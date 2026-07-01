@@ -1443,7 +1443,6 @@ function syncApplicationFeeReceiptButton() {
 
 	var st = resolveApplicationFeeStatus();
 	var receiptWrap = document.getElementById('slcm-fee-receipt-wrap');
-
 	if (st === 'Pending' || st === 'Requested' || st === 'Waived') {
 		if (receiptWrap) {
 			receiptWrap.style.display = 'none';
@@ -1452,9 +1451,8 @@ function syncApplicationFeeReceiptButton() {
 		}
 		return;
 	}
-
 	if (st === 'Paid') {
-		if (receiptWrap) _slcmAppendFeeReceiptButton(applicant, receiptWrap);
+		if (receiptWrap) _slcmAppendFeeReceiptButton(applicant, receiptWrap);		
 		return;
 	}
 
@@ -2469,6 +2467,7 @@ function _showFeeModal(feeDetails, onPaid) {
 }
 
 function _openRazorpay(orderData, feeDetails, onPaid, payBtn, closeModal) {
+	var paymentHandled = false;
 	var primaryColor = '#1a3c6e';
 	try {
 		var cssColor = getComputedStyle(document.documentElement).getPropertyValue('--slcm-primary').trim();
@@ -2484,6 +2483,7 @@ function _openRazorpay(orderData, feeDetails, onPaid, payBtn, closeModal) {
 		name: 'Application Fee',
 		description: 'Application Fee to complete the form',
 		handler: function (res) {
+			paymentHandled = true;
 			_showSubmitOverlay('Verifying payment, Please don\'t refresh or close the page \u2026');
 			frappe.call({
 				method: 'slcm.api.service.fee_service.verify_application_fee_payment',
@@ -2517,15 +2517,35 @@ function _openRazorpay(orderData, feeDetails, onPaid, payBtn, closeModal) {
 				},
 			});
 		},
-		onclose: function () {
-			// Handle modal close
-			closeModal();
-			_doFinalSubmit(feeDetails.applicant_name, 'Submitted');
+		modal: {
+			ondismiss: function () {
+				if (!paymentHandled) {
+					// Handle modal close (e.g. user cancelled)
+					closeModal();
+					
+					// Log the failure so the Payment Request is updated from Requested to Failed/Pending
+					frappe.call({
+						method: 'slcm.api.service.fee_service.log_application_fee_payment_failure',
+						args: {
+							applicant_name: feeDetails.applicant_name,
+							order_id: orderData.order_id,
+							error_data: JSON.stringify({ event: 'modal_dismissed', description: 'User manually closed the payment modal' }),
+						},
+						callback: function () {
+							_doFinalSubmit(feeDetails.applicant_name, 'Submitted');
+						},
+						error: function () {
+							_doFinalSubmit(feeDetails.applicant_name, 'Submitted');
+						}
+					});
+				}
+			},
 		},
 	};
 
 	var rzp = new Razorpay(options);
 	rzp.on('payment.failed', function (err) {
+		paymentHandled = true;
 		frappe.call({
 			method: 'slcm.api.service.fee_service.log_application_fee_payment_failure',
 			args: {
@@ -2541,6 +2561,7 @@ function _openRazorpay(orderData, feeDetails, onPaid, payBtn, closeModal) {
 		_doFinalSubmit(feeDetails.applicant_name, 'Submitted');
 	});
 
+	closeModal();
 	rzp.open();
 	payBtn.disabled = false;
 	_feePayBtnSetLoading(payBtn, false);
@@ -2740,7 +2761,9 @@ function runSubmitFlow() {
 
 							if (feeAmount > 0 && !canSubmit) {
 								// ── 4a. Fee required and unpaid ────────────────
-								_doFinalSubmit(applicantName, 'Submitted');
+								_showFeeModal(fd, function () {
+									_doFinalSubmit(applicantName, 'Completed');
+								});
 							} else {
 								// ── 4b. No fee / already paid → submit ────────
 								_doFinalSubmit(applicantName, 'Completed');
@@ -5322,8 +5345,12 @@ function scheduleApplicantCountryStateCityFilter() {
 function slcmSetupPayButton() {
 	setInterval(function () {
 		if (document.getElementById('slcm-pay-btn')) return;
-		var status = resolveField('status');
-		if (status !== 'Submitted') return;
+		var status = (resolveField('status') || '').trim().toLowerCase();
+		if (status === 'draft' || status === 'new' || !status) return;
+		
+		var feeStatus = resolveApplicationFeeStatus();
+		if (feeStatus === 'Paid' || feeStatus === 'Waived') return;
+		if (document.getElementById('slcm-fee-receipt-btn')) return;
 
 		var $topbar = $('#slcm-form-topbar');
 		if ($topbar.length) {

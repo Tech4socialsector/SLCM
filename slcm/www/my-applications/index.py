@@ -347,7 +347,7 @@ def get_context(context):
                     admission_fee_paid = bool(
                         frappe.db.exists(
                             "Applicant Payment Receipt",
-                            {"applicant": applicant.name, "docstatus": 1},
+                            {"applicant": applicant.name, "docstatus": ["<", 2]},
                         )
                     )
             except Exception:
@@ -597,7 +597,7 @@ def get_context(context):
                 # 2. Fallback to Applicant Payment Receipt
                 if not context.payment_details:
                     receipt = frappe.get_all("Applicant Payment Receipt",
-                        filters={"offer_letter": context.offer_name, "docstatus": 1},
+                        filters={"offer_letter": context.offer_name, "docstatus": ["<", 2]},
                         fields=["name", "total_amount as amount", "payment_date"],
                         order_by="creation desc", limit=1)
                     if receipt:
