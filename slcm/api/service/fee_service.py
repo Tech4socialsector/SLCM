@@ -616,7 +616,7 @@ class FeeService:
                 {
                     "offer_letter": offer_doc.name,
                     "transaction_id": transaction_id,
-                    "docstatus": 1,
+                    "docstatus": ["<", 2],
                 },
                 "name",
             )
@@ -724,7 +724,6 @@ class FeeService:
                 receipt.payment_receipt_template = tpl
 
             receipt.insert(ignore_permissions=True)
-            receipt.submit()
             
             from slcm.api.service.offer_service import OfferService
             OfferService.log_action(offer_doc.name, "Payment Received", 
@@ -1394,7 +1393,7 @@ class FeeService:
                     {
                         "applicant": applicant_doc.name,
                         "transaction_id": transaction_id,
-                        "docstatus": 1,
+                        "docstatus": ["<", 2],
                     },
                     "name",
                 )
@@ -1404,7 +1403,7 @@ class FeeService:
             existing = frappe.db.sql(
                 """
                 SELECT name FROM `tabApplicant Payment Receipt`
-                WHERE applicant = %s AND docstatus = 1 AND IFNULL(offer_letter, '') = ''
+                WHERE applicant = %s AND docstatus < 2 AND IFNULL(offer_letter, '') = ''
                 ORDER BY creation DESC LIMIT 1
                 """,
                 applicant_doc.name,
@@ -1467,7 +1466,6 @@ class FeeService:
             })
 
             receipt.insert(ignore_permissions=True)
-            receipt.submit()
             return receipt.name
         except Exception as e:
             frappe.log_error(frappe.get_traceback(), "Application Fee Receipt Generation Failed")
@@ -1490,7 +1488,7 @@ class FeeService:
         dup = frappe.db.sql(
             """
             SELECT name FROM `tabApplicant Payment Receipt`
-            WHERE applicant = %s AND docstatus = 1 AND IFNULL(offer_letter, '') = ''
+            WHERE applicant = %s AND docstatus < 2 AND IFNULL(offer_letter, '') = ''
             LIMIT 1
             """,
             applicant_name,
@@ -1544,12 +1542,19 @@ class FeeService:
                 except Exception:
                     pass
             err_msg = ""
+            is_gateway_failure = True
             if isinstance(error_data, dict):
                 err_msg = error_data.get("description") or error_data.get("message") or str(error_data)
+                # Differentiate manual dismiss from actual failure
+                if not (error_data.get("code") or error_data.get("reason") or error_data.get("step")):
+                    is_gateway_failure = False
             else:
                 err_msg = str(error_data)
+                
+            pr_status = "Failed" if is_gateway_failure else "Requested"
+            
             FeeService._update_payment_request_for_applicant(
-                applicant, gateway, order_id, "Failed", failure_reason=err_msg, response_data=error_data
+                applicant, gateway, order_id, pr_status, failure_reason=err_msg, response_data=error_data
             )
             if applicant.application_fee_status != "Paid":
                 frappe.db.set_value(
