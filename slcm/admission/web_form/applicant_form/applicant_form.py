@@ -569,6 +569,15 @@ def submit_applicant(applicant_name, target_status=None):
                 "message": _("Application is already submitted."),
             }
 
+    if current_status == "Completed" and _ts == "Completed":
+        return {
+            "status": "success",
+            "name": doc.name,
+            "doc_status": doc.status,
+            "application_fee_status": doc.application_fee_status or "",
+            "message": _("Application is already completed."),
+        }
+
     if current_status and current_status not in ("Draft", "Submitted"):
         return {"status": "error", "message": _("Only Draft or Submitted applications can be updated here.")}
 
@@ -1065,7 +1074,7 @@ def _latest_application_fee_receipt_for_portal(applicant_name):
     rows = frappe.db.sql(
         """
         SELECT name FROM `tabApplicant Payment Receipt`
-        WHERE applicant = %s AND docstatus = 1
+        WHERE applicant = %s AND docstatus < 2
         AND IFNULL(offer_letter, '') = ''
         ORDER BY creation DESC
         LIMIT 1
