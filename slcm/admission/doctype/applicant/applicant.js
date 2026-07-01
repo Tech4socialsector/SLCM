@@ -56,10 +56,11 @@ frappe.ui.form.on("Applicant", {
             });
         }
          // Override after attach widget renders
-         frm.fields_dict['student_photo'].df.options = 'My Device'; // won't work alone
-        
-         // Hook into the upload dialog
-         frm.fields_dict['student_photo'].$input?.on('click', function() {
+         if (frm.fields_dict['candidate_photo']) {
+             frm.fields_dict['candidate_photo'].df.options = 'My Device'; // won't work alone
+            
+             // Hook into the upload dialog
+             frm.fields_dict['candidate_photo'].$input?.on('click', function() {
              setTimeout(() => {
                  // Remove Link option
                  $('.upload-area .from-link').hide();
@@ -67,6 +68,7 @@ frappe.ui.form.on("Applicant", {
                  $('.upload-area .from-camera').hide();
              }, 100);
          });
+         }
         // Status badge in dashboard headline
         const status_colors = {
             "Draft": "gray",
@@ -185,6 +187,13 @@ frappe.ui.form.on("Applicant", {
                 );
             }, __("Portal"));
         }
+
+        if (!frm.doc.__islocal) {
+            frm.add_custom_button(__("View as Candidate"), function() {
+                window.open(`/my-applications?app=${encodeURIComponent(frm.doc.name)}`, '_blank');
+            });
+        }
+
         // Guardian fields required only when flag is set
         frm.toggle_reqd("guardian_name", frm.doc.guardian_required);
         frm.toggle_reqd("guardian_mobile", frm.doc.guardian_required);
