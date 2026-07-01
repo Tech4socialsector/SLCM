@@ -1707,6 +1707,7 @@ class Applicant(Document):
                 return True, ""
 
             # Rule mappings for this program (direct link now)
+            applicant_type = "Domestic Applicants" if getattr(self, "nationality", "") == "Indian" else "International Applicants"
             rule_mappings = frappe.db.sql("""
                 SELECT erm.name
                 FROM `tabEligibility Rule Mapping` erm
@@ -1714,10 +1715,12 @@ class Applicant(Document):
                   AND erm.campus          = %(campus)s
                   AND erm.admission_cycle = %(admission_cycle)s
                   AND erm.program         = %(program)s
+                  AND erm.applicant_type  = %(applicant_type)s
             """, {
                 "campus":          self.campus,
                 "admission_cycle": self.admission_cycle,
                 "program":         program_name,
+                "applicant_type":  applicant_type,
             }, as_dict=True)
 
             # No rule mapping → no restriction → eligible
@@ -1831,6 +1834,7 @@ class Applicant(Document):
     # ──────────────────────────────────────────────
 
     def _get_rule_mappings_for_applicant(self):
+        applicant_type = "Domestic Applicants" if getattr(self, "nationality", "") == "Indian" else "International Applicants"
         return frappe.db.sql("""
             SELECT erm.name
             FROM `tabEligibility Rule Mapping` erm
@@ -1838,10 +1842,12 @@ class Applicant(Document):
               AND erm.campus            = %(campus)s
               AND erm.admission_cycle   = %(admission_cycle)s
               AND erm.program           = %(program)s
+              AND erm.applicant_type    = %(applicant_type)s
         """, {
             "campus":          self.campus,
             "admission_cycle": self.admission_cycle,
             "program":         self.program,
+            "applicant_type":  applicant_type,
         }, as_dict=True)
 
     # ──────────────────────────────────────────────
