@@ -1920,7 +1920,7 @@ class Applicant(Document):
             
             # Check if we should append SSLC lines (either failed or missing)
             if sslc_failed or (sslc_threshold and applicant_sslc <= 0):
-                append_lines("SSLC (Class X)", sslc_threshold, applicant_sslc, sslc_failed)
+                append_lines("Class X", sslc_threshold, applicant_sslc, sslc_failed)
 
         if cat_row and (cat_row.get("category") or "").strip():
             if score_lines:
