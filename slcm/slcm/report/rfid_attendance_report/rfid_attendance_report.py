@@ -4,9 +4,9 @@
 """
 RFID Attendance Report
 ======================
-Two-level hierarchical table:
-  Level 0 (bold, indented=0): Period summary  — totals across ALL terminals
-  Level 1 (indented=1):       Per-terminal row — breakdown by terminal + area
+Two-level table:
+  Summary row: Period totals across ALL terminals
+  Detail rows: Breakdown by terminal + area
 
 Columns:
   Period | [Weekday] | Terminal/Room | Area | Total Swipes
@@ -285,7 +285,7 @@ def _get_data(filters):
         period_first  = min((r.first_swipe for r in rows if r.first_swipe), default=None)
         period_last   = max((r.last_swipe  for r in rows if r.last_swipe),  default=None)
 
-        # ── Summary row — bold=1 tells Frappe DataTable to render it bold ────────
+        # ── Summary row ───────────────────────────────────────────────────────────
         data.append({
             "period_label":    label,
             "terminal_alias":  f"All terminals  ({len(rows)})",
@@ -300,11 +300,9 @@ def _get_data(filters):
             "academic_year":   "",
             "first_swipe":     period_first,
             "last_swipe":      period_last,
-            "indent":          0,
-            "bold":            1,
         })
 
-        # ── Detail rows — indented under the summary ───────────────────────────
+        # ── Detail rows ────────────────────────────────────────────────────────
         for r in rows:
             data.append({
                 "period_label":    "",
@@ -320,8 +318,6 @@ def _get_data(filters):
                 "academic_year":   r.academic_year or "",
                 "first_swipe":     r.first_swipe,
                 "last_swipe":      r.last_swipe,
-                "indent":          1,
-                "bold":            0,
             })
 
     return data
@@ -373,7 +369,7 @@ def _get_chart(data, filters):
     period_unknown = {}
 
     for row in data:
-        if not row.get("bold"):
+        if not str(row.get("terminal_alias", "")).startswith("All terminals"):
             continue
         lbl = row["period_label"]
         period_known[lbl]   = period_known.get(lbl, 0)   + (row["known_students"] or 0)
