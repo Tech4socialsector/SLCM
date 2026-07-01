@@ -108,15 +108,15 @@ function _injectCSS() {
 			'#slcm-wf-switch-program-overlay .slcm-wf-switch-opt.slcm-wf-switch-opt--applied{' +
 			'opacity:0.72;cursor:not-allowed;pointer-events:none;border-color:#e2e8f0 !important;background:#f1f5f9 !important;box-shadow:none !important;}' +
 			'#slcm-wf-switch-program-overlay .slcm-wf-switch-opt.slcm-wf-switch-opt--applied .slcm-wf-switch-applied-badge{' +
-			'display:inline-block;margin-left:8px;font-size:11px;font-weight:400;padding:2px 8px;border-radius:999px;background:#e2e8f0;color:#475569;}' +
+			'display:inline-block;margin-left:8px;font-size:var(--font-size-toast, 11px);font-weight:400;padding:2px 8px;border-radius:999px;background:#e2e8f0;color:#475569;}' +
 			'#slcm-wf-switch-opts-container::-webkit-scrollbar{width:4px;}' +
 			'#slcm-wf-switch-opts-container::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}' +
 			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions .slcm-wf-switch-cancel-btn{' +
-			'height:52px;border-radius:14px;border:none;background:#f1f5f9;font-weight:400;color:#475569;cursor:pointer;transition:background .15s;}' +
+			'height:52px;border-radius:14px;border:none;background:#f1f5f9;font-weight:400;color:#475569;cursor:pointer;transition:background .15s;font-size:var(--font-size-body, 14px);font-family:var(--font-family, inherit);}' +
 			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions .slcm-wf-switch-cancel-btn:hover{background:#e2e8f0;}' +
 			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions #slcm-wf-confirm-switch-btn{' +
-			'height:52px;border-radius:14px;border:none;background:#1a3c6e;color:#fff;font-weight:400;cursor:pointer;' +
-			'box-shadow:0 4px 20px rgba(15,27,76,0.2);transition:filter .15s;}' +
+			'height:52px;border-radius:14px;border:none;background:var(--slcm-primary, #1a3c6e);color:#fff;font-weight:400;cursor:pointer;' +
+			'box-shadow:0 4px 20px rgba(15,27,76,0.2);transition:filter .15s;font-size:var(--font-size-body, 14px);font-family:var(--font-family, inherit);}' +
 			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions #slcm-wf-confirm-switch-btn:hover:not(:disabled){filter:brightness(1.05);}',
 		/* Application ID + status row (inside web-form title h1) */
 		'.slcm-app-heading-row{display:flex;align-items:center;flex-wrap:wrap;gap:12px 28px;' +
@@ -1770,7 +1770,7 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 		var isElig = p.eligible;
 		var rowBg = isSelected && !isElig ? '#fff5f5' : isSelected ? '#f0fdf4' : '#fff';
 		var badge = isSelected
-			? '&nbsp;<span style="font-size:10px;padding:2px 8px;background:' +
+			? '&nbsp;<span style="font-size:var(--font-size-toast, 10px);padding:2px 8px;background:' +
 			  (isElig ? '#27ae60' : '#e74c3c') +
 			  ';color:#fff;border-radius:10px;font-weight:300;vertical-align:middle;">' +
 			  (isElig ? 'Selected ✓' : 'Choosen Program') +
@@ -1783,14 +1783,14 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 			(isElig ? '#27ae60' : '#e74c3c') +
 			';"></span>';
 		var statusLabel =
-			'<span style="font-size:13px;font-weight:300;color:' +
+			'<span style="font-size:var(--font-size-body, 13px);font-weight:300;color:' +
 			(isElig ? '#27ae60' : '#e74c3c') +
 			';">' +
 			(isElig ? 'Eligible' : 'In-Eligible') +
 			'</span>';
 		var appliedNote =
 			isElig && alreadyApplied[p.program]
-				? '<div style="font-size:11px;color:#64748b;margin-top:6px;font-weight:300;">' +
+				? '<div style="font-size:var(--font-size-toast, 11px);color:#64748b;margin-top:6px;font-weight:300;">' +
 				  __('Applied') +
 				  ' &middot; ' +
 				  _slcmEscapeHtml(String(alreadyApplied[p.program])) +
@@ -1803,14 +1803,14 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 			var mainReason = pr[0];
 			var subReasons = pr.slice(1);
 			reasonHtml =
-				'<div style="font-size:11px;color:#888;margin-top:4px;font-style:italic;line-height:1.4;">' +
+				'<div style="font-size:var(--font-size-toast, 11px);color:#888;margin-top:4px;font-style:italic;line-height:1.4;">' +
 				_slcmEscapeHtml(mainReason) +
 				'</div>';
 			if (subReasons.length > 0) {
 				reasonHtml += subReasons
 					.map(function (sr) {
 						return (
-							'<div style="font-size:10px;color:#94a3b8;font-style:normal;margin-top:2px;display:flex;gap:4px;"><span>•</span><span>' +
+							'<div style="font-size:var(--font-size-toast, 10px);color:#94a3b8;font-style:normal;margin-top:2px;display:flex;gap:4px;"><span>•</span><span>' +
 							_slcmEscapeHtml(sr) +
 							'</span></div>'
 						);
@@ -1856,19 +1856,19 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 	if (eligibleCount > 0 && switchablePrograms.length > 0) {
 		switchBlock =
 			'<div style="margin-top:16px; display:flex; justify-content:center;">' +
-			'<button type="button" class="slcm-wf-modal-switch-btn" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 24px;font-size:14px;font-weight:400;border:none;border-radius:12px;background:#1a3c6e;color:#fff;cursor:pointer;box-shadow:0 10px 15px -3px rgba(15,27,76,0.2);width:auto;">' +
+			'<button type="button" class="slcm-wf-modal-switch-btn" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 24px;font-size:var(--font-size-body, 14px);font-weight:400;border:none;border-radius:12px;background:var(--slcm-primary, #1a3c6e);color:#fff;cursor:pointer;box-shadow:0 10px 15px -3px rgba(15,27,76,0.2);width:auto;">' +
 			'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="margin-right:10px; vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>' +
 			__('Switch to an Eligible Programme Instantly') +
 			'</button></div>';
 	} else if (eligibleCount > 0 && switchablePrograms.length === 0) {
 		switchBlock =
-			'<div style="margin-top:16px;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;text-align:center;font-size:0.875rem;color:#64748b;">' +
+			'<div style="margin-top:16px;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;text-align:center;font-size:var(--font-size-body, 0.875rem);color:#64748b;">' +
 			__('You already have a separate application for every eligible programme in this cycle and campus.') +
 			'</div>';
 	}
 
 	var html =
-		'<div id="slcm-wf-eligibility-modal-overlay" style="position:fixed;inset:0;z-index:199000;display:flex;align-items:center;justify-content:center;padding:1.5rem;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;background:rgba(15,23,42,0.4);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">' +
+		'<div id="slcm-wf-eligibility-modal-overlay" style="position:fixed;inset:0;z-index:199000;display:flex;align-items:center;justify-content:center;padding:1.5rem;font-family:var(--font-family, inherit);background:rgba(15,23,42,0.4);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">' +
 		'<div style="background:#fff;border-radius:20px;width:100%;max-width:680px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25),0 0 0 1px rgba(0,0,0,0.05);display:flex;flex-direction:column;max-height:90vh;overflow:hidden;">' +
 		'<div style="padding:20px 24px;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#fef2f2 0%,#fee2e2 100%);border-bottom:1px solid #fecaca;flex-shrink:0;">' +
 		'<div style="display:flex;align-items:center;gap:14px;">' +
@@ -1887,12 +1887,12 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 		'<span style="width:6px;height:6px;background:#dc2626;border-radius:50%;"></span>' +
 		mainHeading +
 		'</div>' +
-		'<div style="font-size:0.875rem;color:#7f1d1d;line-height:1.6;">' +
+		'<div style="font-size:var(--font-size-body, 0.875rem);color:#7f1d1d;line-height:1.6;">' +
 		alertBodyHtml +
 		'</div></div>' +
 
 		'<div style="overflow-x:auto;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;">' +
-		'<table style="width:100%;border-collapse:collapse;font-size:0.875rem;">' +
+		'<table style="width:100%;border-collapse:collapse;font-size:var(--font-size-body, 0.875rem);">' +
 		'<thead><tr style="background:#f1f5f9;">' +
 		'<th style="padding:14px 18px;text-align:left;font-weight:300;color:#475569;width:70%;border-bottom:2px solid #e2e8f0;">Program</th>' +
 		'<th style="padding:14px 18px;text-align:center;font-weight:300;color:#475569;border-bottom:2px solid #e2e8f0;">Eligibility</th>' +
@@ -2037,7 +2037,7 @@ function _slcmWfBuildSwitchProgramOverlay(applicantName, eligibleProgs, alreadyA
 					__('Applied') +
 					'</span>' +
 					(ref
-						? '<span style="font-size:11px;color:#94a3b8;margin-left:6px;">(' +
+						? '<span style="font-size:var(--font-size-toast, 11px);color:#94a3b8;margin-left:6px;">(' +
 						  _slcmEscapeHtml(ref) +
 						  ')</span>'
 						: '') +
@@ -2061,15 +2061,15 @@ function _slcmWfBuildSwitchProgramOverlay(applicantName, eligibleProgs, alreadyA
 	overlay.id = 'slcm-wf-switch-program-overlay';
 	overlay.className = 'slcm-portal-switch-shell';
 	overlay.style.cssText =
-		'position:fixed;inset:0;z-index:200000;background:rgba(15,23,42,0.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px;';
+		'position:fixed;inset:0;z-index:200000;background:rgba(15,23,42,0.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px;font-family:var(--font-family, inherit);';
 	overlay.innerHTML =
 		'<div class="slcm-portal-switch-card">' +
 		'<div style="width:56px;height:56px;background:#f0fdf4;border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;color:#15803d;">' +
 		'<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg></div>' +
-		'<h3 style="margin:0 0 8px;font-size:1.4rem;font-weight:400;color:#1a3c6e;letter-spacing:-0.02em;">' +
+		'<h3 style="margin:0 0 8px;font-size:var(--font-size-heading, 1.4rem);font-weight:400;color:#1a3c6e;letter-spacing:-0.02em;">' +
 		__('Switch Programme') +
 		'</h3>' +
-		'<p style="margin:0 0 24px;font-size:0.95rem;color:#64748b;line-height:1.6;">' +
+		'<p style="margin:0 0 24px;font-size:var(--font-size-body, 0.95rem);color:#64748b;line-height:1.6;">' +
 		__(
 			'Please select your new eligible programme. Your current data will be automatically successfully synced.'
 		) +
