@@ -140,6 +140,22 @@
             max-width: 65%;
         }
 
+        @media (max-width: 992px) {
+            .adm-nav-brand {
+                font-size: 18px !important;
+                max-width: 85%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .adm-nav-brand {
+                font-size: 18px !important;
+                max-width: calc(100% - 95px) !important;
+                white-space: normal !important;
+                line-height: 1.2 !important;
+            }
+        }
+
         .adm-nav-brand img {
             height: clamp(28px, 6vw, 36px);
             width: auto;
