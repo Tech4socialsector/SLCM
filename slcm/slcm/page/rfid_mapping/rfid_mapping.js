@@ -675,29 +675,26 @@ function build_html() {
 
 	<!-- Swipe log stats (matches SQL Server columns) -->
 	<div class="sec-lbl">Swipe Log Statistics</div>
-	<div class="stats-grid g4" style="margin-bottom:22px">
+	<div class="stats-grid g3" style="margin-bottom:22px">
 		<div class="stat-card sc-navy">
 			<div class="stat-num sn-navy" id="st-total">—</div>
-			<div class="stat-lbl">Total Records Imported</div>
-			<div class="stat-sub">from dbo.iclock_trans_ajim</div>
-		</div>
-		<div class="stat-card sc-navy">
-			<div class="stat-num sn-navy" id="st-att-logs">—</div>
-			<div class="stat-lbl">Attendance Logs Created</div>
+			<div class="stat-lbl">Total Swipes Imported</div>
 			<div class="stat-sub">
+				from dbo.iclock_trans_ajim &nbsp;·&nbsp;
 				<a href="/app/attendance-log" target="_blank" style="color:var(--navy-mid); font-size:.72rem">
-					View Attendance Log →
+					View Log →
 				</a>
 			</div>
 		</div>
 		<div class="stat-card sc-gold">
 			<div class="stat-num sn-gold" id="st-linked">—</div>
-			<div class="stat-lbl">Linked to a Student</div>
+			<div class="stat-lbl">Swipes Identified</div>
+			<div class="stat-sub">card matched to a known student</div>
 		</div>
 		<div class="stat-card sc-maroon">
 			<div class="stat-num sn-maroon" id="st-unlinked">—</div>
-			<div class="stat-lbl">Student Unknown</div>
-			<div class="stat-sub">Assign cards below to resolve</div>
+			<div class="stat-lbl">Swipes Unidentified</div>
+			<div class="stat-sub">card not yet assigned — resolve below</div>
 		</div>
 	</div>
 

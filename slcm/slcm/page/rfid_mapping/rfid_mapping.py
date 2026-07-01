@@ -46,20 +46,22 @@ def get_rfid_summary():
         LIMIT 500
     """, as_dict=True)
 
-    # Students already linked
+    # Students already linked — either rfid_uid set on Student Master OR
+    # they appear as student on an Attendance Log (covers backfill gap).
     linked_students = frappe.db.sql("""
         SELECT
-            sm.name         AS student_id,
-            sm.first_name   AS student_name,
-            sm.programme    AS programme,
+            sm.name                                         AS student_id,
+            sm.first_name                                   AS student_name,
+            sm.programme                                    AS programme,
             sm.batch_year,
             sm.department,
-            sm.rfid_uid,
-            COUNT(al.name)  AS total_swipes,
-            MAX(al.swipe_time) AS last_swipe
+            COALESCE(sm.rfid_uid, MAX(al.rfid_uid))         AS rfid_uid,
+            COUNT(al.name)                                  AS total_swipes,
+            MAX(al.swipe_time)                              AS last_swipe
         FROM `tabStudent Master` sm
         LEFT JOIN `tabAttendance Log` al ON al.student = sm.name
-        WHERE sm.rfid_uid IS NOT NULL AND sm.rfid_uid != ''
+        WHERE (sm.rfid_uid IS NOT NULL AND sm.rfid_uid != '')
+           OR (al.student IS NOT NULL AND al.student != '')
         GROUP BY sm.name, sm.first_name, sm.programme, sm.batch_year, sm.department, sm.rfid_uid
         ORDER BY sm.first_name ASC
     """, as_dict=True)

@@ -2208,73 +2208,33 @@ class SLCMWorkspaceAnalyticsDashboard {
 			callback: (r) => {
 				if (r.exc || !r.message) { this._show_error(); return; }
 				const d = r.message;
-				const proc_cls = d.processing_pct >= 90 ? 'success' : d.processing_pct >= 60 ? 'warning' : 'danger';
+				const proc_cls    = d.processing_pct >= 90 ? 'success' : d.processing_pct >= 60 ? 'warning' : 'danger';
+				const unproc_cls  = d.unprocessed > 0 ? 'warning' : 'success';
 
 				$('#sawd-tab-content').html(`
 					<div class="sawd-kpi-grid">
-						${this._kpi('Total Swipes',      sawd_fmt_number(d.total_swipes), '📡', 'primary', 'all time RFID logs')}
-						${this._kpi('Unique Cards',       d.unique_cards,                 '💳', 'info',    'distinct RFID UIDs')}
-						${this._kpi("Today's Swipes",     d.today_swipes,                 '🕐', 'success', 'swipes recorded today')}
-						${this._kpi('Processed',          d.processed,                    '✅', proc_cls,  d.processing_pct + '% processing rate')}
-						${this._kpi('Unprocessed',        d.unprocessed,                  '⏳', d.unprocessed > 0 ? 'warning' : 'success', 'pending attendance link')}
-						${this._kpi('Active RFID Cards',  d.active_cards,                 '🟢', 'success', 'of ' + d.total_cards + ' total cards')}
+						${this._kpi('Total Swipes',  sawd_fmt_number(d.total_swipes), '', 'primary', 'all-time RFID logs')}
+						${this._kpi('Unique Cards',  d.unique_cards,                  '', 'info',    'distinct RFID UIDs')}
+						${this._kpi('Processed',     d.processed,                     '', proc_cls,  d.processing_pct + '% processing rate')}
+						${this._kpi('Unprocessed',   d.unprocessed,                   '', unproc_cls,'pending attendance link')}
 					</div>
 
-					<div class="sawd-section-title">📍 Swipe Distribution</div>
+					<div class="sawd-section-title">RFID Analytics</div>
 					<div class="sawd-chart-grid sawd-chart-grid-3">
-						${this._chart_card('sawd-rfid-location',   'Swipes by Location',   'Top classroom locations',          'Click to drill down', '')}
-						${this._chart_card('sawd-rfid-processing', 'Processing Status',    'Processed vs Unprocessed',         'Click to explore',    '')}
-						${this._chart_card('sawd-rfid-hourly',     'Hourly Swipe Pattern', 'Peak swipe hours across all days', '',                    '')}
-					</div>
-
-					<div class="sawd-section-title">🖥️ Terminal & Trend</div>
-					<div class="sawd-chart-grid">
-						${this._chart_card('sawd-rfid-terminal', 'Top Reader Terminals', 'Swipes per RFID terminal', 'Click to drill down', '')}
-						${this._chart_card('sawd-rfid-trend',    'Monthly Swipe Volume', 'Swipe count per month',    '',                    '')}
+						${this._chart_card('sawd-rfid-location',   'Swipes by Location',  'Top reader locations',     'Click to drill down', '')}
+						${this._chart_card('sawd-rfid-processing', 'Processing Status',   'Processed vs Unprocessed', '',                    '')}
+						${this._chart_card('sawd-rfid-terminal',   'Top Reader Terminals','Swipes per RFID terminal', 'Click to drill down', '')}
 					</div>
 				`);
 
-				// Location horizontal bar
 				this._render_bar_horizontal('#sawd-rfid-location .sawd-chart-body',
 					d.location_dist, { module: 'rfid', dimension: 'location' });
 
-				// Processing donut
 				this._render_donut('#sawd-rfid-processing .sawd-chart-body',
 					d.processing_dist, 'rfid', 'processing');
 
-				// Hourly line chart
-				if (d.hourly_dist && d.hourly_dist.length) {
-					this._render_chart('#sawd-rfid-hourly .sawd-chart-body', {
-						type: 'line',
-						data: {
-							labels:   d.hourly_dist.map(h => h.label),
-							datasets: [{ name: 'Swipes', values: d.hourly_dist.map(h => h.value) }],
-						},
-						colors:      [SAWD_PALETTE.primary[0]],
-						height:      200,
-						lineOptions: { regionFill: 1, hideDots: 1 },
-					});
-				}
-
-				// Terminal horizontal bar
 				this._render_bar_horizontal('#sawd-rfid-terminal .sawd-chart-body',
 					d.terminal_dist, { module: 'rfid', dimension: 'terminal' });
-
-				// Monthly trend bar
-				if (d.monthly_trend && d.monthly_trend.length) {
-					this._render_chart('#sawd-rfid-trend .sawd-chart-body', {
-						type: 'bar',
-						data: {
-							labels:   d.monthly_trend.map(r => r.label),
-							datasets: [{ name: 'Swipes', values: d.monthly_trend.map(r => r.value) }],
-						},
-						colors:     [SAWD_PALETTE.info[1]],
-						height:     200,
-						barOptions: { spaceRatio: 0.3 },
-					});
-				} else {
-					$('#sawd-rfid-trend .sawd-chart-body').html(this._empty_html('No trend data available'));
-				}
 			},
 		});
 	}
