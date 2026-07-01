@@ -146,6 +146,22 @@
     overflow: hidden;
   }
 
+  @media (max-width: 768px) {
+    .mobile-scroll-tabs {
+      overflow-x: auto;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .mobile-scroll-tabs::-webkit-scrollbar {
+      display: none;
+    }
+    .mobile-scroll-tabs .tab-btn {
+      min-width: 90px;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+  }
+
   {{ portal_sidebar_css() }}
 </style>
 {% endblock %}
@@ -279,7 +295,7 @@
         </div>
 
         <div class="fade-in-up" style="animation-delay:0.2s">
-          <div class="bg-slate-200/50 p-1 rounded-xl flex gap-1 mb-6 w-full shadow-inner">
+          <div class="bg-slate-200/50 p-1 rounded-xl flex gap-1 mb-6 w-full shadow-inner mobile-scroll-tabs">
             <button onclick="showTab('eligible')"
               class="tab-btn active flex-1 px-5 py-2 rounded-lg text-xs font-semibold transition-all relative">Eligible</button>
             <button onclick="showTab('applied')"
