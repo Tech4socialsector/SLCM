@@ -5,50 +5,69 @@ Dear **{{ doc.applicant_name or doc.applicant }}**,
 
 We are pleased to inform you that an admission offer has been issued for the **{{ doc.program }}** program at our **{{ doc.campus }}** campus.
 
-Please log in to the student portal to review your offer letter, fee details, and complete the acceptance process before the deadline of **{{ frappe.utils.formatdate(doc.payment_deadline) }}**.
+Your offer letter for the **{{ doc.program }}** program has been issued.
+
+**Deadline to accept and pay:** {{ doc.payment_deadline }}
+**Payable Amount:** ₹{{ doc.payable_amount }}
+
+Please log in to your admission portal to view and accept the offer.
+
+**Action Required:** Log in to your admission dashboard and navigate to the 'My Admission Offers' section to accept your offer.
 
 [View Offer Letter](/app/applicant-offer-lett/{{ doc.name }})
 
-{% elif doc.offer_status == 'Accepted' %}
+{% elif doc.status == 'Accepted' %}
 ### Offer Accepted Successfully
 
 Dear **{{ doc.applicant_name or doc.applicant }}**,
 
-Thank you for accepting the admission offer for **{{ doc.program }}**. 
+Congratulations! You have successfully accepted the offer for the **{{ doc.program }}** program. 
 
-Your fee assignment has been generated. Please proceed to the payment section to complete your admission.
+Your application is moving forward, and we look forward to welcoming you.
 
-{% elif doc.offer_status == 'Payment Completed' %}
+**Next Steps:** Wait for further communication regarding enrolment or next stages.
+<br>
+
+{% elif doc.status == 'Payment Completed' %}
 ### Fee Payment Successful
 
 Dear **{{ doc.applicant_name or doc.applicant }}**,
 
-We have successfully received your fee payment for the **{{ doc.program }}** program. 
+We have received your admission fee payment for the **{{ doc.program }}** program.
 
-Congratulations! Your admission is now confirmed. You can download your payment receipt from the portal.
+Your admission process for this program is now moving to the next stage.
 
-{% elif doc.offer_status == 'Rejected' %}
+**Next Steps:** You will receive further updates about your enrolment shortly.
+<br>
+
+{% elif doc.status == 'Rejected' %}
 ### Offer Rejected
 
 Dear **{{ doc.applicant_name or doc.applicant }}**,
 
-We acknowledge that you have declined the admission offer for **{{ doc.program }}**. 
+You have chosen to reject the offer for the **{{ doc.program }}** program.
 
-If this was a mistake, please contact the admission office immediately.
+If you believe this was a mistake or you have questions, please reach out to our admission office.
+<br>
 
-{% elif doc.offer_status == 'Expired' %}
+{% elif doc.status == 'Expired' %}
 ### Offer Expired
 
 Dear **{{ doc.applicant_name or doc.applicant }}**,
 
-We regret to inform you that your admission offer for **{{ doc.program }}** has expired as the payment deadline has passed.
+Your offer for the **{{ doc.program }}** program has expired.
 
-{% elif doc.offer_status == 'Withdrawn' %}
+The payment and acceptance deadline of **{{ doc.payment_deadline }}** has passed. If you still wish to proceed, please contact the admission office immediately.
+<br>
+
+{% elif doc.status == 'Withdrawn' %}
 ### Offer Withdrawn
 
 Dear **{{ doc.applicant_name or doc.applicant }}**,
 
-Please be informed that your admission offer for **{{ doc.program }}** has been withdrawn by the administration.
+Your offer for the **{{ doc.program }}** program has been withdrawn.
+
+If you need more information regarding this withdrawal, please contact the admission team.
 
 {% endif %}
 

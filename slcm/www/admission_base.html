@@ -1582,12 +1582,23 @@
         window.csrf_token = {{ frappe.session.csrf_token | tojson }};
         window.session_user = {{ frappe.session.user | tojson }} || 'Guest';
 
-        async function apiFetch(method, args) {
-            const r = await fetch('/api/method/' + method, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': window.csrf_token },
-                body: JSON.stringify(args || {})
-            });
+        async function apiFetch(method, args, httpMethod = 'POST') {
+            const token = window.csrf_token || (typeof frappe !== 'undefined' ? frappe.csrf_token : '');
+            let url = '/api/method/' + method;
+            let options = {
+                method: httpMethod,
+                headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': token }
+            };
+            if (httpMethod.toUpperCase() === 'GET') {
+                if (args && Object.keys(args).length > 0) {
+                    const params = new URLSearchParams();
+                    for (const key in args) { params.append(key, args[key]); }
+                    url += '?' + params.toString();
+                }
+            } else {
+                options.body = JSON.stringify(args || {});
+            }
+            const r = await fetch(url, options);
             const d = await r.json();
             if (!r.ok || d.exc) {
                 let msg = 'Server error';

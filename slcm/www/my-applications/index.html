@@ -3902,7 +3902,7 @@ or _app.current_stage)) or _status %}
           {% set _is_done = doc.is_uploaded %}
           <div class="doc-row"
             {% if _status == 'Draft' %}
-            onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}', '{{ _appid }}')"
+            onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}', '{{ _appid }}', '{{ doc.accept or '' }}', '{{ doc.max_size_mb or 5 }}')"
             style="cursor:pointer;"
             {% else %}
             style="cursor:default;"
@@ -4159,7 +4159,7 @@ LIST / DASHBOARD VIEW
             {% set _is_done = doc.is_uploaded %}
             <div class="doc-row"
               {% if prof_app_status == 'Draft' %}
-              onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}', '{{ prof_app_name }}')"
+              onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}', '{{ prof_app_name }}', '{{ doc.accept or '' }}', '{{ doc.max_size_mb or 5 }}')"
               style="cursor:pointer;"
               {% else %}
               style="cursor:default;"
@@ -4487,14 +4487,24 @@ LIST / DASHBOARD VIEW
     };
 
     let currentUploadTarget = {
-      label: '', type: '', field: '', docName: '', source: '', file: null
+      label: '', type: '', field: '', docName: '', source: '', applicantId: '', accept: '', maxSizeMB: 5, file: null
     };
 
-    window.openUploadModal = function (label, type, field, docName, source, applicantId) {
-      currentUploadTarget = { label, type, field, docName, source, applicantId, file: null };
+    window.openUploadModal = function (label, type, field, docName, source, applicantId, accept, maxSizeMB) {
+      currentUploadTarget = { label, type, field, docName, source, applicantId, accept: accept || '.pdf,.jpg,.jpeg,.png,.doc,.docx', maxSizeMB: parseInt(maxSizeMB) || 5, file: null };
       document.getElementById('modal-doc-label').textContent = 'Upload ' + label;
       document.getElementById('modal-doc-type-hint').textContent = 'Requirement: ' + type;
-      document.getElementById('modal-file-input').value = '';
+      
+      const fileInput = document.getElementById('modal-file-input');
+      fileInput.value = '';
+      fileInput.accept = currentUploadTarget.accept;
+      
+      const hintElem = fileInput.nextElementSibling;
+      if (hintElem) {
+        const exts = currentUploadTarget.accept.replace(/\./g, '').toUpperCase().split(',').join(', ');
+        hintElem.textContent = 'Accepted: ' + exts + ' (Max ' + currentUploadTarget.maxSizeMB + 'MB)';
+      }
+      
       document.getElementById('doc-upload-btn').disabled = true;
       document.getElementById('doc-upload-msg').textContent = '';
       document.getElementById('upload-progress-wrap').style.display = 'none';
@@ -4508,8 +4518,19 @@ LIST / DASHBOARD VIEW
     };
 
     window.handleModalFileSelect = function (input) {
+      const msg = document.getElementById('doc-upload-msg');
+      msg.textContent = '';
       if (input.files && input.files[0]) {
-        currentUploadTarget.file = input.files[0];
+        const file = input.files[0];
+        const maxSize = currentUploadTarget.maxSizeMB * 1024 * 1024;
+        if (file.size > maxSize) {
+          msg.style.color = 'var(--danger)';
+          msg.textContent = 'Error: File size must be less than ' + currentUploadTarget.maxSizeMB + 'MB.';
+          currentUploadTarget.file = null;
+          document.getElementById('doc-upload-btn').disabled = true;
+          return;
+        }
+        currentUploadTarget.file = file;
         document.getElementById('doc-upload-btn').disabled = false;
       } else {
         currentUploadTarget.file = null;
@@ -4556,6 +4577,10 @@ LIST / DASHBOARD VIEW
           };
           if (currentUploadTarget.applicantId) {
             updateData.applicant = currentUploadTarget.applicantId;
+          }
+          if (currentUploadTarget.source && currentUploadTarget.source !== 'Applicant' && currentUploadTarget.source !== 'field') {
+            updateData.doctype = currentUploadTarget.source;
+            updateData.docname = currentUploadTarget.docName;
           }
           await apiFetch('slcm.admission.api.profile.update_profile', updateData);
         } else {

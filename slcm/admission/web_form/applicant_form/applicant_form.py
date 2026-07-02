@@ -419,17 +419,46 @@ def save_applicant_draft(data, ignore_mandatory=True):
         "owner", "creation", "modified", "modified_by", "docstatus",
     }
     valid_scalar  = {f.fieldname for f in meta.fields if f.fieldtype not in SKIP_TYPES}
+    attach_fields = {f.fieldname for f in meta.fields if f.fieldtype in ["Attach", "Attach Image"]}
     child_tables  = {f.fieldname for f in meta.fields if f.fieldtype == "Table"}
+
+    def _is_valid_file(file_url):
+        if not file_url or not isinstance(file_url, str):
+            return True
+        if file_url.startswith(("http://", "https://", "data:")):
+            return True
+        
+        try:
+            file_name = frappe.db.get_value("File", {"file_url": file_url}, "name")
+            if file_name:
+                # Some Frappe versions call get_doc inside has_permission which throws PermissionError
+                if not frappe.has_permission("File", "read", file_name):
+                    return False
+                import os
+                file_path = frappe.get_site_path(file_url.lstrip("/"))
+                return os.path.exists(file_path)
+            else:
+                import os
+                file_path = frappe.get_site_path(file_url.lstrip("/"))
+                return os.path.exists(file_path)
+        except Exception:
+            return False
 
     # Apply scalar fields
     for key, value in data.items():
         if key.startswith("__") or key in INTERNAL_KEYS:
             continue
         if key in valid_scalar:
-            try:
-                setattr(doc, key, value)
-            except Exception:
-                pass
+            if key in attach_fields and value and not _is_valid_file(value):
+                try:
+                    setattr(doc, key, None)
+                except Exception:
+                    pass
+            else:
+                try:
+                    setattr(doc, key, value)
+                except Exception:
+                    pass
 
     # Apply child-table rows
     for ct_field in child_tables:
@@ -437,9 +466,18 @@ def save_applicant_draft(data, ignore_mandatory=True):
         if not isinstance(rows, list):
             continue
         doc.set(ct_field, [])
+        try:
+            ct_meta = frappe.get_meta(meta.get_field(ct_field).options)
+            ct_attach = {f.fieldname for f in ct_meta.fields if f.fieldtype in ["Attach", "Attach Image"]}
+        except Exception:
+            ct_attach = set()
+
         for row in rows:
             if isinstance(row, dict):
                 clean = {k: v for k, v in row.items() if k not in INTERNAL_KEYS and not k.startswith("__")}
+                for k in list(clean.keys()):
+                    if k in ct_attach and clean[k] and not _is_valid_file(clean[k]):
+                        clean[k] = None
                 try:
                     doc.append(ct_field, clean)
                 except Exception:
@@ -569,13 +607,13 @@ def submit_applicant(applicant_name, target_status=None):
                 "message": _("Application is already submitted."),
             }
 
-    if current_status == "Completed" and _ts == "Completed":
+    if _ts == "Completed" and current_status not in ("Draft", "Submitted"):
         return {
             "status": "success",
             "name": doc.name,
             "doc_status": doc.status,
             "application_fee_status": doc.application_fee_status or "",
-            "message": _("Application is already completed."),
+            "message": _("Application is already processed."),
         }
 
     if current_status and current_status not in ("Draft", "Submitted"):

@@ -12,6 +12,7 @@
   "program_shortcode",
   "department",
   "image",
+  "application_form_link",
   "column_break_aosh",
   "level_of_study",
   "program_duration",
@@ -272,6 +273,13 @@
    "fieldtype": "Check",
    "label": "Enrolled",
    "read_only": 1
+  },
+  {
+   "fieldname": "application_form_link",
+   "fieldtype": "Data",
+   "label": "Application Form Link",
+   "options": "URL",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
@@ -300,7 +308,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-06-29 11:08:28.392585",
+ "modified": "2026-07-02 10:07:10.257831",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Program",

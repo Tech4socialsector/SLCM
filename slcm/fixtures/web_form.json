@@ -43,7 +43,7 @@
   "payment_gateway": null,
   "print_format": null,
   "published": 1,
-  "route": "applicant-form",
+  "route": "admission/application-form",
   "show_attachments": 0,
   "show_list": 0,
   "show_sidebar": 0,
@@ -8030,7 +8030,7 @@
    },
    {
     "allow_read_on_all_link_options": 0,
-    "default": "Pending",
+    "default": "",
     "depends_on": null,
     "description": null,
     "fieldname": "application_fee_status",

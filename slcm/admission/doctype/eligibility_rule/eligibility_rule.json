@@ -17,6 +17,7 @@
   "unit_type",
   "required_cgpa",
   "required_percentage",
+  "sslc_percentage",
   "allowed_degrees"
  ],
  "fields": [
@@ -87,7 +88,14 @@
   {
    "fieldname": "required_percentage",
    "fieldtype": "Percent",
-   "label": "Required percentage"
+   "label": "Required percentage",
+   "precision": "2"
+  },
+  {
+   "depends_on": "eval:doc.qualification_level == 'XII'",
+   "fieldname": "sslc_percentage",
+   "fieldtype": "Percent",
+   "label": "SSLC Percentage"
   },
   {
    "fieldname": "hsc_group",
@@ -103,7 +111,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-06-19 16:01:25.683490",
+ "modified": "2026-07-01 14:36:30.710144",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule",
