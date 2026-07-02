@@ -226,7 +226,7 @@ def get_overview_stats(academic_year=None, term=None, program=None, cohort=None,
 
 	# ── Placement offers ──────────────────────────────────────────────────────
 	total_offers = frappe.db.count("Placement Offer")
-	accepted_offers = frappe.db.count("Placement Offer", filters={"status": "Accepted"})
+	accepted_offers = frappe.db.count("Placement Offer", filters={"offer_status": "Accepted"})
 
 	return {
 		"total_students": student_totals.total_students or 0,
@@ -1189,13 +1189,13 @@ def get_placement_analytics(academic_year=None, term=None, program=None, cohort=
 	total_opportunities = frappe.db.count("Placement Opportunity")
 	total_applications = frappe.db.count("Placement Application")
 	total_offers = frappe.db.count("Placement Offer")
-	accepted_offers = frappe.db.count("Placement Offer", filters={"status": "Accepted"})
+	accepted_offers = frappe.db.count("Placement Offer", filters={"offer_status": "Accepted"})
 
 	avg_compensation = frappe.db.sql(
 		"""
 		SELECT COALESCE(AVG(compensation), 0) AS avg_comp
 		FROM `tabPlacement Offer`
-		WHERE status = 'Accepted' AND compensation > 0
+		WHERE offer_status = 'Accepted' AND compensation > 0
 		""",
 		as_dict=True,
 	)[0].get("avg_comp", 0)

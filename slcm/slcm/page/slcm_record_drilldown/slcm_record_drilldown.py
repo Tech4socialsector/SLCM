@@ -188,4 +188,35 @@ def get_records(document_type, filters=None, columns=None, search=None, page=1, 
         frappe.get_list(document_type, filters=filters, or_filters=or_filters, fields=["name"], limit_page_length=0)
     )
 
+    # Resolve Link field IDs to their linked document's title (one batch query per Link column)
+    meta = frappe.get_meta(document_type)
+    for col in columns:
+        df = meta.get_field(col)
+        if not (df and df.fieldtype == "Link" and df.options):
+            continue
+        try:
+            linked_meta = frappe.get_meta(df.options)
+            title_field = linked_meta.title_field
+            if not title_field or not linked_meta.has_field(title_field):
+                continue
+            ids = list({row.get(col) for row in rows if row.get(col)})
+            if not ids:
+                continue
+            title_map = {
+                r["name"]: r.get(title_field)
+                for r in frappe.get_list(
+                    df.options,
+                    filters=[["name", "in", ids]],
+                    fields=["name", title_field],
+                    limit_page_length=0,
+                    ignore_permissions=True,
+                )
+            }
+            for row in rows:
+                raw = row.get(col)
+                if raw and raw in title_map and title_map[raw]:
+                    row[col] = title_map[raw]
+        except Exception:
+            pass  # keep raw value if resolution fails
+
     return {"rows": rows, "total": total, "columns": columns}
