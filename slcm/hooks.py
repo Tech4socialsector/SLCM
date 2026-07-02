@@ -35,9 +35,13 @@ web_include_js = ["/assets/slcm/js/fle_theme.js"]
 # app_include_css = "/assets/slcm/css/slcm.css"
 # app_include_js = "/assets/slcm/js/slcm.js"
 app_include_js = [
-    "/assets/slcm/js/student_workspace_redirect.js",
+    "/assets/slcm/js/student_workspace_redirect.js"
 ]
 app_include_css = []
+
+doctype_js = {
+    "Notification": "public/js/notification_override.js"
+}
 
 # include js, css files in header of web template
 # web_include_css = "/assets/slcm/css/slcm.css"
@@ -78,7 +82,8 @@ fixtures = [
         "doctype": "State",
     },
     {
-        "doctype":"Admission Category"
+        "doctype":"Admission Category",
+        "doctype":"Notification"
     },
     # --- SLCM module roles (slcm_ prefix) ---
     {

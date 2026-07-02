@@ -11,12 +11,6 @@ from frappe.utils.file_manager import save_file
 
 class OfferLetter(Document):
 
-    def autoname(self):
-        if getattr(self, "naming_series", None):
-            from frappe.model.naming import make_autoname
-            self.name = make_autoname(self.naming_series)
-        else:
-            self.name = f"OL-{self.applicant}"
     def before_insert(self):
         """
         Ensure data integrity before record creation.

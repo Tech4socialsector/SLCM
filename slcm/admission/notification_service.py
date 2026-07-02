@@ -107,7 +107,7 @@ def notify_status_change(applicant, program, old_status, new_status, allocation_
         return
 
     # Construct combined context for the template (it expects 'doc')
-    doc_context = applicant_doc.as_dict()
+    doc_context = dict(applicant_doc)
     if row:
         row_dict = row.as_dict()
         # Ensure child table values take precedence (selection status, etc.)
