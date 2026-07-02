@@ -63,7 +63,7 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
         academic_year               → academic_year  (falls back via admission_cycle)
         intake_type                 → intake
         intake_type                 → admission_type  (Internal Test→Regular, External Test→PACE)
-        program (AFA)               → programme
+        program (AFA)               → programme_of_study
         program (AFA) department    → department
         class_x_school              → class_x_school
         class_x_percentage          → class_x_percentage
@@ -101,7 +101,7 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
     student.application_number = applicant.name
 
     # ── Programme ─────────────────────────────────────────────────────────────
-    student.programme = program
+    student.programme_of_study = program
 
     # ── Department (derived from programme/program) ────────────────────────────
     if program:

@@ -1033,7 +1033,7 @@ _pc.mission_text) or '' %}
 	                message: "{{ _('You have declined this admission offer. Redirecting to My Applications.') }}"
 	            });
 	            document.getElementById('success-modal').querySelector('button').onclick = function () {
-	                window.location.href = 'merit-and-scholarship/admission_dashboard?panel=profile';
+	                window.location.href = '/merit-and-scholarship/admission_dashboard?panel=applications';
 	            };
 	        } catch (e) {
 	            hide_processing();
@@ -1228,7 +1228,7 @@ _pc.mission_text) or '' %}
 	        try {
 	            const r = await apiFetch('frappe.client.get_value', {
 	                doctype: 'Applicant Payment Receipt',
-	                filters: { offer_letter: offer.name, docstatus: 1 },
+	                filters: { offer_letter: offer.name },
 	                fieldname: 'name'
 	            });
 	            if (r && r.name) {
@@ -1241,7 +1241,7 @@ _pc.mission_text) or '' %}
 	    }
 
 	    function render_error(message) {
-	        $('#offer-detail-wrapper').html(`<div class="text-center p-5 mt-5"><h4>{{ _("Error") }}</h4><p>${message}</p><a href="merit-and-scholarship/admission_dashboard?panel=profile" class="btn btn-primary-adm" style="margin-right:8px;">{{ _("My Applications") }}</a><a href="/offer_letter/offer-letter-list" class="btn btn-outline-adm">{{ _("Offer Letter List") }}</a></div>`);
+	        $('#offer-detail-wrapper').html(`<div class="text-center p-5 mt-5"><h4>{{ _("Error") }}</h4><p>${message}</p><a href="/merit-and-scholarship/admission_dashboard?panel=applications" class="btn btn-primary-adm" style="margin-right:8px;">{{ _("My Applications") }}</a><a href="/offer_letter/offer-letter-list" class="btn btn-outline-adm">{{ _("Offer Letter List") }}</a></div>`);
 	    }
 	    {{ portal_sidebar_js() }}
 </script>
