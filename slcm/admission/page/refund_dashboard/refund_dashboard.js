@@ -9,7 +9,7 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 	$('<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">').appendTo('head');
 	$(`<style>
 		.dashboard-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px; padding: 0 15px; }
-		.stat-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 24px; display: flex; align-items: center; gap: 16px; transition: transform 0.2s; }
+		.stat-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 24px; display: flex; align-items: center; gap: 16px; transition: transform 0.2s; cursor: pointer; }
 		.stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
 		
 		.icon-box { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -121,6 +121,96 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 
 	// --- 4. Refresh Logic ---
 
+	const open_list_view = (type) => {
+		let filters = {};
+		let from_date = page.fields_dict.from_date.get_value();
+		let to_date = page.fields_dict.to_date.get_value();
+
+		let doctype = 'Refund Request';
+
+		switch (type) {
+			case 'total_refunded':
+				filters.status = 'Processed';
+				if (from_date && to_date) {
+					filters.refund_date = ['between', [from_date + ' 00:00:00', to_date + ' 23:59:59']];
+				} else if (from_date) {
+					filters.refund_date = ['>=', from_date + ' 00:00:00'];
+				} else if (to_date) {
+					filters.refund_date = ['<=', to_date + ' 23:59:59'];
+				}
+				break;
+			case 'refunded_today':
+				filters.status = 'Processed';
+				filters.refund_date = ['between', [frappe.datetime.nowdate() + ' 00:00:00', frappe.datetime.nowdate() + ' 23:59:59']];
+				break;
+			case 'total_requests':
+				if (from_date && to_date) {
+					filters.request_date = ['between', [from_date + ' 00:00:00', to_date + ' 23:59:59']];
+				} else if (from_date) {
+					filters.request_date = ['>=', from_date + ' 00:00:00'];
+				} else if (to_date) {
+					filters.request_date = ['<=', to_date + ' 23:59:59'];
+				}
+				break;
+			case 'total_cancellations':
+				doctype = 'Admission Cancellation';
+				let campus = page.fields_dict.campus.get_value();
+				let program = page.fields_dict.program.get_value();
+				if (campus) filters.campus = campus;
+				if (program) filters.program = program;
+				if (from_date && to_date) {
+					filters.requested_on = ['between', [from_date + ' 00:00:00', to_date + ' 23:59:59']];
+				} else if (from_date) {
+					filters.requested_on = ['>=', from_date + ' 00:00:00'];
+				} else if (to_date) {
+					filters.requested_on = ['<=', to_date + ' 23:59:59'];
+				}
+				break;
+			case 'pending_review':
+				filters.status = 'Under Review';
+				if (from_date && to_date) {
+					filters.request_date = ['between', [from_date + ' 00:00:00', to_date + ' 23:59:59']];
+				} else if (from_date) {
+					filters.request_date = ['>=', from_date + ' 00:00:00'];
+				} else if (to_date) {
+					filters.request_date = ['<=', to_date + ' 23:59:59'];
+				}
+				break;
+			case 'approved_queue':
+				filters.status = 'Approved';
+				if (from_date && to_date) {
+					filters.request_date = ['between', [from_date + ' 00:00:00', to_date + ' 23:59:59']];
+				} else if (from_date) {
+					filters.request_date = ['>=', from_date + ' 00:00:00'];
+				} else if (to_date) {
+					filters.request_date = ['<=', to_date + ' 23:59:59'];
+				}
+				break;
+			case 'processed':
+				filters.status = 'Processed';
+				if (from_date && to_date) {
+					filters.refund_date = ['between', [from_date + ' 00:00:00', to_date + ' 23:59:59']];
+				} else if (from_date) {
+					filters.refund_date = ['>=', from_date + ' 00:00:00'];
+				} else if (to_date) {
+					filters.refund_date = ['<=', to_date + ' 23:59:59'];
+				}
+				break;
+			case 'failed':
+				filters.status = 'Failed';
+				if (from_date && to_date) {
+					filters.request_date = ['between', [from_date + ' 00:00:00', to_date + ' 23:59:59']];
+				} else if (from_date) {
+					filters.request_date = ['>=', from_date + ' 00:00:00'];
+				} else if (to_date) {
+					filters.request_date = ['<=', to_date + ' 23:59:59'];
+				}
+				break;
+		}
+
+		frappe.set_route('List', doctype, filters);
+	};
+
 	function refresh_dashboard() {
 		let filters = {
 			from_date: page.fields_dict.from_date.get_value(),
@@ -150,22 +240,22 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 
 		// Row 1: Primary Metrics
 		const row1 = [
-			{ label: __('Total Refunded'), value: format_currency(kpis.total_refund_amount), icon: 'payments', cls: 'icon-blue' },
-			{ label: __('Refunded Today'), value: format_currency(kpis.refunded_today), icon: 'calendar_today', cls: 'icon-green' },
-			{ label: __('Total Requests'), value: kpis.total_requests, icon: 'description', cls: 'icon-orange' },
-			{ label: __('Total Cancellations'), value: kpis.total_cancellations, icon: 'cancel', cls: 'icon-red' }
+			{ label: __('Total Refunded'), value: format_currency(kpis.total_refund_amount), icon: 'payments', cls: 'icon-blue', type: 'total_refunded' },
+			{ label: __('Refunded Today'), value: format_currency(kpis.refunded_today), icon: 'calendar_today', cls: 'icon-green', type: 'refunded_today' },
+			{ label: __('Total Requests'), value: kpis.total_requests, icon: 'description', cls: 'icon-orange', type: 'total_requests' },
+			{ label: __('Total Cancellations'), value: kpis.total_cancellations, icon: 'cancel', cls: 'icon-red', type: 'total_cancellations' }
 		];
 
 		// Row 2: Status Breakdown (Unified with Row 1 design)
 		const row2 = [
-			{ label: __('Pending Review'), value: kpis.review, icon: 'pending', cls: 'icon-orange' },
-			{ label: __('Approved (Queue)'), value: kpis.approved, icon: 'verified', cls: 'icon-blue' },
-			{ label: __('Processed'), value: kpis.processed, icon: 'task_alt', cls: 'icon-green' },
-			{ label: __('Failed'), value: kpis.failed, icon: 'error', cls: 'icon-red' }
+			{ label: __('Pending Review'), value: kpis.review, icon: 'pending', cls: 'icon-orange', type: 'pending_review' },
+			{ label: __('Approved (Queue)'), value: kpis.approved, icon: 'verified', cls: 'icon-blue', type: 'approved_queue' },
+			{ label: __('Processed'), value: kpis.processed, icon: 'task_alt', cls: 'icon-green', type: 'processed' },
+			{ label: __('Failed'), value: kpis.failed, icon: 'error', cls: 'icon-red', type: 'failed' }
 		];
 
 		row1.forEach(item => {
-			$(`<div class="stat-card shadow-sm">
+			let $card = $(`<div class="stat-card shadow-sm">
 				<div class="icon-box ${item.cls}">
 					<span class="material-symbols-outlined">${item.icon}</span>
 				</div>
@@ -174,10 +264,11 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 					<div class="stat-value">${item.value}</div>
 				</div>
 			</div>`).appendTo(kpi_section_1);
+			$card.on('click', () => open_list_view(item.type));
 		});
 
 		row2.forEach(item => {
-			$(`<div class="stat-card shadow-sm">
+			let $card = $(`<div class="stat-card shadow-sm">
 				<div class="icon-box ${item.cls}">
 					<span class="material-symbols-outlined">${item.icon}</span>
 				</div>
@@ -186,6 +277,7 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 					<div class="stat-value" style="color: inherit;">${item.value}</div>
 				</div>
 			</div>`).appendTo(kpi_section_2);
+			$card.on('click', () => open_list_view(item.type));
 		});
 	}
 
