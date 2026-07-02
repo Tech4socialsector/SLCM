@@ -103,6 +103,24 @@ const sawd_rate_badge = (rate) => {
 	return `<span class="sawd-rate-badge ${cls}">${rate}%</span>`;
 };
 
+// Opens a URL in a new tab via a synthetic <a target="_blank"> click rather
+// than window.open(). Browsers' popup blockers treat window.open() calls as
+// suspicious once there is any object lookup/destructuring between the click
+// event and the call, silently swallowing the tab (see Chrome's "Pop-up
+// blocked" indicator). A real anchor click is always trusted as user-initiated
+// regardless of what ran beforehand, so every drilldown in this dashboard
+// should route through this helper instead of calling window.open() directly.
+const sawd_open_in_new_tab = (url) => {
+	if (!url) return;
+	const a = document.createElement('a');
+	a.href = url;
+	a.target = '_blank';
+	a.rel = 'noopener';
+	document.body.appendChild(a);
+	a.click();
+	a.remove();
+};
+
 // ── Main Dashboard Class ──────────────────────────────────────────────────────
 
 class SLCMWorkspaceAnalyticsDashboard {
@@ -937,8 +955,18 @@ class SLCMWorkspaceAnalyticsDashboard {
 
 		this.$body.on('click', '.sawd-kpi-card.has-drilldown', function () {
 			const dt = $(this).data('dt');
-			if (dt) {
-				window.open(`/app/${frappe.router.slug(dt)}`, '_blank');
+			const number_card = $(this).data('number-card');
+			if (dt && number_card) {
+				// Generic path — works for ANY Number Card (hardcoded or
+				// workspace/admin-added) via the Record Drilldown page.
+				// jQuery's .data() auto-parses JSON-looking attribute strings
+				// back into a live array — re-serialize explicitly here rather
+				// than pass that array straight into URLSearchParams, which
+				// would silently join it with commas and corrupt the filter.
+				const resolved_filters = $(this).data('resolved-filters') || [];
+				self._open_record_drilldown_page(number_card, JSON.stringify(resolved_filters), $(this).find('.sawd-kpi-label').text());
+			} else if (dt) {
+				sawd_open_in_new_tab(`/app/${frappe.router.slug(dt)}`);
 			} else {
 				const module = $(this).data('dd-module');
 				const dim    = $(this).data('dd-dim');
@@ -948,7 +976,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 					const filter_str = Object.keys(route.filters || {}).length
 						? '?' + Object.entries(route.filters).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')
 						: '';
-					window.open(`/app/${frappe.router.slug(route.dt)}${filter_str}`, '_blank');
+					sawd_open_in_new_tab(`/app/${frappe.router.slug(route.dt)}${filter_str}`);
 				} else {
 					self._open_drilldown(module, dim, val, {}, $(this).data('dd-title') || '');
 				}
@@ -961,7 +989,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 				const filter_str = Object.keys(r.filters || {}).length
 					? '?' + Object.entries(r.filters).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')
 					: '';
-				window.open(`/app/${frappe.router.slug(r.dt)}${filter_str}`, '_blank');
+				sawd_open_in_new_tab(`/app/${frappe.router.slug(r.dt)}${filter_str}`);
 			}
 		});
 
@@ -1533,7 +1561,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 					else if (type === 'Single')                 frappe.set_route('Form', dt);
 					else if (type === 'Page' && pg)             frappe.set_route(pg);
 					else if (type === 'Report' && rp)           frappe.set_route('query-report', rp);
-					else if (type === 'URL' && url && url !== '#') window.open(url, '_blank');
+					else if (type === 'URL' && url && url !== '#') sawd_open_in_new_tab(url);
 				});
 			},
 		});
@@ -1613,13 +1641,21 @@ class SLCMWorkspaceAnalyticsDashboard {
 			const text_cls = card.diff >= 0 ? 'text-success' : 'text-danger';
 			diff_html = `<div class="sawd-kpi-sub ${text_cls}" style="font-weight:600;margin-top:4px;">${arrow} ${Math.abs(card.diff).toFixed(1)}% vs last ${card.stats_time_interval.toLowerCase().replace('ly', '')}</div>`;
 		}
+		// data-number-card + data-resolved-filters let the generic click handler
+		// open the Record Drilldown page for ANY card — including ones an admin
+		// adds via the Workspace UI — without any per-card code (see
+		// slcm_record_drilldown.py, which reads document_type/filters live off
+		// the Number Card record itself).
+		const resolved_filters_attr = frappe.utils.escape_html(JSON.stringify(card.resolved_filters || []));
 		return `
-		<div class="sawd-kpi-card kpi-${variant} has-drilldown" data-dt="${card.document_type || ''}">
+		<div class="sawd-kpi-card kpi-${variant} has-drilldown" data-dt="${card.document_type || ''}"
+			data-number-card="${frappe.utils.escape_html(card.number_card || card.name || '')}"
+			data-resolved-filters="${resolved_filters_attr}">
 			<div class="sawd-kpi-accent"></div>
 			<div class="sawd-kpi-label">${card.label}</div>
 			<div class="sawd-kpi-value">${formatted_val}</div>
 			${diff_html}
-			${card.document_type ? `<div class="sawd-kpi-drill-hint"><i class="fa fa-external-link" style="font-size:9px"></i> Click to view List</div>` : ''}
+			${card.document_type ? `<div class="sawd-kpi-drill-hint"><i class="fa fa-external-link" style="font-size:9px"></i> Click to view details</div>` : ''}
 		</div>`;
 	}
 
@@ -1668,7 +1704,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 					const filter_str = chart.group_by_field
 						? '?' + encodeURIComponent(chart.group_by_field) + '=' + encodeURIComponent(lbl)
 						: '';
-					window.open(`/app/${frappe.router.slug(chart.document_type)}${filter_str}`, '_blank');
+					sawd_open_in_new_tab(`/app/${frappe.router.slug(chart.document_type)}${filter_str}`);
 				}
 			});
 		} catch (e) {
@@ -1846,18 +1882,24 @@ class SLCMWorkspaceAnalyticsDashboard {
 					${this._kpi('Placement Offers', d.total_placement_offers, '💼', 'purple', `${d.accepted_placement_offers} accepted`, { module:'placement', dimension:'offer_status', value:'Accepted' })}
 				`);
 
-				// Re-bind drilldown for dynamically injected cards — opens list in new tab
+				// Re-bind drilldown for dynamically injected cards — opens list in new tab.
+				// These 5 KPIs are hand-authored in JS (not real Number Card records),
+				// so they stay on the hardcoded _get_list_route map; every OTHER card
+				// on this dashboard — including anything an admin adds via the
+				// Workspace UI — goes through the generic, Number-Card-driven
+				// Record Drilldown page instead (see _render_dynamic_card).
 				const self = this;
 				$('#sawd-ov-adm-kpis').find('.sawd-kpi-card.has-drilldown').off('click').on('click', function () {
 					const module = $(this).data('dd-module');
 					const dim    = $(this).data('dd-dim');
 					const val    = $(this).data('dd-val');
+
 					const route  = self._get_list_route(module, dim, val);
 					if (route && route.dt) {
 						const filter_str = Object.keys(route.filters || {}).length
 							? '?' + Object.entries(route.filters).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')
 							: '';
-						window.open(`/app/${frappe.router.slug(route.dt)}${filter_str}`, '_blank');
+						sawd_open_in_new_tab(`/app/${frappe.router.slug(route.dt)}${filter_str}`);
 					} else {
 						self._open_drilldown(module, dim, val, {}, $(this).data('dd-title') || '');
 					}
@@ -1975,7 +2017,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 						const filter_str = Object.keys(route.filters || {}).length
 							? '?' + Object.entries(route.filters).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')
 							: '';
-						window.open(`/app/${frappe.router.slug(route.dt)}${filter_str}`, '_blank');
+						sawd_open_in_new_tab(`/app/${frappe.router.slug(route.dt)}${filter_str}`);
 					} else {
 						this._open_drilldown(module, dimension, lbl, data[idx]);
 					}
@@ -2024,7 +2066,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 						const filter_str = Object.keys(route.filters || {}).length
 							? '?' + Object.entries(route.filters).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')
 							: '';
-						window.open(`/app/${frappe.router.slug(route.dt)}${filter_str}`, '_blank');
+						sawd_open_in_new_tab(`/app/${frappe.router.slug(route.dt)}${filter_str}`);
 					} else {
 						this._open_drilldown(dd_opts.module, dd_opts.dimension, el.dataset.label, { label: el.dataset.label, value: el.dataset.value });
 					}
@@ -2064,7 +2106,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 						const filter_str = Object.keys(route.filters || {}).length
 							? '?' + Object.entries(route.filters).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')
 							: '';
-						window.open(`/app/${frappe.router.slug(route.dt)}${filter_str}`, '_blank');
+						sawd_open_in_new_tab(`/app/${frappe.router.slug(route.dt)}${filter_str}`);
 					} else {
 						this._open_drilldown(dd_opts.module, dd_opts.dimension, el.dataset.label, {}, el.dataset.label);
 					}
@@ -2194,7 +2236,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 
 		$('#sawd-tab-content .sawd-sc-action-card').on('click', function () {
 			const url = $(this).data('url');
-			if (url) window.open(url, '_blank');
+			if (url) sawd_open_in_new_tab(url);
 		});
 	}
 
@@ -2299,6 +2341,21 @@ class SLCMWorkspaceAnalyticsDashboard {
 		};
 
 		return map[`${module}:${dimension}`] || null;
+	}
+
+	// Opens the generic "slcm-record-drilldown" Desk Page in a NEW browser tab
+	// for ANY Number Card — hardcoded or admin-added via the Workspace UI.
+	// The page itself resolves document_type/columns live from the Number Card
+	// record server-side, so adding a new card in a Workspace needs zero code
+	// changes here. Never frappe.set_route() — that would navigate the
+	// dashboard tab itself instead of opening a fully separate Desk tab.
+	_open_record_drilldown_page(number_card, resolved_filters_json, label) {
+		const params = new URLSearchParams();
+		if (resolved_filters_json) params.set('filters', resolved_filters_json);
+		if (label) params.set('label', label);
+		const query = params.toString() ? `?${params.toString()}` : '';
+		const url = `/app/slcm-record-drilldown/${encodeURIComponent(number_card)}${query}`;
+		sawd_open_in_new_tab(url);
 	}
 
 	_open_drilldown(module, dimension, value, context = {}, title = null) {
@@ -2420,7 +2477,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 		$('#sawd-dd-body').on('click', 'tr.sawd-row-link', function () {
 			const dt = $(this).data('dt');
 			const id = $(this).data('id');
-			if (dt && id) window.open(`/app/${frappe.router.slug(dt)}/${encodeURIComponent(id)}`, '_blank');
+			if (dt && id) sawd_open_in_new_tab(`/app/${frappe.router.slug(dt)}/${encodeURIComponent(id)}`);
 		});
 
 		// Re-apply active search

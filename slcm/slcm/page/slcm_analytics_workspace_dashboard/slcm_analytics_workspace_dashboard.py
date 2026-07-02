@@ -433,6 +433,11 @@ def get_workspace_dashboard_details(workspace_name, filters=None):
                 "document_type": card_doc.document_type,
                 "show_percentage_stats": card_doc.show_percentage_stats,
                 "stats_time_interval": card_doc.stats_time_interval,
+                # Drilldown needs the card's own name (to re-resolve its filters
+                # live) plus the already-merged filters so the frontend doesn't
+                # have to duplicate merge_filters_for_doctype's logic.
+                "number_card": card_doc.name,
+                "resolved_filters": mf,
             }
         except Exception as e:
             frappe.log_error(f"Number card {card_name} in {workspace_name}: {e}")
