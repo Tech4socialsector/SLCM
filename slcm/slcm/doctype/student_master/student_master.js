@@ -439,6 +439,15 @@ frappe.ui.form.on("Student Master", {
 
 	programme(frm) {
 		if (!frm.doc.programme) return;
+
+		// Fetch program_shortcode from the selected Cohort so the naming series
+		// in before_save can build the correct ID (e.g. BBA1.001)
+		frappe.db.get_value("Cohort", frm.doc.programme, "program_shortcode", function (r) {
+			if (r && r.program_shortcode) {
+				frm.set_value("program_shortcode", r.program_shortcode);
+			}
+		});
+
 		frappe.call({
 			method: "slcm.slcm.doctype.student_master.student_master.fetch_program_fee_details",
 			args: { programme: frm.doc.programme },
