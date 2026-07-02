@@ -1,5 +1,5 @@
 // Copyright (c) 2026, TFSS and contributors
-// SLCM Analytics Workspace Dashboard — Personalized, workspace-driven analytics
+// SLCM Analytics Workspace Dashboard — Personalised, workspace-driven analytics
 'use strict';
 
 frappe.pages['slcm-analytics-workspace-dashboard'].on_page_load = function (wrapper) {
@@ -13,18 +13,19 @@ frappe.pages['slcm-analytics-workspace-dashboard'].on_page_load = function (wrap
 
 // ── Palette & constants ───────────────────────────────────────────────────────
 
+// NLSIU brand palette — maroon (#7B1C1C) · gold (#C9922A) · navy (#2b2e4a)
 const SAWD_PALETTE = {
-	primary:   ['#1e3a8a', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe'],
+	primary:   ['#7B1C1C', '#9B2335', '#C0392B', '#E07070', '#F0A8A8', '#FAE0E0'],
 	success:   ['#065f46', '#059669', '#10b981', '#34d399', '#6ee7b7', '#a7f3d0'],
 	warning:   ['#92400e', '#d97706', '#f59e0b', '#fbbf24', '#fcd34d', '#fde68a'],
 	danger:    ['#7f1d1d', '#dc2626', '#ef4444', '#f87171', '#fca5a5', '#fee2e2'],
-	info:      ['#164e63', '#0891b2', '#06b6d4', '#22d3ee', '#67e8f9', '#a5f3fc'],
-	neutral:   ['#0f172a', '#1e293b', '#334155', '#475569', '#64748b', '#94a3b8'],
-	mixed:     ['#1e3a8a','#059669','#d97706','#dc2626','#0891b2','#7c3aed','#db2777','#ea580c'],
+	info:      ['#1a1c30', '#2b2e4a', '#3d4166', '#6b6fa0', '#9ca0b8', '#e8e9f0'],
+	neutral:   ['#1a0a0a', '#2b2e4a', '#4a4d6a', '#6b6f8a', '#9ca0b8', '#c8cad8'],
+	mixed:     ['#7B1C1C','#2b2e4a','#C9922A','#059669','#dc2626','#9B2335','#3d4166','#d97706'],
 	status: {
 		'Active':         '#059669',
-		'Inactive':       '#94a3b8',
-		'Graduated':      '#1e3a8a',
+		'Inactive':       '#8B6060',
+		'Graduated':      '#7B1C1C',
 		'Dropped':        '#dc2626',
 		'Dormant':        '#d97706',
 		'Present':        '#059669',
@@ -57,6 +58,12 @@ const SAWD_MODULE_META = {
 	promotion:   { icon: '🎖️', label: 'Promotion',   desc: 'Criteria checks & outcomes' },
 	ticketing:   { icon: '🎫', label: 'Ticketing',   desc: 'Support tickets & SLA' },
 };
+
+// Attendance module: 2 inner sub-tabs (workspace + RFID)
+const SAWD_ATTENDANCE_SUBTABS = [
+	{ key: 'attendance_workspace', label: 'Attendance Overview', icon: '📋', workspace: 'Attendance' },
+	{ key: 'rfid',                 label: 'RFID Analytics',      icon: '📡', workspace: null },
+];
 
 // Examination module: 3 inner workspace sub-tabs
 const SAWD_EXAM_SUBTABS = [
@@ -96,6 +103,24 @@ const sawd_rate_badge = (rate) => {
 	return `<span class="sawd-rate-badge ${cls}">${rate}%</span>`;
 };
 
+// Opens a URL in a new tab via a synthetic <a target="_blank"> click rather
+// than window.open(). Browsers' popup blockers treat window.open() calls as
+// suspicious once there is any object lookup/destructuring between the click
+// event and the call, silently swallowing the tab (see Chrome's "Pop-up
+// blocked" indicator). A real anchor click is always trusted as user-initiated
+// regardless of what ran beforehand, so every drilldown in this dashboard
+// should route through this helper instead of calling window.open() directly.
+const sawd_open_in_new_tab = (url) => {
+	if (!url) return;
+	const a = document.createElement('a');
+	a.href = url;
+	a.target = '_blank';
+	a.rel = 'noopener';
+	document.body.appendChild(a);
+	a.click();
+	a.remove();
+};
+
 // ── Main Dashboard Class ──────────────────────────────────────────────────────
 
 class SLCMWorkspaceAnalyticsDashboard {
@@ -106,7 +131,8 @@ class SLCMWorkspaceAnalyticsDashboard {
 
 		this.filters          = { academic_year: null, term: null, program: null, cohort: null, student_status: null };
 		this.active_tab       = 'overview';
-		this.active_exam_subtab = 'exam_planner';
+		this.active_exam_subtab      = 'exam_planner';
+		this.active_attendance_subtab = 'attendance_workspace';
 		this.workspace_modules = [];   // [{key, label, icon, enabled, available}, ...]
 		this._filter_options  = null;
 		this._drilldown_open  = false;
@@ -122,28 +148,35 @@ class SLCMWorkspaceAnalyticsDashboard {
 	_inject_styles() {
 		if ($('#sawd-styles').length) return;
 		$(`<style id="sawd-styles">
-		/* ── Design tokens ───────────────────────────────────────────── */
+		/* ── Design tokens — NLSIU brand palette ─────────────────────── */
+		/* Primary: maroon #7B1C1C · Gold: #C9922A · Navy: #2b2e4a       */
 		:root {
-			--sawd-bg:        #f0f4f8;
+			--sawd-bg:        #FAF7F2;
 			--sawd-surface:   #ffffff;
-			--sawd-surface2:  #f8fafc;
-			--sawd-border:    #e2e8f0;
-			--sawd-primary:   #1e3a8a;
-			--sawd-primary-l: #2563eb;
-			--sawd-primary-xl:#dbeafe;
+			--sawd-surface2:  #FDF9F4;
+			--sawd-border:    #E8DDD0;
+			--sawd-primary:   #7B1C1C;
+			--sawd-primary-l: #9B2335;
+			--sawd-primary-xl:#FAE0E0;
+			--sawd-gold:      #C9922A;
+			--sawd-gold-l:    #E0B96A;
+			--sawd-gold-xl:   #F5E6C8;
+			--sawd-navy:      #2b2e4a;
+			--sawd-navy-l:    #3d4166;
+			--sawd-navy-xl:   #e8e9f0;
 			--sawd-success:   #059669;
 			--sawd-warning:   #d97706;
 			--sawd-danger:    #dc2626;
-			--sawd-info:      #0891b2;
-			--sawd-purple:    #7c3aed;
-			--sawd-text1:     #0f172a;
-			--sawd-text2:     #334155;
-			--sawd-text3:     #64748b;
-			--sawd-text4:     #94a3b8;
+			--sawd-info:      #2b2e4a;
+			--sawd-purple:    #8B6914;
+			--sawd-text1:     #1a0a0a;
+			--sawd-text2:     #2b2e4a;
+			--sawd-text3:     #5c607a;
+			--sawd-text4:     #9ca0b8;
 			--sawd-radius:    14px;
 			--sawd-radius-sm: 8px;
-			--sawd-shadow:    0 1px 4px rgba(15,23,42,.08), 0 4px 16px rgba(15,23,42,.06);
-			--sawd-shadow-lg: 0 8px 32px rgba(15,23,42,.14);
+			--sawd-shadow:    0 1px 4px rgba(43,46,74,.08), 0 4px 16px rgba(43,46,74,.06);
+			--sawd-shadow-lg: 0 8px 32px rgba(43,46,74,.14);
 			--sawd-transition: all .22s cubic-bezier(.4,0,.2,1);
 		}
 
@@ -156,10 +189,10 @@ class SLCMWorkspaceAnalyticsDashboard {
 		}
 		.sawd-header-icon {
 			width:52px; height:52px; border-radius:14px; flex-shrink:0;
-			background:linear-gradient(135deg,#1e3a8a,#3b5bdb);
+			background:linear-gradient(135deg,#7B1C1C,#C9922A);
 			display:flex; align-items:center; justify-content:center;
 			color:#fff; font-size:22px;
-			box-shadow:0 4px 14px rgba(30,58,138,.4);
+			box-shadow:0 4px 14px rgba(123,28,28,.4);
 		}
 		.sawd-header-text .sawd-suptitle {
 			font-size:10px; font-weight:700; text-transform:uppercase;
@@ -179,7 +212,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 			display:inline-flex; align-items:center; gap:6px;
 		}
 		.sawd-btn-primary  { background:var(--sawd-primary); color:#fff; border-color:var(--sawd-primary); }
-		.sawd-btn-primary:hover { background:#1e40af; }
+		.sawd-btn-primary:hover { background:#5C1414; }
 		.sawd-btn-ghost    { background:transparent; color:var(--sawd-text3); border-color:var(--sawd-border); }
 		.sawd-btn-ghost:hover  { background:var(--sawd-surface2); color:var(--sawd-text1); }
 		.sawd-btn-configure {
@@ -211,7 +244,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 			display:inline-flex; align-items:center; gap:4px;
 			padding:3px 10px; border-radius:20px;
 			background:var(--sawd-primary-xl); color:var(--sawd-primary);
-			font-size:11px; font-weight:600; border:1px solid #bfdbfe;
+			font-size:11px; font-weight:600; border:1px solid #E8C0C0;
 		}
 
 		/* ── Filter bar ──────────────────────────────────────────────── */
@@ -228,23 +261,83 @@ class SLCMWorkspaceAnalyticsDashboard {
 		}
 		.sawd-filter-actions { display:flex; gap:8px; align-items:flex-end; padding-bottom:2px; }
 
+		/* ── Multiselect dropdown ────────────────────────────────────── */
+		.sawd-ms-wrap { position:relative; }
+		.sawd-ms-trigger {
+			display:flex; align-items:center; justify-content:space-between;
+			gap:6px; padding:6px 10px; min-height:32px;
+			background:var(--sawd-surface); border:1px solid var(--sawd-border);
+			border-radius:var(--sawd-radius-sm); cursor:pointer;
+			font-size:12px; color:var(--sawd-text2); transition:var(--sawd-transition);
+			user-select:none; white-space:nowrap; overflow:hidden;
+		}
+		.sawd-ms-trigger:hover { border-color:var(--sawd-primary); }
+		.sawd-ms-trigger.open   { border-color:var(--sawd-primary); box-shadow:0 0 0 2px var(--sawd-primary-xl); }
+		.sawd-ms-trigger-text { flex:1; overflow:hidden; text-overflow:ellipsis; }
+		.sawd-ms-trigger-count {
+			background:var(--sawd-primary); color:#fff;
+			border-radius:10px; padding:1px 7px; font-size:10px; font-weight:700;
+			flex-shrink:0;
+		}
+		.sawd-ms-trigger-arrow { color:var(--sawd-text4); font-size:10px; flex-shrink:0; transition:transform .18s; }
+		.sawd-ms-trigger.open .sawd-ms-trigger-arrow { transform:rotate(180deg); }
+		.sawd-ms-dropdown {
+			position:absolute; top:calc(100% + 4px); left:0; min-width:100%; max-width:280px;
+			background:var(--sawd-surface); border:1px solid var(--sawd-border);
+			border-radius:var(--sawd-radius-sm); box-shadow:var(--sawd-shadow-lg);
+			z-index:500; display:none; overflow:hidden;
+		}
+		.sawd-ms-dropdown.open { display:block; }
+		.sawd-ms-search {
+			padding:8px 10px; border-bottom:1px solid var(--sawd-border);
+		}
+		.sawd-ms-search input {
+			width:100%; padding:4px 8px; font-size:12px;
+			border:1px solid var(--sawd-border); border-radius:6px;
+			background:var(--sawd-surface2); outline:none;
+		}
+		.sawd-ms-search input:focus { border-color:var(--sawd-primary); }
+		.sawd-ms-actions {
+			display:flex; gap:8px; padding:5px 10px;
+			border-bottom:1px solid var(--sawd-border);
+		}
+		.sawd-ms-action-btn {
+			font-size:10px; font-weight:600; color:var(--sawd-gold);
+			cursor:pointer; text-decoration:underline; background:none; border:none; padding:0;
+		}
+		.sawd-ms-action-btn:hover { color:var(--sawd-primary); }
+		.sawd-ms-list {
+			max-height:200px; overflow-y:auto; padding:4px 0;
+		}
+		.sawd-ms-list::-webkit-scrollbar { width:4px; }
+		.sawd-ms-list::-webkit-scrollbar-thumb { background:var(--sawd-border); border-radius:2px; }
+		.sawd-ms-item {
+			display:flex; align-items:center; gap:8px; padding:6px 10px;
+			cursor:pointer; font-size:12px; color:var(--sawd-text2);
+			transition:background .12s;
+		}
+		.sawd-ms-item:hover { background:var(--sawd-surface2); }
+		.sawd-ms-item input[type=checkbox] { accent-color:var(--sawd-primary); width:14px; height:14px; flex-shrink:0; }
+		.sawd-ms-item label { cursor:pointer; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+		.sawd-ms-empty { padding:10px; font-size:12px; color:var(--sawd-text4); text-align:center; }
+
 		/* ── Tab navigation ──────────────────────────────────────────── */
 		.sawd-tabs {
 			display:flex; gap:4px; flex-wrap:wrap;
-			background:var(--sawd-surface); border-radius:var(--sawd-radius);
+			background:var(--sawd-navy); border-radius:var(--sawd-radius);
 			padding:6px; margin-bottom:20px;
-			border:1px solid var(--sawd-border); box-shadow:var(--sawd-shadow);
+			border:1px solid var(--sawd-navy-l); box-shadow:var(--sawd-shadow);
 		}
 		.sawd-tab {
 			display:flex; align-items:center; gap:7px;
 			padding:8px 16px; border-radius:9px; font-size:13px; font-weight:600;
-			color:var(--sawd-text3); cursor:pointer;
+			color:rgba(255,255,255,.7); cursor:pointer;
 			transition:var(--sawd-transition); user-select:none; border:1px solid transparent;
 		}
-		.sawd-tab:hover { color:var(--sawd-primary); background:var(--sawd-primary-xl); }
+		.sawd-tab:hover { color:#fff; background:rgba(255,255,255,.12); }
 		.sawd-tab.active {
 			background:var(--sawd-primary); color:#fff;
-			box-shadow:0 2px 8px rgba(30,58,138,.3);
+			box-shadow:0 2px 8px rgba(123,28,28,.5);
 		}
 		.sawd-tab .tab-icon { font-size:14px; }
 		.sawd-tabs-empty {
@@ -252,10 +345,13 @@ class SLCMWorkspaceAnalyticsDashboard {
 			font-style:italic;
 		}
 
-		/* ── KPI grid ────────────────────────────────────────────────── */
+		/* ── KPI grid — always 4 columns, wraps naturally ───────────── */
 		.sawd-kpi-grid {
-			display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr));
-			gap:14px; margin-bottom:20px;
+			display:grid; grid-template-columns:repeat(4, 1fr);
+			gap:16px; margin-bottom:20px;
+		}
+		@media (min-width:769px) and (max-width:1199px) {
+			.sawd-kpi-grid { grid-template-columns:repeat(2, 1fr); }
 		}
 		.sawd-kpi-card {
 			background:var(--sawd-surface); border-radius:var(--sawd-radius);
@@ -269,27 +365,44 @@ class SLCMWorkspaceAnalyticsDashboard {
 			position:absolute; top:0; left:0; right:0; height:3px;
 			border-radius:var(--sawd-radius) var(--sawd-radius) 0 0;
 		}
-		.sawd-kpi-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; margin-bottom:12px; }
 		.sawd-kpi-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--sawd-text3); margin-bottom:6px; }
-		.sawd-kpi-value { font-size:28px; font-weight:800; color:var(--sawd-text1); line-height:1; letter-spacing:-.5px; margin-bottom:4px; }
+		.sawd-kpi-value { font-size:28px; font-weight:800; line-height:1; letter-spacing:-.5px; margin-bottom:4px; }
 		.sawd-kpi-sub   { font-size:12px; color:var(--sawd-text3); }
 		.sawd-kpi-drill-hint { font-size:10px; color:var(--sawd-text4); margin-top:6px; }
+		.kpi-primary { background:#FAE9E9; border-color:#F0C5C5; }
 		.kpi-primary .sawd-kpi-accent { background:var(--sawd-primary); }
-		.kpi-primary .sawd-kpi-icon   { background:#dbeafe; color:var(--sawd-primary); }
+		.kpi-primary .sawd-kpi-value  { color:#7B1C1C; }
+		.kpi-success { background:#ECFDF5; border-color:#A7F3D0; }
 		.kpi-success .sawd-kpi-accent { background:var(--sawd-success); }
-		.kpi-success .sawd-kpi-icon   { background:#d1fae5; color:var(--sawd-success); }
+		.kpi-success .sawd-kpi-value  { color:#065f46; }
+		.kpi-warning { background:#FFFBEB; border-color:#FDE68A; }
 		.kpi-warning .sawd-kpi-accent { background:var(--sawd-warning); }
-		.kpi-warning .sawd-kpi-icon   { background:#fef3c7; color:var(--sawd-warning); }
+		.kpi-warning .sawd-kpi-value  { color:#92400e; }
+		.kpi-danger  { background:#FEF2F2; border-color:#FECACA; }
 		.kpi-danger  .sawd-kpi-accent { background:var(--sawd-danger); }
-		.kpi-danger  .sawd-kpi-icon   { background:#fee2e2; color:var(--sawd-danger); }
-		.kpi-info    .sawd-kpi-accent { background:var(--sawd-info); }
-		.kpi-info    .sawd-kpi-icon   { background:#cffafe; color:var(--sawd-info); }
+		.kpi-danger  .sawd-kpi-value  { color:#7f1d1d; }
+		.kpi-info    { background:#EEF2FF; border-color:#C7D2FE; }
+		.kpi-info    .sawd-kpi-accent { background:var(--sawd-navy); }
+		.kpi-info    .sawd-kpi-value  { color:#2b2e4a; }
+		.kpi-purple  { background:#FEF9EE; border-color:#F5D992; }
 		.kpi-purple  .sawd-kpi-accent { background:var(--sawd-purple); }
-		.kpi-purple  .sawd-kpi-icon   { background:#ede9fe; color:var(--sawd-purple); }
+		.kpi-purple  .sawd-kpi-value  { color:#8B6914; }
 
 		/* ── Chart grid ──────────────────────────────────────────────── */
-		.sawd-chart-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; margin-bottom:16px; }
+		/* Always 2 columns on desktop so each chart gets proper width  */
+		.sawd-chart-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; margin-bottom:18px; }
 		.sawd-chart-wide { grid-column:1/-1; }
+		/* Allow 1 chart to go full-width when it's the only one        */
+		.sawd-chart-grid:has(> :only-child) { grid-template-columns:1fr; }
+		/* 3-chart row: 3-across on large                               */
+		.sawd-chart-grid-3 { grid-template-columns:repeat(3,1fr); }
+		/* 4-chart row: 4-across on large, 2×2 on medium                */
+		.sawd-chart-grid-4 { grid-template-columns:repeat(4,1fr); }
+		@media (min-width:769px) and (max-width:1199px) {
+			.sawd-chart-grid   { grid-template-columns:1fr; }
+			.sawd-chart-grid-3 { grid-template-columns:repeat(2,1fr); }
+			.sawd-chart-grid-4 { grid-template-columns:repeat(2,1fr); }
+		}
 		.sawd-chart-card {
 			background:var(--sawd-surface); border-radius:var(--sawd-radius);
 			border:1px solid var(--sawd-border); box-shadow:var(--sawd-shadow);
@@ -300,11 +413,11 @@ class SLCMWorkspaceAnalyticsDashboard {
 		.sawd-chart-subtitle { font-size:11px; color:var(--sawd-text3); margin-top:2px; }
 		.sawd-chart-body   { padding:12px 14px; min-height:200px; }
 		.sawd-chart-tip    { padding:8px 16px; font-size:11px; color:var(--sawd-text4); border-top:1px solid var(--sawd-border); }
-		.sawd-chart-badge  { margin-left:auto; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; background:var(--sawd-primary-xl); color:var(--sawd-primary); white-space:nowrap; }
+		.sawd-chart-badge  { margin-left:auto; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; background:var(--sawd-gold-xl); color:var(--sawd-gold); white-space:nowrap; }
 
 		/* ── Section separator ───────────────────────────────────────── */
 		.sawd-section-title {
-			font-size:13px; font-weight:700; color:var(--sawd-text3);
+			font-size:13px; font-weight:700; color:var(--sawd-navy);
 			text-transform:uppercase; letter-spacing:.6px;
 			margin:24px 0 12px; display:flex; align-items:center; gap:8px;
 		}
@@ -344,7 +457,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 
 		/* ── Summary card (fees) ─────────────────────────────────────── */
 		.sawd-summary-card {
-			background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 100%);
+			background:linear-gradient(135deg,#7B1C1C 0%,#C9922A 100%);
 			border-radius:var(--sawd-radius); padding:22px 24px;
 			color:#fff; margin-bottom:16px; position:relative; overflow:hidden;
 		}
@@ -415,7 +528,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 		.sawd-drilldown-body   { flex:1; overflow-y:auto; padding:16px 20px; }
 		.sawd-drilldown-stats  { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
 		.sawd-drilldown-stat   { background:var(--sawd-surface2); border-radius:10px; padding:12px; text-align:center; border:1px solid var(--sawd-border); }
-		.dds-value { font-size:22px; font-weight:800; color:var(--sawd-primary); }
+		.dds-value { font-size:22px; font-weight:800; color:var(--sawd-navy); }
 		.dds-label { font-size:11px; color:var(--sawd-text3); margin-top:2px; }
 		.sawd-dd-search-bar  { padding:12px 24px 8px; flex-shrink:0; border-bottom:1px solid var(--sawd-border); display:flex; align-items:center; gap:10px; }
 		.sawd-dd-search-wrap { flex:1; position:relative; }
@@ -441,7 +554,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 		.sawd-config-panel.open { left:0; }
 		.sawd-config-header {
 			padding:20px 24px 16px; border-bottom:1px solid var(--sawd-border); flex-shrink:0;
-			background:linear-gradient(135deg,#1e3a8a,#2563eb); color:#fff;
+			background:linear-gradient(135deg,#7B1C1C,#C9922A); color:#fff;
 		}
 		.sawd-config-header-top { display:flex; align-items:center; justify-content:space-between; }
 		.sawd-config-title { font-size:18px; font-weight:800; letter-spacing:-.3px; }
@@ -466,7 +579,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 			position:relative;
 		}
 		.sawd-config-module-item:hover { border-color:var(--sawd-primary-l); background:#fff; }
-		.sawd-config-module-item.is-enabled { border-color:var(--sawd-primary); background:var(--sawd-primary-xl); }
+		.sawd-config-module-item.is-enabled { border-color:var(--sawd-primary); background:var(--sawd-gold-xl); }
 		.sawd-config-module-item.is-locked { opacity:.45; cursor:not-allowed; }
 		.sawd-config-module-icon { font-size:22px; flex-shrink:0; width:36px; text-align:center; }
 		.sawd-config-module-info { flex:1; min-width:0; }
@@ -498,14 +611,14 @@ class SLCMWorkspaceAnalyticsDashboard {
 			background:var(--sawd-primary); color:#fff; font-size:14px; font-weight:700;
 			cursor:pointer; transition:var(--sawd-transition);
 		}
-		.sawd-config-save-btn:hover { background:#1e40af; }
+		.sawd-config-save-btn:hover { background:#5C1414; }
 		.sawd-config-cancel-btn {
 			padding:10px 20px; border-radius:8px; border:1px solid var(--sawd-border);
 			background:var(--sawd-surface); color:var(--sawd-text2); font-size:14px; font-weight:600;
 			cursor:pointer; transition:var(--sawd-transition);
 		}
 		.sawd-config-cancel-btn:hover { background:var(--sawd-surface2); }
-		.sawd-config-select-all { font-size:12px; color:var(--sawd-primary-l); cursor:pointer; font-weight:600; text-decoration:underline; }
+		.sawd-config-select-all { font-size:12px; color:var(--sawd-gold); cursor:pointer; font-weight:600; text-decoration:underline; }
 
 		/* ── Workspace quick-links bar ───────────────────────────────── */
 		.sawd-ws-shortcut-bar {
@@ -518,7 +631,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 		}
 		.sawd-ws-sc-header {
 			display:flex; align-items:center; gap:6px;
-			padding:9px 14px; background:var(--sawd-primary-xl);
+			padding:9px 14px; background:var(--sawd-gold-xl);
 			border-right:1px solid var(--sawd-border);
 			font-size:10px; font-weight:800; text-transform:uppercase;
 			letter-spacing:.7px; color:var(--sawd-primary);
@@ -558,15 +671,15 @@ class SLCMWorkspaceAnalyticsDashboard {
 		}
 		.sawd-sc-action-card:hover {
 			transform:translateY(-2px); box-shadow:var(--sawd-shadow-lg);
-			border-color:var(--sawd-primary); background:var(--sawd-primary-xl);
+			border-color:var(--sawd-gold); background:var(--sawd-gold-xl);
 		}
 		.sawd-sc-action-icon {
 			width:38px; height:38px; border-radius:9px; flex-shrink:0;
-			background:var(--sawd-primary-xl); color:var(--sawd-primary);
+			background:var(--sawd-gold-xl); color:var(--sawd-primary);
 			display:flex; align-items:center; justify-content:center; font-size:16px;
 		}
 		.sawd-sc-action-card:hover .sawd-sc-action-icon {
-			background:var(--sawd-primary); color:#fff;
+			background:var(--sawd-gold); color:#fff;
 		}
 		.sawd-sc-action-info { min-width:0; }
 		.sawd-sc-action-label {
@@ -577,7 +690,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 			font-size:10px; color:var(--sawd-text3); margin-top:2px;
 			font-weight:600; text-transform:uppercase; letter-spacing:.4px;
 		}
-		.sawd-sc-action-card:hover .sawd-sc-action-label { color:var(--sawd-primary); }
+		.sawd-sc-action-card:hover .sawd-sc-action-label { color:var(--sawd-gold); }
 
 		/* ── Examination inner sub-tabs ──────────────────────────────── */
 		.sawd-exam-subtab-bar {
@@ -585,7 +698,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 			background:var(--sawd-surface2); border-radius:var(--sawd-radius-sm);
 			padding:6px 10px; margin-bottom:16px;
 			border:1px solid var(--sawd-border);
-			border-left:4px solid #7c3aed;
+			border-left:4px solid var(--sawd-gold);
 		}
 		.sawd-exam-subtab-label {
 			font-size:10px; font-weight:700; text-transform:uppercase;
@@ -598,12 +711,38 @@ class SLCMWorkspaceAnalyticsDashboard {
 			transition:var(--sawd-transition); user-select:none;
 			border:1px solid transparent;
 		}
-		.sawd-exam-subtab:hover { color:#7c3aed; background:#ede9fe; }
+		.sawd-exam-subtab:hover { color:var(--sawd-primary); background:var(--sawd-gold-xl); }
 		.sawd-exam-subtab.active {
-			background:#7c3aed; color:#fff;
-			box-shadow:0 2px 8px rgba(124,58,237,.3);
+			background:var(--sawd-gold); color:#fff;
+			box-shadow:0 2px 8px rgba(201,146,42,.3);
 		}
 		.sawd-exam-subtab .tab-icon { font-size:13px; }
+
+		/* ── Attendance inner sub-tabs ───────────────────────────────── */
+		.sawd-att-subtab-bar {
+			display:flex; gap:4px; flex-wrap:wrap; align-items:center;
+			background:var(--sawd-surface2); border-radius:var(--sawd-radius-sm);
+			padding:6px 10px; margin-bottom:16px;
+			border:1px solid var(--sawd-border);
+			border-left:4px solid var(--sawd-primary);
+		}
+		.sawd-att-subtab-label {
+			font-size:10px; font-weight:700; text-transform:uppercase;
+			letter-spacing:.6px; color:var(--sawd-text3); margin-right:6px; flex-shrink:0;
+		}
+		.sawd-att-subtab {
+			display:flex; align-items:center; gap:6px;
+			padding:6px 14px; border-radius:7px; font-size:12px; font-weight:600;
+			color:var(--sawd-text3); cursor:pointer;
+			transition:var(--sawd-transition); user-select:none;
+			border:1px solid transparent;
+		}
+		.sawd-att-subtab:hover { color:var(--sawd-primary); background:rgba(123,28,28,.08); }
+		.sawd-att-subtab.active {
+			background:var(--sawd-primary); color:#fff;
+			box-shadow:0 2px 8px rgba(123,28,28,.3);
+		}
+		.sawd-att-subtab .tab-icon { font-size:13px; }
 
 		/* ── Animations ──────────────────────────────────────────────── */
 		@keyframes sawd-fadein { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
@@ -612,8 +751,10 @@ class SLCMWorkspaceAnalyticsDashboard {
 		/* ── Responsive ──────────────────────────────────────────────── */
 		@media (max-width:768px) {
 			.sawd-page  { padding:12px 14px 60px; }
-			.sawd-kpi-grid   { grid-template-columns:repeat(2,1fr); }
-			.sawd-chart-grid { grid-template-columns:1fr; }
+			.sawd-kpi-grid { grid-template-columns:repeat(2,1fr) !important; }
+			.sawd-chart-grid,
+			.sawd-chart-grid-3,
+			.sawd-chart-grid-4 { grid-template-columns:1fr !important; }
 			.sawd-tabs  { overflow-x:auto; flex-wrap:nowrap; }
 			.sawd-tab   { flex-shrink:0; }
 			.sawd-sc-grid    { grid-template-columns:1fr; }
@@ -632,7 +773,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 			<div class="sawd-header">
 				<div class="sawd-header-icon">🗂️</div>
 				<div class="sawd-header-text">
-					<div class="sawd-suptitle">Personalized Analytics</div>
+					<div class="sawd-suptitle">Personalised Analytics</div>
 					<div class="sawd-title">SLCM Analytics Workspace Dashboard</div>
 				</div>
 				<div class="sawd-header-right">
@@ -652,7 +793,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 			<div id="sawd-filter-bar" style="display:none" class="sawd-filter-bar">
 				<div class="sawd-filter-group"><div class="sawd-filter-label">Academic Year</div><div id="sawd-f-ay"></div></div>
 				<div class="sawd-filter-group"><div class="sawd-filter-label">Term</div><div id="sawd-f-term"></div></div>
-				<div class="sawd-filter-group"><div class="sawd-filter-label">Program</div><div id="sawd-f-prog"></div></div>
+				<div class="sawd-filter-group"><div class="sawd-filter-label">Programme</div><div id="sawd-f-prog"></div></div>
 				<div class="sawd-filter-group"><div class="sawd-filter-label">Cohort</div><div id="sawd-f-cohort"></div></div>
 				<div class="sawd-filter-group"><div class="sawd-filter-label">Student Status</div><div id="sawd-f-sstatus"></div></div>
 				<div class="sawd-filter-actions">
@@ -743,7 +884,10 @@ class SLCMWorkspaceAnalyticsDashboard {
 
 		// Edit Workspace button
 		this.$body.on('click', '#sawd-edit-workspace', () => {
-			if (this.active_tab === 'examination') {
+			if (this.active_tab === 'attendance') {
+				const sub = SAWD_ATTENDANCE_SUBTABS.find(t => t.key === this.active_attendance_subtab);
+				if (sub && sub.workspace) frappe.set_route('workspace', sub.workspace);
+			} else if (this.active_tab === 'examination') {
 				// Route to the active exam sub-tab's workspace
 				const sub = SAWD_EXAM_SUBTABS.find(t => t.key === this.active_exam_subtab);
 				if (sub) frappe.set_route('workspace', sub.workspace);
@@ -771,6 +915,23 @@ class SLCMWorkspaceAnalyticsDashboard {
 			this._load_workspace_dashboard(key, ws);
 		});
 
+		// Attendance inner sub-tab switching
+		this.$body.on('click', '.sawd-att-subtab', (e) => {
+			const $tab = $(e.currentTarget);
+			const key  = $tab.data('subtab');
+			const ws   = $tab.data('workspace');
+			$('.sawd-att-subtab').removeClass('active');
+			$tab.addClass('active');
+			this.active_attendance_subtab = key;
+			this._update_att_edit_btn();
+			if (key === 'rfid') {
+				$('#sawd-tab-content').html('');
+				this._load_rfid_subtab();
+			} else {
+				this._load_workspace_dashboard(key, ws);
+			}
+		});
+
 		// Config drawer close
 		this.$body.on('click', '#sawd-config-close, #sawd-config-overlay, #sawd-config-cancel',
 			() => this._close_config_panel());
@@ -794,22 +955,42 @@ class SLCMWorkspaceAnalyticsDashboard {
 
 		this.$body.on('click', '.sawd-kpi-card.has-drilldown', function () {
 			const dt = $(this).data('dt');
-			if (dt) {
-				frappe.set_route('List', dt);
+			const number_card = $(this).data('number-card');
+			if (dt && number_card) {
+				// Generic path — works for ANY Number Card (hardcoded or
+				// workspace/admin-added) via the Record Drilldown page.
+				// jQuery's .data() auto-parses JSON-looking attribute strings
+				// back into a live array — re-serialize explicitly here rather
+				// than pass that array straight into URLSearchParams, which
+				// would silently join it with commas and corrupt the filter.
+				const resolved_filters = $(this).data('resolved-filters') || [];
+				self._open_record_drilldown_page(number_card, JSON.stringify(resolved_filters), $(this).find('.sawd-kpi-label').text());
+			} else if (dt) {
+				sawd_open_in_new_tab(`/app/${frappe.router.slug(dt)}`);
 			} else {
-				self._open_drilldown(
-					$(this).data('dd-module'),
-					$(this).data('dd-dim'),
-					$(this).data('dd-val'),
-					{},
-					$(this).data('dd-title') || '',
-				);
+				const module = $(this).data('dd-module');
+				const dim    = $(this).data('dd-dim');
+				const val    = $(this).data('dd-val');
+				const route  = self._get_list_route(module, dim, val);
+				if (route && route.dt) {
+					const filter_str = Object.keys(route.filters || {}).length
+						? '?' + Object.entries(route.filters).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')
+						: '';
+					sawd_open_in_new_tab(`/app/${frappe.router.slug(route.dt)}${filter_str}`);
+				} else {
+					self._open_drilldown(module, dim, val, {}, $(this).data('dd-title') || '');
+				}
 			}
 		});
 
 		this.$body.on('click', '#sawd-dd-viewlist', () => {
 			const r = this._drilldown_list_route;
-			if (r) frappe.set_route('List', r.dt, r.filters);
+			if (r && r.dt) {
+				const filter_str = Object.keys(r.filters || {}).length
+					? '?' + Object.entries(r.filters).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')
+					: '';
+				sawd_open_in_new_tab(`/app/${frappe.router.slug(r.dt)}${filter_str}`);
+			}
 		});
 
 		this.$body.on('click', '#sawd-dd-export', () => this._export_drilldown());
@@ -855,18 +1036,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 	// ── Workspace badge strip ─────────────────────────────────────────────────
 
 	_render_ws_badges() {
-		const enabled = this.workspace_modules.filter(m => m.enabled);
-		if (!enabled.length) { $('#sawd-ws-badges').hide(); return; }
-
-		const badges = enabled.map(m =>
-			`<span class="sawd-ws-badge">${m.icon} ${m.label}</span>`
-		).join('');
-		$('#sawd-ws-badges').html(`
-			<div class="sawd-ws-badge-strip">
-				<span class="sawd-ws-badge-label">Active modules:</span>
-				${badges}
-			</div>
-		`).show();
+		$('#sawd-ws-badges').hide();
 	}
 
 	// ── Dynamic tab building ──────────────────────────────────────────────────
@@ -1001,16 +1171,126 @@ class SLCMWorkspaceAnalyticsDashboard {
 
 	// ── Filter helpers ────────────────────────────────────────────────────────
 
-	_load_filter_options() {
-		const make_select = (container_id, options, vk, lk, placeholder, onchange) => {
-			const $el = $('<select class="form-control input-xs"></select>');
-			$el.append(`<option value="">${placeholder}</option>`);
-			options.forEach(opt => $el.append(`<option value="${opt[vk]}">${opt[lk] || opt[vk]}</option>`));
-			$el.on('change', () => onchange && onchange($el.val()));
-			$('#' + container_id).html($el);
-			return $el;
+	_make_multiselect(container_id, options, vk, lk, placeholder) {
+		// options: [{[vk]: value, [lk]: label}, ...]
+		// Returns an object with .get_values() and .set_options(newOptions) and .reset()
+		const uid = container_id.replace(/-/g, '_');
+
+		const render = (opts) => {
+			const items_html = opts.map((opt, i) => `
+				<div class="sawd-ms-item" data-val="${opt[vk]}">
+					<input type="checkbox" id="${uid}_cb_${i}" value="${opt[vk]}">
+					<label for="${uid}_cb_${i}">${opt[lk] || opt[vk]}</label>
+				</div>`).join('') || `<div class="sawd-ms-empty">No options</div>`;
+
+			const html = `
+				<div class="sawd-ms-wrap" id="${uid}_wrap">
+					<div class="sawd-ms-trigger" id="${uid}_trigger">
+						<span class="sawd-ms-trigger-text" id="${uid}_label">${placeholder}</span>
+						<span class="sawd-ms-trigger-arrow">▼</span>
+					</div>
+					<div class="sawd-ms-dropdown" id="${uid}_dropdown">
+						<div class="sawd-ms-search"><input type="text" placeholder="Search…" id="${uid}_search"></div>
+						<div class="sawd-ms-actions">
+							<button class="sawd-ms-action-btn" id="${uid}_all">Select all</button>
+							<button class="sawd-ms-action-btn" id="${uid}_none">Clear</button>
+						</div>
+						<div class="sawd-ms-list" id="${uid}_list">${items_html}</div>
+					</div>
+				</div>`;
+			$('#' + container_id).html(html);
 		};
 
+		render(options);
+
+		const update_label = () => {
+			const checked = $(`#${uid}_list input:checked`).map((_, el) => el.value).get();
+			const $lbl = $(`#${uid}_label`);
+			const $trigger = $(`#${uid}_trigger`);
+			$trigger.find('.sawd-ms-trigger-count').remove();
+			if (!checked.length) {
+				$lbl.text(placeholder);
+			} else if (checked.length === 1) {
+				const opt = options.find(o => o[vk] === checked[0]);
+				$lbl.text(opt ? (opt[lk] || opt[vk]) : checked[0]);
+			} else {
+				$lbl.text(`${checked.length} selected`);
+				$trigger.prepend(`<span class="sawd-ms-trigger-count" style="order:-1">${checked.length}</span>`);
+			}
+		};
+
+		// Toggle open/close
+		$(document).on('click', `#${uid}_trigger`, function(e) {
+			e.stopPropagation();
+			const $dd = $(`#${uid}_dropdown`);
+			const isOpen = $dd.hasClass('open');
+			// Close all other dropdowns
+			$('.sawd-ms-dropdown.open').removeClass('open');
+			$('.sawd-ms-trigger.open').removeClass('open');
+			if (!isOpen) {
+				$dd.addClass('open');
+				$(`#${uid}_trigger`).addClass('open');
+				$(`#${uid}_search`).val('').trigger('input').focus();
+			}
+		});
+
+		// Search filter
+		$(document).on('input', `#${uid}_search`, function() {
+			const q = this.value.toLowerCase();
+			$(`#${uid}_list .sawd-ms-item`).each(function() {
+				const label = $(this).find('label').text().toLowerCase();
+				$(this).toggle(label.includes(q));
+			});
+		});
+
+		// Select all / clear
+		$(document).on('click', `#${uid}_all`, function(e) {
+			e.stopPropagation();
+			$(`#${uid}_list .sawd-ms-item:visible input`).prop('checked', true);
+			update_label();
+		});
+		$(document).on('click', `#${uid}_none`, function(e) {
+			e.stopPropagation();
+			$(`#${uid}_list input`).prop('checked', false);
+			update_label();
+		});
+
+		// Checkbox change
+		$(document).on('change', `#${uid}_list input[type=checkbox]`, () => update_label());
+
+		// Close on outside click
+		$(document).on('click.sawd_ms', function(e) {
+			if (!$(e.target).closest(`#${uid}_wrap`).length) {
+				$(`#${uid}_dropdown`).removeClass('open');
+				$(`#${uid}_trigger`).removeClass('open');
+			}
+		});
+
+		return {
+			get_values() {
+				const vals = $(`#${uid}_list input:checked`).map((_, el) => el.value).get();
+				return vals.length ? vals : null;
+			},
+			set_options(new_opts) {
+				const checked = $(`#${uid}_list input:checked`).map((_, el) => el.value).get();
+				options = new_opts;
+				const items_html = new_opts.map((opt, i) => `
+					<div class="sawd-ms-item" data-val="${opt[vk]}">
+						<input type="checkbox" id="${uid}_cb_${i}" value="${opt[vk]}"
+							${checked.includes(opt[vk]) ? 'checked' : ''}>
+						<label for="${uid}_cb_${i}">${opt[lk] || opt[vk]}</label>
+					</div>`).join('') || `<div class="sawd-ms-empty">No options</div>`;
+				$(`#${uid}_list`).html(items_html);
+				update_label();
+			},
+			reset() {
+				$(`#${uid}_list input`).prop('checked', false);
+				update_label();
+			},
+		};
+	}
+
+	_load_filter_options() {
 		frappe.call({
 			method: `${SAWD_PAGE_METHOD}.get_filter_options`,
 			callback: (r) => {
@@ -1018,23 +1298,19 @@ class SLCMWorkspaceAnalyticsDashboard {
 				const opts = r.message;
 				this._filter_options = opts;
 
-				this.$ay = make_select('sawd-f-ay', opts.academic_years, 'name', 'name', 'All Years', (v) => {
-					this.filters.academic_year = v || null;
+				this._ms_ay     = this._make_multiselect('sawd-f-ay',     opts.academic_years,          'name',  'name',         'All Years');
+				this._ms_term   = this._make_multiselect('sawd-f-term',   opts.terms || [],              'name',  'term_name',    'All Terms');
+				this._ms_prog   = this._make_multiselect('sawd-f-prog',   opts.programs,                 'name',  'program_name', 'All Programs');
+				this._ms_cohort = this._make_multiselect('sawd-f-cohort', opts.cohorts,                  'name',  'cohort_name',  'All Cohorts');
+				this._ms_status = this._make_multiselect('sawd-f-sstatus',opts.student_statuses || [],   'value', 'label',        'All Statuses');
+
+				// Cascade: ay/prog selection change → refresh dependent cohort & term options
+				$(document).on('change', '#sawd_f_ay_list input[type=checkbox]', () => {
 					this._refresh_cohort_filter();
 					this._refresh_term_filter();
 				});
-				this.$term = make_select('sawd-f-term', opts.terms || [], 'name', 'term_name', 'All Terms', (v) => {
-					this.filters.term = v || null;
-				});
-				this.$prog = make_select('sawd-f-prog', opts.programs, 'name', 'program_name', 'All Programs', (v) => {
-					this.filters.program = v || null;
+				$(document).on('change', '#sawd_f_prog_list input[type=checkbox]', () => {
 					this._refresh_cohort_filter();
-				});
-				this.$cohort = make_select('sawd-f-cohort', opts.cohorts, 'name', 'cohort_name', 'All Cohorts', (v) => {
-					this.filters.cohort = v || null;
-				});
-				this.$sstatus = make_select('sawd-f-sstatus', opts.student_statuses || [], 'value', 'label', 'All Statuses', (v) => {
-					this.filters.student_status = v || null;
 				});
 
 				this._load_tab(this.active_tab);
@@ -1043,39 +1319,39 @@ class SLCMWorkspaceAnalyticsDashboard {
 	}
 
 	_refresh_cohort_filter() {
-		if (!this._filter_options) return;
+		if (!this._filter_options || !this._ms_cohort) return;
+		const ay_vals  = this._ms_ay?.get_values()   || [];
+		const prog_vals = this._ms_prog?.get_values() || [];
 		let cohorts = this._filter_options.cohorts;
-		if (this.filters.academic_year) cohorts = cohorts.filter(c => c.academic_year === this.filters.academic_year);
-		if (this.filters.program)       cohorts = cohorts.filter(c => c.program === this.filters.program);
-		const $s = this.$cohort;
-		$s.html('<option value="">All Cohorts</option>');
-		cohorts.forEach(c => $s.append(`<option value="${c.name}">${c.cohort_name}</option>`));
-		$s.val(''); this.filters.cohort = null;
+		if (ay_vals.length)   cohorts = cohorts.filter(c => ay_vals.includes(c.academic_year));
+		if (prog_vals.length) cohorts = cohorts.filter(c => prog_vals.includes(c.program));
+		this._ms_cohort.set_options(cohorts);
 	}
 
 	_refresh_term_filter() {
-		if (!this._filter_options) return;
+		if (!this._filter_options || !this._ms_term) return;
+		const ay_vals = this._ms_ay?.get_values() || [];
 		let terms = this._filter_options.terms || [];
-		if (this.filters.academic_year) terms = terms.filter(t => t.academic_year === this.filters.academic_year);
-		const $s = this.$term;
-		$s.html('<option value="">All Terms</option>');
-		terms.forEach(t => $s.append(`<option value="${t.name}">${t.term_name || t.name}</option>`));
-		$s.val(''); this.filters.term = null;
+		if (ay_vals.length) terms = terms.filter(t => ay_vals.includes(t.academic_year));
+		this._ms_term.set_options(terms);
 	}
 
 	_apply_filters() {
-		this.filters.academic_year  = this.$ay?.val()      || null;
-		this.filters.term           = this.$term?.val()    || null;
-		this.filters.program        = this.$prog?.val()    || null;
-		this.filters.cohort         = this.$cohort?.val()  || null;
-		this.filters.student_status = this.$sstatus?.val() || null;
+		this.filters.academic_year  = this._ms_ay?.get_values()     || null;
+		this.filters.term           = this._ms_term?.get_values()   || null;
+		this.filters.program        = this._ms_prog?.get_values()   || null;
+		this.filters.cohort         = this._ms_cohort?.get_values() || null;
+		this.filters.student_status = this._ms_status?.get_values() || null;
 		this._load_tab(this.active_tab, true);
 	}
 
 	_reset_filters() {
 		this.filters = { academic_year: null, term: null, program: null, cohort: null, student_status: null };
-		this.$ay?.val(''); this.$term?.val(''); this.$prog?.val('');
-		this.$cohort?.val(''); this.$sstatus?.val('');
+		this._ms_ay?.reset();
+		this._ms_term?.reset();
+		this._ms_prog?.reset();
+		this._ms_cohort?.reset();
+		this._ms_status?.reset();
 		this._refresh_cohort_filter();
 		this._refresh_term_filter();
 		this._load_tab(this.active_tab, true);
@@ -1114,24 +1390,72 @@ class SLCMWorkspaceAnalyticsDashboard {
 		setTimeout(() => $content.removeClass('sawd-animate'), 400);
 		$('#sawd-last-updated').text('Updated ' + frappe.datetime.now_time());
 
-		// Remove exam sub-tabs when switching away from examination
-		if (tab !== 'examination') {
-			$('#sawd-exam-subtabs').remove();
-		}
+		// Remove inner sub-tab bars when switching away from their tabs
+		if (tab !== 'examination') $('#sawd-exam-subtabs').remove();
+		if (tab !== 'attendance')  $('#sawd-att-subtabs').remove();
 
 		const mod = this.workspace_modules.find(m => m.key === tab);
 		if (tab === 'overview') {
 			$('#sawd-edit-workspace').hide();
 			this._load_overview();
+		} else if (tab === 'attendance') {
+			$('#sawd-edit-workspace').show();
+			this._load_attendance_tab();
 		} else if (tab === 'examination') {
 			$('#sawd-edit-workspace').show();
 			this._load_examination_tab();
+		} else if (tab === 'ticketing') {
+			$('#sawd-edit-workspace').hide();
+			this._load_ticketing();
 		} else if (mod && mod.workspace) {
 			$('#sawd-edit-workspace').show();
 			this._load_workspace_dashboard(tab, mod.workspace);
 		} else {
 			$('#sawd-edit-workspace').hide();
 			this._show_error();
+		}
+	}
+
+	// ── Attendance inner sub-tabs ─────────────────────────────────────────────
+
+	_load_attendance_tab() {
+		$('#sawd-att-subtabs').remove();
+
+		const subtabs_html = SAWD_ATTENDANCE_SUBTABS.map(t => `
+			<div class="sawd-att-subtab${t.key === this.active_attendance_subtab ? ' active' : ''}"
+				data-subtab="${t.key}" data-workspace="${t.workspace || ''}">
+				<span class="tab-icon">${t.icon}</span> ${t.label}
+			</div>
+		`).join('');
+
+		const $bar = $(`
+			<div id="sawd-att-subtabs" class="sawd-att-subtab-bar">
+				<span class="sawd-att-subtab-label">📋 Attendance:</span>
+				${subtabs_html}
+			</div>
+		`);
+
+		$('#sawd-tabs-container').after($bar);
+
+		this._update_att_edit_btn();
+
+		const active = SAWD_ATTENDANCE_SUBTABS.find(t => t.key === this.active_attendance_subtab);
+		if (active) {
+			if (active.key === 'rfid') {
+				$('#sawd-tab-content').html('');
+				this._load_rfid_subtab();
+			} else {
+				this._load_workspace_dashboard(active.key, active.workspace);
+			}
+		}
+	}
+
+	_update_att_edit_btn() {
+		const sub = SAWD_ATTENDANCE_SUBTABS.find(t => t.key === this.active_attendance_subtab);
+		if (sub && sub.workspace) {
+			$('#sawd-edit-workspace').show().text(`✏️ Edit ${sub.label}`);
+		} else {
+			$('#sawd-edit-workspace').hide();
 		}
 	}
 
@@ -1237,7 +1561,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 					else if (type === 'Single')                 frappe.set_route('Form', dt);
 					else if (type === 'Page' && pg)             frappe.set_route(pg);
 					else if (type === 'Report' && rp)           frappe.set_route('query-report', rp);
-					else if (type === 'URL' && url && url !== '#') window.open(url, '_blank');
+					else if (type === 'URL' && url && url !== '#') sawd_open_in_new_tab(url);
 				});
 			},
 		});
@@ -1277,7 +1601,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 				let html = '';
 
 				if (cards.length) {
-					const cards_html = cards.map(c => this._render_dynamic_card(c)).join('');
+					const cards_html = cards.map((c, i) => this._render_dynamic_card(c, i)).join('');
 					html += `<div class="sawd-kpi-grid">${cards_html}</div>`;
 				}
 
@@ -1302,26 +1626,36 @@ class SLCMWorkspaceAnalyticsDashboard {
 					const container_id = `sawd-dynamic-chart-${idx}`;
 					this._render_dynamic_chart(container_id, ch);
 				});
+
 			}
 		});
 	}
 
-	_render_dynamic_card(card) {
-		const color = card.color || 'var(--sawd-primary)';
+	_render_dynamic_card(card, idx = 0) {
+		const VARIANTS = ['primary', 'success', 'warning', 'info', 'purple', 'danger'];
+		const variant  = VARIANTS[idx % VARIANTS.length];
 		const formatted_val = sawd_fmt_number(card.value);
 		let diff_html = '';
 		if (card.show_percentage_stats && card.diff !== null && card.diff !== undefined) {
-			const arrow = card.diff >= 0 ? '▲' : '▼';
+			const arrow    = card.diff >= 0 ? '▲' : '▼';
 			const text_cls = card.diff >= 0 ? 'text-success' : 'text-danger';
 			diff_html = `<div class="sawd-kpi-sub ${text_cls}" style="font-weight:600;margin-top:4px;">${arrow} ${Math.abs(card.diff).toFixed(1)}% vs last ${card.stats_time_interval.toLowerCase().replace('ly', '')}</div>`;
 		}
+		// data-number-card + data-resolved-filters let the generic click handler
+		// open the Record Drilldown page for ANY card — including ones an admin
+		// adds via the Workspace UI — without any per-card code (see
+		// slcm_record_drilldown.py, which reads document_type/filters live off
+		// the Number Card record itself).
+		const resolved_filters_attr = frappe.utils.escape_html(JSON.stringify(card.resolved_filters || []));
 		return `
-		<div class="sawd-kpi-card has-drilldown" data-dt="${card.document_type || ''}">
-			<div class="sawd-kpi-accent" style="background:${color}"></div>
+		<div class="sawd-kpi-card kpi-${variant} has-drilldown" data-dt="${card.document_type || ''}"
+			data-number-card="${frappe.utils.escape_html(card.number_card || card.name || '')}"
+			data-resolved-filters="${resolved_filters_attr}">
+			<div class="sawd-kpi-accent"></div>
 			<div class="sawd-kpi-label">${card.label}</div>
 			<div class="sawd-kpi-value">${formatted_val}</div>
 			${diff_html}
-			${card.document_type ? `<div class="sawd-kpi-drill-hint"><i class="fa fa-list" style="font-size:9px"></i> Click to view List</div>` : ''}
+			${card.document_type ? `<div class="sawd-kpi-drill-hint"><i class="fa fa-external-link" style="font-size:9px"></i> Click to view details</div>` : ''}
 		</div>`;
 	}
 
@@ -1367,11 +1701,10 @@ class SLCMWorkspaceAnalyticsDashboard {
 				const idx = e.detail.index != null ? e.detail.index : null;
 				const lbl = idx != null ? chart.chart_data.labels[idx] : null;
 				if (lbl && chart.document_type) {
-					const filters = {};
-					if (chart.group_by_field) {
-						filters[chart.group_by_field] = lbl;
-					}
-					frappe.set_route('List', chart.document_type, filters);
+					const filter_str = chart.group_by_field
+						? '?' + encodeURIComponent(chart.group_by_field) + '=' + encodeURIComponent(lbl)
+						: '';
+					sawd_open_in_new_tab(`/app/${frappe.router.slug(chart.document_type)}${filter_str}`);
 				}
 			});
 		} catch (e) {
@@ -1515,14 +1848,14 @@ class SLCMWorkspaceAnalyticsDashboard {
 
 				$('#sawd-tab-content').html(`
 					<div class="sawd-kpi-grid" id="sawd-ov-adm-kpis">
-						${Array(6).fill('<div class="sawd-skeleton sawd-skeleton-kpi"></div>').join('')}
+						${Array(4).fill('<div class="sawd-skeleton sawd-skeleton-kpi"></div>').join('')}
 					</div>
 					<div class="sawd-section-title">Key Performance Indicators</div>
 					<div class="sawd-chart-grid">
 						${this._chart_card('sawd-ov-student-status','Student Status Distribution','Real-time student lifecycle','','')}
 						${this._chart_card('sawd-ov-fee-trend','Fee Collection vs Outstanding','Financial health snapshot','','')}
 						${this._rate_card('sawd-ov-rates','System Performance Rates')}
-						${this._chart_card('sawd-ov-hostel','Hostel Utilization','Bed occupancy overview','','')}
+						${this._chart_card('sawd-ov-hostel','Hostel Utilisation','Bed occupancy overview','','')}
 					</div>
 				`);
 
@@ -1545,15 +1878,31 @@ class SLCMWorkspaceAnalyticsDashboard {
 					${this._kpi('Total Applicants', ad.total_applicants, '🎯', 'primary', `${ad.active_cycles} active cycles`, { module:'admission', dimension:'app_status', value:'all' })}
 					${this._kpi('Offer Acceptance', ad.acceptance_rate + '%', '📨', acc, `${ad.accepted_offers} of ${ad.total_offers} offers`, { module:'admission', dimension:'status', value:'Accepted' })}
 					${this._kpi('Active Students', d.active_students, '🎓', 'success', `${d.total_students} total enrolled`, { module:'students', dimension:'student_status', value:'Active' })}
-					${this._kpi('Attendance Rate', d.attendance_rate + '%', '📋', d.attendance_rate >= 75 ? 'success' : d.attendance_rate >= 50 ? 'warning' : 'danger', `${sawd_fmt_number(d.total_attendance_records)} records`, { module:'attendance', dimension:'status', value:'Present' })}
 					${this._kpi('Fee Collection', d.fee_collection_rate + '%', '💰', d.fee_collection_rate >= 80 ? 'success' : 'warning', sawd_fmt_currency(d.total_collected) + ' collected', { module:'fees', dimension:'payment_status', value:'Paid' })}
 					${this._kpi('Placement Offers', d.total_placement_offers, '💼', 'purple', `${d.accepted_placement_offers} accepted`, { module:'placement', dimension:'status', value:'Accepted' })}
 				`);
 
-				// Re-bind drilldown for dynamically injected cards
+				// Re-bind drilldown for dynamically injected cards — opens list in new tab.
+				// These 5 KPIs are hand-authored in JS (not real Number Card records),
+				// so they stay on the hardcoded _get_list_route map; every OTHER card
+				// on this dashboard — including anything an admin adds via the
+				// Workspace UI — goes through the generic, Number-Card-driven
+				// Record Drilldown page instead (see _render_dynamic_card).
 				const self = this;
 				$('#sawd-ov-adm-kpis').find('.sawd-kpi-card.has-drilldown').off('click').on('click', function () {
-					self._open_drilldown($(this).data('dd-module'), $(this).data('dd-dim'), $(this).data('dd-val'), {}, $(this).data('dd-title') || '');
+					const module = $(this).data('dd-module');
+					const dim    = $(this).data('dd-dim');
+					const val    = $(this).data('dd-val');
+
+					const route  = self._get_list_route(module, dim, val);
+					if (route && route.dt) {
+						const filter_str = Object.keys(route.filters || {}).length
+							? '?' + Object.entries(route.filters).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')
+							: '';
+						sawd_open_in_new_tab(`/app/${frappe.router.slug(route.dt)}${filter_str}`);
+					} else {
+						self._open_drilldown(module, dim, val, {}, $(this).data('dd-title') || '');
+					}
 				});
 			},
 		});
@@ -1572,15 +1921,14 @@ class SLCMWorkspaceAnalyticsDashboard {
 		this._render_bar('#sawd-ov-fee-trend .sawd-chart-body', {
 			labels: ['Billed', 'Collected', 'Outstanding'],
 			datasets: [{ values: [d.total_billed, d.total_collected, d.total_outstanding] }],
-		}, { colors: ['#2563eb', '#059669', '#dc2626'], format_value: sawd_fmt_currency });
+		}, { colors: ['#C9922A', '#059669', '#dc2626'], format_value: sawd_fmt_currency });
 
 		// ── Rates progress list ──────────────────────────────────────────────
 		$('#sawd-ov-rates .sawd-chart-body').html(`
 			<div class="sawd-progress-list" style="padding:8px 0">
-				${this._progress_bar('Attendance Rate',      d.attendance_rate,          '#059669')}
-				${this._progress_bar('Fee Collection Rate',  d.fee_collection_rate,      '#2563eb')}
-				${this._progress_bar('Hostel Occupancy',     d.hostel_occupancy_rate,    '#0891b2')}
-				${this._progress_bar('Placement Acceptance', d.placement_acceptance_rate,'#7c3aed')}
+				${this._progress_bar('Fee Collection Rate',  d.fee_collection_rate,      '#C9922A')}
+				${this._progress_bar('Hostel Occupancy',     d.hostel_occupancy_rate,    '#2b2e4a')}
+				${this._progress_bar('Placement Acceptance', d.placement_acceptance_rate,'#7B1C1C')}
 			</div>
 		`);
 
@@ -1615,7 +1963,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 					</div>
 
 					<div class="sawd-section-title">Enrollment Breakdown</div>
-					<div class="sawd-chart-grid">
+					<div class="sawd-chart-grid sawd-chart-grid-4">
 						${this._chart_card('sawd-st-status',  'Student Status',      'Lifecycle distribution',  'Click segment to drill down', '')}
 						${this._chart_card('sawd-st-gender',  'Gender Distribution', 'Demographic breakdown',   'Click to explore', '')}
 						${this._chart_card('sawd-st-quota',   'Quota Category',      'Reservation breakdown',   '', '')}
@@ -1625,10 +1973,10 @@ class SLCMWorkspaceAnalyticsDashboard {
 					<div class="sawd-section-title">Program & Cohort Analysis</div>
 					<div class="sawd-chart-grid">
 						<div class="sawd-chart-wide">
-							${this._chart_card('sawd-st-program','Program-wise Enrollment','Student count per program','Click bar to drill down','')}
+							${this._chart_card('sawd-st-program','Programme-wise Enrollment','Student count per programme','Click bar to drill down','')}
 						</div>
 					</div>
-					<div class="sawd-chart-grid">
+					<div class="sawd-chart-grid sawd-chart-grid-3">
 						${this._chart_card('sawd-st-admission','Admission Type',      'Regular vs PACE vs Other','','') }
 						${this._chart_card('sawd-st-cohort',   'Top Cohorts',         'Enrollment per cohort',    '','') }
 						${this._chart_card('sawd-st-regstatus','Registration Status', 'Workflow progress',        '','') }
@@ -1663,7 +2011,17 @@ class SLCMWorkspaceAnalyticsDashboard {
 				if (!e.detail) return;
 				const idx = e.detail.index != null ? e.detail.index : null;
 				const lbl = idx != null ? data[idx]?.label : null;
-				if (lbl && module && dimension) this._open_drilldown(module, dimension, lbl, data[idx]);
+				if (lbl && module && dimension) {
+					const route = this._get_list_route(module, dimension, lbl);
+					if (route && route.dt) {
+						const filter_str = Object.keys(route.filters || {}).length
+							? '?' + Object.entries(route.filters).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')
+							: '';
+						sawd_open_in_new_tab(`/app/${frappe.router.slug(route.dt)}${filter_str}`);
+					} else {
+						this._open_drilldown(module, dimension, lbl, data[idx]);
+					}
+				}
 			});
 		} catch (err) { container.innerHTML = this._empty_html('Chart unavailable'); }
 	}
@@ -1703,7 +2061,15 @@ class SLCMWorkspaceAnalyticsDashboard {
 		if (dd_opts.module && dd_opts.dimension) {
 			container.querySelectorAll('.sawd-funnel-step').forEach(el => {
 				el.addEventListener('click', () => {
-					this._open_drilldown(dd_opts.module, dd_opts.dimension, el.dataset.label, { label: el.dataset.label, value: el.dataset.value });
+					const route = this._get_list_route(dd_opts.module, dd_opts.dimension, el.dataset.label);
+					if (route && route.dt) {
+						const filter_str = Object.keys(route.filters || {}).length
+							? '?' + Object.entries(route.filters).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')
+							: '';
+						sawd_open_in_new_tab(`/app/${frappe.router.slug(route.dt)}${filter_str}`);
+					} else {
+						this._open_drilldown(dd_opts.module, dd_opts.dimension, el.dataset.label, { label: el.dataset.label, value: el.dataset.value });
+					}
 				});
 			});
 		}
@@ -1714,7 +2080,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 		if (!container) return;
 		if (!data || !data.length) { container.innerHTML = this._empty_html(); return; }
 		const max      = Math.max(...data.map(x => x.value || 0));
-		const colors   = ['#1e3a8a', '#2563eb', '#0891b2', '#059669'];
+		const colors   = ['#7B1C1C', '#C9922A', '#2b2e4a', '#059669'];
 		const clickable = dd_opts.module && dd_opts.dimension;
 		const html = data.map((d, i) => {
 			const pct = max ? Math.max((d.value / max * 100), 10) : 10;
@@ -1735,7 +2101,15 @@ class SLCMWorkspaceAnalyticsDashboard {
 		if (clickable) {
 			container.querySelectorAll('.sawd-funnel-step.sawd-drillable').forEach(el => {
 				el.addEventListener('click', () => {
-					this._open_drilldown(dd_opts.module, dd_opts.dimension, el.dataset.label, {}, el.dataset.label);
+					const route = this._get_list_route(dd_opts.module, dd_opts.dimension, el.dataset.label);
+					if (route && route.dt) {
+						const filter_str = Object.keys(route.filters || {}).length
+							? '?' + Object.entries(route.filters).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')
+							: '';
+						sawd_open_in_new_tab(`/app/${frappe.router.slug(route.dt)}${filter_str}`);
+					} else {
+						this._open_drilldown(dd_opts.module, dd_opts.dimension, el.dataset.label, {}, el.dataset.label);
+					}
 				});
 			});
 		}
@@ -1773,11 +2147,10 @@ class SLCMWorkspaceAnalyticsDashboard {
 				data-dd-module="${dd.module}" data-dd-dim="${dd.dimension}"
 				data-dd-val="${dd.value}" data-dd-title="${label}"`
 			: ` class="sawd-kpi-card kpi-${variant}"`;
-		const hint = dd ? `<div class="sawd-kpi-drill-hint"><i class="fa fa-search" style="font-size:9px"></i> Click to explore</div>` : '';
+		const hint = dd ? `<div class="sawd-kpi-drill-hint"><i class="fa fa-external-link" style="font-size:9px"></i> Click to explore</div>` : '';
 		return `
 		<div${attrs}>
 			<div class="sawd-kpi-accent"></div>
-			<div class="sawd-kpi-icon">${icon}</div>
 			<div class="sawd-kpi-label">${label}</div>
 			<div class="sawd-kpi-value">${value}</div>
 			${sub ? `<div class="sawd-kpi-sub">${sub}</div>` : ''}
@@ -1835,5 +2208,319 @@ class SLCMWorkspaceAnalyticsDashboard {
 		</div>`;
 	}
 
-	// CONTINUED IN PART 3 →
+	// ── Tab: Ticketing (Helpdesk shortcuts only) ─────────────────────────────
+
+	_load_ticketing() {
+		const shortcuts = [
+			{ label: 'Helpdesk Dashboard',  url: '/helpdesk/dashboard',      icon: 'tachometer', type: 'URL' },
+			{ label: 'All Tickets',          url: '/helpdesk/tickets',         icon: 'ticket',     type: 'URL' },
+			{ label: 'New Ticket',           url: '/helpdesk/tickets/new',     icon: 'plus',       type: 'URL' },
+			{ label: 'Knowledge Base',       url: '/helpdesk/knowledge-base',  icon: 'book',       type: 'URL' },
+			{ label: 'Customers',            url: '/helpdesk/customers',       icon: 'users',      type: 'URL' },
+			{ label: 'Contacts',             url: '/helpdesk/contacts',        icon: 'address-card', type: 'URL' },
+		];
+
+		const cards_html = shortcuts.map(s => `
+			<div class="sawd-sc-action-card" data-type="URL" data-url="${s.url}">
+				<div class="sawd-sc-action-icon"><i class="fa fa-${s.icon}"></i></div>
+				<div class="sawd-sc-action-info">
+					<div class="sawd-sc-action-label">${s.label}</div>
+					<div class="sawd-sc-action-type">Helpdesk</div>
+				</div>
+			</div>`).join('');
+
+		$('#sawd-tab-content').html(`
+			<div class="sawd-section-title">🎫 Helpdesk — Quick Actions</div>
+			<div class="sawd-sc-action-grid">${cards_html}</div>
+		`);
+
+		$('#sawd-tab-content .sawd-sc-action-card').on('click', function () {
+			const url = $(this).data('url');
+			if (url) sawd_open_in_new_tab(url);
+		});
+	}
+
+	// ── RFID Analytics sub-tab ──────────────────────────────────────────────
+
+	_load_rfid_subtab() {
+		this._show_loading(3);
+
+		frappe.call({
+			method: `${SAWD_PAGE_METHOD}.get_rfid_analytics`,
+			callback: (r) => {
+				if (r.exc || !r.message) { this._show_error(); return; }
+				const d = r.message;
+				const proc_cls    = d.processing_pct >= 90 ? 'success' : d.processing_pct >= 60 ? 'warning' : 'danger';
+				const unproc_cls  = d.unprocessed > 0 ? 'warning' : 'success';
+
+				$('#sawd-tab-content').html(`
+					<div class="sawd-kpi-grid">
+						${this._kpi('Total Swipes',  sawd_fmt_number(d.total_swipes), '', 'primary', 'all-time RFID logs')}
+						${this._kpi('Unique Cards',  d.unique_cards,                  '', 'info',    'distinct RFID UIDs')}
+						${this._kpi('Processed',     d.processed,                     '', proc_cls,  d.processing_pct + '% processing rate')}
+						${this._kpi('Unprocessed',   d.unprocessed,                   '', unproc_cls,'pending attendance link')}
+					</div>
+
+					<div class="sawd-section-title">RFID Analytics</div>
+					<div class="sawd-chart-grid sawd-chart-grid-3">
+						${this._chart_card('sawd-rfid-location',   'Swipes by Location',  'Top reader locations',     'Click to drill down', '')}
+						${this._chart_card('sawd-rfid-processing', 'Processing Status',   'Processed vs Unprocessed', '',                    '')}
+						${this._chart_card('sawd-rfid-terminal',   'Top Reader Terminals','Swipes per RFID terminal', 'Click to drill down', '')}
+					</div>
+				`);
+
+				this._render_bar_horizontal('#sawd-rfid-location .sawd-chart-body',
+					d.location_dist, { module: 'rfid', dimension: 'location' });
+
+				this._render_donut('#sawd-rfid-processing .sawd-chart-body',
+					d.processing_dist, 'rfid', 'processing');
+
+				this._render_bar_horizontal('#sawd-rfid-terminal .sawd-chart-body',
+					d.terminal_dist, { module: 'rfid', dimension: 'terminal' });
+			},
+		});
+	}
+
+	_render_chart(selector, opts) {
+		const el = $(selector)[0];
+		if (!el) return;
+		try {
+			new frappe.Chart(el, opts);
+		} catch(e) {
+			$(selector).html(`<div style="padding:12px;font-size:12px;color:var(--sawd-text4)">Chart unavailable</div>`);
+		}
+	}
+
+	// ── Drilldown panel ───────────────────────────────────────────────────────
+
+	_get_list_route(module, dimension, value) {
+		const v = (value && value !== 'all' && value !== 'All') ? value : null;
+		const f = (field) => v ? { [field]: v } : {};
+
+		const map = {
+			'students:student_status':        { dt: 'Student Master',                 filters: f('student_status') },
+			'students:reg_status':            { dt: 'Student Master',                 filters: f('student_status') },
+			'students:gender':                { dt: 'Student Master',                 filters: f('gender') },
+			'students:cohort':                { dt: 'Student Master',                 filters: {} },
+			'students:programs_list':         { dt: 'Program',                        filters: {} },
+			'students:cohorts_list':          { dt: 'Cohort',                         filters: {} },
+			'admission:app_status':           { dt: 'Admission Application',          filters: f('status') },
+			'admission:app_program':          { dt: 'Admission Application',          filters: {} },
+			'admission:eligibility_status':   { dt: 'Admission Application',          filters: f('eligibility_status') },
+			'admission:offer_status':         { dt: 'Offer Letter',                   filters: f('offer_status') },
+			'admission:cycle_status':         { dt: 'Admission Cycle',                filters: f('status') },
+			'attendance:status':              { dt: 'Student Attendance',             filters: f('status') },
+			'attendance:session_type':        { dt: 'Student Attendance',             filters: f('session_type') },
+			'attendance:condonation':         { dt: 'Student Attendance Condonation', filters: f('status') },
+			'examination:exam_status':        { dt: 'Exam Plan',                      filters: f('status') },
+			'examination:enrollment_status':  { dt: 'Student Course Marks',           filters: f('enrollment_status') },
+			'examination:grade':              { dt: 'Student Course Marks',           filters: f('grade') },
+			'examination:reexam_payment':     { dt: 'Re Exam Registration',           filters: f('payment_status') },
+			'examination:improvement_payment':{ dt: 'Improvement Exam Registration',  filters: f('payment_status') },
+			'examination:transcript_status':  { dt: 'Student Transcript',             filters: f('status') },
+			'programme:program_status':       { dt: 'Program',                        filters: f('program_status') },
+			'programme:cohort_status':        { dt: 'Cohort',                         filters: f('status') },
+			'programme:enrollment_status':    { dt: 'Student Enrollment',             filters: f('enrollment_status') },
+			'programme:offering_status':      { dt: 'Course Offering',                filters: f('status') },
+			'fees:payment_status':            { dt: 'Fee Demand',                     filters: f('status') },
+			'fees:demand_type':               { dt: 'Fee Demand',                     filters: f('fee_type') },
+			'hostel:allocation_status':       { dt: 'Hostel Allocation',              filters: f('status') },
+			'hostel:complaint_status':        { dt: 'Hostel Complaint',               filters: f('status') },
+			'placement:offer_status':         { dt: 'Placement Offer',                filters: f('status') },
+			'idcard:card_status':             { dt: 'ID Card Generation',             filters: f('card_status') },
+			'venue:booking_status':           { dt: 'Venue Booking',                  filters: f('status') },
+			'promotion:promotion_status':     { dt: 'Student Promotion',              filters: f('promotion_status') },
+			'ticketing:ticket_status':        { dt: 'HD Ticket',                      filters: f('status') },
+			'ticketing:ticket_priority':      { dt: 'HD Ticket',                      filters: f('priority') },
+			'ticketing:ticket_type':          { dt: 'HD Ticket',                      filters: f('ticket_type') },
+			'ticketing:agent_group':          { dt: 'HD Ticket',                      filters: f('agent_group') },
+			'rfid:location':                  { dt: 'Attendance Log',                 filters: f('location') },
+			'rfid:terminal':                  { dt: 'Attendance Log',                 filters: f('terminal_alias') },
+			'rfid:processing':                { dt: 'Attendance Log',                 filters: v === 'Processed' ? { processed: 1 } : v === 'Unprocessed' ? { processed: 0 } : {} },
+			'rfid:card_status':               { dt: 'Student RFID Card',              filters: f('card_status') },
+		};
+
+		return map[`${module}:${dimension}`] || null;
+	}
+
+	// Opens the generic "slcm-record-drilldown" Desk Page in a NEW browser tab
+	// for ANY Number Card — hardcoded or admin-added via the Workspace UI.
+	// The page itself resolves document_type/columns live from the Number Card
+	// record server-side, so adding a new card in a Workspace needs zero code
+	// changes here. Never frappe.set_route() — that would navigate the
+	// dashboard tab itself instead of opening a fully separate Desk tab.
+	_open_record_drilldown_page(number_card, resolved_filters_json, label) {
+		const params = new URLSearchParams();
+		if (resolved_filters_json) params.set('filters', resolved_filters_json);
+		if (label) params.set('label', label);
+		const query = params.toString() ? `?${params.toString()}` : '';
+		const url = `/app/slcm-record-drilldown/${encodeURIComponent(number_card)}${query}`;
+		sawd_open_in_new_tab(url);
+	}
+
+	_open_drilldown(module, dimension, value, context = {}, title = null) {
+		this._drilldown_state = { module, dimension, value, page: 1, page_size: 25 };
+		$('#sawd-dd-title').text(title || value || 'Detail View');
+		$('#sawd-dd-breadcrumb').text(`${module} › ${dimension} › ${value}`);
+		$('#sawd-dd-body').html('<div class="sawd-empty"><div class="sawd-empty-icon">⏳</div><div class="sawd-empty-title">Loading…</div></div>');
+
+		$('#sawd-dd-search').val('');
+		$('#sawd-dd-search-count').text('');
+		$('#sawd-dd-search-clear').hide();
+
+		const listRoute = this._get_list_route(module, dimension, value);
+		this._drilldown_list_route = listRoute;
+		if (listRoute) {
+			$('#sawd-dd-viewlist').show();
+		} else {
+			$('#sawd-dd-viewlist').hide();
+		}
+
+		$('#sawd-dd-overlay, #sawd-dd-panel').addClass('open');
+		this._drilldown_open = true;
+		this._load_drilldown_page(1);
+	}
+
+	_load_drilldown_page(page) {
+		const { module, dimension, value, page_size } = this._drilldown_state;
+		this._drilldown_state.page = page;
+
+		frappe.call({
+			method: `${SAWD_PAGE_METHOD}.get_drilldown_data`,
+			args: { module, dimension, value, page, page_size, ...this.filters },
+			callback: (r) => {
+				if (r.exc || !r.message) {
+					$('#sawd-dd-body').html(this._empty_html('No data found for this selection'));
+					return;
+				}
+				this._drilldown_state.total = r.message.total;
+				this._render_drilldown_content(r.message);
+			},
+		});
+	}
+
+	_render_drilldown_content(d) {
+		const { page, total, page_size } = this._drilldown_state;
+		const total_pages = Math.ceil((total || 0) / page_size);
+		const rows = d.rows || [];
+		const cols = d.columns || [];
+
+		if (!rows.length) {
+			$('#sawd-dd-body').html(this._empty_html('No records found'));
+			return;
+		}
+
+		const stat_html = `
+		<div class="sawd-drilldown-stats">
+			<div class="sawd-drilldown-stat"><div class="dds-value">${sawd_fmt_number(total)}</div><div class="dds-label">Total Records</div></div>
+			<div class="sawd-drilldown-stat"><div class="dds-value">${page}</div><div class="dds-label">Current Page</div></div>
+			<div class="sawd-drilldown-stat"><div class="dds-value">${total_pages}</div><div class="dds-label">Total Pages</div></div>
+		</div>`;
+
+		const { dimension } = this._drilldown_state;
+		const listRoute = this._drilldown_list_route;
+		const row_doctype = listRoute ? listRoute.dt : null;
+		const special_id = { programs_list: 'program_id', cohorts_list: 'cohort_id' };
+		const id_field = special_id[dimension] || 'name';
+
+		const col_labels = cols.map(c => `<th>${c.replace(/_/g,' ').replace(/\b\w/g, s => s.toUpperCase())}</th>`).join('');
+		const row_html = rows.map(row => {
+			const record_id = row[id_field];
+			const is_link = row_doctype && record_id;
+			const tr_attrs = is_link
+				? `class="sawd-row-link" data-dt="${frappe.utils.escape_html(row_doctype)}" data-id="${frappe.utils.escape_html(String(record_id))}"`
+				: '';
+			const cells = cols.map(c => {
+				const val = row[c];
+				if (val == null || val === '') return '<td>—</td>';
+				if (typeof val === 'number' && (c.includes('amount') || c.includes('fee'))) return `<td>${sawd_fmt_currency(val)}</td>`;
+				if (typeof val === 'number') return `<td>${sawd_fmt_number(val)}</td>`;
+				return `<td>${frappe.utils.escape_html(String(val))}</td>`;
+			}).join('');
+			return `<tr ${tr_attrs}>${cells}</tr>`;
+		}).join('');
+
+		const table_html = `
+		<div class="sawd-table-wrap">
+			<table class="sawd-table">
+				<thead><tr>${col_labels}</tr></thead>
+				<tbody>${row_html}</tbody>
+			</table>
+		</div>`;
+
+		const prev_dis = page <= 1 ? 'disabled' : '';
+		const next_dis = page >= total_pages ? 'disabled' : '';
+		const size_opts = [10, 25, 50, 100].map(n =>
+			`<option value="${n}" ${n === page_size ? 'selected' : ''}>${n}</option>`).join('');
+		const page_html = `
+		<div class="sawd-pagination">
+			<span>Showing ${(page-1)*page_size+1}–${Math.min(page*page_size, total)} of ${total} records</span>
+			<div class="sawd-page-size-wrap">
+				Rows per page:
+				<select class="sawd-page-size-select" id="sawd-dd-page-size">${size_opts}</select>
+			</div>
+			<div class="sawd-page-btns">
+				<button class="sawd-page-btn" id="sawd-dd-prev" ${prev_dis}>← Prev</button>
+				<button class="sawd-page-btn" id="sawd-dd-next" ${next_dis}>Next →</button>
+			</div>
+		</div>`;
+
+		$('#sawd-dd-body').html(stat_html + table_html + page_html);
+
+		$('#sawd-dd-prev').on('click', () => this._load_drilldown_page(page - 1));
+		$('#sawd-dd-next').on('click', () => this._load_drilldown_page(page + 1));
+		$('#sawd-dd-page-size').on('change', (e) => {
+			this._drilldown_state.page_size = parseInt(e.target.value);
+			this._load_drilldown_page(1);
+		});
+
+		$('#sawd-dd-body').on('click', 'tr.sawd-row-link', function () {
+			const dt = $(this).data('dt');
+			const id = $(this).data('id');
+			if (dt && id) sawd_open_in_new_tab(`/app/${frappe.router.slug(dt)}/${encodeURIComponent(id)}`);
+		});
+
+		// Re-apply active search
+		const q = $('#sawd-dd-search').val().toLowerCase().trim();
+		if (q) {
+			let visible = 0;
+			const $rows = $('.sawd-table tbody tr');
+			$rows.each(function () {
+				const match = $(this).text().toLowerCase().includes(q);
+				$(this).toggle(match);
+				if (match) visible++;
+			});
+			$('#sawd-dd-search-count').text(`${visible} / ${$rows.length} shown`);
+		}
+	}
+
+	_close_drilldown() {
+		$('#sawd-dd-overlay, #sawd-dd-panel').removeClass('open');
+		this._drilldown_open = false;
+	}
+
+	_export_drilldown() {
+		if (!this._drilldown_state) return;
+		const { module, dimension, value } = this._drilldown_state;
+		frappe.call({
+			method: `${SAWD_PAGE_METHOD}.get_drilldown_data`,
+			args: { module, dimension, value, page: 1, page_size: 10000, ...this.filters },
+			callback: (r) => {
+				if (r.exc || !r.message || !r.message.rows.length) {
+					frappe.show_alert({ message: 'No data to export', indicator: 'orange' });
+					return;
+				}
+				const { rows, columns } = r.message;
+				const csv_rows = [
+					columns.join(','),
+					...rows.map(row => columns.map(c => `"${row[c] || ''}"`).join(',')),
+				];
+				const blob = new Blob([csv_rows.join('\n')], { type: 'text/csv' });
+				const url  = URL.createObjectURL(blob);
+				const a    = document.createElement('a');
+				a.href = url; a.download = `slcm_${module}_${dimension}_${value}.csv`;
+				a.click(); URL.revokeObjectURL(url);
+			},
+		});
+	}
 }

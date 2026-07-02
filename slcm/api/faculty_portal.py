@@ -369,6 +369,38 @@ def change_password(old_password, new_password):
 
 
 @frappe.whitelist()
+def get_reset_password_url():
+    """Generate a password reset key for the logged-in user and return the
+    /update-password URL built from the actual request host — bypassing
+    Frappe's host_name site config which may not match the dev server port."""
+    user = frappe.session.user
+    if user == "Guest":
+        frappe.throw("Not permitted", frappe.PermissionError)
+
+    import hashlib, secrets
+
+    key = secrets.token_hex(32)
+    hashed_key = hashlib.sha256(key.encode()).hexdigest()
+
+    frappe.db.set_value("User", user, {
+        "reset_password_key": hashed_key,
+        "last_reset_password_key_generated_on": frappe.utils.now_datetime(),
+    })
+    frappe.db.commit()
+
+    # Build URL from the actual incoming request host so it always works
+    # regardless of the site config host_name (fixes local dev port issues).
+    request = getattr(frappe.local, "request", None)
+    if request and getattr(request, "host", None):
+        proto = "https://" if frappe.get_request_header("X-Forwarded-Proto", "") == "https" else "http://"
+        base = proto + request.host
+    else:
+        base = frappe.utils.get_url()
+
+    return {"url": base + "/update-password?key=" + key}
+
+
+@frappe.whitelist()
 def save_preferences(
     font_size_pref="Normal",
     layout_density_pref="Normal",
@@ -482,6 +514,159 @@ def _get_faculty_co_names(faculty_name):
         pluck="name",
         ignore_permissions=True,
     )
+
+
+@frappe.whitelist()
+def get_student_marks_detail(scm_name):
+    """Return component-wise marks breakdown for a Student Course Marks record.
+    Only accessible to the faculty who owns the course offering."""
+    if frappe.session.user == "Guest":
+        frappe.throw("Not permitted", frappe.PermissionError)
+
+    faculty_name = get_faculty_name()
+    if not faculty_name:
+        frappe.throw("No faculty record found", frappe.DoesNotExistError)
+
+    scm = frappe.get_doc("Student Course Marks", scm_name, ignore_permissions=True)
+
+    # Verify the course belongs to this faculty via Course Offering
+    owns = frappe.db.sql(
+        """
+        SELECT 1
+        FROM `tabCourse Offering` co
+        WHERE co.course_title = %(course)s
+          AND co.faculty = %(faculty)s
+        LIMIT 1
+        """,
+        {"course": scm.course, "faculty": faculty_name},
+    )
+    if not owns:
+        frappe.throw("Not permitted", frappe.PermissionError)
+
+    # Fetch the evaluation schema components with max marks so the edit form
+    # can show labels, current values, and enforce max-marks validation.
+    schema_components = []
+    if scm.evaluation_schema:
+        schema_rows = frappe.db.sql(
+            """
+            SELECT sac.component, sac.assessment_type, sac.label,
+                   sac.maximum_marks, ec.component_name, eat.type_name
+            FROM `tabSchema Assessment Config` sac
+            LEFT JOIN `tabExam Component` ec ON ec.name = sac.component
+            LEFT JOIN `tabExam Assessment Type` eat ON eat.name = sac.assessment_type
+            WHERE sac.parent = %(schema)s
+            ORDER BY sac.idx ASC
+            """,
+            {"schema": scm.evaluation_schema},
+            as_dict=True,
+        )
+        entry_map = {
+            (r.component, r.assessment_type): frappe.utils.flt(r.marks)
+            for r in scm.get("marks_entries", [])
+        }
+        for sr in schema_rows:
+            label = sr.label or sr.component_name or sr.component or ""
+            schema_components.append({
+                "component": sr.component,
+                "assessment_type": sr.assessment_type,
+                "label": label,
+                "max_marks": frappe.utils.flt(sr.maximum_marks),
+                "marks": entry_map.get((sr.component, sr.assessment_type), None),
+            })
+    else:
+        for row in scm.get("marks_entries", []):
+            label = row.label or (
+                frappe.db.get_value("Exam Component", row.component, "component_name")
+                if row.component else ""
+            ) or row.component or ""
+            schema_components.append({
+                "component": row.component,
+                "assessment_type": row.assessment_type,
+                "label": label,
+                "max_marks": None,
+                "marks": frappe.utils.flt(row.marks),
+            })
+
+    return {
+        "scm_name": scm.name,
+        "course": scm.course,
+        "exam_plan": scm.exam_plan,
+        "components": schema_components,
+        "total_marks": frappe.utils.flt(scm.total_marks),
+        "grade": scm.grade or "—",
+        "moderated_grade": scm.moderated_grade or "",
+        "updated_final_marks": frappe.utils.flt(scm.updated_final_marks) if scm.updated_final_marks else None,
+        "updated_grade": scm.updated_grade or "",
+        "remark": scm.remark or "",
+        "enrollment_status": scm.enrollment_status or "",
+        "attendance_status": scm.attendance_status or "",
+    }
+
+
+@frappe.whitelist()
+def save_student_marks(scm_name, component, assessment_type, marks):
+    """Save a single component marks entry for a student. Faculty-only."""
+    if frappe.session.user == "Guest":
+        frappe.throw("Not permitted", frappe.PermissionError)
+
+    faculty_name = get_faculty_name()
+    if not faculty_name:
+        frappe.throw("No faculty record found", frappe.DoesNotExistError)
+
+    scm = frappe.get_doc("Student Course Marks", scm_name, ignore_permissions=True)
+
+    # Verify ownership
+    owns = frappe.db.sql(
+        """SELECT 1 FROM `tabCourse Offering` co
+           WHERE co.course_title = %(course)s AND co.faculty = %(faculty)s LIMIT 1""",
+        {"course": scm.course, "faculty": faculty_name},
+    )
+    if not owns:
+        frappe.throw("Not permitted", frappe.PermissionError)
+
+    # Check Access Result Settings lock + deadline
+    access = frappe.db.get_value(
+        "Access Result Settings",
+        {"exam_plan": scm.exam_plan, "course": scm.course},
+        ["edit_access", "edit_deadline", "status"],
+        as_dict=True,
+    ) or frappe._dict({"edit_access": 1, "edit_deadline": None, "status": "UNLOCKED"})
+
+    if access.get("status") == "LOCKED":
+        frappe.throw("Result entry is locked for this course.")
+    if not int(access.get("edit_access") or 1):
+        frappe.throw("Edit access is disabled for this course.")
+    edit_deadline = access.get("edit_deadline")
+    if edit_deadline and frappe.utils.now_datetime() > frappe.utils.get_datetime(edit_deadline):
+        frappe.throw("The edit deadline for this course has passed.")
+
+    fvalue = frappe.utils.flt(marks) if marks not in (None, "", "null") else None
+
+    sme_name = frappe.db.get_value(
+        "Student Marks Entry",
+        {"parent": scm_name, "component": component, "assessment_type": assessment_type},
+        "name",
+    )
+    if sme_name:
+        frappe.db.set_value("Student Marks Entry", sme_name, "marks", fvalue if fvalue is not None else 0.0)
+    else:
+        if fvalue is not None:
+            frappe.db.sql(
+                """INSERT INTO `tabStudent Marks Entry`
+                   (name, creation, modified, modified_by, owner,
+                    parent, parenttype, parentfield, component, assessment_type, marks)
+                   VALUES (%(n)s, NOW(), NOW(), %(u)s, %(u)s,
+                           %(p)s, 'Student Course Marks', 'marks_entries',
+                           %(c)s, %(a)s, %(v)s)""",
+                {"n": frappe.generate_hash("", 10), "u": frappe.session.user,
+                 "p": scm_name, "c": component, "a": assessment_type, "v": fvalue},
+            )
+
+    frappe.db.commit()
+
+    # Recalculate total + grade by delegating to examination_result module
+    from slcm.slcm.page.examination_result.examination_result import _recalculate_student_marks
+    return _recalculate_student_marks(scm_name, scm.course, scm.exam_plan)
 
 
 @frappe.whitelist()

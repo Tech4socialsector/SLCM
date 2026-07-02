@@ -439,6 +439,15 @@ frappe.ui.form.on("Student Master", {
 
 	programme(frm) {
 		if (!frm.doc.programme) return;
+
+		// Fetch program_shortcode from the selected Cohort so the naming series
+		// in before_save can build the correct ID (e.g. BBA1.001)
+		frappe.db.get_value("Cohort", frm.doc.programme, "program_shortcode", function (r) {
+			if (r && r.program_shortcode) {
+				frm.set_value("program_shortcode", r.program_shortcode);
+			}
+		});
+
 		frappe.call({
 			method: "slcm.slcm.doctype.student_master.student_master.fetch_program_fee_details",
 			args: { programme: frm.doc.programme },
@@ -1708,6 +1717,23 @@ function _render_payment_timeline(logs) {
 				🧾 Download Receipt</button>`
 			: "";
 
+		// Payer badge — shown prominently before other chips
+		let payer_html = "";
+		if (row.paid_by_role || row.paid_by_name) {
+			const role_colors = {
+				"Parent":  { bg: "#fef3c7", text: "#92400e", icon: "👨‍👩‍👧" },
+				"Student": { bg: "#dbeafe", text: "#1e40af", icon: "🎓" },
+				"Staff":   { bg: "#d1fae5", text: "#065f46", icon: "🏫" },
+				"System":  { bg: "#f3f4f6", text: "#374151", icon: "⚙️" },
+			};
+			const rc = role_colors[row.paid_by_role] || { bg: "#f3f4f6", text: "#374151", icon: "👤" };
+			const role_label = row.paid_by_role ? `${rc.icon} ${row.paid_by_role}` : "👤 Unknown";
+			const name_part  = row.paid_by_name  ? ` — ${frappe.utils.escape_html(row.paid_by_name)}` : "";
+			payer_html = `<span style="display:inline-block;background:${rc.bg};color:${rc.text};
+				padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;
+				white-space:nowrap;margin-left:6px;">${role_label}${name_part}</span>`;
+		}
+
 		// Meta chips
 		let chips = [];
 		if (row.fee_demand)           chips.push(`<span class="plog-chip">📋 ${row.fee_demand}</span>`);
@@ -1776,7 +1802,7 @@ function _render_payment_timeline(logs) {
 
 		const search_text = [
 			row.event_type, row.invoice, row.fee_demand, row.razorpay_payment_id,
-			row.transaction_id, row.triggered_by, row.remarks,
+			row.transaction_id, row.triggered_by, row.paid_by_role, row.paid_by_name, row.remarks,
 		].filter(Boolean).join(" ").toLowerCase()
 		 .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
@@ -1807,6 +1833,7 @@ function _render_payment_timeline(logs) {
 						<span style="font-size:16px;">${is_demand ? '📋' : style.icon}</span>
 						${badge_html}
 						${source_badge}
+						${payer_html}
 						${amount ? `<span style="font-weight:700;font-size:14px;color:#1f2937;">${amount}</span>` : ""}
 					</div>
 					<div style="display:flex;align-items:center;gap:6px;">
@@ -1856,6 +1883,7 @@ function _download_logs_csv(logs, student_label) {
 		"event_type", "timestamp", "amount", "currency", "invoice", "fee_demand",
 		"payment_mode", "payment_method", "razorpay_payment_id",
 		"razorpay_order_id", "transaction_id", "triggered_by",
+		"paid_by_role", "paid_by_name",
 		"attempt_type", "retry_count", "webhook_status",
 		"from_status", "to_status", "ip_address",
 		"error_message", "failure_reason", "remarks",

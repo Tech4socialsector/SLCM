@@ -4,6 +4,8 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "tab_appearance",
+  "html_appearance_note",
   "branding_section",
   "portal_title",
   "portal_subtitle",
@@ -41,6 +43,8 @@
   "col_break_grade2",
   "grade_fail_color",
   "grade_fail_label",
+  "tab_layout",
+  "html_layout_note",
   "attendance_thresholds_section",
   "att_good_threshold",
   "att_warn_threshold",
@@ -57,6 +61,8 @@
   "layout_density",
   "show_faculty_id_sidebar",
   "show_department_sidebar",
+  "tab_features",
+  "html_features_note",
   "dashboard_section",
   "show_announcements_ticker",
   "show_today_schedule",
@@ -69,6 +75,8 @@
   "show_leave_status",
   "show_student_performance_overview",
   "show_upcoming_exams",
+  "tab_modules",
+  "html_modules_note",
   "attendance_module_section",
   "enable_attendance_marking",
   "enable_bulk_attendance",
@@ -104,6 +112,8 @@
   "col_break_leave",
   "workload_calculation_method",
   "max_weekly_teaching_hours",
+  "tab_permissions",
+  "html_permissions_note",
   "self_service_section",
   "allow_theme_override",
   "allow_density_override",
@@ -112,10 +122,23 @@
   "allow_dashboard_customization",
   "allow_font_size_override",
   "allow_language_preference",
+  "tab_advanced",
+  "html_advanced_note",
   "advanced_section",
   "custom_css"
  ],
  "fields": [
+  {
+   "fieldname": "tab_appearance",
+   "fieldtype": "Tab Break",
+   "label": "Appearance"
+  },
+  {
+   "fieldname": "html_appearance_note",
+   "fieldtype": "HTML",
+   "label": "Appearance Note",
+   "options": "<div class=\"alert alert-primary\" style=\"background:#e8f0fe;border-left:4px solid #4285f4;padding:10px 14px;border-radius:6px;margin-bottom:12px;\"><strong style=\"color:#1a56db;\">&#127912; Appearance</strong> &nbsp;Configure the portal's visual identity — branding, typography, theme colours, status indicators, and grade colour bands. Changes apply globally to all faculty portal pages.</div>"
+  },
   {
    "fieldname": "branding_section",
    "fieldtype": "Section Break",
@@ -186,21 +209,21 @@
   {
    "fieldname": "theme_section",
    "fieldtype": "Section Break",
-   "label": "Theme Colors"
+   "label": "Theme Colours"
   },
   {
-   "default": "#1e3a5f",
-   "description": "Main color for the top navbar background",
+   "default": "#2b2e4a",
+   "description": "Main colour for the top navbar background",
    "fieldname": "primary_color",
    "fieldtype": "Color",
-   "label": "Primary Color (Navbar)"
+   "label": "Primary Colour (Navbar)"
   },
   {
-   "default": "#e8a020",
-   "description": "Accent color used for active nav items, badges, and key highlights",
+   "default": "#920c24",
+   "description": "Accent colour used for active nav items, badges, and key highlights",
    "fieldname": "secondary_color",
    "fieldtype": "Color",
-   "label": "Secondary / Accent Color"
+   "label": "Secondary / Accent Colour"
   },
   {
    "fieldname": "col_break_theme",
@@ -208,21 +231,21 @@
   },
   {
    "default": "#f0f2f5",
-   "description": "Main page content background color",
+   "description": "Main page content background colour",
    "fieldname": "background_color",
    "fieldtype": "Color",
-   "label": "Page Background Color"
+   "label": "Page Background Colour"
   },
   {
    "default": "#ffffff",
-   "description": "Background color for cards and panels in the main content area",
+   "description": "Background colour for cards and panels in the main content area",
    "fieldname": "card_background",
    "fieldtype": "Color",
-   "label": "Card Background Color"
+   "label": "Card Background Colour"
   },
   {
    "default": "Light",
-   "description": "Light sidebar uses a white background. Dark sidebar uses the primary color as background with white text.",
+   "description": "Light sidebar uses a white background. Dark sidebar uses the primary colour as background with white text.",
    "fieldname": "sidebar_theme",
    "fieldtype": "Select",
    "label": "Sidebar Theme",
@@ -234,17 +257,17 @@
   },
   {
    "default": "#ffffff",
-   "description": "Color of text and icons in the top navbar (white works on dark navbars)",
+   "description": "Colour of text and icons in the top navbar (white works on dark navbars)",
    "fieldname": "nav_text_color",
    "fieldtype": "Color",
-   "label": "Navbar Text / Icon Color"
+   "label": "Navbar Text / Icon Colour"
   },
   {
    "collapsible": 1,
    "description": "Used for badges, progress bars, and indicators across Attendance, Marks, and Assignment pages",
    "fieldname": "status_colors_section",
    "fieldtype": "Section Break",
-   "label": "Status Colors"
+   "label": "Status Colours"
   },
   {
    "default": "#16a34a",
@@ -280,17 +303,17 @@
   },
   {
    "collapsible": 1,
-   "description": "Colors used to display grade bands on the Marks Entry and Class Statistics pages",
+   "description": "Colours used to display grade bands on the Marks Entry and Class Statistics pages",
    "fieldname": "grading_section",
    "fieldtype": "Section Break",
-   "label": "Grading Colors"
+   "label": "Grading Colours"
   },
   {
    "default": "#16a34a",
    "description": "Top grade band — Distinction, A+, A, S",
    "fieldname": "grade_excellent_color",
    "fieldtype": "Color",
-   "label": "Excellent Grade Color"
+   "label": "Excellent Grade Colour"
   },
   {
    "default": "A+ / A / S",
@@ -308,7 +331,7 @@
    "description": "Second grade band — B+, B",
    "fieldname": "grade_good_color",
    "fieldtype": "Color",
-   "label": "Good Grade Color"
+   "label": "Good Grade Colour"
   },
   {
    "default": "B+ / B",
@@ -322,7 +345,7 @@
    "description": "Third grade band — C+, C",
    "fieldname": "grade_average_color",
    "fieldtype": "Color",
-   "label": "Average Grade Color"
+   "label": "Average Grade Colour"
   },
   {
    "default": "C+ / C",
@@ -340,7 +363,7 @@
    "description": "Fail grade band — D, F, Absent",
    "fieldname": "grade_fail_color",
    "fieldtype": "Color",
-   "label": "Fail Grade Color"
+   "label": "Fail Grade Colour"
   },
   {
    "default": "D / F",
@@ -350,8 +373,19 @@
    "label": "Fail Grade Label"
   },
   {
+   "fieldname": "tab_layout",
+   "fieldtype": "Tab Break",
+   "label": "Layout & Navigation"
+  },
+  {
+   "fieldname": "html_layout_note",
+   "fieldtype": "HTML",
+   "label": "Layout Note",
+   "options": "<div class=\"alert\" style=\"background:#fef3c7;border-left:4px solid #f59e0b;padding:10px 14px;border-radius:6px;margin-bottom:12px;\"><strong style=\"color:#b45309;\">&#128461;&#65039; Layout &amp; Navigation</strong> &nbsp;Control the portal's structural layout — sidebar position and width, navbar height, corner style, density, and attendance colour thresholds. Changes take effect on the next page load for all faculty users.</div>"
+  },
+  {
    "collapsible": 1,
-   "description": "Controls which color band is displayed for each student’s attendance percentage across all faculty views",
+   "description": "Controls which colour band is displayed for each student's attendance percentage across all faculty views",
    "fieldname": "attendance_thresholds_section",
    "fieldtype": "Section Break",
    "label": "Attendance Thresholds"
@@ -457,16 +491,27 @@
   },
   {
    "default": "1",
-   "description": "Show the faculty’s department name below the employee ID in the sidebar profile card",
+   "description": "Show the faculty's department name below the employee ID in the sidebar profile card",
    "fieldname": "show_department_sidebar",
    "fieldtype": "Check",
    "label": "Show Department in Sidebar"
   },
   {
+   "fieldname": "tab_features",
+   "fieldtype": "Tab Break",
+   "label": "Dashboard Features"
+  },
+  {
+   "fieldname": "html_features_note",
+   "fieldtype": "HTML",
+   "label": "Features Note",
+   "options": "<div class=\"alert\" style=\"background:#ecfdf5;border-left:4px solid #10b981;padding:10px 14px;border-radius:6px;margin-bottom:12px;\"><strong style=\"color:#047857;\">&#128203; Dashboard Features</strong> &nbsp;Toggle individual panels on or off for all faculty users. Disabled panels are completely hidden from the portal dashboard. Faculty may further personalise visible panels if self-service customisation is enabled.</div>"
+  },
+  {
    "description": "Toggle individual dashboard panels on or off for all faculty users",
    "fieldname": "dashboard_section",
    "fieldtype": "Section Break",
-   "label": "Dashboard Features"
+   "label": "Dashboard Panels"
   },
   {
    "default": "1",
@@ -477,10 +522,10 @@
   },
   {
    "default": "1",
-   "description": "Show today’s teaching schedule panel on the dashboard",
+   "description": "Show today's teaching schedule panel on the dashboard",
    "fieldname": "show_today_schedule",
    "fieldtype": "Check",
-   "label": "Today’s Schedule Panel"
+   "label": "Today's Schedule Panel"
   },
   {
    "default": "1",
@@ -520,24 +565,35 @@
   },
   {
    "default": "1",
-   "description": "Show the faculty’s leave balance and recent leave request status",
+   "description": "Show the faculty's leave balance and recent leave request status",
    "fieldname": "show_leave_status",
    "fieldtype": "Check",
    "label": "Leave Status Panel"
   },
   {
    "default": "1",
-   "description": "Show a compact overview of student performance (pass/fail ratio, top/bottom performers) for the faculty’s courses",
+   "description": "Show a compact overview of student performance (pass/fail ratio, top/bottom performers) for the faculty's courses",
    "fieldname": "show_student_performance_overview",
    "fieldtype": "Check",
    "label": "Student Performance Overview"
   },
   {
    "default": "1",
-   "description": "Show upcoming exam/assessment dates relevant to the faculty’s courses",
+   "description": "Show upcoming exam/assessment dates relevant to the faculty's courses",
    "fieldname": "show_upcoming_exams",
    "fieldtype": "Check",
    "label": "Upcoming Exams Panel"
+  },
+  {
+   "fieldname": "tab_modules",
+   "fieldtype": "Tab Break",
+   "label": "Modules"
+  },
+  {
+   "fieldname": "html_modules_note",
+   "fieldtype": "HTML",
+   "label": "Modules Note",
+   "options": "<div class=\"alert\" style=\"background:#fdf4ff;border-left:4px solid #a855f7;padding:10px 14px;border-radius:6px;margin-bottom:12px;\"><strong style=\"color:#7e22ce;\">&#9881;&#65039; Modules</strong> &nbsp;Enable or disable individual faculty modules — Attendance, Marks &amp; Grading, Assignments, Student Interaction, and Leave &amp; Workload. Disabling a module hides it entirely from the portal navigation. Module-specific restrictions (edit windows, booking limits) are also configured here.</div>"
   },
   {
    "description": "Configure attendance marking behaviour and restrictions for faculty",
@@ -639,7 +695,7 @@
   },
   {
    "default": "1",
-   "description": "Allow faculty to add textual remarks against each student’s grade entry",
+   "description": "Allow faculty to add textual remarks against each student's grade entry",
    "fieldname": "enable_grade_remarks",
    "fieldtype": "Check",
    "label": "Enable Grade Remarks"
@@ -771,14 +827,25 @@
    "label": "Max Weekly Teaching Hours"
   },
   {
-   "description": "Control which portal settings each faculty member can personalize without administrator intervention. Enabled permissions are surfaced in the Faculty Portal User Preferences page.",
+   "fieldname": "tab_permissions",
+   "fieldtype": "Tab Break",
+   "label": "Self-Service Permissions"
+  },
+  {
+   "fieldname": "html_permissions_note",
+   "fieldtype": "HTML",
+   "label": "Permissions Note",
+   "options": "<div class=\"alert\" style=\"background:#fff1f2;border-left:4px solid #f43f5e;padding:10px 14px;border-radius:6px;margin-bottom:12px;\"><strong style=\"color:#be123c;\">&#128274; Self-Service Permissions</strong> &nbsp;Control which portal settings each faculty member can personalise independently. Enabled permissions are surfaced in the <em>Faculty Portal User Preferences</em> page. Restrict these to maintain a consistent institutional look and feel.</div>"
+  },
+  {
+   "description": "Control which portal settings each faculty member can personalise without administrator intervention. Enabled permissions are surfaced in the Faculty Portal User Preferences page.",
    "fieldname": "self_service_section",
    "fieldtype": "Section Break",
    "label": "Faculty Self-Service Permissions"
   },
   {
    "default": "1",
-   "description": "Let faculty choose their own portal theme color scheme. They can pick from presets or set a custom primary color.",
+   "description": "Let faculty choose their own portal theme colour scheme. They can pick from presets or set a custom primary colour.",
    "fieldname": "allow_theme_override",
    "fieldtype": "Check",
    "label": "Allow Theme Override"
@@ -823,14 +890,25 @@
    "label": "Allow Language Preference"
   },
   {
+   "fieldname": "tab_advanced",
+   "fieldtype": "Tab Break",
+   "label": "Advanced"
+  },
+  {
+   "fieldname": "html_advanced_note",
+   "fieldtype": "HTML",
+   "label": "Advanced Note",
+   "options": "<div class=\"alert\" style=\"background:#fefce8;border-left:4px solid #eab308;padding:10px 14px;border-radius:6px;margin-bottom:12px;\"><strong style=\"color:#854d0e;\">&#9888;&#65039; Advanced — Custom CSS</strong> &nbsp;Inject raw CSS that is appended after all portal stylesheets. Use CSS variables like <code>--fp-primary</code> and <code>--fp-secondary</code> for theme-consistent overrides. Incorrect CSS here can break the portal layout — test changes carefully before saving.</div>"
+  },
+  {
    "collapsible": 1,
-   "description": "Inject raw CSS appended after all portal styles. Use CSS variables like --fp-primary for consistency.",
+   "description": "Inject raw CSS appended after all portal styles. Use CSS variables like --fp-primary for colour consistency.",
    "fieldname": "advanced_section",
    "fieldtype": "Section Break",
    "label": "Advanced — Custom CSS"
   },
   {
-   "description": "Raw CSS injected at the end of every faculty portal page. Use CSS variables like --fp-primary, --fp-secondary for theme consistency.",
+   "description": "Raw CSS injected at the end of every faculty portal page. Use CSS variables like --fp-primary, --fp-secondary for theme colour consistency.",
    "fieldname": "custom_css",
    "fieldtype": "Code",
    "label": "Custom CSS",
@@ -839,7 +917,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-06-01 10:00:00",
+ "modified": "2026-06-25 12:00:00",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Faculty Portal Settings",
