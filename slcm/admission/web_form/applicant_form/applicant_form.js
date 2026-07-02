@@ -5481,4 +5481,32 @@ function slcmSetupPayButton() {
 	}, 2000);
 }
 
-
+// ── FIX: Force Frappe Web Form to reflect Check fields properly on reload ──
+// Frappe's frontend evaluation of depends_on for parent sections wipes out child 
+// field values on load. We explicitly fetch the actual saved values from the DB 
+// and rehydrate the checkboxes, forcing the DOM to check them.
+frappe.ready(function() {
+	setTimeout(function() {
+		if (frappe.web_form && frappe.web_form.doc && frappe.web_form.doc.name && frappe.web_form.doc.name !== 'new') {
+			frappe.call({
+				method: 'frappe.client.get',
+				args: { doctype: 'Applicant', name: frappe.web_form.doc.name },
+				callback: function(r) {
+					if (r.message && frappe.web_form.fields_dict) {
+						$.each(frappe.web_form.fields_dict, function(fname, field) {
+							if (field.df.fieldtype === 'Check') {
+								var val = r.message[fname];
+								if (val === 1 || val === '1' || val === true) {
+									field.set_value(1);
+									if (field.$input && field.$input.length) {
+										field.$input.prop('checked', true);
+									}
+								}
+							}
+						});
+					}
+				}
+			});
+		}
+	}, 600);
+});
