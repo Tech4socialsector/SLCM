@@ -55,6 +55,7 @@ def _load_program_detail(context, slug):
     context.prog_app_fee     = gf("application_fee")
     context.prog_deadline    = gf("application_deadline")
     context.prog_brochure    = gf("brochure_file")
+    context.prog_app_link    = gf("application_form_link")
     context.prog_slug        = slug
 
     # Media (child table "media" / Program Media)

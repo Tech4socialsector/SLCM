@@ -188,7 +188,11 @@ def update_applicant_from_form(**kwargs):
     allowed_fields = {
         "candidate_photo", "alternate_contact", "id_proof",
         "class_x_marksheet", "class_xii_marksheet", "caste_certificate",
-        "pwd_certificate", "phd_proposal", "cv", "ka_study_7yrs_certificate"
+        "pwd_certificate", "phd_proposal", "cv", "ka_study_7yrs_certificate",
+        "ews_certificate", "ka_defence_child_certificate", "ka_govt_child_certificate",
+        "ka_ais_child_certificate", "ka_capf_child_certificate",
+        "degree_certificate", "marksheets", 
+        "pg_degree_certificatebonafide_certificate_to_be_uploaded", "transcriptsmarksheets_to_be_uploaded"
     }
     
     for k, v in kwargs.items():
@@ -204,8 +208,17 @@ def update_applicant_from_form(**kwargs):
         return {"success": False, "error": "No valid fields provided for applicant update."}
 
     try:
-        # Update Applicant only — User profile is updated only via update_user_profile (portal modal).
-        frappe.db.set_value("Applicant", app_name, applicant_update_dict)
+        target_doctype = kwargs.get("doctype") or "Applicant"
+        target_docname = kwargs.get("docname") or app_name
+        
+        if target_doctype == "Applicant":
+            # Update Applicant only — User profile is updated only via update_user_profile (portal modal).
+            frappe.db.set_value("Applicant", target_docname, applicant_update_dict)
+        else:
+            parent = frappe.db.get_value(target_doctype, target_docname, "parent")
+            if parent != app_name:
+                return {"success": False, "error": "Invalid document reference."}
+            frappe.db.set_value(target_doctype, target_docname, applicant_update_dict)
 
         frappe.db.commit()
         return {"success": True, "status": "ok"}
@@ -229,9 +242,13 @@ def update_profile(**kwargs):
     """
     # Fields that specifically belong to Applicant doctype
     applicant_only_fields = {
-        "applicant", "name", "candidate_photo", "id_proof",
+        "applicant", "name", "doctype", "docname", "candidate_photo", "id_proof",
         "class_x_marksheet", "class_xii_marksheet", "caste_certificate",
-        "pwd_certificate", "phd_proposal", "cv", "ka_study_7yrs_certificate"
+        "pwd_certificate", "phd_proposal", "cv", "ka_study_7yrs_certificate",
+        "ews_certificate", "ka_defence_child_certificate", "ka_govt_child_certificate",
+        "ka_ais_child_certificate", "ka_capf_child_certificate",
+        "degree_certificate", "marksheets", 
+        "pg_degree_certificatebonafide_certificate_to_be_uploaded", "transcriptsmarksheets_to_be_uploaded"
     }
     
     if any(k in applicant_only_fields for k in kwargs.keys()):
