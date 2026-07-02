@@ -386,9 +386,41 @@ def get_where_clause(filters, prefix=""):
 @frappe.whitelist()
 def get_document_verifiers():
     # Ignore permissions to allow non-managers to fetch the dropdown list
-    return frappe.get_all(
+    roles = ["Document Verifier", "PACE Admission Manager", "PACE Manager"]
+    verifiers = frappe.get_all(
         "Has Role",
-        filters={"role": "Document Verifier"},
+        filters={"role": ["in", roles]},
         pluck="parent",
         ignore_permissions=True
     )
+    return list(set(verifiers))
+
+
+@frappe.whitelist()
+def get_verifier_users_for_link(doctype, txt, searchfield, start, page_len, filters):
+    roles = ["Document Verifier", "PACE Admission Manager", "PACE Manager"]
+    users = frappe.get_all(
+        "Has Role",
+        filters={"role": ["in", roles]},
+        pluck="parent",
+        ignore_permissions=True
+    )
+    unique_users = list(set(users))
+    if not unique_users:
+        return []
+
+    query = """
+        SELECT name, full_name 
+        FROM `tabUser` 
+        WHERE name IN %(users)s 
+          AND enabled = 1
+    """
+    params = {"users": unique_users}
+    if txt:
+        query += " AND (name LIKE %(txt)s OR full_name LIKE %(txt)s)"
+        params["txt"] = f"%{txt}%"
+
+    query += f" ORDER BY name LIMIT {int(page_len)} OFFSET {int(start)}"
+    return frappe.db.sql(query, params, as_list=True)
+
+

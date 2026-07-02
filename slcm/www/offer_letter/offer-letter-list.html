@@ -329,7 +329,7 @@
             const data = await apiFetch('slcm.admission.utils.web.get_offer_list', {
                 limit_start: current_page * page_size,
                 limit_page_length: page_size
-            });
+            }, 'GET');
             console.log("Offers data received:", data);
             if (!data) {
                 render_error("{{ _('No response from server') }}");
@@ -363,8 +363,8 @@
         <div class="row g-4">
     `;
         offers.forEach(offer => {
-            const status_class = offer.offer_status.toLowerCase().replace(/ /g, '-');
-            const display_status = offer.offer_status.charAt(0).toUpperCase() + offer.offer_status.slice(1).toLowerCase();
+            const status_class = offer.status.toLowerCase().replace(/ /g, '-');
+            const display_status = offer.status.charAt(0).toUpperCase() + offer.status.slice(1).toLowerCase();
             const _encOffer = encodeURIComponent(offer.name || '');
             const _issuedDate = offer.issued_on ? new Date(offer.issued_on).toLocaleDateString('en-GB', {day: 'numeric', month: 'short'}) : '—';
             
@@ -403,7 +403,7 @@
                 </div>
             </div>
 
-            ${offer.payment_deadline && (offer.offer_status === 'Issued' || offer.offer_status === 'Accepted') ? `
+            ${offer.payment_deadline && (offer.status === 'Issued' || offer.status === 'Accepted') ? `
                 <div class="mt-2 p-2 px-3 rounded-lg bg-orange-50 border border-orange-100 d-flex align-items-center justify-content-between">
                     <span class="text-xs font-bold text-orange-700 uppercase tracking-wider">Valid Until</span>
                     <span class="text-xs font-extrabold text-orange-800 offer-timer" data-deadline="${offer.payment_deadline}">
@@ -544,9 +544,8 @@
     function render_error(message) {
         $('#offer-list-wrapper').html(`
         <div class="text-center p-5 mt-5">
-            <i class="fa fa-folder-open text-muted mb-4 opacity-25" style="font-size: 64px; color: var(--primary) !important;"></i>
-            <h2 class="text-muted font-weight-bold" style="font-size: 24px; margin-bottom: 12px;">{{ _("No Offers Found") }}</h2>
-            <p class="text-muted" style="font-size: 16px;">${message}</p>
+            <i class="fa fa-folder-open text-muted mb-4 opacity-25" style="font-size: 64px !important; color: var(--primary) !important;"></i>
+            <p class="text-muted" style="font-size: 22px !important;">${message}</p>
         </div>
     `);
     }

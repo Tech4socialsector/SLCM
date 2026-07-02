@@ -91,7 +91,7 @@ def check_existing_application(admission_cycle=None):
     existing = frappe.get_all(
         "Applicant",
         filters=filters,
-        fields=["name", "admission_cycle", "application_status"],
+        fields=["name", "admission_cycle", "status"],
         order_by="creation desc",
         limit=1
     )
@@ -99,7 +99,7 @@ def check_existing_application(admission_cycle=None):
         return {
             "exists":  True,
             "name":    existing[0].name,
-            "status":  existing[0].application_status,
+            "status":  existing[0].status,
             "cycle":   existing[0].admission_cycle,
         }
     return {"exists": False, "name": ""}
@@ -420,12 +420,12 @@ def _get_stage_seq(stages, stage_name):
 def get_stage_tracker_data(applicant_name: str) -> dict:
     """
     Returns stage tracker data for the portal progress bar.
-    Directly matches Applicant.application_status with Admission Cycle Stage.application_status.
+    Directly matches Applicant.status with Admission Cycle Stage.status.
     Filters stages based on Applicant.intake_type.
     """
     applicant = frappe.db.get_value(
         "Applicant", applicant_name,
-        ["owner", "email", "admission_cycle", "intake_type", "application_status"],
+        ["owner", "email", "admission_cycle", "intake_type", "status"],
         as_dict=True
     )
     if not applicant:
@@ -437,7 +437,7 @@ def get_stage_tracker_data(applicant_name: str) -> dict:
         frappe.throw("Not permitted", frappe.PermissionError)
 
     if not applicant.admission_cycle:
-        return {"stages": [], "progress_pct": 0, "current_status": applicant.application_status}
+        return {"stages": [], "progress_pct": 0, "current_status": applicant.status}
 
     # Load all enabled stages for this cycle
     all_stages = frappe.get_all(
@@ -465,7 +465,7 @@ def get_stage_tracker_data(applicant_name: str) -> dict:
     ]
 
     if not filtered_stages:
-        return {"stages": [], "progress_pct": 0, "current_status": applicant.application_status}
+        return {"stages": [], "progress_pct": 0, "current_status": applicant.status}
 
     # Fetch Eligibility Evaluation for exemptions
     evaluation = frappe.db.get_value("Eligibility Evaluation", 
@@ -473,9 +473,9 @@ def get_stage_tracker_data(applicant_name: str) -> dict:
         ["exempts_entrance_test", "exempts_interview"], 
         as_dict=True) or {}
 
-    # Find the active stage by matching application_status
+    # Find the active stage by matching status
     # We look for the furthest stage that matches the current status.
-    current_status = applicant.application_status
+    current_status = applicant.status
     active_index = -1
     is_terminal_stop = False
     is_completed_stop = False
@@ -558,7 +558,7 @@ def get_stage_tracker_data(applicant_name: str) -> dict:
     return {
         "stages":         stages_out,
         "progress_pct":   progress_pct,
-        "current_status": applicant.application_status,
+        "current_status": applicant.status,
         "intake_type":    applicant.intake_type
     }
 
@@ -652,7 +652,7 @@ def get_offer_list(limit_start=0, limit_page_length=10):
 
     # Fetch offers
     fields = [
-        "name", "program", "issued_on", "offer_status", 
+        "name", "program", "issued_on", "status", 
         "payment_deadline", "payable_amount", "campus", "applicant",
         "academic_year", "admission_cycle"
     ]

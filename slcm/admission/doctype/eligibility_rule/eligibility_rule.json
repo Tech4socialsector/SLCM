@@ -9,8 +9,6 @@
   "eligibility_rule_details_section",
   "rule_name",
   "rule_code",
-  "academic_year",
-  "campus",
   "qualification_level",
   "rule_type",
   "hsc_group",
@@ -19,11 +17,8 @@
   "unit_type",
   "required_cgpa",
   "required_percentage",
-  "allowed_degrees",
-  "effective_from",
-  "effective_to",
-  "is_active",
-  "ineligible_message"
+  "sslc_percentage",
+  "allowed_degrees"
  ],
  "fields": [
   {
@@ -74,26 +69,6 @@
    "reqd": 1
   },
   {
-   "default": "0",
-   "fieldname": "is_active",
-   "fieldtype": "Check",
-   "in_list_view": 1,
-   "label": "Is Active",
-   "options": "Enable/Disable rule"
-  },
-  {
-   "fieldname": "effective_from",
-   "fieldtype": "Date",
-   "label": "Effective from",
-   "reqd": 1
-  },
-  {
-   "fieldname": "effective_to",
-   "fieldtype": "Date",
-   "label": "Effective to",
-   "reqd": 1
-  },
-  {
    "fieldname": "allowed_degrees",
    "fieldtype": "Table",
    "label": "Allowed degrees",
@@ -113,23 +88,14 @@
   {
    "fieldname": "required_percentage",
    "fieldtype": "Percent",
-   "label": "Required percentage"
+   "label": "Required percentage",
+   "precision": "2"
   },
   {
-   "fieldname": "campus",
-   "fieldtype": "Link",
-   "in_standard_filter": 1,
-   "label": "Campus",
-   "options": "Campus",
-   "reqd": 1
-  },
-  {
-   "fieldname": "academic_year",
-   "fieldtype": "Link",
-   "in_standard_filter": 1,
-   "label": "Academic year ",
-   "options": "Academic Year",
-   "reqd": 1
+   "depends_on": "eval:doc.qualification_level == 'XII'",
+   "fieldname": "sslc_percentage",
+   "fieldtype": "Percent",
+   "label": "SSLC Percentage"
   },
   {
    "fieldname": "hsc_group",
@@ -140,17 +106,12 @@
   {
    "fieldname": "column_break_kdop",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "ineligible_message",
-   "fieldtype": "Small Text",
-   "label": "Ineligible Message "
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-06-19 16:01:25.683490",
+ "modified": "2026-07-01 14:36:30.710144",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule",

@@ -203,8 +203,8 @@ def update_razorpay_refund_status(name):
 	if not razorpay:
 		frappe.throw(_("Razorpay library is not installed."))
 		
-	settings = frappe.get_single("Razorpay Settings")
-	client = razorpay.Client(auth=(settings.api_key, settings.get_password("api_secret")))
+	from slcm.api.service.razorpay_utils import get_razorpay_client
+	client = get_razorpay_client()
 	
 	try:
 		# Fetch status from Razorpay
@@ -246,6 +246,95 @@ def update_razorpay_refund_status(name):
 		return {"status": "Error", "message": str(e)}
 
 @frappe.whitelist()
+def reconcile_refund_status(name):
+	"""
+	Reconciles a refund request with Razorpay.
+	If razorpay_refund_id is already set, it checks its status.
+	If not set, it queries Razorpay for refunds on the associated payment_id
+	and tries to find one matching this refund request name in notes.
+	"""
+	refund = frappe.get_doc("Refund Request", name)
+	
+	if not razorpay:
+		frappe.throw(_("Razorpay library is not installed."))
+		
+	from slcm.api.service.razorpay_utils import get_razorpay_client
+	client = get_razorpay_client()
+	
+	# Case 1: razorpay_refund_id is already known, query its status directly
+	if refund.razorpay_refund_id:
+		return update_razorpay_refund_status(name)
+		
+	# Case 2: razorpay_refund_id is not set, search by payment_id
+	if not refund.razorpay_payment_id:
+		frappe.throw(_("Cannot reconcile: No Razorpay Payment ID or Refund ID found on this request."))
+		
+	try:
+		# Fetch all refunds for the payment
+		res = client.refund.all({"payment_id": refund.razorpay_payment_id})
+		items = res.get("items") or []
+		
+		matched_rzp_refund = None
+		for item in items:
+			# Check if notes contains the refund request name
+			notes = item.get("notes") or {}
+			if notes.get("refund_request") == refund.name:
+				matched_rzp_refund = item
+				break
+			
+		if matched_rzp_refund:
+			rzp_refund_id = matched_rzp_refund.get("id")
+			rzp_status = matched_rzp_refund.get("status")
+			
+			refund.db_set("razorpay_refund_id", rzp_refund_id)
+			
+			if rzp_status == "processed":
+				refund.db_set("status", "Processed")
+				if not refund.refund_date:
+					refund.db_set("refund_date", now_datetime())
+				refund.db_set("failure_message", "")
+				
+				# Create Refund Transaction if it doesn't exist
+				if not frappe.db.exists("Refund Transaction", {"refund_request": refund.name, "status": "Processed"}):
+					rt = frappe.new_doc("Refund Transaction")
+					rt.refund_request = refund.name
+					rt.payment_request = refund.payment_request
+					rt.razorpay_payment_id = refund.razorpay_payment_id
+					rt.razorpay_refund_id = rzp_refund_id
+					rt.refund_amount = refund.refund_amount
+					rt.status = "Processed"
+					rt.processed_at = now_datetime()
+					
+					if matched_rzp_refund.get("created_at"):
+						from frappe.utils import format_datetime, get_datetime
+						matched_rzp_refund["processed_date"] = format_datetime(get_datetime(matched_rzp_refund.get("created_at")))
+					rt.gateway_response = json.dumps(matched_rzp_refund, indent=4)
+					rt.insert(ignore_permissions=True)
+					
+				# Sync status
+				refund.sync_cancellation_status()
+				
+				return {"status": "Success", "message": _("Refund reconciled successfully as PROCESSED. Razorpay Refund ID: {0}").format(rzp_refund_id)}
+				
+			elif rzp_status == "failed":
+				error_code = matched_rzp_refund.get("error_code", "Unknown")
+				error_desc = matched_rzp_refund.get("error_description", "No description provided")
+				refund.db_set("status", "Failed")
+				refund.db_set("failure_message", f"Razorpay Failure: {error_code} - {error_desc}")
+				return {"status": "Error", "message": _("Refund was reconciled as FAILED at Razorpay: {0}").format(error_desc)}
+			else:
+				# Pending/other
+				refund.db_set("status", "Processing")
+				return {"status": "Info", "message": _("Refund was found on Razorpay with status: {0}").format(rzp_status.upper())}
+		else:
+			return {"status": "Info", "message": _("No matching refund attempt was found on Razorpay for this request.")}
+			
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), _("Razorpay Refund Reconciliation Error"))
+		return {"status": "Error", "message": str(e)}
+
+@frappe.whitelist()
+
 def submit_admission_cancellation(**kwargs):
 	"""
 	Portal-safe method to submit admission cancellation.
@@ -257,7 +346,7 @@ def submit_admission_cancellation(**kwargs):
 	# Clean up 'None' passed from template/JS
 	if offer in ("None", "", None):
 		offer = frappe.db.get_value("Offer Letter", 
-			{"applicant": applicant, "offer_status": ["not in", ["Rejected", "Withdrawn", "Expired"]]}, 
+			{"applicant": applicant, "status": ["not in", ["Rejected", "Withdrawn", "Expired"]]}, 
 			"name", order_by="creation desc")
 	
 	if not offer:

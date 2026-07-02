@@ -1,276 +1,460 @@
-{% extends "slcm/www/student-portal/_base.html" %}
-{% block title %}Placement Portal{% endblock %}
-
-{% block content %}
-
-{% if no_student %}
-<div class="sp-info-box fade-in" style="background:var(--sp-warning-bg);border-color:var(--sp-warning);">
-  <span class="sp-ms">warning</span>
-  <div><strong>No student record found.</strong> Please contact the Registrar's Office.</div>
+{% extends "slcm/www/student-portal/_base.html" %} {% block title %}Placement Portal{% endblock %}
+{% block content %} {% if no_student %}
+<div
+	class="sp-info-box fade-in"
+	style="background: var(--sp-warning-bg); border-color: var(--sp-warning)"
+>
+	<span class="sp-ms">warning</span>
+	<div><strong>No student record found.</strong> Please contact the Registrar's Office.</div>
 </div>
 
 {% else %}
 
 <div class="sp-page-header fade-in">
-  <h1 class="sp-page-title">Placement Portal</h1>
-  <p class="sp-page-sub">Explore opportunities, track applications, and manage your placement profile</p>
+	<h1 class="sp-page-title">Placement Portal</h1>
+	<p class="sp-page-sub">
+		Explore opportunities, track applications, and manage your placement profile
+	</p>
 </div>
 
 {% if portal_error %}
-<div class="sp-info-box fade-in" style="background:var(--sp-warning-bg);border-color:var(--sp-warning);margin-bottom:20px;">
-  <span class="sp-ms">warning</span><div>{{ portal_error }}</div>
+<div
+	class="sp-info-box fade-in"
+	style="background: var(--sp-warning-bg); border-color: var(--sp-warning); margin-bottom: 20px"
+>
+	<span class="sp-ms">warning</span>
+	<div>{{ portal_error }}</div>
 </div>
-{% endif %}
-
-{# ── Stats ────────────────────────────────────────────────────────── #}
-<div class="sp-stat-grid fade-in" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
-  <div class="sp-stat-card">
-    <div class="sp-stat-icon" style="background:#ede9fe;color:#7c3aed;">work</div>
-    <div>
-      <div class="sp-stat-label">Open Opportunities</div>
-      <div class="sp-stat-value" style="color:#7c3aed;">{{ open_count or 0 }}</div>
-    </div>
-  </div>
-  <div class="sp-stat-card">
-    <div class="sp-stat-icon" style="background:var(--sp-primary-light);color:var(--sp-primary);">send</div>
-    <div>
-      <div class="sp-stat-label">Applied</div>
-      <div class="sp-stat-value">{{ applications_count or 0 }}</div>
-    </div>
-  </div>
-  <div class="sp-stat-card">
-    <div class="sp-stat-icon" style="background:var(--sp-success-bg);color:var(--sp-success);">star</div>
-    <div>
-      <div class="sp-stat-label">Shortlisted</div>
-      <div class="sp-stat-value" style="color:var(--sp-success);">{{ shortlisted_count or 0 }}</div>
-    </div>
-  </div>
+{% endif %} {# ── Stats ────────────────────────────────────────────────────────── #}
+<div
+	class="sp-stat-grid fade-in"
+	style="grid-template-columns: repeat(3, 1fr); margin-bottom: 24px"
+>
+	<div class="sp-stat-card">
+		<div class="sp-stat-icon" style="background: #ede9fe; color: #7c3aed">work</div>
+		<div>
+			<div class="sp-stat-label">Open Opportunities</div>
+			<div class="sp-stat-value" style="color: #7c3aed">{{ open_count or 0 }}</div>
+		</div>
+	</div>
+	<div class="sp-stat-card">
+		<div
+			class="sp-stat-icon"
+			style="background: var(--sp-primary-light); color: var(--sp-primary)"
+		>
+			send
+		</div>
+		<div>
+			<div class="sp-stat-label">Applied</div>
+			<div class="sp-stat-value">{{ applications_count or 0 }}</div>
+		</div>
+	</div>
+	<div class="sp-stat-card">
+		<div
+			class="sp-stat-icon"
+			style="background: var(--sp-success-bg); color: var(--sp-success)"
+		>
+			star
+		</div>
+		<div>
+			<div class="sp-stat-label">Shortlisted</div>
+			<div class="sp-stat-value" style="color: var(--sp-success)">
+				{{ shortlisted_count or 0 }}
+			</div>
+		</div>
+	</div>
 </div>
 
-{# ── Placement Offer Banner ────────────────────────────────────────── #}
-{% if placement_offer %}
-<div class="sp-section-card fade-in" style="background:linear-gradient(135deg,#d1fae5,#a7f3d0);border:none;margin-bottom:24px;animation-delay:0.05s;">
-  <div class="sp-section-body" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-    <span style="font-family:'Material Symbols Outlined';font-size:40px;color:#059669;">celebration</span>
-    <div>
-      <div style="font-weight:700;font-size:16px;color:#065f46;">Placement Offer Received!</div>
-      <div style="color:#047857;font-size:13px;margin-top:2px;">
-        {{ placement_offer.offered_role or "Role" }}
-        {% if placement_offer.compensation %}
-         · {{ frappe.utils.fmt_money(placement_offer.compensation) }}
-        {% endif %}
-      </div>
-      <span class="sp-badge sp-badge-pass" style="margin-top:6px;">
-        {{ placement_offer.offer_status or "Offered" }}
-      </span>
-    </div>
-  </div>
+{# ── Placement Offer Banner ────────────────────────────────────────── #} {% if placement_offer %}
+<div
+	class="sp-section-card fade-in"
+	style="
+		background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+		border: none;
+		margin-bottom: 24px;
+		animation-delay: 0.05s;
+	"
+>
+	<div
+		class="sp-section-body"
+		style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap"
+	>
+		<span
+			style="
+				font-family: &quot;Material Symbols Outlined&quot;;
+				font-size: 40px;
+				color: #059669;
+			"
+			>celebration</span
+		>
+		<div>
+			<div style="font-weight: 700; font-size: 16px; color: #065f46">
+				Placement Offer Received!
+			</div>
+			<div style="color: #047857; font-size: 13px; margin-top: 2px">
+				{{ placement_offer.offered_role or "Role" }} {% if placement_offer.compensation %}
+				· {{ frappe.utils.fmt_money(placement_offer.compensation) }} {% endif %}
+			</div>
+			<span class="sp-badge sp-badge-pass" style="margin-top: 6px">
+				{{ placement_offer.offer_status or "Offered" }}
+			</span>
+		</div>
+	</div>
 </div>
-{% endif %}
-
-{# ── Placement Profile ─────────────────────────────────────────────── #}
-<div class="sp-section-card fade-in" style="animation-delay:0.08s;margin-bottom:24px;">
-  <div class="sp-section-header">
-    <span class="sp-ms">badge</span> My Placement Profile
-  </div>
-  <div class="sp-section-body">
-    {% if placement_profile %}
-    <div style="display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap;">
-      <div style="flex:1;min-width:180px;">
-        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--sp-text-2);margin-bottom:8px;">
-          <span style="font-family:'Material Symbols Outlined';font-size:16px;color:var(--sp-text-4);">school</span>
-          CGPA: <strong>{{ placement_profile.cgpa or "—" }}</strong>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--sp-text-2);margin-bottom:8px;">
-          <span style="font-family:'Material Symbols Outlined';font-size:16px;color:var(--sp-text-4);">work_history</span>
-          Internships: <strong>{{ placement_profile.internships|length if placement_profile.internships else 0 }}</strong>
-        </div>
-        {% if placement_profile.linkedin_url %}
-        <div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px;">
-          <span style="font-family:'Material Symbols Outlined';font-size:16px;color:var(--sp-text-4);">link</span>
-          <a href="{{ placement_profile.linkedin_url }}" target="_blank"
-             style="color:var(--sp-primary);text-decoration:none;font-weight:500;">LinkedIn Profile</a>
-        </div>
-        {% endif %}
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-start;gap:10px;">
-        <span class="sp-badge
-          {%- if placement_profile.profile_status == 'Verified' %} sp-badge-pass
-          {%- elif placement_profile.profile_status == 'Locked' %} sp-badge-fail
-          {%- else %} sp-badge-pend{%- endif %}" style="font-size:12px;padding:6px 14px;">
-          {{ placement_profile.profile_status }}
-        </span>
-        {% if placement_profile.resume %}
-        <a href="{{ placement_profile.resume }}" target="_blank"
-           class="sp-btn sp-btn-ghost" style="font-size:12px;text-decoration:none;">
-          <span class="sp-ms">download</span> My Resume
-        </a>
-        {% endif %}
-      </div>
-    </div>
-    {% else %}
-    <div style="padding:32px 0;text-align:center;color:var(--sp-text-4);">
-      <div style="font-family:'Material Symbols Outlined';font-size:40px;margin-bottom:8px;opacity:0.35;">person_off</div>
-      <div style="font-weight:600;color:var(--sp-text-2);">No placement profile found</div>
-      <div style="font-size:13px;margin-top:4px;">Contact the Placement Cell to set up your profile.</div>
-    </div>
-    {% endif %}
-  </div>
+{% endif %} {# ── Placement Profile ─────────────────────────────────────────────── #}
+<div class="sp-section-card fade-in" style="animation-delay: 0.08s; margin-bottom: 24px">
+	<div class="sp-section-header"><span class="sp-ms">badge</span> My Placement Profile</div>
+	<div class="sp-section-body">
+		{% if placement_profile %}
+		<div style="display: flex; align-items: flex-start; gap: 24px; flex-wrap: wrap">
+			<div style="flex: 1; min-width: 180px">
+				<div
+					style="
+						display: flex;
+						align-items: center;
+						gap: 8px;
+						font-size: 13px;
+						color: var(--sp-text-2);
+						margin-bottom: 8px;
+					"
+				>
+					<span
+						style="
+							font-family: &quot;Material Symbols Outlined&quot;;
+							font-size: 16px;
+							color: var(--sp-text-4);
+						"
+						>school</span
+					>
+					CGPA: <strong>{{ placement_profile.cgpa or "—" }}</strong>
+				</div>
+				<div
+					style="
+						display: flex;
+						align-items: center;
+						gap: 8px;
+						font-size: 13px;
+						color: var(--sp-text-2);
+						margin-bottom: 8px;
+					"
+				>
+					<span
+						style="
+							font-family: &quot;Material Symbols Outlined&quot;;
+							font-size: 16px;
+							color: var(--sp-text-4);
+						"
+						>work_history</span
+					>
+					Internships:
+					<strong
+						>{{ placement_profile.internships|length if placement_profile.internships
+						else 0 }}</strong
+					>
+				</div>
+				{% if placement_profile.linkedin_url %}
+				<div
+					style="
+						display: flex;
+						align-items: center;
+						gap: 8px;
+						font-size: 13px;
+						margin-bottom: 8px;
+					"
+				>
+					<span
+						style="
+							font-family: &quot;Material Symbols Outlined&quot;;
+							font-size: 16px;
+							color: var(--sp-text-4);
+						"
+						>link</span
+					>
+					<a
+						href="{{ placement_profile.linkedin_url }}"
+						target="_blank"
+						style="color: var(--sp-primary); text-decoration: none; font-weight: 500"
+						>LinkedIn Profile</a
+					>
+				</div>
+				{% endif %}
+			</div>
+			<div style="display: flex; flex-direction: column; align-items: flex-start; gap: 10px">
+				<span
+					class="sp-badge {%- if placement_profile.profile_status == 'Verified' %} sp-badge-pass {%- elif placement_profile.profile_status == 'Locked' %} sp-badge-fail {%- else %} sp-badge-pend{%- endif %}"
+					style="font-size: 12px; padding: 6px 14px"
+				>
+					{{ placement_profile.profile_status }}
+				</span>
+				{% if placement_profile.resume %}
+				<a
+					href="{{ placement_profile.resume }}"
+					target="_blank"
+					class="sp-btn sp-btn-ghost"
+					style="font-size: 12px; text-decoration: none"
+				>
+					<span class="sp-ms">download</span> My Resume
+				</a>
+				{% endif %}
+			</div>
+		</div>
+		{% else %}
+		<div style="padding: 32px 0; text-align: center; color: var(--sp-text-4)">
+			<div
+				style="
+					font-family: &quot;Material Symbols Outlined&quot;;
+					font-size: 40px;
+					margin-bottom: 8px;
+					opacity: 0.35;
+				"
+			>
+				person_off
+			</div>
+			<div style="font-weight: 600; color: var(--sp-text-2)">No placement profile found</div>
+			<div style="font-size: 13px; margin-top: 4px">
+				Contact the Placement Cell to set up your profile.
+			</div>
+		</div>
+		{% endif %}
+	</div>
 </div>
 
 {# ── Open Opportunities ───────────────────────────────────────────── #}
-<div class="sp-section-card fade-in" style="animation-delay:0.12s;margin-bottom:24px;">
-  <div class="sp-section-header" style="display:flex;align-items:center;justify-content:space-between;">
-    <span><span class="sp-ms">business_center</span> Open Opportunities</span>
-    <span class="sp-badge sp-badge-pass">{{ open_count or 0 }}</span>
-  </div>
+<div class="sp-section-card fade-in" style="animation-delay: 0.12s; margin-bottom: 24px">
+	<div
+		class="sp-section-header"
+		style="display: flex; align-items: center; justify-content: space-between"
+	>
+		<span><span class="sp-ms">business_center</span> Open Opportunities</span>
+		<span class="sp-badge sp-badge-pass">{{ open_count or 0 }}</span>
+	</div>
 
-  {% if not opportunities %}
-  <div style="padding:48px 20px;text-align:center;color:var(--sp-text-4);">
-    <div style="font-family:'Material Symbols Outlined';font-size:48px;margin-bottom:8px;opacity:0.35;">work_off</div>
-    <div style="font-weight:600;color:var(--sp-text-2);">No open opportunities</div>
-    <div style="font-size:13px;margin-top:4px;">Check back later for new placements and internships.</div>
-  </div>
-  {% else %}
-  <div>
-    {% for opp in opportunities %}
-    <div style="padding:16px 20px;
+	{% if not opportunities %}
+	<div style="padding: 48px 20px; text-align: center; color: var(--sp-text-4)">
+		<div
+			style="
+				font-family: &quot;Material Symbols Outlined&quot;;
+				font-size: 48px;
+				margin-bottom: 8px;
+				opacity: 0.35;
+			"
+		>
+			work_off
+		</div>
+		<div style="font-weight: 600; color: var(--sp-text-2)">No open opportunities</div>
+		<div style="font-size: 13px; margin-top: 4px">
+			Check back later for new placements and internships.
+		</div>
+	</div>
+	{% else %}
+	<div>
+		{% for opp in opportunities %}
+		<div
+			style="padding:16px 20px;
                 {% if not loop.last %}border-bottom:1px solid var(--sp-border);{% endif %}
                 display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;
-                {% if opp.is_closed %}opacity:0.55;{% endif %}">
+                {% if opp.is_closed %}opacity:0.55;{% endif %}"
+		>
+			<div style="flex: 1; min-width: 0">
+				<div
+					style="
+						display: flex;
+						align-items: center;
+						gap: 6px;
+						flex-wrap: wrap;
+						margin-bottom: 6px;
+					"
+				>
+					<span
+						class="sp-badge {% if opp.opportunity_type == 'Internship' %}sp-badge-pend{% else %}sp-badge-pass{% endif %}"
+					>
+						{{ opp.opportunity_type }}
+					</span>
+					{% if opp.is_closed %}
+					<span class="sp-badge sp-badge-fail">Deadline Passed</span>
+					{% elif opp.already_applied %}
+					<span class="sp-badge sp-badge-na">Applied</span>
+					{% endif %}
+				</div>
 
-      <div style="flex:1;min-width:0;">
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
-          <span class="sp-badge {% if opp.opportunity_type == 'Internship' %}sp-badge-pend{% else %}sp-badge-pass{% endif %}">
-            {{ opp.opportunity_type }}
-          </span>
-          {% if opp.is_closed %}
-          <span class="sp-badge sp-badge-fail">Deadline Passed</span>
-          {% elif opp.already_applied %}
-          <span class="sp-badge sp-badge-na">Applied</span>
-          {% endif %}
-        </div>
+				<div style="font-weight: 600; font-size: 14px; color: var(--sp-text-1)">
+					{{ opp.company_name }}
+				</div>
 
-        <div style="font-weight:600;font-size:14px;color:var(--sp-text-1);">{{ opp.company_name }}</div>
+				<div
+					style="
+						font-size: 12px;
+						color: var(--sp-text-3);
+						margin-top: 4px;
+						display: flex;
+						flex-wrap: wrap;
+						gap: 10px;
+					"
+				>
+					{% if opp.location %}
+					<span>
+						<span
+							style="
+								font-family: &quot;Material Symbols Outlined&quot;;
+								font-size: 12px;
+								vertical-align: -2px;
+							"
+							>location_on</span
+						>
+						{{ opp.location }}
+					</span>
+					{% endif %} {% if opp.compensation %}
+					<span>
+						<span
+							style="
+								font-family: &quot;Material Symbols Outlined&quot;;
+								font-size: 12px;
+								vertical-align: -2px;
+							"
+							>currency_rupee</span
+						>
+						{{ frappe.utils.fmt_money(opp.compensation) }}
+					</span>
+					{% endif %}
+					<span>
+						<span
+							style="
+								font-family: &quot;Material Symbols Outlined&quot;;
+								font-size: 12px;
+								vertical-align: -2px;
+							"
+							>schedule</span
+						>
+						Deadline: {{ frappe.utils.formatdate(opp.application_end, "dd MMM yyyy") if
+						opp.application_end else "—" }}
+					</span>
+				</div>
 
-        <div style="font-size:12px;color:var(--sp-text-3);margin-top:4px;display:flex;flex-wrap:wrap;gap:10px;">
-          {% if opp.location %}
-          <span>
-            <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">location_on</span>
-            {{ opp.location }}
-          </span>
-          {% endif %}
-          {% if opp.compensation %}
-          <span>
-            <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">currency_rupee</span>
-            {{ frappe.utils.fmt_money(opp.compensation) }}
-          </span>
-          {% endif %}
-          <span>
-            <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">schedule</span>
-            Deadline: {{ frappe.utils.formatdate(opp.application_end, "dd MMM yyyy") if opp.application_end else "—" }}
-          </span>
-        </div>
+				{% if opp.eligibility_criteria %}
+				<div style="font-size: 11px; color: var(--sp-text-4); margin-top: 6px">
+					{{ opp.eligibility_criteria[:150] }}{% if opp.eligibility_criteria|length > 150
+					%}…{% endif %}
+				</div>
+				{% endif %}
+			</div>
 
-        {% if opp.eligibility_criteria %}
-        <div style="font-size:11px;color:var(--sp-text-4);margin-top:6px;">
-          {{ opp.eligibility_criteria[:150] }}{% if opp.eligibility_criteria|length > 150 %}…{% endif %}
-        </div>
-        {% endif %}
-      </div>
-
-      <div style="flex-shrink:0;padding-top:2px;">
-        {% if opp.already_applied %}
-        <button class="sp-btn sp-btn-ghost" disabled style="opacity:0.6;cursor:default;">
-          <span class="sp-ms">check</span> Applied
-        </button>
-        {% elif opp.is_closed %}
-        <button class="sp-btn sp-btn-ghost" disabled style="opacity:0.5;cursor:default;">Closed</button>
-        {% else %}
-        <button class="sp-btn sp-btn-primary" onclick="applyForOpp('{{ opp.name }}', this)">
-          <span class="sp-ms">send</span> Apply
-        </button>
-        {% endif %}
-      </div>
-
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
+			<div style="flex-shrink: 0; padding-top: 2px">
+				{% if opp.already_applied %}
+				<button class="sp-btn sp-btn-ghost" disabled style="opacity: 0.6; cursor: default">
+					<span class="sp-ms">check</span> Applied
+				</button>
+				{% elif opp.is_closed %}
+				<button class="sp-btn sp-btn-ghost" disabled style="opacity: 0.5; cursor: default">
+					Closed
+				</button>
+				{% else %}
+				<button
+					class="sp-btn sp-btn-primary"
+					onclick="applyForOpp('{{ opp.name }}', this)"
+				>
+					<span class="sp-ms">send</span> Apply
+				</button>
+				{% endif %}
+			</div>
+		</div>
+		{% endfor %}
+	</div>
+	{% endif %}
 </div>
 
 {# ── My Applications ──────────────────────────────────────────────── #}
-<div class="sp-section-card fade-in" style="animation-delay:0.16s;">
-  <div class="sp-section-header" style="display:flex;align-items:center;justify-content:space-between;">
-    <span><span class="sp-ms">assignment</span> My Applications</span>
-    <span class="sp-badge sp-badge-pend">{{ applications_count or 0 }}</span>
-  </div>
+<div class="sp-section-card fade-in" style="animation-delay: 0.16s">
+	<div
+		class="sp-section-header"
+		style="display: flex; align-items: center; justify-content: space-between"
+	>
+		<span><span class="sp-ms">assignment</span> My Applications</span>
+		<span class="sp-badge sp-badge-pend">{{ applications_count or 0 }}</span>
+	</div>
 
-  {% if not my_applications %}
-  <div style="padding:48px 20px;text-align:center;color:var(--sp-text-4);">
-    <div style="font-family:'Material Symbols Outlined';font-size:48px;margin-bottom:8px;opacity:0.35;">inbox</div>
-    <div style="font-weight:600;color:var(--sp-text-2);">No applications yet</div>
-    <div style="font-size:13px;margin-top:4px;">Apply to open opportunities above.</div>
-  </div>
-  {% else %}
-  <div>
-    {% for app in my_applications %}
-    <div style="padding:16px 20px;{% if not loop.last %}border-bottom:1px solid var(--sp-border);{% endif %}">
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
-        <span class="sp-badge
-          {%- if app.application_status == 'Shortlisted' %} sp-badge-pass
-          {%- elif app.application_status == 'Rejected' %} sp-badge-fail
-          {%- else %} sp-badge-pend{%- endif %}">
-          {{ app.application_status }}
-        </span>
-        {% if app.opportunity_type %}
-        <span class="sp-badge sp-badge-na">{{ app.opportunity_type }}</span>
-        {% endif %}
-      </div>
-      <div style="font-weight:600;font-size:14px;color:var(--sp-text-1);">{{ app.company_name }}</div>
-      <div style="font-size:11px;color:var(--sp-text-4);margin-top:4px;">
-        Applied: {{ frappe.utils.formatdate(app.applied_on, "dd MMM yyyy") if app.applied_on else "—" }}
-        {% if app.remarks %}
-        &nbsp;·&nbsp; {{ app.remarks[:80] }}{% if app.remarks|length > 80 %}…{% endif %}
-        {% endif %}
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
+	{% if not my_applications %}
+	<div style="padding: 48px 20px; text-align: center; color: var(--sp-text-4)">
+		<div
+			style="
+				font-family: &quot;Material Symbols Outlined&quot;;
+				font-size: 48px;
+				margin-bottom: 8px;
+				opacity: 0.35;
+			"
+		>
+			inbox
+		</div>
+		<div style="font-weight: 600; color: var(--sp-text-2)">No applications yet</div>
+		<div style="font-size: 13px; margin-top: 4px">Apply to open opportunities above.</div>
+	</div>
+	{% else %}
+	<div>
+		{% for app in my_applications %}
+		<div
+			style="padding:16px 20px;{% if not loop.last %}border-bottom:1px solid var(--sp-border);{% endif %}"
+		>
+			<div
+				style="
+					display: flex;
+					align-items: center;
+					gap: 6px;
+					flex-wrap: wrap;
+					margin-bottom: 6px;
+				"
+			>
+				<span
+					class="sp-badge {%- if app.status == 'Shortlisted' %} sp-badge-pass {%- elif app.status == 'Rejected' %} sp-badge-fail {%- else %} sp-badge-pend{%- endif %}"
+				>
+					{{ app.status }}
+				</span>
+				{% if app.opportunity_type %}
+				<span class="sp-badge sp-badge-na">{{ app.opportunity_type }}</span>
+				{% endif %}
+			</div>
+			<div style="font-weight: 600; font-size: 14px; color: var(--sp-text-1)">
+				{{ app.company_name }}
+			</div>
+			<div style="font-size: 11px; color: var(--sp-text-4); margin-top: 4px">
+				Applied: {{ frappe.utils.formatdate(app.applied_on, "dd MMM yyyy") if
+				app.applied_on else "—" }} {% if app.remarks %} &nbsp;·&nbsp; {{ app.remarks[:80]
+				}}{% if app.remarks|length > 80 %}…{% endif %} {% endif %}
+			</div>
+		</div>
+		{% endfor %}
+	</div>
+	{% endif %}
 </div>
 
-{% endif %}
-{% endblock %}
-
-{% block extra_js %}
+{% endif %} {% endblock %} {% block extra_js %}
 <script>
-function applyForOpp(oppName, btn) {
-  if (!confirm('Apply for this opportunity?')) return;
-  btn.disabled = true;
-  btn.innerHTML = '<span class="sp-ms">hourglass_empty</span> Applying…';
+	function applyForOpp(oppName, btn) {
+		if (!confirm("Apply for this opportunity?")) return;
+		btn.disabled = true;
+		btn.innerHTML = '<span class="sp-ms">hourglass_empty</span> Applying…';
 
-  spCall(
-    'slcm.www.student-portal.placement.apply_for_opportunity',
-    { opportunity: oppName },
-    function(msg) {
-      if (msg && msg.name) {
-        btn.innerHTML = '<span class="sp-ms">check</span> Applied';
-        btn.className = 'sp-btn sp-btn-ghost';
-        btn.disabled = true;
-        btn.style.opacity = '0.6';
-        setTimeout(function() { location.reload(); }, 1500);
-      } else {
-        btn.disabled = false;
-        btn.innerHTML = '<span class="sp-ms">send</span> Apply';
-      }
-    },
-    function(err) {
-      btn.disabled = false;
-      btn.innerHTML = '<span class="sp-ms">send</span> Apply';
-      alert(err);
-    }
-  );
-}
+		spCall(
+			"slcm.www.student-portal.placement.apply_for_opportunity",
+			{ opportunity: oppName },
+			function (msg) {
+				if (msg && msg.name) {
+					btn.innerHTML = '<span class="sp-ms">check</span> Applied';
+					btn.className = "sp-btn sp-btn-ghost";
+					btn.disabled = true;
+					btn.style.opacity = "0.6";
+					setTimeout(function () {
+						location.reload();
+					}, 1500);
+				} else {
+					btn.disabled = false;
+					btn.innerHTML = '<span class="sp-ms">send</span> Apply';
+				}
+			},
+			function (err) {
+				btn.disabled = false;
+				btn.innerHTML = '<span class="sp-ms">send</span> Apply';
+				alert(err);
+			},
+		);
+	}
 </script>
 {% endblock %}

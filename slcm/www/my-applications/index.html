@@ -347,9 +347,6 @@
   }
 
   .app-id-chip {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--text-2);
     background: #f1f5f9;
     padding: 6px 14px;
     border-radius: 9px;
@@ -2971,7 +2968,7 @@ DETAIL VIEW
 _app.applicant_name)) or '' %}
 {% set _prog = (_app.get('program') or _app.get('program_name') or _app.get('programme') if _app.get else (_app.program or _app.program_name or _app.programme)) or 'Programme' %}
 {% set _cycle = (_app.get('admission_cycle') if _app.get else _app.admission_cycle) or '' %}
-{% set _status = (_app.get('application_status') if _app.get else _app.application_status) or 'Draft' %}
+{% set _status = (_app.get('status') if _app.get else _app.status) or 'Draft' %}
 {% set _stage = (_app.get('current_stage_name') or _app.get('current_stage') if _app.get else (_app.current_stage_name
 or _app.current_stage)) or _status %}
 {% set _email = (_app.get('email') if _app.get else _app.email) or '' %}
@@ -3017,14 +3014,14 @@ or _app.current_stage)) or _status %}
           <div class="app-header-left">
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px; flex-wrap:wrap;">
               <h1 class="app-program-name" style="margin:0; font-size:24px;">{{ _prog }}</h1>
-              <span class="app-id-chip" style="margin:0; background:#f8fafc; color:#64748b; border-color:#e2e8f0; font-size:11px; text-transform:none; font-weight:600;">Application number: {{ _appid }}</span>
+              <span class="app-id-chip" style="margin:0; background:#f8fafc; border-color:#e2e8f0; text-transform:none; color: var(--primary);">Application Number: {{ _appid }}</span>
             </div>
             <div class="app-id-row" style="margin-top:0; gap:16px;">
-              <span class="app-submitted-date">Submitted on: {{ _subdate }}</span>
+              <span class="app-submitted-date">Submitted On: {{ _subdate }}</span>
               {% if _cycle %}
               <span class="app-submitted-date" style="display:flex; align-items:center; gap:16px;">
                 <span style="color:var(--border);">|</span>
-                Admission cycle: {{ _cycle }}
+                Admission Cycle: {{ _cycle }}
               </span>
               {% endif %}
             </div>
@@ -3049,11 +3046,19 @@ or _app.current_stage)) or _status %}
               </button>
               {% endif %}
 
+              {% if selected_app.status == 'Submitted' and selected_app.application_fee_status != 'Paid' and selected_app.application_fee_status != 'Waived' %}
               <a href="{{ applicant_portal_open_url or '#' }}" class="btn-edit-application"
-                title="{{ 'View' if not is_editable else 'Open and edit' }} this application">
-                <span class="material-symbols-outlined">{{ 'visibility' if not is_editable else 'edit' }}</span>
-                {{ 'View' if not is_editable else 'Edit' }}
+                title="Pay Application Fee" style="background: var(--primary);">
+                <span class="material-symbols-outlined">payments</span>
+                Pay Application Fee
               </a>
+              {% else %}
+              <a href="{{ applicant_portal_open_url or '#' }}" class="btn-edit-application"
+                title="{{ 'View Application' if not is_editable else 'Edit Application' }}">
+                <span class="material-symbols-outlined">{{ 'visibility' if not is_editable else 'edit' }}</span>
+                {{ 'View Application' if not is_editable else 'Edit Application' }}
+              </a>
+              {% endif %}
               
               {% if app_name_param %}
               <a href="/api/method/slcm.admission.utils.web.download_application?applicant_name={{ app_name_param }}"
@@ -3229,25 +3234,25 @@ or _app.current_stage)) or _status %}
             Offer Letter
           </span>
           <span class="qs-value qs-value--offer-actions">
-              {% set _display_status = offer_status %}
-              {% if offer_status == 'Issued' %}{% set _display_status = 'Offer Issued' %}
-              {% elif offer_status == 'Accepted' %}{% set _display_status = 'Offer Accepted' %}
-              {% elif offer_status == 'Payment Completed' %}{% set _display_status = 'Offer Accepted' %}
-              {% elif offer_status == 'Expired' %}{% set _display_status = 'Offer Expired' %}
-              {% elif offer_status == 'Rejected' %}{% set _display_status = 'Offer Declined' %}
-              {% elif offer_status == 'Withdrawn' %}{% set _display_status = 'Offer Withdrawn' %}
+              {% set _display_status = status %}
+              {% if status == 'Issued' %}{% set _display_status = 'Offer Issued' %}
+              {% elif status == 'Accepted' %}{% set _display_status = 'Offer Accepted' %}
+              {% elif status == 'Payment Completed' %}{% set _display_status = 'Offer Accepted' %}
+              {% elif status == 'Expired' %}{% set _display_status = 'Offer Expired' %}
+              {% elif status == 'Rejected' %}{% set _display_status = 'Offer Declined' %}
+              {% elif status == 'Withdrawn' %}{% set _display_status = 'Offer Withdrawn' %}
               {% endif %}
 
-              {% set _obg, _oclr, _orgb = ('#e0f2fe', '#0369a1', '3, 105, 161') if offer_status == 'Issued' 
-                             else (('#d1fae5', '#065f46', '6, 95, 70') if offer_status in ['Accepted', 'Payment Completed'] 
-                             else (('#fef3c7', '#92400e', '146, 64, 14') if offer_status == 'Expired' 
+              {% set _obg, _oclr, _orgb = ('#e0f2fe', '#0369a1', '3, 105, 161') if status == 'Issued' 
+                             else (('#d1fae5', '#065f46', '6, 95, 70') if status in ['Accepted', 'Payment Completed'] 
+                             else (('#fef3c7', '#92400e', '146, 64, 14') if status == 'Expired' 
                              else ('#fee2e2', '#991b1b', '153, 27, 27'))) %}
               
               <a href="/offer_letter/offer-letter-detail?offer={{ offer_name }}" class="btn-qs-offer"
                  style="background: {{ _obg }}; color: {{ _oclr }}; border-color: {{ _oclr }}40; --qs-pulse-rgb: {{ _orgb }};">
                 {{ _display_status }}
               </a>
-              {% if offer_status == 'Accepted' %}
+              {% if status == 'Accepted' %}
               <a class="btn-pay-now" href="/offer_letter/offer-letter-detail?offer={{ offer_name }}">
                 Pay now
               </a>
@@ -3897,7 +3902,7 @@ or _app.current_stage)) or _status %}
           {% set _is_done = doc.is_uploaded %}
           <div class="doc-row"
             {% if _status == 'Draft' %}
-            onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}', '{{ _appid }}')"
+            onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}', '{{ _appid }}', '{{ doc.accept or '' }}', '{{ doc.max_size_mb or 5 }}')"
             style="cursor:pointer;"
             {% else %}
             style="cursor:default;"
@@ -4154,7 +4159,7 @@ LIST / DASHBOARD VIEW
             {% set _is_done = doc.is_uploaded %}
             <div class="doc-row"
               {% if prof_app_status == 'Draft' %}
-              onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}', '{{ prof_app_name }}')"
+              onclick="openUploadModal('{{ doc.document_name }}', '{{ doc.document_type }}', '{{ doc.field or '' }}', '{{ doc.doc_name or '' }}', '{{ doc.source }}', '{{ prof_app_name }}', '{{ doc.accept or '' }}', '{{ doc.max_size_mb or 5 }}')"
               style="cursor:pointer;"
               {% else %}
               style="cursor:default;"
@@ -4482,14 +4487,24 @@ LIST / DASHBOARD VIEW
     };
 
     let currentUploadTarget = {
-      label: '', type: '', field: '', docName: '', source: '', file: null
+      label: '', type: '', field: '', docName: '', source: '', applicantId: '', accept: '', maxSizeMB: 5, file: null
     };
 
-    window.openUploadModal = function (label, type, field, docName, source, applicantId) {
-      currentUploadTarget = { label, type, field, docName, source, applicantId, file: null };
+    window.openUploadModal = function (label, type, field, docName, source, applicantId, accept, maxSizeMB) {
+      currentUploadTarget = { label, type, field, docName, source, applicantId, accept: accept || '.pdf,.jpg,.jpeg,.png,.doc,.docx', maxSizeMB: parseInt(maxSizeMB) || 5, file: null };
       document.getElementById('modal-doc-label').textContent = 'Upload ' + label;
       document.getElementById('modal-doc-type-hint').textContent = 'Requirement: ' + type;
-      document.getElementById('modal-file-input').value = '';
+      
+      const fileInput = document.getElementById('modal-file-input');
+      fileInput.value = '';
+      fileInput.accept = currentUploadTarget.accept;
+      
+      const hintElem = fileInput.nextElementSibling;
+      if (hintElem) {
+        const exts = currentUploadTarget.accept.replace(/\./g, '').toUpperCase().split(',').join(', ');
+        hintElem.textContent = 'Accepted: ' + exts + ' (Max ' + currentUploadTarget.maxSizeMB + 'MB)';
+      }
+      
       document.getElementById('doc-upload-btn').disabled = true;
       document.getElementById('doc-upload-msg').textContent = '';
       document.getElementById('upload-progress-wrap').style.display = 'none';
@@ -4503,8 +4518,19 @@ LIST / DASHBOARD VIEW
     };
 
     window.handleModalFileSelect = function (input) {
+      const msg = document.getElementById('doc-upload-msg');
+      msg.textContent = '';
       if (input.files && input.files[0]) {
-        currentUploadTarget.file = input.files[0];
+        const file = input.files[0];
+        const maxSize = currentUploadTarget.maxSizeMB * 1024 * 1024;
+        if (file.size > maxSize) {
+          msg.style.color = 'var(--danger)';
+          msg.textContent = 'Error: File size must be less than ' + currentUploadTarget.maxSizeMB + 'MB.';
+          currentUploadTarget.file = null;
+          document.getElementById('doc-upload-btn').disabled = true;
+          return;
+        }
+        currentUploadTarget.file = file;
         document.getElementById('doc-upload-btn').disabled = false;
       } else {
         currentUploadTarget.file = null;
@@ -4551,6 +4577,10 @@ LIST / DASHBOARD VIEW
           };
           if (currentUploadTarget.applicantId) {
             updateData.applicant = currentUploadTarget.applicantId;
+          }
+          if (currentUploadTarget.source && currentUploadTarget.source !== 'Applicant' && currentUploadTarget.source !== 'field') {
+            updateData.doctype = currentUploadTarget.source;
+            updateData.docname = currentUploadTarget.docName;
           }
           await apiFetch('slcm.admission.api.profile.update_profile', updateData);
         } else {

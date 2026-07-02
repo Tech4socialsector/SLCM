@@ -51,7 +51,7 @@ def run_fee_tests():
             "last_name": "Applicant",
             "candidate_name": "Test Applicant Fee Logic",
             "admission_cycle": cycle_name,
-            "application_status": "Selected",
+            "status": "Selected",
             "campus": campus_name,
             "program": program_name
         })
@@ -60,7 +60,7 @@ def run_fee_tests():
     else:
         # Force update status to Selected and ensure program is set
         frappe.db.set_value("Applicant", applicant_id, {
-            "application_status": "Selected",
+            "status": "Selected",
             "program": program_name
         })
         frappe.db.commit()
@@ -77,13 +77,13 @@ def run_fee_tests():
             "academic_year": academic_year_name,
             "campus": campus_name,
             "offer_date": today(),
-            "offer_status": "Issued"
+            "status": "Issued"
         })
         ol.insert(ignore_permissions=True, ignore_links=True)
         offer_letter_name = ol.name
     else:
         # Ensure status is Issued for testing
-        frappe.db.set_value("Offer Letter", offer_letter_name, "offer_status", "Issued")
+        frappe.db.set_value("Offer Letter", offer_letter_name, "status", "Issued")
         frappe.db.commit()
 
     # Ensure Scholarship Scheme

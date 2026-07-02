@@ -24,7 +24,7 @@ class AdmissionCancellation(Document):
 			
 			# Fetch the latest active Offer Letter for this applicant
 			offer_name = frappe.db.get_value("Offer Letter", 
-				{"applicant": self.applicant, "offer_status": ["not in", ["Rejected", "Withdrawn"]]},
+				{"applicant": self.applicant, "status": ["not in", ["Rejected", "Withdrawn"]]},
 				"name", order_by="creation desc"
 			)
 			if offer_name:

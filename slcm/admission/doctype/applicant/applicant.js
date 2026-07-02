@@ -27,27 +27,40 @@ function slcm_applicant_setup_country_state_city_queries(frm) {
 
 frappe.ui.form.on("Applicant", {
 
+    if_cgpa_maximum_cgpa_class_xii: function(frm) {
+        if (frm.doc.if_cgpa_maximum_cgpa_class_xii && frm.doc.if_cgpa_maximum_cgpa_class_xii > 10) {
+            frappe.msgprint({
+                title: __('Invalid CGPA'),
+                message: __('Class XII CGPA cannot be greater than 10.'),
+                indicator: 'red'
+            });
+            frm.set_value('if_cgpa_maximum_cgpa_class_xii', '');
+        }
+    },
+
+
     // ── REFRESH ──────────────────────────────
     refresh: function (frm) {
-        // Auto-refresh when application_status is updated from Entrance Test Seat Allocation
+        // Auto-refresh when status is updated from Entrance Test Seat Allocation
         if (!window._applicant_status_realtime_subscribed) {
             window._applicant_status_realtime_subscribed = true;
-            frappe.realtime.on("applicant_application_status_updated", function (data) {
+            frappe.realtime.on("applicant_status_updated", function (data) {
                 const frm = cur_frm;
                 if (frm && frm.doctype === "Applicant" && frm.doc && frm.doc.name === data.docname) {
                     frm.reload_doc();
                     frappe.show_alert({
-                        message: __("Application status was updated to {0}", [data.application_status || ""]),
+                        message: __("Application status was updated to {0}", [data.status || ""]),
                         indicator: "blue",
                     }, 4);
                 }
             });
         }
          // Override after attach widget renders
-         frm.fields_dict['student_photo'].df.options = 'My Device'; // won't work alone
-        
-         // Hook into the upload dialog
-         frm.fields_dict['student_photo'].$input?.on('click', function() {
+         if (frm.fields_dict['candidate_photo']) {
+             frm.fields_dict['candidate_photo'].df.options = 'My Device'; // won't work alone
+            
+             // Hook into the upload dialog
+             frm.fields_dict['candidate_photo'].$input?.on('click', function() {
              setTimeout(() => {
                  // Remove Link option
                  $('.upload-area .from-link').hide();
@@ -55,6 +68,7 @@ frappe.ui.form.on("Applicant", {
                  $('.upload-area .from-camera').hide();
              }, 100);
          });
+         }
         // Status badge in dashboard headline
         const status_colors = {
             "Draft": "gray",
@@ -75,10 +89,10 @@ frappe.ui.form.on("Applicant", {
             "Rejected": "red",
             "Waitlisted": "yellow"
         };
-        const color = status_colors[frm.doc.application_status] || "gray";
+        const color = status_colors[frm.doc.status] || "gray";
         frm.dashboard.set_headline(
             `<span style="color:${color}; font-weight:bold;">
-                Status: ${frm.doc.application_status}
+                Status: ${frm.doc.status}
             </span>`
         );
 
@@ -97,7 +111,7 @@ frappe.ui.form.on("Applicant", {
         );
 
         // Custom buttons for submitted docs
-        // if (frm.doc.application_status && frm.doc.application_status !== "Draft") {
+        // if (frm.doc.status && frm.doc.status !== "Draft") {
         //     frm.add_custom_button(__("View Campus Status"), function () {
         //         frappe.set_route("List", "Applicant Campus Preference", {
         //             applicant: frm.doc.name
@@ -112,7 +126,7 @@ frappe.ui.form.on("Applicant", {
 
         // Record Application Fee Payment (offline)
         const feeStatus = (frm.doc.application_fee_status || "").trim();
-        if (!frm.doc.__islocal && frm.doc.application_status === "Draft" &&
+        if (!frm.doc.__islocal && frm.doc.status === "Draft" &&
             (feeStatus === "Pending" || feeStatus === "Requested") &&
             frm.doc.program && frm.doc.admission_cycle) {
             frm.add_custom_button(__("Record Application Fee Payment"), function () {
@@ -173,6 +187,13 @@ frappe.ui.form.on("Applicant", {
                 );
             }, __("Portal"));
         }
+
+        if (!frm.doc.__islocal) {
+            frm.add_custom_button(__("View as Candidate"), function() {
+                window.open(`/my-applications?app=${encodeURIComponent(frm.doc.name)}`, '_blank');
+            });
+        }
+
         // Guardian fields required only when flag is set
         frm.toggle_reqd("guardian_name", frm.doc.guardian_required);
         frm.toggle_reqd("guardian_mobile", frm.doc.guardian_required);
@@ -184,7 +205,7 @@ frappe.ui.form.on("Applicant", {
         // Calls the unified API (slcm.api.service.applicant_to_student.convert_applicant_to_student).
         // For the full AFA flow (Fee Invoice + Enrollment), use the "Convert to Student" button
         // on the Applicant Fee Assignment form instead.
-        if (!frm.doc.__islocal && frm.doc.application_status === 'Fee Paid') {
+        if (!frm.doc.__islocal && frm.doc.status === 'Fee Paid') {
             frm.add_custom_button(__('Convert to Student'), function () {
                 // Resolve AFA for program and admission_cycle
                 frappe.db.get_list('Applicant Fee Assignment', {
@@ -261,7 +282,7 @@ frappe.ui.form.on("Applicant", {
 
     // ── VALIDATE (runs before every save / submit) ──
     validate: function (frm) {
-        if (frm.doc.application_status === "Draft") {
+        if (frm.doc.status === "Draft") {
             frm.ignore_mandatory = true;
         } else {
             frm.ignore_mandatory = false;
@@ -308,7 +329,7 @@ frappe.ui.form.on("Applicant", {
         }
 
         // Declaration must be accepted when submitting
-        if (frm.doc.application_status === "Submitted" && !frm.doc.declaration_undertaking) {
+        if (frm.doc.status === "Submitted" && !frm.doc.declaration_undertaking) {
             errors.push(__("You must accept the Declaration & Undertaking before submitting."));
         }
 

@@ -1,3 +1,46 @@
+
+// Patch FormData to prevent Frappe core from overwriting/deleting files with the identical name
+// Renames every uploaded File with a 12-char cryptographic hex suffix before it hits the server,
+// so Frappe's native upload handler sets attached_to_* correctly and no backend rename is needed.
+if (typeof FormData !== 'undefined' && !window._slcm_fd_patched) {
+	window._slcm_fd_patched = true;
+	var _orig_fd_append = FormData.prototype.append;
+	FormData.prototype.append = function(name, value, filename) {
+		if (value instanceof File) {
+			var fname = filename || value.name;
+			if (fname) {
+				var parts = fname.split('.');
+				var ext = parts.length > 1 ? parts.pop() : '';
+				var base = parts.join('.');
+				// 12-char cryptographic hex suffix (crypto.getRandomValues preferred, Math.random fallback)
+				var suffix;
+				try {
+					suffix = Array.from(crypto.getRandomValues(new Uint8Array(6)),
+						function(b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+				} catch(e) {
+					suffix = Math.random().toString(36).substring(2, 14);
+				}
+				fname = base + '_' + suffix + (ext ? '.' + ext : '');
+				try {
+					value = new File([value], fname, { type: value.type });
+				} catch(e) {}
+				return _orig_fd_append.call(this, name, value, fname);
+			}
+		}
+		return _orig_fd_append.apply(this, arguments);
+	};
+}
+
+
+// Patch for Autocomplete initialization error
+if (window.frappe && frappe.ui && frappe.ui.form && frappe.ui.form.ControlAutocomplete) {
+	var _origAutocompleteValidate = frappe.ui.form.ControlAutocomplete.prototype.validate;
+	frappe.ui.form.ControlAutocomplete.prototype.validate = function(value) {
+		if (!this._list) return value;
+		return _origAutocompleteValidate.call(this, value);
+	};
+}
+
 // ═══════════════════════════════════════════════════════════════════
 //  SLCM — Applicant Web Form client script
 //  Features:
@@ -65,15 +108,15 @@ function _injectCSS() {
 			'#slcm-wf-switch-program-overlay .slcm-wf-switch-opt.slcm-wf-switch-opt--applied{' +
 			'opacity:0.72;cursor:not-allowed;pointer-events:none;border-color:#e2e8f0 !important;background:#f1f5f9 !important;box-shadow:none !important;}' +
 			'#slcm-wf-switch-program-overlay .slcm-wf-switch-opt.slcm-wf-switch-opt--applied .slcm-wf-switch-applied-badge{' +
-			'display:inline-block;margin-left:8px;font-size:11px;font-weight:400;padding:2px 8px;border-radius:999px;background:#e2e8f0;color:#475569;}' +
+			'display:inline-block;margin-left:8px;font-size:var(--font-size-toast, 11px);font-weight:400;padding:2px 8px;border-radius:999px;background:#e2e8f0;color:#475569;}' +
 			'#slcm-wf-switch-opts-container::-webkit-scrollbar{width:4px;}' +
 			'#slcm-wf-switch-opts-container::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}' +
 			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions .slcm-wf-switch-cancel-btn{' +
-			'height:52px;border-radius:14px;border:none;background:#f1f5f9;font-weight:400;color:#475569;cursor:pointer;transition:background .15s;}' +
+			'height:52px;border-radius:14px;border:none;background:#f1f5f9;font-weight:400;color:#475569;cursor:pointer;transition:background .15s;font-size:var(--font-size-body, 14px);font-family:var(--font-family, inherit);}' +
 			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions .slcm-wf-switch-cancel-btn:hover{background:#e2e8f0;}' +
 			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions #slcm-wf-confirm-switch-btn{' +
-			'height:52px;border-radius:14px;border:none;background:#1a3c6e;color:#fff;font-weight:400;cursor:pointer;' +
-			'box-shadow:0 4px 20px rgba(15,27,76,0.2);transition:filter .15s;}' +
+			'height:52px;border-radius:14px;border:none;background:var(--slcm-primary, #1a3c6e);color:#fff;font-weight:400;cursor:pointer;' +
+			'box-shadow:0 4px 20px rgba(15,27,76,0.2);transition:filter .15s;font-size:var(--font-size-body, 14px);font-family:var(--font-family, inherit);}' +
 			'#slcm-wf-switch-program-overlay .slcm-portal-switch-actions #slcm-wf-confirm-switch-btn:hover:not(:disabled){filter:brightness(1.05);}',
 		/* Application ID + status row (inside web-form title h1) */
 		'.slcm-app-heading-row{display:flex;align-items:center;flex-wrap:wrap;gap:12px 28px;' +
@@ -658,6 +701,7 @@ function _buildShell(ws, cfg, user, uinfo) {
 			_esc(title) +
 		'</h1>' +
 		'<div class="adm-nav-links">' +
+			'<a href="/admission" style="color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;font-weight:500;white-space:nowrap;" onmouseover="this.style.color=\'#fff\'" onmouseout="this.style.color=\'rgba(255,255,255,.85)\'">Admission</a>' +
 			(isGuest
 				? '<a href="/login" style="display:inline-flex;align-items:center;background:' + primary + ';color:#fff;padding:8px 20px;border-radius:8px;font-weight:400;font-size:14px;text-decoration:none;">Login / Apply</a>'
 				: '<div style="position:relative;display:flex;align-items:center;gap:10px;">' +
@@ -702,7 +746,7 @@ function _buildShell(ws, cfg, user, uinfo) {
 	var logoutLink = document.getElementById('slcm-nav-logout');
 	if (logoutLink) {
 		logoutLink.addEventListener('click', function () {
-			frappe.call({ method: 'logout', callback: function () { window.location.href = '/login'; } });
+			frappe.call({ method: 'logout', callback: function () { window.location.href = '/admission/login#login'; } });
 		});
 	}
 
@@ -875,6 +919,9 @@ function slcmPortalAbsUrl(path) {
 /** Read a field value from wf.get_value → wf.doc → frappe.reference_doc */
 function resolveField(fieldname) {
 	var wf = frappe.web_form;
+	if (fieldname === 'status' && wf && wf.doc && wf.doc.status) {
+		return wf.doc.status;
+	}
 	var val = '';
 	try { val = (wf && wf.get_value(fieldname)) || ''; } catch (e) {}
 	if (!val && wf && wf.doc) val = wf.doc[fieldname] || '';
@@ -899,14 +946,15 @@ function resolveApplicationFeeStatus() {
 
 /** Mirror server: portal edits only while status is Draft. */
 function slcmApplicationPortalLocked() {
-	var s = (resolveField('application_status') || '').trim();
+	var s = (resolveField('status') || '').trim();
 	if (!s) return false;
-	return s.toLowerCase() !== 'draft';
+	var lower = s.toLowerCase();
+	return lower !== 'draft' && lower !== 'new';
 }
 
 /** Progressive stepper (grey/blue/green) only while status is Draft; any other status = application was finalized. */
 function slcmApplicationIsDraft() {
-	var s = (resolveField('application_status') || '').trim();
+	var s = (resolveField('status') || '').trim();
 	return !s || s === 'Draft';
 }
 
@@ -918,7 +966,7 @@ function collectDraftData() {
 
 	var PRESERVE = [
 		'name', 'program', 'admission_cycle', 'academic_year', 'admission_year',
-		'campus', 'application_status', 'application_fee_status',
+		'campus', 'status', 'application_fee_status',
 		'application_fee_amount', 'program_level', 'applicant_id',
 	];
 	var ref = frappe.reference_doc || {};
@@ -952,7 +1000,12 @@ function updateStatusBadge(status) {
 	if (!badge) return;
 	badge.className = _statusBadgeClass(status);
 	badge.textContent = status || '';
-	badge.style.display = status ? '' : 'none';
+	
+	var isNew = false;
+	try { isNew = isNewApplicantWebForm(); } catch (e) { }
+	var show = (status && !isNew) ? '' : 'none';
+	
+	badge.style.display = show;
 
 	// Hide Frappe's default "Not Saved" / dirty indicator always to avoid confusing draft users
 	$('.indicator-pill.orange, .indicator.orange, .not-saved-badge').hide();
@@ -965,6 +1018,9 @@ function updateStatusBadge(status) {
 		label.className = 'slcm-app-status-label';
 		label.textContent = 'Application Status: ';
 		badge.parentNode.insertBefore(label, badge);
+	}
+	if (label) {
+		label.style.display = show;
 	}
 }
 
@@ -1007,17 +1063,22 @@ function setupStatusBadge() {
 			idSpan.id = 'slcm-app-heading-id';
 			idSpan.textContent = idText;
 
+			var initStatus = resolveField('status');
+			var isNew = false;
+			try { isNew = isNewApplicantWebForm(); } catch (e) { }
+			var show = (initStatus && !isNew) ? '' : 'none';
+
 			var label = document.createElement('span');
 			label.id = 'slcm-app-status-label';
 			label.className = 'slcm-app-status-label';
 			label.textContent = 'Application Status: ';
+			label.style.display = show;
 
 			var badge = document.createElement('span');
 			badge.id = 'slcm-app-status-badge';
-			var initStatus = resolveField('application_status');
 			badge.className = _statusBadgeClass(initStatus);
 			badge.textContent = initStatus || '';
-			badge.style.display = initStatus ? '' : 'none';
+			badge.style.display = show;
 
 			var meta = document.createElement('span');
 			meta.id = 'slcm-app-heading-meta';
@@ -1091,7 +1152,7 @@ function handleSaveDraft(opts) {
 				// Set directly on doc — avoids triggering a Frappe field-refresh
 				// cascade that would call set_formatted_input on the phone control
 				// before its async make_input() has finished.
-				try { if (wf && wf.doc) wf.doc.application_status = 'Draft'; } catch (e) {}
+				try { if (wf && wf.doc) wf.doc.status = 'Draft'; } catch (e) {}
 				frappe.form_dirty = false;
 					updateStatusBadge('Draft');
 					if (!(opts && opts.silent)) {
@@ -1391,7 +1452,6 @@ function syncApplicationFeeReceiptButton() {
 
 	var st = resolveApplicationFeeStatus();
 	var receiptWrap = document.getElementById('slcm-fee-receipt-wrap');
-
 	if (st === 'Pending' || st === 'Requested' || st === 'Waived') {
 		if (receiptWrap) {
 			receiptWrap.style.display = 'none';
@@ -1400,9 +1460,8 @@ function syncApplicationFeeReceiptButton() {
 		}
 		return;
 	}
-
 	if (st === 'Paid') {
-		if (receiptWrap) _slcmAppendFeeReceiptButton(applicant, receiptWrap);
+		if (receiptWrap) _slcmAppendFeeReceiptButton(applicant, receiptWrap);		
 		return;
 	}
 
@@ -1703,9 +1762,7 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 	var total = programs.length;
 
 	var sorted = programs
-		.filter(function (p) { return p.program === selectedProgram; })
-		.concat(programs.filter(function (p) { return p.program !== selectedProgram && !p.eligible; }))
-		.concat(programs.filter(function (p) { return p.program !== selectedProgram && p.eligible; }));
+		.filter(function (p) { return p.program !== selectedProgram && p.eligible; });
 
 	var rowsHtml = '';
 	sorted.forEach(function (p) {
@@ -1713,7 +1770,7 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 		var isElig = p.eligible;
 		var rowBg = isSelected && !isElig ? '#fff5f5' : isSelected ? '#f0fdf4' : '#fff';
 		var badge = isSelected
-			? '&nbsp;<span style="font-size:10px;padding:2px 8px;background:' +
+			? '&nbsp;<span style="font-size:var(--font-size-toast, 10px);padding:2px 8px;background:' +
 			  (isElig ? '#27ae60' : '#e74c3c') +
 			  ';color:#fff;border-radius:10px;font-weight:300;vertical-align:middle;">' +
 			  (isElig ? 'Selected ✓' : 'Choosen Program') +
@@ -1726,14 +1783,14 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 			(isElig ? '#27ae60' : '#e74c3c') +
 			';"></span>';
 		var statusLabel =
-			'<span style="font-size:13px;font-weight:300;color:' +
+			'<span style="font-size:var(--font-size-body, 13px);font-weight:300;color:' +
 			(isElig ? '#27ae60' : '#e74c3c') +
 			';">' +
-			(isElig ? 'Eligible' : 'Not Eligible') +
+			(isElig ? 'Eligible' : 'In-Eligible') +
 			'</span>';
 		var appliedNote =
 			isElig && alreadyApplied[p.program]
-				? '<div style="font-size:11px;color:#64748b;margin-top:6px;font-weight:300;">' +
+				? '<div style="font-size:var(--font-size-toast, 11px);color:#64748b;margin-top:6px;font-weight:300;">' +
 				  __('Applied') +
 				  ' &middot; ' +
 				  _slcmEscapeHtml(String(alreadyApplied[p.program])) +
@@ -1746,14 +1803,14 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 			var mainReason = pr[0];
 			var subReasons = pr.slice(1);
 			reasonHtml =
-				'<div style="font-size:11px;color:#888;margin-top:4px;font-style:italic;line-height:1.4;">' +
+				'<div style="font-size:var(--font-size-toast, 11px);color:#888;margin-top:4px;font-style:italic;line-height:1.4;">' +
 				_slcmEscapeHtml(mainReason) +
 				'</div>';
 			if (subReasons.length > 0) {
 				reasonHtml += subReasons
 					.map(function (sr) {
 						return (
-							'<div style="font-size:10px;color:#94a3b8;font-style:normal;margin-top:2px;display:flex;gap:4px;"><span>•</span><span>' +
+							'<div style="font-size:var(--font-size-toast, 10px);color:#94a3b8;font-style:normal;margin-top:2px;display:flex;gap:4px;"><span>•</span><span>' +
 							_slcmEscapeHtml(sr) +
 							'</span></div>'
 						);
@@ -1785,7 +1842,7 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 			'<tr><td colspan="2" style="padding:16px;text-align:center;color:#888;">No program data available.</td></tr>';
 	}
 
-	var mainHeading = 'Not Eligible for ' + _slcmEscapeHtml(selectedProgram);
+	var mainHeading = 'In-Eligible for ' + _slcmEscapeHtml(selectedProgram);
 
 	var rawMsg = ((eligRes && eligRes.message) || (eligRes && eligRes.error) || '').trim();
 	if (!rawMsg) {
@@ -1799,19 +1856,19 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 	if (eligibleCount > 0 && switchablePrograms.length > 0) {
 		switchBlock =
 			'<div style="margin-top:16px; display:flex; justify-content:center;">' +
-			'<button type="button" class="slcm-wf-modal-switch-btn" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 24px;font-size:14px;font-weight:400;border:none;border-radius:12px;background:#1a3c6e;color:#fff;cursor:pointer;box-shadow:0 10px 15px -3px rgba(15,27,76,0.2);width:auto;">' +
+			'<button type="button" class="slcm-wf-modal-switch-btn" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 24px;font-size:var(--font-size-body, 14px);font-weight:400;border:none;border-radius:12px;background:var(--slcm-primary, #1a3c6e);color:#fff;cursor:pointer;box-shadow:0 10px 15px -3px rgba(15,27,76,0.2);width:auto;">' +
 			'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="margin-right:10px; vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>' +
 			__('Switch to an Eligible Programme Instantly') +
 			'</button></div>';
 	} else if (eligibleCount > 0 && switchablePrograms.length === 0) {
 		switchBlock =
-			'<div style="margin-top:16px;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;text-align:center;font-size:0.875rem;color:#64748b;">' +
+			'<div style="margin-top:16px;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;text-align:center;font-size:var(--font-size-body, 0.875rem);color:#64748b;">' +
 			__('You already have a separate application for every eligible programme in this cycle and campus.') +
 			'</div>';
 	}
 
 	var html =
-		'<div id="slcm-wf-eligibility-modal-overlay" style="position:fixed;inset:0;z-index:199000;display:flex;align-items:center;justify-content:center;padding:1.5rem;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;background:rgba(15,23,42,0.4);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">' +
+		'<div id="slcm-wf-eligibility-modal-overlay" style="position:fixed;inset:0;z-index:199000;display:flex;align-items:center;justify-content:center;padding:1.5rem;font-family:var(--font-family, inherit);background:rgba(15,23,42,0.4);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">' +
 		'<div style="background:#fff;border-radius:20px;width:100%;max-width:680px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25),0 0 0 1px rgba(0,0,0,0.05);display:flex;flex-direction:column;max-height:90vh;overflow:hidden;">' +
 		'<div style="padding:20px 24px;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#fef2f2 0%,#fee2e2 100%);border-bottom:1px solid #fecaca;flex-shrink:0;">' +
 		'<div style="display:flex;align-items:center;gap:14px;">' +
@@ -1830,29 +1887,12 @@ function _slcmWfRenderEligibilityModalContent(applicantName, eligRes, alreadyApp
 		'<span style="width:6px;height:6px;background:#dc2626;border-radius:50%;"></span>' +
 		mainHeading +
 		'</div>' +
-		'<div style="font-size:0.875rem;color:#7f1d1d;line-height:1.6;">' +
+		'<div style="font-size:var(--font-size-body, 0.875rem);color:#7f1d1d;line-height:1.6;">' +
 		alertBodyHtml +
 		'</div></div>' +
-		'<div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap;padding:12px 16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">' +
-		'<span style="font-weight:300;font-size:0.875rem;color:#334155;">All Programmes at This Level</span>' +
-		'<span style="font-size:0.75rem;color:#94a3b8;">' +
-		_slcmEscapeHtml(campus) +
-		(cycle ? ' &middot; ' + _slcmEscapeHtml(cycle) : '') +
-		'</span>' +
-		'<span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:0.8125rem;">' +
-		'<span style="width:8px;height:8px;background:#22c55e;border-radius:50%;"></span>' +
-		'<strong style="color:#15803d;">' +
-		eligibleCount +
-		'</strong> eligible' +
-		'</span>' +
-		'<span style="display:inline-flex;align-items:center;gap:6px;font-size:0.8125rem;">' +
-		'<span style="width:8px;height:8px;background:#dc2626;border-radius:50%;"></span>' +
-		'<strong style="color:#b91c1c;">' +
-		(total - eligibleCount) +
-		'</strong> not eligible' +
-		'</span></div>' +
+
 		'<div style="overflow-x:auto;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;">' +
-		'<table style="width:100%;border-collapse:collapse;font-size:0.875rem;">' +
+		'<table style="width:100%;border-collapse:collapse;font-size:var(--font-size-body, 0.875rem);">' +
 		'<thead><tr style="background:#f1f5f9;">' +
 		'<th style="padding:14px 18px;text-align:left;font-weight:300;color:#475569;width:70%;border-bottom:2px solid #e2e8f0;">Program</th>' +
 		'<th style="padding:14px 18px;text-align:center;font-weight:300;color:#475569;border-bottom:2px solid #e2e8f0;">Eligibility</th>' +
@@ -1977,23 +2017,6 @@ function _slcmWfBuildSwitchProgramOverlay(applicantName, eligibleProgs, alreadyA
 		return;
 	}
 
-	if (eligibleProgs.length === 1) {
-		if (alreadyApplied[eligibleProgs[0]]) {
-			showToast(
-				__('This programme is already applied for in the same cycle and campus.') +
-					' (' +
-					__('Application ID') +
-					': ' +
-					_slcmEscapeHtml(String(alreadyApplied[eligibleProgs[0]])) +
-					')',
-				'error',
-				12000
-			);
-			return;
-		}
-		_slcmWfExecuteProgramSwitch(applicantName, eligibleProgs[0]);
-		return;
-	}
 
 	var optionsHtml = eligibleProgs
 		.map(function (p) {
@@ -2014,7 +2037,7 @@ function _slcmWfBuildSwitchProgramOverlay(applicantName, eligibleProgs, alreadyA
 					__('Applied') +
 					'</span>' +
 					(ref
-						? '<span style="font-size:11px;color:#94a3b8;margin-left:6px;">(' +
+						? '<span style="font-size:var(--font-size-toast, 11px);color:#94a3b8;margin-left:6px;">(' +
 						  _slcmEscapeHtml(ref) +
 						  ')</span>'
 						: '') +
@@ -2038,15 +2061,15 @@ function _slcmWfBuildSwitchProgramOverlay(applicantName, eligibleProgs, alreadyA
 	overlay.id = 'slcm-wf-switch-program-overlay';
 	overlay.className = 'slcm-portal-switch-shell';
 	overlay.style.cssText =
-		'position:fixed;inset:0;z-index:200000;background:rgba(15,23,42,0.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px;';
+		'position:fixed;inset:0;z-index:200000;background:rgba(15,23,42,0.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px;font-family:var(--font-family, inherit);';
 	overlay.innerHTML =
 		'<div class="slcm-portal-switch-card">' +
 		'<div style="width:56px;height:56px;background:#f0fdf4;border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;color:#15803d;">' +
 		'<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg></div>' +
-		'<h3 style="margin:0 0 8px;font-size:1.4rem;font-weight:400;color:#1a3c6e;letter-spacing:-0.02em;">' +
+		'<h3 style="margin:0 0 8px;font-size:var(--font-size-heading, 1.4rem);font-weight:400;color:#1a3c6e;letter-spacing:-0.02em;">' +
 		__('Switch Programme') +
 		'</h3>' +
-		'<p style="margin:0 0 24px;font-size:0.95rem;color:#64748b;line-height:1.6;">' +
+		'<p style="margin:0 0 24px;font-size:var(--font-size-body, 0.95rem);color:#64748b;line-height:1.6;">' +
 		__(
 			'Please select your new eligible programme. Your current data will be automatically successfully synced.'
 		) +
@@ -2345,7 +2368,7 @@ function _feePayBtnSetLoading(payBtn, loading, label) {
 			'<path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>' +
 			'<span>' + (label || 'Opening\u2026') + '</span>';
 	} else {
-		payBtn.textContent = 'Pay Now';
+		payBtn.textContent = payBtn.id === 'slcm-pay-btn' ? 'Pay Application Fee' : 'Pay Now';
 	}
 }
 
@@ -2356,15 +2379,24 @@ function _showFeeModal(feeDetails, onPaid) {
 		modal = document.createElement('div');
 		modal.id = 'slcm-fee-modal';
 		modal.innerHTML =
-			'<div id="slcm-fee-backdrop"></div>' +
-			'<div id="slcm-fee-box">' +
-				'<h3>Application Fee Payment</h3>' +
-				'<div id="slcm-fee-amount"></div>' +
-				'<p>Your application fee as per the Programme Reservation Policy.<br>' +
-				'Please complete payment to submit your application.</p>' +
-				'<div class="slcm-fee-actions">' +
-					'<button id="slcm-fee-pay-btn">Pay Now</button>' +
-					'<button id="slcm-fee-later-btn">Save &amp; Pay Later</button>' +
+			'<div id="slcm-fee-backdrop" style="position:absolute;inset:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(3px);"></div>' +
+			'<div id="slcm-fee-box" style="position:relative;background:#fff;border-radius:12px;width:100%;max-width:380px;text-align:center;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);border:1px solid #e2e8f0;border-top:4px solid var(--slcm-primary,#1a3c6e);overflow:hidden;padding:0;animation:slcm-slide-up 0.3s ease-out;">' +
+				'<div style="padding:32px 24px 24px;">' +
+					'<div style="margin-bottom:16px;">' +
+						'<div style="display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;background:#e0f2fe;color:var(--slcm-primary,#1a3c6e);">' +
+							'<span style="font-family:\'Material Symbols Outlined\';font-size:32px;">currency_rupee</span>' +
+						'</div>' +
+					'</div>' +
+					'<h3 style="margin:0 0 16px;font-size:18px;font-weight:600;color:#0f172a;">Confirm Your Payment</h3>' +
+					'<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px;">' +
+						'<div id="slcm-fee-amount" style="font-size:28px;font-weight:700;color:#0f172a;"></div>' +
+						'<span style="background:#dcfce7;color:#166534;font-size:12px;font-weight:500;padding:4px 8px;border-radius:4px;">Secured</span>' +
+					'</div>' +
+					'<p style="margin:0 0 24px;font-size:14px;color:#64748b;">You are about to complete your application for <strong id="slcm-applying-for-prog"></strong>. Please pay the application fee</p>' +
+					'<div class="slcm-fee-actions" style="display:flex;flex-direction:column;gap:12px;">' +
+						'<button id="slcm-fee-pay-btn" style="background:var(--slcm-primary,#1a3c6e);color:#fff;border:none;padding:12px;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;width:100%;transition:all 0.2s;">Pay Now</button>' +
+						'<button id="slcm-fee-later-btn" style="background:transparent;color:#64748b;border:none;padding:8px;font-size:14px;cursor:pointer;width:100%;">Save &amp; Pay Later</button>' +
+					'</div>' +
 				'</div>' +
 			'</div>';
 		document.body.appendChild(modal);
@@ -2372,6 +2404,12 @@ function _showFeeModal(feeDetails, onPaid) {
 
 	var amountFormatted = '\u20B9 ' + (feeDetails.fee_amount || 0).toFixed(2);
 	document.getElementById('slcm-fee-amount').textContent = amountFormatted;
+	var progLabel = '';
+	var progEl = document.querySelector('[data-fieldname="program"] input');
+	if (progEl) progLabel = progEl.value;
+	if (!progLabel && frappe.web_form) progLabel = frappe.web_form.get_value('program') || '';
+	var progStrEl = document.getElementById('slcm-applying-for-prog');
+	if (progStrEl) progStrEl.textContent = progLabel;
 	var payBtnEl = document.getElementById('slcm-fee-pay-btn');
 	if (payBtnEl) {
 		payBtnEl.disabled = false;
@@ -2381,11 +2419,11 @@ function _showFeeModal(feeDetails, onPaid) {
 
 	function closeModal() { modal.classList.remove('open'); }
 
-	document.getElementById('slcm-fee-backdrop').onclick = closeModal;
+	
 
 	document.getElementById('slcm-fee-later-btn').onclick = function () {
 		closeModal();
-		showToast('Draft saved. Please complete payment to submit your application.', 'info');
+		_doFinalSubmit(feeDetails.applicant_name, 'Submitted');
 	};
 
 	document.getElementById('slcm-fee-pay-btn').onclick = function () {
@@ -2398,6 +2436,12 @@ function _showFeeModal(feeDetails, onPaid) {
 			args: { applicant_name: feeDetails.applicant_name },
 			callback: function (r) {
 				var d = r && r.message;
+				if (d && d.already_paid) {
+					showToast('Application fee has already been paid.', 'success');
+					closeModal();
+					_doFinalSubmit(feeDetails.applicant_name, 'Completed');
+					return;
+				}
 				if (!d || !d.order_id) {
 					payBtn.disabled = false;
 					_feePayBtnSetLoading(payBtn, false);
@@ -2432,15 +2476,24 @@ function _showFeeModal(feeDetails, onPaid) {
 }
 
 function _openRazorpay(orderData, feeDetails, onPaid, payBtn, closeModal) {
+	var paymentHandled = false;
+	var primaryColor = '#1a3c6e';
+	try {
+		var cssColor = getComputedStyle(document.documentElement).getPropertyValue('--slcm-primary').trim();
+		if (cssColor) primaryColor = cssColor;
+	} catch (e) {}
+
 	var options = {
+		theme: { color: primaryColor },
 		key: orderData.key_id,
 		amount: orderData.amount,
 		currency: orderData.currency || 'INR',
 		order_id: orderData.order_id,
 		name: 'Application Fee',
-		description: 'Application Fee',
+		description: 'Application Fee to complete the form',
 		handler: function (res) {
-			_showSubmitOverlay('Verifying payment\u2026');
+			paymentHandled = true;
+			_showSubmitOverlay('Verifying payment, Please don\'t refresh or close the page \u2026');
 			frappe.call({
 				method: 'slcm.api.service.fee_service.verify_application_fee_payment',
 				args: {
@@ -2455,10 +2508,12 @@ function _openRazorpay(orderData, feeDetails, onPaid, payBtn, closeModal) {
 					if (vr && vr.message && vr.message.status === 'success') {
 						showToast('Payment successful!', 'success');
 						closeModal();
-						onPaid();
+						_doFinalSubmit(feeDetails.applicant_name, 'Completed');
 					} else {
 						_hideSubmitOverlay();
 						showToast((vr && vr.message && vr.message.message) || 'Verification failed.', 'error');
+						closeModal();
+						_doFinalSubmit(feeDetails.applicant_name, 'Submitted');
 					}
 				},
 				error: function () {
@@ -2466,13 +2521,40 @@ function _openRazorpay(orderData, feeDetails, onPaid, payBtn, closeModal) {
 					payBtn.disabled = false;
 					_feePayBtnSetLoading(payBtn, false);
 					showToast('Verification failed. Please contact support.', 'error');
+					closeModal();
+					_doFinalSubmit(feeDetails.applicant_name, 'Submitted');
 				},
 			});
+		},
+		modal: {
+			ondismiss: function () {
+				if (!paymentHandled) {
+					// Handle modal close (e.g. user cancelled)
+					closeModal();
+					
+					// Log the failure so the Payment Request is updated from Requested to Failed/Pending
+					frappe.call({
+						method: 'slcm.api.service.fee_service.log_application_fee_payment_failure',
+						args: {
+							applicant_name: feeDetails.applicant_name,
+							order_id: orderData.order_id,
+							error_data: JSON.stringify({ event: 'modal_dismissed', description: 'User manually closed the payment modal' }),
+						},
+						callback: function () {
+							_doFinalSubmit(feeDetails.applicant_name, 'Submitted');
+						},
+						error: function () {
+							_doFinalSubmit(feeDetails.applicant_name, 'Submitted');
+						}
+					});
+				}
+			},
 		},
 	};
 
 	var rzp = new Razorpay(options);
 	rzp.on('payment.failed', function (err) {
+		paymentHandled = true;
 		frappe.call({
 			method: 'slcm.api.service.fee_service.log_application_fee_payment_failure',
 			args: {
@@ -2484,37 +2566,47 @@ function _openRazorpay(orderData, feeDetails, onPaid, payBtn, closeModal) {
 		showToast((err && err.error && err.error.description) || 'Payment failed.', 'error');
 		payBtn.disabled = false;
 		_feePayBtnSetLoading(payBtn, false);
+		closeModal();
+		_doFinalSubmit(feeDetails.applicant_name, 'Submitted');
 	});
 
+	closeModal();
 	rzp.open();
 	payBtn.disabled = false;
 	_feePayBtnSetLoading(payBtn, false);
 }
 
 /** Call backend submit_applicant and update UI */
-function _doFinalSubmit(applicantName) {
-	_showSubmitOverlay('Submitting application\u2026');
+function _doFinalSubmit(applicantName, targetStatus) {
+	_showSubmitOverlay('Submitting application, Please don\'t refresh or close the page \u2026');
 	frappe.call({
 		method: 'slcm.admission.web_form.applicant_form.applicant_form.submit_applicant',
-		args: { applicant_name: applicantName },
+		args: { applicant_name: applicantName, target_status: targetStatus || 'Submitted' },
 		callback: function (r) {
 			_hideSubmitOverlay();
 			var msg = r && r.message;
 			if (msg && msg.status === 'success') {
-				updateStatusBadge('Submitted');
+				var finalStatus = msg.doc_status || targetStatus || 'Submitted';
+				updateStatusBadge(finalStatus);
 				try {
 					if (frappe.web_form && frappe.web_form.doc) {
-						frappe.web_form.doc.application_status = 'Submitted';
+						frappe.web_form.doc.status = finalStatus;
 					}
 				} catch (e) {}
 
-				// ── Use "After Submission" settings ──────────────────────
-				var wf = frappe.web_form || {};
-				var title = wf.success_title || 'Application Submitted Successfully';
-				var message = wf.success_message || 'Your application has been submitted successfully.';
-				var nextUrl = wf.success_url || '';
-
-				_showSuccessModal(title, message, nextUrl);
+				if (finalStatus === 'Completed') {
+					// ── Use "After Submission" settings ──────────────────────
+					var wf = frappe.web_form || {};
+					var title = wf.success_title || 'Application Submitted Successfully';
+					var message = wf.success_message || 'Your application has been submitted successfully.';
+					var nextUrl = wf.success_url || '';
+					_showSuccessModal(title, message, nextUrl);
+				} else {
+					showToast('Application saved. Please complete payment from dashboard to finalize.', 'info', 6000);
+					setTimeout(function() {
+						window.location.reload();
+					}, 2000);
+				}
 			} else {
 				showToast('\u26a0  ' + ((msg && msg.message) || 'Submission failed.'), 'error');
 			}
@@ -2637,7 +2729,7 @@ function runSubmitFlow() {
 	}
 
 	// ── 1. Save with mandatory validation ──────────────────────────
-	_showSubmitOverlay('Saving and validating\u2026');
+	_showSubmitOverlay('Saving and validating, Please don\'t refresh or close the page \u2026');
 	handleSaveDraft({ ignore_mandatory: false, silent: true })
 		.then(function (saveResult) {
 			var applicantName = (saveResult && saveResult.name) || getDocName();
@@ -2648,7 +2740,7 @@ function runSubmitFlow() {
 			}
 
 			// ── 2. Eligibility check ────────────────────────────────
-			_showSubmitOverlay('Checking eligibility\u2026');
+			_showSubmitOverlay('Checking eligibility, Please don\'t refresh or close the page \u2026');
 			frappe.call({
 				method: 'slcm.admission.web_form.applicant_form.applicant_form.check_eligibility',
 				args: { applicant_name: applicantName },
@@ -2666,7 +2758,7 @@ function runSubmitFlow() {
 					}
 
 					// ── 3. Fee check ────────────────────────────────
-					_showSubmitOverlay('Checking application fee\u2026');
+					_showSubmitOverlay('Checking application fee, Please don\'t refresh or close the page \u2026');
 					frappe.call({
 						method: 'slcm.api.service.application_fee_service.get_application_fee_details',
 						args: { applicant_name: applicantName },
@@ -2679,12 +2771,11 @@ function runSubmitFlow() {
 							if (feeAmount > 0 && !canSubmit) {
 								// ── 4a. Fee required and unpaid ────────────────
 								_showFeeModal(fd, function () {
-									// Called after successful payment
-									_doFinalSubmit(applicantName);
+									_doFinalSubmit(applicantName, 'Completed');
 								});
 							} else {
 								// ── 4b. No fee / already paid → submit ────────
-								_doFinalSubmit(applicantName);
+								_doFinalSubmit(applicantName, 'Completed');
 							}
 						},
 						error: function () {
@@ -3246,7 +3337,7 @@ var SLCM_APPLICANT_YEAR_4_FIELDS = {
 };
 var SLCM_APPLICANT_MAX10_P2_FIELDS = {
 	class_x_cgpa: 1,
-	class_xii_cgpa: 1,
+	if_cgpa_maximum_cgpa_class_xii: 1,
 	ug_cgpa: 1,
 	pg_cgpa: 1,
 };
@@ -3634,6 +3725,213 @@ function setupPhoneValidation() {
 // ───────────────────────────────────────────────────────────────────
 //  QUERY PREFILL — /applicant-form/new?program=...&admission_cycle=...
 // ───────────────────────────────────────────────────────────────────
+function _slcmShowErrorModal(message, customUrl, customLabel) {
+	if (document.getElementById('slcm-error-modal')) return;
+
+	var overlay = document.createElement('div');
+	overlay.id = 'slcm-error-modal';
+	overlay.style.cssText = [
+		'position:fixed', 'inset:0', 'z-index:9999',
+		'display:flex', 'align-items:center', 'justify-content:center',
+		'background:rgba(0,0,0,0.6)', 'backdrop-filter:blur(5px)'
+	].join(';');
+
+	var url = customUrl || '/merit-and-scholarship/admission_dashboard?panel=profile';
+	var label = customLabel || __('My Profile');
+
+	overlay.innerHTML =
+		'<div style="max-width:480px;width:90%;background:#fff;border-radius:16px;padding:40px 32px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.2);position:relative;animation:slcmErrorFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)">' +
+			'<div style="width:72px;height:72px;background:linear-gradient(135deg,#ef4444,#dc2626);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;box-shadow:0 8px 20px rgba(239,68,68,0.3)">' +
+				'<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+					'<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>' +
+					'<line x1="12" y1="9" x2="12" y2="13"/>' +
+					'<line x1="12" y1="17" x2="12.01" y2="17"/>' +
+				'</svg>' +
+			'</div>' +
+			'<h2 style="font-size:22px;font-weight:700;color:#111827;margin:0 0 14px">' + __('Admission Restriction') + '</h2>' +
+			'<p style="font-size:14.5px;color:#4b5563;line-height:1.6;margin:0 0 32px;padding:0 8px">' + _esc(message) + '</p>' +
+			'<a href="' + url + '" style="display:inline-block;background:#7B1D1D;color:#fff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;transition:background 0.2s,transform 0.1s;box-shadow:0 4px 12px rgba(123,29,29,0.2)">' + label + '</a>' +
+		'</div>' +
+		'<style>' +
+			'@keyframes slcmErrorFadeIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}' +
+			'#slcm-error-modal a:hover{background:#5F1616 !important;}' +
+		'</style>';
+
+	document.body.appendChild(overlay);
+}
+
+// ───────────────────────────────────────────────────────────────────
+//  PROGRAMME PICKER — shown when ?program= is absent on /new
+// ───────────────────────────────────────────────────────────────────
+function _slcmShowProgrammePicker(wf, onConfirm) {
+	_slcmRenderSelectProgrammeButton(wf, onConfirm);
+	frappe.call({
+		method: 'slcm.admission.web_form.applicant_form.applicant_form.get_open_programmes',
+		callback: function (r) {
+			var programmes = (r && r.message) ? r.message : [];
+			_slcmOpenPickerModal(programmes, wf, onConfirm);
+		},
+		error: function () {
+			_slcmOpenPickerModal([], wf, onConfirm);
+		}
+	});
+}
+
+function _slcmOpenPickerModal(programmes, wf, onConfirm) {
+	if (document.getElementById('slcm-prog-picker-overlay')) return;
+
+	var primary = getComputedStyle(document.documentElement)
+		.getPropertyValue('--slcm-primary').trim() || '#1a3c6e';
+
+	var optionsHtml = '<option value="">— Select a Programme —</option>';
+	programmes.forEach(function (p) {
+		var val = typeof p === 'object' ? (p.name || p) : p;
+		var lbl = typeof p === 'object' ? (p.label || p.name || p) : p;
+		optionsHtml += '<option value="' + _esc(val) + '">' + _esc(lbl) + '</option>';
+	});
+
+	var overlay = document.createElement('div');
+	overlay.id = 'slcm-prog-picker-overlay';
+	overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);';
+
+	overlay.innerHTML =
+		'<div style="background:#fff;border-radius:20px;width:min(480px,92vw);padding:36px 32px;box-shadow:0 24px 60px rgba(0,0,0,0.22);position:relative;animation:slcmPickerIn 0.3s cubic-bezier(0.16,1,0.3,1)">' +
+			'<style>@keyframes slcmPickerIn{from{opacity:0;transform:scale(0.94)}to{opacity:1;transform:scale(1)}}</style>' +
+			'<div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,' + primary + ',color-mix(in srgb,' + primary + ' 70%,#000));display:flex;align-items:center;justify-content:center;margin:0 auto 20px;box-shadow:0 8px 20px rgba(0,0,0,0.15)">' +
+				'<span class="material-symbols-outlined" style="font-size:30px;color:#fff;font-family:\'Material Symbols Outlined\'!important">school</span>' +
+			'</div>' +
+			'<h2 style="font-size:20px;font-weight:700;color:#0f172a;text-align:center;margin:0 0 8px">Choose Your Programme</h2>' +
+			'<p style="font-size:14px;color:#64748b;text-align:center;margin:0 0 24px;line-height:1.6">Select the programme you wish to apply for. Once confirmed, this <strong>cannot be changed</strong>.</p>' +
+			'<div style="margin-bottom:20px">' +
+				'<label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:8px">Programme</label>' +
+				'<select id="slcm-prog-select" style="width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;color:#0f172a;background:#f8fafc;outline:none;cursor:pointer;appearance:auto">' +
+					optionsHtml +
+				'</select>' +
+			'</div>' +
+			'<div id="slcm-prog-warning" style="display:none;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:12px 14px;font-size:13px;color:#78350f;margin-bottom:20px;line-height:1.5">' +
+				'<strong>⚠ Please confirm:</strong> You are applying for <strong id="slcm-prog-warning-name"></strong>. Once you proceed, the programme cannot be changed.' +
+			'</div>' +
+			'<div style="display:flex;gap:10px">' +
+				'<button id="slcm-prog-cancel-btn" style="flex:1;padding:11px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc;color:#475569;font-size:14px;font-weight:500;cursor:pointer">Cancel</button>' +
+				'<button id="slcm-prog-confirm-btn" style="flex:1;padding:11px;border-radius:10px;border:none;background:' + primary + ';color:#fff;font-size:14px;font-weight:600;cursor:pointer;opacity:0.45;pointer-events:none">Confirm &amp; Proceed</button>' +
+			'</div>' +
+		'</div>';
+
+	document.body.appendChild(overlay);
+
+	var sel        = document.getElementById('slcm-prog-select');
+	var warning    = document.getElementById('slcm-prog-warning');
+	var warnName   = document.getElementById('slcm-prog-warning-name');
+	var cancelBtn  = document.getElementById('slcm-prog-cancel-btn');
+	var confirmBtn = document.getElementById('slcm-prog-confirm-btn');
+
+	sel.addEventListener('change', function () {
+		var chosen = sel.value;
+		if (chosen) {
+			warning.style.display = 'block';
+			warnName.textContent = sel.options[sel.selectedIndex].text;
+			confirmBtn.style.opacity = '1';
+			confirmBtn.style.pointerEvents = 'auto';
+		} else {
+			warning.style.display = 'none';
+			confirmBtn.style.opacity = '0.45';
+			confirmBtn.style.pointerEvents = 'none';
+		}
+	});
+
+	confirmBtn.addEventListener('click', function () {
+		var chosen = sel.value;
+		if (!chosen) return;
+		overlay.remove();
+		var banner = document.getElementById('slcm-select-prog-banner');
+		if (banner) banner.remove();
+		onConfirm(chosen);
+	});
+
+	cancelBtn.addEventListener('click', function () {
+		overlay.remove();
+	});
+}
+
+function _slcmRenderSelectProgrammeButton(wf, onConfirm) {
+	if (document.getElementById('slcm-select-prog-banner')) return;
+
+	var primary = getComputedStyle(document.documentElement)
+		.getPropertyValue('--slcm-primary').trim() || '#1a3c6e';
+
+	var banner = document.createElement('div');
+	banner.id = 'slcm-select-prog-banner';
+	banner.style.cssText = 'width:100%;background:#fffbeb;border-bottom:2px solid #fcd34d;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-sizing:border-box;';
+	banner.innerHTML =
+		'<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">' +
+			'<span class="material-symbols-outlined" style="font-size:22px;color:#b45309;font-family:\'Material Symbols Outlined\'!important;flex-shrink:0">warning</span>' +
+			'<span style="font-size:14px;color:#78350f;font-weight:500">No programme selected. Please choose your programme before filling the application.</span>' +
+		'</div>' +
+		'<button id="slcm-select-prog-btn" style="padding:9px 20px;border-radius:8px;border:none;background:' + primary + ';color:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">Select Programme</button>';
+
+	var container = document.querySelector('.web-form-container') || document.querySelector('main') || document.body;
+	container.insertBefore(banner, container.firstChild);
+
+	document.getElementById('slcm-select-prog-btn').addEventListener('click', function () {
+		if (document.getElementById('slcm-prog-picker-overlay')) return;
+		frappe.call({
+			method: 'slcm.admission.web_form.applicant_form.applicant_form.get_open_programmes',
+			callback: function (r) {
+				var programmes = (r && r.message) ? r.message : [];
+				_slcmOpenPickerModal(programmes, wf, onConfirm);
+			}
+		});
+	});
+}
+
+/**
+ * Runs the full prefill + cycle validation flow after the picker confirms a program.
+ */
+function _slcmRunPrefillWithProgram(wf, program) {
+	frappe.call({
+		method: 'slcm.admission.web_form.applicant_form.applicant_form.validate_new_application_access',
+		args: { program: program },
+		callback: function (r) {
+			var res = r && r.message;
+			if (res && !res.allowed) {
+				frappe.call({
+					method: 'slcm.admission.web_form.applicant_form.applicant_form.get_portal_shell_data',
+					callback: function (rd) {
+						var url = (rd && rd.message && rd.message.admission_website_url) || '/';
+						_slcmShowErrorModal(res.message, url, __('Go to Website'));
+					}
+				});
+				return;
+			}
+			// Set the program field directly
+			var attempts = 0;
+			var t = setInterval(function () {
+				try {
+					var ctrl = wf.fields_dict && wf.fields_dict['program'];
+					if (ctrl) {
+						clearInterval(t);
+						try { wf.set_value('program', res.program || program); } catch (e) { }
+						try { wf.set_value('admission_cycle', res.admission_cycle || ''); } catch (e) { }
+						try { wf.set_value('admission_year', res.admission_year || ''); } catch (e) { }
+						try { wf.set_value('academic_year', res.academic_year || ''); } catch (e) { }
+						if (res.campus) {
+							try { wf.set_value('campus', res.campus); } catch (e) { }
+						}
+						if (res.intake_type) {
+							try { wf.set_value('intake_type', res.intake_type); } catch (e) { }
+						}
+						if (res.program_level) {
+							try { wf.set_value('program_level', res.program_level); } catch (e) { }
+						}
+						scheduleProgramPortalDerivatives();
+					}
+				} catch (err) { }
+				if (++attempts > 30) clearInterval(t);
+			}, 100);
+		}
+	});
+}
+
 function isNewApplicantWebForm() {
 	var path = (window.location.pathname || '').toLowerCase();
 	if (path.indexOf('/new') !== -1) return true;
@@ -3642,6 +3940,27 @@ function isNewApplicantWebForm() {
 
 function applyQueryStringPrefill() {
 	var params = new URLSearchParams(window.location.search);
+	
+	if (isNewApplicantWebForm() && !params.get('program')) {
+		// Wait for web form to be ready before showing picker
+		var _pickerTries = 0;
+		var _pickerT = setInterval(function () {
+			_pickerTries++;
+			var wf = window.frappe && frappe.web_form;
+			if (wf && typeof wf.set_value === 'function') {
+				clearInterval(_pickerT);
+				_slcmShowProgrammePicker(wf, function (selectedProg) {
+					var url = new URL(window.location.href);
+					url.searchParams.set('program', selectedProg);
+					window.history.replaceState({}, '', url.toString());
+					_slcmRunPrefillWithProgram(wf, selectedProg);
+				});
+			}
+			if (_pickerTries > 100) clearInterval(_pickerT);
+		}, 100);
+		return;
+	}
+
 	if (!params.get('program') && !params.get('admission_cycle')) return;
 
 	var tries = 0;
@@ -3655,65 +3974,101 @@ function applyQueryStringPrefill() {
 		clearInterval(t);
 		if (!isNewApplicantWebForm()) return;
 
-		function applyQueryPairs() {
-			var pairs = [
-				['program', 'program'],
-				['admission_cycle', 'admission_cycle'],
-				['campus', 'campus'],
-				['intake_type', 'intake_type'],
-				['admission_year', 'admission_year'],
-				['academic_year', 'academic_year'],
-				['program_level', 'program_level'],
-			];
-			pairs.forEach(function (x) {
-				var v = params.get(x[0]);
-				if (v) {
-					try {
-						wf.set_value(x[1], v);
-					} catch (e) {}
+		// ── Validate admission cycle is open before allowing new application ──
+		frappe.call({
+			method: 'slcm.admission.web_form.applicant_form.applicant_form.validate_new_application_access',
+			args: { program: params.get('program') || '' },
+			callback: function (r) {
+				var res = r && r.message;
+				if (res && !res.allowed) {
+					// Lock form
+					try { wf.in_edit_mode = false; } catch (e) { }
+					if (wf.fields) {
+						wf.fields.forEach(function (f) {
+							if (f.fieldname) {
+								try { wf.set_df_property(f.fieldname, 'read_only', 1); } catch (e2) { }
+							}
+						});
+					}
+					$('.web-form input, .web-form select, .web-form textarea').attr('disabled', 'disabled').css('cursor', 'not-allowed');
+					$('#slcm-save-draft-btn, .submit-btn, .btn-submit-web-form, .btn-next, .discard-btn').hide();
+					// Fetch website URL then show modal
+					frappe.call({
+						method: 'slcm.admission.web_form.applicant_form.applicant_form.get_portal_shell_data',
+						callback: function (rd) {
+							var url = (rd && rd.message && rd.message.admission_website_url) || '/';
+							_slcmShowErrorModal(res.message, url, __('Go to Website'));
+						}
+					});
+					return; // abort prefill
 				}
-			});
+				// Cycle is open — proceed with normal prefill
+				runPrefill(res);
+			},
+			error: function () {
+				// On server error, still allow prefill (fail-open for graceful degradation)
+				runPrefill();
+			}
+		});
+
+		function applyQueryPairs(res) {
+			if (res) {
+				try { wf.set_value('program', res.program || params.get('program')); } catch (e) {}
+				try { wf.set_value('admission_cycle', res.admission_cycle || ''); } catch (e) {}
+				try { wf.set_value('admission_year', res.admission_year || ''); } catch (e) {}
+				try { wf.set_value('academic_year', res.academic_year || ''); } catch (e) {}
+				if (res.campus) {
+					try { wf.set_value('campus', res.campus); } catch (e) {}
+				}
+				if (res.intake_type) {
+					try { wf.set_value('intake_type', res.intake_type); } catch (e) {}
+				}
+				if (res.program_level) {
+					try { wf.set_value('program_level', res.program_level); } catch (e) {}
+				}
+			}
+
 			scheduleFeeUpdate();
 		}
 
-		// Never re-apply Application Info / programme-derived fields from a prior Applicant;
-		// those come from the URL and get_program_portal_derivatives (Program + cycle).
-		var SLCM_COPY_SKIP_FIELDS = {
-			program: 1,
-			admission_cycle: 1,
-			admission_year: 1,
-			academic_year: 1,
-			campus: 1,
-			program_level: 1,
-			application_type: 1,
-			intake_type: 1,
-			application_status: 1,
-		};
-
-		frappe.call({
-			method: 'slcm.admission.web_form.applicant_form.applicant_form.pop_multiprogram_profile_copy',
-			callback: function (r) {
-				var payload = r.message;
-				if (payload && typeof payload === 'object') {
-					Object.keys(payload).forEach(function (k) {
-						if (k.indexOf('__') === 0) return;
-						if (SLCM_COPY_SKIP_FIELDS[k]) return;
-						var v = payload[k];
-						if (v === undefined || v === null) return;
-						if (Array.isArray(v) && v.length === 0) return;
-						try {
-							wf.set_value(k, v);
-						} catch (e) {}
-					});
-				}
-				applyQueryPairs();
-				scheduleProgramPortalDerivatives();
-			},
-			error: function () {
-				applyQueryPairs();
-				scheduleProgramPortalDerivatives();
-			},
-		});
+		// Wrapped for re-use by the cycle-validation callback
+		function runPrefill(res) {
+			var SLCM_COPY_SKIP_FIELDS = {
+				program: 1,
+				admission_cycle: 1,
+				admission_year: 1,
+				academic_year: 1,
+				campus: 1,
+				program_level: 1,
+				application_type: 1,
+				intake_type: 1,
+				status: 1,
+			};
+			frappe.call({
+				method: 'slcm.admission.web_form.applicant_form.applicant_form.pop_multiprogram_profile_copy',
+				callback: function (r) {
+					var payload = r.message;
+					if (payload && typeof payload === 'object') {
+						Object.keys(payload).forEach(function (k) {
+							if (k.indexOf('__') === 0) return;
+							if (SLCM_COPY_SKIP_FIELDS[k]) return;
+							var v = payload[k];
+							if (v === undefined || v === null) return;
+							if (Array.isArray(v) && v.length === 0) return;
+							try {
+								wf.set_value(k, v);
+							} catch (e) {}
+						});
+					}
+					applyQueryPairs(res);
+					scheduleProgramPortalDerivatives();
+				},
+				error: function () {
+					applyQueryPairs(res);
+					scheduleProgramPortalDerivatives();
+				},
+			});
+		}
 	}, 80);
 }
 
@@ -3987,10 +4342,224 @@ function setupSlcmWebFormAwesompletePositionFix() {
 	});
 }
 
+
+// Make input in Uppercase
+function makeInputUppercase() {
+	const uppercase_fields = [
+		"candidate_name",
+		"father_occupation",
+		"mother_occupation",
+		"correspondence_address",
+		"father_name",
+		"mother_name",
+		"class_x_school",
+		"class_x_board",
+		"class_xii_name_of_examination",
+		"class_xii_school",
+		"class_xii_board",
+		"proposed_phd_topic",
+		"other_degree_details"
+	];
+
+	uppercase_fields.forEach(fieldname => {
+		let field = frappe.web_form.get_field(fieldname);
+		if (field && field.$input) {
+			field.$input.css('text-transform', 'uppercase');
+			field.$input.on('input', function() {
+				let start = this.selectionStart;
+				let end = this.selectionEnd;
+				this.value = this.value.toUpperCase();
+				this.setSelectionRange(start, end);
+			});
+		}
+
+		frappe.web_form.on(fieldname, (field, value) => {
+			if (value) {
+				frappe.web_form.set_value(
+					fieldname,
+					value.toUpperCase()
+				);
+			}
+		});
+	});
+
+	// For child table fields (UG/PG details) which are rendered dynamically
+	$('body').on('input', '[data-fieldname="ug_program"] input, [data-fieldname="college"] input, [data-fieldname="pg_program"] input, [data-fieldname="collegeuniversity"] input', function() {
+		let start = this.selectionStart;
+		let end = this.selectionEnd;
+		this.value = this.value.toUpperCase();
+		this.setSelectionRange(start, end);
+	});
+
+	const display_uppercase_fields = [
+		"country", "state", "city", "hsc_group", "national_test_name","first_preference","second_preference","third_preference"
+	];
+
+	let parent_display_selectors = display_uppercase_fields.map(f => 
+		`[data-fieldname="${f}"] input, [data-fieldname="${f}"] select, [data-fieldname="${f}"] .awesomplete ul li`
+	).join(', ');
+
+	let all_css_selectors = [parent_display_selectors].filter(Boolean).join(', ');
+
+	$(`<style>${all_css_selectors} { text-transform: uppercase; }</style>`).appendTo('head');
+}
+
 // ───────────────────────────────────────────────────────────────────
+
+function setupPreferenceValidation() {
+	var n = 0;
+	var t = setInterval(function () {
+		var wf = window.frappe && frappe.web_form;
+		if (wf && wf.fields_dict) {
+			clearInterval(t);
+
+			function validatePreferences() {
+				var f1 = wf.get_value('first_preference');
+				var f2 = wf.get_value('second_preference');
+				var f3 = wf.get_value('third_preference');
+
+				if (f1 && f2 && f1 === f2) {
+					frappe.msgprint('First and Second Preferences cannot be the same.');
+					wf.set_value('second_preference', '');
+				}
+				if (f1 && f3 && f1 === f3) {
+					frappe.msgprint('First and Third Preferences cannot be the same.');
+					wf.set_value('third_preference', '');
+				}
+				if (f2 && f3 && f2 === f3) {
+					frappe.msgprint('Second and Third Preferences cannot be the same.');
+					wf.set_value('third_preference', '');
+				}
+			}
+
+			wf.on('first_preference', validatePreferences);
+			wf.on('second_preference', validatePreferences);
+			wf.on('third_preference', validatePreferences);
+		}
+		if (++n > 100) clearInterval(t);
+	}, 200);
+}
+
+
+/** Get the current Applicant docname from wf.doc or URL */
+function _slcmGetApplicantDocName() {
+	var wf = window.frappe && frappe.web_form;
+	var name = wf && wf.doc && wf.doc.name;
+	if (!name) {
+		var p = new URLSearchParams(window.location.search);
+		name = p.get('name') || p.get('doc');
+	}
+	if (!name && window.location && window.location.pathname) {
+		var path = String(window.location.pathname).replace(/\/$/, '');
+		var m = path.match(/\/applicant-form\/([^/]+)(?:\/edit)?$/);
+		if (m && m[1] && m[1] !== 'new' && m[1] !== 'list') {
+			name = decodeURIComponent(m[1]);
+		}
+	}
+	return name || null;
+}
+
+/**
+ * Fetch declaration checkbox values DIRECTLY from the server and force them in the DOM.
+ * Mirrors _paceRestoreCheckboxValues from PACE form.
+ */
+function _slcmRestoreApplicantCheckboxValues(wf) {
+	var CHECK_FIELDS = [
+		'authorisation_information',
+		'agreement_to_communications',
+		'agreement_withdrawal_conditions'
+	];
+
+	function _applyToDOM(data) {
+		CHECK_FIELDS.forEach(function (fn) {
+			if (data[fn] || data[fn] === 1 || data[fn] === true) {
+				$('[data-fieldname="' + fn + '"] input[type="checkbox"]').each(function () {
+					this.checked = true;
+				});
+				if (wf && wf.fields_dict && wf.fields_dict[fn]) {
+					try { wf.fields_dict[fn].value = 1; } catch (e) {}
+				}
+				if (wf && wf.doc) {
+					try { wf.doc[fn] = 1; } catch (e) {}
+				}
+			}
+		});
+	}
+
+	// 1. Fast path from wf.doc (may be incomplete on first load)
+	if (wf && wf.doc) {
+		_applyToDOM(wf.doc);
+	}
+
+	// 2. Authoritative server fetch
+	var docname = _slcmGetApplicantDocName();
+	if (!docname || docname === 'new' || window._slcm_chk_fetched) return;
+	window._slcm_chk_fetched = true;
+
+	frappe.call({
+		method: 'frappe.client.get_value',
+		args: {
+			doctype: 'Applicant',
+			filters: { name: docname },
+			fieldname: CHECK_FIELDS
+		},
+		callback: function (r) {
+			if (!r || !r.message) return;
+			var data = r.message;
+
+			if (wf && wf.doc) {
+				CHECK_FIELDS.forEach(function (fn) { wf.doc[fn] = data[fn] || 0; });
+			}
+
+			_applyToDOM(data);
+
+			// Re-apply at staggered intervals to survive Frappe page re-renders
+			setTimeout(function () { _applyToDOM(data); }, 300);
+			setTimeout(function () { _applyToDOM(data); }, 800);
+			setTimeout(function () { _applyToDOM(data); }, 1500);
+			setTimeout(function () { _applyToDOM(data); }, 3000);
+
+			// MutationObserver: re-apply whenever the declaration section appears in DOM
+			// Critical for multi-page forms where checkboxes render only when page is shown
+			if (!window._slcm_chk_observer) {
+				window._slcm_chk_observer = new MutationObserver(function () {
+					CHECK_FIELDS.forEach(function (fn) {
+						var $chk = $('[data-fieldname="' + fn + '"] input[type="checkbox"]');
+						if ($chk.length && data[fn]) {
+							$chk.each(function () {
+								if (!this.checked) this.checked = true;
+							});
+						}
+					});
+				});
+				window._slcm_chk_observer.observe(
+					document.querySelector('.web-form') || document.body,
+					{ childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] }
+				);
+			}
+		}
+	});
+}
+
+function setupApplicantCheckboxRenderFix() {
+	// Wait for wf to be ready, then use server-fetch restore (mirrors paceSetupDeclarationRenderFix)
+	var n = 0;
+	var t = setInterval(function () {
+		var wf = window.frappe && frappe.web_form;
+		if (wf && wf.fields_dict) {
+			clearInterval(t);
+			_slcmRestoreApplicantCheckboxValues(wf);
+		}
+		if (++n > 100) clearInterval(t);
+	}, 200);
+}
+
 //  BOOTSTRAP
 // ───────────────────────────────────────────────────────────────────
 frappe.ready(function () {
+	setupApplicantCheckboxRenderFix(); // schedules itself via after_load + timeout
+	makeInputUppercase();
+	setupPreferenceValidation();
 	_injectCSS();
 	_injectAdmissionShell();
 	setupSlcmFieldErrorClear();
@@ -4027,6 +4596,7 @@ frappe.ready(function () {
 
 	// Status badge
 	setupStatusBadge();
+	slcmSetupPayButton();
 
 	// Save Draft button (re-polls on every step change)
 	setupSaveDraftButton();
@@ -4038,6 +4608,7 @@ frappe.ready(function () {
 			frappe.web_form.events.on('after_load', function () {
 				_ensureTopBar();
 				scheduleProgramPortalDerivatives();
+				updateStatusBadge(resolveField('status'));
 			});
 		} catch (e) {}
 	}
@@ -4607,81 +5178,162 @@ function setupCityStateFilter() {
 		return ((raw || '') + '').trim() || 'India';
 	}
 
-	try {
-		['country', 'state', 'city'].forEach(function (fn) {
-			var fld = wf.get_field && wf.get_field(fn);
+	function patchBlock(countryFld, stateFld, cityDataFld) {
+		var sf = wf.get_field && wf.get_field(stateFld);
+		var cf = wf.get_field && wf.get_field(cityDataFld);
+		if (!sf) return false;
+
+		[countryFld, stateFld].forEach(function (fn) {
+			var fld = wf.get_field(fn);
 			if (fld && fld.df) fld.df.ignore_user_permissions = 1;
 		});
 
-		// Prefer official FieldGroup API (matches Desk); also mirror on df.get_query so refresh survives
 		function stateQueryFn() {
-			var c = effCountry();
-			if (String(c).toLowerCase() === 'india') {
-				return { filters: { country: c } };
-			}
-			return { filters: { name: 'Other' } };
+			var eff = effCountry();
+			return { filters: [['State', 'country', '=', eff]] };
 		}
 
 		function cityQueryFn() {
-			var st = wf.get_value('state');
-			var ctr = effCountry();
+			var st = wf.get_value(stateFld);
 			if (!st) {
 				return { filters: [['name', '=', '__slcm_no_state__']] };
 			}
-			return { filters: { state: st, country: ctr } };
+			var eff = effCountry();
+			return { filters: [['state', '=', st], ['country', '=', eff]] };
 		}
 
-		wf.set_query('state', stateQueryFn);
-		wf.set_query('city', cityQueryFn);
+		if (wf.set_query) {
+			wf.set_query(stateFld, stateQueryFn);
+			wf.set_query(cityDataFld, cityQueryFn);
+		}
+		if (wf.set_df_property) {
+			try { wf.set_df_property(stateFld, 'get_query', stateQueryFn); } catch (e) {}
+			try { wf.set_df_property(cityDataFld, 'get_query', cityQueryFn); } catch (e) {}
+		}
+		if (sf) {
+			if (sf.df) sf.df.get_query = stateQueryFn;
+			sf.get_query = stateQueryFn;
+		}
+		if (cf) {
+			if (cf.df) cf.df.get_query = cityQueryFn;
+			cf.get_query = cityQueryFn;
+		}
 
-		var sf = wf.get_field('state');
-		var cf = wf.get_field('city');
-		if (sf && sf.df) sf.df.get_query = stateQueryFn;
-		if (cf && cf.df) cf.df.get_query = cityQueryFn;
+		var lastCountry = wf.get_value(countryFld);
+		var lastState = wf.get_value(stateFld);
 
-		wf.on('country', function () {
-			wf.set_value('state', '');
-			wf.set_value('city', '');
+		wf.on(countryFld, function () {
+			if (wf._is_syncing_address) return;
+			var currentCountry = wf.get_value(countryFld);
+			if (lastCountry === currentCountry) return;
+			lastCountry = currentCountry;
+
+			wf.set_value(stateFld, '');
+			wf.set_value(cityDataFld, '');
 		});
 
-		wf.on('state', function () {
-			wf.set_value('city', '');
+		wf.on(stateFld, function () {
+			if (wf._is_syncing_address) return;
+			var currentCountry = wf.get_value(countryFld);
+			var currentState = wf.get_value(stateFld);
+			if (lastState === currentState) return;
+			lastState = currentState;
+
+			if (!currentState) {
+				wf.set_value(cityDataFld, '');
+				return;
+			}
+
+			if (currentCountry) {
+				frappe.call({
+					method: "frappe.client.get_value",
+					args: {
+						doctype: "State",
+						filters: { name: currentState },
+						fieldname: ["country"]
+					},
+					callback: function(r) {
+						if (r.message && r.message.country && r.message.country !== currentCountry) {
+							frappe.msgprint("The selected State '" + currentState + "' does not belong to '" + currentCountry + "'.");
+							wf._is_syncing_address = true;
+							wf.set_value(stateFld, '');
+							wf.set_value(cityDataFld, '');
+							setTimeout(function() { wf._is_syncing_address = false; }, 200);
+						}
+					}
+				});
+			}
+
+			wf.set_value(cityDataFld, '');
 		});
 
-		// ── Show all cities for the selected state on focus (no typing needed) ──
+		// Focus show all trick for city
 		var cityField = wf.fields_dict.city;
-		var $inp = $(cityField.input || cityField.$input);
-		if ($inp.length) {
-			$inp.off('focus.slcmCity').on('focus.slcmCity', function () {
-				var stateVal = wf.get_value('state');
-				if (!stateVal) return;
-				var currentVal = $inp.val();
-				if (!currentVal) {
-					$inp.val('');
-					$inp.trigger('input');
-				}
+		if (cityField) {
+			var $inp = $(cityField.input || cityField.$input);
+			if ($inp.length) {
+				$inp.off('focus.slcmCity').on('focus.slcmCity', function () {
+					var stateVal = wf.get_value('state');
+					if (!stateVal) return;
+					var currentVal = $inp.val();
+					if (!currentVal) {
+						$inp.val('');
+						$inp.trigger('input');
+					}
+				});
+
+				$(document).off('awesomplete-open.slcmCity').on('awesomplete-open.slcmCity',
+					'[data-fieldname="city"] input',
+					function () {
+						var $ul = $(this).closest('.awesomplete').find('ul');
+						if ($ul.length) {
+							$ul.css({
+								width: $(this).outerWidth() + 'px',
+								minWidth: '0',
+								maxWidth: '100%',
+								boxSizing: 'border-box'
+							});
+						}
+					}
+				);
+			}
+		}
+
+		// ── Validate city belongs to selected state on awesomplete selection ──
+		$(document).off('awesomplete-selectcomplete.slcmCityValidate')
+			.on('awesomplete-selectcomplete.slcmCityValidate', '[data-fieldname="' + cityDataFld + '"] input', function () {
+				var selectedCity = $(this).val();
+				var currentState = wf.get_value(stateFld);
+				var currentCountry = wf.get_value(countryFld);
+				if (!selectedCity || !currentState) return;
+				if (currentCountry && currentCountry !== 'India') return; // non-India: no validation
+
+				frappe.call({
+					method: 'frappe.client.get_value',
+					args: {
+						doctype: 'City',
+						filters: { name: selectedCity },
+						fieldname: ['state', 'country']
+					},
+					callback: function (r) {
+						if (!r.message) return;
+						var cityState = r.message.state;
+						if (cityState && cityState !== currentState) {
+							showToast(
+								'\u26a0 "' + selectedCity + '" belongs to ' + cityState +
+								', not ' + currentState + '. Please select a city from ' + currentState + '.',
+								'error'
+							);
+							wf.set_value(cityDataFld, '');
+						}
+					}
+				});
 			});
 
-			$(document).off('awesomplete-open.slcmCity').on('awesomplete-open.slcmCity',
-				'[data-fieldname="city"] input',
-				function () {
-					var $ul = $(this).closest('.awesomplete').find('ul');
-					if ($ul.length) {
-						$ul.css({
-							width: $(this).outerWidth() + 'px',
-							minWidth: '0',
-							maxWidth: '100%',
-							boxSizing: 'border-box'
-						});
-					}
-				}
-			);
-		}
-
-	} catch (e) {
-		console.error('setupCityStateFilter error:', e);
+		return true;
 	}
-	return true;
+
+	return patchBlock('country', 'state', 'city');
 }
 
 function scheduleApplicantCountryStateCityFilter() {
@@ -4697,3 +5349,173 @@ function scheduleApplicantCountryStateCityFilter() {
 }
 
 
+
+
+function slcmSetupPayButton() {
+	setInterval(function () {
+		if (document.getElementById('slcm-pay-btn')) return;
+		var status = (resolveField('status') || '').trim().toLowerCase();
+		if (status === 'draft' || status === 'new' || !status) return;
+		
+		var feeStatus = resolveApplicationFeeStatus();
+		if (feeStatus === 'Paid' || feeStatus === 'Waived') return;
+		if (document.getElementById('slcm-fee-receipt-btn')) return;
+
+		var $topbar = $('#slcm-form-topbar');
+		if ($topbar.length) {
+			var btn = $('<button id="slcm-pay-btn" class="slcm-btn-pay" style="padding: 7px 14px; font-size: 13px; margin-left: auto; background: var(--slcm-primary, #1a3c6e); color: #fff; border: none; border-radius: 4px; cursor: pointer;">Pay Application Fee</button>');
+			btn.on('click', function () {
+				var applicantName = getDocName();
+				if (!applicantName) return;
+				
+				var payBtnDom = btn.get(0);
+				payBtnDom.disabled = true;
+				_feePayBtnSetLoading(payBtnDom, true, 'Checking fee\u2026');
+
+				frappe.call({
+					method: 'slcm.api.service.application_fee_service.get_application_fee_details',
+					args: { applicant_name: applicantName },
+					callback: function (fr) {
+						var fd = fr && fr.message;
+						var feeAmount = fd && (fd.fee_amount || 0);
+						var canSubmit = fd && fd.can_submit;
+						
+						if (feeAmount > 0 && !canSubmit) {
+							_feePayBtnSetLoading(payBtnDom, true, 'Creating order\u2026');
+							frappe.call({
+								method: 'slcm.api.service.fee_service.create_application_fee_razorpay_order',
+								args: { applicant_name: fd.applicant_name },
+								callback: function (r) {
+									var d = r && r.message;
+									if (d && d.already_paid) {
+										payBtnDom.disabled = false;
+										_feePayBtnSetLoading(payBtnDom, false);
+										showToast('Application fee has already been paid.', 'success');
+										_doFinalSubmit(applicantName, 'Completed');
+										return;
+									}
+									if (!d || !d.order_id) {
+										payBtnDom.disabled = false;
+										_feePayBtnSetLoading(payBtnDom, false);
+										showToast('Could not create payment order. Please try again.', 'error');
+										return;
+									}
+
+									var onPaid = function () {
+										_doFinalSubmit(applicantName, 'Completed');
+									};
+									var closeModal = function () {};
+
+									if (typeof Razorpay === 'undefined') {
+										_feePayBtnSetLoading(payBtnDom, true, 'Loading checkout\u2026');
+										var sc = document.createElement('script');
+										sc.src = 'https://checkout.razorpay.com/v1/checkout.js';
+										sc.onload = function () { _openRazorpay(d, fd, onPaid, payBtnDom, closeModal); };
+										sc.onerror = function () {
+											payBtnDom.disabled = false;
+											_feePayBtnSetLoading(payBtnDom, false);
+											showToast('Payment gateway script failed to load. Please refresh.', 'error');
+										};
+										document.head.appendChild(sc);
+									} else {
+										_feePayBtnSetLoading(payBtnDom, true, 'Opening checkout\u2026');
+										_openRazorpay(d, fd, onPaid, payBtnDom, closeModal);
+									}
+								},
+								error: function () {
+									payBtnDom.disabled = false;
+									_feePayBtnSetLoading(payBtnDom, false);
+									showToast('Network error while creating payment order.', 'error');
+								}
+							});
+						} else {
+							payBtnDom.disabled = false;
+							_feePayBtnSetLoading(payBtnDom, false);
+							showToast('Application fee is already paid or waived.', 'success');
+							_doFinalSubmit(applicantName, 'Completed');
+						}
+					},
+					error: function () {
+						payBtnDom.disabled = false;
+						_feePayBtnSetLoading(payBtnDom, false);
+						showToast('Could not verify fee status. Please try again.', 'error');
+					}
+				});
+			});
+			$topbar.append(btn);
+		}
+	}, 2000);
+}
+
+function slcmSetupPayButton() {
+	setInterval(function () {
+		if (document.getElementById('slcm-pay-btn')) return;
+		var status = resolveField('status');
+		if (status !== 'Submitted') return;
+
+		var $title = $('.slcm-app-heading-row');
+		if ($title.length) {
+			var btn = $('<button id="slcm-pay-btn" class="slcm-btn-pay" style="padding: 7px 14px; font-size: 13px; margin-left: 15px; background: var(--slcm-primary, #1a3c6e); color: #fff; border: none; border-radius: 4px; cursor: pointer;">Pay Application Fee</button>');
+			btn.on('click', function () {
+				var applicantName = getDocName();
+				if (!applicantName) return;
+				
+				_showSubmitOverlay('Checking application fee, Please don\'t refresh or close the page \u2026');
+				frappe.call({
+					method: 'slcm.api.service.application_fee_service.get_application_fee_details',
+					args: { applicant_name: applicantName },
+					callback: function (fr) {
+						_hideSubmitOverlay();
+						var fd = fr && fr.message;
+						var feeAmount = fd && (fd.fee_amount || 0);
+						var canSubmit = fd && fd.can_submit;
+						
+						if (feeAmount > 0 && !canSubmit) {
+							_showFeeModal(fd, function () {
+								_doFinalSubmit(applicantName, 'Completed');
+							});
+						} else {
+							showToast('Application fee is already paid or waived.', 'success');
+							_doFinalSubmit(applicantName, 'Completed');
+						}
+					},
+					error: function () {
+						_hideSubmitOverlay();
+						showToast('Could not verify fee status. Please try again.', 'error');
+					}
+				});
+			});
+			$title.append(btn);
+		}
+	}, 2000);
+}
+
+// ── FIX: Force Frappe Web Form to reflect Check fields properly on reload ──
+// Frappe's frontend evaluation of depends_on for parent sections wipes out child 
+// field values on load. We explicitly fetch the actual saved values from the DB 
+// and rehydrate the checkboxes, forcing the DOM to check them.
+frappe.ready(function() {
+	setTimeout(function() {
+		if (frappe.web_form && frappe.web_form.doc && frappe.web_form.doc.name && frappe.web_form.doc.name !== 'new') {
+			frappe.call({
+				method: 'frappe.client.get',
+				args: { doctype: 'Applicant', name: frappe.web_form.doc.name },
+				callback: function(r) {
+					if (r.message && frappe.web_form.fields_dict) {
+						$.each(frappe.web_form.fields_dict, function(fname, field) {
+							if (field.df.fieldtype === 'Check') {
+								var val = r.message[fname];
+								if (val === 1 || val === '1' || val === true) {
+									field.set_value(1);
+									if (field.$input && field.$input.length) {
+										field.$input.prop('checked', true);
+									}
+								}
+							}
+						});
+					}
+				}
+			});
+		}
+	}, 600);
+});

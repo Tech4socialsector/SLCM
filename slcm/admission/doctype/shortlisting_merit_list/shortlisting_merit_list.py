@@ -105,7 +105,7 @@ def download_merit_list(name, download_type, category=None):
     doc = frappe.get_doc("Shortlisting Merit List", name)
     
     columns = [
-        "Applicant ID", "Candidate Name", "Rank", "Category", 
+        "Applicant ID", "Candidate Name", "Rank", "Candidate Category", 
         "Category Rank", "Part A Score", "Vertical Category", 
         "Compartmentalized Category", "Horizontal Categories", 
         "Allocation Type", "Shortlisted Category"

@@ -841,7 +841,7 @@
                         </div>
                         <div class="flex justify-between items-end border-b border-white/20 pb-2">
                             <div class="text-[0.6875rem] tracking-wide text-white/90 font-bold">Course duration</div>
-                            <div class="font-bold text-sm">{{ programme.duration or '6' }} {{ (programme.duration_type or 'Month')|capitalize }}s</div>
+                            <div class="font-bold text-sm">{{ programme.duration or '6' }} {{ (programme.duration_type or 'Month')|capitalize }}{{ 's' if (programme.duration or '6')|int > 1 else '' }}</div>
                         </div>
                         <!-- <div class="flex justify-between items-end border-b border-white/20 pb-2">
                             <div class="text-[0.6875rem] tracking-wide text-white/90 font-bold">Mode</div>
@@ -1056,7 +1056,7 @@
     }
 
     async function frappeCall(method, args = {}) {
-        const csrfToken = window.csrf_token || getCookie('frappe_csrf_token');
+        const csrfToken = window.csrf_token || "{{ frappe.session.csrf_token }}" || getCookie('frappe_csrf_token');
         try {
             const response = await fetch('/api/method/' + method, {
                 method: 'POST',
@@ -1280,6 +1280,23 @@
         if (!input.files || !input.files[0]) return;
 
         const file = input.files[0];
+
+        if (fieldname === 'student_signature') {
+            const maxSize = 1 * 1024 * 1024; // 1 MB
+            if (file.size > maxSize) {
+                showToastLocal('Invalid File', 'Student Signature must be under 1 MB.', 'error');
+                input.value = '';
+                return;
+            }
+            
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+            if (!allowedTypes.includes(file.type)) {
+                showToastLocal('Invalid File', 'Only JPEG, JPG, and PNG files are allowed for Student Signature.', 'error');
+                input.value = '';
+                return;
+            }
+        }
+
         const reader = new FileReader();
         
         reader.onload = async function(e) {

@@ -71,15 +71,12 @@ def build_applicant_form_new_url(
 
 	parts = {
 		"program": program or "",
-		"admission_cycle": admission_cycle or "",
-		"campus": campus or "",
-		"intake_type": intake_type or "",
-		"admission_year": admission_year or "",
-		"academic_year": academic_year or "",
-		"program_level": program_level or "",
 	}
 	q = urlencode({k: v for k, v in parts.items() if v})
-	return f"/applicant-form/new?{q}" if q else "/applicant-form/new"
+	route = frappe.db.get_value("Web Form", "applicant-form", "route") or "applicant-form"
+	if not route.startswith("/"):
+		route = "/" + route
+	return f"{route}/new?{q}" if q else f"{route}/new"
 
 
 def build_login_redirect_to_applicant_form_new(
@@ -120,9 +117,14 @@ def build_existing_applicant_portal_url(
 		from urllib.parse import urlencode
 
 		return f"/application_form?{urlencode({'applicant': name})}"
+	
+	route = frappe.db.get_value("Web Form", "applicant-form", "route") or "applicant-form"
+	if not route.startswith("/"):
+		route = "/" + route
+		
 	if edit:
-		return f"/applicant-form/{name}/edit"
-	return f"/applicant-form/{name}"
+		return f"{route}/{name}/edit"
+	return f"{route}/{name}"
 
 
 # ── TYPOGRAPHY HELPER ────────────────────────────────────────────
@@ -739,10 +741,10 @@ def api_get_all_program_statuses(cycle):
     apps = frappe.get_all(
         "Applicant",
         filters={"owner": frappe.session.user, "admission_cycle": cycle},
-        fields=["program", "application_status"]
+        fields=["program", "status"]
     )
     
-    return {a.program: a.application_status for a in apps}
+    return {a.program: a.status for a in apps}
 
 @frappe.whitelist(allow_guest=True)
 def get_active_programs():
@@ -787,7 +789,7 @@ def get_active_programs():
                     p["campus_label"] = p.get("campus")
             # Fetch slug, abbreviation, and other details from Program
             prog_info = frappe.db.get_value("Program", p.program, 
-                ["program_slug", "program_shortcode", "program_duration", "program_image", "program_description", "brochure_file", "level_of_study"], 
+                ["program_slug", "program_shortcode", "program_duration", "program_image", "program_description", "brochure_file", "level_of_study", "application_form_link"], 
                 as_dict=True
             )
             if prog_info:
@@ -799,12 +801,14 @@ def get_active_programs():
                 p["program_description"] = prog_info.program_description
                 p["brochure_file"] = prog_info.brochure_file
                 p["program_level"] = prog_info.level_of_study or p.get("program_level")
+                p["application_form_link"] = prog_info.application_form_link
             else:
                 p["program_slug"] = _re.sub(r'[^a-z0-9]+', '-', (p.program or "").lower()).strip('-')
                 p["program_abbreviation"] = ""
                 p["duration"] = ""
                 p["program_description"] = ""
                 p["brochure_file"] = ""
+                p["application_form_link"] = ""
 
             p["description"] = p.get("desciption") or ""
             
@@ -1140,14 +1144,14 @@ def is_application_editable(applicant):
         applicant = frappe.get_doc("Applicant", applicant, ignore_permissions=True)
     
     # If no status, default to True (Draft-like)
-    if not applicant.get("application_status"):
+    if not applicant.get("status"):
         return True
     
     # If no admission_cycle, we can't look up stages
     if not applicant.get("admission_cycle"):
         return True
     
-    current_status = applicant.application_status
+    current_status = applicant.status
     
     # Draft is always editable by default, overriding stage settings
     if current_status == "Draft":

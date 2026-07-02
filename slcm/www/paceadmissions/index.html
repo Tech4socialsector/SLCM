@@ -488,7 +488,7 @@ tailwind.config = {
                 }
                 fetch('/api/method/' + method, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': '{{ frappe.session.csrf_token }}' },
                     body: JSON.stringify(args)
                 }).then(function (res) { return res.json(); })
                   .then(function (d) { resolve(d.message); })

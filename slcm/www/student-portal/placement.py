@@ -78,7 +78,7 @@ def get_context(context):
 			filters={"student": student_name},
 			fields=[
 				"name", "opportunity", "applied_on",
-				"application_status", "remarks",
+				"status", "remarks",
 			],
 			order_by="applied_on desc",
 			ignore_permissions=True,
@@ -95,7 +95,7 @@ def get_context(context):
 
 		context.my_applications = my_apps
 		context.applications_count = len(my_apps)
-		context.shortlisted_count = sum(1 for a in my_apps if a.application_status == "Shortlisted")
+		context.shortlisted_count = sum(1 for a in my_apps if a.status == "Shortlisted")
 
 		# ── Placement Offer ───────────────────────────────────────
 		offer = frappe.db.get_value(
@@ -142,7 +142,7 @@ def apply_for_opportunity(opportunity, resume_url=""):
 		"opportunity": opportunity,
 		"applied_on": nowdatetime(),
 		"resume_used": resume_url or "",
-		"application_status": "Applied",
+		"status": "Applied",
 	})
 	doc.insert(ignore_permissions=True)
 	frappe.db.commit()

@@ -52,7 +52,7 @@ class ApplicantDashboard {
                                 <p class="mb-2 opacity-75">Application ID: ${applicant.applicant_id || 'N/A'}</p>
                                 <div class="d-flex align-items-center mt-3">
                                     <span class="badge rounded-pill bg-white text-primary px-3 py-2 me-3 fw-bold">
-                                        ${applicant.application_status}
+                                        ${applicant.status}
                                     </span>
                                     <span class="text-white-50">${applicant.program} | ${applicant.application_type}</span>
                                 </div>

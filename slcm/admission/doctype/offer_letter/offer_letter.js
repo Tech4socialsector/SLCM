@@ -10,7 +10,7 @@ frappe.ui.form.on("Offer Letter", {
             frm.set_df_property('rendered_content', 'options', frm.doc.rendered_content);
         }
 
-        if (frm.doc.offer_status === "Issued") {
+        if (frm.doc.status === "Issued") {
             frm.add_custom_button(__('Send Reminder'), function () {
                 const offers = [{
                     name: frm.doc.name,
@@ -28,9 +28,9 @@ frappe.ui.form.on("Offer Letter", {
             minDate: new Date(frappe.datetime.get_today()),
         });
 
-        if (frm.doc.offer_status === "Accepted") {
+        if (frm.doc.status === "Accepted") {
             frm.add_custom_button(__('Record Manual Payment'), function () {
-                if (frm.doc.offer_status === "Payment Completed") {
+                if (frm.doc.status === "Payment Completed") {
                     frappe.msgprint(__('Fee has already been paid for this offer.'));
                     return;
                 }
@@ -118,7 +118,7 @@ frappe.ui.form.on("Offer Letter", {
             }, __('Actions'));
         }
 
-        if (frm.doc.offer_status === "Payment Completed") {
+        if (frm.doc.status === "Payment Completed") {
             frm.add_custom_button(__('Cancel Admission'), function () {
                 frappe.model.with_doctype('Admission Cancellation', () => {
                     let new_doc = frappe.model.get_new_doc('Admission Cancellation');
@@ -160,7 +160,7 @@ frappe.ui.form.on("Offer Letter", {
         // 2. Status is Issued or beyond (locked state)
         // 3. Document has changes (dirty)
         // 4. Reason hasn't been captured yet
-        if (!frm.is_new() && frm.doc.offer_status !== "Draft" && frm.is_dirty() && !frm.doc.edit_reason) {
+        if (!frm.is_new() && frm.doc.status !== "Draft" && frm.is_dirty() && !frm.doc.edit_reason) {
 
             frappe.prompt([
                 {

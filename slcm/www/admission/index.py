@@ -55,6 +55,7 @@ def _load_program_detail(context, slug):
     context.prog_app_fee     = gf("application_fee")
     context.prog_deadline    = gf("application_deadline")
     context.prog_brochure    = gf("brochure_file")
+    context.prog_app_link    = gf("application_form_link")
     context.prog_slug        = slug
 
     # Media (child table "media" / Program Media)
@@ -246,7 +247,7 @@ def _load_program_detail(context, slug):
             _recs = frappe.get_all(
                 "Applicant",
                 filters=filters,
-                fields=["name", "application_status"],
+                fields=["name", "status"],
                 order_by="creation desc",
                 limit=1
             )
@@ -259,7 +260,7 @@ def _load_program_detail(context, slug):
                 _all = frappe.get_all(
                     "Applicant",
                     filters=f2,
-                    fields=["name", "program", "application_status"],
+                    fields=["name", "program", "status"],
                     order_by="creation desc",
                     limit=30
                 )
@@ -272,7 +273,7 @@ def _load_program_detail(context, slug):
                         break
             if _recs:
                 context.user_app_name   = _recs[0].get("name") or ""
-                context.user_app_status = _recs[0].get("application_status") or ""
+                context.user_app_status = _recs[0].get("status") or ""
         except Exception as _ex:
             frappe.log_error(title="prog_detail_app_lookup", message=str(_ex))
 
@@ -321,7 +322,7 @@ def _load_program_detail(context, slug):
     _aac = (context.active_cycle.get("academic_year") if context.active_cycle else "") or ""
 
     context.apply_web_form_url = build_applicant_form_new_url(
-        prog_name or "",
+        slug or "",
         _cn,
         campus=ac_campus,
         intake_type=ac_intake,
@@ -330,7 +331,7 @@ def _load_program_detail(context, slug):
         program_level=ac_prog_level,
     )
     context.apply_web_form_login_url = build_login_redirect_to_applicant_form_new(
-        prog_name or "",
+        slug or "",
         _cn,
         campus=ac_campus,
         intake_type=ac_intake,
@@ -470,7 +471,7 @@ def get_context(context):
             _uapps = frappe.get_all(
                 "Applicant",
                 filters=filters,
-                fields=["name", "program", "application_status"],
+                fields=["name", "program", "status"],
                 order_by="creation desc",
                 limit=50
             )
@@ -479,7 +480,7 @@ def get_context(context):
                 if _key and _key not in context.user_app_map:
                     context.user_app_map[_key] = {
                         "app_name": _ua.get("name") or "",
-                        "status":   _ua.get("application_status") or ""
+                        "status":   _ua.get("status") or ""
                     }
             if context.user_app_map:
                 context.has_any_application = True

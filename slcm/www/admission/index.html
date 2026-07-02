@@ -1,36 +1,3 @@
-<!--
-  TESTING CHECKLIST — complete before sending for approval
-  
-  1. Technical check
-     - [ ] Font loads correctly in Chrome, Firefox, Safari
-     - [ ] Font applies to ALL sections including cards, tables, modals
-     - [ ] Font size changes (Small/Normal/Large) reflect across heading, subheading, body
-     - [ ] Icons render on all pages
-     - [ ] No console errors (missing CDN, broken paths, 404s)
-     - [ ] Page loads without FOUC (flash of unstyled content)
-
-  2. Security check
-     - [ ] No API keys or credentials in HTML source
-     - [ ] CDN links include integrity and crossorigin attributes
-     - [ ] No inline event handlers (onclick= etc.) added during this change
-
-  3. UI / Usability check
-     - [ ] Mobile breakpoints still work correctly
-     - [ ] Button sizes and spacing unchanged
-     - [ ] Nav link sizes unchanged
-     - [ ] No layout shifts caused by font change
-
-  4. Language & spell check
-     - [ ] English (UK/India) spellings used throughout
-     - [ ] Sentence case on labels and descriptions
-     - [ ] Title Case on headings, buttons, nav
-     - [ ] No ALL CAPS in visible text
-     - [ ] Active voice used
-     - [ ] Instructions are short and direct
-     - [ ] No repeated phrases across heading levels
-     - [ ] Terminology consistent (programme, enrol, sign in, etc.)
--->
-
 {% extends "slcm/www/admission_base.html" %}
 
 {% block title %}{{ portal_config.get('portal_title') if portal_config and portal_config.get else
@@ -43,8 +10,8 @@
     --primary:   {{ portal_config.get('primary_color','#1a3c6e') if portal_config.get else portal_config.primary_color or '#1a3c6e' }};
     --secondary: {{ portal_config.get('secondary_color','#c8a14b') if portal_config.get else portal_config.secondary_color or '#c8a14b' }};
     {% else %}
-    --primary: #1a3c6e;
-    --secondary: #c8a14b;
+    --primary: #920C24;
+    --secondary: #2B2E4A;
     {% endif %}
   }
 
@@ -945,7 +912,7 @@
       </a>
       {% endif %}
       {% if frappe.session.user != "Guest" %}
-      <a href="{{ apply_web_form_url if (_is_cycle_active and not prog_seats_full) else 'javascript:void(0)' }}"
+      <a href="{{ (prog_app_link or apply_web_form_url) if (_is_cycle_active and not prog_seats_full) else 'javascript:void(0)' }}"
          style="display:inline-flex;align-items:center;gap:8px;
                 padding:10px 24px;border-radius:10px;font-size:13px;
                 font-weight:700;color:white;text-decoration:none;
@@ -959,7 +926,7 @@
         {{ 'Seats Full' if prog_seats_full else ('Apply Now' if _is_cycle_active else ('Yet to Open' if _is_yet_to_open else 'Application Closed')) }}
       </a>
       {% else %}
-      <a href="{{ apply_web_form_login_url if (_is_cycle_active and not prog_seats_full) else 'javascript:void(0)' }}"
+      <a href="{{ (prog_app_link or apply_web_form_login_url) if (_is_cycle_active and not prog_seats_full) else 'javascript:void(0)' }}"
          style="display:inline-flex;align-items:center;gap:8px;
                 padding:10px 24px;border-radius:10px;font-size:13px;
                 font-weight:700;color:white;text-decoration:none;
@@ -1218,7 +1185,7 @@
                 Applied
               </a>
               {% else %}
-              <a href="{{ apply_web_form_url if _is_cycle_active else 'javascript:void(0)' }}"
+              <a href="{{ (prog_app_link or apply_web_form_url) if _is_cycle_active else 'javascript:void(0)' }}"
                 style="display:block;width:100%;padding:13px;text-align:center;border-radius:10px;background:var(--primary);color:white;font-weight:700;font-size:14px;text-decoration:none;box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);{{ 'opacity: 0.6; cursor: not-allowed; pointer-events: none;' if not _is_cycle_active else '' }}"
                 {% if _is_cycle_active %} onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'" {%
                 endif %}>
@@ -1226,7 +1193,7 @@
               </a>
               {% endif %}
               {% else %}
-              <a href="{{ apply_web_form_login_url if _is_cycle_active else 'javascript:void(0)' }}"
+              <a href="{{ (prog_app_link or apply_web_form_login_url) if _is_cycle_active else 'javascript:void(0)' }}"
                 style="display:block;width:100%;padding:13px;text-align:center;border-radius:10px;background:var(--primary);color:white;font-weight:700;font-size:14px;text-decoration:none;box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);{{ 'opacity: 0.6; cursor: not-allowed; pointer-events: none;' if not _is_cycle_active else '' }}"
                 {% if _is_cycle_active %} onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'" {%
                 endif %}>
@@ -1329,7 +1296,7 @@
       {% if _tagline %}<h2 class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _tagline }}</h2>{% endif %}
       <div class="mt-10 flex flex-wrap justify-center gap-4">
         <a href="#programs"
-          class="rounded-xl px-8 py-4 text-lg font-bold text-white hover:scale-105 transition-transform"
+          class="rounded-xl px-6 py-3 text-lg font-bold text-white hover:scale-105 transition-transform"
           style="background:var(--primary)">{{ _cta1 }}</a>
         <!-- <button class="rounded-xl border border-white/20 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-md hover:bg-white/20 transition-all">{{ _cta2 }}</button> -->
       </div>
@@ -1356,7 +1323,7 @@
       {% if _ssub %}<h2 class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _ssub }}</h2>{% endif %}
       <div class="mt-10 flex flex-wrap justify-center gap-4">
         <a href="#programs"
-          class="rounded-xl px-8 py-4 text-lg font-bold text-white hover:scale-105 transition-transform"
+          class="rounded-xl px-6 py-3 text-lg font-bold text-white hover:scale-105 transition-transform"
           style="background:var(--primary)">{{ _cta1 }}</a>
         <!-- <button class="rounded-xl border border-white/20 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-md hover:bg-white/20 transition-all">{{ _cta2 }}</button> -->
       </div>
@@ -1398,14 +1365,14 @@
       <div class="flex items-center gap-4">
         <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full"
           style="background:rgba(26,60,110,0.08);color:var(--primary)">
-          <span class="material-symbols-outlined">campaign</span>
+          <span class="material-symbols-outlined" style="font-size: 32px !important;">campaign</span>
         </div>
         <div>
-          <h3 class="text-xl font-bold text-slate-900">
+          <h2 class="font-headline font-black text-slate-900" style="font-size:clamp(22px,3.5vw,36px);">
             {% if _show_ann and _ann_text %}{{ _ann_text | safe }}
             {% elif active_cycle %}Admissions {{ active_cycle.name }} Now Open!
             {% else %}Admissions are currently closed.{% endif %}
-          </h3>
+          </h2>
         </div>
       </div>
       {% if active_cycle %}
@@ -1450,7 +1417,7 @@
 
 <!-- ══ PROGRAMS ══════════════════════════════════════════════════════ -->
 <section id="programs" class="py-20">
-  {% if active_cycle and _app_start and _app_end %}
+  <!-- {% if active_cycle and _app_start and _app_end %}
   <div class="mb-8 p-4 rounded-xl border flex items-center gap-3 fade-card
     {{ 'border-red-200 bg-red-50' if _is_closed else ('border-amber-200 bg-amber-50' if _is_yet_to_open else 'border-emerald-200 bg-emerald-50') }}">
     <span class="material-symbols-outlined {{ 'text-red-600' if _is_closed else ('text-amber-600' if _is_yet_to_open else 'text-emerald-600') }}">
@@ -1466,13 +1433,13 @@
       {% endif %}
     </p>
   </div>
-  {% endif %}
+  {% endif %} -->
   <div class="mb-12 flex flex-col items-center justify-center text-center gap-4">
     <div>
       <h2 class="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">Academic Programmes</h2>
       <p class="mt-2 text-slate-500">
         {{ programs|length }} programme{{ 's' if programs|length != 1 }}
-        {% if active_cycle %} available — {{ active_cycle.name }}{% endif %}
+        {% if active_cycle %} available{% endif %}
       </p>
     </div>
   </div>
@@ -1502,7 +1469,7 @@
     {% set _pid = p.get('program') or p.get('name') if p.get else (p.program or p.name or '') %}
 
     <article class="prog-card fade-card flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm"
-      style="width:320px;height:480px;border:1.5px solid rgba(26,60,110,0.06);cursor:pointer;margin:0 auto;box-sizing:border-box;" onclick="window.location='/admission/{{ _slug }}'"
+      style="width:320px;height:100%;min-height:480px;border:1.5px solid rgba(26,60,110,0.06);cursor:pointer;margin:0 auto;box-sizing:border-box;" onclick="window.location='/admission/{{ _slug }}'"
       tabindex="0" role="button" aria-label="View {{ _name }}">
 
       <!-- Image -->
@@ -1548,9 +1515,9 @@
 
         <!-- Meta -->
         <div class="mt-auto pt-3 flex flex-wrap gap-3 text-md text-slate-400 border-t border-slate-50">
-          <!-- {% if _seats %}<span>👥 {{ _seats }} seats</span>{% endif %} -->
-          {% if _dur %}<span>🕐 {{ _dur }}</span>{% endif %}
-          {% if _show_campus %}<span>🏫 {{ _campus_label }}</span>{% endif %}
+          <!-- {% if _seats %}<span class="flex items-center gap-1"><span class="material-symbols-outlined" style="font-size:16px;color:var(--primary);">group</span> {{ _seats }} seats</span>{% endif %} -->
+          {% if _dur %}<span class="flex items-center gap-1"><span class="material-symbols-outlined" style="font-size:16px;color:var(--primary);">schedule</span> {{ _dur }}</span>{% endif %}
+          {% if _show_campus %}<span class="flex items-center gap-1"><span class="material-symbols-outlined" style="font-size:16px;color:var(--primary);">account_balance</span> {{ _campus_label }}</span>{% endif %}
         </div>
 
         <!-- Buttons -->
@@ -1559,7 +1526,7 @@
           {% if frappe.session.user != "Guest" %}
           {% set _is_full = p.get('seats_full') if p.get else p.seats_full %}
           {% if _ua.get('app_name') %}
-          <a href="/my-applications?app={{ _ua.app_name }}" style="display:inline-flex;align-items:center;gap:6px;
+          <a href="/my-applications?app={{ _ua.app_name }}" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;
                         padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;
                         text-decoration:none;color:#fff;
                         background:#10b981;transition:opacity .2s;" onmouseover="this.style.opacity='.85'"
@@ -1568,7 +1535,7 @@
             Applied
           </a>
           {% elif has_any_application and not (allow_multiple_applications|default(false)) %}
-          <a href="javascript:void(0)" style="display:inline-flex;align-items:center;gap:6px;
+          <a href="javascript:void(0)" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;
                         padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;
                         text-decoration:none;color:#fff;
                         background:#94a3b8;cursor:not-allowed;opacity:0.6;" onclick="event.stopPropagation()">
@@ -1576,8 +1543,8 @@
             Apply now
           </a>
           {% else %}
-          <a href="{{ build_applicant_form_new_url(_pid, p.admission_cycle or (active_cycle.name if active_cycle else ''), campus=(p.campus or ''), intake_type=(p.intake_type or ''), admission_year=(active_cycle.admission_year if active_cycle else ''), academic_year=(active_cycle.academic_year if active_cycle else ''), program_level=(p.program_level or '')) if (_is_cycle_active and not _is_full) else 'javascript:void(0)' }}"
-            style="display:inline-flex;align-items:center;gap:6px;
+          <a href="{{ (p.application_form_link or build_applicant_form_new_url(_slug, p.admission_cycle or (active_cycle.name if active_cycle else ''), campus=(p.campus or ''), intake_type=(p.intake_type or ''), admission_year=(active_cycle.admission_year if active_cycle else ''), academic_year=(active_cycle.academic_year if active_cycle else ''), program_level=(p.program_level or ''))) if (_is_cycle_active and not _is_full) else 'javascript:void(0)' }}"
+            style="display:inline-flex;align-items:center;justify-content:center;gap:6px;
                         padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;
                         text-decoration:none;color:#fff;
                         background:var(--primary,#CB2929);transition:opacity .2s;
@@ -1585,12 +1552,12 @@
             {% if _is_cycle_active and not _is_full %} onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'" {%
             endif %} onclick="event.stopPropagation()">
             <span class="material-symbols-outlined" style="font-size:16px;">{{ 'edit_square' if not _is_full else 'block' }}</span>
-            {{ 'Application Closed' if _is_full else ('Apply now' if _is_cycle_active else 'Application Closed') }}
+            {{ 'Closed' if _is_full else ('Apply now' if _is_cycle_active else 'Closed') }}
           </a>
           {% endif %}
           {% else %}
           {% set _is_full = p.get('seats_full') if p.get else p.seats_full %}
-          <a href="{{ build_login_redirect_to_applicant_form_new(_pid, p.admission_cycle or (active_cycle.name if active_cycle else ''), campus=(p.campus or ''), intake_type=(p.intake_type or ''), admission_year=(active_cycle.admission_year if active_cycle else ''), academic_year=(active_cycle.academic_year if active_cycle else ''), program_level=(p.program_level or '')) if (_is_cycle_active and not _is_full) else 'javascript:void(0)' }}" style="display:inline-flex;align-items:center;gap:6px;
+          <a href="{{ (p.application_form_link or build_login_redirect_to_applicant_form_new(_slug, p.admission_cycle or (active_cycle.name if active_cycle else ''), campus=(p.campus or ''), intake_type=(p.intake_type or ''), admission_year=(active_cycle.admission_year if active_cycle else ''), academic_year=(active_cycle.academic_year if active_cycle else ''), program_level=(p.program_level or ''))) if (_is_cycle_active and not _is_full) else 'javascript:void(0)' }}" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;
                       padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;
                       text-decoration:none;color:#fff;
                       background:var(--primary,#CB2929);transition:opacity .2s;
@@ -1598,7 +1565,7 @@
             {% if _is_cycle_active and not _is_full %} onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'" {%
             endif %} onclick="event.stopPropagation()">
             <span class="material-symbols-outlined" style="font-size:16px;">{{ 'login' if not _is_full else 'block' }}</span>
-            {{ 'Application Closed' if _is_full else ('Apply now' if _is_cycle_active else 'Application Closed') }}
+            {{ 'Closed' if _is_full else ('Apply now' if _is_cycle_active else 'Closed') }}
           </a>
           {% endif %}
           <a href="/admission/{{ _slug }}"
@@ -1606,18 +1573,14 @@
             style="background:rgba(26,60,110,0.08);color:var(--primary)" onclick="event.stopPropagation()">
             Details
           </a>
-        </div>
-
-        {% if _bro %}
-        <div class="mt-3 border-t border-slate-100 pt-3">
+          {% if _bro %}
           <a href="{{ _bro }}" target="_blank"
-            class="flex items-center gap-1 text-xs text-slate-400 hover:underline transition-colors"
-            style="color:var(--muted,#94a3b8)" onclick="event.stopPropagation()" title="Download brochure">
-            <span class="material-symbols-outlined" style="font-size:14px">download</span>
-            Download brochure
+            class="flex items-center justify-center rounded-lg px-3 transition-colors hover:bg-slate-200"
+            style="background:rgba(26,60,110,0.08);color:var(--primary)" onclick="event.stopPropagation()" title="Download brochure">
+            <span class="material-symbols-outlined" style="font-size:20px">download</span>
           </a>
+          {% endif %}
         </div>
-        {% endif %}
       </div>
     </article>
 

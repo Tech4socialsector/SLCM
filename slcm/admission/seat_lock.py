@@ -14,7 +14,7 @@ def lock_seat_after_payment(payment_request):
 	"""
 	Called when a Payment Request becomes Paid (e.g. from Razorpay webhook).
 	Fetches the linked Admission Offer (Offer Letter), marks seat_locked = 1,
-	updates offer_status = Payment Completed, and syncs seat allocation status.
+	updates status = Payment Completed, and syncs seat allocation status.
 	"""
 	if not payment_request:
 		return
@@ -41,7 +41,7 @@ def lock_seat_after_payment(payment_request):
 
 	# Mark seat locked and confirm offer (Payment Completed = confirmed in this codebase)
 	offer.db_set("seat_locked", 1)
-	offer.db_set("offer_status", "Payment Completed")
+	offer.db_set("status", "Payment Completed")
 	frappe.db.commit()
 
 	# Update Applicant Fee Assignment to Paid
@@ -57,12 +57,12 @@ def lock_seat_after_payment(payment_request):
 	from slcm.api.service import fee_service as fee_service_module
 
 	OfferService.sync_seat_allocation_status(offer, "Fee Paid")
-	OfferService.update_applicant_status(offer.applicant, application_status="Fee Paid")
+	OfferService.update_applicant_status(offer.applicant, status="Fee Paid")
 	OfferService.log_action(offer.name, "Fee Paid", _("Payment confirmed via gateway webhook. Seat locked."))
 
 	# Generate receipt if not already generated
 	payment_id = getattr(pr_doc, "razorpay_payment_id", None) or pr_doc.get("razorpay_payment_id") or pr_doc.get("transaction_id")
-	if payment_id and frappe.db.get_value("Offer Letter", offer.name, "offer_status") == "Payment Completed":
+	if payment_id and frappe.db.get_value("Offer Letter", offer.name, "status") == "Payment Completed":
 		try:
 			fee_service_module.FeeService.generate_receipt(offer, payment_id, "Online")
 		except Exception as e:

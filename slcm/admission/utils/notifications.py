@@ -112,7 +112,7 @@ def _send_email_notification(applicant, notification_type, message):
             "{{candidate_name}}": applicant_doc.get("candidate_name", ""),
             "{{applicant_id}}": applicant_doc.applicant_id,
             "{{program}}": applicant_doc.get("program", ""),
-            "{{status}}": applicant_doc.get("application_status", ""),
+            "{{status}}": applicant_doc.get("status", ""),
             "{{message}}": message
         }
         for placeholder, value in replacements.items():

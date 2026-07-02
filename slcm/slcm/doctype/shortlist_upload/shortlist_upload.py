@@ -13,7 +13,7 @@ class ShortlistUpload(Document):
 		Steps (to be implemented):
 		1. Parse shortlist file (Excel / PDF)
 		2. Map students to Placement Application
-		3. Update application_status = 'Shortlisted'
+		3. Update status = 'Shortlisted'
 		4. Send notifications to students
 		"""
 		pass

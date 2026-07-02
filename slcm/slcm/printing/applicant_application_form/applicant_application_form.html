@@ -1,705 +1,787 @@
-{#- ================================================================
-    NLSIU — Applicant Application Form — Print Format
-    DocType: Applicant
-    Style: Bordered table, compact rows, NLSIU header banner (admit card style)
-    Page 1: All sections  |  Page 2+: Uploaded documents
-    ================================================================ -#}
-
-{%- set _site = frappe.utils.get_url() -%}
-
-{#- ── Helper: display a field value or em-dash ───────────────── -#}
-{%- macro f(val) -%}
-  {%- if val and val != 'None' -%}{{ val }}{%- else -%}&mdash;{%- endif -%}
-{%- endmacro -%}
-
-{#- ── Helper: Yes/No from checkbox ──────────────────────────── -#}
-{%- macro yn(val) -%}{{ 'Yes' if val else 'No' }}{%- endmacro -%}
-
-{#- ── Helper: format date ────────────────────────────────────── -#}
-{%- macro fd(val) -%}
-  {%- if val -%}{{ frappe.utils.formatdate(val, 'dd-MM-yyyy') }}{%- else -%}&mdash;{%- endif -%}
-{%- endmacro -%}
+{#- ================================================================ NLSIU — Applicant Application
+Form — Print Format DocType: Applicant Style: Bordered table, compact rows, NLSIU header banner
+(admit card style) Page 1: All sections | Page 2+: Uploaded documents
+================================================================ -#} {%- set _site =
+frappe.utils.get_url() -%} {#- ── Helper: display a field value or em-dash ───────────────── -#}
+{%- macro f(val) -%} {%- if val and val != 'None' -%}{{ val }}{%- else -%}&mdash;{%- endif -%} {%-
+endmacro -%} {#- ── Helper: Yes/No from checkbox ──────────────────────────── -#} {%- macro yn(val)
+-%}{{ 'Yes' if val else 'No' }}{%- endmacro -%} {#- ── Helper: format date
+────────────────────────────────────── -#} {%- macro fd(val) -%} {%- if val -%}{{
+frappe.utils.formatdate(val, 'dd-MM-yyyy') }}{%- else -%}&mdash;{%- endif -%} {%- endmacro -%}
 
 <style>
-/* ── Reset & base ─────────────────────────────────────────────── */
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: Arial, Helvetica, sans-serif; font-size: 9.5pt;
-       color: #000; background: #fff; }
+	/* ── Reset & base ─────────────────────────────────────────────── */
+	* {
+		box-sizing: border-box;
+		margin: 0;
+		padding: 0;
+	}
+	body {
+		font-family: Arial, Helvetica, sans-serif;
+		font-size: 9.5pt;
+		color: #000;
+		background: #fff;
+	}
 
-/* ── Page ─────────────────────────────────────────────────────── */
-.pf-page {
-  width: 210mm; min-height: 297mm;
-  margin: 0 auto; padding: 12mm 14mm 10mm;
-  background: #fff;
-}
- @media print {
-  .pf-page { padding: 10mm 12mm 8mm; page-break-after: always; }
-  .pf-page:last-child { page-break-after: auto; }
-  .no-print { display: none !important; }
-}
+	/* ── Page ─────────────────────────────────────────────────────── */
+	.pf-page {
+		width: 210mm;
+		min-height: 297mm;
+		margin: 0 auto;
+		padding: 12mm 14mm 10mm;
+		background: #fff;
+	}
+	@media print {
+		.pf-page {
+			padding: 10mm 12mm 8mm;
+			page-break-after: always;
+		}
+		.pf-page:last-child {
+			page-break-after: auto;
+		}
+		.no-print {
+			display: none !important;
+		}
+	}
 
-/* ── NLSIU Header banner ──────────────────────────────────────── */
-.pf-header {
-  display: flex; align-items: center;
-  border: 2px solid #1a3c6e;
-  background: #1a3c6e; color: #fff;
-  padding: 8px 14px; margin-bottom: 0;
-}
-.pf-header-logo {
-  width: 52px; height: 52px; flex-shrink: 0;
-  background: #fff; border-radius: 4px;
-  display: flex; align-items: center; justify-content: center;
-  overflow: hidden; margin-right: 14px;
-}
-.pf-header-logo img { width: 48px; height: 48px; object-fit: contain; }
-.pf-header-text { flex: 1; }
-.pf-header-inst {
-  font-size: 13pt; font-weight: bold; letter-spacing: 0.3px;
-  line-height: 1.2; text-transform: uppercase;
-}
-.pf-header-sub {
-  font-size: 8pt; letter-spacing: 0.5px; margin-top: 2px;
-  text-transform: uppercase; opacity: 0.85;
-}
+	/* ── NLSIU Header banner ──────────────────────────────────────── */
+	.pf-header {
+		display: flex;
+		align-items: center;
+		border: 2px solid #1a3c6e;
+		background: #1a3c6e;
+		color: #fff;
+		padding: 8px 14px;
+		margin-bottom: 0;
+	}
+	.pf-header-logo {
+		width: 52px;
+		height: 52px;
+		flex-shrink: 0;
+		background: #fff;
+		border-radius: 4px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		overflow: hidden;
+		margin-right: 14px;
+	}
+	.pf-header-logo img {
+		width: 48px;
+		height: 48px;
+		object-fit: contain;
+	}
+	.pf-header-text {
+		flex: 1;
+	}
+	.pf-header-inst {
+		font-size: 13pt;
+		font-weight: bold;
+		letter-spacing: 0.3px;
+		line-height: 1.2;
+		text-transform: uppercase;
+	}
+	.pf-header-sub {
+		font-size: 8pt;
+		letter-spacing: 0.5px;
+		margin-top: 2px;
+		text-transform: uppercase;
+		opacity: 0.85;
+	}
 
-/* ── Form title bar ───────────────────────────────────────────── */
-.pf-title-bar {
-  border: 1.5px solid #1a3c6e; border-top: none;
-  text-align: center; padding: 5px;
-  background: #f0f4fa; margin-bottom: 0;
-}
-.pf-title { font-size: 11pt; font-weight: bold; color: #1a3c6e; }
-.pf-subtitle { font-size: 9pt; color: #333; margin-top: 1px; }
+	/* ── Form title bar ───────────────────────────────────────────── */
+	.pf-title-bar {
+		border: 1.5px solid #1a3c6e;
+		border-top: none;
+		text-align: center;
+		padding: 5px;
+		background: #f0f4fa;
+		margin-bottom: 0;
+	}
+	.pf-title {
+		font-size: 11pt;
+		font-weight: bold;
+		color: #1a3c6e;
+	}
+	.pf-subtitle {
+		font-size: 9pt;
+		color: #333;
+		margin-top: 1px;
+	}
 
-/* ── Application ID bar ───────────────────────────────────────── */
-.pf-appid-bar {
-  display: flex; justify-content: space-between; align-items: center;
-  border: 1.5px solid #1a3c6e; border-top: none;
-  padding: 4px 10px; background: #fff; font-size: 8.5pt;
-  margin-bottom: 0;
-}
+	/* ── Application ID bar ───────────────────────────────────────── */
+	.pf-appid-bar {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		border: 1.5px solid #1a3c6e;
+		border-top: none;
+		padding: 4px 10px;
+		background: #fff;
+		font-size: 8.5pt;
+		margin-bottom: 0;
+	}
 
-/* ── Main table (all field rows) ──────────────────────────────── */
-.pf-table {
-  width: 100%; border-collapse: collapse;
-  border: 1.5px solid #1a3c6e; border-top: none;
-  margin-bottom: 0;
-}
-.pf-table td, .pf-table th {
-  border: 1px solid #aab8cc;
-  padding: 4px 8px; vertical-align: top;
-  font-size: 9pt; line-height: 1.4;
-}
+	/* ── Main table (all field rows) ──────────────────────────────── */
+	.pf-table {
+		width: 100%;
+		border-collapse: collapse;
+		border: 1.5px solid #1a3c6e;
+		border-top: none;
+		margin-bottom: 0;
+	}
+	.pf-table td,
+	.pf-table th {
+		border: 1px solid #aab8cc;
+		padding: 4px 8px;
+		vertical-align: top;
+		font-size: 9pt;
+		line-height: 1.4;
+	}
 
-/* ── Section heading row ──────────────────────────────────────── */
-.pf-sec {
-  background: #1a3c6e; color: #fff;
-  font-weight: bold; font-size: 9.5pt;
-  letter-spacing: 0.3px; padding: 5px 8px;
-  text-transform: uppercase;
-}
+	/* ── Section heading row ──────────────────────────────────────── */
+	.pf-sec {
+		background: #1a3c6e;
+		color: #fff;
+		font-weight: bold;
+		font-size: 9.5pt;
+		letter-spacing: 0.3px;
+		padding: 5px 8px;
+		text-transform: uppercase;
+	}
 
-/* ── Label cell ───────────────────────────────────────────────── */
-.pf-lbl {
-  width: 32%; background: #f5f7fb;
-  font-weight: 600; color: #1a3c6e;
-  white-space: nowrap;
-}
+	/* ── Label cell ───────────────────────────────────────────────── */
+	.pf-lbl {
+		width: 32%;
+		background: #f5f7fb;
+		font-weight: 600;
+		color: #1a3c6e;
+		white-space: nowrap;
+	}
 
-/* ── Value cell ───────────────────────────────────────────────── */
-.pf-val { color: #111; }
-.pf-val-full { color: #111; } /* spans full width */
+	/* ── Value cell ───────────────────────────────────────────────── */
+	.pf-val {
+		color: #111;
+	}
+	.pf-val-full {
+		color: #111;
+	} /* spans full width */
 
-/* ── Sub-section heading (e.g. Class X, Class XII) ────────────── */
-.pf-subsec {
-  background: #dce6f4; color: #1a3c6e;
-  font-weight: bold; font-size: 9pt;
-  padding: 4px 8px; border: 1px solid #aab8cc;
-}
+	/* ── Sub-section heading (e.g. Class X, Class XII) ────────────── */
+	.pf-subsec {
+		background: #dce6f4;
+		color: #1a3c6e;
+		font-weight: bold;
+		font-size: 9pt;
+		padding: 4px 8px;
+		border: 1px solid #aab8cc;
+	}
 
-/* ── Photo box ────────────────────────────────────────────────── */
-.pf-photo-cell {
-  width: 28mm; min-height: 35mm;
-  border: 1.5px solid #aab8cc;
-  text-align: center; vertical-align: middle;
-  padding: 4px;
-}
-.pf-photo-cell img {
-  max-width: 26mm; max-height: 33mm;
-  object-fit: cover; display: block; margin: 0 auto;
-}
-.pf-photo-placeholder {
-  width: 26mm; height: 33mm;
-  background: #f0f4fa;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 7pt; color: #94a3b8; text-align: center;
-  margin: 0 auto;
-}
+	/* ── Photo box ────────────────────────────────────────────────── */
+	.pf-photo-cell {
+		width: 28mm;
+		min-height: 35mm;
+		border: 1.5px solid #aab8cc;
+		text-align: center;
+		vertical-align: middle;
+		padding: 4px;
+	}
+	.pf-photo-cell img {
+		max-width: 26mm;
+		max-height: 33mm;
+		object-fit: cover;
+		display: block;
+		margin: 0 auto;
+	}
+	.pf-photo-placeholder {
+		width: 26mm;
+		height: 33mm;
+		background: #f0f4fa;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 7pt;
+		color: #94a3b8;
+		text-align: center;
+		margin: 0 auto;
+	}
 
-/* ── Declaration block ────────────────────────────────────────── */
-.pf-declaration {
-  border: 1.5px solid #1a3c6e; border-top: none;
-  padding: 8px 12px; font-size: 8.5pt; line-height: 1.55;
-  background: #fff;
-}
-.pf-declaration-title {
-  font-weight: bold; font-size: 9pt;
-  color: #1a3c6e; margin-bottom: 5px;
-  text-transform: uppercase;
-}
+	/* ── Declaration block ────────────────────────────────────────── */
+	.pf-declaration {
+		border: 1.5px solid #1a3c6e;
+		border-top: none;
+		padding: 8px 12px;
+		font-size: 8.5pt;
+		line-height: 1.55;
+		background: #fff;
+	}
+	.pf-declaration-title {
+		font-weight: bold;
+		font-size: 9pt;
+		color: #1a3c6e;
+		margin-bottom: 5px;
+		text-transform: uppercase;
+	}
 
-/* ── Signature row ────────────────────────────────────────────── */
-.pf-sig-row {
-  display: flex; justify-content: space-between; align-items: flex-end;
-  border: 1.5px solid #1a3c6e; border-top: none;
-  padding: 10px 14px 8px; background: #fff;
-}
-.pf-sig-box {
-  text-align: center; width: 46%;
-}
-.pf-sig-line {
-  border-top: 1px solid #000; margin-bottom: 3px;
-  margin-top: 28px;
-}
-.pf-sig-label { font-size: 8pt; color: #333; }
+	/* ── Signature row ────────────────────────────────────────────── */
+	.pf-sig-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-end;
+		border: 1.5px solid #1a3c6e;
+		border-top: none;
+		padding: 10px 14px 8px;
+		background: #fff;
+	}
+	.pf-sig-box {
+		text-align: center;
+		width: 46%;
+	}
+	.pf-sig-line {
+		border-top: 1px solid #000;
+		margin-bottom: 3px;
+		margin-top: 28px;
+	}
+	.pf-sig-label {
+		font-size: 8pt;
+		color: #333;
+	}
 
-/* ── Page 2+: Document images ─────────────────────────────────── */
-.pf-doc-page { width: 210mm; min-height: 297mm; margin: 0 auto;
-               padding: 12mm 14mm; background: #fff; }
-.pf-doc-header { text-align: center; margin-bottom: 12px; }
-.pf-doc-header h2 { font-size: 11pt; color: #1a3c6e; font-weight: bold; }
-.pf-doc-item { margin-bottom: 18px; }
-.pf-doc-label {
-  font-weight: bold; font-size: 9pt; color: #1a3c6e;
-  background: #dce6f4; padding: 4px 10px;
-  border: 1px solid #aab8cc; margin-bottom: 4px;
-}
-.pf-doc-image { text-align: center; border: 1px solid #aab8cc; padding: 4px; }
-.pf-doc-image img { max-width: 100%; max-height: 200mm; }
-.pf-doc-pdf {
-  padding: 12px; background: #f8fafc;
-  border: 1px solid #aab8cc; text-align: center;
-  color: #64748b; font-size: 9pt;
-}
+	/* ── Page 2+: Document images ─────────────────────────────────── */
+	.pf-doc-page {
+		width: 210mm;
+		min-height: 297mm;
+		margin: 0 auto;
+		padding: 12mm 14mm;
+		background: #fff;
+	}
+	.pf-doc-header {
+		text-align: center;
+		margin-bottom: 12px;
+	}
+	.pf-doc-header h2 {
+		font-size: 11pt;
+		color: #1a3c6e;
+		font-weight: bold;
+	}
+	.pf-doc-item {
+		margin-bottom: 18px;
+	}
+	.pf-doc-label {
+		font-weight: bold;
+		font-size: 9pt;
+		color: #1a3c6e;
+		background: #dce6f4;
+		padding: 4px 10px;
+		border: 1px solid #aab8cc;
+		margin-bottom: 4px;
+	}
+	.pf-doc-image {
+		text-align: center;
+		border: 1px solid #aab8cc;
+		padding: 4px;
+	}
+	.pf-doc-image img {
+		max-width: 100%;
+		max-height: 200mm;
+	}
+	.pf-doc-pdf {
+		padding: 12px;
+		background: #f8fafc;
+		border: 1px solid #aab8cc;
+		text-align: center;
+		color: #64748b;
+		font-size: 9pt;
+	}
 
-/* ── Print footer ─────────────────────────────────────────────── */
-.pf-footer {
-  border-top: 1px dashed #aab8cc; margin-top: 6px;
-  padding-top: 4px; text-align: center;
-  font-size: 7.5pt; color: #94a3b8;
-}
+	/* ── Print footer ─────────────────────────────────────────────── */
+	.pf-footer {
+		border-top: 1px dashed #aab8cc;
+		margin-top: 6px;
+		padding-top: 4px;
+		text-align: center;
+		font-size: 7.5pt;
+		color: #94a3b8;
+	}
 </style>
 
-
-{# ════════════════════════════════════════════════════════════════
-   PAGE 1 — APPLICATION FORM
-   ════════════════════════════════════════════════════════════════ #}
+{# ════════════════════════════════════════════════════════════════ PAGE 1 — APPLICATION FORM
+════════════════════════════════════════════════════════════════ #}
 <div class="pf-page">
+	{# ── NLSIU HEADER BANNER ──────────────────────────────────── #}
+	<div class="pf-header">
+		<div class="pf-header-logo">
+			{%- set _logo = frappe.db.get_single_value('Applicant Portal Config','hero_image') -%}
+			{%- if _logo -%}
+			<img src="{{ _site }}{{ _logo }}" alt="NLSIU" />
+			{%- else -%}
+			<span style="font-size: 7pt; color: #1a3c6e; font-weight: bold; text-align: center"
+				>NLSIU</span
+			>
+			{%- endif -%}
+		</div>
+		<div class="pf-header-text">
+			<div class="pf-header-inst">National Law School of India University</div>
+			<div class="pf-header-sub">
+				Bengaluru — Deemed to be University u/s 3 of UGC Act, 1956
+			</div>
+		</div>
+	</div>
 
-  {# ── NLSIU HEADER BANNER ──────────────────────────────────── #}
-  <div class="pf-header">
-    <div class="pf-header-logo">
-      {%- set _logo = frappe.db.get_single_value('Applicant Portal Config','hero_image') -%}
-      {%- if _logo -%}
-        <img src="{{ _site }}{{ _logo }}" alt="NLSIU">
-      {%- else -%}
-        <span style="font-size:7pt;color:#1a3c6e;font-weight:bold;text-align:center;">NLSIU</span>
-      {%- endif -%}
-    </div>
-    <div class="pf-header-text">
-      <div class="pf-header-inst">National Law School of India University</div>
-      <div class="pf-header-sub">Bengaluru — Deemed to be University u/s 3 of UGC Act, 1956</div>
-    </div>
-  </div>
+	{# ── FORM TITLE BAR ───────────────────────────────────────── #}
+	<div class="pf-title-bar">
+		<div class="pf-title">Application Form</div>
+		<div class="pf-subtitle">
+			{{ doc.program or '' }} {%- if doc.academic_year %} &nbsp;·&nbsp; {{ doc.academic_year
+			}}{%- endif -%}
+		</div>
+	</div>
 
-  {# ── FORM TITLE BAR ───────────────────────────────────────── #}
-  <div class="pf-title-bar">
-    <div class="pf-title">Application Form</div>
-    <div class="pf-subtitle">
-      {{ doc.program or '' }}
-      {%- if doc.academic_year %} &nbsp;·&nbsp; {{ doc.academic_year }}{%- endif -%}
-    </div>
-  </div>
+	{# ── APPLICATION ID BAR ───────────────────────────────────── #}
+	<div class="pf-appid-bar">
+		<span><strong>Application ID:</strong> {{ doc.name }}</span>
+		<span><strong>Status:</strong> {{ doc.status or 'Draft' }}</span>
+		<span
+			><strong>Date Printed:</strong> {{ frappe.utils.formatdate(frappe.utils.nowdate(),
+			'dd-MM-yyyy') }}</span
+		>
+	</div>
 
-  {# ── APPLICATION ID BAR ───────────────────────────────────── #}
-  <div class="pf-appid-bar">
-    <span><strong>Application ID:</strong> {{ doc.name }}</span>
-    <span><strong>Status:</strong> {{ doc.application_status or 'Draft' }}</span>
-    <span><strong>Date Printed:</strong> {{ frappe.utils.formatdate(frappe.utils.nowdate(), 'dd-MM-yyyy') }}</span>
-  </div>
+	{# ════════════════════════════════════════════════════════════ MAIN TABLE
+	════════════════════════════════════════════════════════════ #}
+	<table class="pf-table">
+		{# ── SECTION 1: PERSONAL INFORMATION ─────────────────────── #}
+		<tr>
+			<td colspan="4" class="pf-sec">1. Personal Information</td>
+		</tr>
 
-  {# ════════════════════════════════════════════════════════════
-     MAIN TABLE
-     ════════════════════════════════════════════════════════════ #}
-  <table class="pf-table">
+		{# Row with photo spanning multiple rows on the right #}
+		<tr>
+			<td class="pf-lbl">Full Name</td>
+			<td class="pf-val" colspan="2">
+				{%- if doc.title -%}{{ doc.title }} {%- endif -%} {{ f(doc.candidate_name) }}
+			</td>
+			<td
+				class="pf-photo-cell"
+				rowspan="8"
+				style="text-align: center; vertical-align: middle"
+			>
+				{%- if doc.candidate_photo -%}
+				<img src="{{ _site }}{{ doc.candidate_photo }}" alt="Photo" />
+				<div style="font-size: 7pt; color: #64748b; margin-top: 3px">Candidate Photo</div>
+				{%- else -%}
+				<div class="pf-photo-placeholder">Photo<br />Not<br />Uploaded</div>
+				{%- endif -%}
+			</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Date of Birth</td>
+			<td class="pf-val" colspan="2">{{ fd(doc.date_of_birth) }}</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Gender</td>
+			<td class="pf-val" colspan="2">{{ f(doc.gender) }}</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Nationality</td>
+			<td class="pf-val" colspan="2">{{ f(doc.nationality) }}</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Religion</td>
+			<td class="pf-val" colspan="2">{{ f(doc.religion) }}</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Mobile Number</td>
+			<td class="pf-val" colspan="2">{{ f(doc.mobile_number) }}</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Alternate Contact</td>
+			<td class="pf-val" colspan="2">{{ f(doc.alternate_contact) }}</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Email Address</td>
+			<td class="pf-val" colspan="2">{{ f(doc.email) }}</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">ID Proof Type</td>
+			<td class="pf-val" colspan="3">{{ f(doc.id_proof) }}</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Correspondence Address</td>
+			<td class="pf-val" colspan="3">
+				{{ f(doc.correspondence_address) }} {%- if doc.city -%}, {{ doc.city }}{%- endif
+				-%} {%- if doc.state -%}, {{ doc.state }}{%- endif -%} {%- if doc.pincode %}
+				&ndash; {{ doc.pincode }}{%- endif -%}
+			</td>
+		</tr>
 
-    {# ── SECTION 1: PERSONAL INFORMATION ─────────────────────── #}
-    <tr>
-      <td colspan="4" class="pf-sec">1. Personal Information</td>
-    </tr>
+		{# ── SECTION 2: FAMILY INFORMATION ────────────────────────── #}
+		<tr>
+			<td colspan="4" class="pf-sec">2. Family Information</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Father's Name</td>
+			<td class="pf-val">{{ f(doc.father_name) }}</td>
+			<td class="pf-lbl">Father's Occupation</td>
+			<td class="pf-val">{{ f(doc.father_occupation) }}</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Father's Mobile</td>
+			<td class="pf-val">{{ f(doc.father_mobile) }}</td>
+			<td class="pf-lbl">Father's Email</td>
+			<td class="pf-val">{{ f(doc.father_email) }}</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Mother's Name</td>
+			<td class="pf-val">{{ f(doc.mother_name) }}</td>
+			<td class="pf-lbl">Mother's Occupation</td>
+			<td class="pf-val">{{ f(doc.mother_occupation) }}</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Mother's Mobile</td>
+			<td class="pf-val">{{ f(doc.mother_mobile) }}</td>
+			<td class="pf-lbl">Mother's Email</td>
+			<td class="pf-val">{{ f(doc.mother_email) }}</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Annual Household Income</td>
+			<td class="pf-val" colspan="3">{{ f(doc.annual_house_hold_income) }}</td>
+		</tr>
+		{%- if doc.guardian_required -%}
+		<tr>
+			<td colspan="4" class="pf-subsec">Guardian Details</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Guardian's Name</td>
+			<td class="pf-val">{{ f(doc.guardian_name) }}</td>
+			<td class="pf-lbl">Guardian's Mobile</td>
+			<td class="pf-val">{{ f(doc.guardian_mobile) }}</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Guardian's Email</td>
+			<td class="pf-val" colspan="3">{{ f(doc.guardian_email) }}</td>
+		</tr>
+		{%- endif -%} {# ── SECTION 3: ACADEMIC DETAILS ──────────────────────────── #}
+		<tr>
+			<td colspan="4" class="pf-sec">3. Academic Details</td>
+		</tr>
 
-    {# Row with photo spanning multiple rows on the right #}
-    <tr>
-      <td class="pf-lbl">Full Name</td>
-      <td class="pf-val" colspan="2">
-        {%- if doc.title -%}{{ doc.title }} {%- endif -%}
-        {{ f(doc.candidate_name) }}
-      </td>
-      <td class="pf-photo-cell" rowspan="8" style="text-align:center;vertical-align:middle;">
-        {%- if doc.candidate_photo -%}
-          <img src="{{ _site }}{{ doc.candidate_photo }}" alt="Photo">
-          <div style="font-size:7pt;color:#64748b;margin-top:3px;">Candidate Photo</div>
-        {%- else -%}
-          <div class="pf-photo-placeholder">Photo<br>Not<br>Uploaded</div>
-        {%- endif -%}
-      </td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Date of Birth</td>
-      <td class="pf-val" colspan="2">{{ fd(doc.date_of_birth) }}</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Gender</td>
-      <td class="pf-val" colspan="2">{{ f(doc.gender) }}</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Nationality</td>
-      <td class="pf-val" colspan="2">{{ f(doc.nationality) }}</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Religion</td>
-      <td class="pf-val" colspan="2">{{ f(doc.religion) }}</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Mobile Number</td>
-      <td class="pf-val" colspan="2">{{ f(doc.mobile_number) }}</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Alternate Contact</td>
-      <td class="pf-val" colspan="2">{{ f(doc.alternate_contact) }}</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Email Address</td>
-      <td class="pf-val" colspan="2">{{ f(doc.email) }}</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">ID Proof Type</td>
-      <td class="pf-val" colspan="3">{{ f(doc.id_proof) }}</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Correspondence Address</td>
-      <td class="pf-val" colspan="3">
-        {{ f(doc.correspondence_address) }}
-        {%- if doc.city -%}, {{ doc.city }}{%- endif -%}
-        {%- if doc.state -%}, {{ doc.state }}{%- endif -%}
-        {%- if doc.pincode %} &ndash; {{ doc.pincode }}{%- endif -%}
-      </td>
-    </tr>
+		{# Class X #}
+		<tr>
+			<td colspan="4" class="pf-subsec">Class X (Secondary School)</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">School Name</td>
+			<td class="pf-val" colspan="3">{{ f(doc.class_x_school) }}</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Board</td>
+			<td class="pf-val">{{ f(doc.class_x_board) }}</td>
+			<td class="pf-lbl">Year of Completion</td>
+			<td class="pf-val">{{ f(doc.class_x_year_of_completion) }}</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Percentage (%)</td>
+			<td class="pf-val">{{ f(doc.class_x_percentage) }}</td>
+			<td class="pf-lbl">CGPA</td>
+			<td class="pf-val">{{ f(doc.class_x_cgpa) }}</td>
+		</tr>
 
-    {# ── SECTION 2: FAMILY INFORMATION ────────────────────────── #}
-    <tr>
-      <td colspan="4" class="pf-sec">2. Family Information</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Father's Name</td>
-      <td class="pf-val">{{ f(doc.father_name) }}</td>
-      <td class="pf-lbl">Father's Occupation</td>
-      <td class="pf-val">{{ f(doc.father_occupation) }}</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Father's Mobile</td>
-      <td class="pf-val">{{ f(doc.father_mobile) }}</td>
-      <td class="pf-lbl">Father's Email</td>
-      <td class="pf-val">{{ f(doc.father_email) }}</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Mother's Name</td>
-      <td class="pf-val">{{ f(doc.mother_name) }}</td>
-      <td class="pf-lbl">Mother's Occupation</td>
-      <td class="pf-val">{{ f(doc.mother_occupation) }}</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Mother's Mobile</td>
-      <td class="pf-val">{{ f(doc.mother_mobile) }}</td>
-      <td class="pf-lbl">Mother's Email</td>
-      <td class="pf-val">{{ f(doc.mother_email) }}</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Annual Household Income</td>
-      <td class="pf-val" colspan="3">{{ f(doc.annual_house_hold_income) }}</td>
-    </tr>
-    {%- if doc.guardian_required -%}
-    <tr>
-      <td colspan="4" class="pf-subsec">Guardian Details</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Guardian's Name</td>
-      <td class="pf-val">{{ f(doc.guardian_name) }}</td>
-      <td class="pf-lbl">Guardian's Mobile</td>
-      <td class="pf-val">{{ f(doc.guardian_mobile) }}</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Guardian's Email</td>
-      <td class="pf-val" colspan="3">{{ f(doc.guardian_email) }}</td>
-    </tr>
-    {%- endif -%}
+		{# Class XII #}
+		<tr>
+			<td colspan="4" class="pf-subsec">Class XII (Higher Secondary)</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Examination Name</td>
+			<td class="pf-val" colspan="3">{{ f(doc.class_xii_name_of_examination) }}</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">School / College</td>
+			<td class="pf-val" colspan="3">{{ f(doc.class_xii_school) }}</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Board</td>
+			<td class="pf-val">{{ f(doc.class_xii_board) }}</td>
+			<td class="pf-lbl">Year of Completion</td>
+			<td class="pf-val">{{ f(doc.class_xii_year_of_completion) }}</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Percentage (%)</td>
+			<td class="pf-val">{{ f(doc.class_xii_percentage) }}</td>
+			<td class="pf-lbl">CGPA</td>
+			<td class="pf-val">{{ f(doc.class_xii_cgpa) }}</td>
+		</tr>
 
-    {# ── SECTION 3: ACADEMIC DETAILS ──────────────────────────── #}
-    <tr>
-      <td colspan="4" class="pf-sec">3. Academic Details</td>
-    </tr>
+		{# UG / Higher Education — show only if filled #} {%- if doc.ug_degree_completion or
+		doc.ug_degree_details -%}
+		<tr>
+			<td colspan="4" class="pf-subsec">Undergraduate / Higher Education</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Degree Details</td>
+			<td class="pf-val" colspan="3">{{ f(doc.ug_degree_details) }}</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Completion Status</td>
+			<td class="pf-val">{{ f(doc.ug_degree_completion) }}</td>
+			<td class="pf-lbl">Work Experience (yrs)</td>
+			<td class="pf-val">{{ f(doc.years_of_work_experience) }}</td>
+		</tr>
+		{%- if doc.post_degree_work_experience -%}
+		<tr>
+			<td class="pf-lbl">Work Experience Details</td>
+			<td class="pf-val" colspan="3">{{ f(doc.post_degree_work_experience) }}</td>
+		</tr>
+		{%- endif -%} {%- endif -%} {# ── SECTION 4: RESERVATION / CATEGORY ──────────────────────
+		#}
+		<tr>
+			<td colspan="4" class="pf-sec">4. Reservation / Category Details</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Reservation Category</td>
+			<td class="pf-val" colspan="3">{{ f(doc.whether_scstobc_ncl) }}</td>
+		</tr>
+		{%- set _cat = (doc.whether_scstobc_ncl or '') | lower -%} {# EWS — show only if ews is Yes
+		#} {%- if doc.ews == 'Yes' -%}
+		<tr>
+			<td class="pf-lbl">EWS Status</td>
+			<td class="pf-val">{{ yn(doc.ews) }}</td>
+			<td class="pf-lbl">EWS Certificate</td>
+			<td class="pf-val">
+				{% if doc.ews_certificate %}Uploaded{% else %}&mdash;{% endif %}
+			</td>
+		</tr>
+		{%- endif -%} {# SC/ST/OBC — show caste certificate row #} {%- if _cat in
+		['sc','st','obc','sc/st','obc-ncl'] or 'sc' in _cat or 'st' in _cat or 'obc' in _cat -%}
+		<tr>
+			<td class="pf-lbl">Caste Certificate</td>
+			<td class="pf-val" colspan="3">
+				{% if doc.caste_certificate %}Uploaded{% else %}&mdash;{% endif %}
+			</td>
+		</tr>
+		{%- endif -%} {# PWD — show only if pwd is checked #} {%- if doc.pwd -%}
+		<tr>
+			<td colspan="4" class="pf-subsec">Persons with Disability (PwD)</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">PwD Status</td>
+			<td class="pf-val">{{ yn(doc.pwd) }}</td>
+			<td class="pf-lbl">PwD Certificate</td>
+			<td class="pf-val">
+				{% if doc.pwd_certificate %}Uploaded{% else %}&mdash;{% endif %}
+			</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Requires Special Test</td>
+			<td class="pf-val">{{ yn(doc.pwd_required_test) }}</td>
+			<td class="pf-lbl">Scribe Allotment</td>
+			<td class="pf-val">{{ f(doc.scribe_allotment) }}</td>
+		</tr>
+		{%- endif -%} {# Karnataka Category — show only if karnataka_category is set #} {%- if
+		doc.karnataka_category or 'karnataka' in _cat or 'ka_' in _cat -%}
+		<tr>
+			<td colspan="4" class="pf-subsec">Karnataka Category</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">Karnataka Category</td>
+			<td class="pf-val" colspan="3">{{ f(doc.karnataka_category) }}</td>
+		</tr>
+		{%- if doc.ka_study_7yrs -%}
+		<tr>
+			<td class="pf-lbl">Studied in Karnataka (7 yrs)</td>
+			<td class="pf-val">{{ yn(doc.ka_study_7yrs) }}</td>
+			<td class="pf-lbl">Certificate</td>
+			<td class="pf-val">
+				{% if doc.ka_study_7yrs_certificate %}Uploaded{% else %}&mdash;{% endif %}
+			</td>
+		</tr>
+		{%- endif -%} {%- if doc.ka_defence_child -%}
+		<tr>
+			<td class="pf-lbl">Child of Defence Personnel</td>
+			<td class="pf-val">{{ yn(doc.ka_defence_child) }}</td>
+			<td class="pf-lbl">Certificate</td>
+			<td class="pf-val">
+				{% if doc.ka_defence_child_certificate %}Uploaded{% else %}&mdash;{% endif %}
+			</td>
+		</tr>
+		{%- endif -%} {%- if doc.ka_govt_child -%}
+		<tr>
+			<td class="pf-lbl">Child of Karnataka Govt Employee</td>
+			<td class="pf-val">{{ yn(doc.ka_govt_child) }}</td>
+			<td class="pf-lbl">Certificate</td>
+			<td class="pf-val">
+				{% if doc.ka_govt_child_certificate %}Uploaded{% else %}&mdash;{% endif %}
+			</td>
+		</tr>
+		{%- endif -%} {%- if doc.ka_ais_child -%}
+		<tr>
+			<td class="pf-lbl">Child of AIS Officer</td>
+			<td class="pf-val">{{ yn(doc.ka_ais_child) }}</td>
+			<td class="pf-lbl">Certificate</td>
+			<td class="pf-val">
+				{% if doc.ka_ais_child_certificate %}Uploaded{% else %}&mdash;{% endif %}
+			</td>
+		</tr>
+		{%- endif -%} {%- if doc.ka_capf_child -%}
+		<tr>
+			<td class="pf-lbl">Child of CAPF Personnel</td>
+			<td class="pf-val">{{ yn(doc.ka_capf_child) }}</td>
+			<td class="pf-lbl">Certificate</td>
+			<td class="pf-val">
+				{% if doc.ka_capf_child_certificate %}Uploaded{% else %}&mdash;{% endif %}
+			</td>
+		</tr>
+		{%- endif -%} {%- endif -%} {# ── SECTION 5: PROGRAM PREFERENCES ────────────────────────
+		#}
+		<tr>
+			<td colspan="4" class="pf-sec">5. Program Preferences</td>
+		</tr>
+		<tr>
+			<td class="pf-lbl">1st Preference</td>
+			<td class="pf-val" colspan="3">{{ f(doc.first_preference) }}</td>
+		</tr>
+		{%- if doc.second_preference -%}
+		<tr>
+			<td class="pf-lbl">2nd Preference</td>
+			<td class="pf-val" colspan="3">{{ f(doc.second_preference) }}</td>
+		</tr>
+		{%- endif -%} {%- if doc.third_preference -%}
+		<tr>
+			<td class="pf-lbl">3rd Preference</td>
+			<td class="pf-val" colspan="3">{{ f(doc.third_preference) }}</td>
+		</tr>
+		{%- endif -%}
+		<tr>
+			<td class="pf-lbl">Source of Information</td>
+			<td class="pf-val">{{ f(doc.source_of_information) }}</td>
+			{%- if doc.please_mention -%}
+			<td class="pf-lbl">Please Mention</td>
+			<td class="pf-val">{{ f(doc.please_mention) }}</td>
+			{%- else -%}
+			<td colspan="2"></td>
+			{%- endif -%}
+		</tr>
+		{%- if doc.cv -%}
+		<tr>
+			<td class="pf-lbl">CV / Resume</td>
+			<td class="pf-val" colspan="3">Uploaded</td>
+		</tr>
+		{%- endif -%}
+	</table>
+	{# END MAIN TABLE #} {# ── DECLARATION ──────────────────────────────────────────── #}
+	<div class="pf-declaration">
+		<div class="pf-declaration-title">Declaration &amp; Undertaking</div>
+		{%- if doc.declaration_undertaking -%}
+		<p>{{ doc.declaration_undertaking }}</p>
+		{%- else -%}
+		<p>
+			I hereby declare that all the information furnished above is true, complete, and
+			correct to the best of my knowledge and belief. I understand that in the event of any
+			information being found false or incorrect at any stage, my candidature is liable to be
+			cancelled. I agree to abide by all the rules and regulations of National Law School of
+			India University, Bengaluru.
+		</p>
+		{%- endif -%} {%- if doc.consent_third_party -%}
+		<p style="margin-top: 6px; font-size: 8.5pt; color: #333">
+			<strong>Consent:</strong> {{ doc.consent_third_party }}
+		</p>
+		{%- endif -%}
+	</div>
 
-    {# Class X #}
-    <tr>
-      <td colspan="4" class="pf-subsec">Class X (Secondary School)</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">School Name</td>
-      <td class="pf-val" colspan="3">{{ f(doc.class_x_school) }}</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Board</td>
-      <td class="pf-val">{{ f(doc.class_x_board) }}</td>
-      <td class="pf-lbl">Year of Completion</td>
-      <td class="pf-val">{{ f(doc.class_x_year_of_completion) }}</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Percentage (%)</td>
-      <td class="pf-val">{{ f(doc.class_x_percentage) }}</td>
-      <td class="pf-lbl">CGPA</td>
-      <td class="pf-val">{{ f(doc.class_x_cgpa) }}</td>
-    </tr>
+	{# ── SIGNATURE ROW ────────────────────────────────────────── #}
+	<div class="pf-sig-row">
+		<div class="pf-sig-box">
+			<div class="pf-sig-line"></div>
+			<div class="pf-sig-label">Signature of Candidate</div>
+		</div>
+		<div class="pf-sig-box">
+			<div style="font-size: 8.5pt; color: #333; margin-bottom: 4px">
+				Date: ___________________________
+			</div>
+			<div class="pf-sig-label">Place &amp; Date</div>
+		</div>
+		<div class="pf-sig-box">
+			<div class="pf-sig-line"></div>
+			<div class="pf-sig-label">Signature of Parent / Guardian</div>
+		</div>
+	</div>
 
-    {# Class XII #}
-    <tr>
-      <td colspan="4" class="pf-subsec">Class XII (Higher Secondary)</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Examination Name</td>
-      <td class="pf-val" colspan="3">{{ f(doc.class_xii_name_of_examination) }}</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">School / College</td>
-      <td class="pf-val" colspan="3">{{ f(doc.class_xii_school) }}</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Board</td>
-      <td class="pf-val">{{ f(doc.class_xii_board) }}</td>
-      <td class="pf-lbl">Year of Completion</td>
-      <td class="pf-val">{{ f(doc.class_xii_year_of_completion) }}</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Percentage (%)</td>
-      <td class="pf-val">{{ f(doc.class_xii_percentage) }}</td>
-      <td class="pf-lbl">CGPA</td>
-      <td class="pf-val">{{ f(doc.class_xii_cgpa) }}</td>
-    </tr>
-
-    {# UG / Higher Education — show only if filled #}
-    {%- if doc.ug_degree_completion or doc.ug_degree_details -%}
-    <tr>
-      <td colspan="4" class="pf-subsec">Undergraduate / Higher Education</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Degree Details</td>
-      <td class="pf-val" colspan="3">{{ f(doc.ug_degree_details) }}</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Completion Status</td>
-      <td class="pf-val">{{ f(doc.ug_degree_completion) }}</td>
-      <td class="pf-lbl">Work Experience (yrs)</td>
-      <td class="pf-val">{{ f(doc.years_of_work_experience) }}</td>
-    </tr>
-    {%- if doc.post_degree_work_experience -%}
-    <tr>
-      <td class="pf-lbl">Work Experience Details</td>
-      <td class="pf-val" colspan="3">{{ f(doc.post_degree_work_experience) }}</td>
-    </tr>
-    {%- endif -%}
-    {%- endif -%}
-
-    {# ── SECTION 4: RESERVATION / CATEGORY ────────────────────── #}
-    <tr>
-      <td colspan="4" class="pf-sec">4. Reservation / Category Details</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Reservation Category</td>
-      <td class="pf-val" colspan="3">{{ f(doc.whether_scstobc_ncl) }}</td>
-    </tr>
-    {%- set _cat = (doc.whether_scstobc_ncl or '') | lower -%}
-
-    {# EWS — show only if ews is Yes #}
-    {%- if doc.ews == 'Yes' -%}
-    <tr>
-      <td class="pf-lbl">EWS Status</td>
-      <td class="pf-val">{{ yn(doc.ews) }}</td>
-      <td class="pf-lbl">EWS Certificate</td>
-      <td class="pf-val">{% if doc.ews_certificate %}Uploaded{% else %}&mdash;{% endif %}</td>
-    </tr>
-    {%- endif -%}
-
-    {# SC/ST/OBC — show caste certificate row #}
-    {%- if _cat in ['sc','st','obc','sc/st','obc-ncl'] or
-           'sc' in _cat or 'st' in _cat or 'obc' in _cat -%}
-    <tr>
-      <td class="pf-lbl">Caste Certificate</td>
-      <td class="pf-val" colspan="3">{% if doc.caste_certificate %}Uploaded{% else %}&mdash;{% endif %}</td>
-    </tr>
-    {%- endif -%}
-
-    {# PWD — show only if pwd is checked #}
-    {%- if doc.pwd -%}
-    <tr>
-      <td colspan="4" class="pf-subsec">Persons with Disability (PwD)</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">PwD Status</td>
-      <td class="pf-val">{{ yn(doc.pwd) }}</td>
-      <td class="pf-lbl">PwD Certificate</td>
-      <td class="pf-val">{% if doc.pwd_certificate %}Uploaded{% else %}&mdash;{% endif %}</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Requires Special Test</td>
-      <td class="pf-val">{{ yn(doc.pwd_required_test) }}</td>
-      <td class="pf-lbl">Scribe Allotment</td>
-      <td class="pf-val">{{ f(doc.scribe_allotment) }}</td>
-    </tr>
-    {%- endif -%}
-
-    {# Karnataka Category — show only if karnataka_category is set #}
-    {%- if doc.karnataka_category or 'karnataka' in _cat or 'ka_' in _cat -%}
-    <tr>
-      <td colspan="4" class="pf-subsec">Karnataka Category</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">Karnataka Category</td>
-      <td class="pf-val" colspan="3">{{ f(doc.karnataka_category) }}</td>
-    </tr>
-    {%- if doc.ka_study_7yrs -%}
-    <tr>
-      <td class="pf-lbl">Studied in Karnataka (7 yrs)</td>
-      <td class="pf-val">{{ yn(doc.ka_study_7yrs) }}</td>
-      <td class="pf-lbl">Certificate</td>
-      <td class="pf-val">{% if doc.ka_study_7yrs_certificate %}Uploaded{% else %}&mdash;{% endif %}</td>
-    </tr>
-    {%- endif -%}
-    {%- if doc.ka_defence_child -%}
-    <tr>
-      <td class="pf-lbl">Child of Defence Personnel</td>
-      <td class="pf-val">{{ yn(doc.ka_defence_child) }}</td>
-      <td class="pf-lbl">Certificate</td>
-      <td class="pf-val">{% if doc.ka_defence_child_certificate %}Uploaded{% else %}&mdash;{% endif %}</td>
-    </tr>
-    {%- endif -%}
-    {%- if doc.ka_govt_child -%}
-    <tr>
-      <td class="pf-lbl">Child of Karnataka Govt Employee</td>
-      <td class="pf-val">{{ yn(doc.ka_govt_child) }}</td>
-      <td class="pf-lbl">Certificate</td>
-      <td class="pf-val">{% if doc.ka_govt_child_certificate %}Uploaded{% else %}&mdash;{% endif %}</td>
-    </tr>
-    {%- endif -%}
-    {%- if doc.ka_ais_child -%}
-    <tr>
-      <td class="pf-lbl">Child of AIS Officer</td>
-      <td class="pf-val">{{ yn(doc.ka_ais_child) }}</td>
-      <td class="pf-lbl">Certificate</td>
-      <td class="pf-val">{% if doc.ka_ais_child_certificate %}Uploaded{% else %}&mdash;{% endif %}</td>
-    </tr>
-    {%- endif -%}
-    {%- if doc.ka_capf_child -%}
-    <tr>
-      <td class="pf-lbl">Child of CAPF Personnel</td>
-      <td class="pf-val">{{ yn(doc.ka_capf_child) }}</td>
-      <td class="pf-lbl">Certificate</td>
-      <td class="pf-val">{% if doc.ka_capf_child_certificate %}Uploaded{% else %}&mdash;{% endif %}</td>
-    </tr>
-    {%- endif -%}
-    {%- endif -%}
-
-    {# ── SECTION 5: PROGRAM PREFERENCES ──────────────────────── #}
-    <tr>
-      <td colspan="4" class="pf-sec">5. Program Preferences</td>
-    </tr>
-    <tr>
-      <td class="pf-lbl">1st Preference</td>
-      <td class="pf-val" colspan="3">{{ f(doc.first_preference) }}</td>
-    </tr>
-    {%- if doc.second_preference -%}
-    <tr>
-      <td class="pf-lbl">2nd Preference</td>
-      <td class="pf-val" colspan="3">{{ f(doc.second_preference) }}</td>
-    </tr>
-    {%- endif -%}
-    {%- if doc.third_preference -%}
-    <tr>
-      <td class="pf-lbl">3rd Preference</td>
-      <td class="pf-val" colspan="3">{{ f(doc.third_preference) }}</td>
-    </tr>
-    {%- endif -%}
-    <tr>
-      <td class="pf-lbl">Source of Information</td>
-      <td class="pf-val">{{ f(doc.source_of_information) }}</td>
-      {%- if doc.please_mention -%}
-      <td class="pf-lbl">Please Mention</td>
-      <td class="pf-val">{{ f(doc.please_mention) }}</td>
-      {%- else -%}
-      <td colspan="2"></td>
-      {%- endif -%}
-    </tr>
-    {%- if doc.cv -%}
-    <tr>
-      <td class="pf-lbl">CV / Resume</td>
-      <td class="pf-val" colspan="3">Uploaded</td>
-    </tr>
-    {%- endif -%}
-
-  </table>
-  {# END MAIN TABLE #}
-
-  {# ── DECLARATION ──────────────────────────────────────────── #}
-  <div class="pf-declaration">
-    <div class="pf-declaration-title">Declaration &amp; Undertaking</div>
-    {%- if doc.declaration_undertaking -%}
-    <p>{{ doc.declaration_undertaking }}</p>
-    {%- else -%}
-    <p>I hereby declare that all the information furnished above is true, complete, and correct to the best of my knowledge and belief. I understand that in the event of any information being found false or incorrect at any stage, my candidature is liable to be cancelled. I agree to abide by all the rules and regulations of National Law School of India University, Bengaluru.</p>
-    {%- endif -%}
-    {%- if doc.consent_third_party -%}
-    <p style="margin-top:6px;font-size:8.5pt;color:#333;">
-      <strong>Consent:</strong> {{ doc.consent_third_party }}
-    </p>
-    {%- endif -%}
-  </div>
-
-  {# ── SIGNATURE ROW ────────────────────────────────────────── #}
-  <div class="pf-sig-row">
-    <div class="pf-sig-box">
-      <div class="pf-sig-line"></div>
-      <div class="pf-sig-label">Signature of Candidate</div>
-    </div>
-    <div class="pf-sig-box">
-      <div style="font-size:8.5pt;color:#333;margin-bottom:4px;">
-        Date: ___________________________
-      </div>
-      <div class="pf-sig-label">Place &amp; Date</div>
-    </div>
-    <div class="pf-sig-box">
-      <div class="pf-sig-line"></div>
-      <div class="pf-sig-label">Signature of Parent / Guardian</div>
-    </div>
-  </div>
-
-  {# ── PRINT FOOTER ─────────────────────────────────────────── #}
-  <div class="pf-footer">
-    National Law School of India University, Nagarbhavi, Bengaluru &ndash; 560 072
-    &nbsp;|&nbsp; nlsiu.ac.in
-    &nbsp;|&nbsp; Application ID: {{ doc.name }}
-  </div>
-
+	{# ── PRINT FOOTER ─────────────────────────────────────────── #}
+	<div class="pf-footer">
+		National Law School of India University, Nagarbhavi, Bengaluru &ndash; 560 072
+		&nbsp;|&nbsp; nlsiu.ac.in &nbsp;|&nbsp; Application ID: {{ doc.name }}
+	</div>
 </div>
-{# END PAGE 1 #}
-
-
-{# ════════════════════════════════════════════════════════════════
-   PAGE 2+ — UPLOADED DOCUMENTS
-   Collect all file fields and render each as image or PDF label
-   ════════════════════════════════════════════════════════════════ #}
-
-{#- Build list of (label, file_url) for all uploaded files -#}
-{%- set _docs = [] -%}
-
-{%- set _file_fields = [
-  ('Candidate Photo',                doc.candidate_photo),
-  ('Class X Marksheet',              doc.class_x_marksheet),
-  ('Class XII Marksheet',            doc.class_xii_marksheet),
-  ('EWS Certificate',                doc.ews_certificate),
-  ('Caste Certificate',              doc.caste_certificate),
-  ('PwD Certificate',                doc.pwd_certificate),
-  ('Karnataka Study Certificate',    doc.ka_study_7yrs_certificate),
-  ('Defence Child Certificate',      doc.ka_defence_child_certificate),
-  ('Govt Child Certificate',         doc.ka_govt_child_certificate),
-  ('AIS Child Certificate',          doc.ka_ais_child_certificate),
-  ('CAPF Child Certificate',         doc.ka_capf_child_certificate),
-  ('CV / Resume',                    doc.cv),
-] -%}
-
-{%- for label, furl in _file_fields -%}
-  {%- if furl -%}
-    {%- set _ = _docs.append({'label': label, 'url': furl}) -%}
-  {%- endif -%}
-{%- endfor -%}
-
-{# Also append any Applicant Document child table entries #}
-{%- if doc.get('documents') -%}
-  {%- for d in doc.documents -%}
-    {%- if d.file -%}
-      {%- set _ = _docs.append({'label': d.document_type or 'Document', 'url': d.file}) -%}
-    {%- endif -%}
-  {%- endfor -%}
-{%- endif -%}
-
-{%- if _docs -%}
+{# END PAGE 1 #} {# ════════════════════════════════════════════════════════════════ PAGE 2+ —
+UPLOADED DOCUMENTS Collect all file fields and render each as image or PDF label
+════════════════════════════════════════════════════════════════ #} {#- Build list of (label,
+file_url) for all uploaded files -#} {%- set _docs = [] -%} {%- set _file_fields = [ ('Candidate
+Photo', doc.candidate_photo), ('Class X Marksheet', doc.class_x_marksheet), ('Class XII Marksheet',
+doc.class_xii_marksheet), ('EWS Certificate', doc.ews_certificate), ('Caste Certificate',
+doc.caste_certificate), ('PwD Certificate', doc.pwd_certificate), ('Karnataka Study Certificate',
+doc.ka_study_7yrs_certificate), ('Defence Child Certificate', doc.ka_defence_child_certificate),
+('Govt Child Certificate', doc.ka_govt_child_certificate), ('AIS Child Certificate',
+doc.ka_ais_child_certificate), ('CAPF Child Certificate', doc.ka_capf_child_certificate), ('CV /
+Resume', doc.cv), ] -%} {%- for label, furl in _file_fields -%} {%- if furl -%} {%- set _ =
+_docs.append({'label': label, 'url': furl}) -%} {%- endif -%} {%- endfor -%} {# Also append any
+Applicant Document child table entries #} {%- if doc.get('documents') -%} {%- for d in
+doc.documents -%} {%- if d.file -%} {%- set _ = _docs.append({'label': d.document_type or
+'Document', 'url': d.file}) -%} {%- endif -%} {%- endfor -%} {%- endif -%} {%- if _docs -%}
 <div class="pf-doc-page">
+	{# Mini header on doc pages #}
+	<div class="pf-header" style="margin-bottom: 0">
+		<div class="pf-header-logo">
+			{%- set _logo = frappe.db.get_single_value('Applicant Portal Config','hero_image') -%}
+			{%- if _logo -%}
+			<img src="{{ _site }}{{ _logo }}" alt="NLSIU" />
+			{%- else -%}
+			<span style="font-size: 7pt; color: #1a3c6e; font-weight: bold">NLSIU</span>
+			{%- endif -%}
+		</div>
+		<div class="pf-header-text">
+			<div class="pf-header-inst">National Law School of India University</div>
+			<div class="pf-header-sub">
+				Uploaded Documents — {{ doc.candidate_name }} — {{ doc.name }}
+			</div>
+		</div>
+	</div>
+	<div class="pf-title-bar" style="margin-bottom: 10px">
+		<div class="pf-title">Supporting Documents</div>
+		<div class="pf-subtitle">
+			{{ doc.program or '' }} {%- if doc.academic_year %} &nbsp;·&nbsp; {{ doc.academic_year
+			}}{%- endif -%}
+		</div>
+	</div>
 
-  {# Mini header on doc pages #}
-  <div class="pf-header" style="margin-bottom:0;">
-    <div class="pf-header-logo">
-      {%- set _logo = frappe.db.get_single_value('Applicant Portal Config','hero_image') -%}
-      {%- if _logo -%}
-        <img src="{{ _site }}{{ _logo }}" alt="NLSIU">
-      {%- else -%}
-        <span style="font-size:7pt;color:#1a3c6e;font-weight:bold;">NLSIU</span>
-      {%- endif -%}
-    </div>
-    <div class="pf-header-text">
-      <div class="pf-header-inst">National Law School of India University</div>
-      <div class="pf-header-sub">Uploaded Documents — {{ doc.candidate_name }} — {{ doc.name }}</div>
-    </div>
-  </div>
-  <div class="pf-title-bar" style="margin-bottom:10px;">
-    <div class="pf-title">Supporting Documents</div>
-    <div class="pf-subtitle">
-      {{ doc.program or '' }}
-      {%- if doc.academic_year %} &nbsp;·&nbsp; {{ doc.academic_year }}{%- endif -%}
-    </div>
-  </div>
+	{%- for item in _docs -%} {%- set _ext = (item.url or '').split('.')[-1] | lower -%} {%- set
+	_is_image = _ext in ['jpg','jpeg','png','gif','webp','bmp'] -%}
 
-  {%- for item in _docs -%}
-    {%- set _ext = (item.url or '').split('.')[-1] | lower -%}
-    {%- set _is_image = _ext in ['jpg','jpeg','png','gif','webp','bmp'] -%}
+	<div class="pf-doc-item">
+		<div class="pf-doc-label">{{ loop.index }}. {{ item.label }}</div>
+		{%- if _is_image -%}
+		<div class="pf-doc-image">
+			<img src="{{ _site }}{{ item.url }}" alt="{{ item.label }}" />
+		</div>
+		{%- else -%}
+		<div class="pf-doc-pdf">
+			<strong>{{ item.label }}</strong><br />
+			<span style="font-size: 8pt"> PDF Document — {{ item.url.split('/')[-1] }} </span
+			><br />
+			<span style="font-size: 7.5pt; color: #94a3b8">
+				(Open the portal to view this document)
+			</span>
+		</div>
+		{%- endif -%}
+	</div>
 
-    <div class="pf-doc-item">
-      <div class="pf-doc-label">{{ loop.index }}. {{ item.label }}</div>
-      {%- if _is_image -%}
-      <div class="pf-doc-image">
-        <img src="{{ _site }}{{ item.url }}" alt="{{ item.label }}">
-      </div>
-      {%- else -%}
-      <div class="pf-doc-pdf">
-        <strong>{{ item.label }}</strong><br>
-        <span style="font-size:8pt;">
-          PDF Document — {{ item.url.split('/')[-1] }}
-        </span><br>
-        <span style="font-size:7.5pt;color:#94a3b8;">
-          (Open the portal to view this document)
-        </span>
-      </div>
-      {%- endif -%}
-    </div>
+	{# Page break every 2 documents to avoid overflow #} {%- if loop.index % 2 == 0 and not
+	loop.last -%}
+	<div style="page-break-after: always"></div>
+	{%- endif -%} {%- endfor -%}
 
-    {# Page break every 2 documents to avoid overflow #}
-    {%- if loop.index % 2 == 0 and not loop.last -%}
-    <div style="page-break-after:always;"></div>
-    {%- endif -%}
-
-  {%- endfor -%}
-
-  <div class="pf-footer" style="margin-top:12px;">
-    End of Uploaded Documents &nbsp;|&nbsp; Application ID: {{ doc.name }}
-    &nbsp;|&nbsp; Printed: {{ frappe.utils.formatdate(frappe.utils.nowdate(), 'dd-MM-yyyy') }}
-  </div>
-
+	<div class="pf-footer" style="margin-top: 12px">
+		End of Uploaded Documents &nbsp;|&nbsp; Application ID: {{ doc.name }} &nbsp;|&nbsp;
+		Printed: {{ frappe.utils.formatdate(frappe.utils.nowdate(), 'dd-MM-yyyy') }}
+	</div>
 </div>
-{%- endif -%}
-{# END DOCUMENTS PAGE #}
+{%- endif -%} {# END DOCUMENTS PAGE #}

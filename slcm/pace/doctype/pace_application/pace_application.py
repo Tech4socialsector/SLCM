@@ -11,6 +11,7 @@ import time
 import random
 import io
 import os
+import uuid
 import zipfile
 from frappe.utils.file_manager import save_file
 
@@ -23,7 +24,27 @@ class PACEApplication(Document):
         self.validate_single_application_per_year()
         self.validate_programme_admission_status()
         self.validate_programme_change()
+        self.validate_geography_hierarchy()
 
+
+    def validate_geography_hierarchy(self):
+        def _validate_hierarchy(country, state, district):
+            if state and state != "Others" and country:
+                state_country = frappe.db.get_value("State", state, "country")
+                if state_country and state_country != country:
+                    frappe.throw(_("State '{0}' does not belong to country '{1}'.").format(state, country))
+
+            if district and district != "Others" and state:
+                city_data = frappe.db.get_value("City", district, ["state", "country"], as_dict=True)
+                if city_data:
+                    if city_data.get("state") and city_data.get("state") != state:
+                        frappe.throw(_("District '{0}' does not belong to state '{1}'.").format(district, state))
+                    if country and city_data.get("country") and city_data.get("country") != country:
+                        frappe.throw(_("District '{0}' does not belong to country '{1}'.").format(district, country))
+
+        _validate_hierarchy(self.country, self.state, self.district)
+        if not self.is_permanent_address_same:
+            _validate_hierarchy(self.p_country, self.p_state, self.p_district)
 
     def enforce_uppercase(self):
         uppercase_fields = [
@@ -330,6 +351,93 @@ class PACEApplication(Document):
         if self.status in ["Submitted", "Completed"] and prev_status not in ["Submitted", "Completed"]:
             if not self.submission_date:
                 self.submission_date = frappe.utils.today()
+        # NOTE: File renaming is now handled entirely on the frontend (FormData patch in
+        # pace_application_form.js) so handle_file_name() is no longer called here.
+        # This eliminates the deferred after_commit rename that caused orphaned files.
+
+    
+    def handle_file_name(self):
+        doc_before = self.get_doc_before_save()
+        for df in self.meta.fields:
+            if df.fieldtype in ["Attach", "Attach Image"]:
+                file_url = self.get(df.fieldname)
+                if not file_url:
+                    continue
+                    
+                # Skip if the file was not changed in this transaction (prevents auto-upgrading old files and breaking validations)
+                if doc_before:
+                    prev_url = doc_before.get(df.fieldname)
+                    if prev_url == file_url:
+                        continue
+                    
+                file_name_from_url = file_url.split("/")[-1]
+                is_uuid = False
+                if len(file_name_from_url) > 13 and file_name_from_url[12] == "_" and file_name_from_url[:12].isalnum():
+                    is_uuid = True
+                
+                if is_uuid:
+                    try:
+                        file_doc = frappe.get_doc("File", {"file_url": file_url})
+                        if not file_doc.is_private:
+                            file_doc.is_private = 1
+                            file_doc.save(ignore_permissions=True)
+                            self.set(df.fieldname, file_doc.file_url)
+                    except Exception:
+                        pass
+                    continue
+                
+                # Check for stale frontend state sending the old URL
+                if doc_before:
+                    prev_url = doc_before.get(df.fieldname)
+                    if prev_url and prev_url != file_url:
+                        prev_name = prev_url.split("/")[-1]
+                        if len(prev_name) > 13 and prev_name[12] == "_" and prev_name[13:] == file_name_from_url:
+                            self.set(df.fieldname, prev_url)
+                            continue
+                
+                # It's a genuine new upload, generate a UUID
+                try:
+                    import uuid
+                    file_doc = frappe.get_doc("File", {"file_url": file_url})
+
+                    new_file_name = f"{uuid.uuid4().hex[:12]}_{file_doc.file_name}"
+                    new_file_url = f"/private/files/{new_file_name}"
+
+                    # Update doc IMMEDIATELY so the DB transaction saves it
+                    self.set(df.fieldname, new_file_url)
+
+                    # Defer physical move to avoid 404 on transaction rollback
+                    f_name = file_doc.name
+                    _doc_name = self.name
+                    _doc_type = self.doctype
+                    _fieldname = df.fieldname
+
+                    def move_file_after_commit(f_name, n_name, n_url, doc_type, doc_name, fieldname):
+                        try:
+                            import shutil, os
+                            f_doc = frappe.get_doc("File", f_name)
+
+                            old_path = f_doc.get_full_path()
+                            new_path = frappe.get_site_path("private", "files", n_name)
+
+                            if os.path.exists(old_path):
+                                shutil.move(old_path, new_path)
+
+                            frappe.db.set_value("File", f_name, {
+                                "file_name": n_name,
+                                "file_url": n_url,
+                                "is_private": 1,
+                                "attached_to_doctype": doc_type,
+                                "attached_to_name": doc_name,
+                                "attached_to_field": fieldname,
+                            })
+                            frappe.db.commit()
+                        except Exception as e:
+                            frappe.log_error("handle_file_name deferred error", str(e))
+
+                    frappe.db.after_commit.add(lambda f=f_name, n=new_file_name, u=new_file_url, dt=_doc_type, dn=_doc_name, fn=_fieldname: move_file_after_commit(f, n, u, dt, dn, fn))
+                except Exception:
+                    frappe.log_error(title="handle_file_name error", message=frappe.get_traceback())
 
     def set_applicant_name(self):
         """Populate applicant_name from first, middle, and last names."""
@@ -2075,3 +2183,82 @@ def withdraw_application(application_name, reason):
 		"message": _("Application and student record withdrawn successfully.")
 	}
 
+
+@frappe.whitelist()
+def fix_orphaned_pace_files():
+	"""
+	One-time utility: Re-links any private file uploaded against a PACE Application
+	whose attached_to_doctype / attached_to_name / attached_to_field got lost during
+	the handle_file_name rename process.
+
+	Accessible via: bench --site <site> execute
+	  slcm.pace.doctype.pace_application.pace_application.fix_orphaned_pace_files
+	"""
+	if not ("System Manager" in frappe.get_roles() or "Administrator" in frappe.get_roles()):
+		frappe.throw(_("Only System Managers can run this utility."), frappe.PermissionError)
+
+	ATTACH_FIELDS = [
+		"upload_student_photo",
+		"student_signature",
+		"ug_degree_certificate",
+		"govt_id",
+	]
+
+	apps = frappe.get_all("PACE Application", pluck="name")
+	fixed = 0
+	errors = 0
+
+	for app_name in apps:
+		try:
+			doc_vals = frappe.db.get_value(
+				"PACE Application", app_name, ATTACH_FIELDS, as_dict=True
+			)
+			if not doc_vals:
+				continue
+
+			for fieldname in ATTACH_FIELDS:
+				file_url = doc_vals.get(fieldname)
+				if not file_url:
+					continue
+
+				file_name = frappe.db.get_value("File", {"file_url": file_url}, "name")
+				if not file_name:
+					continue
+
+				fd = frappe.db.get_value(
+					"File", file_name,
+					["attached_to_doctype", "attached_to_name", "attached_to_field", "is_private"],
+					as_dict=True,
+				)
+				if not fd:
+					continue
+
+				needs_update = (
+					fd.attached_to_doctype != "PACE Application"
+					or fd.attached_to_name != app_name
+					or fd.attached_to_field != fieldname
+					or not fd.is_private
+				)
+
+				if needs_update:
+					frappe.db.set_value("File", file_name, {
+						"attached_to_doctype": "PACE Application",
+						"attached_to_name": app_name,
+						"attached_to_field": fieldname,
+						"is_private": 1,
+					})
+					frappe.logger().info(
+						f"fix_orphaned_pace_files: Fixed {file_name} → {app_name}.{fieldname}"
+					)
+					fixed += 1
+		except Exception:
+			frappe.log_error(
+				frappe.get_traceback(),
+				f"fix_orphaned_pace_files: error processing {app_name}"
+			)
+			errors += 1
+
+	frappe.db.commit()
+	result = f"Done. Fixed {fixed} orphaned file(s). Errors: {errors}."
+	frappe.logger().info(result)
+	return result

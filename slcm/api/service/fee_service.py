@@ -51,7 +51,7 @@ class FeeService:
         
         offers = frappe.get_all("Offer Letter", filters={
             "fee_structure": fee_structure_name,
-            "offer_status": ["in", ["Draft", "Issued"]]
+            "status": ["in", ["Draft", "Issued"]]
         }, fields=["name"])
         
         for entry in offers:
@@ -190,14 +190,14 @@ class FeeService:
         offer_doc = frappe.get_doc("Offer Letter", offer_name)
         
         # Security: Prevent duplicate payments
-        if offer_doc.offer_status == "Payment Completed":
+        if offer_doc.status == "Payment Completed":
             throw(_("Payment has already been recorded for this offer ({0}).").format(offer_name))
 
         assignment_name = frappe.db.get_value("Applicant Fee Assignment", 
             {"offer_letter": offer_name, "status": ["!=", "Cancelled"]}, "name")
         
         if not assignment_name:
-            if offer_doc.offer_status != "Accepted":
+            if offer_doc.status != "Accepted":
                 throw(_("Offer must be 'Accepted' before paying fees."))
             assignment_name = FeeService.create_fee_assignment_from_offer(offer_doc)
         
@@ -208,8 +208,8 @@ class FeeService:
         assignment.db_set("status", "Paid")
         
         # Update Offer Letter status directly
-        offer_doc.offer_status = "Payment Completed"
-        offer_doc.db_set("offer_status", "Payment Completed")
+        offer_doc.status = "Payment Completed"
+        offer_doc.db_set("status", "Payment Completed")
 
         # Sync Payment Request if it exists
         # For manual payments, we check if "Manual Payment" gateway exists, otherwise use a generic label
@@ -221,7 +221,7 @@ class FeeService:
         FeeService._update_payment_request(offer_doc, gateway, reference_number or "N/A", "Paid", payment_id=reference_number)
 
         from slcm.api.service.offer_service import OfferService
-        OfferService.update_applicant_status(assignment.applicant, application_status="Fee Paid")
+        OfferService.update_applicant_status(assignment.applicant, status="Fee Paid")
         OfferService.sync_seat_allocation_status(offer_doc, status="Fee Paid")
         OfferService.log_action(offer_name, "Fee Paid", _("Fee status updated to Paid via {0}").format(payment_mode))
 
@@ -265,7 +265,7 @@ class FeeService:
             if not offer.payable_amount or flt(offer.payable_amount) <= 0:
                 frappe.throw(_("Payable amount must be greater than zero."))
             
-            if offer.offer_status == "Payment Completed":
+            if offer.status == "Payment Completed":
                 frappe.throw(_("Payment has already been completed."))
 
             # Block if a Payment Request for this offer is already Paid (gateway truth)
@@ -286,10 +286,10 @@ class FeeService:
             if afa_status in ("Paid", "Converted"):
                 frappe.throw(_("Fee for this offer has already been paid or the applicant has been converted. You cannot pay again."))
             
-            if offer.offer_status in ["Rejected", "Expired", "Withdrawn"]:
-                frappe.throw(_("Cannot initiate payment. The offer is currently {0}.").format(offer.offer_status))
+            if offer.status in ["Rejected", "Expired", "Withdrawn"]:
+                frappe.throw(_("Cannot initiate payment. The offer is currently {0}.").format(offer.status))
             
-            if offer.offer_status in ["Draft", "Issued"]:
+            if offer.status in ["Draft", "Issued"]:
                 frappe.throw(_("Please accept the offer before proceeding to fee payment."))
 
             # 2. Get Dynamic Gateway from Fee Structure
@@ -364,10 +364,10 @@ class FeeService:
         """Idempotently records payment for the offer letter fee."""
 
         # 1. Update Offer Status
-        if offer_doc.offer_status != "Payment Completed":
+        if offer_doc.status != "Payment Completed":
             offer_doc.on_payment_authorized("Completed")
             offer_doc.db_set("seat_locked", 1)
-            offer_doc.db_set("offer_status", "Payment Completed")
+            offer_doc.db_set("status", "Payment Completed")
             
         # 2. Update Payment Request
         FeeService._update_payment_request(
@@ -378,7 +378,7 @@ class FeeService:
         # 3. Trigger Seat Lock Sync
         from slcm.api.service.offer_service import OfferService
         OfferService.sync_seat_allocation_status(offer_doc, "Fee Paid")
-        OfferService.update_applicant_status(offer_doc.applicant, application_status="Fee Paid")
+        OfferService.update_applicant_status(offer_doc.applicant, status="Fee Paid")
         
         # 4. Generate Receipt (with safety)
         try:
@@ -409,7 +409,7 @@ class FeeService:
             offer.reload()
 
             # Step 3: already paid check
-            if offer.offer_status == "Payment Completed":
+            if offer.status == "Payment Completed":
                 return {"status": "success"}
 
             gateway = frappe.db.get_value("Fee Structure", offer.fee_structure, "payment_gateway")
@@ -616,7 +616,7 @@ class FeeService:
                 {
                     "offer_letter": offer_doc.name,
                     "transaction_id": transaction_id,
-                    "docstatus": 1,
+                    "docstatus": ["<", 2],
                 },
                 "name",
             )
@@ -724,7 +724,6 @@ class FeeService:
                 receipt.payment_receipt_template = tpl
 
             receipt.insert(ignore_permissions=True)
-            receipt.submit()
             
             from slcm.api.service.offer_service import OfferService
             OfferService.log_action(offer_doc.name, "Payment Received", 
@@ -791,7 +790,8 @@ class FeeService:
             {
                 "reference_doctype": "Offer Letter", 
                 "reference_name": offer.name,
-                "status": ["!=", "Cancelled"]
+                "status": ["!=", "Cancelled"],
+                "docstatus": ["!=", 2]
             }, "name", order_by="creation desc")
         
         if not pr_name and transaction_id:
@@ -961,7 +961,8 @@ class FeeService:
         pr_name = frappe.db.get_value("Payment Request", {
             "reference_doctype": "Applicant",
             "reference_name": applicant_doc.name,
-            "status": ["!=", "Cancelled"]
+            "status": ["!=", "Cancelled"],
+            "docstatus": ["!=", 2]
         }, "name", order_by="creation desc")
 
         if not pr_name and transaction_id:
@@ -1136,7 +1137,11 @@ class FeeService:
             if pr:
                 pr_status = (pr.status or "").strip()
                 if pr_status == "Paid":
-                    frappe.throw(_("Application fee has already been paid."))
+                    if applicant.application_fee_status != "Paid":
+                        frappe.db.set_value("Applicant", applicant_name, "application_fee_status", "Paid")
+                        sync_application_fee_assignment_for_applicant(applicant_name)
+                        frappe.db.commit()
+                    return {"already_paid": True}
                 if pr_status == "Failed" or flt(pr.amount) != actual_payable:
                     cancel_payment_request_for_retry(pr)
                     pr = None
@@ -1198,6 +1203,14 @@ class FeeService:
 
         from slcm.api.service.application_fee_service import sync_application_fee_assignment_for_applicant
         sync_application_fee_assignment_for_applicant(applicant_doc.name)
+
+        applicant_doc.reload()
+        if applicant_doc.status == "Submitted":
+            from slcm.admission.web_form.applicant_form.applicant_form import submit_applicant
+            submit_applicant(applicant_doc.name, "Completed")
+
+        frappe.db.commit()
+
         frappe.db.commit()
 
     @staticmethod
@@ -1380,7 +1393,7 @@ class FeeService:
                     {
                         "applicant": applicant_doc.name,
                         "transaction_id": transaction_id,
-                        "docstatus": 1,
+                        "docstatus": ["<", 2],
                     },
                     "name",
                 )
@@ -1390,7 +1403,7 @@ class FeeService:
             existing = frappe.db.sql(
                 """
                 SELECT name FROM `tabApplicant Payment Receipt`
-                WHERE applicant = %s AND docstatus = 1 AND IFNULL(offer_letter, '') = ''
+                WHERE applicant = %s AND docstatus < 2 AND IFNULL(offer_letter, '') = ''
                 ORDER BY creation DESC LIMIT 1
                 """,
                 applicant_doc.name,
@@ -1439,7 +1452,8 @@ class FeeService:
                     order_by="modified desc",
                 )
             if pr:
-                receipt.payment_reference = pr
+                if frappe.db.get_value("Payment Request", pr, "docstatus") != 2:
+                    receipt.payment_reference = pr
                 
             receipt.append("fee_components", {
                 "fee_component": "Application Fee",
@@ -1452,7 +1466,6 @@ class FeeService:
             })
 
             receipt.insert(ignore_permissions=True)
-            receipt.submit()
             return receipt.name
         except Exception as e:
             frappe.log_error(frappe.get_traceback(), "Application Fee Receipt Generation Failed")
@@ -1475,7 +1488,7 @@ class FeeService:
         dup = frappe.db.sql(
             """
             SELECT name FROM `tabApplicant Payment Receipt`
-            WHERE applicant = %s AND docstatus = 1 AND IFNULL(offer_letter, '') = ''
+            WHERE applicant = %s AND docstatus < 2 AND IFNULL(offer_letter, '') = ''
             LIMIT 1
             """,
             applicant_name,
@@ -1529,12 +1542,19 @@ class FeeService:
                 except Exception:
                     pass
             err_msg = ""
+            is_gateway_failure = True
             if isinstance(error_data, dict):
                 err_msg = error_data.get("description") or error_data.get("message") or str(error_data)
+                # Differentiate manual dismiss from actual failure
+                if not (error_data.get("code") or error_data.get("reason") or error_data.get("step")):
+                    is_gateway_failure = False
             else:
                 err_msg = str(error_data)
+                
+            pr_status = "Failed" if is_gateway_failure else "Requested"
+            
             FeeService._update_payment_request_for_applicant(
-                applicant, gateway, order_id, "Failed", failure_reason=err_msg, response_data=error_data
+                applicant, gateway, order_id, pr_status, failure_reason=err_msg, response_data=error_data
             )
             if applicant.application_fee_status != "Paid":
                 frappe.db.set_value(

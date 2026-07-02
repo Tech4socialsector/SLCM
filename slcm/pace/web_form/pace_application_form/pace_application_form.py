@@ -72,7 +72,7 @@ def _pace_get_application_for_portal(application_name):
 
 
 @frappe.whitelist()
-def get_pace_application_status(application_name):
+def get_pace_status(application_name):
     """Return canonical application status from DB for portal read-only logic."""
     if not _pace_portal_user_owns_application(application_name):
         frappe.throw(_("You do not have permission to access this application."), frappe.PermissionError)
@@ -141,6 +141,26 @@ def get_context(context):
 
         frappe.local.flags.redirect_location = login_url
         raise frappe.Redirect
+
+    # Enforce PACE Application DocType permissions
+    is_new = frappe.form_dict.name == "new" or not frappe.form_dict.name
+    if is_new:
+        if not frappe.has_permission("PACE Application", "create"):
+            frappe.throw(_("You do not have permission to create a PACE Application. Please request the appropriate access."), frappe.PermissionError)
+    else:
+        doc_name = frappe.form_dict.name
+        if doc_name and doc_name != "new":
+            user = frappe.session.user
+            email = frappe.db.get_value("User", user, "email") or user
+            
+            owner = frappe.db.get_value("PACE Application", doc_name, "owner")
+            doc_email = frappe.db.get_value("PACE Application", doc_name, "email_address")
+            
+            if owner != user and (doc_email or "").lower() != (email or "").lower():
+                admin_roles = ["System Manager", "Admission Admin", "Administrator", "Campus Admin", "PACE Admission Manager"]
+                has_admin = any(r in admin_roles for r in frappe.get_roles(user))
+                if not has_admin:
+                    frappe.throw(_("You do not have permission to view this PACE Application."), frappe.PermissionError)
 
 
 # ───────────────────────────────────────────────────────────────────
@@ -228,6 +248,7 @@ def get_pace_portal_shell_data():
         "footer_text":          pc.get("footer_text") or "",
         "pace_footer":          pace_footer,
         "pace_enabled":         pace_enabled,
+        "pace_website_url":     pc.get("pace_website_url") or "/",
         "powerd_by":            powerd_by,
         "user":                 user,
         "full_name":            full_name,
@@ -1307,7 +1328,7 @@ def verify_pace_payment_signature(
         }
 
 @frappe.whitelist()
-def update_application_status_after_payment(application_name):
+def update_status_after_payment(application_name):
     application = _pace_get_application_for_portal(application_name)
     
     # Check if Course Fee is paid

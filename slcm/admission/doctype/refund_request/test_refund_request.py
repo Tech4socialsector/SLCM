@@ -37,7 +37,7 @@ class TestRefundRequest(FrappeTestCase):
 			"campus": "SHC",
 			"admission_cycle": "June To December",
 			"academic_year": "2026",
-			"application_status": "Fee Paid"
+			"status": "Fee Paid"
 		})
 		self.applicant.db_insert()
 
@@ -101,7 +101,7 @@ class TestRefundRequest(FrappeTestCase):
 
 		# Verify Applicant Status is Withdrawn
 		self.applicant.reload()
-		self.assertEqual(self.applicant.application_status, "Withdrawn")
+		self.assertEqual(self.applicant.status, "Withdrawn")
 
 	def test_partial_refund_workflow(self):
 		# Create Admission Cancellation
@@ -130,7 +130,7 @@ class TestRefundRequest(FrappeTestCase):
 		refund.save(ignore_permissions=True)
 
 		self.applicant.reload()
-		self.assertEqual(self.applicant.application_status, "Withdrawn")
+		self.assertEqual(self.applicant.status, "Withdrawn")
 
 	def test_no_refund_workflow(self):
 		# Create Admission Cancellation
@@ -157,7 +157,7 @@ class TestRefundRequest(FrappeTestCase):
 		refund.save(ignore_permissions=True)
 
 		self.applicant.reload()
-		self.assertEqual(self.applicant.application_status, "Withdrawn")
+		self.assertEqual(self.applicant.status, "Withdrawn")
 
 	@patch('slcm.api.service.razorpay_utils.get_razorpay_client')
 	def test_automated_razorpay_refund(self, mock_get_client):
@@ -245,9 +245,68 @@ class TestRefundRequest(FrappeTestCase):
 		# Saving should fail because 30,000 + 30,000 > 50,000
 		self.assertRaises(frappe.ValidationError, refund2.insert)
 
+	@patch('slcm.api.service.razorpay_utils.get_razorpay_client')
+	def test_reconcile_refund_status(self, mock_get_client):
+		# Mock client and refund list response
+		mock_client = MagicMock()
+		mock_get_client.return_value = mock_client
+		mock_client.refund.all.return_value = {
+			"entity": "collection",
+			"count": 1,
+			"items": [
+				{
+					"id": "rfnd_reconciled_999",
+					"payment_id": "pay_reconcile_123",
+					"amount": 3500000,
+					"status": "processed",
+					"notes": {
+						"refund_request": "TEST-REFUND-REQ-XYZ"
+					},
+					"created_at": 1782966800
+				}
+			]
+		}
+
+		# Setup a mock Refund Request without refund ID
+		refund = frappe.get_doc({
+			"doctype": "Refund Request",
+			"name": "TEST-REFUND-REQ-XYZ",
+			"applicant": self.applicant.name,
+			"status": "Approved",
+			"refund_type": "Partial",
+			"amount_paid": 50000.0,
+			"refund_amount": 35000.0,
+			"razorpay_payment_id": "pay_reconcile_123",
+			"refund_reason": "Test Reconcile"
+		})
+		refund.db_insert()
+
+		from slcm.admission_cancel_api import reconcile_refund_status
+		res = reconcile_refund_status("TEST-REFUND-REQ-XYZ")
+
+		# Verify reconciliation output and database updates
+		self.assertEqual(res.get("status"), "Success")
+		self.assertTrue("rfnd_reconciled_999" in res.get("message"))
+
+		refund.reload()
+		self.assertEqual(refund.razorpay_refund_id, "rfnd_reconciled_999")
+		self.assertEqual(refund.status, "Processed")
+
+		# Verify Refund Transaction was created
+		self.assertTrue(frappe.db.exists("Refund Transaction", {
+			"refund_request": "TEST-REFUND-REQ-XYZ",
+			"status": "Processed",
+			"razorpay_refund_id": "rfnd_reconciled_999"
+		}))
+
+		# Clean up
+		frappe.db.delete("Refund Request", {"name": "TEST-REFUND-REQ-XYZ"})
+		frappe.db.delete("Refund Transaction", {"refund_request": "TEST-REFUND-REQ-XYZ"})
+
 
 def run_tests():
 	import unittest
 	suite = unittest.TestLoader().loadTestsFromTestCase(TestRefundRequest)
 	unittest.TextTestRunner(verbosity=2).run(suite)
+
 

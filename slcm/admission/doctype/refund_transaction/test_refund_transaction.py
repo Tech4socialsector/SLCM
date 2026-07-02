@@ -21,7 +21,7 @@ class TestRefundTransaction(FrappeTestCase):
 			"campus": "SHC",
 			"admission_cycle": "June To December",
 			"academic_year": "2026",
-			"application_status": "Fee Paid"
+			"status": "Fee Paid"
 		})
 		self.applicant.db_insert()
 

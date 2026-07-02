@@ -62,9 +62,9 @@ def _next_steps_without_deadline_placeholder(next_steps):
     return out
 
 
-def _application_closed_portal_message(application_status, status_type, next_step_note=None):
+def _application_closed_portal_message(status, status_type, next_step_note=None):
     """Return {"title", "body"} when the detail view should hide the stage tracker and show a closed panel."""
-    app_status = (application_status or "").strip()
+    app_status = (status or "").strip()
     st_type = (status_type or "").strip()
     if app_status in _APPLICATION_CLOSED_PORTAL_MESSAGES:
         title, fallback_body = _APPLICATION_CLOSED_PORTAL_MESSAGES[app_status]
@@ -97,7 +97,7 @@ def _set_offer_letter_entries(context):
             offers = frappe.get_all(
                 "Offer Letter",
                 filters={"applicant": ["in", applicant_names]},
-                fields=["name", "applicant", "program", "campus", "offer_status", "payable_amount"],
+                fields=["name", "applicant", "program", "campus", "status", "payable_amount"],
                 order_by="creation desc",
                 ignore_permissions=True
             )
@@ -111,7 +111,7 @@ def _set_offer_letter_entries(context):
                     "program_name": program_name,
                     "campus": o.get("campus"),
                     "campus_name": campus_name,
-                    "offer_status": o.get("offer_status") or "Issued",
+                    "status": o.get("status") or "Issued",
                     "payable_amount": o.get("payable_amount"),
                 })
     except Exception:
@@ -152,7 +152,7 @@ def get_context(context):
             fields=["name","candidate_name","date_of_birth","gender","nationality",
                     "religion","mobile_number","alternate_contact","id_proof",
                     "correspondence_address","city","state","pincode",
-                    "application_status", "intake_type", "whether_scstobc_ncl",
+                    "status", "intake_type", "whether_scstobc_ncl",
                     "pwd", "program_level"],
             limit=1, order_by="creation desc")
         if not _prof_apps:
@@ -161,7 +161,7 @@ def get_context(context):
                 fields=["name","candidate_name","date_of_birth","gender","nationality",
                         "religion","mobile_number","alternate_contact","id_proof",
                         "correspondence_address","city","state","pincode",
-                        "application_status", "intake_type", "whether_scstobc_ncl",
+                        "status", "intake_type", "whether_scstobc_ncl",
                         "pwd", "program_level"],
                 limit=1, order_by="creation desc")
         if _prof_apps:
@@ -182,7 +182,7 @@ def get_context(context):
         context.prof_city            = _prof_app.city
         context.prof_state           = _prof_app.state
         context.prof_pincode         = _prof_app.pincode
-        context.prof_app_status      = _prof_app.application_status
+        context.prof_app_status      = _prof_app.status
         context.prof_app_name        = _prof_app.name
     else:
         context.prof_dob             = None
@@ -228,26 +228,37 @@ def get_context(context):
 
             # Standard fields in Applicant DocType
             standard_checklist = [
-                {"label": "10th Certificate", "field": "class_x_marksheet", "required": True},
-                {"label": "12th Certificate", "field": "class_xii_marksheet", "required": True},
-                {"label": "ID Proof", "field": "id_proof", "required": True},
-                {"label": "Photo", "field": "candidate_photo", "required": True},
+                {"label": "10th Certificate", "field": "class_x_marksheet", "required": True, "accept": ".pdf,.jpg,.jpeg,.png", "max_size_mb": 5},
+                {"label": "12th Certificate", "field": "class_xii_marksheet", "required": True, "accept": ".pdf,.jpg,.jpeg,.png", "max_size_mb": 5},
+                {"label": "ID Proof", "field": "id_proof", "required": True, "accept": ".pdf,.jpg,.jpeg,.png", "max_size_mb": 5},
+                {"label": "Photo", "field": "candidate_photo", "required": True, "accept": ".jpg,.jpeg,.png", "max_size_mb": 1},
+                {"label": "CV", "field": "cv", "required": True, "accept": ".doc,.docx,.pdf", "max_size_mb": 5},
             ]
 
             # Optional / Conditional fields
             if target_applicant.whether_scstobc_ncl and target_applicant.whether_scstobc_ncl != "NA":
-                standard_checklist.append({"label": "Category Certificate", "field": "caste_certificate", "required": True})
+                standard_checklist.append({"label": "Category Certificate", "field": "caste_certificate", "required": True, "accept": ".jpg,.jpeg,.png", "max_size_mb": 5})
                 
             if target_applicant.pwd == "Yes":
-                standard_checklist.append({"label": "PwD Certificate", "field": "pwd_certificate", "required": True})
+                standard_checklist.append({"label": "PwD Certificate", "field": "pwd_certificate", "required": True, "accept": ".jpg,.jpeg,.png", "max_size_mb": 5})
+
+            if getattr(target_applicant, "ews", None) == "Yes":
+                standard_checklist.append({"label": "EWS Certificate", "field": "ews_certificate", "required": True, "accept": ".pdf,.jpg,.jpeg,.png", "max_size_mb": 5})
                 
             if target_applicant.program_level == "Research Course":
-                standard_checklist.append({"label": "Research Proposal", "field": "phd_proposal", "required": True})
-                standard_checklist.append({"label": "CV", "field": "cv", "required": True})
+                standard_checklist.append({"label": "Research Proposal", "field": "phd_proposal", "required": True, "accept": ".pdf,.jpg,.jpeg,.png", "max_size_mb": 5})
             
             # Special case for Karnataka category
-            if target_applicant.ka_study_7yrs:
-                standard_checklist.append({"label": "Karnataka Study Certificate", "field": "ka_study_7yrs_certificate", "required": True})
+            if getattr(target_applicant, "ka_study_7yrs", 0):
+                standard_checklist.append({"label": "Karnataka Study Certificate", "field": "ka_study_7yrs_certificate", "required": True, "accept": ".jpg,.jpeg,.png", "max_size_mb": 5})
+            if getattr(target_applicant, "ka_defence_child", 0):
+                standard_checklist.append({"label": "Karnataka Defence Child Certificate", "field": "ka_defence_child_certificate", "required": True, "accept": ".jpg,.jpeg,.png", "max_size_mb": 5})
+            if getattr(target_applicant, "ka_govt_child", 0):
+                standard_checklist.append({"label": "Karnataka Govt Child Certificate", "field": "ka_govt_child_certificate", "required": True, "accept": ".jpg,.jpeg,.png", "max_size_mb": 5})
+            if getattr(target_applicant, "ka_ais_child", 0):
+                standard_checklist.append({"label": "Karnataka AIS Child Certificate", "field": "ka_ais_child_certificate", "required": True, "accept": ".jpg,.jpeg,.png", "max_size_mb": 5})
+            if getattr(target_applicant, "ka_capf_child", 0):
+                standard_checklist.append({"label": "Karnataka CAPF Child Certificate", "field": "ka_capf_child_certificate", "required": True, "accept": ".jpg,.jpeg,.png", "max_size_mb": 5})
 
             for item in standard_checklist:
                 field = item["field"]
@@ -259,9 +270,67 @@ def get_context(context):
                     "is_uploaded": bool(val),
                     "file_url": val,
                     "field": field,
+                    "doc_name": "",
                     "source": "field",
-                    "required": item["required"]
+                    "required": item["required"],
+                    "accept": item.get("accept", ".pdf,.jpg,.jpeg,.png"),
+                    "max_size_mb": item.get("max_size_mb", 5)
                 })
+
+            # Child tables
+            if target_applicant.program_level in ["Postgraduate", "Research Course"]:
+                for row in target_applicant.get("ug_degree_details", []):
+                    context.app_documents.append({
+                        "document_name": f"UG Certificate ({row.ug_program or 'Degree'})",
+                        "document_type": "UG degree certificate / Bonafide",
+                        "is_uploaded": bool(row.degree_certificate),
+                        "file_url": row.degree_certificate,
+                        "field": "degree_certificate",
+                        "doc_name": row.name,
+                        "source": "UG Degree Detail",
+                        "required": True,
+                        "accept": ".pdf,.jpg,.jpeg,.png",
+                        "max_size_mb": 5
+                    })
+                    context.app_documents.append({
+                        "document_name": f"UG Marksheets ({row.ug_program or 'Degree'})",
+                        "document_type": "Transcripts / Marksheets",
+                        "is_uploaded": bool(row.marksheets),
+                        "file_url": row.marksheets,
+                        "field": "marksheets",
+                        "doc_name": row.name,
+                        "source": "UG Degree Detail",
+                        "required": True,
+                        "accept": ".pdf,.jpg,.jpeg,.png",
+                        "max_size_mb": 5
+                    })
+
+            if target_applicant.program_level == "Research Course":
+                for row in target_applicant.get("pg_degree_details", []):
+                    context.app_documents.append({
+                        "document_name": f"PG Certificate ({row.pg_program or 'Degree'})",
+                        "document_type": "PG degree certificate / Bonafide",
+                        "is_uploaded": bool(row.pg_degree_certificatebonafide_certificate_to_be_uploaded),
+                        "file_url": row.pg_degree_certificatebonafide_certificate_to_be_uploaded,
+                        "field": "pg_degree_certificatebonafide_certificate_to_be_uploaded",
+                        "doc_name": row.name,
+                        "source": "PG Degree Details",
+                        "required": True,
+                        "accept": ".pdf,.jpg,.jpeg,.png",
+                        "max_size_mb": 5
+                    })
+                    context.app_documents.append({
+                        "document_name": f"PG Marksheets ({row.pg_program or 'Degree'})",
+                        "document_type": "Transcripts / Marksheets",
+                        "is_uploaded": bool(row.transcriptsmarksheets_to_be_uploaded),
+                        "file_url": row.transcriptsmarksheets_to_be_uploaded,
+                        "field": "transcriptsmarksheets_to_be_uploaded",
+                        "doc_name": row.name,
+                        "source": "PG Degree Details",
+                        "required": True,
+                        "accept": ".pdf,.jpg,.jpeg,.png",
+                        "max_size_mb": 5
+                    })
         except Exception as e:
             frappe.log_error(f"Document checklist error: {e}")
 
@@ -333,12 +402,12 @@ def get_context(context):
                 _off_row = frappe.get_all(
                     "Offer Letter",
                     filters={"applicant": applicant.name},
-                    fields=["offer_status"],
+                    fields=["status"],
                     order_by="creation desc",
                     limit=1,
                     ignore_permissions=True,
                 )
-                if _off_row and (_off_row[0].get("offer_status") or "") in (
+                if _off_row and (_off_row[0].get("status") or "") in (
                     "Accepted",
                     "Payment Completed",
                 ):
@@ -347,7 +416,7 @@ def get_context(context):
                     admission_fee_paid = bool(
                         frappe.db.exists(
                             "Applicant Payment Receipt",
-                            {"applicant": applicant.name, "docstatus": 1},
+                            {"applicant": applicant.name, "docstatus": ["<", 2]},
                         )
                     )
             except Exception:
@@ -364,7 +433,7 @@ def get_context(context):
                 # Potential stages mapping based on checkboxes in Program
                 # Using 'intereview' as per the doctype field name (note the typo)
                 POTENTIAL_STAGES = [
-                    {"field": "submitted",       "name": "Application Submitted", "stage_type": "Application"},
+                    {"field": "submitted",       "name": "Submitted", "stage_type": "Application"},
                     {"field": "entrance_test",   "name": "Entrance Test",         "stage_type": "Entrance Test"},
                     {"field": "intereview",      "name": "Interview",             "stage_type": "Interview"},
                     {"field": "merit_list",      "name": "Merit",                 "stage_type": "Merit"},
@@ -378,7 +447,7 @@ def get_context(context):
                 
             # 2. Get current status info from Applicant Status doctype
             status_info = frappe.db.get_value("Applicant Status", 
-                applicant.application_status, 
+                applicant.status, 
                 ["stage_type", "status_type", "next_step_note"], 
                 as_dict=True) or {}
             
@@ -402,7 +471,7 @@ def get_context(context):
                     if i < active_index:
                         state = "completed"
                     elif i == active_index:
-                        if current_status_type == "Complete":
+                        if current_status_type == "Completed":
                             state = "completed"
                         elif current_status_type == "Closed":
                             state = "closed"
@@ -422,7 +491,7 @@ def get_context(context):
                 stage_name = s["name"]
                 status_label = ""
                 if state in ["active", "closed"]:
-                    status_label = applicant.application_status
+                    status_label = applicant.status
 
                 if s["stage_type"] == "Admission Fee" and admission_fee_paid and state in (
                     "completed",
@@ -444,12 +513,12 @@ def get_context(context):
         if not stages_with_state:
             # Fallback based on common statuses
             statuses = [
-                {"name": "Application Submitted", "activate": "Submitted", "closed": "Rejected"},
+                {"name": "Submitted", "activate": "Submitted", "closed": "Rejected"},
                 {"name": "Review", "activate": "Under Review", "closed": "Rejected"},
                 {"name": "Interview", "activate": "Interview Scheduled", "closed": "Interview Rejected"},
                 {"name": "Decision", "activate": "Selected", "closed": "Rejected"}
             ]
-            current = applicant.get("application_status") or "Draft"
+            current = applicant.get("status") or "Draft"
             stop_found = False
             for st in statuses:
                 state = "pending"
@@ -477,7 +546,7 @@ def get_context(context):
         context.stage_tracker = stages_with_state
 
         # ── Next steps ─────────────────────────────────────────────
-        _portal_app_status = applicant.get("application_status") or "Draft"
+        _portal_app_status = applicant.get("status") or "Draft"
         try:
             _pc = frappe.get_doc("Applicant Portal Config")
             _next_steps = []
@@ -530,17 +599,17 @@ def get_context(context):
         # --- Fetch Offer Letter for this applicant ---
         offer_letter = frappe.get_all("Offer Letter", 
             filters={"applicant": applicant.name},
-            fields=["name", "offer_status"],
+            fields=["name", "status"],
             order_by="creation desc",
             limit=1,
             ignore_permissions=True
         )
         if offer_letter:
             context.offer_name = offer_letter[0].name
-            context.offer_status = offer_letter[0].offer_status
+            context.status = offer_letter[0].status
         else:
             context.offer_name = ""
-            context.offer_status = ""
+            context.status = ""
 
         # --- Fetch Payment Details for Cancellation Button ---
         context.payment_details = None
@@ -574,11 +643,11 @@ def get_context(context):
              context.has_cancellation = False
         
         # Show withdraw button ONLY if Enrolled and no existing cancellation
-        if not context.has_cancellation and applicant.application_status == "Enrolled":
+        if not context.has_cancellation and applicant.status == "Enrolled":
             # We fetch the latest active Offer Letter. If someone has paid, it should be 'Payment Completed' or 'Accepted'. 
             # But we also include 'Issued' just in case the status sync is pending.
             _off_name = frappe.db.get_value("Offer Letter", 
-                {"applicant": applicant.name, "offer_status": ["not in", ["Rejected", "Withdrawn", "Expired"]]}, 
+                {"applicant": applicant.name, "status": ["not in", ["Rejected", "Withdrawn", "Expired"]]}, 
                 "name", order_by="creation desc")
             context.offer_name = _off_name or ""
             
@@ -597,7 +666,7 @@ def get_context(context):
                 # 2. Fallback to Applicant Payment Receipt
                 if not context.payment_details:
                     receipt = frappe.get_all("Applicant Payment Receipt",
-                        filters={"offer_letter": context.offer_name, "docstatus": 1},
+                        filters={"offer_letter": context.offer_name, "docstatus": ["<", 2]},
                         fields=["name", "total_amount as amount", "payment_date"],
                         order_by="creation desc", limit=1)
                     if receipt:
@@ -852,12 +921,12 @@ def get_context(context):
 
         _closed_meta = frappe.db.get_value(
             "Applicant Status",
-            applicant.application_status,
+            applicant.status,
             ["status_type", "next_step_note"],
             as_dict=True,
         ) or {}
         context.application_closed_message = _application_closed_portal_message(
-            applicant.application_status,
+            applicant.status,
             _closed_meta.get("status_type"),
             _closed_meta.get("next_step_note")
         )
@@ -919,7 +988,7 @@ def get_context(context):
     for app_id in all_app_names:
         app_doc = frappe.get_doc("Applicant", app_id)
         
-        status = app_doc.application_status or "Draft"
+        status = app_doc.status or "Draft"
         style = STATUS_STYLE.get(status, STATUS_STYLE["Draft"])
         
         program_name = frappe.db.get_value("Program", app_doc.program, "program_name") or app_doc.program
@@ -929,7 +998,7 @@ def get_context(context):
         _payment_details = None
         _offer_name = frappe.db.get_value("Offer Letter", {
             "applicant": app_doc.name, 
-            "offer_status": ["in", ["Accepted", "Payment Completed"]]
+            "status": ["in", ["Accepted", "Payment Completed"]]
         }, "name")
         
         student_name = frappe.db.get_value("Student Master", {"application_number": app_doc.name}, "name")

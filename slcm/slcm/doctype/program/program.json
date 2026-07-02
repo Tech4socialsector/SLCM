@@ -13,6 +13,7 @@
   "program_shortcode",
   "department",
   "image",
+  "application_form_link",
   "column_break_aosh",
   "level_of_study",
   "program_duration",
@@ -26,9 +27,9 @@
   "portal_details_tab",
   "intake_type",
   "program_image",
+  "brochure_file",
   "program_description",
   "eligibility_summary",
-  "brochure_file",
   "media",
   "curriculum_items",
   "career_items",
@@ -172,7 +173,8 @@
   {
    "fieldname": "brochure_file",
    "fieldtype": "Attach",
-   "label": "Brochure File"
+   "label": "Brochure File",
+   "reqd": 1
   },
   {
    "fieldname": "media",
@@ -271,6 +273,13 @@
    "fieldname": "enrolled",
    "fieldtype": "Check",
    "label": "Enrolled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "application_form_link",
+   "fieldtype": "Data",
+   "label": "Application Form Link",
+   "options": "URL",
    "read_only": 1
   }
  ],

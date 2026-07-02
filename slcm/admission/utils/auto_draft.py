@@ -25,7 +25,7 @@ def get_draft_status(applicant_name):
     applicant = frappe.db.get_value(
         "Applicant",
         applicant_name,
-        ["modified", "application_status", "docstatus"],
+        ["modified", "status", "docstatus"],
         as_dict=True
     )
     return applicant

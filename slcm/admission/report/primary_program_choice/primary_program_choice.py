@@ -62,7 +62,7 @@ def get_columns() -> list[dict]:
 		},
 		{
 			"label": _("Application Status"),
-			"fieldname": "application_status",
+			"fieldname": "status",
 			"fieldtype": "Data",
 			"width": 140
 		},
@@ -88,8 +88,8 @@ def get_data(filters: dict | None) -> list[dict]:
 		query_filters["program"] = filters.get("program")
 	if filters.get("program_level"):
 		query_filters["program_level"] = filters.get("program_level")
-	if filters.get("application_status"):
-		query_filters["application_status"] = filters.get("application_status")
+	if filters.get("status"):
+		query_filters["status"] = filters.get("status")
 	if filters.get("campus"):
 		query_filters["campus"] = filters.get("campus")
 
@@ -104,7 +104,7 @@ def get_data(filters: dict | None) -> list[dict]:
 			"program_level",
 			"program",
 			"campus",
-			"application_status",
+			"status",
 			"admission_year",
 			"admission_cycle"
 		],
