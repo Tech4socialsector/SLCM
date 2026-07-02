@@ -546,31 +546,49 @@ class SLCMWorkspaceAnalyticsDashboard {
 		.sawd-viewlist-btn:hover { opacity:.85; }
 		.sawd-viewlist-btn:disabled { opacity:.35; cursor:not-allowed; }
 
-		/* ── Drilldown panel ─────────────────────────────────────────── */
+		/* ── Drilldown modal (centered popup) ────────────────────────── */
 		.sawd-drilldown-overlay {
-			position:fixed; inset:0; background:rgba(15,23,42,.35);
-			backdrop-filter:blur(2px); z-index:999; opacity:0; pointer-events:none;
-			transition:opacity .25s ease;
+			position:fixed; inset:0; background:rgba(15,23,42,.45);
+			backdrop-filter:blur(3px); z-index:999; opacity:0; pointer-events:none;
+			transition:opacity .22s ease;
+			display:flex; align-items:center; justify-content:center;
 		}
 		.sawd-drilldown-overlay.open { opacity:1; pointer-events:all; }
+		@keyframes sawd-modal-in { from{opacity:0;transform:scale(.95) translateY(12px)} to{opacity:1;transform:scale(1) translateY(0)} }
 		.sawd-drilldown-panel {
-			position:fixed; top:0; right:-680px; width:640px; max-width:95vw; height:100vh;
-			background:var(--sawd-surface); box-shadow:var(--sawd-shadow-lg);
+			position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(.95);
+			width:820px; max-width:92vw; max-height:88vh;
+			background:var(--sawd-surface); border-radius:16px; box-shadow:0 24px 64px rgba(15,23,42,.28);
 			z-index:1000; display:flex; flex-direction:column;
-			transition:right .3s cubic-bezier(.4,0,.2,1);
+			opacity:0; pointer-events:none;
+			transition:opacity .22s ease, transform .22s cubic-bezier(.4,0,.2,1);
 		}
-		.sawd-drilldown-panel.open { right:0; }
-		.sawd-drilldown-header { display:flex; align-items:center; gap:12px; padding:16px 20px; border-bottom:1px solid var(--sawd-border); flex-shrink:0; }
-		.sawd-drilldown-title  { font-size:16px; font-weight:700; color:var(--sawd-text1); }
-		.sawd-drilldown-breadcrumb { font-size:11px; color:var(--sawd-text4); margin-top:2px; }
-		.sawd-drilldown-close  { margin-left:auto; width:32px; height:32px; border-radius:8px; border:1px solid var(--sawd-border); background:var(--sawd-surface2); cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; transition:var(--sawd-transition); }
-		.sawd-drilldown-close:hover { background:var(--sawd-danger); color:#fff; border-color:var(--sawd-danger); }
-		.sawd-drilldown-body   { flex:1; overflow-y:auto; padding:16px 20px; }
+		.sawd-drilldown-panel.open {
+			opacity:1; pointer-events:all;
+			transform:translate(-50%,-50%) scale(1);
+		}
+		.sawd-drilldown-header {
+			display:flex; align-items:center; gap:12px; padding:18px 22px 14px;
+			border-bottom:1px solid var(--sawd-border); flex-shrink:0;
+			background:linear-gradient(135deg,#7B1C1C,#C9922A);
+			border-radius:16px 16px 0 0;
+		}
+		.sawd-drilldown-title  { font-size:16px; font-weight:700; color:#fff; }
+		.sawd-drilldown-breadcrumb { font-size:11px; color:rgba(255,255,255,.65); margin-top:2px; }
+		.sawd-drilldown-close  {
+			margin-left:auto; width:32px; height:32px; border-radius:8px;
+			border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.12);
+			cursor:pointer; font-size:16px; color:#fff;
+			display:flex; align-items:center; justify-content:center;
+			transition:var(--sawd-transition);
+		}
+		.sawd-drilldown-close:hover { background:rgba(220,38,38,.8); border-color:transparent; }
+		.sawd-drilldown-body   { flex:1; overflow-y:auto; padding:16px 20px; min-height:0; }
 		.sawd-drilldown-stats  { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
 		.sawd-drilldown-stat   { background:var(--sawd-surface2); border-radius:10px; padding:12px; text-align:center; border:1px solid var(--sawd-border); }
 		.dds-value { font-size:22px; font-weight:800; color:var(--sawd-navy); }
 		.dds-label { font-size:11px; color:var(--sawd-text3); margin-top:2px; }
-		.sawd-dd-search-bar  { padding:12px 24px 8px; flex-shrink:0; border-bottom:1px solid var(--sawd-border); display:flex; align-items:center; gap:10px; }
+		.sawd-dd-search-bar  { padding:10px 20px 8px; flex-shrink:0; border-bottom:1px solid var(--sawd-border); display:flex; align-items:center; gap:10px; }
 		.sawd-dd-search-wrap { flex:1; position:relative; }
 		.sawd-dd-search-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--sawd-text3); font-size:13px; pointer-events:none; }
 		.sawd-dd-search-input { width:100%; padding:7px 12px 7px 32px; border:1.5px solid var(--sawd-border); border-radius:8px; font-size:13px; color:var(--sawd-text1); background:var(--sawd-surface2); outline:none; transition:var(--sawd-transition); }
@@ -799,7 +817,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 			.sawd-tabs  { overflow-x:auto; flex-wrap:nowrap; }
 			.sawd-tab   { flex-shrink:0; }
 			.sawd-sc-grid    { grid-template-columns:1fr; }
-			.sawd-drilldown-panel { width:100%; }
+			.sawd-drilldown-panel { width:96vw; max-height:92vh; }
 			.sawd-drilldown-stats { grid-template-columns:1fr 1fr; }
 			.sawd-config-panel { width:100%; max-width:100vw; }
 		}
@@ -1012,20 +1030,13 @@ class SLCMWorkspaceAnalyticsDashboard {
 				const resolved_filters = $(this).data('resolved-filters') || [];
 				self._open_record_drilldown_page(number_card, JSON.stringify(resolved_filters), $(this).find('.sawd-kpi-label').text());
 			} else if (dt) {
-				sawd_open_in_new_tab(`/app/${frappe.router.slug(dt)}`);
+				const title = $(this).find('.sawd-kpi-label').text();
+				self._open_doctype_in_panel(dt, [], title, null);
 			} else {
 				const module = $(this).data('dd-module');
 				const dim    = $(this).data('dd-dim');
 				const val    = $(this).data('dd-val');
-				const route  = self._get_list_route(module, dim, val);
-				if (route && route.dt) {
-					const filter_str = Object.keys(route.filters || {}).length
-						? '?' + Object.entries(route.filters).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')
-						: '';
-					sawd_open_in_new_tab(`/app/${frappe.router.slug(route.dt)}${filter_str}`);
-				} else {
-					self._open_drilldown(module, dim, val, {}, $(this).data('dd-title') || '');
-				}
+				self._open_drilldown(module, dim, val, {}, $(this).data('dd-title') || '');
 			}
 		});
 
@@ -2425,15 +2436,51 @@ class SLCMWorkspaceAnalyticsDashboard {
 	// changes here. Never frappe.set_route() — that would navigate the
 	// dashboard tab itself instead of opening a fully separate Desk tab.
 	_open_record_drilldown_page(number_card, resolved_filters_json, label) {
-		const params = new URLSearchParams();
-		if (resolved_filters_json) params.set('filters', resolved_filters_json);
-		if (label) params.set('label', label);
-		const query = params.toString() ? `?${params.toString()}` : '';
-		const url = `/app/slcm-record-drilldown/${encodeURIComponent(number_card)}${query}`;
-		sawd_open_in_new_tab(url);
+		// Open the drilldown panel rather than navigating to a new tab
+		$('#sawd-dd-title').text(label || 'Record Drilldown');
+		$('#sawd-dd-breadcrumb').text('');
+		$('#sawd-dd-body').html('<div class="sawd-empty"><div class="sawd-empty-icon">⏳</div><div class="sawd-empty-title">Loading…</div></div>');
+		$('#sawd-dd-search').val('');
+		$('#sawd-dd-search-count').text('');
+		$('#sawd-dd-search-clear').hide();
+		$('#sawd-dd-viewlist').hide();
+		$('#sawd-dd-overlay, #sawd-dd-panel').addClass('open');
+		this._drilldown_open = true;
+
+		frappe.call({
+			method: 'slcm.slcm.page.slcm_record_drilldown.slcm_record_drilldown.get_card_meta',
+			args: { number_card },
+			callback: (r) => {
+				if (r.exc || !r.message) {
+					$('#sawd-dd-body').html('<div class="sawd-empty"><div class="sawd-empty-icon">⚠️</div><div class="sawd-empty-title">Could not load card metadata</div></div>');
+					return;
+				}
+				const meta = r.message;
+				const filters = resolved_filters_json ? JSON.parse(resolved_filters_json) : [];
+				this._drilldown_list_route = { dt: meta.document_type, filters: {} };
+				$('#sawd-dd-viewlist').show();
+				this._open_doctype_in_panel(meta.document_type, filters, label || meta.label, meta.columns);
+			},
+		});
+	}
+
+	_open_doctype_in_panel(dt, filters, title, columns) {
+		this._dd_doctype_mode = true;
+		this._dd_doctype_state = { dt, filters: filters || [], columns: columns || null };
+		this._drilldown_state  = { module: 'doctype', dimension: dt, value: '', page: 1, page_size: 25 };
+		if (!this._drilldown_list_route) {
+			this._drilldown_list_route = { dt, filters: {} };
+			$('#sawd-dd-viewlist').show();
+		}
+		$('#sawd-dd-title').text(title || dt);
+		$('#sawd-dd-breadcrumb').text(dt);
+		$('#sawd-dd-overlay, #sawd-dd-panel').addClass('open');
+		this._drilldown_open = true;
+		this._load_drilldown_page(1);
 	}
 
 	_open_drilldown(module, dimension, value, context = {}, title = null) {
+		this._dd_doctype_mode = false;
 		this._drilldown_state = { module, dimension, value, page: 1, page_size: 25 };
 		$('#sawd-dd-title').text(title || value || 'Detail View');
 		$('#sawd-dd-breadcrumb').text(`${module} › ${dimension} › ${value}`);
@@ -2457,9 +2504,35 @@ class SLCMWorkspaceAnalyticsDashboard {
 	}
 
 	_load_drilldown_page(page) {
-		const { module, dimension, value, page_size } = this._drilldown_state;
 		this._drilldown_state.page = page;
 
+		// Doctype mode: fetch records directly via the record-drilldown API
+		if (this._dd_doctype_mode) {
+			const { dt, filters, columns } = this._dd_doctype_state;
+			const { page_size } = this._drilldown_state;
+			$('#sawd-dd-body').html('<div class="sawd-empty"><div class="sawd-empty-icon">⏳</div><div class="sawd-empty-title">Loading…</div></div>');
+			frappe.call({
+				method: 'slcm.slcm.page.slcm_record_drilldown.slcm_record_drilldown.get_records',
+				args: {
+					document_type: dt,
+					filters: JSON.stringify(filters || []),
+					columns: JSON.stringify(columns || []),
+					page,
+					page_size,
+				},
+				callback: (r) => {
+					if (r.exc || !r.message) {
+						$('#sawd-dd-body').html(this._empty_html('No data found'));
+						return;
+					}
+					this._drilldown_state.total = r.message.total;
+					this._render_drilldown_content(r.message);
+				},
+			});
+			return;
+		}
+
+		const { module, dimension, value, page_size } = this._drilldown_state;
 		frappe.call({
 			method: `${SAWD_PAGE_METHOD}.get_drilldown_data`,
 			args: { module, dimension, value, page, page_size, ...this.filters },
@@ -2549,7 +2622,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 			this._load_drilldown_page(1);
 		});
 
-		$('#sawd-dd-body').on('click', 'tr.sawd-row-link', function () {
+		$('#sawd-dd-body').off('click', 'tr.sawd-row-link').on('click', 'tr.sawd-row-link', function () {
 			const dt = $(this).data('dt');
 			const id = $(this).data('id');
 			if (dt && id) sawd_open_in_new_tab(`/app/${frappe.router.slug(dt)}/${encodeURIComponent(id)}`);
@@ -2572,6 +2645,8 @@ class SLCMWorkspaceAnalyticsDashboard {
 	_close_drilldown() {
 		$('#sawd-dd-overlay, #sawd-dd-panel').removeClass('open');
 		this._drilldown_open = false;
+		this._dd_doctype_mode = false;
+		this._drilldown_list_route = null;
 	}
 
 	_export_drilldown() {
