@@ -1280,6 +1280,23 @@
         if (!input.files || !input.files[0]) return;
 
         const file = input.files[0];
+
+        if (fieldname === 'student_signature') {
+            const maxSize = 1 * 1024 * 1024; // 1 MB
+            if (file.size > maxSize) {
+                showToastLocal('Invalid File', 'Student Signature must be under 1 MB.', 'error');
+                input.value = '';
+                return;
+            }
+            
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+            if (!allowedTypes.includes(file.type)) {
+                showToastLocal('Invalid File', 'Only JPEG, JPG, and PNG files are allowed for Student Signature.', 'error');
+                input.value = '';
+                return;
+            }
+        }
+
         const reader = new FileReader();
         
         reader.onload = async function(e) {

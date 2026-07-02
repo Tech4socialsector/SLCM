@@ -329,7 +329,7 @@
             const data = await apiFetch('slcm.admission.utils.web.get_offer_list', {
                 limit_start: current_page * page_size,
                 limit_page_length: page_size
-            });
+            }, 'GET');
             console.log("Offers data received:", data);
             if (!data) {
                 render_error("{{ _('No response from server') }}");

@@ -72,7 +72,7 @@
    "fieldname": "actual_category",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Actual Category",
+   "label": "Candidate Category",
    "read_only": 1
   },
   {
