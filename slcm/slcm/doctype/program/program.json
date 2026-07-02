@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:program_name",
  "creation": "2026-03-11 13:55:37.916716",
@@ -299,7 +300,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-05-15 14:20:39.978026",
+ "modified": "2026-07-02 14:09:41.880591",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Program",

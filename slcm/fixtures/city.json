@@ -1,5 +1,41 @@
 [
  {
+  "city_name": "Bangaluru",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-03-10 20:39:20.535871",
+  "name": "Bangaluru",
+  "state": "Karnataka"
+ },
+ {
+  "city_name": "Ambarnath",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-05-04 10:41:07.574543",
+  "name": "Ambarnath",
+  "state": "Maharashtra"
+ },
+ {
+  "city_name": "Karaikkudi",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-05-04 10:41:08.049242",
+  "name": "Karaikkudi",
+  "state": "Tamil Nadu"
+ },
+ {
+  "city_name": "Other",
+  "country": "Other",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-05-04 11:31:27.472812",
+  "name": "Other",
+  "state": "Other"
+ },
+ {
   "city_name": "Car Nicobar",
   "country": "India",
   "docstatus": 0,
