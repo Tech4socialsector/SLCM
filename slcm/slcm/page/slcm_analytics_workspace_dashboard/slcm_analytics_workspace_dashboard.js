@@ -42,6 +42,28 @@ const SAWD_PALETTE = {
 
 const SAWD_PAGE_METHOD = 'slcm.slcm.page.slcm_analytics_workspace_dashboard.slcm_analytics_workspace_dashboard';
 
+// Persists the active tab/sub-tabs and filter selections across page reloads
+// and navigation away-and-back, per logged-in user, so re-opening the
+// dashboard restores the view instead of always resetting to Overview.
+const SAWD_STATE_KEY = `sawd_dashboard_state:${frappe.session.user}`;
+
+const sawd_save_state = (state) => {
+	try {
+		localStorage.setItem(SAWD_STATE_KEY, JSON.stringify(state));
+	} catch {
+		// localStorage may be unavailable (private browsing, quota) — persistence
+		// is a convenience, not a requirement, so fail silently.
+	}
+};
+
+const sawd_load_state = () => {
+	try {
+		return JSON.parse(localStorage.getItem(SAWD_STATE_KEY) || '{}');
+	} catch {
+		return {};
+	}
+};
+
 // Module metadata (icon + label for config panel)
 const SAWD_MODULE_META = {
 	overview:    { icon: '📊', label: 'Overview',    desc: 'Institution-wide KPI summary' },
@@ -138,6 +160,13 @@ class SLCMWorkspaceAnalyticsDashboard {
 		this._drilldown_open  = false;
 		this._config_open     = false;
 
+		// Restore last-used tab/sub-tab/filters for this user, if any.
+		const saved = sawd_load_state();
+		if (saved.active_tab)              this.active_tab = saved.active_tab;
+		if (saved.active_exam_subtab)      this.active_exam_subtab = saved.active_exam_subtab;
+		if (saved.active_attendance_subtab) this.active_attendance_subtab = saved.active_attendance_subtab;
+		if (saved.filters)                 this.filters = { ...this.filters, ...saved.filters };
+
 		this._inject_styles();
 		this._build_skeleton();
 		this._load_workspace_config();
@@ -181,7 +210,18 @@ class SLCMWorkspaceAnalyticsDashboard {
 		}
 
 		/* ── Page layout ─────────────────────────────────────────────── */
-		.sawd-page { padding:20px 24px 80px; min-height:100vh; }
+		.sawd-page { padding:0 24px 80px; min-height:100vh; }
+
+		/* ── Sticky header/filter/tab region ─────────────────────────── */
+		/* Keeps the tab bar and active filters visible while scrolling  */
+		/* through KPIs/charts, so switching context never requires      */
+		/* scrolling back to the top of the page.                        */
+		.sawd-sticky-header {
+			position:sticky; top:0; z-index:400;
+			background:var(--sawd-bg);
+			margin:0 -24px; padding:20px 24px 0;
+			box-shadow:0 2px 0 var(--sawd-bg);
+		}
 
 		/* ── Header ──────────────────────────────────────────────────── */
 		.sawd-header {
@@ -750,7 +790,8 @@ class SLCMWorkspaceAnalyticsDashboard {
 
 		/* ── Responsive ──────────────────────────────────────────────── */
 		@media (max-width:768px) {
-			.sawd-page  { padding:12px 14px 60px; }
+			.sawd-page  { padding:0 14px 60px; }
+			.sawd-sticky-header { margin:0 -14px; padding:12px 14px 0; }
 			.sawd-kpi-grid { grid-template-columns:repeat(2,1fr) !important; }
 			.sawd-chart-grid,
 			.sawd-chart-grid-3,
@@ -770,38 +811,40 @@ class SLCMWorkspaceAnalyticsDashboard {
 	_build_skeleton() {
 		this.$body.html(`
 		<div class="sawd-page">
-			<div class="sawd-header">
-				<div class="sawd-header-icon">🗂️</div>
-				<div class="sawd-header-text">
-					<div class="sawd-suptitle">Personalised Analytics</div>
-					<div class="sawd-title">SLCM Analytics Workspace Dashboard</div>
+			<div class="sawd-sticky-header">
+				<div class="sawd-header">
+					<div class="sawd-header-icon">🗂️</div>
+					<div class="sawd-header-text">
+						<div class="sawd-suptitle">Personalised Analytics</div>
+						<div class="sawd-title">SLCM Analytics Workspace Dashboard</div>
+					</div>
+					<div class="sawd-header-right">
+						<span class="sawd-last-updated" id="sawd-last-updated"></span>
+						<button class="sawd-refresh-btn" id="sawd-refresh" style="display:none">
+							<i class="fa fa-refresh"></i> Refresh
+						</button>
+						<button class="sawd-btn-configure" id="sawd-configure" style="display:none">
+							⚙️ Configure Workspace
+						</button>
+						<button class="sawd-btn-configure" id="sawd-edit-workspace" style="display:none; margin-left: 10px;">
+							✏️ Edit Workspace
+						</button>
+					</div>
 				</div>
-				<div class="sawd-header-right">
-					<span class="sawd-last-updated" id="sawd-last-updated"></span>
-					<button class="sawd-refresh-btn" id="sawd-refresh" style="display:none">
-						<i class="fa fa-refresh"></i> Refresh
-					</button>
-					<button class="sawd-btn-configure" id="sawd-configure" style="display:none">
-						⚙️ Configure Workspace
-					</button>
-					<button class="sawd-btn-configure" id="sawd-edit-workspace" style="display:none; margin-left: 10px;">
-						✏️ Edit Workspace
-					</button>
+				<div id="sawd-ws-badges" style="display:none"></div>
+				<div id="sawd-filter-bar" style="display:none" class="sawd-filter-bar">
+					<div class="sawd-filter-group"><div class="sawd-filter-label">Academic Year</div><div id="sawd-f-ay"></div></div>
+					<div class="sawd-filter-group"><div class="sawd-filter-label">Term</div><div id="sawd-f-term"></div></div>
+					<div class="sawd-filter-group"><div class="sawd-filter-label">Programme</div><div id="sawd-f-prog"></div></div>
+					<div class="sawd-filter-group"><div class="sawd-filter-label">Cohort</div><div id="sawd-f-cohort"></div></div>
+					<div class="sawd-filter-group"><div class="sawd-filter-label">Student Status</div><div id="sawd-f-sstatus"></div></div>
+					<div class="sawd-filter-actions">
+						<button class="sawd-btn sawd-btn-primary" id="sawd-apply-filters"><i class="fa fa-filter"></i> Apply</button>
+						<button class="sawd-btn sawd-btn-ghost"  id="sawd-reset-filters"><i class="fa fa-times"></i> Reset</button>
+					</div>
 				</div>
+				<div id="sawd-tabs-container"></div>
 			</div>
-			<div id="sawd-ws-badges" style="display:none"></div>
-			<div id="sawd-filter-bar" style="display:none" class="sawd-filter-bar">
-				<div class="sawd-filter-group"><div class="sawd-filter-label">Academic Year</div><div id="sawd-f-ay"></div></div>
-				<div class="sawd-filter-group"><div class="sawd-filter-label">Term</div><div id="sawd-f-term"></div></div>
-				<div class="sawd-filter-group"><div class="sawd-filter-label">Programme</div><div id="sawd-f-prog"></div></div>
-				<div class="sawd-filter-group"><div class="sawd-filter-label">Cohort</div><div id="sawd-f-cohort"></div></div>
-				<div class="sawd-filter-group"><div class="sawd-filter-label">Student Status</div><div id="sawd-f-sstatus"></div></div>
-				<div class="sawd-filter-actions">
-					<button class="sawd-btn sawd-btn-primary" id="sawd-apply-filters"><i class="fa fa-filter"></i> Apply</button>
-					<button class="sawd-btn sawd-btn-ghost"  id="sawd-reset-filters"><i class="fa fa-times"></i> Reset</button>
-				</div>
-			</div>
-			<div id="sawd-tabs-container"></div>
 			<div id="sawd-tab-content">
 				<div class="sawd-kpi-grid">
 					${Array(4).fill('<div class="sawd-skeleton sawd-skeleton-kpi"></div>').join('')}
@@ -871,6 +914,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 			self.$body.find('.sawd-tab').removeClass('active');
 			$(this).addClass('active');
 			self.active_tab = tab;
+			self._persist_state();
 			self._load_tab(tab);
 		});
 
@@ -912,6 +956,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 			$tab.addClass('active');
 			this.active_exam_subtab = key;
 			this._update_exam_edit_btn();
+			this._persist_state();
 			this._load_workspace_dashboard(key, ws);
 		});
 
@@ -924,6 +969,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 			$tab.addClass('active');
 			this.active_attendance_subtab = key;
 			this._update_att_edit_btn();
+			this._persist_state();
 			if (key === 'rfid') {
 				$('#sawd-tab-content').html('');
 				this._load_rfid_subtab();
@@ -1271,6 +1317,11 @@ class SLCMWorkspaceAnalyticsDashboard {
 				const vals = $(`#${uid}_list input:checked`).map((_, el) => el.value).get();
 				return vals.length ? vals : null;
 			},
+			set_values(vals) {
+				const set = new Set(vals || []);
+				$(`#${uid}_list input`).each(function () { $(this).prop('checked', set.has(this.value)); });
+				update_label();
+			},
 			set_options(new_opts) {
 				const checked = $(`#${uid}_list input:checked`).map((_, el) => el.value).get();
 				options = new_opts;
@@ -1304,6 +1355,17 @@ class SLCMWorkspaceAnalyticsDashboard {
 				this._ms_cohort = this._make_multiselect('sawd-f-cohort', opts.cohorts,                  'name',  'cohort_name',  'All Cohorts');
 				this._ms_status = this._make_multiselect('sawd-f-sstatus',opts.student_statuses || [],   'value', 'label',        'All Statuses');
 
+				// Restore previously-selected filter values (see sawd_load_state)
+				// now that the widgets exist. Cohort options depend on year/programme,
+				// so refresh those before restoring the cohort selection itself.
+				if (this.filters.academic_year)  this._ms_ay.set_values([].concat(this.filters.academic_year));
+				if (this.filters.program)        this._ms_prog.set_values([].concat(this.filters.program));
+				if (this.filters.student_status) this._ms_status.set_values([].concat(this.filters.student_status));
+				this._refresh_cohort_filter();
+				this._refresh_term_filter();
+				if (this.filters.term)           this._ms_term.set_values([].concat(this.filters.term));
+				if (this.filters.cohort)         this._ms_cohort.set_values([].concat(this.filters.cohort));
+
 				// Cascade: ay/prog selection change → refresh dependent cohort & term options
 				$(document).on('change', '#sawd_f_ay_list input[type=checkbox]', () => {
 					this._refresh_cohort_filter();
@@ -1336,12 +1398,24 @@ class SLCMWorkspaceAnalyticsDashboard {
 		this._ms_term.set_options(terms);
 	}
 
+	// Saves the current tab/sub-tab/filter selections so re-opening the
+	// dashboard (reload, or navigating back from a drilldown tab) restores them.
+	_persist_state() {
+		sawd_save_state({
+			active_tab: this.active_tab,
+			active_exam_subtab: this.active_exam_subtab,
+			active_attendance_subtab: this.active_attendance_subtab,
+			filters: this.filters,
+		});
+	}
+
 	_apply_filters() {
 		this.filters.academic_year  = this._ms_ay?.get_values()     || null;
 		this.filters.term           = this._ms_term?.get_values()   || null;
 		this.filters.program        = this._ms_prog?.get_values()   || null;
 		this.filters.cohort         = this._ms_cohort?.get_values() || null;
 		this.filters.student_status = this._ms_status?.get_values() || null;
+		this._persist_state();
 		this._load_tab(this.active_tab, true);
 	}
 
@@ -1354,6 +1428,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 		this._ms_status?.reset();
 		this._refresh_cohort_filter();
 		this._refresh_term_filter();
+		this._persist_state();
 		this._load_tab(this.active_tab, true);
 	}
 
