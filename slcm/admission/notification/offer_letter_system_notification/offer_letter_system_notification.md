@@ -1,11 +1,11 @@
-{% if doc.offer_status == 'Issued' %}
+{% if doc.status == 'Issued' %}
 ### Congratulations!
 
 Dear **{{ doc.applicant_name or doc.applicant }}**,
 
-We are pleased to inform you that an admission offer has been issued for the **{{ doc.program }}** program at our **{{ doc.campus }}** campus.
+We are pleased to inform you that an admission offer has been issued for the **{{ doc.program }}** programme at our **{{ doc.campus }}** campus.
 
-Your offer letter for the **{{ doc.program }}** program has been issued.
+Your offer letter for the **{{ doc.program }}** programme has been issued.
 
 **Deadline to accept and pay:** {{ doc.payment_deadline }}
 **Payable Amount:** ₹{{ doc.payable_amount }}
@@ -21,7 +21,7 @@ Please log in to your admission portal to view and accept the offer.
 
 Dear **{{ doc.applicant_name or doc.applicant }}**,
 
-Congratulations! You have successfully accepted the offer for the **{{ doc.program }}** program. 
+Congratulations! You have successfully accepted the offer for the **{{ doc.program }}** programme. 
 
 Your application is moving forward, and we look forward to welcoming you.
 
@@ -33,9 +33,9 @@ Your application is moving forward, and we look forward to welcoming you.
 
 Dear **{{ doc.applicant_name or doc.applicant }}**,
 
-We have received your admission fee payment for the **{{ doc.program }}** program.
+We have received your admission fee payment for the **{{ doc.program }}** programme.
 
-Your admission process for this program is now moving to the next stage.
+Your admission process for this programme is now moving to the next stage.
 
 **Next Steps:** You will receive further updates about your enrolment shortly.
 <br>
@@ -45,7 +45,7 @@ Your admission process for this program is now moving to the next stage.
 
 Dear **{{ doc.applicant_name or doc.applicant }}**,
 
-You have chosen to reject the offer for the **{{ doc.program }}** program.
+You have chosen to reject the offer for the **{{ doc.program }}** programme.
 
 If you believe this was a mistake or you have questions, please reach out to our admission office.
 <br>
@@ -55,7 +55,7 @@ If you believe this was a mistake or you have questions, please reach out to our
 
 Dear **{{ doc.applicant_name or doc.applicant }}**,
 
-Your offer for the **{{ doc.program }}** program has expired.
+Your offer for the **{{ doc.program }}** programme has expired.
 
 The payment and acceptance deadline of **{{ doc.payment_deadline }}** has passed. If you still wish to proceed, please contact the admission office immediately.
 <br>
@@ -65,7 +65,7 @@ The payment and acceptance deadline of **{{ doc.payment_deadline }}** has passed
 
 Dear **{{ doc.applicant_name or doc.applicant }}**,
 
-Your offer for the **{{ doc.program }}** program has been withdrawn.
+Your offer for the **{{ doc.program }}** programme has been withdrawn.
 
 If you need more information regarding this withdrawal, please contact the admission team.
 
