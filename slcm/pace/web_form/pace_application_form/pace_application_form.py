@@ -118,29 +118,7 @@ def get_context(context):
     # Hide default breadcrumbs; custom nav injected by pace_application_form.js
     context.no_breadcrumbs = True
 
-    if frappe.session.user == "Guest":
-        from urllib.parse import quote
 
-        # Try multiple ways to get the full path with parameters
-        full_path = ""
-        try:
-            if hasattr(frappe, "local") and hasattr(frappe.local, "request") and frappe.local.request:
-                full_path = frappe.local.request.full_path
-            elif hasattr(frappe, "request") and frappe.request:
-                full_path = frappe.request.full_path
-        except Exception:
-            pass
-        
-        if not full_path:
-            # Fallback to current path if full_path couldn't be determined
-            full_path = "/paceadmissions/application-form/new"
-
-        # Dynamically capture current URL including query params for redirect
-        encoded_url = quote(full_path, safe='')
-        login_url = f"/paceadmissions/login?redirect-to={encoded_url}#register"
-
-        frappe.local.flags.redirect_location = login_url
-        raise frappe.Redirect
 
     # Enforce PACE Application DocType permissions
     is_new = frappe.form_dict.name == "new" or not frappe.form_dict.name

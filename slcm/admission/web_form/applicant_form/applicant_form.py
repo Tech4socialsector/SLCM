@@ -30,6 +30,8 @@ def get_context(context):
     Non-Draft applicants: force view mode; redirect /edit → read-only URL.
     Only Draft remains editable on the portal.
     """
+
+
     # Hide Frappe’s default web-form breadcrumb ("Back > APP-…"); custom bar stays in applicant_form.js.
     context.no_breadcrumbs = True
 
