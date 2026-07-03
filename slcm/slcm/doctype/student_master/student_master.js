@@ -368,7 +368,10 @@ frappe.ui.form.on("Student Master", {
 
 				// Populate Year of Study field with ordinal label
 				const yr = (d && d.current_year) || frm.doc.current_year;
-				frm.set_value("year_of_study", _ordinal_year(yr));
+				const new_yr_str = _ordinal_year(yr);
+				if (frm.doc.year_of_study !== new_yr_str) {
+					frm.set_value("year_of_study", new_yr_str);
+				}
 			},
 			error() {
 				frm.set_df_property(

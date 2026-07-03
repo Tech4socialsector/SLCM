@@ -875,7 +875,7 @@ class OfferService:
                 "attached_to_name": offer_doc.name,
                 "attached_to_field": "offer_letter_pdf",
                 "content": pdf_content,
-                "is_private": 0
+                "is_private": 1
             })
             _file.insert(ignore_permissions=True)
             

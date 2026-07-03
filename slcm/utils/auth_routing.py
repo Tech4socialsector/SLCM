@@ -73,15 +73,13 @@ def intercept_login():
 
     # 1. Intercept Guest hitting protected Web Forms directly BEFORE Frappe drops the query params
     if frappe.session.user == "Guest":
-        if (normalized_path.startswith("paceadmissions/application-form") or 
-            normalized_path.startswith("pace-application-form") or 
-            normalized_path.startswith("applicant-form")):
-            
-            if "pace" in normalized_path:
-                # Redirect to login with #register tab active and return to the SPECIFIC page after login
-                raise AuthRedirect(f"/paceadmissions/login?redirect-to={encoded_url}#register")
-            else:
-                raise AuthRedirect(f"/admission/login?redirect-to={encoded_url}")
+        applicant_route = (frappe.get_cached_value("Web Form", "applicant-form", "route") or "admission/application-form").strip("/")
+        pace_route = (frappe.get_cached_value("Web Form", "pace-application-form", "route") or "paceadmissions/application-form").strip("/")
+
+        if (normalized_path.startswith(pace_route) or normalized_path.startswith("pace-application-form")):
+            raise AuthRedirect(f"/paceadmissions/login?redirect-to={encoded_url}#register")
+        elif (normalized_path.startswith(applicant_route) or normalized_path.startswith("applicant-form")):
+            raise AuthRedirect(f"/admission/login?redirect-to={encoded_url}#register")
 
         if path.startswith("/student-portal"):
             encoded_url = urllib.parse.quote(path, safe='')

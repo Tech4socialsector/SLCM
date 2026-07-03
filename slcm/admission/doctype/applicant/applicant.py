@@ -369,6 +369,8 @@ class Applicant(Document):
                     frappe.log_error(title="handle_file_name error", message=frappe.get_traceback())
 
     def on_update(self):
+        if not self.user_id:
+            frappe.set_value(self.doctype, self.name, "user_id", self.email)
         self.sync_user_profile()
         old_status = self.flags.get("old_status")
         just_submitted = (
