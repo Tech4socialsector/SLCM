@@ -4831,5 +4831,14 @@
   "modified": "2026-06-16 15:02:26.959677",
   "name": "Kolkata",
   "state": "West Bengal"
+ },
+ {
+  "city_name": "Palghar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-03 11:43:28.400769",
+  "name": "Palghar",
+  "state": "Maharashtra"
  }
 ]

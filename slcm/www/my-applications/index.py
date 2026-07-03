@@ -228,26 +228,37 @@ def get_context(context):
 
             # Standard fields in Applicant DocType
             standard_checklist = [
-                {"label": "10th Certificate", "field": "class_x_marksheet", "required": True},
-                {"label": "12th Certificate", "field": "class_xii_marksheet", "required": True},
-                {"label": "ID Proof", "field": "id_proof", "required": True},
-                {"label": "Photo", "field": "candidate_photo", "required": True},
+                {"label": "10th Certificate", "field": "class_x_marksheet", "required": True, "accept": ".pdf,.jpg,.jpeg,.png", "max_size_mb": 5},
+                {"label": "12th Certificate", "field": "class_xii_marksheet", "required": True, "accept": ".pdf,.jpg,.jpeg,.png", "max_size_mb": 5},
+                {"label": "ID Proof", "field": "id_proof", "required": True, "accept": ".pdf,.jpg,.jpeg,.png", "max_size_mb": 5},
+                {"label": "Photo", "field": "candidate_photo", "required": True, "accept": ".jpg,.jpeg,.png", "max_size_mb": 1},
+                {"label": "CV", "field": "cv", "required": True, "accept": ".doc,.docx,.pdf", "max_size_mb": 5},
             ]
 
             # Optional / Conditional fields
             if target_applicant.whether_scstobc_ncl and target_applicant.whether_scstobc_ncl != "NA":
-                standard_checklist.append({"label": "Category Certificate", "field": "caste_certificate", "required": True})
+                standard_checklist.append({"label": "Category Certificate", "field": "caste_certificate", "required": True, "accept": ".jpg,.jpeg,.png", "max_size_mb": 5})
                 
             if target_applicant.pwd == "Yes":
-                standard_checklist.append({"label": "PwD Certificate", "field": "pwd_certificate", "required": True})
+                standard_checklist.append({"label": "PwD Certificate", "field": "pwd_certificate", "required": True, "accept": ".jpg,.jpeg,.png", "max_size_mb": 5})
+
+            if getattr(target_applicant, "ews", None) == "Yes":
+                standard_checklist.append({"label": "EWS Certificate", "field": "ews_certificate", "required": True, "accept": ".pdf,.jpg,.jpeg,.png", "max_size_mb": 5})
                 
             if target_applicant.program_level == "Research Course":
-                standard_checklist.append({"label": "Research Proposal", "field": "phd_proposal", "required": True})
-                standard_checklist.append({"label": "CV", "field": "cv", "required": True})
+                standard_checklist.append({"label": "Research Proposal", "field": "phd_proposal", "required": True, "accept": ".pdf,.jpg,.jpeg,.png", "max_size_mb": 5})
             
             # Special case for Karnataka category
-            if target_applicant.ka_study_7yrs:
-                standard_checklist.append({"label": "Karnataka Study Certificate", "field": "ka_study_7yrs_certificate", "required": True})
+            if getattr(target_applicant, "ka_study_7yrs", 0):
+                standard_checklist.append({"label": "Karnataka Study Certificate", "field": "ka_study_7yrs_certificate", "required": True, "accept": ".jpg,.jpeg,.png", "max_size_mb": 5})
+            if getattr(target_applicant, "ka_defence_child", 0):
+                standard_checklist.append({"label": "Karnataka Defence Child Certificate", "field": "ka_defence_child_certificate", "required": True, "accept": ".jpg,.jpeg,.png", "max_size_mb": 5})
+            if getattr(target_applicant, "ka_govt_child", 0):
+                standard_checklist.append({"label": "Karnataka Govt Child Certificate", "field": "ka_govt_child_certificate", "required": True, "accept": ".jpg,.jpeg,.png", "max_size_mb": 5})
+            if getattr(target_applicant, "ka_ais_child", 0):
+                standard_checklist.append({"label": "Karnataka AIS Child Certificate", "field": "ka_ais_child_certificate", "required": True, "accept": ".jpg,.jpeg,.png", "max_size_mb": 5})
+            if getattr(target_applicant, "ka_capf_child", 0):
+                standard_checklist.append({"label": "Karnataka CAPF Child Certificate", "field": "ka_capf_child_certificate", "required": True, "accept": ".jpg,.jpeg,.png", "max_size_mb": 5})
 
             for item in standard_checklist:
                 field = item["field"]
@@ -259,9 +270,67 @@ def get_context(context):
                     "is_uploaded": bool(val),
                     "file_url": val,
                     "field": field,
+                    "doc_name": "",
                     "source": "field",
-                    "required": item["required"]
+                    "required": item["required"],
+                    "accept": item.get("accept", ".pdf,.jpg,.jpeg,.png"),
+                    "max_size_mb": item.get("max_size_mb", 5)
                 })
+
+            # Child tables
+            if target_applicant.program_level in ["Postgraduate", "Research Course"]:
+                for row in target_applicant.get("ug_degree_details", []):
+                    context.app_documents.append({
+                        "document_name": f"UG Certificate ({row.ug_program or 'Degree'})",
+                        "document_type": "UG degree certificate / Bonafide",
+                        "is_uploaded": bool(row.degree_certificate),
+                        "file_url": row.degree_certificate,
+                        "field": "degree_certificate",
+                        "doc_name": row.name,
+                        "source": "UG Degree Detail",
+                        "required": True,
+                        "accept": ".pdf,.jpg,.jpeg,.png",
+                        "max_size_mb": 5
+                    })
+                    context.app_documents.append({
+                        "document_name": f"UG Marksheets ({row.ug_program or 'Degree'})",
+                        "document_type": "Transcripts / Marksheets",
+                        "is_uploaded": bool(row.marksheets),
+                        "file_url": row.marksheets,
+                        "field": "marksheets",
+                        "doc_name": row.name,
+                        "source": "UG Degree Detail",
+                        "required": True,
+                        "accept": ".pdf,.jpg,.jpeg,.png",
+                        "max_size_mb": 5
+                    })
+
+            if target_applicant.program_level == "Research Course":
+                for row in target_applicant.get("pg_degree_details", []):
+                    context.app_documents.append({
+                        "document_name": f"PG Certificate ({row.pg_program or 'Degree'})",
+                        "document_type": "PG degree certificate / Bonafide",
+                        "is_uploaded": bool(row.pg_degree_certificatebonafide_certificate_to_be_uploaded),
+                        "file_url": row.pg_degree_certificatebonafide_certificate_to_be_uploaded,
+                        "field": "pg_degree_certificatebonafide_certificate_to_be_uploaded",
+                        "doc_name": row.name,
+                        "source": "PG Degree Details",
+                        "required": True,
+                        "accept": ".pdf,.jpg,.jpeg,.png",
+                        "max_size_mb": 5
+                    })
+                    context.app_documents.append({
+                        "document_name": f"PG Marksheets ({row.pg_program or 'Degree'})",
+                        "document_type": "Transcripts / Marksheets",
+                        "is_uploaded": bool(row.transcriptsmarksheets_to_be_uploaded),
+                        "file_url": row.transcriptsmarksheets_to_be_uploaded,
+                        "field": "transcriptsmarksheets_to_be_uploaded",
+                        "doc_name": row.name,
+                        "source": "PG Degree Details",
+                        "required": True,
+                        "accept": ".pdf,.jpg,.jpeg,.png",
+                        "max_size_mb": 5
+                    })
         except Exception as e:
             frappe.log_error(f"Document checklist error: {e}")
 
@@ -347,7 +416,7 @@ def get_context(context):
                     admission_fee_paid = bool(
                         frappe.db.exists(
                             "Applicant Payment Receipt",
-                            {"applicant": applicant.name, "docstatus": 1},
+                            {"applicant": applicant.name, "docstatus": ["<", 2]},
                         )
                     )
             except Exception:
@@ -597,7 +666,7 @@ def get_context(context):
                 # 2. Fallback to Applicant Payment Receipt
                 if not context.payment_details:
                     receipt = frappe.get_all("Applicant Payment Receipt",
-                        filters={"offer_letter": context.offer_name, "docstatus": 1},
+                        filters={"offer_letter": context.offer_name, "docstatus": ["<", 2]},
                         fields=["name", "total_amount as amount", "payment_date"],
                         order_by="creation desc", limit=1)
                     if receipt:

@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "format:OL-{YYYY}-{#####}",
  "creation": "2026-02-13 12:42:43.280155",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -10,6 +11,7 @@
   "admission_year",
   "campus",
   "email",
+  "applicant_name",
   "column_break_uiqy",
   "academic_year",
   "admission_cycle",
@@ -28,7 +30,8 @@
   "payment_deadline",
   "status",
   "seat_locked",
-  "edit_reason"
+  "edit_reason",
+  "connections_tab"
  ],
  "fields": [
   {
@@ -81,9 +84,7 @@
   {
    "fieldname": "offer_letter_pdf",
    "fieldtype": "Attach",
-   "label": "Offer letter PDF",
-   "make_attachment_public": 1,
-   "read_only": 1
+   "label": "Offer letter PDF"
   },
   {
    "fieldname": "rendered_content",
@@ -173,7 +174,6 @@
   {
    "fieldname": "notification_receiver",
    "fieldtype": "Link",
-   "hidden": 1,
    "label": "Notification Receiver",
    "options": "User",
    "read_only": 1
@@ -196,6 +196,19 @@
    "in_standard_filter": 1,
    "label": "Offer Status",
    "options": "Draft\nIssued\nAccepted\nPayment Completed\nRejected\nExpired\nWithdrawn"
+  },
+  {
+   "fieldname": "connections_tab",
+   "fieldtype": "Tab Break",
+   "label": "Connections",
+   "show_dashboard": 1
+  },
+  {
+   "fetch_from": "applicant.candidate_name",
+   "fieldname": "applicant_name",
+   "fieldtype": "Data",
+   "label": "Applicant Name",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
@@ -215,11 +228,11 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-06-25 15:26:21.345782",
+ "modified": "2026-07-03 10:57:20.858308",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letter",
- "naming_rule": "By script",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
@@ -299,6 +312,6 @@
    "title": "Withdrawn"
   }
  ],
- "title_field": "applicant",
+ "title_field": "applicant_name",
  "track_changes": 1
 }

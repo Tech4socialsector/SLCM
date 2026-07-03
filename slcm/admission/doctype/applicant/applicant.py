@@ -369,6 +369,8 @@ class Applicant(Document):
                     frappe.log_error(title="handle_file_name error", message=frappe.get_traceback())
 
     def on_update(self):
+        if not self.user_id:
+            frappe.set_value(self.doctype, self.name, "user_id", self.email)
         self.sync_user_profile()
         old_status = self.flags.get("old_status")
         just_submitted = (
@@ -1707,6 +1709,7 @@ class Applicant(Document):
                 return True, ""
 
             # Rule mappings for this program (direct link now)
+            applicant_type = "Domestic Applicants" if getattr(self, "nationality", "") == "Indian" else "International Applicants"
             rule_mappings = frappe.db.sql("""
                 SELECT erm.name
                 FROM `tabEligibility Rule Mapping` erm
@@ -1714,10 +1717,12 @@ class Applicant(Document):
                   AND erm.campus          = %(campus)s
                   AND erm.admission_cycle = %(admission_cycle)s
                   AND erm.program         = %(program)s
+                  AND erm.applicant_type  = %(applicant_type)s
             """, {
                 "campus":          self.campus,
                 "admission_cycle": self.admission_cycle,
                 "program":         program_name,
+                "applicant_type":  applicant_type,
             }, as_dict=True)
 
             # No rule mapping → no restriction → eligible
@@ -1831,6 +1836,7 @@ class Applicant(Document):
     # ──────────────────────────────────────────────
 
     def _get_rule_mappings_for_applicant(self):
+        applicant_type = "Domestic Applicants" if getattr(self, "nationality", "") == "Indian" else "International Applicants"
         return frappe.db.sql("""
             SELECT erm.name
             FROM `tabEligibility Rule Mapping` erm
@@ -1838,10 +1844,12 @@ class Applicant(Document):
               AND erm.campus            = %(campus)s
               AND erm.admission_cycle   = %(admission_cycle)s
               AND erm.program           = %(program)s
+              AND erm.applicant_type    = %(applicant_type)s
         """, {
             "campus":          self.campus,
             "admission_cycle": self.admission_cycle,
             "program":         self.program,
+            "applicant_type":  applicant_type,
         }, as_dict=True)
 
     # ──────────────────────────────────────────────
@@ -1895,39 +1903,32 @@ class Applicant(Document):
         #    threshold for the evaluated path) + “You secured”; we omit the old
         #    “for your category” / “general-category baseline” pair of lines.
         score_lines = []
-        if cat_row and (cat_row.get("category") or "").strip():
-            if score_failed:
-                if applied_threshold is not None:
-                    score_lines.append(
-                        _("• Minimum required ({0}): {1}{2}").format(
-                            display_level, flt(applied_threshold), unit
-                        )
-                    )
-                score_lines.append(
-                    _("• You secured ({0}): {1}{2}").format(display_level, flt(applicant_val), unit)
-                )
-            elif applied_threshold and applicant_val <= 0:
-                score_lines.append(
-                    _("• Your {0} marks were not found or are zero; minimum required is {1}{2}.").format(
-                        display_level, flt(applied_threshold), unit
-                    )
-                )
-        else:
-            score_lines.append(_("Academic requirement (general)"))
-            if applied_threshold is not None:
-                score_lines.append(
-                    _("• Minimum required ({0}): {1}{2}").format(display_level, flt(applied_threshold), unit)
-                )
-            if score_failed:
-                score_lines.append(
-                    _("• You secured ({0}): {1}{2}").format(display_level, flt(applicant_val), unit)
-                )
-            elif applied_threshold and applicant_val <= 0:
-                score_lines.append(
-                    _("• Your {0} marks were not found or are zero; minimum required is {1}{2}.").format(
-                        display_level, flt(applied_threshold), unit
-                    )
-                )
+        has_general_header = False
+
+        def append_lines(l_display, l_threshold, l_app_val, l_failed):
+            nonlocal has_general_header
+            if not cat_row or not (cat_row.get("category") or "").strip():
+                if not has_general_header:
+                    score_lines.append(_("Academic requirement (general)"))
+                    has_general_header = True
+            
+            if l_failed:
+                if l_threshold is not None:
+                    score_lines.append(_("• Minimum required ({0}): {1}{2}").format(l_display, flt(l_threshold), unit))
+                score_lines.append(_("• You secured ({0}): {1}{2}").format(l_display, flt(l_app_val), unit))
+            elif l_threshold and l_app_val <= 0:
+                score_lines.append(_("• Your {0} marks were not found or are zero; minimum required is {1}{2}.").format(l_display, flt(l_threshold), unit))
+
+        append_lines(display_level, applied_threshold, applicant_val, score_failed)
+
+        if qualification_level == "XII" and base_rule.get("sslc_percentage"):
+            sslc_threshold = flt(base_rule.get("sslc_percentage"))
+            applicant_sslc = flt(getattr(self, "class_x_percentage", None) or 0)
+            sslc_failed = bool(sslc_threshold and applicant_sslc > 0 and not self._compare(applicant_sslc, sslc_threshold, operator))
+            
+            # Check if we should append SSLC lines (either failed or missing)
+            if sslc_failed or (sslc_threshold and applicant_sslc <= 0):
+                append_lines("Class X", sslc_threshold, applicant_sslc, sslc_failed)
 
         if cat_row and (cat_row.get("category") or "").strip():
             if score_lines:
@@ -2294,7 +2295,16 @@ class Applicant(Document):
             if required_value is None:
                 return False
 
-            return self._compare(applicant_value, required_value, operator)
+            passed = self._compare(applicant_value, required_value, operator)
+            if not passed:
+                return False
+                
+            if qualification_level == "XII" and rule.get("sslc_percentage"):
+                sslc_val = flt(getattr(self, "class_x_percentage", None) or 0)
+                if not self._compare(sslc_val, flt(rule.get("sslc_percentage")), operator):
+                    return False
+                    
+            return True
 
         return True
 
@@ -2310,7 +2320,14 @@ class Applicant(Document):
 
         if qualification_level == "XII":
             value = flt(getattr(self, "hsc_percentage", None) or 0)
-            return self._compare(value, required_min, operator)
+            passed = self._compare(value, required_min, operator)
+            if not passed:
+                return False
+            if rule.get("sslc_percentage"):
+                sslc_val = flt(getattr(self, "class_x_percentage", None) or 0)
+                if not self._compare(sslc_val, flt(rule.get("sslc_percentage")), operator):
+                    return False
+            return True
 
         elif qualification_level == "Undergraduate":
             values = self._get_ug_cgpa_values()

@@ -11,6 +11,7 @@
   "rule",
   "admission_cycle",
   "campus",
+  "applicant_type",
   "column_break_enee",
   "is_active",
   "section_break_uflx",
@@ -53,6 +54,15 @@
    "fieldtype": "Table",
    "label": "Reservation category",
    "options": "Rule Mapping Category",
+   "reqd": 1
+  },
+  {
+   "default": "Domestic Applicants",
+   "fieldname": "applicant_type",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Applicant Type",
+   "options": "Domestic Applicants\nInternational Applicants",
    "reqd": 1
   },
   {

@@ -794,12 +794,15 @@ _pc.mission_text) or '' %}
 
 	                <!-- Sidebar / Left Column -->
 	                <div style="display: flex; flex-direction: column;">
-	                    <div class="ui-card">
+	                    <div class="ui-card" style="position: relative;">
 	                        <span class="ui-card-label">{{ _("Offer status") }}</span>
 	                        <div class="status-badge-row ${status_class}">
 	                            ${get_status_icon(offer.status)}
 	                            ${display_status}
 	                        </div>
+	                        ${applicant.candidate_photo ? `
+                            <img src="${applicant.candidate_photo}" style="position: absolute; bottom: 20px; right: 24px; width: 48px; height: 48px; object-fit: cover; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            ` : `<div style="position: absolute; bottom: 20px; right: 24px; width: 48px; height: 48px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 20px; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><i class="fa fa-user"></i></div>`}
 	                    </div>
 
 	                    ${offer.payment_deadline && (offer.status === 'Issued' || offer.status === 'Accepted') ? `
@@ -1033,7 +1036,7 @@ _pc.mission_text) or '' %}
 	                message: "{{ _('You have declined this admission offer. Redirecting to My Applications.') }}"
 	            });
 	            document.getElementById('success-modal').querySelector('button').onclick = function () {
-	                window.location.href = 'merit-and-scholarship/admission_dashboard?panel=profile';
+	                window.location.href = '/merit-and-scholarship/admission_dashboard?panel=applications';
 	            };
 	        } catch (e) {
 	            hide_processing();
@@ -1228,7 +1231,7 @@ _pc.mission_text) or '' %}
 	        try {
 	            const r = await apiFetch('frappe.client.get_value', {
 	                doctype: 'Applicant Payment Receipt',
-	                filters: { offer_letter: offer.name, docstatus: 1 },
+	                filters: { offer_letter: offer.name },
 	                fieldname: 'name'
 	            });
 	            if (r && r.name) {
@@ -1241,7 +1244,7 @@ _pc.mission_text) or '' %}
 	    }
 
 	    function render_error(message) {
-	        $('#offer-detail-wrapper').html(`<div class="text-center p-5 mt-5"><h4>{{ _("Error") }}</h4><p>${message}</p><a href="merit-and-scholarship/admission_dashboard?panel=profile" class="btn btn-primary-adm" style="margin-right:8px;">{{ _("My Applications") }}</a><a href="/offer_letter/offer-letter-list" class="btn btn-outline-adm">{{ _("Offer Letter List") }}</a></div>`);
+	        $('#offer-detail-wrapper').html(`<div class="text-center p-5 mt-5"><h4>{{ _("Error") }}</h4><p>${message}</p><a href="/merit-and-scholarship/admission_dashboard?panel=applications" class="btn btn-primary-adm" style="margin-right:8px;">{{ _("My Applications") }}</a><a href="/offer_letter/offer-letter-list" class="btn btn-outline-adm">{{ _("Offer Letter List") }}</a></div>`);
 	    }
 	    {{ portal_sidebar_js() }}
 </script>

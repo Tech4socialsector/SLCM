@@ -73,7 +73,10 @@ def build_applicant_form_new_url(
 		"program": program or "",
 	}
 	q = urlencode({k: v for k, v in parts.items() if v})
-	return f"/applicant-form/new?{q}" if q else "/applicant-form/new"
+	route = frappe.db.get_value("Web Form", "applicant-form", "route") or "applicant-form"
+	if not route.startswith("/"):
+		route = "/" + route
+	return f"{route}/new?{q}" if q else f"{route}/new"
 
 
 def build_login_redirect_to_applicant_form_new(
@@ -114,9 +117,14 @@ def build_existing_applicant_portal_url(
 		from urllib.parse import urlencode
 
 		return f"/application_form?{urlencode({'applicant': name})}"
+	
+	route = frappe.db.get_value("Web Form", "applicant-form", "route") or "applicant-form"
+	if not route.startswith("/"):
+		route = "/" + route
+		
 	if edit:
-		return f"/applicant-form/{name}/edit"
-	return f"/applicant-form/{name}"
+		return f"{route}/{name}/edit"
+	return f"{route}/{name}"
 
 
 # ── TYPOGRAPHY HELPER ────────────────────────────────────────────
@@ -781,7 +789,7 @@ def get_active_programs():
                     p["campus_label"] = p.get("campus")
             # Fetch slug, abbreviation, and other details from Program
             prog_info = frappe.db.get_value("Program", p.program, 
-                ["program_slug", "program_shortcode", "program_duration", "program_image", "program_description", "brochure_file", "level_of_study"], 
+                ["program_slug", "program_shortcode", "program_duration", "program_image", "program_description", "brochure_file", "level_of_study", "application_form_link"], 
                 as_dict=True
             )
             if prog_info:
@@ -793,12 +801,14 @@ def get_active_programs():
                 p["program_description"] = prog_info.program_description
                 p["brochure_file"] = prog_info.brochure_file
                 p["program_level"] = prog_info.level_of_study or p.get("program_level")
+                p["application_form_link"] = prog_info.application_form_link
             else:
                 p["program_slug"] = _re.sub(r'[^a-z0-9]+', '-', (p.program or "").lower()).strip('-')
                 p["program_abbreviation"] = ""
                 p["duration"] = ""
                 p["program_description"] = ""
                 p["brochure_file"] = ""
+                p["application_form_link"] = ""
 
             p["description"] = p.get("desciption") or ""
             

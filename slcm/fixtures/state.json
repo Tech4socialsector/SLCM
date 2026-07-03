@@ -1,12 +1,1020 @@
 [
  {
-  "country": null,
+  "country": "Algeria",
   "docstatus": 0,
   "doctype": "State",
-  "modified": "2026-03-03 19:14:54.728110",
-  "name": "Tamilnadu",
+  "modified": "2026-06-29 14:34:49.245079",
+  "name": "Adrar",
   "state_code": null,
-  "state_name": "Tamilnadu"
+  "state_name": "Adrar"
+ },
+ {
+  "country": "Antigua and Barbuda",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:50.239258",
+  "name": "Saint George",
+  "state_code": null,
+  "state_name": "Saint George"
+ },
+ {
+  "country": "Antigua and Barbuda",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:50.245986",
+  "name": "Saint John",
+  "state_code": null,
+  "state_name": "Saint John"
+ },
+ {
+  "country": "Antigua and Barbuda",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:50.253021",
+  "name": "Saint Mary",
+  "state_code": null,
+  "state_name": "Saint Mary"
+ },
+ {
+  "country": "Antigua and Barbuda",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:50.260079",
+  "name": "Saint Paul",
+  "state_code": null,
+  "state_name": "Saint Paul"
+ },
+ {
+  "country": "Antigua and Barbuda",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:50.267273",
+  "name": "Saint Peter",
+  "state_code": null,
+  "state_name": "Saint Peter"
+ },
+ {
+  "country": "Antigua and Barbuda",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:50.275111",
+  "name": "Saint Philip",
+  "state_code": null,
+  "state_name": "Saint Philip"
+ },
+ {
+  "country": "Argentina",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:50.318175",
+  "name": "Córdoba",
+  "state_code": null,
+  "state_name": "Córdoba"
+ },
+ {
+  "country": "Argentina",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:50.361119",
+  "name": "La Rioja",
+  "state_code": null,
+  "state_name": "La Rioja"
+ },
+ {
+  "country": "Argentina",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:50.376323",
+  "name": "Misiones",
+  "state_code": null,
+  "state_name": "Misiones"
+ },
+ {
+  "country": "Argentina",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:50.391344",
+  "name": "Río Negro",
+  "state_code": null,
+  "state_name": "Río Negro"
+ },
+ {
+  "country": "Argentina",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:50.405835",
+  "name": "San Juan",
+  "state_code": null,
+  "state_name": "San Juan"
+ },
+ {
+  "country": "Argentina",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:50.419760",
+  "name": "Santa Cruz",
+  "state_code": null,
+  "state_name": "Santa Cruz"
+ },
+ {
+  "country": "Australia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:50.574941",
+  "name": "Victoria",
+  "state_code": null,
+  "state_name": "Victoria"
+ },
+ {
+  "country": "Azerbaijan",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:50.896593",
+  "name": "Lankaran",
+  "state_code": null,
+  "state_name": "Lankaran"
+ },
+ {
+  "country": "Azerbaijan",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:50.965070",
+  "name": "Nakhchivan",
+  "state_code": null,
+  "state_name": "Nakhchivan"
+ },
+ {
+  "country": "Azerbaijan",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:51.150539",
+  "name": "Shaki",
+  "state_code": null,
+  "state_name": "Shaki"
+ },
+ {
+  "country": "Azerbaijan",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:51.283444",
+  "name": "Yevlakh",
+  "state_code": null,
+  "state_name": "Yevlakh"
+ },
+ {
+  "country": "Bahrain",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:51.322147",
+  "name": "Capital",
+  "state_code": null,
+  "state_name": "Capital"
+ },
+ {
+  "country": "Bahrain",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:51.338628",
+  "name": "Northern",
+  "state_code": null,
+  "state_name": "Northern"
+ },
+ {
+  "country": "Bahrain",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:51.346116",
+  "name": "Southern",
+  "state_code": null,
+  "state_name": "Southern"
+ },
+ {
+  "country": "Barbados",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:51.915997",
+  "name": "Saint Andrew",
+  "state_code": null,
+  "state_name": "Saint Andrew"
+ },
+ {
+  "country": "Barbados",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:51.926048",
+  "name": "Saint James",
+  "state_code": null,
+  "state_name": "Saint James"
+ },
+ {
+  "country": "Barbados",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:51.936112",
+  "name": "Saint Joseph",
+  "state_code": null,
+  "state_name": "Saint Joseph"
+ },
+ {
+  "country": "Barbados",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:51.964252",
+  "name": "Saint Thomas",
+  "state_code": null,
+  "state_name": "Saint Thomas"
+ },
+ {
+  "country": "Belarus",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:51.991950",
+  "name": "Minsk",
+  "state_code": null,
+  "state_name": "Minsk"
+ },
+ {
+  "country": "Belgium",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:52.066313",
+  "name": "Limburg",
+  "state_code": null,
+  "state_name": "Limburg"
+ },
+ {
+  "country": "Belize",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:52.151510",
+  "name": "Toledo",
+  "state_code": null,
+  "state_name": "Toledo"
+ },
+ {
+  "country": "Benin",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:52.259128",
+  "name": "Littoral",
+  "state_code": null,
+  "state_name": "Littoral"
+ },
+ {
+  "country": "Benin",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:52.294290",
+  "name": "Plateau",
+  "state_code": null,
+  "state_name": "Plateau"
+ },
+ {
+  "country": "Bolivia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:52.546354",
+  "name": "La Paz",
+  "state_code": null,
+  "state_name": "La Paz"
+ },
+ {
+  "country": "Botswana",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:52.686948",
+  "name": "Central",
+  "state_code": null,
+  "state_name": "Central"
+ },
+ {
+  "country": "Brazil",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:52.967305",
+  "name": "Amazonas",
+  "state_code": null,
+  "state_name": "Amazonas"
+ },
+ {
+  "country": "Brazil",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:53.197293",
+  "name": "Santa Catarina",
+  "state_code": null,
+  "state_name": "Santa Catarina"
+ },
+ {
+  "country": "Bulgaria",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:53.325313",
+  "name": "Montana",
+  "state_code": null,
+  "state_name": "Montana"
+ },
+ {
+  "country": "Burkina Faso",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:53.539678",
+  "name": "Centre",
+  "state_code": null,
+  "state_name": "Centre"
+ },
+ {
+  "country": "Burkina Faso",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:53.730778",
+  "name": "Nord",
+  "state_code": null,
+  "state_name": "Nord"
+ },
+ {
+  "country": "Cameroon",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:54.370979",
+  "name": "Adamawa",
+  "state_code": null,
+  "state_name": "Adamawa"
+ },
+ {
+  "country": "Cameroon",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:54.426421",
+  "name": "North",
+  "state_code": null,
+  "state_name": "North"
+ },
+ {
+  "country": "Cameroon",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:54.451774",
+  "name": "South",
+  "state_code": null,
+  "state_name": "South"
+ },
+ {
+  "country": "Chile",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:55.314392",
+  "name": "Los Ríos",
+  "state_code": null,
+  "state_name": "Los Ríos"
+ },
+ {
+  "country": "Colombia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:55.642591",
+  "name": "Bolívar",
+  "state_code": null,
+  "state_name": "Bolívar"
+ },
+ {
+  "country": "Colombia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:55.803888",
+  "name": "Sucre",
+  "state_code": null,
+  "state_name": "Sucre"
+ },
+ {
+  "country": "Congo",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:55.924719",
+  "name": "Plateaux",
+  "state_code": null,
+  "state_name": "Plateaux"
+ },
+ {
+  "country": "Costa Rica",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:56.000655",
+  "name": "San José",
+  "state_code": null,
+  "state_name": "San José"
+ },
+ {
+  "country": "Dominica",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:57.294555",
+  "name": "Saint David",
+  "state_code": null,
+  "state_name": "Saint David"
+ },
+ {
+  "country": "Dominica",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:57.319680",
+  "name": "Saint Mark",
+  "state_code": null,
+  "state_name": "Saint Mark"
+ },
+ {
+  "country": "Dominica",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:57.328611",
+  "name": "Saint Patrick",
+  "state_code": null,
+  "state_name": "Saint Patrick"
+ },
+ {
+  "country": "Egypt",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:58.252177",
+  "name": "Red Sea",
+  "state_code": null,
+  "state_name": "Red Sea"
+ },
+ {
+  "country": "El Salvador",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:58.347957",
+  "name": "La Libertad",
+  "state_code": null,
+  "state_name": "La Libertad"
+ },
+ {
+  "country": "Estonia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:58.756800",
+  "name": "Järva",
+  "state_code": null,
+  "state_name": "Järva"
+ },
+ {
+  "country": "Estonia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:58.788998",
+  "name": "Jõgeva",
+  "state_code": null,
+  "state_name": "Jõgeva"
+ },
+ {
+  "country": "Estonia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:59.169030",
+  "name": "Pärnu",
+  "state_code": null,
+  "state_name": "Pärnu"
+ },
+ {
+  "country": "Estonia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:59.245111",
+  "name": "Põlva",
+  "state_code": null,
+  "state_name": "Põlva"
+ },
+ {
+  "country": "Estonia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:59.293846",
+  "name": "Rakvere",
+  "state_code": null,
+  "state_name": "Rakvere"
+ },
+ {
+  "country": "Estonia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:59.330187",
+  "name": "Rapla",
+  "state_code": null,
+  "state_name": "Rapla"
+ },
+ {
+  "country": "Estonia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:59.447862",
+  "name": "Tartu",
+  "state_code": null,
+  "state_name": "Tartu"
+ },
+ {
+  "country": "Estonia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:59.535224",
+  "name": "Valga",
+  "state_code": null,
+  "state_name": "Valga"
+ },
+ {
+  "country": "Estonia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:59.594251",
+  "name": "Viljandi",
+  "state_code": null,
+  "state_name": "Viljandi"
+ },
+ {
+  "country": "Estonia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:59.656573",
+  "name": "Võru",
+  "state_code": null,
+  "state_name": "Võru"
+ },
+ {
+  "country": "Fiji",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:34:59.885720",
+  "name": "Eastern",
+  "state_code": null,
+  "state_name": "Eastern"
+ },
+ {
+  "country": "Fiji",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:00.022247",
+  "name": "Western",
+  "state_code": null,
+  "state_name": "Western"
+ },
+ {
+  "country": "France",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:00.962679",
+  "name": "Jura",
+  "state_code": null,
+  "state_name": "Jura"
+ },
+ {
+  "country": "Ghana",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:01.797078",
+  "name": "North East",
+  "state_code": null,
+  "state_name": "North East"
+ },
+ {
+  "country": "Guinea",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:02.196295",
+  "name": "Boké",
+  "state_code": null,
+  "state_name": "Boké"
+ },
+ {
+  "country": "Guinea",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:02.249381",
+  "name": "Faranah",
+  "state_code": null,
+  "state_name": "Faranah"
+ },
+ {
+  "country": "Guinea",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:02.288611",
+  "name": "Kankan",
+  "state_code": null,
+  "state_name": "Kankan"
+ },
+ {
+  "country": "Guinea",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:02.306343",
+  "name": "Kindia",
+  "state_code": null,
+  "state_name": "Kindia"
+ },
+ {
+  "country": "Guinea",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:02.345238",
+  "name": "Labé",
+  "state_code": null,
+  "state_name": "Labé"
+ },
+ {
+  "country": "Guinea",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:02.384743",
+  "name": "Mamou",
+  "state_code": null,
+  "state_name": "Mamou"
+ },
+ {
+  "country": "Guinea",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:02.402568",
+  "name": "Nzérékoré",
+  "state_code": null,
+  "state_name": "Nzérékoré"
+ },
+ {
+  "country": "Honduras",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:02.699520",
+  "name": "Colón",
+  "state_code": null,
+  "state_name": "Colón"
+ },
+ {
+  "country": "Iceland",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:03.466719",
+  "name": "Northwestern",
+  "state_code": null,
+  "state_name": "Northwestern"
+ },
+ {
+  "country": "Indonesia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:03.976399",
+  "name": "Maluku",
+  "state_code": null,
+  "state_name": "Maluku"
+ },
+ {
+  "country": "Indonesia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:04.017034",
+  "name": "Papua",
+  "state_code": null,
+  "state_name": "Papua"
+ },
+ {
+  "country": "Italy",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:04.874128",
+  "name": "Bari",
+  "state_code": null,
+  "state_name": "Bari"
+ },
+ {
+  "country": "Jamaica",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:05.757854",
+  "name": "Manchester",
+  "state_code": null,
+  "state_name": "Manchester"
+ },
+ {
+  "country": "Kazakhstan",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:06.311028",
+  "name": "Almaty",
+  "state_code": null,
+  "state_name": "Almaty"
+ },
+ {
+  "country": "Kenya",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:06.456069",
+  "name": "Busia",
+  "state_code": null,
+  "state_name": "Busia"
+ },
+ {
+  "country": "Kyrgyzstan",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:06.883056",
+  "name": "Osh",
+  "state_code": null,
+  "state_name": "Osh"
+ },
+ {
+  "country": "Laos",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:07.004186",
+  "name": "Vientiane",
+  "state_code": null,
+  "state_name": "Vientiane"
+ },
+ {
+  "country": "Latvia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:07.121541",
+  "name": "Jelgava",
+  "state_code": null,
+  "state_name": "Jelgava"
+ },
+ {
+  "country": "Latvia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:07.239302",
+  "name": "Rēzekne",
+  "state_code": null,
+  "state_name": "Rēzekne"
+ },
+ {
+  "country": "Latvia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:07.352453",
+  "name": "Ventspils",
+  "state_code": null,
+  "state_name": "Ventspils"
+ },
+ {
+  "country": "Liberia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:07.562463",
+  "name": "Maryland",
+  "state_code": null,
+  "state_name": "Maryland"
+ },
+ {
+  "country": "Lithuania",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:07.897421",
+  "name": "Alytus",
+  "state_code": null,
+  "state_name": "Alytus"
+ },
+ {
+  "country": "Lithuania",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:07.994647",
+  "name": "Kaunas",
+  "state_code": null,
+  "state_name": "Kaunas"
+ },
+ {
+  "country": "Lithuania",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:08.033394",
+  "name": "Klaipėda",
+  "state_code": null,
+  "state_name": "Klaipėda"
+ },
+ {
+  "country": "Lithuania",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:08.076980",
+  "name": "Marijampolė",
+  "state_code": null,
+  "state_name": "Marijampolė"
+ },
+ {
+  "country": "Lithuania",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:08.141664",
+  "name": "Panevėžys",
+  "state_code": null,
+  "state_name": "Panevėžys"
+ },
+ {
+  "country": "Lithuania",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:08.220762",
+  "name": "Šiauliai",
+  "state_code": null,
+  "state_name": "Šiauliai"
+ },
+ {
+  "country": "Lithuania",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:08.270161",
+  "name": "Tauragė",
+  "state_code": null,
+  "state_name": "Tauragė"
+ },
+ {
+  "country": "Lithuania",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:08.280570",
+  "name": "Telšiai",
+  "state_code": null,
+  "state_name": "Telšiai"
+ },
+ {
+  "country": "Lithuania",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:08.306873",
+  "name": "Utena",
+  "state_code": null,
+  "state_name": "Utena"
+ },
+ {
+  "country": "Lithuania",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:08.331906",
+  "name": "Vilnius",
+  "state_code": null,
+  "state_name": "Vilnius"
+ },
+ {
+  "country": "Malawi",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:08.616888",
+  "name": "Mwanza",
+  "state_code": null,
+  "state_name": "Mwanza"
+ },
+ {
+  "country": "Malta",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:09.411662",
+  "name": "Rabat",
+  "state_code": null,
+  "state_name": "Rabat"
+ },
+ {
+  "country": "Malta",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:09.418511",
+  "name": "Safi",
+  "state_code": null,
+  "state_name": "Safi"
+ },
+ {
+  "country": "Moldova",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:10.420550",
+  "name": "Călărași",
+  "state_code": null,
+  "state_name": "Călărași"
+ },
+ {
+  "country": "Mozambique",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:11.839950",
+  "name": "Gaza",
+  "state_code": null,
+  "state_name": "Gaza"
+ },
+ {
+  "country": "Mozambique",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:11.861728",
+  "name": "Maputo",
+  "state_code": null,
+  "state_name": "Maputo"
+ },
+ {
+  "country": "New Zealand",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:12.492072",
+  "name": "West Coast",
+  "state_code": null,
+  "state_name": "West Coast"
+ },
+ {
+  "country": "Nicaragua",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:12.537247",
+  "name": "Granada",
+  "state_code": null,
+  "state_name": "Granada"
+ },
+ {
+  "country": "Nicaragua",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:12.551995",
+  "name": "León",
+  "state_code": null,
+  "state_name": "León"
+ },
+ {
+  "country": "Russia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:16.241790",
+  "name": "Altai",
+  "state_code": null,
+  "state_name": "Altai"
+ },
+ {
+  "country": "Russia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:16.560960",
+  "name": "Moscow",
+  "state_code": null,
+  "state_name": "Moscow"
+ },
+ {
+  "country": "Saint Lucia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:17.058314",
+  "name": "Choiseul",
+  "state_code": null,
+  "state_name": "Choiseul"
+ },
+ {
+  "country": "Saudi Arabia",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:17.353713",
+  "name": "Al Jawf",
+  "state_code": null,
+  "state_name": "Al Jawf"
+ },
+ {
+  "country": "Sierra Leone",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:18.028505",
+  "name": "North Western",
+  "state_code": null,
+  "state_name": "North Western"
+ },
+ {
+  "country": "Singapore",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:18.062980",
+  "name": "North West",
+  "state_code": null,
+  "state_name": "North West"
+ },
+ {
+  "country": "Spain",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:20.535355",
+  "name": "Cantabria",
+  "state_code": null,
+  "state_name": "Cantabria"
+ },
+ {
+  "country": "United States",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:27.585789",
+  "name": "Florida",
+  "state_code": null,
+  "state_name": "Florida"
+ },
+ {
+  "country": "Uzbekistan",
+  "docstatus": 0,
+  "doctype": "State",
+  "modified": "2026-06-29 14:35:28.194350",
+  "name": "Tashkent",
+  "state_code": null,
+  "state_name": "Tashkent"
  },
  {
   "country": null,

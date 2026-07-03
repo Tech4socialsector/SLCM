@@ -63,7 +63,7 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
         academic_year               → academic_year  (falls back via admission_cycle)
         intake_type                 → intake
         intake_type                 → admission_type  (Internal Test→Regular, External Test→PACE)
-        program (AFA)               → programme
+        program (AFA)               → programme_of_study
         program (AFA) department    → department
         class_x_school              → class_x_school
         class_x_percentage          → class_x_percentage
@@ -101,7 +101,7 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
     student.application_number = applicant.name
 
     # ── Programme ─────────────────────────────────────────────────────────────
-    student.programme = program
+    student.programme_of_study = program
 
     # ── Department (derived from programme/program) ────────────────────────────
     if program:
@@ -471,23 +471,10 @@ def _update_user_roles_for_student(applicant_email):
             user.append("roles", {"role": "slcm_Student"})
             roles_updated = True
 
-        # Remove Applicant role if present
-        roles_to_remove = ["PACE Applicant", "Applicant"]
-        if any(r in existing_roles for r in roles_to_remove):
-            user.set("roles", [d for d in user.get("roles", []) if d.role not in roles_to_remove])
-            roles_updated = True
-
-        # Remove Applicant Role Profile if present
-        if user.get("role_profiles"):
-            initial_count = len(user.role_profiles)
-            user.set("role_profiles", [p for p in user.role_profiles if p.role_profile not in ["PACE Applicant", "Applicant"]])
-            if len(user.role_profiles) < initial_count:
-                roles_updated = True
-
         if roles_updated:
             user.save(ignore_permissions=True)
             frappe.logger().info(
-                f"[convert_applicant_to_student] User {user_name}: Added slcm_Student role, Removed Applicant role/profile"
+                f"[convert_applicant_to_student] User {user_name}: Added slcm_Student role"
             )
     except Exception:
         frappe.log_error(

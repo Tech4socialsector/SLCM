@@ -57,7 +57,6 @@
   "column_break_coqt",
   "pincode",
   "section_break_azsq",
-  "title",
   "applicant_id",
   "section_break_rnvz",
   "rejected_reason",
@@ -154,6 +153,7 @@
   "status",
   "program",
   "admission_cycle",
+  "user_id",
   "column_break_rynw",
   "admission_year",
   "academic_year",
@@ -268,8 +268,9 @@
   {
    "description": "Max 5 MB \u2014 supported formats: png, jpeg, jpg, pdf",
    "fieldname": "id_proof",
-   "fieldtype": "Attach Image",
+   "fieldtype": "Attach",
    "label": "ID Proof (Govt. issued photo ID)",
+   "options": "png,jpeg,jpg,pdf",
    "reqd": 1
   },
   {
@@ -359,7 +360,6 @@
    "reqd": 1
   },
   {
-   "default": "India",
    "fieldname": "country",
    "fieldtype": "Link",
    "label": "Country",
@@ -879,12 +879,6 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "title",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Title"
-  },
-  {
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -1008,7 +1002,6 @@
    "label": "Center Filled"
   },
   {
-   "default": "Pending",
    "fieldname": "application_fee_status",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -1218,6 +1211,13 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "Applicant ID"
+  },
+  {
+   "fieldname": "user_id",
+   "fieldtype": "Link",
+   "label": "User ID",
+   "options": "User",
+   "permlevel": 1
   }
  ],
  "grid_page_length": 50,
@@ -1257,7 +1257,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-06-29 09:59:29.278057",
+ "modified": "2026-07-02 18:41:40.520253",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
@@ -1399,6 +1399,16 @@
    "role": "Admission Admin",
    "share": 1,
    "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "permlevel": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "All",
+   "share": 1
   }
  ],
  "row_format": "Dynamic",
@@ -1408,12 +1418,104 @@
  "sort_order": "DESC",
  "states": [
   {
-   "color": "Pink",
+   "color": "Cyan",
    "title": "Draft"
   },
   {
-   "color": "Green",
+   "color": "Light Blue",
    "title": "Submitted"
+  },
+  {
+   "color": "Green",
+   "title": "Completed"
+  },
+  {
+   "color": "Green",
+   "title": " Merit Selected"
+  },
+  {
+   "color": "Yellow",
+   "title": "Merit Waitlisted"
+  },
+  {
+   "color": "Red",
+   "title": "Merit Rejected"
+  },
+  {
+   "color": "Green",
+   "title": "Merit Published"
+  },
+  {
+   "color": "Green",
+   "title": "Seat Selected"
+  },
+  {
+   "color": "Yellow",
+   "title": "Seat Waitlisted"
+  },
+  {
+   "color": "Red",
+   "title": "Seat Rejected"
+  },
+  {
+   "color": "Green",
+   "title": " Offer Accepted"
+  },
+  {
+   "color": "Orange",
+   "title": " Offer Declined"
+  },
+  {
+   "color": "Light Blue",
+   "title": " Offer Issued"
+  },
+  {
+   "color": "Red",
+   "title": " Offer Expired"
+  },
+  {
+   "color": "Green",
+   "title": " Exempted Entrance Test And Interview"
+  },
+  {
+   "color": "Light Blue",
+   "title": " Interview Scheduled"
+  },
+  {
+   "color": "Red",
+   "title": " Interview Rejected"
+  },
+  {
+   "color": "Green",
+   "title": " Interview Completed"
+  },
+  {
+   "color": "Green",
+   "title": " Interview Exempted"
+  },
+  {
+   "color": "Green",
+   "title": "Entrance Test Completed"
+  },
+  {
+   "color": "Light Blue",
+   "title": " Entrance Test Allocated"
+  },
+  {
+   "color": "Green",
+   "title": "Entrance Test Exempted"
+  },
+  {
+   "color": "Red",
+   "title": " Entrance Test Rejected"
+  },
+  {
+   "color": "Light Blue",
+   "title": " Entrance Test Scheduled"
+  },
+  {
+   "color": "Blue",
+   "title": " Enrolled"
   }
  ],
  "title_field": "candidate_name"

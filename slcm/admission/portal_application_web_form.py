@@ -22,7 +22,7 @@ _LINK_OPTIONS_PATCHED = False
 
 # Portal web forms where Program link options must not be scoped to doc.owner
 # (child-table ug_program / pg_program are converted to Autocomplete via process_link_field).
-_APPLICANT_PORTAL_WEB_FORM_ROUTES = frozenset({"applicant-form", "paceadmissions/application-form"})
+_APPLICANT_PORTAL_WEB_FORM_NAMES = frozenset({"applicant-form", "pace-application-form"})
 
 
 def applicant_portal_application_locked(status: str | None) -> bool:
@@ -50,7 +50,7 @@ def patch_web_form_get_context_once() -> None:
 		try:
 			if (
 				getattr(self, "doc_type", None) == "Applicant"
-				and (getattr(self, "route", None) or "") == "applicant-form"
+				and getattr(self, "name", None) == "applicant-form"
 				and fd.get("name")
 				and not fd.get("is_edit")
 				and not fd.get("is_read")
@@ -67,12 +67,12 @@ def patch_web_form_get_context_once() -> None:
 	_PATCHED = True
 
 
-# (doc_type, route, dotted path to web_form module next to <scrub(name)>.js)
+# (doc_type, name, dotted path to web_form module next to <scrub(name)>.js)
 _SLCM_NON_STANDARD_WEB_FORM_MODULES: tuple[tuple[str, str, str], ...] = (
 	("Applicant", "applicant-form", "slcm.admission.web_form.applicant_form.applicant_form"),
 	(
 		"PACE Application",
-		"paceadmissions/application-form",
+		"pace-application-form",
 		"slcm.pace.web_form.pace_application_form.pace_application_form",
 	),
 )
@@ -168,10 +168,10 @@ def patch_applicant_web_form_module_assets_once() -> None:
 		_orig(self, context)
 		if getattr(self, "is_standard", None):
 			return
-		route = (getattr(self, "route", None) or "").strip()
+		name = getattr(self, "name", None)
 		dt = getattr(self, "doc_type", None)
-		for doc_type, r, module in _SLCM_NON_STANDARD_WEB_FORM_MODULES:
-			if dt == doc_type and route == r:
+		for doc_type, n, module in _SLCM_NON_STANDARD_WEB_FORM_MODULES:
+			if dt == doc_type and name == n:
 				_slcm_inject_web_form_module_assets(self, context, module)
 				break
 
@@ -196,11 +196,7 @@ def patch_web_form_program_link_options_once() -> None:
 	_orig = wf_mod.process_link_field
 
 	def _process_link_field(field, web_form_name):
-		try:
-			route = (frappe.db.get_value("Web Form", web_form_name, "route") or "").strip()
-		except Exception:
-			route = ""
-		if route in _APPLICANT_PORTAL_WEB_FORM_ROUTES and field.get("options") in ["Program", "PACE Programme"]:
+		if web_form_name in _APPLICANT_PORTAL_WEB_FORM_NAMES and field.get("options") in ["Program", "PACE Programme"]:
 			field["allow_read_on_all_link_options"] = 1
 		return _orig(field, web_form_name)
 
