@@ -673,9 +673,20 @@ def get_offer_list(limit_start=0, limit_page_length=10):
 
     for offer in offers:
         if offer.campus:
-            offer.campus_name = frappe.db.get_value("Campus", offer.campus, "campus_name") or offer.campus
+            campus_data = frappe.db.get_value("Campus", offer.campus, ["campus_name", "logo"], as_dict=1)
+            if campus_data:
+                offer.campus_name = campus_data.campus_name or offer.campus
+                offer.campus_image = campus_data.logo
+            else:
+                offer.campus_name = offer.campus
+                offer.campus_image = None
         else:
             offer.campus_name = ""
+            offer.campus_image = None
+            
+        offer.candidate_photo = frappe.db.get_value("Applicant", offer.applicant, "candidate_photo")
+        if not offer.candidate_photo:
+            offer.candidate_photo = frappe.db.get_value("User", frappe.session.user, "user_image")
             
         # Fetch scholarship info from Applicant Fee Assignment
         afa = frappe.db.get_value("Applicant Fee Assignment", 
