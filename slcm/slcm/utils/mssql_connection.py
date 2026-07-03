@@ -60,10 +60,12 @@ def get_mssql_connection():
             title="RFID SQL Server Not Configured"
         )
 
-    # Try ODBC Driver 18, fall back to 17, then the generic SQL Server driver.
+    # Try Microsoft's driver first (if ever installed), then fall back to
+    # FreeTDS, which is what Frappe Cloud provisions via apt (see pyproject.toml).
     drivers = [
         "ODBC Driver 18 for SQL Server",
         "ODBC Driver 17 for SQL Server",
+        "FreeTDS",
         "SQL Server",
     ]
 
@@ -86,6 +88,11 @@ def get_mssql_connection():
         "TrustServerCertificate=yes;"
         "Connection Timeout=10;"
     )
+
+    # FreeTDS needs an explicit TDS protocol version to talk to SQL Server 2014;
+    # unlike Microsoft's driver it does not auto-negotiate.
+    if chosen == "FreeTDS":
+        conn_str += "TDS_Version=7.4;"
 
     # SQL Server 2014 only supports TLS 1.0.  Temporarily point OpenSSL at a
     # config that lowers the minimum protocol to TLSv1 for this connection.
