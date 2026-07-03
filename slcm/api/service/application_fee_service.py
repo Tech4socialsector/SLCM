@@ -6,7 +6,7 @@ from frappe import _
 from frappe.utils import cint, flt
 
 
-def get_application_fee_for_category(program, admission_cycle, category):
+def get_application_fee_for_category(program, admission_cycle, category, is_foreign=False):
 	"""
 	Returns the application fee amount from Program Reservation Policy
 	based on program, admission_cycle, and category (Admission Category name).
@@ -35,17 +35,20 @@ def get_application_fee_for_category(program, admission_cycle, category):
 	rows = frappe.get_all(
 		"Program Reservation Category",
 		filters={"parent": policy, "parenttype": "Program Reservation Policy"},
-		fields=["category_name", "application_fee"]
+		fields=["category_name", "application_fee_for_indian", "application_fee_for_foreign"]
 	)
+
+	def _get_fee(row):
+		return flt(row.application_fee_for_foreign if is_foreign else row.application_fee_for_indian, 2)
 
 	category_str = (category or "").strip()
 	for row in rows:
 		if row.category_name == category_str or (row.category_name and row.category_name.strip() == category_str):
-			return flt(row.application_fee, 2)
+			return _get_fee(row)
 
 	for row in rows:
 		if (row.category_name or "").lower() in ("general", "gen", "unreserved", ""):
-			return flt(row.application_fee, 2)
+			return _get_fee(row)
 
 	return 0
 
@@ -166,8 +169,9 @@ def sync_application_fee_assignment_for_applicant(applicant_name):
 		return None
 
 	category = _get_applicant_category(applicant_name)
+	is_foreign = applicant.nationality != "Indian"
 	fee_amount = flt(
-		get_application_fee_for_category(applicant.program, applicant.admission_cycle, category), 2
+		get_application_fee_for_category(applicant.program, applicant.admission_cycle, category, is_foreign=is_foreign), 2
 	)
 
 	if fee_amount > 0 and flt(applicant.application_fee_amount or 0) != fee_amount:
@@ -293,9 +297,10 @@ def get_application_fee_details(applicant_name):
 	"""
 	applicant = frappe.get_doc("Applicant", applicant_name)
 	category = _get_applicant_category(applicant_name)
+	is_foreign = applicant.nationality != "Indian"
 
 	fee_amount = get_application_fee_for_category(
-		applicant.program, applicant.admission_cycle, category
+		applicant.program, applicant.admission_cycle, category, is_foreign=is_foreign
 	)
 
 	if fee_amount != flt(applicant.application_fee_amount):

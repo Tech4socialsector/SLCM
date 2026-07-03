@@ -150,32 +150,6 @@
   {
    "child": 1,
    "collapsible": 1,
-   "icon": "clipboard-clock",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Offer action log",
-   "link_to": "Offer Action Log",
-   "link_type": "DocType",
-   "open_in_new_tab": 0,
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "icon": "cctv",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Offer fee snapshot",
-   "link_to": "Offer Fee Snapshot",
-   "link_type": "DocType",
-   "open_in_new_tab": 0,
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
    "icon": "album",
    "indent": 0,
    "keep_closed": 0,
@@ -187,7 +161,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-05-21 16:18:24.982226",
+ "modified": "2026-07-03 16:06:01.696963",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letters",

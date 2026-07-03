@@ -43,12 +43,7 @@ class OfferLetter(Document):
         # Deterministic logging after successful update
         # We use flags to pass audit data from validate to on_update to avoid redundant logic
         print("on update called for offer letter")
-        if getattr(self, "_audit_logs", None):
-            for log_data in self._audit_logs:
-                self.log_action(**log_data)
-                print(f"Logged action called: {log_data['action']} for Offer Letter {self.name}")
-            # Clear logs to avoid duplicates in same session
-            self._audit_logs = []
+
 
         self.sync_status_to_seat_allocation()
 
@@ -95,11 +90,7 @@ class OfferLetter(Document):
                     # Manually trigger sync since we used db_set to avoid full validation hooks
                     other_doc.sync_status_to_seat_allocation()
                     
-                    other_doc.log_action(
-                        action="Withdrawn",
-                        notes=_("Automatically withdrawn because applicant accepted offer {0}").format(self.name),
-                        performed_by="System"
-                    )
+
 
         # 1. Automatic Fee Cancellation for termination statuses
         if self.status in ["Rejected", "Expired", "Withdrawn"]:
@@ -136,12 +127,7 @@ class OfferLetter(Document):
         if self.status not in allowed_transitions.get(db_status, []):
             throw(_("Invalid status transition: From {0} to {1}").format(db_status, self.status))
 
-        # Track status change for audit
-        self._queue_audit_log(
-            action=self.status,
-            notes=_("Status changed from {0} to {1}").format(db_status, self.status),
-            reason=self.get("edit_reason") or frappe.flags.edit_reason or ""
-        )
+
 
     def handle_audit_and_locking(self):
         """Detects changes in sensitive fields and enforces locking."""
@@ -175,14 +161,7 @@ class OfferLetter(Document):
                     else:
                         self.enforce_lock_override(fieldname)
 
-                # Queue log for field change
-                self._queue_audit_log(
-                    action="Field Updated",
-                    field_changed=fieldname,
-                    old_value=db_doc.get(fieldname),
-                    new_value=self.get(fieldname),
-                    reason=self.get("edit_reason") or frappe.flags.edit_reason or ""
-                )
+
 
     def enforce_lock_override(self, fieldname):
         """Validates if the user has permission to override a locked field."""
@@ -200,35 +179,7 @@ class OfferLetter(Document):
                 self.meta.get_label(fieldname)
             ))
 
-    def _queue_audit_log(self, **kwargs):
-        """Queues an audit log to be created in on_update."""
-        if not hasattr(self, "_audit_logs"):
-            self._audit_logs = []
-        
-        # Ensure timestamp and user are set (though helper handles it)
-        kwargs.update({
-            "timestamp": frappe.utils.now_datetime(),
-            "performed_by": frappe.session.user
-        })
-        self._audit_logs.append(kwargs)
 
-    def log_action(self, action, field_changed=None, old_value=None, new_value=None, reason=None, notes=None, **kwargs):
-        """Creates an entry in the Offer Action Log."""
-        # Prevent duplicate status logs if already logged by generate_offer etc.
-        # This is a safety check for deterministic logging.
-        print(f"Logging action: {action} for Offer Letter {self.name}")
-        log = frappe.new_doc("Offer Action Log")
-        log.offer_letter = self.name
-        log.action = action
-        log.field_changed = field_changed
-        log.old_value = frappe.as_json(old_value) if old_value is not None else None
-        log.new_value = frappe.as_json(new_value) if new_value is not None else None
-        log.reason = reason
-        log.notes = notes
-        log.timestamp = kwargs.get("timestamp") or frappe.utils.now_datetime()
-        log.performed_by = kwargs.get("performed_by") or frappe.session.user
-        log.insert(ignore_permissions=True)
-        print(f"Logged action: {action} for Offer Letter {self.name} with log ID {log.name}")
 
     def on_payment_authorized(self, status):
         """
