@@ -49,6 +49,7 @@
   "mssql_username",
   "mssql_password",
   "mssql_view",
+  "mssql_swipe_cutoff_date",
   "column_break_mssql",
   "mssql_last_processed_id",
   "rfid_poller_note"
@@ -361,6 +362,12 @@
    "label": "MSSQL View / Table"
   },
   {
+   "description": "Swipes with a punch time before this date are never imported, regardless of the SQL ID watermark. Leave blank to import all history.",
+   "fieldname": "mssql_swipe_cutoff_date",
+   "fieldtype": "Date",
+   "label": "Only Import Swipes From"
+  },
+  {
    "fieldname": "column_break_mssql",
    "fieldtype": "Column Break"
   },
@@ -375,7 +382,7 @@
    "fieldname": "rfid_poller_note",
    "fieldtype": "HTML",
    "label": "RFID Poller Note",
-   "options": "<div style=\"background:#f9f0f0; border-left:4px solid #8b1a1a; border-radius:6px; padding:14px 16px; font-size:.84rem; line-height:1.9; color:#333; margin-top:12px\">\n  <strong style=\"color:#8b1a1a; font-size:.9rem\">How the Automatic Poller Works</strong><br><br>\n  <b style=\"color:#2b2e4a\">&#9654; Automatic sync:</b> SLCM pulls new swipes from the SQL Server every <b>5 minutes</b> via a background scheduler. No manual action is needed once configured.<br>\n  <b style=\"color:#2b2e4a\">&#9654; Watermark:</b> The <em>Last Processed SQL ID</em> above tracks the last imported row. The poller only fetches rows with <code style=\"background:#e8dada; padding:1px 5px; border-radius:3px\">Id &gt; last_processed_id</code> \u2014 old data is never re-imported.<br>\n  <b style=\"color:#2b2e4a\">&#9654; Deduplication:</b> Each SQL Server row has a unique <code style=\"background:#e8dada; padding:1px 5px; border-radius:3px\">Id</code>. Even if a row is encountered twice, the poller skips it \u2014 no duplicate Attendance Logs are ever created.<br>\n  <b style=\"color:#2b2e4a\">&#9654; Batch size:</b> Up to 500 rows are imported per run. If there is a large backlog, multiple runs will process it in sequence.<br>\n  <b style=\"color:#2b2e4a\">&#9654; Card assignment:</b> Go to <a href=\"/rfid-mapping\" style=\"color:#8b1a1a; font-weight:700\">Attendance &rarr; RFID Card Management</a> to link cards to students, view unassigned swipes, and run bulk imports.<br><br>\n  <div style=\"background:#f0d8d8; border-radius:4px; padding:8px 12px; color:#8b1a1a; font-weight:600; font-size:.82rem\">\n    &#9888; To re-import all records from scratch: set <em>Last Processed SQL ID</em> to <code>0</code> and save. The next poll will reimport everything from the beginning. Use with caution on a live system.\n  </div>\n</div>"
+   "options": "<div style=\"background:#f9f0f0; border-left:4px solid #8b1a1a; border-radius:6px; padding:14px 16px; font-size:.84rem; line-height:1.9; color:#333; margin-top:12px\">\n  <strong style=\"color:#8b1a1a; font-size:.9rem\">How the Automatic Poller Works</strong><br><br>\n  <b style=\"color:#2b2e4a\">&#9654; Automatic sync:</b> SLCM pulls new swipes from the SQL Server every <b>minute</b> via a background scheduler (the shortest interval Frappe's scheduler supports). You can also force an immediate pull any time with the <b>Refresh Now</b> button on the RFID Card Management page. No manual action is needed for normal operation.<br>\n  <b style=\"color:#2b2e4a\">&#9654; Watermark:</b> The <em>Last Processed SQL ID</em> above tracks the last imported row. The poller only fetches rows with <code style=\"background:#e8dada; padding:1px 5px; border-radius:3px\">Id &gt; last_processed_id</code> \u2014 old data is never re-imported.<br>\n  <b style=\"color:#2b2e4a\">&#9654; Start date filter:</b> Set <em>Only Import Swipes From</em> to a date to permanently ignore any swipe with an older punch time, even if its SQL ID is above the watermark. Leave it blank to import full history.<br>\n  <b style=\"color:#2b2e4a\">&#9654; Deduplication:</b> Each SQL Server row has a unique <code style=\"background:#e8dada; padding:1px 5px; border-radius:3px\">Id</code>. Even if a row is encountered twice, the poller skips it \u2014 no duplicate Attendance Logs are ever created.<br>\n  <b style=\"color:#2b2e4a\">&#9654; Batch size:</b> Up to 500 rows are imported per run. If there is a large backlog, multiple runs will process it in sequence.<br>\n  <b style=\"color:#2b2e4a\">&#9654; Card assignment:</b> Go to <a href=\"/rfid-mapping\" style=\"color:#8b1a1a; font-weight:700\">Attendance &rarr; RFID Card Management</a> to link cards to students, view unassigned swipes, and run bulk imports.<br><br>\n  <div style=\"background:#f0d8d8; border-radius:4px; padding:8px 12px; color:#8b1a1a; font-weight:600; font-size:.82rem\">\n    &#9888; To re-import all records from scratch: set <em>Last Processed SQL ID</em> to <code>0</code> and save. The next poll will reimport everything from the beginning. Use with caution on a live system.\n  </div>\n</div>"
   }
  ],
  "issingle": 1,

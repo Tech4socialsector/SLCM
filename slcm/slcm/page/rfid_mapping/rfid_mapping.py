@@ -138,6 +138,8 @@ def link_rfid_to_student(rfid_uid, student):
     Assign rfid_uid to a Student Master record.
     Backfills all existing Attendance Logs for that UID.
     """
+    frappe.only_for("System Manager")
+
     rfid_uid = (rfid_uid or "").strip()
     student  = (student  or "").strip()
 
@@ -207,6 +209,8 @@ def get_export_data():
     program RFID cards: Student ID, Name, Programme, Batch, Department.
     Excludes students who already have an RFID UID assigned.
     """
+    frappe.only_for("System Manager")
+
     rows = frappe.db.sql("""
         SELECT
             sm.name         AS student_id,
@@ -228,6 +232,8 @@ def get_export_data():
 @frappe.whitelist()
 def read_uploaded_file(file_url):
     """Read an uploaded CSV or Excel file and return its content as CSV text."""
+    frappe.only_for("System Manager")
+
     import os
     try:
         file_doc = frappe.get_doc("File", {"file_url": file_url})

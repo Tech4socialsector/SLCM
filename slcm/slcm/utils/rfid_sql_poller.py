@@ -9,7 +9,8 @@ remote MS SQL Server and inserts them as Attendance Log records in Frappe.
 
 Flow:
   1. Read last_processed_id from Attendance Settings (watermark)
-  2. SELECT rows WHERE Id > last_processed_id ORDER BY Id ASC
+  2. SELECT rows WHERE Id > last_processed_id
+       AND punch_time >= mssql_swipe_cutoff_date (if set) ORDER BY Id ASC
   3. For each row:
        a. Skip if source_id already exists in Attendance Log (idempotent)
        b. Resolve emp_code → Student via Student RFID Card
@@ -18,11 +19,14 @@ Flow:
   4. Update last_processed_id in Attendance Settings
   5. Commit
 
-The existing scheduler job at */10 * * * * (process_pending_logs) converts
-these raw logs into Student Attendance records automatically.
+The scheduler job at * * * * * (process_pending_logs) converts these raw
+logs into Student Attendance records automatically, right after this poller
+runs in the same minute.
 
-This poller is registered at */5 * * * * so new swipes appear within
-~5 minutes on the worst path.  Admins can also call poll_now() manually.
+This poller is registered at * * * * * (the shortest interval Frappe's
+cron scheduler supports) so new swipes appear within ~1-2 minutes on the
+worst path. Admins can also call poll_now() manually, or click "Refresh
+Now" on the RFID Card Management page, to pull immediately on demand.
 """
 
 import frappe
@@ -71,6 +75,13 @@ def _run_poll(cfg):
     view = re.sub(r"[^\w\.]", "", raw_view) or "dbo.iclock_trans_ajim"
     batch   = 500   # max rows per run to avoid memory spikes
 
+    cutoff_date = cfg.mssql_swipe_cutoff_date or None
+    where_clause = "WHERE Id > ?"
+    params = [last_id]
+    if cutoff_date:
+        where_clause += " AND punch_time >= ?"
+        params.append(cutoff_date)
+
     conn = get_mssql_connection()
     try:
         cursor = conn.cursor()
@@ -84,10 +95,10 @@ def _run_poll(cfg):
                 terminal_alias,
                 area_alias
             FROM {view}
-            WHERE Id > ?
+            {where_clause}
             ORDER BY Id ASC
             """,
-            last_id
+            params
         )
         rows = cursor.fetchall()
     finally:
