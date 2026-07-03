@@ -26,7 +26,7 @@ class PACEApplication(Document):
         self.validate_programme_change()
         self.validate_geography_hierarchy()
 
-
+ 
     def validate_geography_hierarchy(self):
         def _validate_hierarchy(country, state, district):
             if state and state != "Others" and country:
@@ -465,6 +465,8 @@ class PACEApplication(Document):
         self.sync_user_profile()
         self.sync_documents_to_verification()
 
+        if not self.user_id:
+            frappe.set_value(self.doctype, self.name, "user_id", self.email_address or None)
 
         # Generate the application PDF when the status is "Draft", "Submitted", or "Completed"
         if self.status in ["Draft", "Submitted", "Completed"] and not self.flags.get("in_pdf_generation"):
