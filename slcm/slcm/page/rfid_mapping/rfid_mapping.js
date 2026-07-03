@@ -124,6 +124,37 @@ function bind_events(wrapper) {
 	$w.on("click", ".btn-assign",        function () { show_assign_dialog($(this).data("uid"), wrapper); });
 	$w.on("click", "#btn-export-vendor", () => do_export(wrapper));
 	$w.on("click", "#btn-bulk-import",   () => show_import_dialog(wrapper));
+	$w.on("click", "#btn-refresh-now",   () => refresh_now(wrapper));
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Manual "Refresh Now" — force an immediate SQL Server pull
+// ─────────────────────────────────────────────────────────────────
+function refresh_now(wrapper) {
+	const $btn = $(wrapper).find("#btn-refresh-now");
+	$btn.prop("disabled", true).find(".btn-refresh-label").text("Refreshing…");
+	set_dot(wrapper, "syncing");
+
+	frappe.call({
+		method: "slcm.slcm.utils.rfid_sql_poller.poll_now",
+		callback(r) {
+			$btn.prop("disabled", false).find(".btn-refresh-label").text("Refresh Now");
+			if (r.message && r.message.success) {
+				frappe.show_alert({ message: r.message.message, indicator: "green" }, 5);
+			} else {
+				frappe.msgprint({
+					title: "Refresh Failed",
+					message: r.message ? r.message.message : "Unknown error.",
+					indicator: "red",
+				});
+			}
+			full_load(wrapper);
+		},
+		error() {
+			$btn.prop("disabled", false).find(".btn-refresh-label").text("Refresh Now");
+			set_dot(wrapper, "live");
+		},
+	});
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -720,7 +751,7 @@ function set_dot(wrapper, state) {
 	$d.removeClass("dot-live dot-syncing");
 	if (state === "live") {
 		$d.addClass("dot-live");
-		$t.text("Live — SQL Server syncs automatically every 5 minutes");
+		$t.text("Live — SQL Server syncs automatically every minute");
 	} else {
 		$d.addClass("dot-syncing");
 		$t.text("Syncing…");
@@ -989,8 +1020,11 @@ function build_html() {
 	<!-- Status bar -->
 	<div class="rfid-status">
 		<div class="sync-dot dot-live" id="sync-dot"></div>
-		<span id="sync-text">Live — SQL Server syncs automatically every 5 minutes</span>
+		<span id="sync-text">Live — SQL Server syncs automatically every minute</span>
 		<span class="cdown">Display refreshes in <strong id="next-refresh">30</strong>s</span>
+		<button class="btn-outline" id="btn-refresh-now" style="margin-left:14px">
+			<i class="fa fa-refresh"></i> <span class="btn-refresh-label">Refresh Now</span>
+		</button>
 	</div>
 
 	<!-- Swipe log stats (matches SQL Server columns) -->
@@ -1148,7 +1182,8 @@ function build_html() {
 			the machine logs it in the SQL Server database (<code>dbo.iclock_trans_ajim</code>)
 			with the columns: <code>emp_code</code>, <code>punch_time</code>,
 			<code>terminal_alias</code>, <code>area_alias</code>.<br><br>
-			SLCM pulls those records every <strong>5 minutes</strong> automatically in the background.
+			SLCM pulls those records every <strong>minute</strong> automatically in the background,
+			or immediately if you click <strong>Refresh Now</strong> above.
 			This page refreshes the display every <strong>30 seconds</strong> —
 			new rows appear at the <strong>top</strong>, highlighted briefly.
 			A student showing <em>Unknown</em> means that card is not yet assigned —

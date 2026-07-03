@@ -18,11 +18,14 @@ Flow:
   4. Update last_processed_id in Attendance Settings
   5. Commit
 
-The existing scheduler job at */10 * * * * (process_pending_logs) converts
-these raw logs into Student Attendance records automatically.
+The scheduler job at * * * * * (process_pending_logs) converts these raw
+logs into Student Attendance records automatically, right after this poller
+runs in the same minute.
 
-This poller is registered at */5 * * * * so new swipes appear within
-~5 minutes on the worst path.  Admins can also call poll_now() manually.
+This poller is registered at * * * * * (the shortest interval Frappe's
+cron scheduler supports) so new swipes appear within ~1-2 minutes on the
+worst path. Admins can also call poll_now() manually, or click "Refresh
+Now" on the RFID Card Management page, to pull immediately on demand.
 """
 
 import frappe
