@@ -69,24 +69,9 @@ def get_offer_details(offer_name=None):
         target_applicant = offer_dict.get("applicant")
         fee_structure = offer_dict.get("fee_structure")
 
-    # Get Snapshot or Live Fee Details
+    # Get Live Fee Details
     fee_data = []
-    snapshot = frappe.get_all("Offer Fee Snapshot", filters={"offer_id": offer_id}, order_by="creation desc", limit=1, ignore_permissions=True)
-    if snapshot:
-        snapshot_items = frappe.get_all("Fee Component Child",
-            filters={"parent": snapshot[0].name, "parenttype": "Offer Fee Snapshot"},
-            fields=["component_name", "fee_component", "total_amount", "amount"],
-            ignore_permissions=True
-        )
-        for comp in snapshot_items:
-            # Skip any legacy Scholarship component rows — shown separately below
-            if (comp.fee_component or "").lower() == "scholarship":
-                continue
-            fee_data.append({
-                "component": comp.component_name or comp.fee_component,
-                "amount": comp.total_amount or comp.amount
-            })
-    elif fee_structure:
+    if fee_structure:
         fs_components = frappe.get_all("Fee Component Child",
             filters={"parent": fee_structure, "parenttype": "Fee Structure"},
             fields=["component_name", "fee_component", "total_amount", "amount"],

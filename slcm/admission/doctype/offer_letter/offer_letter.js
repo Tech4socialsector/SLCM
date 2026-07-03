@@ -4,6 +4,7 @@
 frappe.ui.form.on("Offer Letter", {
 
     refresh(frm) {
+
         if (frm.doc.rendered_content) {
             // Force the field to display as rendered HTML instead of an editor or raw code
             frm.set_df_property('rendered_content', 'fieldtype', 'HTML');

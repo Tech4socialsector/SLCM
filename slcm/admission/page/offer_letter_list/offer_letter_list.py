@@ -53,7 +53,7 @@ def get_offer_list(limit_start=0, limit_page_length=10):
     )
 
     for offer in offers:
-        scholarship = frappe.db.get_value("Offer Fee Snapshot", {"offer_id": offer.name}, "scholarship_amount")
+        scholarship = frappe.db.get_value("Applicant Fee Assignment", {"offer_letter": offer.name, "docstatus": ["!=", 2]}, "scholarship_amount")
         offer["scholarship_amount"] = scholarship or 0
 
     return {
