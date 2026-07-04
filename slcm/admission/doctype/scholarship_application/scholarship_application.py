@@ -88,7 +88,9 @@ class ScholarshipApplication(Document):
 					break
 			
 			if fee_structure_name:
-				fee_data = FeeService._calculate_and_freeze_fees(fee_structure_name)
+				nationality = frappe.db.get_value("Applicant", self.applicant_id, "nationality")
+				is_foreign = nationality != "Indian"
+				fee_data = FeeService._calculate_and_freeze_fees(fee_structure_name, is_foreign=is_foreign)
 				self.original_fee_amount = flt(fee_data.get("total_payable") or 0)
 		except Exception:
 			# If resolution fails, we don't block save, but fee might be 0
@@ -498,7 +500,7 @@ class ScholarshipApplication(Document):
 		# Also update any existing Payment Request amount to match the new final payable amount
 		pr_list = frappe.get_all("Payment Request", filters={
 			"reference_doctype": "Offer Letter",
-			"reference_name": self.offer_letter or frappe.db.get_value("Applicant Fee Assignment", afa_name, "offer_letter"),
+			"reference_name": self.get("offer_letter") or frappe.db.get_value("Applicant Fee Assignment", afa_name, "offer_letter"),
 			"status": ["not in", ["Paid", "Cancelled"]]
 		}, fields=["name"])
 		
@@ -726,7 +728,9 @@ def get_original_fee_amount(applicant_id, program, campus=None, cycle=None):
 				break
 		
 		if fee_structure_name:
-			fee_data = FeeService._calculate_and_freeze_fees(fee_structure_name)
+			nationality = frappe.db.get_value("Applicant", applicant_id, "nationality")
+			is_foreign = nationality != "Indian"
+			fee_data = FeeService._calculate_and_freeze_fees(fee_structure_name, is_foreign=is_foreign)
 			return flt(fee_data.get("total_payable") or 0)
 	except Exception:
 		pass

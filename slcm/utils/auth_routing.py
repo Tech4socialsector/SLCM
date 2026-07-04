@@ -93,6 +93,51 @@ def intercept_login():
             encoded_url = urllib.parse.quote(path, safe='')
             raise AuthRedirect(f"/parent/login?redirect-to={encoded_url}")
 
+    elif frappe.session.user != "Guest":
+        applicant_route = (frappe.get_cached_value("Web Form", "applicant-form", "route") or "admission/application-form").strip("/")
+        pace_route = (frappe.get_cached_value("Web Form", "pace-application-form", "route") or "paceadmissions/application-form").strip("/")
+        
+        is_application_form = False
+        base_route = ""
+        if normalized_path in (pace_route, f"{pace_route}/new", "pace-application-form", "pace-application-form/new"):
+            is_application_form = True
+            base_route = pace_route
+        elif normalized_path in (applicant_route, f"{applicant_route}/new", "applicant-form", "applicant-form/new"):
+            is_application_form = True
+            base_route = applicant_route
+
+        if is_application_form:
+            active_cycle = frappe.db.get_value("Admission Cycle", {"status": "Active"}, ["name", "allow_multiple_applications"], as_dict=True)
+            if active_cycle:
+                requested_program = frappe.form_dict.get("program") or ""
+                allow_multiple = int(active_cycle.allow_multiple_applications or 0)
+                
+                filters = {
+                    "email": frappe.session.user,
+                    "admission_cycle": active_cycle.name
+                }
+                
+                if allow_multiple:
+                    if requested_program:
+                        filters["program"] = requested_program
+                        existing_app = frappe.db.exists("Applicant", filters)
+                        if existing_app:
+                            raise AuthRedirect(f"/{base_route}/{existing_app}")
+                else:
+                    # If multiple applications are not allowed, ANY application in this cycle counts
+                    # If requested_program is present, try to match it first just in case
+                    if requested_program:
+                        exact_match_filters = filters.copy()
+                        exact_match_filters["program"] = requested_program
+                        existing_app = frappe.db.exists("Applicant", exact_match_filters)
+                        if existing_app:
+                            raise AuthRedirect(f"/{base_route}/{existing_app}")
+                    
+                    # Otherwise get the most recent application
+                    existing_app = frappe.db.get_value("Applicant", filters, "name", order_by="creation desc")
+                    if existing_app:
+                        raise AuthRedirect(f"/{base_route}/{existing_app}")
+
     # 2. Intercept the standard Frappe /login fallback
     if path == "/login":
         if frappe.session.user != "Guest":

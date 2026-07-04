@@ -257,11 +257,10 @@
    "reqd": 1
   },
   {
-   "default": "Indian",
    "fieldname": "nationality",
    "fieldtype": "Select",
    "label": "Nationality",
-   "options": "Afghan\nAlbanian\nAlgerian\nAmerican\nAndorran\nAngolan\nAntiguan and Barbudan\nArgentine\nArmenian\nAustralian\nAustrian\nAzerbaijani\nBahamian\nBahraini\nBangladeshi\nBarbadian\nBelarusian\nBelgian\nBelizean\nBeninese\nBhutanese\nBolivian\nBosnian\nBotswanan\nBrazilian\nBritish\nBruneian\nBulgarian\nBurkinab\u00e9\nBurundian\nCambodian\nCameroonian\nCanadian\nCape Verdean\nCentral African\nChadian\nChilean\nChinese\nColombian\nComorian\nCongolese (Democratic Republic of the Congo)\nCongolese (Republic of the Congo)\nCosta Rican\nCroatian\nCuban\nCypriot\nCzech\nDanish\nDjiboutian\nDominican\nDominican (Dominican Republic)\nDutch\nEcuadorian\nEgyptian\nEmirati\nEquatorial Guinean\nEritrean\nEstonian\nEswatini\nEthiopian\nFijian\nFilipino\nFinnish\nFrench\nGabonese\nGambian\nGeorgian\nGerman\nGhanaian\nGreek\nGrenadian\nGuatemalan\nGuinean\nGuinea-Bissauan\nGuyanese\nHaitian\nHonduran\nHungarian\nIcelandic\nIndian\nIndonesian\nIranian\nIraqi\nIrish\nIsraeli\nItalian\nIvorian\nJamaican\nJapanese\nJordanian\nKazakhstani\nKenyan\nKiribatian\nKosovar\nKuwaiti\nKyrgyzstani\nLao\nLatvian\nLebanese\nLesotho\nLiberian\nLibyan\nLiechtensteiner\nLithuanian\nLuxembourgish\nMalagasy\nMalawian\nMalaysian\nMaldivian\nMalian\nMaltese\nMarshallese\nMauritanian\nMauritian\nMexican\nMicronesian\nMoldovan\nMon\u00e9gasque\nMongolian\nMontenegrin\nMoroccan\nMozambican\nMyanmar (Burmese)\nNamibian\nNauruan\nNepali\nNew Zealander\nNicaraguan\nNigerian\nNigerien\nNorth Korean\nNorth Macedonian\nNorwegian\nOmani\nPakistani\nPalauan\nPalestinian\nPanamanian\nPapua New Guinean\nParaguayan\nPeruvian\nPolish\nPortuguese\nQatari\nRomanian\nRussian\nRwandan\nSaint Kitts and Nevis\nSaint Lucian\nSaint Vincentian\nSalvadoran\nSamoan\nSan Marinese\nS\u00e3o Tom\u00e9an\nSaudi Arabian\nSenegalese\nSerbian\nSeychellois\nSierra Leonean\nSingaporean\nSlovak\nSlovenian\nSolomon Islander\nSomali\nSouth African\nSouth Korean\nSouth Sudanese\nSpanish\nSri Lankan\nSudanese\nSurinamese\nSwedish\nSwiss\nSyrian\nTaiwanese\nTajikistani\nTanzanian\nThai\nTimorese\nTogolese\nTongan\nTrinidadian and Tobagonian\nTunisian\nTurkish\nTurkmen\nTuvaluan\nUgandan\nUkrainian\nUruguayan\nUzbekistani\nVanuatuan\nVatican\nVenezuelan\nVietnamese\nYemeni\nZambian\nZimbabwean",
+   "options": "Indian\nAfghan\nAlbanian\nAlgerian\nAmerican\nAndorran\nAngolan\nAntiguan and Barbudan\nArgentine\nArmenian\nAustralian\nAustrian\nAzerbaijani\nBahamian\nBahraini\nBangladeshi\nBarbadian\nBelarusian\nBelgian\nBelizean\nBeninese\nBhutanese\nBolivian\nBosnian\nBotswanan\nBrazilian\nBritish\nBruneian\nBulgarian\nBurkinab\u00e9\nBurundian\nCambodian\nCameroonian\nCanadian\nCape Verdean\nCentral African\nChadian\nChilean\nChinese\nColombian\nComorian\nCongolese (Democratic Republic of the Congo)\nCongolese (Republic of the Congo)\nCosta Rican\nCroatian\nCuban\nCypriot\nCzech\nDanish\nDjiboutian\nDominican\nDominican (Dominican Republic)\nDutch\nEcuadorian\nEgyptian\nEmirati\nEquatorial Guinean\nEritrean\nEstonian\nEswatini\nEthiopian\nFijian\nFilipino\nFinnish\nFrench\nGabonese\nGambian\nGeorgian\nGerman\nGhanaian\nGreek\nGrenadian\nGuatemalan\nGuinean\nGuinea-Bissauan\nGuyanese\nHaitian\nHonduran\nHungarian\nIcelandic\nIndonesian\nIranian\nIraqi\nIrish\nIsraeli\nItalian\nIvorian\nJamaican\nJapanese\nJordanian\nKazakhstani\nKenyan\nKiribatian\nKosovar\nKuwaiti\nKyrgyzstani\nLao\nLatvian\nLebanese\nLesotho\nLiberian\nLibyan\nLiechtensteiner\nLithuanian\nLuxembourgish\nMalagasy\nMalawian\nMalaysian\nMaldivian\nMalian\nMaltese\nMarshallese\nMauritanian\nMauritian\nMexican\nMicronesian\nMoldovan\nMon\u00e9gasque\nMongolian\nMontenegrin\nMoroccan\nMozambican\nMyanmar (Burmese)\nNamibian\nNauruan\nNepali\nNew Zealander\nNicaraguan\nNigerian\nNigerien\nNorth Korean\nNorth Macedonian\nNorwegian\nOmani\nPakistani\nPalauan\nPalestinian\nPanamanian\nPapua New Guinean\nParaguayan\nPeruvian\nPolish\nPortuguese\nQatari\nRomanian\nRussian\nRwandan\nSaint Kitts and Nevis\nSaint Lucian\nSaint Vincentian\nSalvadoran\nSamoan\nSan Marinese\nS\u00e3o Tom\u00e9an\nSaudi Arabian\nSenegalese\nSerbian\nSeychellois\nSierra Leonean\nSingaporean\nSlovak\nSlovenian\nSolomon Islander\nSomali\nSouth African\nSouth Korean\nSouth Sudanese\nSpanish\nSri Lankan\nSudanese\nSurinamese\nSwedish\nSwiss\nSyrian\nTaiwanese\nTajikistani\nTanzanian\nThai\nTimorese\nTogolese\nTongan\nTrinidadian and Tobagonian\nTunisian\nTurkish\nTurkmen\nTuvaluan\nUgandan\nUkrainian\nUruguayan\nUzbekistani\nVanuatuan\nVatican\nVenezuelan\nVietnamese\nYemeni\nZambian\nZimbabwean",
    "reqd": 1,
    "sort_options": 1
   },
@@ -1230,10 +1229,7 @@
   {
    "link_doctype": "Offer Letter",
    "link_fieldname": "applicant"
-  },
-  {
-   "link_doctype": "Offer Action Log",
-   "link_fieldname": "applicant"
+
   },
   {
    "link_doctype": "Applicant Payment Receipt",
@@ -1257,7 +1253,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-02 18:41:40.520253",
+ "modified": "2026-07-03 15:17:10.900941",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
