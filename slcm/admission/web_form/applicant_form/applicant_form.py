@@ -30,6 +30,8 @@ def get_context(context):
     Non-Draft applicants: force view mode; redirect /edit → read-only URL.
     Only Draft remains editable on the portal.
     """
+
+
     # Hide Frappe’s default web-form breadcrumb ("Back > APP-…"); custom bar stays in applicant_form.js.
     context.no_breadcrumbs = True
 
@@ -508,7 +510,9 @@ def save_applicant_draft(data, ignore_mandatory=True):
 
             raw_cat = (getattr(doc, "whether_scstobc_ncl", "") or "").strip()
             cat     = raw_cat if raw_cat and raw_cat.upper() != "NA" else None
-            computed = flt(get_application_fee_for_category(doc.program, doc.admission_cycle, cat), 2)
+            nationality = getattr(doc, "nationality", "") or ""
+            is_foreign = nationality != "Indian" if nationality else False
+            computed = flt(get_application_fee_for_category(doc.program, doc.admission_cycle, cat, is_foreign=is_foreign), 2)
             fee_status = (getattr(doc, "application_fee_status", "") or "").strip()
             if fee_status not in ("Paid", "Waived"):
                 doc.application_fee_amount = computed
@@ -1055,9 +1059,11 @@ def switch_applicant_program(applicant_name, program):
             raw_cat = (getattr(doc, "whether_scstobc_ncl", "") or "").strip()
             cat = raw_cat if raw_cat and raw_cat.upper() != "NA" else None
             fee_status = (getattr(doc, "application_fee_status", "") or "").strip()
+            nationality = getattr(doc, "nationality", "") or ""
+            is_foreign = nationality != "Indian" if nationality else False
             if fee_status not in ("Paid", "Waived"):
                 doc.application_fee_amount = flt(
-                    get_application_fee_for_category(doc.program, doc.admission_cycle, cat), 2
+                    get_application_fee_for_category(doc.program, doc.admission_cycle, cat, is_foreign=is_foreign), 2
                 )
         except Exception:
             frappe.log_error(frappe.get_traceback(), "switch_applicant_program — fee recalc")

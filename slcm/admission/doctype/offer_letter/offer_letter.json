@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "format:OL-{YYYY}-{#####}",
  "creation": "2026-02-13 12:42:43.280155",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -10,25 +11,26 @@
   "admission_year",
   "campus",
   "email",
+  "applicant_name",
   "column_break_uiqy",
   "academic_year",
   "admission_cycle",
   "program",
   "offer_letter_pdf",
   "payable_amount",
-  "section_break_xjow",
+  "offer_letter_section",
   "rendered_content",
   "controls_tab",
   "issued_on",
   "accepted_on",
   "offer_configrationn",
   "fee_structure",
-  "notification_receiver",
   "column_break_hdcy",
+  "notification_receiver",
   "payment_deadline",
   "status",
-  "seat_locked",
-  "edit_reason"
+  "edit_reason",
+  "connections_tab"
  ],
  "fields": [
   {
@@ -65,7 +67,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Admission cycle",
+   "label": "Admission Cycle",
    "options": "Admission Cycle",
    "reqd": 1
   },
@@ -81,15 +83,7 @@
   {
    "fieldname": "offer_letter_pdf",
    "fieldtype": "Attach",
-   "label": "Offer letter PDF",
-   "make_attachment_public": 1,
-   "read_only": 1
-  },
-  {
-   "fieldname": "rendered_content",
-   "fieldtype": "HTML Editor",
-   "in_preview": 1,
-   "label": "Rendered content"
+   "label": "Offer Letter PDF"
   },
   {
    "fieldname": "controls_tab",
@@ -119,13 +113,6 @@
    "label": "Payment Deadline"
   },
   {
-   "default": "0",
-   "fieldname": "seat_locked",
-   "fieldtype": "Check",
-   "label": "Seat Locked",
-   "read_only": 1
-  },
-  {
    "fieldname": "offer_configrationn",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -134,15 +121,13 @@
    "read_only": 1
   },
   {
-   "fetch_from": "fee_structure.total_amount",
    "fieldname": "payable_amount",
    "fieldtype": "Currency",
-   "label": "Payable amount"
+   "label": "Payable Amount"
   },
   {
    "fieldname": "edit_reason",
    "fieldtype": "Small Text",
-   "hidden": 1,
    "label": "Edit Reason",
    "read_only": 1
   },
@@ -151,7 +136,7 @@
    "fieldname": "academic_year",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Academic year",
+   "label": "Academic Year",
    "options": "Academic Year",
    "reqd": 1
   },
@@ -159,7 +144,7 @@
    "fieldname": "admission_year",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Admission year",
+   "label": "Admission Year",
    "options": "Admission Year",
    "reqd": 1
   },
@@ -173,14 +158,15 @@
   {
    "fieldname": "notification_receiver",
    "fieldtype": "Link",
-   "hidden": 1,
    "label": "Notification Receiver",
    "options": "User",
    "read_only": 1
   },
   {
-   "fieldname": "section_break_xjow",
-   "fieldtype": "Section Break"
+   "fieldname": "rendered_content",
+   "fieldtype": "Code",
+   "label": "Rendered Content",
+   "options": "HTML"
   },
   {
    "fetch_from": "applicant.email",
@@ -196,6 +182,24 @@
    "in_standard_filter": 1,
    "label": "Offer Status",
    "options": "Draft\nIssued\nAccepted\nPayment Completed\nRejected\nExpired\nWithdrawn"
+  },
+  {
+   "fieldname": "connections_tab",
+   "fieldtype": "Tab Break",
+   "label": "Connections",
+   "show_dashboard": 1
+  },
+  {
+   "fetch_from": "applicant.candidate_name",
+   "fieldname": "applicant_name",
+   "fieldtype": "Data",
+   "label": "Applicant Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "offer_letter_section",
+   "fieldtype": "Section Break",
+   "label": "Offer Letter"
   }
  ],
  "grid_page_length": 50,
@@ -204,22 +208,13 @@
   {
    "link_doctype": "Applicant Fee Assignment",
    "link_fieldname": "offer_letter"
-  },
-  {
-   "link_doctype": "Offer Action Log",
-   "link_fieldname": "offer_letter"
-  },
-  {
-   "link_doctype": "Offer Fee Snapshot",
-   "link_fieldname": "offer_id"
   }
  ],
- "make_attachments_public": 1,
- "modified": "2026-06-25 15:26:21.345782",
+ "modified": "2026-07-03 17:44:10.878174",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letter",
- "naming_rule": "By script",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
@@ -299,6 +294,7 @@
    "title": "Withdrawn"
   }
  ],
- "title_field": "applicant",
- "track_changes": 1
+ "title_field": "applicant_name",
+ "track_changes": 1,
+ "track_seen": 1
 }

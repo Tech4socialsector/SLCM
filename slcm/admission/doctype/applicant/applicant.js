@@ -69,32 +69,6 @@ frappe.ui.form.on("Applicant", {
              }, 100);
          });
          }
-        // Status badge in dashboard headline
-        const status_colors = {
-            "Draft": "gray",
-            "Submitted": "blue",
-            "Under Evaluation": "blue",
-            "Shortlisted": "orange",
-            "Interview Scheduled": "purple",
-            "Entrance Test Scheduled": "purple",
-            "Interview Excempted": "teal",
-            "Entrance Test Exempted": "teal",
-            "Excempted Entrance Test And Interview": "teal",
-            "Entrance Test Rejected": "red",
-            "Entrance Test Completed": "green",
-            "Interview Rejected": "red",
-            "Interview Completed": "green",
-            "Offered": "green",
-            "Accepted": "darkgreen",
-            "Rejected": "red",
-            "Waitlisted": "yellow"
-        };
-        const color = status_colors[frm.doc.status] || "gray";
-        frm.dashboard.set_headline(
-            `<span style="color:${color}; font-weight:bold;">
-                Status: ${frm.doc.status}
-            </span>`
-        );
 
         // Application completion indicator
         const required_fields = [
@@ -252,13 +226,46 @@ frappe.ui.form.on("Applicant", {
                                                 message: __('Student Master {0} created successfully.', [res.student_name]),
                                                 indicator: 'green'
                                             }, 6);
+                                            frm.reload_doc();
                                         } else {
-                                            frappe.show_alert({
-                                                message: __('Student Master {0} already exists for this applicant.', [res.student_name]),
-                                                indicator: 'blue'
-                                            }, 6);
+                                            let d = new frappe.ui.Dialog({
+                                                title: __('Student Already Exists'),
+                                                fields: [
+                                                    {
+                                                        fieldname: 'msg',
+                                                        fieldtype: 'HTML',
+                                                        options: `<div style="padding: 10px; font-size: 13px;">
+                                                            ${__('Student Master <b>{0}</b> already exists for this applicant.', [res.student_name])}
+                                                            <br><br>
+                                                            ${__('Would you like to mark this Applicant as Enrolled?')}
+                                                        </div>`
+                                                    }
+                                                ],
+                                                primary_action_label: __('Mark as Enrolled'),
+                                                primary_action: function() {
+                                                    d.get_primary_btn().prop('disabled', true);
+                                                    frappe.call({
+                                                        method: 'frappe.client.set_value',
+                                                        args: {
+                                                            doctype: 'Applicant',
+                                                            name: frm.doc.name,
+                                                            fieldname: 'status',
+                                                            value: 'Enrolled'
+                                                        },
+                                                        callback: function(r) {
+                                                            if (!r.exc) {
+                                                                frappe.show_alert({message: __('Applicant marked as Enrolled.'), indicator: 'green'});
+                                                                d.hide();
+                                                                frm.reload_doc();
+                                                            } else {
+                                                                d.get_primary_btn().prop('disabled', false);
+                                                            }
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                            d.show();
                                         }
-                                        frm.reload_doc();
                                     }
                                 }
                             });

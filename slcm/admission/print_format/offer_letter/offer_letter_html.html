@@ -1,8 +1,8 @@
 {% set campus = frappe.get_doc("Campus", doc.campus) if doc.campus else None %}
 {% set applicant = frappe.get_doc("Applicant", doc.applicant) if doc.applicant else None %}
-{% set snapshot = frappe.get_all("Offer Fee Snapshot", filters={"offer_id": doc.name}, fields=["*"], limit=1) %}
-{% set fee_info = snapshot[0] if snapshot else None %}
-{% set pay_amt = (fee_info.total_payable if fee_info else doc.payable_amount) or 0 %}
+{% set afa = frappe.get_all("Applicant Fee Assignment", filters={"offer_letter": doc.name, "docstatus": ["!=", 2]}, fields=["*"], limit=1) %}
+{% set fee_info = afa[0] if afa else None %}
+{% set pay_amt = (fee_info.final_payable_amount if fee_info else doc.payable_amount) or 0 %}
 {% set issued_date = doc.issued_on or frappe.utils.today() %}
 {% set fee_deadline = doc.payment_deadline %}
 

@@ -238,7 +238,9 @@ class OfferService:
             offer.payment_deadline = FeeService._calculate_deadline(fee_structure_name)
             
             # Freeze Fees from Fee Structure
-            fee_data = FeeService._calculate_and_freeze_fees(fee_structure_name)
+            nationality = frappe.db.get_value("Applicant", applicant, "nationality")
+            is_foreign = nationality != "Indian"
+            fee_data = FeeService._calculate_and_freeze_fees(fee_structure_name, is_foreign=is_foreign)
             offer.payable_amount = fee_data.get("total_payable")
             
             # Ensure Fetch From doesn't overwrite our resolved campus and cycle 
@@ -253,12 +255,7 @@ class OfferService:
                 
                 
 
-            # Snapshot Content (Now we have the name/ID)
-            offer.rendered_content = OfferService._render_snapshot(offer, config.email_template)
-            offer.db_set('rendered_content', offer.rendered_content)
-            
-            # Create the actual snapshot record
-            OfferService._create_snapshot_record(offer.name, fee_data)
+
 
             # Commit here so that frappe.get_print (used by _generate_offer_pdf) can
             # read the fully-committed offer record from DB. This is critical in bulk/
@@ -711,8 +708,8 @@ class OfferService:
 
     
     @staticmethod
-    def _calculate_and_freeze_fees(fee_structure_name):
-        return FeeService._calculate_and_freeze_fees(fee_structure_name)
+    def _calculate_and_freeze_fees(fee_structure_name, is_foreign=False):
+        return FeeService._calculate_and_freeze_fees(fee_structure_name, is_foreign=is_foreign)
 
     @staticmethod
     def _send_offer_letter_email(offer, email_template):
@@ -731,7 +728,7 @@ class OfferService:
         context = OfferService._get_template_context(offer)
         
         subject = frappe.render_template(tpl.subject, context)
-        message = OfferService._render_snapshot(offer, email_template)
+        message = frappe.render_template(tpl.response, context)
 
         attachments = []
         if offer.offer_letter_pdf:
@@ -773,22 +770,7 @@ class OfferService:
             reference_name=offer.name
         )
 
-    @staticmethod
-    def _create_snapshot_record(offer_name, fee_data):
-        """Creates the Offer Fee Snapshot record with full component breakdown."""
-        snapshot = frappe.new_doc("Offer Fee Snapshot")
-        snapshot.offer_id = offer_name
-        snapshot.scholarship_amount = fee_data.get("scholarship_amount")
-        snapshot.total_payable = fee_data.get("total_payable")
-        snapshot.frozen_on = now_datetime()
-        snapshot.frozen_by = frappe.session.user
-        
-        # Populate components child table
-        if fee_data.get("components"):
-            for comp in fee_data.get("components"):
-                snapshot.append("fee_component", comp)
-                
-        snapshot.insert(ignore_permissions=True)
+
 
     @staticmethod
     def _get_template_context(offer):
@@ -839,27 +821,18 @@ class OfferService:
             
         return context
 
-    @staticmethod
-    def _render_snapshot(offer_doc, template_name):
-        """Renders the HTML content snapshot of the offer."""
-        if not template_name:
-            return ""
-            
-        tpl_doc = frappe.get_doc("Email Template", template_name)
-        html = tpl_doc.response_html if tpl_doc.use_html else tpl_doc.response
-        
-        if not html:
-            return ""
 
-        # Context for rendering
-        context = OfferService._get_template_context(offer_doc)
-        
-        return frappe.render_template(html, context)
 
     @staticmethod
     def _generate_offer_pdf(offer_doc, print_format):
-        """Generates PDF and attaches it to the Offer Letter record."""
+        """Generates PDF and HTML preview, attaching them to the Offer Letter record."""
         try:
+            # Generate HTML for preview
+            html_content = frappe.get_print("Offer Letter", offer_doc.name, print_format, as_pdf=False)
+            offer_doc.db_set("rendered_content", html_content)
+            offer_doc.rendered_content = html_content
+
+            # Generate PDF
             pdf_content = frappe.get_print("Offer Letter", offer_doc.name, print_format, as_pdf=True)
             
             if not pdf_content:
@@ -875,7 +848,7 @@ class OfferService:
                 "attached_to_name": offer_doc.name,
                 "attached_to_field": "offer_letter_pdf",
                 "content": pdf_content,
-                "is_private": 0
+                "is_private": 1
             })
             _file.insert(ignore_permissions=True)
             
@@ -919,17 +892,7 @@ class OfferService:
         except Exception as e:
             frappe.log_error(f"Static PDF Attachment Failed for {offer_doc.name}: {str(e)}")
 
-    @staticmethod
-    def log_action(offer_name, action, notes=None, reason=None):
-        """Utility to log every transition in the lifecycle."""
-        log = frappe.new_doc("Offer Action Log")
-        log.offer_letter = offer_name
-        log.action = action
-        log.performed_by = frappe.session.user  
-        log.timestamp = now_datetime()
-        log.notes = notes
-        log.reason = reason
-        log.insert(ignore_permissions=True)
+
 
     @staticmethod
     def sync_seat_allocation_status(offer, status):

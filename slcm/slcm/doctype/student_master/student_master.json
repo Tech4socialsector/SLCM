@@ -26,6 +26,7 @@
   "department",
   "programme",
   "academic_year",
+  "programme_of_study",
   "term_name",
   "current_term",
   "current_cgpa",
@@ -1379,6 +1380,12 @@
   {
    "fieldname": "column_break_jbgv",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "programme_of_study",
+   "fieldtype": "Link",
+   "label": "Programme Of Study",
+   "options": "Program"
   }
  ],
  "links": [],

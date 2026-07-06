@@ -234,7 +234,8 @@ class Applicant(Document):
         from slcm.api.service.application_fee_service import _get_applicant_category
 
         category = _get_applicant_category(self.name)
-        fee_amount = get_application_fee_for_category(self.program, self.admission_cycle, category)
+        is_foreign = self.nationality != "Indian" if self.nationality else False
+        fee_amount = get_application_fee_for_category(self.program, self.admission_cycle, category, is_foreign=is_foreign)
 
         if flt(fee_amount, 2) <= 0:
             # No fee or zero fee: allow submit without payment; set status to Paid so UI/reports treat as complete
@@ -369,6 +370,8 @@ class Applicant(Document):
                     frappe.log_error(title="handle_file_name error", message=frappe.get_traceback())
 
     def on_update(self):
+        if not self.user_id:
+            frappe.db.set_value(self.doctype, self.name, "user_id", self.email, update_modified=False)
         self.sync_user_profile()
         old_status = self.flags.get("old_status")
         just_submitted = (

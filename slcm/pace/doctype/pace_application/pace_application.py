@@ -26,7 +26,7 @@ class PACEApplication(Document):
         self.validate_programme_change()
         self.validate_geography_hierarchy()
 
-
+ 
     def validate_geography_hierarchy(self):
         def _validate_hierarchy(country, state, district):
             if state and state != "Others" and country:
@@ -355,6 +355,9 @@ class PACEApplication(Document):
         # pace_application_form.js) so handle_file_name() is no longer called here.
         # This eliminates the deferred after_commit rename that caused orphaned files.
 
+        if not self.user_id:
+            self.user_id = self.email_address or None
+
     
     def handle_file_name(self):
         doc_before = self.get_doc_before_save()
@@ -464,7 +467,6 @@ class PACEApplication(Document):
         self.handle_programme_change()
         self.sync_user_profile()
         self.sync_documents_to_verification()
-
 
         # Generate the application PDF when the status is "Draft", "Submitted", or "Completed"
         if self.status in ["Draft", "Submitted", "Completed"] and not self.flags.get("in_pdf_generation"):

@@ -51,19 +51,12 @@ def get_applicant_refund_policies(applicant):
 		if fee_structure:
 			break
 	
-	# Priority 2: Direct lookup by Program + Cycle/Year (Fallback)
+	# Priority 2: Direct lookup by Program + Academic Year (Fallback)
 	if not fee_structure:
-		# Try by Cycle first
 		fee_structure = frappe.db.get_value("Fee Structure", 
-			{"admission_cycle": cycle, "program": program, "status": "Active", "is_refund_available": 1}, 
+			{"academic_year": year, "program": program, "status": "Active", "is_refund_available": 1}, 
 			"name"
 		)
-		if not fee_structure:
-			# Try by Academic Year
-			fee_structure = frappe.db.get_value("Fee Structure", 
-				{"academic_year": year, "program": program, "status": "Active", "is_refund_available": 1}, 
-				"name"
-			)
 			
 	# Priority 3: Broadest Fallback - Any Active FS for this Program with refunds enabled
 	if not fee_structure:

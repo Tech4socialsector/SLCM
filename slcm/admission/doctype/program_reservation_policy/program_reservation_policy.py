@@ -174,6 +174,7 @@ class ProgramReservationPolicy(Document):
         """
         Returns the application_fee for a given category code or name.
         Falls back to first row (General) if no match.
+        Note: Defaults to Indian fee as nationality context is not passed.
         """
         rows = self.categories or []
         if not rows:
@@ -183,7 +184,7 @@ class ProgramReservationPolicy(Document):
             for row in rows:
                 if row.category == category or row.category_name == category:
                     return (
-                        row.application_fee or 0,
+                        row.application_fee_for_indian or 0,
                         f"{row.category_name or 'Application'} Fee",
                         row.category or row.category_name
                     )
@@ -191,7 +192,7 @@ class ProgramReservationPolicy(Document):
         # Fallback: first row
         first = rows[0]
         return (
-            first.application_fee or 0,
+            first.application_fee_for_indian or 0,
             f"{first.category_name or 'Application'} Fee",
             first.category or first.category_name
         )
