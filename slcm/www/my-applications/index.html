@@ -3037,7 +3037,7 @@ or _app.current_stage)) or _status %}
                   <span class="material-symbols-outlined" style="font-size:16px;">cancel_presentation</span>
                   Withdrawal: {{ _cstat }}
                 </div>
-              {% elif payment_details %}
+                {% elif show_withdraw_button %}
               <button onclick="show_cancellation_dialog('{{ offer_name }}', '{{ _appid }}', '{{ selected_app.campus }}', '{{ selected_app.program }}', '{{ payment_receipt or (payment_details.name if payment_details else "") }}')" 
                 class="btn-withdraw-application" title="Withdraw your application and request refund"
                 style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:6px 12px; border-radius:6px; font-weight:600; display:flex; align-items:center; gap:6px; font-size:13px;">
@@ -4294,7 +4294,7 @@ LIST / DASHBOARD VIEW
             </div>
           </div>
           <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
-            {% if app.payment_details %}
+            {% if app.show_withdraw_button %}
             <button onclick="show_cancellation_dialog('{{ app.offer_name }}', '{{ app.name }}', '{{ app.campus }}', '{{ app.program }}')" 
               class="btn-withdraw-application" title="Withdraw your application and request refund"
               style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:8px 14px; border-radius:9px; font-weight:600; display:flex; align-items:center; gap:6px; font-size:12px; height:38px;">

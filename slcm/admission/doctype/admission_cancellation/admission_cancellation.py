@@ -66,7 +66,7 @@ class AdmissionCancellation(Document):
 
 					# Always search for Applicant Payment Receipt for visibility/Audit Trail
 					receipt = frappe.get_all("Applicant Payment Receipt",
-						filters={"offer_letter": offer_name, "docstatus": 1},
+						filters={"offer_letter": offer_name, "docstatus": ["<", 2]},
 						fields=["name", "total_amount", "transaction_id"],
 						limit=1
 					)

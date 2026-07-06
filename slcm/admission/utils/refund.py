@@ -136,7 +136,7 @@ def get_last_payment_date(applicant):
 
 	last_receipt = frappe.db.get_value(
 		"Applicant Payment Receipt",
-		{"applicant": applicant, "docstatus": 1},
+		{"applicant": applicant, "docstatus": ["<", 2]},
 		"payment_date",
 		order_by="payment_date desc"
 	)
