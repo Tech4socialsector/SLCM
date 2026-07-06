@@ -263,7 +263,7 @@
    "fieldname": "admission_type",
    "fieldtype": "Select",
    "label": "Admission Type",
-   "options": "Regular\nPACE\nOther"
+   "options": "\nRegular\nPACE\nOther"
   },
   {
    "fieldname": "quota",
@@ -954,7 +954,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Student Status",
-   "options": "Active\nInactive\nGraduated\nDropped\nAlumni\nDormant\nWithdrawn"
+   "options": "Active\nInactive\nGraduated\nDropped\nAlumni\nDormant\nWithdrawn\nDeferral"
   },
   {
    "fieldname": "account_status",
@@ -1382,7 +1382,7 @@
   }
  ],
  "links": [],
- "modified": "2026-05-20 14:51:48.461543",
+ "modified": "2026-07-03 13:35:55.630943",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",
@@ -1428,12 +1428,12 @@
   },
   {
    "email": 1,
+   "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "slcm_Faculty",
-   "share": 1,
-   "export": 1
+   "share": 1
   },
   {
    "read": 1,

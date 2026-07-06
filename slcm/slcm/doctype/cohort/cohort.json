@@ -7,12 +7,12 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "cohort_code",
-  "cohort_name",
+  "academic_year",
   "program",
   "program_shortcode",
   "current_year",
-  "academic_year",
+  "cohort_name",
+  "cohort_code",
   "term_name",
   "term_year",
   "batch",
@@ -151,24 +151,22 @@
    "fetch_from": "program.current_year",
    "fieldname": "current_year",
    "fieldtype": "Data",
-   "label": "Current Year"
+   "label": "Current Year of the Programme"
   }
  ],
  "links": [
   {
    "group": "Students",
    "link_doctype": "Student Enrollment",
-   "link_fieldname": "cohort",
-   "type": "Has Many"
+   "link_fieldname": "cohort"
   },
   {
    "group": "Academics",
    "link_doctype": "Course Offering",
-   "link_fieldname": "cohort",
-   "type": "Has Many"
+   "link_fieldname": "cohort"
   }
  ],
- "modified": "2026-01-06 18:17:41.308176",
+ "modified": "2026-07-03 13:01:59.089889",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Cohort",
@@ -208,6 +206,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "title_field": "cohort_name",
- "custom": 0
+ "title_field": "cohort_name"
 }
