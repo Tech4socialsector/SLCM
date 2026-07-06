@@ -531,13 +531,25 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 		try:
 			from frappe.utils.file_manager import save_file
 			import base64
+			import os
 			
+			# Validate extension
+			allowed_extensions = ['.pdf', '.jpg', '.jpeg', '.png']
+			ext = os.path.splitext(income_certificate_name.lower())[1]
+			if ext not in allowed_extensions:
+				frappe.throw(frappe._("Income Certificate must be a PDF, JPG, or PNG file."))
+				
 			if "," in income_certificate_data:
 				income_certificate_data = income_certificate_data.split(",")[1]
 				
 			file_content = base64.b64decode(income_certificate_data)
+			
+			# Validate size (Max 5MB)
+			if len(file_content) > 5 * 1024 * 1024:
+				frappe.throw(frappe._("Income Certificate file size must not exceed 5MB."))
+				
 			# Save file without attachment initially to avoid name mandatory error
-			saved_file = save_file(income_certificate_name, file_content, None, None, is_private=0)
+			saved_file = save_file(income_certificate_name, file_content, None, None, is_private=1)
 			income_cert_url = saved_file.file_url
 		except Exception as e:
 			frappe.log_error(f"File upload error (Income): {e}", "Scholarship Application Debug")
@@ -548,16 +560,29 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 		try:
 			from frappe.utils.file_manager import save_file
 			import base64
+			import os
 			
+			# Validate extension
+			allowed_extensions = ['.pdf', '.jpg', '.jpeg', '.png']
+			ext = os.path.splitext(supporting_documents_name.lower())[1]
+			if ext not in allowed_extensions:
+				frappe.throw(frappe._("Supporting Documents must be a PDF, JPG, or PNG file."))
+				
 			if "," in supporting_documents_data:
 				supporting_documents_data = supporting_documents_data.split(",")[1]
 				
 			file_content = base64.b64decode(supporting_documents_data)
+			
+			# Validate size (Max 5MB)
+			if len(file_content) > 5 * 1024 * 1024:
+				frappe.throw(frappe._("Supporting Documents file size must not exceed 5MB."))
+				
 			# Save file without attachment initially to avoid name mandatory error
-			saved_file = save_file(supporting_documents_name, file_content, None, None, is_private=0)
+			saved_file = save_file(supporting_documents_name, file_content, None, None, is_private=1)
 			supporting_docs_url = saved_file.file_url
 		except Exception as e:
 			frappe.log_error(f"File upload error (Supporting): {e}", "Scholarship Application Debug")
+			frappe.throw(frappe._("Failed to upload Supporting Documents: {0}").format(str(e)))
 
 	# Create the application
 	try:
