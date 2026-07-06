@@ -169,7 +169,10 @@ fixtures = [
                 "Admission Offer Letter",
                 "Pace Application Completed but Payment Pending",
                 "PACE Verifier Action Confirmation",
-                "Parent RFID Absence Alert"
+                "Parent RFID Absence Alert",
+                "HD Ticket SLA Escalation - New Agent",
+                "HD Ticket SLA Escalation - Previous Agent",
+                "HD Ticket SLA Escalation - Max Hops Reached"
             ]]
         ]
     },
@@ -451,6 +454,9 @@ scheduler_events = {
 		"*/10 * * * *": [
 			"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist"
 		],
+        "*/5 * * * *": [
+            "slcm.api.helpdesk_escalation.run_sla_escalation"
+        ],
         "*/15 * * * *": [
             "slcm.admission.utils.scheduler.auto_manage_announcements",
             "slcm.api.service.fee_service.reconcile_pending_payments"
