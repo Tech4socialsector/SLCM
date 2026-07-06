@@ -40,19 +40,7 @@
   "tab_rfid",
   "rfid_general_note",
   "enable_rfid",
-  "rfid_swipe_mode",
-  "tab_rfid_sql",
-  "rfid_sql_note",
-  "mssql_server",
-  "mssql_port",
-  "mssql_database",
-  "mssql_username",
-  "mssql_password",
-  "mssql_view",
-  "mssql_swipe_cutoff_date",
-  "column_break_mssql",
-  "mssql_last_processed_id",
-  "rfid_poller_note"
+  "rfid_swipe_mode"
  ],
  "fields": [
   {
@@ -121,7 +109,7 @@
    "fieldname": "course_hours_note",
    "fieldtype": "HTML",
    "label": "Course Hours Note",
-   "options": "<div style=\"background:#e8e9f0; border-left:4px solid #2b2e4a; border-radius:6px; padding:12px 16px; font-size:.84rem; line-height:1.7; color:#333; margin-bottom:4px\">\n  <strong style=\"color:#2b2e4a\">Course Hours Configuration</strong><br>\n  Define the total contact hours for core and elective courses per trimester. These values are used to calculate each student's attendance percentage. Office hours are optional \u2014 enable the toggle below to include them in the calculation.\n</div>"
+   "options": "<div style=\"background:#e8e9f0; border-left:4px solid #2b2e4a; border-radius:6px; padding:12px 16px; font-size:.84rem; line-height:1.7; color:#333; margin-bottom:4px\">\n  <strong style=\"color:#2b2e4a\">Course Hours Configuration</strong><br>\n  Define the total contact hours for core and elective courses per trimester. These values are used to calculate each student's attendance percentage. Office hours are optional — enable the toggle below to include them in the calculation.\n</div>"
   },
   {
    "default": "60",
@@ -297,7 +285,7 @@
    "fieldname": "rfid_general_note",
    "fieldtype": "HTML",
    "label": "RFID General Note",
-   "options": "<div style=\"background:#e8e9f0; border-left:4px solid #2b2e4a; border-radius:6px; padding:14px 16px; font-size:.84rem; line-height:1.8; color:#333; margin-bottom:8px\">\n  <strong style=\"color:#2b2e4a; font-size:.9rem\">RFID Attendance \u2014 Overview</strong><br><br>\n  Enable RFID to allow student swipe data from physical card readers (installed at classroom gates and terminals) to flow automatically into SLCM.<br><br>\n  <b>Swipe Mode:</b><br>\n  &nbsp;&nbsp;<b>In Only</b> \u2014 records the first swipe of the day as entry. Suitable for classrooms where exit is not tracked.<br>\n  &nbsp;&nbsp;<b>In and Out</b> \u2014 records both entry and exit swipes. Used when gates track both directions.<br><br>\n  Once enabled, go to <a href=\"/rfid-mapping\" style=\"color:#8b1a1a; font-weight:600\">RFID Card Management</a> to assign cards to students, view unassigned swipes, and perform bulk imports.\n</div>"
+   "options": "<div style=\"background:#e8e9f0; border-left:4px solid #2b2e4a; border-radius:6px; padding:14px 16px; font-size:.84rem; line-height:1.8; color:#333; margin-bottom:8px\">\n  <strong style=\"color:#2b2e4a; font-size:.9rem\">RFID Attendance — Overview</strong><br><br>\n  Enable RFID to allow student swipe data from physical card readers (installed at classroom gates and terminals) to flow automatically into SLCM.<br><br>\n  <b>Swipe Mode:</b><br>\n  &nbsp;&nbsp;<b>In Only</b> — records the first swipe of the day as entry. Suitable for classrooms where exit is not tracked.<br>\n  &nbsp;&nbsp;<b>In and Out</b> — records both entry and exit swipes. Used when gates track both directions.<br><br>\n  Once enabled, go to <a href=\"/rfid-mapping\" style=\"color:#8b1a1a; font-weight:600\">RFID Card Management</a> to assign cards to students, view unassigned swipes, and perform bulk imports.\n</div>"
   },
   {
    "default": "0",
@@ -314,75 +302,6 @@
    "fieldtype": "Select",
    "label": "RFID Swipe Mode",
    "options": "In Only\nIn and Out"
-  },
-  {
-   "fieldname": "tab_rfid_sql",
-   "fieldtype": "Tab Break",
-   "label": "SQL Server (RFID Source)"
-  },
-  {
-   "fieldname": "rfid_sql_note",
-   "fieldtype": "HTML",
-   "label": "RFID SQL Server Note",
-   "options": "<div style=\"background:#e8e9f0; border-left:4px solid #2b2e4a; border-radius:6px; padding:14px 16px; font-size:.84rem; line-height:1.8; color:#333; margin-bottom:8px\">\n  <strong style=\"color:#2b2e4a; font-size:.9rem\">SQL Server Connection \u2014 RFID Swipe Source</strong><br><br>\n  SLCM connects to a Microsoft SQL Server database where the RFID terminals log every student swipe. Fill in the connection details below. All credentials are stored securely.\n  <br><br>\n  <b>Database:</b> <code style=\"background:#d0d3e8; padding:1px 6px; border-radius:3px\">etpdb</code> &nbsp;\n  <b>View:</b> <code style=\"background:#d0d3e8; padding:1px 6px; border-radius:3px\">dbo.iclock_trans_ajim</code> &nbsp;\n  <b>Columns pulled:</b> <code style=\"background:#d0d3e8; padding:1px 6px; border-radius:3px\">Id, emp_code, punch_time, terminal_id, terminal_alias, area_alias</code>\n</div>"
-  },
-  {
-   "description": "IP address or hostname of the MSSQL server (e.g. 192.168.10.10)",
-   "fieldname": "mssql_server",
-   "fieldtype": "Data",
-   "label": "MSSQL Server Host"
-  },
-  {
-   "default": "1433",
-   "fieldname": "mssql_port",
-   "fieldtype": "Int",
-   "label": "MSSQL Port"
-  },
-  {
-   "description": "Database name on the MSSQL server (e.g. etpdb)",
-   "fieldname": "mssql_database",
-   "fieldtype": "Data",
-   "label": "MSSQL Database"
-  },
-  {
-   "fieldname": "mssql_username",
-   "fieldtype": "Data",
-   "label": "MSSQL Username"
-  },
-  {
-   "fieldname": "mssql_password",
-   "fieldtype": "Password",
-   "label": "MSSQL Password"
-  },
-  {
-   "default": "dbo.iclock_trans_ajim",
-   "description": "View or table to pull RFID swipes from",
-   "fieldname": "mssql_view",
-   "fieldtype": "Data",
-   "label": "MSSQL View / Table"
-  },
-  {
-   "description": "Swipes with a punch time before this date are never imported, regardless of the SQL ID watermark. Leave blank to import all history.",
-   "fieldname": "mssql_swipe_cutoff_date",
-   "fieldtype": "Date",
-   "label": "Only Import Swipes From"
-  },
-  {
-   "fieldname": "column_break_mssql",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "description": "Last iclock_trans_ajim.Id successfully imported. Updated automatically by the poller \u2014 do not edit manually.",
-   "fieldname": "mssql_last_processed_id",
-   "fieldtype": "Int",
-   "label": "Last Processed SQL ID"
-  },
-  {
-   "fieldname": "rfid_poller_note",
-   "fieldtype": "HTML",
-   "label": "RFID Poller Note",
-   "options": "<div style=\"background:#f9f0f0; border-left:4px solid #8b1a1a; border-radius:6px; padding:14px 16px; font-size:.84rem; line-height:1.9; color:#333; margin-top:12px\">\n  <strong style=\"color:#8b1a1a; font-size:.9rem\">How the Automatic Poller Works</strong><br><br>\n  <b style=\"color:#2b2e4a\">&#9654; Automatic sync:</b> SLCM pulls new swipes from the SQL Server every <b>minute</b> via a background scheduler (the shortest interval Frappe's scheduler supports). You can also force an immediate pull any time with the <b>Refresh Now</b> button on the RFID Card Management page. No manual action is needed for normal operation.<br>\n  <b style=\"color:#2b2e4a\">&#9654; Watermark:</b> The <em>Last Processed SQL ID</em> above tracks the last imported row. The poller only fetches rows with <code style=\"background:#e8dada; padding:1px 5px; border-radius:3px\">Id &gt; last_processed_id</code> \u2014 old data is never re-imported.<br>\n  <b style=\"color:#2b2e4a\">&#9654; Start date filter:</b> Set <em>Only Import Swipes From</em> to a date to permanently ignore any swipe with an older punch time, even if its SQL ID is above the watermark. Leave it blank to import full history.<br>\n  <b style=\"color:#2b2e4a\">&#9654; Deduplication:</b> Each SQL Server row has a unique <code style=\"background:#e8dada; padding:1px 5px; border-radius:3px\">Id</code>. Even if a row is encountered twice, the poller skips it \u2014 no duplicate Attendance Logs are ever created.<br>\n  <b style=\"color:#2b2e4a\">&#9654; Batch size:</b> Up to 500 rows are imported per run. If there is a large backlog, multiple runs will process it in sequence.<br>\n  <b style=\"color:#2b2e4a\">&#9654; Card assignment:</b> Go to <a href=\"/rfid-mapping\" style=\"color:#8b1a1a; font-weight:700\">Attendance &rarr; RFID Card Management</a> to link cards to students, view unassigned swipes, and run bulk imports.<br><br>\n  <div style=\"background:#f0d8d8; border-radius:4px; padding:8px 12px; color:#8b1a1a; font-weight:600; font-size:.82rem\">\n    &#9888; To re-import all records from scratch: set <em>Last Processed SQL ID</em> to <code>0</code> and save. The next poll will reimport everything from the beginning. Use with caution on a live system.\n  </div>\n</div>"
   }
  ],
  "issingle": 1,
