@@ -25,6 +25,28 @@ frappe.ui.form.on("Offer Letter", {
                 });
             });
         }
+
+        if (["Draft", "Issued"].includes(frm.doc.status) && frm.doc.fee_structure) {
+            frm.add_custom_button(__('Sync Fee Amount'), function () {
+                frappe.call({
+                    method: "sync_fee_amount",
+                    doc: frm.doc,
+                    freeze: true,
+                    freeze_message: __("Syncing Fee Amount..."),
+                    callback: function(r) {
+                        if (!r.exc) {
+                            if (r.message) {
+                                frappe.msgprint(__('Fee Amount Synced Successfully'));
+                                frm.reload_doc();
+                            } else {
+                                frappe.msgprint(__('Fee Amount is already up to date.'));
+                            }
+                        }
+                    }
+                });
+            },);
+        }
+
         frm.fields_dict.accepted_on.datepicker.update({
             minDate: new Date(frappe.datetime.get_today()),
         });

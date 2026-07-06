@@ -674,17 +674,17 @@ class FeeService:
             total_from_components = 0
             for comp in components:
                 # Use total_amount if available, fallback to amount
-                comp_total = _flt(getattr(comp, "total_amount", 0)) or _flt(getattr(comp, "amount", 0))
+                comp_total = _flt(comp.get("total_amount", 0)) or _flt(comp.get("amount", 0))
                 total_from_components += comp_total
 
                 receipt.append("fee_components", {
-                    "fee_component": comp.fee_component,
-                    "component_name": comp.component_name,
-                    "amount": comp.amount,
-                    "is_taxable": comp.is_taxable,
-                    "tax_rate": comp.tax_rate,
-                    "tax_amount": comp.tax_amount,
-                    "total_amount": comp.total_amount
+                    "fee_component": comp.get("fee_component"),
+                    "component_name": comp.get("component_name"),
+                    "amount": comp.get("amount"),
+                    "is_taxable": comp.get("is_taxable"),
+                    "tax_rate": comp.get("tax_rate"),
+                    "tax_amount": comp.get("tax_amount"),
+                    "total_amount": comp.get("total_amount")
                 })
 
             # Store scholarship in dedicated header fields (no Fee Component record needed)
