@@ -28,7 +28,7 @@ frappe.ui.form.on('Applicant Fee Assignment', {
 
         if (frm.doc.docstatus === 1 && ["Partially Paid", "Paid"].includes(frm.doc.status) && frm.doc.fee_type === "Admission Fee") {
             frm.add_custom_button(__('Convert to Student'), function () {
-                frappe.confirm(__('This action will create a Student Master, Enrollment, and Fee Invoice. Continue?'),
+                frappe.confirm(__('This action will create a Student Master. Continue?'),
                     function () {
                         frappe.call({
                             // create_invoice orchestrates: Student Master (via slcm.api.service.applicant_to_student),
@@ -41,7 +41,7 @@ frappe.ui.form.on('Applicant Fee Assignment', {
                             freeze_message: __('Converting applicant to student...'),
                             callback: function (r) {
                                 if (r.message) {
-                                    frappe.msgprint(__('Fee Invoice {0} created and Student converted successfully.', [r.message]));
+                                    frappe.msgprint(__('Student Master {0} created and converted successfully.', [r.message]));
                                     frm.reload_doc();
                                 }
                             }
@@ -50,17 +50,7 @@ frappe.ui.form.on('Applicant Fee Assignment', {
             }).addClass('btn-primary');
         }
 
-        if (frm.doc.fee_invoice) {
-            frm.add_custom_button(__('View Fee Invoice'), function () {
-                frappe.set_route('Form', 'Fee Invoice', frm.doc.fee_invoice);
-            }, __('View'));
 
-            frm.add_custom_button(__('View Payment History'), function () {
-                frappe.set_route('List', 'Fee Payment', {
-                    fee_invoice: frm.doc.fee_invoice
-                });
-            }, __('View'));
-        }
 
         if (frm.doc.docstatus === 1 && ["Assigned", "Partially Paid"].includes(frm.doc.status) && frm.doc.fee_type === "Admission Fee" && frm.doc.offer_letter) {
             frm.add_custom_button(__('Record Manual Payment'), function () {

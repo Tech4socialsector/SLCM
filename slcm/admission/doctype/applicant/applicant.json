@@ -85,21 +85,21 @@
   "if_cgpa_maximum_cgpa_class_xii",
   "section_break_cmag",
   "ug_degree_completion",
+  "ug_degree_details",
+  "section_break_cris",
+  "ug_degree_details_column",
+  "pg_degree_details",
   "section_break_vokh",
   "national_test_name",
   "national_test_certificate",
   "column_break_qiha",
   "percentage",
-  "section_break_cris",
-  "ug_degree_details_column",
-  "ug_degree_details",
   "section_break_vmys",
   "phd_proposal",
   "column_break_nkbo",
   "phd_program_type",
   "section_break_cmjy",
   "proposed_phd_topic",
-  "pg_degree_details",
   "others_section",
   "other_degree",
   "column_break_hwbd",
@@ -1229,7 +1229,6 @@
   {
    "link_doctype": "Offer Letter",
    "link_fieldname": "applicant"
-
   },
   {
    "link_doctype": "Applicant Payment Receipt",
@@ -1253,7 +1252,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-03 15:17:10.900941",
+ "modified": "2026-07-06 15:32:04.236914",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

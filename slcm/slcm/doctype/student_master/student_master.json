@@ -27,11 +27,13 @@
   "programme",
   "academic_year",
   "programme_of_study",
+  "pace_programme",
+  "level_of_study",
   "term_name",
   "current_term",
-  "current_cgpa",
   "attendance_status",
   "column_break_bgkj",
+  "current_cgpa",
   "program_shortcode",
   "specialisation",
   "current_year",
@@ -1382,14 +1384,28 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:doc.admission_type != 'PACE'",
    "fieldname": "programme_of_study",
    "fieldtype": "Link",
    "label": "Programme Of Study",
    "options": "Program"
+  },
+  {
+   "depends_on": "eval:doc.admission_type == 'PACE'",
+   "fieldname": "pace_programme",
+   "fieldtype": "Link",
+   "label": "PACE Programme",
+   "options": "PACE Programme"
+  },
+  {
+   "fieldname": "level_of_study",
+   "fieldtype": "Select",
+   "label": "Level Of Study",
+   "options": "\nUndergraduate\nPostgraduate\nResearch Course\nDiploma"
   }
  ],
  "links": [],
- "modified": "2026-07-02 18:23:06.550341",
+ "modified": "2026-07-06 16:56:43.319807",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",

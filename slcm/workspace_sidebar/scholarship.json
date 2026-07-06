@@ -15,20 +15,6 @@
    "label": "Scholarship Scheme",
    "link_to": "Scholarship Scheme",
    "link_type": "DocType",
-   "open_in_new_tab": 0,
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
-   "icon": "combine",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Scholarship Scheme Mapping",
-   "link_to": "Scholarship Scheme Mapping",
-   "link_type": "DocType",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -41,7 +27,6 @@
    "label": "Scholarship Application",
    "link_to": "Scholarship Application",
    "link_type": "DocType",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -54,7 +39,6 @@
    "label": "Applicant Fee Assignment",
    "link_to": "Applicant Fee Assignment",
    "link_type": "DocType",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -67,7 +51,6 @@
    "label": "Scholarship Utilization Report",
    "link_to": "Scholarship Utilization Report",
    "link_type": "Report",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -80,12 +63,11 @@
    "label": "Scholarship Audit Log",
    "link_to": "Scholarship Audit Log",
    "link_type": "DocType",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   }
  ],
- "modified": "2026-06-19 11:59:55.339528",
+ "modified": "2026-07-06 16:39:13.403166",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Scholarship",

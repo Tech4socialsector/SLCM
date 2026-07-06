@@ -765,7 +765,8 @@ _pc.mission_text) or '' %}
 
 
 	    function get_status_icon(status) {
-	        switch(status.toLowerCase()) {
+	        const s = (status || 'Issued').toLowerCase();
+	        switch(s) {
 	            case 'draft': return '<span class="material-symbols-outlined" style="font-size: 18px;">edit_document</span>';
 	            case 'issued': return '<span class="material-symbols-outlined" style="font-size: 18px;">mark_email_unread</span>';
 	            case 'accepted': return '<span class="material-symbols-outlined" style="font-size: 18px;">thumb_up</span>';
@@ -779,6 +780,9 @@ _pc.mission_text) or '' %}
 
 	    function render_offer_detail(data) {
 	        const { offer, applicant, fee_breakdown, rendered_content, currency, is_fee_paid, online_payment_enabled } = data;
+	        if (offer) {
+	            offer.status = offer.status || 'Issued';
+	        }
 	        const wrapper = $('#offer-detail-wrapper');
 	        const status_class = offer.status.toLowerCase().replace(/ /g, '-');
 	        const display_status = offer.status.charAt(0).toUpperCase() + offer.status.slice(1).toLowerCase();

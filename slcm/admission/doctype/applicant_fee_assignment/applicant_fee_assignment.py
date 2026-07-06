@@ -99,9 +99,9 @@ class ApplicantFeeAssignment(Document):
 		self.final_payable_amount = max(0, base_total - flt(self.scholarship_amount))
 
 	def validate_status_change(self):
-		if self.status == "Converted" and not self.fee_invoice:
+		if self.status == "Converted":
 			if not frappe.flags.in_test and not frappe.flags.in_import:
-				frappe.throw(frappe._("Status cannot be set to 'Converted' manually. Please use the 'Create Invoice' action."))
+				frappe.throw(frappe._("Status cannot be set to 'Converted' manually. Please use the 'Convert to Student' action."))
 
 	def before_submit(self):
 		if not self.fee_components:
@@ -124,11 +124,6 @@ class ApplicantFeeAssignment(Document):
 		self.status = "Assigned"
 
 	def on_cancel(self):
-		if self.fee_invoice:
-			invoice = frappe.get_doc("Fee Invoice", self.fee_invoice)
-			if flt(invoice.paid_amount) > 0:
-				frappe.throw(frappe._("Cannot cancel Fee Assignment as payments have already been received for the linked Invoice {0}.").format(self.fee_invoice))
-
 		self.status = "Cancelled"
 
 
@@ -191,117 +186,31 @@ def create_invoice(docname):
 			f"for Applicant: {applicant.name} | AFA: {docname}"
 		)
 
-	# ── 2. Student Enrollment (optional on Fee Invoice; cohort drives Program / Academic Year) ──
-	enrollment_name = None
-	existing_enr = frappe.get_all(
-		"Student Enrollment",
-		filters={
-			"student": student_name,
-			"program": doc.program,
-			"academic_year": doc.academic_year,
-		},
-		pluck="name",
-		limit=1,
-	)
-	if existing_enr:
-		enrollment_name = existing_enr[0]
+	# ── 2. Sync Finance tab of Student Master (Scholarship Details + Fee Details) ──
+	# Fetching additional details from the linked Scholarship Application if present.
+	
+	scholarship_type = None
+	scholarship_percentage = 0
+	scholarship_approval_date = None
+	
+	if doc.get("scholarship_application"):
+		sa_data = frappe.db.get_value("Scholarship Application", doc.scholarship_application, 
+			["scholarship_scheme", "approval_date"], as_dict=True)
+		if sa_data:
+			scholarship_approval_date = sa_data.approval_date
+			if sa_data.scholarship_scheme:
+				scheme_data = frappe.db.get_value("Scholarship Scheme", sa_data.scholarship_scheme, 
+					["scheme_type", "coverage_type", "coverage_value"], as_dict=True)
+				if scheme_data:
+					scholarship_type = scheme_data.scheme_type
+					if scheme_data.coverage_type == "Percentage":
+						scholarship_percentage = scheme_data.coverage_value
 
-	cohort = None
-	if doc.program and doc.academic_year:
-		cohort = frappe.db.get_value(
-			"Cohort",
-			{"program": doc.program, "academic_year": doc.academic_year},
-			"name",
-		)
+	offer_fee_structure = None
+	if doc.get("offer_letter"):
+		offer_fee_structure = frappe.db.get_value("Offer Letter", doc.offer_letter, "fee_structure")
 
-	if not enrollment_name and cohort:
-		try:
-			enrollment = frappe.new_doc("Student Enrollment")
-			enrollment.student = student_name
-			enrollment.cohort = cohort
-			enrollment.enrollment_date = nowdate()
-			enrollment.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
-			enrollment_name = enrollment.name
-
-			frappe.logger().info(
-				f"[create_invoice] Student Enrollment created: {enrollment_name} "
-				f"| Student: {student_name} | AFA: {docname}"
-			)
-
-		except Exception as enroll_err:
-			frappe.log_error(
-				message=frappe.get_traceback(),
-				title=f"Student Enrollment Creation Failed | Student: {student_name}",
-			)
-			frappe.throw(
-				frappe._(
-					"Could not create Student Enrollment record. "
-					"Please check the Error Log for details. Error: {0}"
-				).format(str(enroll_err))
-			)
-	elif not enrollment_name:
-		frappe.throw(
-			frappe._(
-				"Cannot convert to student: no Cohort exists for Program '{0}' and Academic Year '{1}'. "
-				"Create a Cohort for this program and year before converting (Student Enrollment is required)."
-			).format(doc.program or "—", doc.academic_year or "—")
-		)
-
-	# ── 3. Create Fee Invoice ─────────────────────────────────────────────────
 	try:
-		invoice = frappe.new_doc("Fee Invoice")
-		invoice.student = student_name
-		invoice.enrollment = enrollment_name
-		invoice.program                = doc.program
-		invoice.academic_year          = doc.academic_year
-		invoice.invoice_date           = nowdate()
-		invoice.due_date               = add_days(nowdate(), 15)
-		invoice.applicant_fee_assignment = doc.name
-		invoice.scholarship_amount     = doc.scholarship_amount
-
-		for row in doc.fee_components:
-			invoice.append("fee_components", {
-				"fee_component":  row.fee_component,
-				"component_name": row.component_name,
-				"amount":         row.amount,
-				"is_taxable":     row.is_taxable,
-				"tax_rate":       row.tax_rate,
-				"tax_amount":     row.tax_amount,
-				"total_amount":   row.total_amount,
-			})
-
-		invoice.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
-
-		frappe.logger().info(
-			f"[create_invoice] Fee Invoice created: {invoice.name} "
-			f"| Student: {student_name} | AFA: {docname}"
-		)
-
-		# ── Sync Finance tab of Student Master (Scholarship Details + Fee Details) ──
-		# Always called after invoice creation so that the portal hero card
-		# and Finance tab show accurate fee totals, scholarship info, and status.
-		# Non-fatal — invoice was created successfully regardless.
-		#
-		# Note on fields:
-		#   Fetching additional details from the linked Scholarship Application if present.
-		
-		scholarship_type = None
-		scholarship_percentage = 0
-		scholarship_approval_date = None
-		
-		if doc.get("scholarship_application"):
-			sa_data = frappe.db.get_value("Scholarship Application", doc.scholarship_application, 
-				["scholarship_scheme", "approval_date"], as_dict=True)
-			if sa_data:
-				scholarship_approval_date = sa_data.approval_date
-				if sa_data.scholarship_scheme:
-					scheme_data = frappe.db.get_value("Scholarship Scheme", sa_data.scholarship_scheme, 
-						["scheme_type", "coverage_type", "coverage_value"], as_dict=True)
-					if scheme_data:
-						scholarship_type = scheme_data.scheme_type
-						if scheme_data.coverage_type == "Percentage":
-							scholarship_percentage = scheme_data.coverage_value
-
 		_sync_finance_to_student(
 			student_name=student_name,
 			scholarship_amount=flt(doc.scholarship_amount),
@@ -313,76 +222,18 @@ def create_invoice(docname):
 			total_amount=flt(doc.total_amount),
 			final_payable_amount=flt(doc.get("final_payable_amount") or 0),
 			fee_payment_status=doc.status,
-			fee_structure=doc.get("fee_structure") or None,
+			fee_structure=offer_fee_structure,
 		)
-
-	except Exception as invoice_err:
+	except Exception as sync_err:
 		frappe.log_error(
 			message=frappe.get_traceback(),
-			title=f"Fee Invoice Creation Failed | Student: {student_name}"
+			title=f"Student Finance Sync Failed | Student: {student_name}"
 		)
-		frappe.throw(frappe._(
-			"Could not create Fee Invoice. "
-			"Please check the Error Log for details. Error: {0}"
-		).format(str(invoice_err)))
 
-	# ── 4. Migrate Payments if already paid as Applicant (Admission Fee only) ──
-	if doc.status == "Paid" and doc.offer_letter:
-		try:
-			receipt_name = frappe.db.get_value(
-				"Applicant Payment Receipt",
-				{"offer_letter": doc.offer_letter, "docstatus": 1},
-				"name"
-			)
-
-			if receipt_name:
-				receipt = frappe.get_doc("Applicant Payment Receipt", receipt_name)
-
-				payment = frappe.new_doc("Fee Payment")
-				payment.student          = student_name
-				payment.fee_invoice      = invoice.name
-				payment.payment_date     = receipt.payment_date or nowdate()
-				payment.payment_mode     = (
-					receipt.payment_mode
-					if receipt.payment_mode in ["Cash", "Bank Transfer", "Cheque", "Online Payment"]
-					else "Other"
-				)
-				# Use net_amount (after scholarship deduction) as the actual amount paid
-				payment.amount           = flt(receipt.net_amount) if flt(receipt.get('net_amount')) > 0 else flt(receipt.total_amount)
-				payment.reference_number = receipt.transaction_id
-				payment.status           = "Submitted"
-
-				payment.insert(ignore_permissions=True)
-				payment.submit()
-
-				invoice.reload()
-				invoice.save()
-
-				frappe.logger().info(
-					f"[create_invoice] Payment migrated from Receipt: {receipt_name} "
-					f"| Fee Payment: {payment.name} | AFA: {docname}"
-				)
-
-		except Exception as payment_err:
-			# Non-fatal: log and continue — invoice was already created successfully
-			frappe.log_error(
-				message=frappe.get_traceback(),
-				title=f"Payment Migration Failed | Student: {student_name} | AFA: {docname}"
-			)
-			frappe.msgprint(
-				frappe._(
-					"Fee Invoice was created, but payment migration failed. "
-					"Please reconcile manually. Error: {0}"
-				).format(str(payment_err)),
-				indicator="orange",
-				alert=True,
-			)
-
-	# ── 5. Update Fee Assignment ──────────────────────────────────────────────
-	doc.db_set("fee_invoice", invoice.name)
+	# ── 3. Update Fee Assignment ──────────────────────────────────────────────
 	doc.db_set("status", "Converted")
 
-	# ── 6. Set Applicant status to Enrolled ───────────────────────────────────
+	# ── 4. Set Applicant status to Enrolled ───────────────────────────────────
 	try:
 		_enrolled_status = "Enrolled"
 		if frappe.db.exists("Applicant Status", _enrolled_status):
@@ -393,7 +244,7 @@ def create_invoice(docname):
 			)
 			frappe.db.commit()
 	except Exception as status_err:
-		# Non-fatal: student and invoice are already created; just log
+		# Non-fatal: student is already created; just log
 		frappe.log_error(
 			message=frappe.get_traceback(),
 			title=f"Applicant Status Update Failed | Applicant: {doc.applicant} | AFA: {docname}"
@@ -402,39 +253,8 @@ def create_invoice(docname):
 	# NOTE: User role swap (Applicant → Student) is handled inside
 	# convert_applicant_to_student() called in step 1 above.
 
-	return invoice.name
+	return student_name
 
-
-@frappe.whitelist()
-def create_payment(docname, amount, payment_mode, reference_number=None):
-	assignment = frappe.get_doc("Applicant Fee Assignment", docname)
-
-	if not assignment.fee_invoice:
-		frappe.throw(frappe._("Cannot create payment without a linked Fee Invoice. Please create the invoice first."))
-
-	invoice = frappe.get_doc("Fee Invoice", assignment.fee_invoice)
-
-	payment = frappe.new_doc("Fee Payment")
-	payment.student          = invoice.student
-	payment.fee_invoice      = invoice.name
-	payment.payment_date     = nowdate()
-	payment.payment_mode     = payment_mode
-	payment.amount           = flt(amount)
-	payment.reference_number = reference_number
-	payment.status           = "Submitted"
-
-	payment.insert(ignore_permissions=True)
-	payment.submit()
-
-	assignment.reload()
-	invoice.reload()
-
-	if invoice.status == "Paid":
-		assignment.db_set("status", "Converted")
-	elif invoice.status == "Partially Paid":
-		assignment.db_set("status", "Partially Paid")
-
-	return payment.name
 
 
 # ── Bulk Convert to Student ───────────────────────────────────────────────────
