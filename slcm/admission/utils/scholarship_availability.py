@@ -47,7 +47,6 @@ def check_scholarship_availability(scheme_name, applicant_status):
 def update_scheme_usage(scheme_name, approved_amount, mapping_name=None, reverse=False, update_count=True):
     """
     Updates the beneficiary count and utilized budget for a scholarship scheme.
-    Also updates the intake count on the specific mapping if provided.
     """
     scheme = frappe.get_doc("Scholarship Scheme", scheme_name)
     
@@ -80,12 +79,6 @@ def update_scheme_usage(scheme_name, approved_amount, mapping_name=None, reverse
         "status": new_status
     })
 
-    # Update Mapping Count
-    if mapping_name and update_count:
-        current_mapping_count = frappe.db.get_value("Scholarship Scheme Mapping", mapping_name, "current_count") or 0
-        new_mapping_count = max(0, current_mapping_count + factor)
-        frappe.db.set_value("Scholarship Scheme Mapping", mapping_name, "current_count", new_mapping_count)
-
 def flt(v):
     from frappe.utils import flt as _flt
     return _flt(v)
@@ -107,20 +100,6 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
     to apply for. 
     applicant_statuses should be a list of statuses (e.g. from their admission results/preferences).
     """
-    # 1. Get all schemes mapped to this cycle + campus
-    mappings = frappe.get_all(
-        "Scholarship Scheme Mapping",
-        filters={
-            "admission_cycle": cycle,
-            "campus": campus,
-            "is_active": 1
-        },
-        fields=["scholarship_scheme", "program", "program_level", "category"]
-    )
-    
-    if not mappings:
-        return []
-
     # Get applicant categories for filtering
     from slcm.admission.doctype.seat_allocation.seat_allocation import get_applicant_categories
     applicant_categories = get_applicant_categories(applicant_id)
@@ -130,30 +109,12 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
     if not applicant_program_level and program:
         applicant_program_level = frappe.db.get_value("Program", program, "level_of_study")
 
-    applicable_schemes = []
-    for m in mappings:
-        # Check program match
-        program_match = not m.program or m.program == program
-        
-        # Check program level match
-        level_match = not m.program_level or m.program_level == applicant_program_level
-        
-        # Check category match (if mapping has category, student must have it in their multi-category list)
-        category_match = not m.category or m.category in applicant_categories
-        
-        if program_match and level_match and category_match:
-            applicable_schemes.append(m.scholarship_scheme)
-
-    if not applicable_schemes:
-        return []
-
-    # 2. Filter schemes that are Active and within application dates
-    today = getdate()
-
+    # 1. Get all Active schemes for this cycle + campus
     schemes = frappe.get_all(
         "Scholarship Scheme",
         filters={
-            "name": ["in", applicable_schemes],
+            "admission_cycle": cycle,
+            "campus": campus,
             "status": "Active"
         },
         fields=[
@@ -161,10 +122,13 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
             "coverage_value", "apply_on", "stage_availability", 
             "application_start", "application_end", "max_beneficiaries", 
             "current_beneficiaries", "total_budget", "utilized_budget", 
-            "exclusive_scheme", "max_amount", "eligibility_criteria"
+            "max_amount", "eligibility_criteria", "program", "program_level", "category"
         ]
     )
     
+    if not schemes:
+        return []
+
     available = []
     
     # Get schemes already applied for (regardless of status)
@@ -175,30 +139,28 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
     applied_scheme_names = [d.scholarship_scheme for d in applied_docs]
     approved_scheme_names = [d.scholarship_scheme for d in applied_docs if d.status == "Approved"]
 
-    # Check if applicant already has an APPROVED Exclusive scholarship
-    has_exclusive = frappe.db.exists("Scholarship Application", {
-        "applicant_id": applicant_id,
-        "status": "Approved",
-        "scholarship_scheme": ["in", frappe.get_all("Scholarship Scheme", filters={"exclusive_scheme": 1}, pluck="name")]
-    })
-
     # Get Max Schemes limit from Cycle
     cycle_limit = frappe.db.get_value("Admission Cycle", cycle, "max_schemes_per_applicant") or 0
+    today = getdate()
 
     for scheme in schemes:
+        # Check program match
+        program_match = not scheme.program or scheme.program == program
+        
+        # Check program level match
+        level_match = not scheme.program_level or scheme.program_level == applicant_program_level
+        
+        # Check category match (if mapping has category, student must have it in their multi-category list)
+        category_match = not scheme.category or scheme.category in applicant_categories
+        
+        if not (program_match and level_match and category_match):
+            continue
+
         # Skip if already applied (even if not yet approved)
         if scheme.name in applied_scheme_names:
             continue
             
-        # 1. Exclusive Check: If they have an exclusive one, they see nothing else.
-        if has_exclusive:
-            continue
-            
-        # 2. If THIS scheme is exclusive, they can only see it if they have ZERO approved schemes.
-        if scheme.exclusive_scheme and len(approved_scheme_names) > 0:
-            continue
-            
-        # 3. Max Schemes Check: If they already reached the limit for this cycle
+        # Max Schemes Check: If they already reached the limit for this cycle
         if cycle_limit > 0:
             if len(approved_scheme_names) >= cycle_limit:
                 continue

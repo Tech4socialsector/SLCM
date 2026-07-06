@@ -7,20 +7,22 @@
   "section_basic",
   "scheme_name",
   "scheme_code",
-  "admission_cycle",
-  "approval_authority",
   "scheme_type",
-  "column_basic_2",
+  "category",
   "eligibility_criteria",
+  "column_basic_2",
+  "admission_cycle",
+  "campus",
+  "program",
+  "program_level",
   "description",
   "coverage_and_financial_controls_tab",
   "section_coverage",
   "apply_on",
   "coverage_type",
+  "column_coverage_2",
   "coverage_value",
   "max_amount",
-  "exclusive_scheme",
-  "column_coverage_2",
   "section_component_coverage",
   "coverage_rules",
   "section_financial",
@@ -76,11 +78,35 @@
    "reqd": 1
   },
   {
-   "fieldname": "approval_authority",
-   "fieldtype": "Select",
-   "label": "Approval authority",
-   "options": "Admissions Committee\nFinance Head\nVC",
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Campus",
+   "options": "Campus",
    "reqd": 1
+  },
+  {
+   "fieldname": "program_level",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Programme Level",
+   "options": "\nUndergraduate\nPostgraduate\nResearch Course"
+  },
+  {
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Programme",
+   "options": "Program"
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Link",
+   "label": "Category",
+   "options": "Admission Category"
   },
   {
    "fieldname": "scheme_type",
@@ -123,7 +149,7 @@
    "fieldname": "apply_on",
    "fieldtype": "Select",
    "label": "Apply On",
-   "options": "Total Fee\nTuition Only\nComponent-wise",
+   "options": "Total Fee\nTuition Only",
    "reqd": 1
   },
   {
@@ -132,7 +158,7 @@
    "fieldtype": "Select",
    "label": "Coverage type",
    "mandatory_depends_on": "eval:doc.apply_on != 'Component-wise'",
-   "options": "Percentage\nFixed\nComponent-wise"
+   "options": "Percentage\nFixed"
   },
   {
    "depends_on": "eval:doc.apply_on != 'Component-wise'",
@@ -201,13 +227,6 @@
    "fieldname": "section_conflict",
    "fieldtype": "Section Break",
    "label": "Conflict & Priority Controls"
-  },
-  {
-   "default": "0",
-   "fieldname": "exclusive_scheme",
-   "fieldtype": "Check",
-   "label": "Exclusive scheme",
-   "reqd": 1
   },
   {
    "fieldname": "column_conflict_2",
@@ -282,7 +301,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-09 10:31:48.173590",
+ "modified": "2026-07-06 16:41:21.897266",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Scholarship Scheme",

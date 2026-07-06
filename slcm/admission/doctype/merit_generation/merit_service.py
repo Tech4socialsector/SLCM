@@ -393,21 +393,8 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
 
         status = "Selected" 
 
-        if processing_stage == "Part A Ranking":
-            cats = get_applicant_categories(app.applicant_id)
-            if "SC" in cats:
-                primary_cat = "SC"
-            elif "ST" in cats:
-                primary_cat = "ST"
-            elif "OBC-NCL" in cats:
-                primary_cat = "OBC-NCL"
-            elif "EWS" in cats:
-                primary_cat = "EWS"
-            else:
-                primary_cat = "General"
-        else:
-            verticals, horizontals, compartmental = _get_categorized_traits(app.applicant_id)
-            primary_cat = verticals[0] if verticals else "General"
+        verticals, horizontals, compartmental = _get_categorized_traits(app.applicant_id)
+        primary_cat = verticals[0] if verticals else "General"
 
         merit.append("merit_applicants", {
             "applicant_id": app.applicant_id,
@@ -519,10 +506,31 @@ def _populate_category_lists(doc):
         
     # Clear existing
     list_fields = ["general_list", "sc_list", "st_list", "obc_list", "ews_list", "karnataka_list", "women_list", "pwd_list"]
+    if hasattr(doc, "meta") and doc.meta:
+        for f in doc.meta.get("fields") or []:
+            if f.fieldtype == "Table" and f.fieldname.endswith("_list") and f.fieldname not in list_fields:
+                list_fields.append(f.fieldname)
     for field in list_fields:
         if hasattr(doc, field):
             doc.set(field, [])
             
+    policy = None
+    multiplier = 1.0
+    if getattr(doc, "program", None) and getattr(doc, "admission_cycle", None):
+        policy_name = frappe.db.get_value("Program Reservation Policy", {
+            "admission_cycle": doc.admission_cycle,
+            "program": doc.program
+        }, "name")
+        if policy_name:
+            policy = frappe.get_doc("Program Reservation Policy", policy_name)
+            multiplier = policy.get("shortlisting_multiplier") or 1.0
+
+    comp_cat = "Karnataka"
+    if policy and policy.compartmental_reservations:
+        for comp in policy.compartmental_reservations:
+            comp_cat = comp.category_name or "Karnataka"
+            break
+
     app_list = []
     if hasattr(doc, "shortlist_applicants"):
         app_list = doc.shortlist_applicants
@@ -571,17 +579,16 @@ def _populate_category_lists(doc):
             
         # 3. Vertical Lists (only if allocated to that vertical specifically)
         target_field = None
-        if v_cat == "SC": target_field = "sc_list"
-        elif v_cat == "ST": target_field = "st_list"
-        elif v_cat == "OBC-NCL": target_field = "obc_list"
-        elif v_cat == "EWS": target_field = "ews_list"
+        if v_cat:
+            norm_v_cat = v_cat.lower().replace("-ncl", "").replace("-", "_")
+            target_field = f"{norm_v_cat}_list"
         
         if target_field and hasattr(doc, target_field):
             doc.append(target_field, row_data)
             
         # 4. Special Lists (Horizontal/Compartmental) - Use _has_trait for partial matching (e.g. Karnataka Students)
         is_shortlist = hasattr(doc, "shortlist_applicants")
-        if _has_trait(row.applicant_id, "Karnataka", is_shortlist) and hasattr(doc, "karnataka_list"):
+        if _has_trait(row.applicant_id, comp_cat, is_shortlist) and hasattr(doc, "karnataka_list"):
             doc.append("karnataka_list", row_data)
         if _has_trait(row.applicant_id, "Women", is_shortlist) and hasattr(doc, "women_list"):
             doc.append("women_list", row_data)
@@ -718,6 +725,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
         return execute_part_a_shortlisting(doc)
         
     clear_category_cache()
+    karnataka_vacancies = {}
     
     child_table = None
     status_field = "status"
@@ -894,9 +902,27 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                             out_cand = eligible_out[0]
                             
                             # Recursive Displacement: Save out_cand in their reserved category if possible
-                            _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field)
+                            _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies)
                             _assign_seat_to_applicant(in_cand, v_cat, "Open" if v_cat == "General" else "Reserved", allocated_list, unallocated, v_info, status_field)
                             deficit -= 1
+
+                    # Recalculate deficit after attempting to fill with available Karnataka candidates
+                    comp_in_v = [a for a in allocated_list if a.vertical_category == v_cat and _has_trait(a.applicant_id, comp_cat)]
+                    remaining_deficit = target_info["seats"] - len(comp_in_v)
+                    if remaining_deficit > 0:
+                        # Identify All-India candidates in this category that are currently allocated
+                        eligible_out = [a for a in allocated_list if a.vertical_category == v_cat and not _has_trait(a.applicant_id, comp_cat)]
+                        max_ai_allowed = v_info["seats"] - target_info["seats"]
+                        excess_ai = len(eligible_out) - max_ai_allowed
+                        if excess_ai > 0 and eligible_out:
+                            eligible_out.sort(key=lambda x: -(x.overall_rank or 999999))
+                            # We need to displace excess_ai of them so these seats remain vacant
+                            to_displace = eligible_out[:excess_ai]
+                            for out_cand in to_displace:
+                                _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies)
+                        
+                        # Store the vacancy count
+                        karnataka_vacancies[v_cat] = remaining_deficit
 
         # --- PHASE 3: HORIZONTAL RESERVATION (e.g., PWD & Women) ---
         _publish_allocation_progress(doc, 93, "Applying horizontal reservations (Women & PWD quotas)...")
@@ -927,7 +953,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                         eligible_out.sort(key=lambda x: -(x.overall_rank or 999999))
                         out_cand = eligible_out[0]
                         
-                        _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field)
+                        _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies)
                         _assign_seat_to_applicant(in_cand, v_belong, "Open" if v_belong == "General" else "Reserved", allocated_list, unallocated, vertical_targets[v_belong], status_field)
                         deficit -= 1
 
@@ -938,7 +964,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
         # fill them now from the remaining unallocated pool.
         for v_cat in ordered_cats:
             v_info = vertical_targets[v_cat]
-            while v_info["filled"] < v_info["seats"]:
+            kv_count = karnataka_vacancies.get(v_cat, 0)
+            while v_info["filled"] < (v_info["seats"] - kv_count):
                 # Find best merit unallocated candidates who belong to this vertical category
                 potential = []
                 for u in unallocated:
@@ -1075,7 +1102,7 @@ def _check_percentile_eligibility(app, vertical_targets, horizontal_targets=None
             
     return percentile >= threshold
 
-def _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field):
+def _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies=None):
     """
     Displaces a candidate from their current seat.
     If they belong to a reserved category, attempts to re-allocate them to that category pool.
@@ -1100,7 +1127,8 @@ def _execute_recursive_displacement(out_cand, allocated_list, unallocated, verti
     if actual_v_cat != "General" and actual_v_cat != prev_v:
         v_info = vertical_targets.get(actual_v_cat)
         if v_info:
-            if v_info["filled"] < v_info["seats"]:
+            kv_count = (karnataka_vacancies or {}).get(actual_v_cat, 0)
+            if v_info["filled"] < (v_info["seats"] - kv_count):
                 _assign_seat_to_applicant(out_cand, actual_v_cat, "Reserved", allocated_list, unallocated, v_info, status_field)
             else:
                 # Pool full, try to displace lowest in THEIR category
@@ -1121,7 +1149,7 @@ def _execute_recursive_displacement(out_cand, allocated_list, unallocated, verti
                         _execute_candidate_displacement(out_cand, lowest_cand, allocated_list, unallocated, status_field)
                         # Attempt to recursively displace the candidate we just pushed out, 
                         # in case they have somewhere else to go (though usually they don't if they were in their own category)
-                        _execute_recursive_displacement(lowest_cand, allocated_list, unallocated, vertical_targets, status_field)
+                        _execute_recursive_displacement(lowest_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies)
 
 def _assign_seat_to_applicant(app, vertical_cat, alloc_type, allocated_list, unallocated, v_info, status_field):
     status_value = "Selected"
@@ -1259,6 +1287,37 @@ def execute_part_a_shortlisting(doc):
 
     applicants = getattr(doc, child_table)
 
+    # Fetch dynamic Program Reservation Policy targets
+    policy = None
+    multiplier = 1.0
+    if getattr(doc, "program", None) and getattr(doc, "admission_cycle", None):
+        policy_name = frappe.db.get_value("Program Reservation Policy", {
+            "admission_cycle": doc.admission_cycle,
+            "program": doc.program
+        }, "name")
+        if policy_name:
+            policy = frappe.get_doc("Program Reservation Policy", policy_name)
+            multiplier = policy.get("shortlisting_multiplier") or 1.0
+
+    # Determine dynamic compartmental category name
+    comp_cat = "Karnataka"
+    if policy and policy.compartmental_reservations:
+        for comp in policy.compartmental_reservations:
+            comp_cat = comp.category_name or "Karnataka"
+            break
+    comp_key = comp_cat.lower()
+
+    # Determine vertical categories dynamically
+    vertical_cats = ["General", "SC", "ST", "OBC-NCL", "EWS"]
+    if policy:
+        vertical_cats = []
+        for v in policy.categories:
+            v_name = v.category_name or "General"
+            if v_name not in vertical_cats:
+                vertical_cats.append(v_name)
+        if "General" not in vertical_cats:
+            vertical_cats.append("General")
+
     # 1. Reset all fields on all rows first (Regeneration cleanup)
     for row in applicants:
         row.shortlist_rank = 0
@@ -1290,20 +1349,16 @@ def execute_part_a_shortlisting(doc):
             
             cats = get_applicant_categories(row.applicant_id)
             
-            # Map vertical category
-            if "SC" in cats:
-                row.actual_category = "SC"
-            elif "ST" in cats:
-                row.actual_category = "ST"
-            elif "OBC-NCL" in cats:
-                row.actual_category = "OBC-NCL"
-            elif "EWS" in cats:
-                row.actual_category = "EWS"
-            else:
-                row.actual_category = "General"
+            # Map vertical category dynamically
+            matched_v = "General"
+            for v_cat_name in vertical_cats:
+                if v_cat_name != "General" and v_cat_name in cats:
+                    matched_v = v_cat_name
+                    break
+            row.actual_category = matched_v
             
             # Map traits for shortlist processing
-            row.is_karnataka = ("Karnataka" in cats)
+            row.is_karnataka = (comp_cat in cats)
             row.is_pwd = ("PWD" in cats)
             row.is_female = ("Women" in cats)
             
@@ -1322,27 +1377,22 @@ def execute_part_a_shortlisting(doc):
         if hasattr(row, "overall_rank"):
             row.overall_rank = current_rank
 
-    # Fetch dynamic Program Reservation Policy targets
-    policy = None
-    multiplier = 1.0
-    if getattr(doc, "program", None) and getattr(doc, "admission_cycle", None):
-        policy_name = frappe.db.get_value("Program Reservation Policy", {
-            "admission_cycle": doc.admission_cycle,
-            "program": doc.program
-        }, "name")
-        if policy_name:
-            policy = frappe.get_doc("Program Reservation Policy", policy_name)
-            multiplier = policy.get("shortlisting_multiplier") or 1.0
-
     targets = {
-        "General": {"total": 245, "karnataka": 60},
-        "SC": {"total": 90, "karnataka": 20},
-        "ST": {"total": 45, "karnataka": 10},
-        "OBC-NCL": {"total": 160, "karnataka": 40},
-        "EWS": {"total": 60, "karnataka": 15},
         "PWD": 30,
         "Women": 180
     }
+    defaults_fallback = {
+        "General": {"total": 245, "karnataka": 60, comp_key: 60},
+        "SC": {"total": 90, "karnataka": 20, comp_key: 20},
+        "ST": {"total": 45, "karnataka": 10, comp_key: 10},
+        "OBC-NCL": {"total": 160, "karnataka": 40, comp_key: 40},
+        "EWS": {"total": 60, "karnataka": 15, comp_key: 15},
+    }
+    for v_cat_name in vertical_cats:
+        if v_cat_name in defaults_fallback:
+            targets[v_cat_name] = defaults_fallback[v_cat_name].copy()
+        else:
+            targets[v_cat_name] = {"total": 0, "karnataka": 0, comp_key: 0}
 
     if policy:
         # 1. Main vertical categories
@@ -1355,41 +1405,38 @@ def execute_part_a_shortlisting(doc):
                 targets[v_cat_name] = {}
             targets[v_cat_name]["total"] = req_seats
 
-        for v in policy.categories:
-            if v.category_name == "General":
-                req_seats = v.get("shortlisting_target")
-                if not req_seats:
-                    req_seats = int((v.seats or 0) * multiplier)
-                targets["General"]["total"] = req_seats
-
-        # 2. Compartmental (Karnataka sub-quotas inside each vertical category)
-        karnataka_percentage = 25.0
+        # 2. Compartmental (sub-quotas inside each vertical category)
+        comp_percentage = 25.0
         for comp in policy.compartmental_reservations:
-            if comp.category_name == "Karnataka":
-                karnataka_percentage = comp.percentage or 25.0
+            if comp.category_name == comp_cat:
+                comp_percentage = comp.percentage or 25.0
                 break
 
-        for cat in ["General", "SC", "ST", "OBC-NCL", "EWS"]:
+        for cat in vertical_cats:
             req_total = targets[cat]["total"]
-            targets[cat]["karnataka"] = int((req_total * karnataka_percentage) / 100.0)
+            targets[cat][comp_key] = int((req_total * comp_percentage) / 100.0)
 
         # 3. Horizontal reservations (Women, PWD)
         for h in policy.horizontal_reservations:
             h_name = h.category_name
+            if not h_name: continue
             req_seats = h.get("shortlisting_target")
             if not req_seats:
                 req_seats = int((h.seats or 0) * multiplier)
-            if h_name in ["PWD", "Women"]:
-                targets[h_name] = req_seats
+            targets[h_name] = req_seats
 
     # 5. General shortlist (Select top candidates)
     general_shortlist = eligible_applicants[:targets["General"]["total"]]
 
-    # 6. Karnataka fill for General
+    # 6. Compartmental fill for General
+    all_karnataka_available = len([x for x in eligible_applicants if x.is_karnataka])
+    kar_req_gen = targets["General"].get(comp_key, 0)
+    gen_deficit = max(0, kar_req_gen - all_karnataka_available)
+
     karnataka_count = len([x for x in general_shortlist if x.is_karnataka])
-    if karnataka_count < targets["General"]["karnataka"]:
+    if karnataka_count < kar_req_gen:
         remaining_karnataka = [x for x in eligible_applicants[targets["General"]["total"]:] if x.is_karnataka]
-        to_add = remaining_karnataka[:targets["General"]["karnataka"] - karnataka_count]
+        to_add = remaining_karnataka[:kar_req_gen - karnataka_count]
         for kar_cand in to_add:
             # Find and displace the lowest ranked non-Karnataka candidate in general_shortlist
             for idx in range(len(general_shortlist) - 1, -1, -1):
@@ -1398,13 +1445,31 @@ def execute_part_a_shortlisting(doc):
                     general_shortlist.append(kar_cand)
                     break
 
+    # Ensure All-India candidates do not exceed their quota, leaving unfilled Karnataka seats vacant
+    max_ai_allowed = targets["General"]["total"] - kar_req_gen
+    ai_in_shortlist = [x for x in general_shortlist if not x.is_karnataka]
+    excess_ai = len(ai_in_shortlist) - max_ai_allowed
+    if excess_ai > 0:
+        removed_count = 0
+        for idx in range(len(general_shortlist) - 1, -1, -1):
+            if not general_shortlist[idx].is_karnataka:
+                general_shortlist.pop(idx)
+                removed_count += 1
+                if removed_count == excess_ai:
+                    break
+
+    targets["General"]["total"] = len(general_shortlist)
+
     # 7. Reserved category shortlisting
-    reserved_rules = [
-        {"cat": "SC", "total": targets["SC"]["total"], "karnataka": targets["SC"]["karnataka"]},
-        {"cat": "ST", "total": targets["ST"]["total"], "karnataka": targets["ST"]["karnataka"]},
-        {"cat": "OBC-NCL", "total": targets["OBC-NCL"]["total"], "karnataka": targets["OBC-NCL"]["karnataka"]},
-        {"cat": "EWS", "total": targets["EWS"]["total"], "karnataka": targets["EWS"]["karnataka"]}
-    ]
+    # 7. Reserved category shortlisting
+    reserved_rules = []
+    for v_cat_name in vertical_cats:
+        if v_cat_name != "General":
+            reserved_rules.append({
+                "cat": v_cat_name,
+                "total": targets[v_cat_name]["total"],
+                "karnataka": targets[v_cat_name].get(comp_key, 0)
+            })
 
     shortlists = {
         "General": general_shortlist
@@ -1418,6 +1483,10 @@ def execute_part_a_shortlisting(doc):
         # Pool strictly belonging to this vertical category, excluding general_shortlist
         pool = [x for x in eligible_applicants if x.actual_category == cat and x not in general_shortlist]
         
+        # Calculate available Karnataka candidates strictly in this category's pool
+        all_karnataka_available = len([x for x in pool if x.is_karnataka])
+        deficit = max(0, kar_req - all_karnataka_available)
+
         # Initial candidates up to total required
         cat_shortlist = pool[:total_req]
         
@@ -1433,7 +1502,21 @@ def execute_part_a_shortlisting(doc):
                         cat_shortlist.pop(idx)
                         cat_shortlist.append(kar_cand)
                         break
-                        
+
+        # Ensure All-India candidates do not exceed their quota, leaving unfilled Karnataka seats vacant
+        max_ai_allowed = total_req - kar_req
+        ai_in_shortlist = [x for x in cat_shortlist if not x.is_karnataka]
+        excess_ai = len(ai_in_shortlist) - max_ai_allowed
+        if excess_ai > 0:
+            removed_count = 0
+            for idx in range(len(cat_shortlist) - 1, -1, -1):
+                if not cat_shortlist[idx].is_karnataka:
+                    cat_shortlist.pop(idx)
+                    removed_count += 1
+                    if removed_count == excess_ai:
+                        break
+
+        targets[cat]["total"] = len(cat_shortlist)
         shortlists[cat] = cat_shortlist
 
     # --- 7b. Apply PWD Horizontal Reservation First ---
@@ -1446,6 +1529,39 @@ def execute_part_a_shortlisting(doc):
     all_selected = get_all_selected()
     selected_set = {x.applicant_id for x in all_selected}
     pwd_count = sum(1 for x in all_selected if x.is_pwd)
+    
+    women_count = None
+    
+    def accommodate_displaced_candidate(displaced_cand, shortlist_name):
+        if displaced_cand.applicant_id in selected_set:
+            selected_set.remove(displaced_cand.applicant_id)
+            
+        if shortlist_name == "General":
+            v_cat = displaced_cand.actual_category
+            if v_cat != "General":
+                target_list = shortlists[v_cat]
+                target_total = targets[v_cat]["total"]
+                
+                if len(target_list) < target_total:
+                    target_list.append(displaced_cand)
+                    selected_set.add(displaced_cand.applicant_id)
+                else:
+                    displaceable = [
+                        (idx, x) for idx, x in enumerate(target_list)
+                        if not x.is_pwd and not (women_count is not None and x.is_female)
+                    ]
+                    if displaceable:
+                        # Prefer to displace non-Karnataka candidates if the incoming displaced candidate is not Karnataka
+                        if not displaced_cand.is_karnataka:
+                            non_kar = [p for p in displaceable if not p[1].is_karnataka]
+                            if non_kar:
+                                displaceable = non_kar
+                        lowest_idx, lowest_in_r = max(displaceable, key=lambda pair: (pair[1].shortlist_rank or 999999))
+                        if (displaced_cand.shortlist_rank or 0) < (lowest_in_r.shortlist_rank or 999999):
+                            target_list.pop(lowest_idx)
+                            target_list.append(displaced_cand)
+                            selected_set.remove(lowest_in_r.applicant_id)
+                            selected_set.add(displaced_cand.applicant_id)
     
     if pwd_count < targets["PWD"]:
         remaining_pwd = [x for x in eligible_applicants if x.is_pwd and x.applicant_id not in selected_set]
@@ -1465,7 +1581,7 @@ def execute_part_a_shortlisting(doc):
                 lowest_idx, lowest_cand = max(same_compartment, key=lambda pair: (pair[1].shortlist_rank or 999999))
                 shortlist.pop(lowest_idx)
                 shortlist.append(pwd_cand)
-                selected_set.remove(lowest_cand.applicant_id)
+                accommodate_displaced_candidate(lowest_cand, cat)
                 selected_set.add(pwd_cand.applicant_id)
                 displaced = True
             
@@ -1479,7 +1595,7 @@ def execute_part_a_shortlisting(doc):
                     lowest_idx, lowest_cand = max(same_cat, key=lambda pair: (pair[1].shortlist_rank or 999999))
                     shortlist.pop(lowest_idx)
                     shortlist.append(pwd_cand)
-                    selected_set.remove(lowest_cand.applicant_id)
+                    accommodate_displaced_candidate(lowest_cand, cat)
                     selected_set.add(pwd_cand.applicant_id)
                     displaced = True
                     
@@ -1516,7 +1632,7 @@ def execute_part_a_shortlisting(doc):
                 lowest_idx, lowest_cand = max(cands_1, key=lambda pair: (pair[1].shortlist_rank or 999999))
                 shortlist.pop(lowest_idx)
                 shortlist.append(female_cand)
-                selected_set.remove(lowest_cand.applicant_id)
+                accommodate_displaced_candidate(lowest_cand, cat)
                 selected_set.add(female_cand.applicant_id)
                 displaced = True
                 
@@ -1530,7 +1646,7 @@ def execute_part_a_shortlisting(doc):
                     lowest_idx, lowest_cand = max(cands_2, key=lambda pair: (pair[1].shortlist_rank or 999999))
                     shortlist.pop(lowest_idx)
                     shortlist.append(female_cand)
-                    selected_set.remove(lowest_cand.applicant_id)
+                    accommodate_displaced_candidate(lowest_cand, cat)
                     selected_set.add(female_cand.applicant_id)
                     displaced = True
                     
@@ -1544,7 +1660,7 @@ def execute_part_a_shortlisting(doc):
                     lowest_idx, lowest_cand = max(cands_3, key=lambda pair: (pair[1].shortlist_rank or 999999))
                     shortlist.pop(lowest_idx)
                     shortlist.append(female_cand)
-                    selected_set.remove(lowest_cand.applicant_id)
+                    accommodate_displaced_candidate(lowest_cand, cat)
                     selected_set.add(female_cand.applicant_id)
                     displaced = True
                     
@@ -1558,7 +1674,7 @@ def execute_part_a_shortlisting(doc):
                     lowest_idx, lowest_cand = max(cands_4, key=lambda pair: (pair[1].shortlist_rank or 999999))
                     shortlist.pop(lowest_idx)
                     shortlist.append(female_cand)
-                    selected_set.remove(lowest_cand.applicant_id)
+                    accommodate_displaced_candidate(lowest_cand, cat)
                     selected_set.add(female_cand.applicant_id)
                     displaced = True
                     
@@ -1582,14 +1698,14 @@ def execute_part_a_shortlisting(doc):
         candidate_row.horizontal_categories = ", ".join(h_traits)
         
         if candidate_row.is_karnataka:
-            candidate_row.compartmentalized_category = "Karnataka"
+            candidate_row.compartmentalized_category = comp_cat
         else:
             candidate_row.compartmentalized_category = ""
             
         # Build display category
         parts = [vertical_cat]
         if candidate_row.is_karnataka:
-            parts.append("Karnataka")
+            parts.append(comp_cat)
         if candidate_row.is_female:
             parts.append("Women")
         if candidate_row.is_pwd:
@@ -1635,19 +1751,8 @@ def execute_part_a_shortlisting(doc):
             row.category_rank = current_cat_rank
 
     # 9. Perform Validation & Logs
+    # 9. Perform Validation & Logs
     total_selected = len([x for x in applicants if getattr(x, status_field) in ["Shortlisted", "Selected"]])
-    gen_selected = len([x for x in applicants if getattr(x, status_field) in ["Shortlisted", "Selected"] and x.vertical_category == "General"])
-    sc_selected = len([x for x in applicants if getattr(x, status_field) in ["Shortlisted", "Selected"] and x.vertical_category == "SC"])
-    st_selected = len([x for x in applicants if getattr(x, status_field) in ["Shortlisted", "Selected"] and x.vertical_category == "ST"])
-    obc_selected = len([x for x in applicants if getattr(x, status_field) in ["Shortlisted", "Selected"] and x.vertical_category == "OBC-NCL"])
-    ews_selected = len([x for x in applicants if getattr(x, status_field) in ["Shortlisted", "Selected"] and x.vertical_category == "EWS"])
-    
-    gen_kar = len([x for x in applicants if getattr(x, status_field) in ["Shortlisted", "Selected"] and x.vertical_category == "General" and x.is_karnataka])
-    sc_kar = len([x for x in applicants if getattr(x, status_field) in ["Shortlisted", "Selected"] and x.vertical_category == "SC" and x.is_karnataka])
-    st_kar = len([x for x in applicants if getattr(x, status_field) in ["Shortlisted", "Selected"] and x.vertical_category == "ST" and x.is_karnataka])
-    obc_kar = len([x for x in applicants if getattr(x, status_field) in ["Shortlisted", "Selected"] and x.vertical_category == "OBC-NCL" and x.is_karnataka])
-    ews_kar = len([x for x in applicants if getattr(x, status_field) in ["Shortlisted", "Selected"] and x.vertical_category == "EWS" and x.is_karnataka])
-
     pwd_selected = len([x for x in applicants if getattr(x, status_field) in ["Shortlisted", "Selected"] and x.is_pwd])
     women_selected = len([x for x in applicants if getattr(x, status_field) in ["Shortlisted", "Selected"] and x.is_female])
 
@@ -1656,19 +1761,21 @@ def execute_part_a_shortlisting(doc):
         cats = get_applicant_categories(row.applicant_id)
         if "EWS" in cats:
             actual_ews_count += 1
-            
-    validation_log = (
-        f"Validation Logs after shortlisting generation:\n"
-        f"- Total selected count: {total_selected}\n"
-        f"- General selected count: {gen_selected} (Karnataka: {gen_kar})\n"
-        f"- SC selected count: {sc_selected} (Karnataka: {sc_kar})\n"
-        f"- ST selected count: {st_selected} (Karnataka: {st_kar})\n"
-        f"- OBC-NCL selected count: {obc_selected} (Karnataka: {obc_kar})\n"
-        f"- EWS selected count: {ews_selected} (Karnataka: {ews_kar})\n"
-        f"- PWD selected count: {pwd_selected}\n"
-        f"- Women selected count: {women_selected}\n"
-        f"- Actual EWS candidate count in Applicants: {actual_ews_count}"
-    )
+
+    logs = [
+        f"Validation Logs after shortlisting generation:",
+        f"- Total selected count: {total_selected}"
+    ]
+    for v_cat_name in vertical_cats:
+        v_sel = len([x for x in applicants if getattr(x, status_field) in ["Shortlisted", "Selected"] and x.vertical_category == v_cat_name])
+        v_comp = len([x for x in applicants if getattr(x, status_field) in ["Shortlisted", "Selected"] and x.vertical_category == v_cat_name and x.is_karnataka])
+        logs.append(f"- {v_cat_name} selected count: {v_sel} ({comp_cat}: {v_comp})")
+
+    logs.append(f"- PWD selected count: {pwd_selected}")
+    logs.append(f"- Women selected count: {women_selected}")
+    logs.append(f"- Actual EWS candidate count in Applicants: {actual_ews_count}")
+
+    validation_log = "\n".join(logs)
     frappe.logger().info(validation_log)
     # frappe.msgprint(validation_log, title="Validation Log")
  
@@ -1716,32 +1823,23 @@ def execute_part_a_shortlisting(doc):
             seen.add(row.applicant_id)
 
     # 7. General selected count must be General total from targets
-    if gen_selected != targets["General"]["total"]:
-        frappe.throw(f"Validation failed: General selected count is {gen_selected}, expected {targets['General']['total']}.")
+    gen_selected = len([x for x in applicants if getattr(x, status_field) in ["Shortlisted", "Selected"] and x.vertical_category == "General"])
+    sc_selected = len([x for x in applicants if getattr(x, status_field) in ["Shortlisted", "Selected"] and x.vertical_category == "SC"])
+    st_selected = len([x for x in applicants if getattr(x, status_field) in ["Shortlisted", "Selected"] and x.vertical_category == "ST"])
+    obc_selected = len([x for x in applicants if getattr(x, status_field) in ["Shortlisted", "Selected"] and x.vertical_category == "OBC-NCL"])
+    ews_selected = len([x for x in applicants if getattr(x, status_field) in ["Shortlisted", "Selected"] and x.vertical_category == "EWS"])
+
+    expected_gen_selected = len(general_shortlist)
+    if gen_selected != expected_gen_selected:
+        frappe.throw(f"Validation failed: General selected count is {gen_selected}, expected {expected_gen_selected}.")
         
-    # 8. SC selected count must be SC total (or pool size if pool is smaller)
-    total_sc_pool_size = len([x for x in eligible_applicants if x.actual_category == "SC" and x not in general_shortlist])
-    expected_sc_selected = min(targets["SC"]["total"], total_sc_pool_size)
-    if sc_selected != expected_sc_selected:
-        frappe.throw(f"Validation failed: SC selected count is {sc_selected}, expected {expected_sc_selected}.")
-        
-    # 9. ST selected count must be ST total (or pool size if pool is smaller)
-    total_st_pool_size = len([x for x in eligible_applicants if x.actual_category == "ST" and x not in general_shortlist])
-    expected_st_selected = min(targets["ST"]["total"], total_st_pool_size)
-    if st_selected != expected_st_selected:
-        frappe.throw(f"Validation failed: ST selected count is {st_selected}, expected {expected_st_selected}.")
-        
-    # 10. OBC-NCL selected count must be OBC total (or pool size if pool is smaller)
-    total_obc_pool_size = len([x for x in eligible_applicants if x.actual_category == "OBC-NCL" and x not in general_shortlist])
-    expected_obc_selected = min(targets["OBC-NCL"]["total"], total_obc_pool_size)
-    if obc_selected != expected_obc_selected:
-        frappe.throw(f"Validation failed: OBC-NCL selected count is {obc_selected}, expected {expected_obc_selected}.")
-        
-    # 11. EWS selected count must not exceed actual valid EWS candidates available after excluding Open merit candidates
-    total_nums_ews = len([x for x in eligible_applicants if x.actual_category == "EWS" and x not in general_shortlist])
-    expected_ews_selected = min(targets["EWS"]["total"], total_nums_ews)
-    if ews_selected != expected_ews_selected:
-        frappe.throw(f"Validation failed: EWS selected count is {ews_selected}, expected {expected_ews_selected}.")
+    # 8. Reserved categories selected count must match their shortlist lengths
+    for v_cat_name in vertical_cats:
+        if v_cat_name == "General": continue
+        v_selected = len([x for x in applicants if getattr(x, status_field) in ["Shortlisted", "Selected"] and x.vertical_category == v_cat_name])
+        expected_v_selected = len(shortlists.get(v_cat_name, []))
+        if v_selected != expected_v_selected:
+            frappe.throw(f"Validation failed: {v_cat_name} selected count is {v_selected}, expected {expected_v_selected}.")
 
     # 12. PWD selected count must be PWD target (or pool size if pool is smaller)
     total_pwd_available = len([x for x in eligible_applicants if x.is_pwd])
