@@ -66,7 +66,7 @@ class FeeService:
                 doc.save(ignore_permissions=True)
 
     @staticmethod
-    def _calculate_and_freeze_fees(fee_structure_name):
+    def _calculate_and_freeze_fees(fee_structure_name, is_foreign=False):
         """
         Financial Logic: Calculates fees and returns a structured dict.
         """
@@ -79,7 +79,13 @@ class FeeService:
         tax_amount = 0
         breakdown = {}
         components = []
-        for component in fs_doc.components:
+        total_payable = 0
+        
+        source_components = fs_doc.get("fee_components_for_foreign") if is_foreign else fs_doc.get("fee_components_for_indian")
+        if not source_components:
+            source_components = []
+
+        for component in source_components:
             base_fee += component.amount
             tax_amount += component.tax_amount
             label = component.component_name or component.fee_component 
@@ -95,11 +101,15 @@ class FeeService:
                 "total_amount": component.total_amount
             })
 
+        total_payable = fs_doc.get("total_amount_for_foreign") if is_foreign else fs_doc.get("total_amount_for_indian")
+        if total_payable is None or total_payable == "":
+            total_payable = fs_doc.total_amount
+
         return {
             "base_fee": base_fee, 
             "scholarship_amount": 0,
             "tax_amount": tax_amount,
-            "total_payable": fs_doc.total_amount,
+            "total_payable": total_payable,
             "breakdown": breakdown,
             "components": components,
             "payment_gateway": fs_doc.payment_gateway,
@@ -117,20 +127,9 @@ class FeeService:
         if frappe.db.exists("Applicant Fee Assignment", {"offer_letter": offer.name, "status": ["!=", "Cancelled"]}):
             return
 
-        snapshot_name = frappe.db.get_value("Offer Fee Snapshot", {"offer_id": offer.name})
-        if not snapshot_name:
-            # Fallback: Try to recreate snapshot from current Fee Structure if missing
-            # This handles offers generated before snapshotting was introduced or failed snapshots.
-            if offer.fee_structure:
-                from slcm.api.service.offer_service import OfferService
-                fee_data = FeeService._calculate_and_freeze_fees(offer.fee_structure)
-                OfferService._create_snapshot_record(offer.name, fee_data)
-                snapshot_name = frappe.db.get_value("Offer Fee Snapshot", {"offer_id": offer.name})
-            
-            if not snapshot_name:
-                throw(_("Fee Snapshot not found for Offer {0}. Cannot create Fee Assignment.").format(offer.name))
-
-        snapshot = frappe.get_doc("Offer Fee Snapshot", snapshot_name)
+        nationality = frappe.db.get_value("Applicant", offer.applicant, "nationality")
+        is_foreign = nationality != "Indian"
+        fee_data = FeeService._calculate_and_freeze_fees(offer.fee_structure, is_foreign=is_foreign)
 
         admission_cycle = offer.admission_cycle or frappe.db.get_value("Applicant", offer.applicant, "admission_cycle")
 
@@ -157,18 +156,18 @@ class FeeService:
         assignment.admission_cycle = admission_cycle
         assignment.assignment_date = frappe.utils.today()
 
-        # Copy fee rows — skip any legacy "Scholarship" link row from snapshot
-        for row in snapshot.fee_component:
-            if (row.fee_component or "").lower() == "scholarship":
+        # Copy fee rows
+        for row in fee_data.get("components", []):
+            if (row.get("fee_component") or "").lower() == "scholarship":
                 continue
             assignment.append("fee_components", {
-                "fee_component": row.fee_component,
-                "component_name": row.component_name,
-                "amount": row.amount,
-                "is_taxable": row.is_taxable,
-                "tax_rate": row.tax_rate,
-                "tax_amount": row.tax_amount,
-                "total_amount": row.total_amount
+                "fee_component": row.get("fee_component"),
+                "component_name": row.get("component_name"),
+                "amount": row.get("amount"),
+                "is_taxable": row.get("is_taxable"),
+                "tax_rate": row.get("tax_rate"),
+                "tax_amount": row.get("tax_amount"),
+                "total_amount": row.get("total_amount")
             })
 
         # Store scholarship in the dedicated field (no Fee Component record needed)
@@ -223,7 +222,6 @@ class FeeService:
         from slcm.api.service.offer_service import OfferService
         OfferService.update_applicant_status(assignment.applicant, status="Fee Paid")
         OfferService.sync_seat_allocation_status(offer_doc, status="Fee Paid")
-        OfferService.log_action(offer_name, "Fee Paid", _("Fee status updated to Paid via {0}").format(payment_mode))
 
         from slcm.admission.utils.notifications import log_communication
         log_communication(
@@ -623,21 +621,13 @@ class FeeService:
             if existing:
                 return existing
 
-            # 1. Fetch Snapshot for components
-            snapshot = frappe.get_all("Offer Fee Snapshot", 
-                filters={"offer_id": offer_doc.name}, 
-                fields=["name", "total_payable"],
-                order_by="creation desc", limit=1)
+            # 1. Fetch components directly
+            nationality = frappe.db.get_value("Applicant", offer_doc.applicant, "nationality")
+            is_foreign = nationality != "Indian"
+            fee_data = FeeService._calculate_and_freeze_fees(offer_doc.fee_structure, is_foreign=is_foreign)
             
-            if not snapshot:
-                # Fallback to Fee Structure if no snapshot
-                snapshot_data = frappe.get_doc("Fee Structure", offer_doc.fee_structure)
-                total_payable = snapshot_data.total_amount if hasattr(snapshot_data, 'total_amount') else offer_doc.payable_amount
-                components = snapshot_data.get("components") or []
-            else:
-                snapshot_doc = frappe.get_doc("Offer Fee Snapshot", snapshot[0].name)
-                total_payable = snapshot_doc.total_payable
-                components = list(snapshot_doc.fee_component or [])
+            total_payable = fee_data.get("total_payable")
+            components = fee_data.get("components") or []
 
             # 2. Create Receipt
             receipt = frappe.new_doc("Applicant Payment Receipt")
@@ -725,9 +715,6 @@ class FeeService:
 
             receipt.insert(ignore_permissions=True)
             
-            from slcm.api.service.offer_service import OfferService
-            OfferService.log_action(offer_doc.name, "Payment Received", 
-                frappe._("Payment Receipt {0} generated for transaction {1}").format(receipt.name, transaction_id))
             
             return receipt.name
         except Exception as e:
@@ -766,13 +753,7 @@ class FeeService:
                 response_data=error_data
             )
             
-            # Log in Offer Action Log as well
-            from slcm.api.service.offer_service import OfferService
-            OfferService.log_action(
-                offer.name, 
-                "Payment Failed", 
-                notes=_("Payment attempt failed: {0}").format(error_message)
-            )
+
             
             return {"status": "success"}
         except Exception as e:
@@ -1413,8 +1394,9 @@ class FeeService:
 
             from slcm.api.service.application_fee_service import get_application_fee_for_category, _get_applicant_category
             category = _get_applicant_category(applicant_doc.name)
+            is_foreign = getattr(applicant_doc, "nationality", "") != "Indian"
             fee_amount = flt(
-                get_application_fee_for_category(applicant_doc.program, applicant_doc.admission_cycle, category)
+                get_application_fee_for_category(applicant_doc.program, applicant_doc.admission_cycle, category, is_foreign=is_foreign)
             )
             if fee_amount <= 0:
                 fee_amount = flt(applicant_doc.application_fee_amount or 0)

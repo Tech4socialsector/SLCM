@@ -12,28 +12,30 @@
   "academic_year",
   "batch_year",
   "program_level",
-  "student_category",
-  "demand_type",
   "academic_term",
   "term_type",
+  "column_break_1",
+  "student_category",
+  "demand_type",
   "applicable",
+  "offer_round",
+  "receipt_print_format",
+  "total_amount_for_indian",
+  "total_amount_for_foreign",
+  "column_break_imnv",
   "online_payment",
   "cash",
-  "column_break_1",
-  "offer_round",
   "payment_gateway",
   "valid_from",
   "valid_until",
   "status",
-  "total_amount",
-  "receipt_print_format",
   "section_demand_settings",
   "auto_generate_demand",
   "is_one_time",
   "due_offset_days",
   "phd_year_from",
   "phd_year_to",
-  "section_payment_terms",
+  "column_break_zdey",
   "instalment_enabled",
   "max_instalments",
   "late_fee_enabled",
@@ -43,7 +45,8 @@
   "is_refund_available",
   "refund_policies",
   "section_components",
-  "components"
+  "fee_components_for_indian",
+  "fee_components_for_foreign"
  ],
  "fields": [
   {
@@ -81,7 +84,7 @@
   {
    "fieldname": "section_demand_settings",
    "fieldtype": "Section Break",
-   "label": "Demand Generation Settings"
+   "label": "Demand Generation Settings And Payment Terms"
   },
   {
    "default": "0",
@@ -183,21 +186,9 @@
    "reqd": 1
   },
   {
-   "fieldname": "total_amount",
-   "fieldtype": "Currency",
-   "label": "Total Amount",
-   "read_only": 1
-  },
-  {
    "fieldname": "section_components",
    "fieldtype": "Section Break",
    "label": "Fee Components"
-  },
-  {
-   "fieldname": "components",
-   "fieldtype": "Table",
-   "label": "Components",
-   "options": "Fee Component Child"
   },
   {
    "fieldname": "applicable",
@@ -244,11 +235,6 @@
    "label": "Receipt Print Format",
    "mandatory_depends_on": "eval:doc.online_payment ==1",
    "options": "Print Format"
-  },
-  {
-   "fieldname": "section_payment_terms",
-   "fieldtype": "Section Break",
-   "label": "Payment Terms"
   },
   {
    "default": "0",
@@ -300,10 +286,44 @@
    "fieldtype": "Table",
    "label": "Refund Policies",
    "options": "Fee Structure Refund Policy"
+  },
+  {
+   "fieldname": "fee_components_for_indian",
+   "fieldtype": "Table",
+   "label": "Fee Components for Indian",
+   "options": "Fee Component Child",
+   "search_index": 1
+  },
+  {
+   "fieldname": "fee_components_for_foreign",
+   "fieldtype": "Table",
+   "label": "Fee Components for Foreign",
+   "options": "Fee Component Child",
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_zdey",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_amount_for_indian",
+   "fieldtype": "Currency",
+   "label": "Total Amount for Indian",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_amount_for_foreign",
+   "fieldtype": "Currency",
+   "label": "Total Amount for Foreign",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_imnv",
+   "fieldtype": "Column Break"
   }
  ],
  "links": [],
- "modified": "2026-06-02 16:15:53.320936",
+ "modified": "2026-07-03 15:04:31.657983",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Fee Structure",

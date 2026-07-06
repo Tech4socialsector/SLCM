@@ -102,16 +102,29 @@ class FeeStructure(Document):
                 frappe.throw(_("Valid From date cannot be after Valid Until date"))
 
     def calculate_total(self):
-        total = 0
-        for component in self.components:
+        total_indian = 0
+        for component in self.get("fee_components_for_indian", []):
             amount   = component.amount or 0
             tax_rate = component.tax_rate or 0
 
             component.tax_amount   = (amount * tax_rate) / 100
             component.total_amount = amount + component.tax_amount
 
-            total += component.total_amount
-        self.total_amount = total
+            total_indian += component.total_amount
+
+        total_foreign = 0
+        for component in self.get("fee_components_for_foreign", []):
+            amount   = component.amount or 0
+            tax_rate = component.tax_rate or 0
+
+            component.tax_amount   = (amount * tax_rate) / 100
+            component.total_amount = amount + component.tax_amount
+
+            total_foreign += component.total_amount
+
+        self.total_amount_for_indian = total_indian
+        self.total_amount_for_foreign = total_foreign
+        self.total_amount = total_indian
 
     def on_update(self):
         # Extend offer letter fee deadline when valid_until changes
