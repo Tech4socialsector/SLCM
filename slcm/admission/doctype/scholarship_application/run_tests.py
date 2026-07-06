@@ -3,11 +3,11 @@ from frappe.utils import flt, add_days, today
 
 def run_fee_tests():
     # Setup
-    cycle_name = "AC-AY-2026-Test"
-    year_label = "AY-2026"
-    academic_year_name = "2026"
-    campus_name = "CAMP-0002"
-    program_name = "cs"
+    cycle_name = "June To December"
+    year_label = "2026-27"
+    academic_year_name = "2026-27"
+    campus_name = "Bengaluru"
+    program_name = "3-Year LL.B. (Hons.)"
 
     # Ensure Admission Year
     if not frappe.db.exists("Admission Year", year_label):
@@ -25,21 +25,6 @@ def run_fee_tests():
             "academic_year_name": academic_year_name
         }).insert(ignore_permissions=True, ignore_links=True)
 
-    # Ensure Admission Cycle
-    if not frappe.db.exists("Admission Cycle", cycle_name):
-        frappe.get_doc({
-            "doctype": "Admission Cycle",
-            "cycle_name": cycle_name,
-            "cycle_code": "TEST",
-            "admission_year": year_label,
-            "application_start": today(),
-            "application_end": add_days(today(), 30),
-            "status": "Active"
-        }).insert(ignore_permissions=True, ignore_links=True)
-    else:
-        if not frappe.db.get_value("Admission Cycle", cycle_name, "cycle_code"):
-            frappe.db.set_value("Admission Cycle", cycle_name, "cycle_code", "TEST")
-
     # Ensure Applicant
     applicant_filters = {"candidate_name": "Test Applicant Fee Logic", "admission_cycle": cycle_name}
     applicant_id = frappe.db.get_value("Applicant", applicant_filters, "name")
@@ -55,6 +40,7 @@ def run_fee_tests():
             "campus": campus_name,
             "program": program_name
         })
+        app.flags.ignore_mandatory = True
         app.insert(ignore_permissions=True, ignore_links=True)
         applicant_id = app.name
     else:
@@ -79,6 +65,7 @@ def run_fee_tests():
             "offer_date": today(),
             "status": "Issued"
         })
+        ol.flags.ignore_mandatory = True
         ol.insert(ignore_permissions=True, ignore_links=True)
         offer_letter_name = ol.name
     else:
@@ -103,23 +90,18 @@ def run_fee_tests():
             "apply_on": "Total Fee",
             "priority": 1,
             "stage_availability": "Post-Selection",
-            "approval_authority": "Admissions Committee"
-        }).insert(ignore_permissions=True, ignore_links=True)
-    else:
-        # Ensure coverage value is 3000
-        frappe.db.set_value("Scholarship Scheme", {"scheme_code": scheme_code, "admission_cycle": cycle_name}, "coverage_value", 3000)
-    
-    scheme_id = frappe.db.get_value("Scholarship Scheme", {"scheme_code": scheme_code, "admission_cycle": cycle_name}, "name")
-
-    # Ensure Mapping
-    if not frappe.db.exists("Scholarship Scheme Mapping", {"scholarship_scheme": scheme_id, "admission_cycle": cycle_name, "program": program_name}):
-        frappe.get_doc({
-            "doctype": "Scholarship Scheme Mapping",
-            "scholarship_scheme": scheme_id,
-            "admission_cycle": cycle_name,
             "campus": campus_name,
             "program": program_name
         }).insert(ignore_permissions=True, ignore_links=True)
+    else:
+        # Ensure coverage value is 3000, campus and program
+        frappe.db.set_value("Scholarship Scheme", {"scheme_code": scheme_code, "admission_cycle": cycle_name}, {
+            "coverage_value": 3000,
+            "campus": campus_name,
+            "program": program_name
+        })
+    
+    scheme_id = frappe.db.get_value("Scholarship Scheme", {"scheme_code": scheme_code, "admission_cycle": cycle_name}, "name")
 
     # Prepare Fee Assignment
     afa_filters = {"applicant": applicant_id, "admission_cycle": cycle_name}
@@ -157,7 +139,9 @@ def run_fee_tests():
             "original_fee_amount": 10000,
             "status": "Submitted",
             "campus": campus_name,
-            "program": program_name
+            "program": program_name,
+            "family_income": 500000,
+            "income_certificate": "/path/to/cert.pdf"
         })
         sa.flags.ignore_mandatory = True
         sa.insert(ignore_permissions=True, ignore_links=True)
