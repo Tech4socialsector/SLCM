@@ -1,0 +1,320 @@
+{
+ "actions": [],
+ "creation": "2026-07-06 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "tab_general",
+  "enabled",
+  "college_id",
+  "cp_url",
+  "column_break_general",
+  "batch_size",
+  "add_to_deviceid",
+  "is_deviceid_zero_padded",
+  "tab_sql_server",
+  "sql_note",
+  "db_server",
+  "db_port",
+  "db_database",
+  "db_login",
+  "db_password",
+  "column_break_sql",
+  "db_table",
+  "sql_id_column",
+  "sql_empcode_column",
+  "sql_terminal_id_column",
+  "sql_terminal_alias_column",
+  "sql_punchtime_column",
+  "tab_watermark",
+  "watermark_note",
+  "fetch_from_date",
+  "fetch_to_date",
+  "column_break_watermark",
+  "last_log_id",
+  "is_first_run",
+  "tab_failure_mail",
+  "cp_is_send_mail",
+  "mail_to",
+  "mail_cc",
+  "mail_bcc",
+  "column_break_mail",
+  "cp_smtp_host",
+  "cp_smtp_port",
+  "cp_mail_username",
+  "cp_mail_password",
+  "mail_subject"
+ ],
+ "fields": [
+  {
+   "fieldname": "tab_general",
+   "fieldtype": "Tab Break",
+   "label": "General"
+  },
+  {
+   "default": "0",
+   "description": "Master switch for the RFID SQL Server puller.",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enable RFID SQL Agent"
+  },
+  {
+   "description": "College identifier, kept for reference only — not used for any outbound call.",
+   "fieldname": "college_id",
+   "fieldtype": "Data",
+   "label": "College ID"
+  },
+  {
+   "description": "College subdomain / URL, kept for reference only.",
+   "fieldname": "cp_url",
+   "fieldtype": "Data",
+   "label": "College URL"
+  },
+  {
+   "fieldname": "column_break_general",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "20",
+   "description": "Max rows pulled per poll run.",
+   "fieldname": "batch_size",
+   "fieldtype": "Int",
+   "label": "Batch Size"
+  },
+  {
+   "default": "0",
+   "description": "Added to the numeric device/terminal id after zero-padding is removed.",
+   "fieldname": "add_to_deviceid",
+   "fieldtype": "Int",
+   "label": "Add To Device ID"
+  },
+  {
+   "default": "0",
+   "description": "Strip leading zeros from the terminal id before use.",
+   "fieldname": "is_deviceid_zero_padded",
+   "fieldtype": "Check",
+   "label": "Device ID Is Zero Padded"
+  },
+  {
+   "fieldname": "tab_sql_server",
+   "fieldtype": "Tab Break",
+   "label": "SQL Server"
+  },
+  {
+   "fieldname": "sql_note",
+   "fieldtype": "HTML",
+   "label": "SQL Server Note",
+   "options": "<div style=\"background:#e8e9f0; border-left:4px solid #2b2e4a; border-radius:6px; padding:14px 16px; font-size:.84rem; line-height:1.8; color:#333; margin-bottom:8px\"><strong>RFID SQL Agent — SQL Server Source</strong><br><br>Polls a Microsoft SQL Server table where RFID/biometric terminals log swipes, and pulls new rows in order, tracking the last row imported so nothing is missed or duplicated.</div>"
+  },
+  {
+   "description": "IP address or hostname of the SQL Server.",
+   "fieldname": "db_server",
+   "fieldtype": "Data",
+   "label": "Server Host"
+  },
+  {
+   "default": "1433",
+   "fieldname": "db_port",
+   "fieldtype": "Int",
+   "label": "Port"
+  },
+  {
+   "description": "Database name on the SQL Server (e.g. etpdb).",
+   "fieldname": "db_database",
+   "fieldtype": "Data",
+   "label": "Database"
+  },
+  {
+   "description": "SQL Server login username.",
+   "fieldname": "db_login",
+   "fieldtype": "Data",
+   "label": "Username"
+  },
+  {
+   "description": "SQL Server login password.",
+   "fieldname": "db_password",
+   "fieldtype": "Password",
+   "label": "Password"
+  },
+  {
+   "fieldname": "column_break_sql",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "iclock_transaction_reffer",
+   "description": "The table/view to pull swipes from.",
+   "fieldname": "db_table",
+   "fieldtype": "Data",
+   "label": "Table / View"
+  },
+  {
+   "default": "id",
+   "description": "Row id column, used for the watermark.",
+   "fieldname": "sql_id_column",
+   "fieldtype": "Data",
+   "label": "ID Column"
+  },
+  {
+   "default": "emp_code",
+   "description": "Student/employee code column.",
+   "fieldname": "sql_empcode_column",
+   "fieldtype": "Data",
+   "label": "Emp Code Column"
+  },
+  {
+   "default": "terminal_id",
+   "description": "Device/terminal id column.",
+   "fieldname": "sql_terminal_id_column",
+   "fieldtype": "Data",
+   "label": "Terminal ID Column"
+  },
+  {
+   "default": "terminal_alias",
+   "description": "Device/terminal location column.",
+   "fieldname": "sql_terminal_alias_column",
+   "fieldtype": "Data",
+   "label": "Terminal Alias Column"
+  },
+  {
+   "default": "punch_time",
+   "description": "Swipe timestamp column.",
+   "fieldname": "sql_punchtime_column",
+   "fieldtype": "Data",
+   "label": "Punch Time Column"
+  },
+  {
+   "fieldname": "tab_watermark",
+   "fieldtype": "Tab Break",
+   "label": "Watermark"
+  },
+  {
+   "fieldname": "watermark_note",
+   "fieldtype": "HTML",
+   "label": "Watermark Note",
+   "options": "<div style=\"background:#f9f0f0; border-left:4px solid #8b1a1a; border-radius:6px; padding:14px 16px; font-size:.84rem; line-height:1.8; color:#333\">The poller only fetches rows with <code>id &gt; Last Log ID</code> and advances this value on every successful run. If the source table has a long history, use the date range below to skip straight to a specific period instead of importing everything from the start.</div>"
+  },
+  {
+   "description": "Only import swipes with a punch time on/after this date. Leave blank to import all history. Useful to skip a large backlog and start near the present.",
+   "fieldname": "fetch_from_date",
+   "fieldtype": "Date",
+   "label": "Fetch Swipes From"
+  },
+  {
+   "description": "Only import swipes with a punch time on/before this date. Leave blank for no upper bound.",
+   "fieldname": "fetch_to_date",
+   "fieldtype": "Date",
+   "label": "Fetch Swipes To"
+  },
+  {
+   "fieldname": "column_break_watermark",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Last SQL row id successfully imported. Updated automatically by the poller — do not edit manually.",
+   "fieldname": "last_log_id",
+   "fieldtype": "Int",
+   "label": "Last Log ID"
+  },
+  {
+   "default": "1",
+   "description": "Set automatically on the very first successful poll run.",
+   "fieldname": "is_first_run",
+   "fieldtype": "Check",
+   "label": "Is First Run",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tab_failure_mail",
+   "fieldtype": "Tab Break",
+   "label": "Failure Email"
+  },
+  {
+   "default": "0",
+   "description": "When on, a failure email is sent if a poll run errors.",
+   "fieldname": "cp_is_send_mail",
+   "fieldtype": "Check",
+   "label": "Send Email On Failure"
+  },
+  {
+   "depends_on": "eval:doc.cp_is_send_mail==1",
+   "fieldname": "mail_to",
+   "fieldtype": "Data",
+   "label": "Mail To"
+  },
+  {
+   "depends_on": "eval:doc.cp_is_send_mail==1",
+   "fieldname": "mail_cc",
+   "fieldtype": "Data",
+   "label": "Mail CC"
+  },
+  {
+   "depends_on": "eval:doc.cp_is_send_mail==1",
+   "fieldname": "mail_bcc",
+   "fieldtype": "Data",
+   "label": "Mail BCC"
+  },
+  {
+   "fieldname": "column_break_mail",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.cp_is_send_mail==1",
+   "fieldname": "cp_smtp_host",
+   "fieldtype": "Data",
+   "label": "SMTP Host"
+  },
+  {
+   "default": "587",
+   "depends_on": "eval:doc.cp_is_send_mail==1",
+   "fieldname": "cp_smtp_port",
+   "fieldtype": "Int",
+   "label": "SMTP Port"
+  },
+  {
+   "depends_on": "eval:doc.cp_is_send_mail==1",
+   "fieldname": "cp_mail_username",
+   "fieldtype": "Data",
+   "label": "SMTP Username"
+  },
+  {
+   "depends_on": "eval:doc.cp_is_send_mail==1",
+   "fieldname": "cp_mail_password",
+   "fieldtype": "Password",
+   "label": "SMTP Password"
+  },
+  {
+   "default": "RFID SQL Agent — Biometric Data Sync Failure",
+   "depends_on": "eval:doc.cp_is_send_mail==1",
+   "fieldname": "mail_subject",
+   "fieldtype": "Data",
+   "label": "Mail Subject"
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-07-06 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "RFID SQL Agent Settings",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "custom": 0
+}

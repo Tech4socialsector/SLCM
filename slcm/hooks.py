@@ -436,15 +436,17 @@ on_logout = "slcm.utils.auth_routing.handle_logout"
 # RFID Attendance Processing
 scheduler_events = {
 	"cron": {
-		# Pull new RFID swipes from SQL Server into Attendance Log every minute
-		# (1 minute is the shortest interval Frappe's cron scheduler supports;
-		# admins can also force an immediate pull with the "Refresh Now" button
-		# on the RFID Card Management page, which calls poll_now() directly),
-		# then convert those raw logs into Student Attendance right after —
-		# a swipe shows up as attendance within ~1-2 minutes end-to-end
+		# Convert raw Attendance Log rows (created by the live device-push API)
+		# into Student Attendance records — runs every minute, the shortest
+		# interval Frappe's cron scheduler supports.
 		"* * * * *": [
-			"slcm.slcm.utils.rfid_sql_poller.poll_rfid_swipes",
 			"slcm.slcm.doctype.attendance_log.process_attendance_logs.process_pending_logs",
+		],
+		# RFID SQL Agent — independent ingestion path for devices that log to
+		# a SQL Server table instead of pushing over HTTP. Writes into its
+		# own RFID SQL Punch Log, separate from Attendance Log.
+		"*/5 * * * *": [
+			"slcm.slcm.rfid_sql_agent.poller.poll_rfid_sql_agent",
 		],
 		"*/10 * * * *": [
 			"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist"
