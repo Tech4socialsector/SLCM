@@ -164,7 +164,7 @@ frappe.listview_settings['Applicant'] = {
 											<h3 style="margin: 0; color: #2f855a;">${success_count}</h3>
 											<div style="font-size: 11px; color: #38a169; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">${__('Successful')}</div>
 										</div>
-										<div style="flex: 1; padding: 12px; background: #fffbeeb; border: 1px solid #fef08a; border-radius: 8px; text-align: center;">
+										<div style="flex: 1; padding: 12px; background: #fef9c3; border: 1px solid #fef08a; border-radius: 8px; text-align: center;">
 											<h3 style="margin: 0; color: #a16207;">${skipped_count}</h3>
 											<div style="font-size: 11px; color: #ca8a04; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">${__('Skipped')}</div>
 										</div>
