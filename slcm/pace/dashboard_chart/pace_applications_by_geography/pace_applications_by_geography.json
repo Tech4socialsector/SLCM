@@ -4,7 +4,7 @@
  "color": "#a56bdb",
  "creation": "2026-06-30 11:54:14.326254",
  "currency": "",
- "custom_options": "{\"type\": \"bar\", \"title\": \"Applications by City\", \"axisOptions\": {\"shortenYAxisNumbers\": 1}, \"height\": 280, \"colors\": [\"#a56bdb\"]}",
+ "custom_options": "{\"type\": \"bar\", \"axisOptions\": {\"shortenYAxisNumbers\": 1}, \"height\": 280, \"colors\": [\"#a56bdb\"]}",
  "docstatus": 0,
  "doctype": "Dashboard Chart",
  "filters_json": "{\"country\":\"India\"}",
