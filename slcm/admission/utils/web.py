@@ -690,7 +690,7 @@ def get_offer_list(limit_start=0, limit_page_length=10):
             
         # Fetch scholarship info from Applicant Fee Assignment
         afa = frappe.db.get_value("Applicant Fee Assignment", 
-            {"offer_letter": offer.name, "fee_type": "Admission Fee"}, 
+            {"offer_letter": offer.name, "fee_type": "Admission Fee", "docstatus": ["!=", 2]}, 
             ["scholarship_amount", "final_payable_amount"], as_dict=True)
         
         if afa:

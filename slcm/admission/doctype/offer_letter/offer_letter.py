@@ -27,6 +27,13 @@ class OfferLetter(Document):
 
     def validate(self):
         print("VALIDATE TRIGGERED")
+        if self.status == "Draft" and self.fee_structure:
+            from slcm.api.service.fee_service import FeeService
+            applicant_nationality = frappe.db.get_value("Applicant", self.applicant, "nationality") or "Indian"
+            is_foreign = applicant_nationality.strip().lower() != "indian"
+            fee_data = FeeService._calculate_and_freeze_fees(self.fee_structure, is_foreign=is_foreign)
+            self.payable_amount = fee_data.get("total_payable")
+
         self.set_notification_receiver()
         self.validate_status_transition()
         self.handle_audit_and_locking()
@@ -128,6 +135,30 @@ class OfferLetter(Document):
             throw(_("Invalid status transition: From {0} to {1}").format(db_status, self.status))
 
 
+
+    @frappe.whitelist()
+    def sync_fee_amount(self):
+        from slcm.api.service.fee_service import FeeService
+        if self.status not in ["Draft", "Issued"]:
+            frappe.throw(_("Fee can only be synced when Offer Letter is in Draft or Issued status."))
+        
+        if not self.fee_structure:
+            frappe.throw(_("Fee Structure is not set."))
+
+        applicant_nationality = frappe.db.get_value("Applicant", self.applicant, "nationality") or "Indian"
+        is_foreign = applicant_nationality.strip().lower() != "indian"
+        
+        fee_data = FeeService._calculate_and_freeze_fees(self.fee_structure, is_foreign=is_foreign)
+        new_payable_amount = fee_data.get("total_payable")
+        
+        if new_payable_amount != self.payable_amount:
+            self.payable_amount = new_payable_amount
+            if self.status == "Issued":
+                self.ignore_lock = True
+                self.edit_reason = "Synced fee amount from updated Fee Structure"
+            self.save(ignore_permissions=True)
+            return True
+        return False
 
     def handle_audit_and_locking(self):
         """Detects changes in sensitive fields and enforces locking."""
