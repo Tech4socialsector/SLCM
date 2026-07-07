@@ -9,6 +9,8 @@
   "college_id",
   "cp_url",
   "column_break_general",
+  "poll_interval_seconds",
+  "last_polled_at",
   "batch_size",
   "add_to_deviceid",
   "is_deviceid_zero_padded",
@@ -73,6 +75,20 @@
   {
    "fieldname": "column_break_general",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "300",
+   "description": "How often to pull new swipes. The background scheduler ticks every minute (Frappe's finest interval), so this value is rounded up to a minimum of 60 seconds — e.g. 90 still means every 2 minutes.",
+   "fieldname": "poll_interval_seconds",
+   "fieldtype": "Int",
+   "label": "Poll Interval (seconds)"
+  },
+  {
+   "description": "When the poller last actually ran (based on Poll Interval above). Updated automatically.",
+   "fieldname": "last_polled_at",
+   "fieldtype": "Datetime",
+   "label": "Last Polled At",
+   "read_only": 1
   },
   {
    "default": "20",

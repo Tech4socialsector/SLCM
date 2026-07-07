@@ -26,7 +26,7 @@ Flow:
 
 import re
 import frappe
-from frappe.utils import now_datetime
+from frappe.utils import now_datetime, get_datetime
 
 
 # ---------------------------------------------------------------------------
@@ -34,7 +34,14 @@ from frappe.utils import now_datetime
 # ---------------------------------------------------------------------------
 
 def poll_rfid_sql_agent():
-    """Scheduled entry point. Silently exits when not configured/enabled."""
+    """
+    Scheduled entry point — ticks every minute (Frappe's finest cron interval)
+    but only actually polls once "Poll Interval (seconds)" has elapsed since
+    the last run, so admins can dial the effective frequency from the
+    RFID SQL Agent Settings form without touching code/hooks.py. The floor is
+    60 seconds since Frappe's scheduler itself can't tick faster than that.
+    Silently exits when not configured/enabled.
+    """
     try:
         cfg = frappe.get_single("RFID SQL Agent Settings")
 
@@ -43,6 +50,15 @@ def poll_rfid_sql_agent():
 
         if not cfg.db_server:
             return
+
+        interval = max(60, int(cfg.poll_interval_seconds or 300))
+        if cfg.last_polled_at:
+            elapsed = (now_datetime() - get_datetime(cfg.last_polled_at)).total_seconds()
+            if elapsed < interval:
+                return
+
+        frappe.db.set_single_value("RFID SQL Agent Settings", "last_polled_at", now_datetime())
+        frappe.db.commit()
 
         _run_poll(cfg)
 
@@ -267,12 +283,13 @@ def get_dashboard_summary():
         FROM `tabRFID SQL Punch Log` cpl
         LEFT JOIN `tabStudent Master` sm ON sm.name = cpl.student
         ORDER BY cpl.punch_time DESC
-        LIMIT 100
+        LIMIT 5000
     """, as_dict=True)
 
     return {
-        "enabled":      bool(cfg.enabled),
-        "last_log_id":  cfg.last_log_id,
-        "stats":        stats,
-        "recent":       recent,
+        "enabled":             bool(cfg.enabled),
+        "last_log_id":         cfg.last_log_id,
+        "poll_interval_seconds": max(60, int(cfg.poll_interval_seconds or 300)),
+        "stats":               stats,
+        "recent":              recent,
     }
