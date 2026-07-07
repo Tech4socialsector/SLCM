@@ -616,6 +616,7 @@
    "mandatory_depends_on": "eval:doc.ka_capf_child"
   },
   {
+   "depends_on": "eval:doc.foriegn_national == \"No\"",
    "fieldname": "preference_of_test_center_tab",
    "fieldtype": "Tab Break",
    "label": "Preference Of Test Centre"
@@ -624,23 +625,23 @@
    "fieldname": "first_preference",
    "fieldtype": "Link",
    "label": "First Preference",
-   "options": "Entrance Test Provider",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.foriegn_national == \"No\"",
+   "options": "Entrance Test Provider"
   },
   {
    "fieldname": "second_preference",
    "fieldtype": "Link",
    "label": "Second Preference",
-   "options": "Entrance Test Provider",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.foriegn_national == \"No\"",
+   "options": "Entrance Test Provider"
   },
   {
    "fieldname": "third_preference",
    "fieldtype": "Link",
    "label": "Third Preference",
+   "mandatory_depends_on": "eval:doc.foriegn_national == \"No\"",
    "not_nullable": 1,
-   "options": "Entrance Test Provider",
-   "reqd": 1
+   "options": "Entrance Test Provider"
   },
   {
    "fieldname": "other_information_tab",
@@ -782,6 +783,7 @@
    "fieldtype": "Section Break"
   },
   {
+   "depends_on": "eval:doc.foriegn_national == \"No\"",
    "fieldname": "test_center_allocation_note",
    "fieldtype": "HTML",
    "options": "<div style=\"background:#f8f9fa;padding:12px;border-left:4px solid #dc3545;font-size:13px;line-height:1.5\">\n  <strong>Note:</strong>\n  The University reserves the right to allot candidates a test centre other than their first, second, or third preference\n  if it is not logistically feasible to conduct the admissions test at the selected centre(s).\n  The application fee is <strong>non-refundable</strong> in such cases.\n</div>\n"
@@ -1270,7 +1272,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-07 14:54:46.208296",
+ "modified": "2026-07-07 15:10:41.769836",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
