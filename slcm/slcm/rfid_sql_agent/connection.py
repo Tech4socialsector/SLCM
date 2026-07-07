@@ -28,6 +28,25 @@ _OPENSSL_CNF = os.path.join(_APP_ROOT, "mssql_openssl.cnf")
 _GNUTLS_CNF = os.path.join(_APP_ROOT, "mssql_gnutls_override.conf")
 
 
+_FREETDS_LIB_CANDIDATES = [
+    "/usr/lib/x86_64-linux-gnu/odbc/libtdsodbc.so",
+    "/usr/lib/aarch64-linux-gnu/odbc/libtdsodbc.so",
+    "/usr/lib/odbc/libtdsodbc.so",
+    "/usr/lib64/libtdsodbc.so",
+]
+
+
+def _find_freetds_lib():
+    """Locate the FreeTDS ODBC shared library on disk, regardless of whether
+    it's registered in /etc/odbcinst.ini. Returns the path, or None."""
+    import glob
+    for path in _FREETDS_LIB_CANDIDATES:
+        if os.path.exists(path):
+            return path
+    matches = glob.glob("/usr/lib/*/odbc/libtdsodbc.so") + glob.glob("/usr/lib/**/libtdsodbc.so", recursive=True)
+    return matches[0] if matches else None
+
+
 def get_connection():
     """
     Return an open pyodbc connection to the SQL Server configured in
@@ -66,11 +85,21 @@ def get_connection():
 
     available = list(pyodbc.drivers())
     chosen = next((d for d in drivers if d in available), None)
+    is_freetds = chosen == "FreeTDS"
+
+    if not chosen:
+        # Fall back to pointing pyodbc straight at the FreeTDS shared library,
+        # in case tdsodbc is installed but never got registered in
+        # /etc/odbcinst.ini (e.g. on Frappe Cloud, where there's no way to
+        # write that file by hand). pyodbc accepts a raw .so path as DRIVER.
+        chosen = _find_freetds_lib()
+        is_freetds = bool(chosen)
 
     if not chosen:
         frappe.throw(
-            f"No compatible ODBC driver found. Install 'ODBC Driver 17 for SQL Server' on the server. "
-            f"Drivers found: {available}",
+            f"No compatible ODBC driver found. Add 'tdsodbc', 'unixodbc', and 'unixodbc-dev' "
+            f"as APT dependencies (Frappe Cloud) or install 'ODBC Driver 17 for SQL Server' "
+            f"on the server. Drivers found: {available}",
             title="ODBC Driver Missing"
         )
 
@@ -84,7 +113,7 @@ def get_connection():
         "Connection Timeout=10;"
     )
 
-    if chosen == "FreeTDS":
+    if is_freetds:
         conn_str += "TDS_Version=7.4;"
 
     _prev_openssl_conf = os.environ.get("OPENSSL_CONF")

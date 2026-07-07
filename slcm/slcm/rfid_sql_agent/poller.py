@@ -176,6 +176,9 @@ def _run_poll(cfg):
             })
             doc.insert(ignore_permissions=True)
             imported += 1
+
+            if cfg.enable_remote_push:
+                _push_to_remote(cfg, doc)
         except Exception:
             frappe.log_error(
                 title=f"RFID SQL Agent — Failed to insert punch for emp {emp_code} (SQL id {sql_id})",
@@ -194,6 +197,85 @@ def _run_poll(cfg):
             f"RFID SQL Agent: imported={imported}, skipped={skipped}, "
             f"max_id={max_id}, ran_at={now_datetime()}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Remote push — forwards each punch to a remote/cloud SLCM site over its
+# REST API, for setups where the SQL Server is only reachable from this
+# machine (e.g. via a VPN a cloud-hosted site can't run itself).
+# ---------------------------------------------------------------------------
+
+def _push_to_remote(cfg, doc):
+    """POST one punch to the remote site's REST API. Best-effort: logs and
+    marks unsynced on failure so a later retry sweep can pick it up, never
+    raises (must not break the local import if the remote is unreachable)."""
+    import requests
+
+    site_url = (cfg.remote_site_url or "").rstrip("/")
+    api_key = cfg.remote_api_key
+    api_secret = cfg.get_password("remote_api_secret")
+
+    if not site_url or not api_key or not api_secret:
+        return
+
+    payload = {
+        "source_log_id": doc.source_log_id,
+        "emp_code": doc.emp_code,
+        "student": doc.student,
+        "punch_time": str(doc.punch_time),
+        "terminal_id": doc.terminal_id,
+        "terminal_alias": doc.terminal_alias,
+        "sync_status": doc.sync_status,
+    }
+
+    try:
+        resp = requests.post(
+            f"{site_url}/api/resource/RFID SQL Punch Log",
+            json=payload,
+            headers={"Authorization": f"token {api_key}:{api_secret}"},
+            timeout=15,
+        )
+        # A DuplicateEntryError (already pushed earlier) counts as success.
+        if resp.status_code in (200, 409) or (
+            resp.status_code == 417 and "DuplicateEntryError" in resp.text
+        ):
+            frappe.db.set_value("RFID SQL Punch Log", doc.name, "remote_synced", 1)
+        else:
+            frappe.log_error(
+                title=f"RFID SQL Agent — remote push failed for {doc.name}",
+                message=f"HTTP {resp.status_code}: {resp.text[:500]}"
+            )
+    except Exception:
+        frappe.log_error(
+            title=f"RFID SQL Agent — remote push error for {doc.name}",
+            message=frappe.get_traceback()
+        )
+
+
+@frappe.whitelist()
+def retry_unsynced_pushes(limit=200):
+    """Retry pushing any punches that failed to reach the remote site earlier.
+    bench execute slcm.slcm.rfid_sql_agent.poller.retry_unsynced_pushes"""
+    frappe.only_for("System Manager")
+
+    cfg = frappe.get_single("RFID SQL Agent Settings")
+    if not cfg.enable_remote_push:
+        return {"success": False, "message": "Remote Push is not enabled in RFID SQL Agent Settings."}
+
+    names = frappe.get_all(
+        "RFID SQL Punch Log",
+        filters={"remote_synced": 0},
+        pluck="name",
+        limit_page_length=int(limit),
+        order_by="punch_time asc",
+    )
+
+    for name in names:
+        doc = frappe.get_doc("RFID SQL Punch Log", name)
+        _push_to_remote(cfg, doc)
+
+    frappe.db.commit()
+    return {"success": True, "message": f"Retried {len(names)} unsynced punch(es)."}
 
 
 def _maybe_send_failure_mail(cfg, traceback_text):
