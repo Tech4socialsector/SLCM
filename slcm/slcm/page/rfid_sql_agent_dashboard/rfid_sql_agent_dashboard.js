@@ -36,16 +36,9 @@ function build_html() {
 			<div style="margin-bottom: 10px;">
 				<span id="cp-status-dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#ccc;margin-right:6px;"></span>
 				<span id="cp-status-text">Loading...</span>
+				<span class="text-muted" id="cp-shown-count" style="float:right;"></span>
 			</div>
-			<table class="table table-bordered">
-				<thead>
-					<tr>
-						<th>Emp Code</th><th>Student</th><th>Punch Time</th>
-						<th>Terminal</th><th>Location</th><th>Status</th>
-					</tr>
-				</thead>
-				<tbody id="cp-feed-body"><tr><td colspan="6" class="text-muted">Loading...</td></tr></tbody>
-			</table>
+			<div id="cp-datatable"></div>
 		</div>
 		<style>
 			.stat-card { background: var(--card-bg, #fff); border: 1px solid var(--border-color, #d1d8dd); border-radius: 8px; padding: 16px; text-align: center; }
@@ -53,6 +46,35 @@ function build_html() {
 			.stat-label { font-size: .8rem; color: var(--text-muted, #8d99a6); text-transform: uppercase; }
 		</style>
 	`;
+}
+
+const DT_COLUMNS = [
+	{ name: "Emp Code", id: "emp_code", width: 140 },
+	{ name: "Student", id: "student", width: 160 },
+	{ name: "Punch Time", id: "punch_time", width: 170 },
+	{ name: "Terminal", id: "terminal_id", width: 100 },
+	{ name: "Location", id: "terminal_alias", width: 140 },
+	{ name: "Status", id: "sync_status", width: 110 },
+];
+
+function rows_to_datatable_data(recent) {
+	return (recent || []).map((row) => [
+		row.emp_code || "",
+		row.student ? row.student_name || row.student : "Unmapped",
+		frappe.datetime.str_to_user(row.punch_time) || "",
+		row.terminal_id || "",
+		row.terminal_alias || "",
+		row.sync_status || "",
+	]);
+}
+
+function format_interval(seconds) {
+	seconds = seconds || 300;
+	if (seconds % 60 === 0) {
+		const mins = seconds / 60;
+		return mins === 1 ? "1 minute" : `${mins} minutes`;
+	}
+	return seconds === 1 ? "1 second" : `${seconds} seconds`;
 }
 
 function load(wrapper) {
@@ -75,25 +97,28 @@ function render(wrapper, d) {
 	$w.find("#cp-status-dot").css("background", d.enabled ? "#28a745" : "#dc3545");
 	$w.find("#cp-status-text").text(
 		d.enabled
-			? `Enabled — polling every 5 minutes. Last swipe: ${frappe.datetime.str_to_user(d.stats.last_punch) || "none yet"}`
+			? `Enabled — polling every ${format_interval(d.poll_interval_seconds)}. Last swipe: ${frappe.datetime.str_to_user(d.stats.last_punch) || "none yet"}`
 			: "Disabled — turn on 'Enable RFID SQL Agent' in RFID SQL Agent Settings."
 	);
 
-	const rows = (d.recent || [])
-		.map(
-			(row) => `
-			<tr>
-				<td>${frappe.utils.escape_html(row.emp_code || "")}</td>
-				<td>${row.student ? frappe.utils.escape_html(row.student_name || row.student) : '<span class="text-muted">Unmapped</span>'}</td>
-				<td>${frappe.datetime.str_to_user(row.punch_time) || ""}</td>
-				<td>${frappe.utils.escape_html(row.terminal_id || "")}</td>
-				<td>${frappe.utils.escape_html(row.terminal_alias || "")}</td>
-				<td><span class="indicator ${row.sync_status === "Matched" ? "green" : "orange"}">${row.sync_status}</span></td>
-			</tr>`
-		)
-		.join("");
+	const data = rows_to_datatable_data(d.recent);
+	$w.find("#cp-shown-count").text(
+		d.recent && d.recent.length ? `Showing ${d.recent.length} most recent (searchable/sortable below)` : ""
+	);
 
-	$w.find("#cp-feed-body").html(rows || '<tr><td colspan="6" class="text-muted">No punches yet.</td></tr>');
+	if (!wrapper._rfid_dt) {
+		wrapper._rfid_dt = new frappe.DataTable(wrapper.querySelector("#cp-datatable"), {
+			columns: DT_COLUMNS,
+			data,
+			layout: "fluid",
+			serialNoColumn: true,
+			inlineFilters: true,
+			clusterize: true,
+			noDataMessage: "No punches yet.",
+		});
+	} else {
+		wrapper._rfid_dt.refresh(data, DT_COLUMNS);
+	}
 }
 
 function run_now(wrapper) {
