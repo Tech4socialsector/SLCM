@@ -1,9 +1,7 @@
 {
  "actions": [],
- "allow_import": 0,
- "allow_rename": 0,
- "autoname": "hash",
- "creation": "2026-05-05 00:00:00.000000",
+ "autoname": "SP-.####",
+ "creation": "2026-05-05 00:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -90,12 +88,12 @@
    "reqd": 1
   },
   {
+   "fetch_from": "student.first_name",
    "fieldname": "student_name",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Student Name",
-   "read_only": 1,
-   "fetch_from": "student.first_name"
+   "read_only": 1
   },
   {
    "fieldname": "col_break_student",
@@ -155,8 +153,8 @@
    "fieldname": "current_cgpa",
    "fieldtype": "Float",
    "label": "CGPA",
-   "read_only": 1,
-   "precision": "2"
+   "precision": "2",
+   "read_only": 1
   },
   {
    "fieldname": "backlog_count",
@@ -185,11 +183,11 @@
    "fieldtype": "Column Break"
   },
   {
+   "description": "Carry-forward courses where FA/MFA was applied but student is still not exam-eligible",
    "fieldname": "cf_fa_shortage_count",
    "fieldtype": "Int",
    "label": "CF Courses with FA + Shortage",
-   "read_only": 1,
-   "description": "Carry-forward courses where FA/MFA was applied but student is still not exam-eligible"
+   "read_only": 1
   },
   {
    "fieldname": "section_checks",
@@ -197,19 +195,19 @@
    "label": "Criteria Results"
   },
   {
+   "default": "Not Checked",
    "fieldname": "cgpa_result",
    "fieldtype": "Select",
    "label": "CGPA Check",
    "options": "Pass\nFail\nNot Checked",
-   "default": "Not Checked",
    "read_only": 1
   },
   {
+   "default": "Not Checked",
    "fieldname": "backlog_result",
    "fieldtype": "Select",
    "label": "Backlog Check",
    "options": "Pass\nFail\nNot Checked",
-   "default": "Not Checked",
    "read_only": 1
   },
   {
@@ -217,27 +215,27 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "Not Checked",
    "fieldname": "attendance_result",
    "fieldtype": "Select",
    "label": "Attendance Check",
    "options": "Pass\nFail\nNot Checked",
-   "default": "Not Checked",
    "read_only": 1
   },
   {
+   "default": "Not Checked",
    "fieldname": "shortage_course_result",
    "fieldtype": "Select",
    "label": "Course Shortage Check",
    "options": "Pass\nFail\nNot Checked",
-   "default": "Not Checked",
    "read_only": 1
   },
   {
+   "default": "Not Checked",
    "fieldname": "cf_result",
    "fieldtype": "Select",
    "label": "CF FA + Shortage Check",
    "options": "Pass\nFail\nNot Checked",
-   "default": "Not Checked",
    "read_only": 1
   },
   {
@@ -246,29 +244,29 @@
    "label": "Manual Override"
   },
   {
+   "default": "0",
+   "description": "Check this to override the system-determined promotion status",
    "fieldname": "manual_override",
    "fieldtype": "Check",
-   "label": "Manual Override",
-   "default": "0",
-   "description": "Check this to override the system-determined promotion status"
+   "label": "Manual Override"
   },
   {
    "fieldname": "col_break_override",
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:doc.manual_override",
    "fieldname": "override_reason",
    "fieldtype": "Small Text",
-   "label": "Override Reason",
-   "depends_on": "eval:doc.manual_override"
+   "label": "Override Reason"
   }
  ],
  "links": [],
- "modified": "2026-05-05 00:00:00.000000",
+ "modified": "2026-06-30 11:22:52.259499",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Promotion",
- "naming_rule": "Random",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -285,12 +283,12 @@
   },
   {
    "create": 1,
-   "delete": 0,
    "read": 1,
    "role": "Academics User",
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

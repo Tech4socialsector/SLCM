@@ -35,17 +35,17 @@ class AttendanceSession(Document):
 			self.trigger_calculations()
 
 	def update_student_attendance_hours(self):
-		"""Update hours_counted in linked Student Attendance records"""
+		"""Update hours_counted in ALL linked Student Attendance records when session duration changes."""
 		if not self.duration_hours:
 			return
 
+		# Update all sources including RFID — session duration is authoritative
 		frappe.db.sql("""
 			UPDATE `tabStudent Attendance`
 			SET hours_counted = %s
 			WHERE attendance_session = %s
 			AND status IN ('Present', 'Late', 'Excused')
 			AND docstatus < 2
-			AND (source IS NULL OR source != 'RFID')
 		""", (self.duration_hours, self.name))
 
 	def sync_details_to_attendance(self):
@@ -98,8 +98,9 @@ class AttendanceSession(Document):
 					"date": self.session_date,
 					"session_type": self.session_type,
 					"status": "Absent",
-					"source": "Auto",   # Auto-created placeholder — NOT yet manually marked
-					"student_group": self.student_group
+					"source": "Auto",
+					"student_group": self.student_group,
+					"hours_counted": self.duration_hours or 1.0,
 				})
 				doc.insert(ignore_permissions=True)
 				
@@ -159,13 +160,14 @@ class AttendanceSession(Document):
 		attendance_data = frappe.db.sql("""
 			SELECT
 				COUNT(*) as total,
-				SUM(CASE WHEN sa.source IN ('Manual', 'RFID') AND sa.status IN ('Present', 'Late') THEN 1 ELSE 0 END) as present,
-				SUM(CASE WHEN sa.source IN ('Manual', 'RFID') AND sa.status = 'Absent'              THEN 1 ELSE 0 END) as absent,
-				SUM(CASE WHEN sa.source IN ('Manual', 'RFID') AND sa.status IN ('Present', 'Late')
-				         AND (s.gender = 'Male' OR s.gender = 'Man')                               THEN 1 ELSE 0 END) as boys,
-				SUM(CASE WHEN sa.source IN ('Manual', 'RFID') AND sa.status IN ('Present', 'Late')
-				         AND (s.gender = 'Female' OR s.gender = 'Woman')                           THEN 1 ELSE 0 END) as girls,
-				SUM(CASE WHEN sa.source IN ('Manual', 'RFID')                                      THEN 1 ELSE 0 END) as manually_marked
+				SUM(CASE WHEN sa.status IN ('Present', 'Late') THEN 1 ELSE 0 END) as present,
+				SUM(CASE WHEN sa.status = 'Absent'             THEN 1 ELSE 0 END) as absent,
+				SUM(CASE WHEN sa.status IN ('Present', 'Late')
+				         AND (s.gender = 'Male' OR s.gender = 'Man')   THEN 1 ELSE 0 END) as boys,
+				SUM(CASE WHEN sa.status IN ('Present', 'Late')
+				         AND (s.gender = 'Female' OR s.gender = 'Woman') THEN 1 ELSE 0 END) as girls,
+				SUM(CASE WHEN sa.source = 'Manual'             THEN 1 ELSE 0 END) as manually_marked,
+				SUM(CASE WHEN sa.source = 'RFID'               THEN 1 ELSE 0 END) as rfid_marked
 			FROM `tabStudent Attendance` sa
 			JOIN `tabStudent Master` s ON sa.student = s.name
 			WHERE sa.attendance_session = %s
@@ -176,23 +178,24 @@ class AttendanceSession(Document):
 			data = attendance_data[0]
 			self.total_students = data.get('total', 0) or 0
 			manually_marked = data.get('manually_marked', 0) or 0
+			rfid_marked = data.get('rfid_marked', 0) or 0
 			self.present_count = data.get('present', 0) or 0
 			self.absent_count = data.get('absent', 0) or 0
 			self.total_boys = data.get('boys', 0) or 0
 			self.total_girls = data.get('girls', 0) or 0
 
-			# Percentage is based on total enrolled students (not just marked ones)
 			if self.total_students > 0:
 				self.attendance_percentage = (self.present_count / self.total_students) * 100
 			else:
 				self.attendance_percentage = 0
 
-			# attendance_marked = 1 only when teacher/RFID has explicitly marked attendance.
-			# Auto-created placeholder records (source='Auto') do NOT count as marked.
+			# attendance_marked = 1 only when a teacher has manually marked attendance.
+			# RFID-only marking does NOT set this flag — teacher must confirm.
+			# Auto placeholder records (source='Auto') never count.
 			self.attendance_marked = 1 if manually_marked > 0 else 0
 
-			# session_status flips to "Conducted" only when attendance is actually marked
-			if self.attendance_marked and self.session_status == "Scheduled":
+			# session_status flips to "Conducted" when either Manual or RFID attendance exists
+			if (manually_marked > 0 or rfid_marked > 0) and self.session_status == "Scheduled":
 				self.session_status = "Conducted"
 
 		# Populate Child Table

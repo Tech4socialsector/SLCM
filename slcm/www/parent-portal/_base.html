@@ -58,8 +58,8 @@
       --pp-purple-bg:     #ede9fe;
       --sidebar-w:        {{ pp_settings.sidebar_width_css   if pp_settings else "256px" }};
       --nav-h:            {{ pp_settings.nav_height_css      if pp_settings else "62px" }};
-      --pp-sidebar-bg:    {{ pp_settings.sidebar_bg_color    if pp_settings and pp_settings.sidebar_bg_color else "#ffffff" }};
-      --pp-sidebar-text:  {{ pp_settings.sidebar_text_color  if pp_settings and pp_settings.sidebar_text_color else "#374151" }};
+      --pp-sidebar-bg:    {{ pp_settings.sidebar_bg_color    if pp_settings and pp_settings.sidebar_bg_color else "#2b2e4a" }};
+      --pp-sidebar-text:  {{ pp_settings.sidebar_text_color  if pp_settings and pp_settings.sidebar_text_color else "#e8e9f0" }};
       --pp-radius:        {{ pp_settings.corner_radius_css   if pp_settings else "16px" }};
       --pp-font:          {{ pp_settings.font_family_css     if pp_settings else "'Inter', system-ui, sans-serif" }};
     }
@@ -293,7 +293,7 @@
       top: var(--nav-h); left: 0; bottom: 0;
       width: var(--sidebar-w);
       background: var(--pp-sidebar-bg);
-      border-right: 1px solid var(--pp-border);
+      border-right: 1px solid rgba(255,255,255,0.08);
       overflow-y: auto;
       overflow-x: hidden;
       z-index: 100;
@@ -340,31 +340,56 @@
     }
     .pp-parent-info-label .ms { font-size: 13px; vertical-align: -2px; }
 
-    /* Ward selector pill (multi-ward) */
-    .pp-ward-selector {
-      background: var(--pp-bg);
-      border: 1px solid var(--pp-border);
-      border-radius: 10px;
-      padding: 10px 12px;
-      margin-bottom: 14px;
-      font-size: 12px;
-      color: var(--pp-text-3);
+    /* Ward selector (multi-ward) */
+    .pp-ward-selector { margin-bottom: 10px; }
+    .pp-ward-selector-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--pp-sidebar-text);
+      opacity: 0.45; padding: 0 4px; margin-bottom: 6px; display: block;
     }
-    .pp-ward-selector strong { color: var(--pp-text-1); font-size: 12px; font-weight: 600; display: block; margin-bottom: 7px; }
     .pp-ward-pill {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 4px 10px;
-      border-radius: 20px;
-      border: 1.5px solid var(--pp-border);
-      font-size: 12px; font-weight: 600;
-      color: var(--pp-text-2);
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 12px; border-radius: 10px;
+      border: 1.5px solid rgba(255,255,255,0.12);
+      font-size: 12.5px; font-weight: 500;
+      color: rgba(255,255,255,0.65);
       text-decoration: none;
-      margin: 2px 2px 2px 0;
-      background: #fff;
+      margin-bottom: 4px;
+      background: transparent;
+      transition: all 0.15s;
+      cursor: pointer;
+    }
+    .pp-ward-pill:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.25);
+      color: rgba(255,255,255,0.9);
+    }
+    .pp-ward-pill.active {
+      background: rgba(255,255,255,0.14);
+      border-color: rgba(255,255,255,0.35);
+      color: #ffffff;
+      font-weight: 700;
+    }
+    .pp-ward-pill-avatar {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      background: rgba(255,255,255,0.15); font-size: 11px; font-weight: 700;
+      color: rgba(255,255,255,0.8);
+      display: flex; align-items: center; justify-content: center;
       transition: all 0.15s;
     }
-    .pp-ward-pill:hover { border-color: var(--pp-primary); color: var(--pp-primary); }
-    .pp-ward-pill.active { background: var(--pp-primary); color: #fff; border-color: var(--pp-primary); }
+    .pp-ward-pill.active .pp-ward-pill-avatar {
+      background: var(--pp-primary);
+      color: #fff;
+    }
+    .pp-ward-pill-check {
+      font-family: 'Material Symbols Outlined'; font-size: 15px;
+      color: var(--pp-primary); opacity: 0;
+      margin-left: auto; flex-shrink: 0;
+      background: rgba(255,255,255,0.9); border-radius: 50%;
+      width: 18px; height: 18px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .pp-ward-pill.active .pp-ward-pill-check { opacity: 1; }
 
     .pp-sidebar-label {
       font-size: 10.5px; font-weight: 700;
@@ -379,14 +404,14 @@
       color: var(--pp-sidebar-text); transition: all 0.15s;
       margin-bottom: 1px; border-left: 3px solid transparent;
     }
-    .pp-nav-item:hover:not(.active) { background: rgba(0,0,0,0.06); color: var(--pp-sidebar-text); }
+    .pp-nav-item:hover:not(.active) { background: rgba(255,255,255,0.08); color: var(--pp-sidebar-text); }
     .pp-nav-item.active {
-      background: var(--pp-primary-light);
-      border-left-color: var(--pp-primary);
-      color: var(--pp-primary); font-weight: 600;
+      background: var(--pp-primary);
+      border-left-color: rgba(255,255,255,0.6);
+      color: #ffffff; font-weight: 600;
     }
     .pp-nav-item .ms { font-family: 'Material Symbols Outlined'; font-size: 19px; color: var(--pp-sidebar-text); opacity: 0.65; flex-shrink: 0; transition: color 0.15s; }
-    .pp-nav-item.active .ms { color: var(--pp-primary); opacity: 1; }
+    .pp-nav-item.active .ms { color: #ffffff; opacity: 1; }
     .pp-nav-item:hover:not(.active) .ms { opacity: 0.9; }
     .pp-nav-item-badge {
       margin-left: auto;
@@ -396,7 +421,7 @@
 
     /* Sidebar Academic Info */
     .pp-sidebar-info-box {
-      background: rgba(0,0,0,0.06);
+      background: rgba(255,255,255,0.07);
       border-radius: 10px;
       padding: 10px 12px;
       margin-top: 2px;
@@ -411,7 +436,7 @@
     /* Sidebar footer contact */
     .pp-sidebar-footer {
       padding: 12px 12px 0;
-      border-top: 1px solid rgba(0,0,0,0.1);
+      border-top: 1px solid rgba(255,255,255,0.12);
       margin-top: auto;
     }
     .pp-sidebar-contact-card {
@@ -622,7 +647,7 @@
 
     /* ── Divider ────────────────────────────────────────────── */
     .pp-divider { border: none; border-top: 1px solid var(--pp-border); margin: 16px 0; }
-    .pp-sidebar .pp-divider { border-top-color: rgba(0,0,0,0.1); }
+    .pp-sidebar .pp-divider { border-top-color: rgba(255,255,255,0.12); }
 
     /* ── Animations ─────────────────────────────────────────── */
     @keyframes fadeInUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
@@ -919,10 +944,16 @@
       {% if wards and wards|length > 1 %}
       <!-- Ward Selector -->
       <div class="pp-ward-selector">
-        <strong>Select Ward</strong>
+        <span class="pp-ward-selector-label">Switch Ward</span>
+        {% set _cur_path = frappe.request.path if frappe.request else '/parent-portal' %}
         {% for w in wards %}
-        <a href="?ward={{ w.name }}" class="pp-ward-pill {% if w.name == active_ward %}active{% endif %}">
-          {{ w.first_name }}
+        <a href="{{ _cur_path }}?ward={{ w.name }}"
+           class="pp-ward-pill {% if w.name == active_ward %}active{% endif %}">
+          <div class="pp-ward-pill-avatar">{{ (w.first_name or 'S')[0].upper() }}</div>
+          <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            {{ w.first_name }}{% if w.last_name %} {{ w.last_name }}{% endif %}
+          </span>
+          <span class="pp-ward-pill-check">check</span>
         </a>
         {% endfor %}
       </div>
@@ -956,39 +987,6 @@
          class="pp-nav-item {% if active_page == 'fees' %}active{% endif %}">
         <span class="ms">payments</span> Fees &amp; Payments
       </a>
-      {% endif %}
-
-      {% if ward_programme or ward_batch or ward_status %}
-      <div class="pp-sidebar-label" style="margin-top:18px;">Academic Info</div>
-      <div class="pp-sidebar-info-box">
-        {% if ward_name %}
-        <div class="pp-sidebar-info-row">
-          <span class="pp-sidebar-info-label">Student</span>
-          <span class="pp-sidebar-info-value">{{ ward_name }}</span>
-        </div>
-        {% endif %}
-        {% if ward_programme %}
-        <div class="pp-sidebar-info-row">
-          <span class="pp-sidebar-info-label">Programme</span>
-          <span class="pp-sidebar-info-value">{{ ward_programme }}</span>
-        </div>
-        {% endif %}
-        {% if ward_batch %}
-        <div class="pp-sidebar-info-row">
-          <span class="pp-sidebar-info-label">Batch</span>
-          <span class="pp-sidebar-info-value">{{ ward_batch }}</span>
-        </div>
-        {% endif %}
-        {% if ward_status %}
-        <div class="pp-sidebar-info-row" style="margin-bottom:0;">
-          <span class="pp-sidebar-info-label">Status</span>
-          <span class="pp-sidebar-info-value"
-                style="color:{% if ward_status == 'Active' %}var(--pp-success){% else %}var(--pp-warning){% endif %};">
-            {{ ward_status }}
-          </span>
-        </div>
-        {% endif %}
-      </div>
       {% endif %}
 
       <hr class="pp-divider" style="margin:18px 0 14px;">

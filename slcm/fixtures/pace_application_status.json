@@ -112,7 +112,7 @@
  {
   "docstatus": 0,
   "doctype": "PACE Application Status",
-  "modified": "2026-06-19 18:22:00.000000",
+  "modified": "2026-06-19 18:22:00",
   "name": "Withdrawn",
   "next_step_note": "Application withdrawn. Admission process closed.",
   "stage_type": "Enrolled",

@@ -15,9 +15,7 @@
 <div class="fp-dashboard-hero fade-in">
   <div style="position:relative;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;">
     <div>
-      <p class="fp-hero-sub">
-        {{ faculty_designation or 'Faculty' }}{% if faculty_department %} &nbsp;·&nbsp; {{ faculty_department }}{% endif %}
-      </p>
+      {% if faculty_department %}<p class="fp-hero-sub">{{ faculty_department }}</p>{% endif %}
       <div class="fp-hero-date">
         <span class="fp-ms">today</span>
         <span id="fp-live-date">Loading date…</span>
@@ -271,7 +269,7 @@ window._fpDashData = {
   var isDark    = document.body.classList.contains('fp-dark');
   var gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
   var textColor = isDark ? '#64748b' : '#94a3b8';
-  var primary   = '#1e3a5f';
+  var primary   = '#920c24';
   var accent    = '#2563eb';
   Chart.defaults.font.family = "'Poppins', system-ui, sans-serif";
   Chart.defaults.font.size   = 11;

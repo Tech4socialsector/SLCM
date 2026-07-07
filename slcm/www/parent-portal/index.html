@@ -3,111 +3,27 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block extra_css %}
-  /* Dashboard single-column layout */
-  .pp-dash-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 20px;
-    align-items: start;
-  }
-
-  /* Quick Actions */
-  .pp-action-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-  @media (max-width: 560px) {
-    .pp-action-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  }
-  .pp-action-card {
-    background: var(--pp-card);
-    border: 1px solid var(--pp-border);
-    border-radius: 14px;
-    padding: 18px 14px;
-    text-decoration: none;
-    display: flex; flex-direction: column; align-items: center; gap: 10px;
-    text-align: center;
-    transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
-    cursor: pointer;
-  }
-  .pp-action-card:hover {
-    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-    transform: translateY(-2px);
-    border-color: var(--pp-primary);
-  }
-  .pp-action-icon {
-    width: 48px; height: 48px; border-radius: 14px;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Material Symbols Outlined'; font-size: 24px;
-  }
-  .pp-action-label { font-size: 12.5px; font-weight: 600; color: var(--pp-text-2); line-height: 1.3; }
-
-  /* Academic Profile card */
-  .pp-profile-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--pp-border-light);
-  }
-  .pp-profile-row:last-child { border-bottom: none; padding-bottom: 0; }
-  .pp-profile-row:first-child { padding-top: 0; }
-  .pp-profile-key { font-size: 12px; color: var(--pp-text-4); font-weight: 500; }
-  .pp-profile-val { font-size: 13px; font-weight: 600; color: var(--pp-text-1); text-align: right; }
-
-  /* Result preview card */
-  .pp-result-item {
-    display: flex; align-items: center; gap: 14px;
-    padding: 14px 0; border-bottom: 1px solid var(--pp-border-light);
-  }
-  .pp-result-item:last-child { border-bottom: none; padding-bottom: 0; }
-  .pp-result-item:first-child { padding-top: 0; }
-  .pp-result-icon {
-    width: 42px; height: 42px; border-radius: 11px;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Material Symbols Outlined'; font-size: 20px;
-    flex-shrink: 0;
-  }
-  .pp-result-name { font-weight: 600; font-size: 13.5px; color: var(--pp-text-1); }
-  .pp-result-meta { font-size: 11.5px; color: var(--pp-text-4); margin-top: 2px; }
-  .pp-result-pills { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
-  .pp-result-pill {
-    font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 8px;
-    background: var(--pp-primary-light); color: var(--pp-primary);
-  }
-
-  /* ── Stat card drill-down ────────────────────────────────────── */
-  .pp-stat-card-drillable {
-    cursor: pointer;
-    transition: box-shadow 0.2s, transform 0.2s;
-  }
-  .pp-stat-card-drillable:hover {
-    box-shadow: 0 10px 28px rgba(0,0,0,0.13);
-    transform: translateY(-4px);
-  }
+  /* ── Stat card drill-down ─────────────────────────────────── */
+  .pp-stat-card-drillable { cursor: pointer; transition: box-shadow 0.2s, transform 0.2s; }
+  .pp-stat-card-drillable:hover { box-shadow: 0 10px 28px rgba(0,0,0,0.13); transform: translateY(-4px); }
   .pp-stat-drill-hint {
     display: flex; align-items: center; gap: 3px;
-    font-size: 10.5px; font-weight: 600;
-    color: var(--pp-primary); margin-top: 8px;
-    opacity: 0; transition: opacity 0.2s;
+    font-size: 10.5px; font-weight: 600; color: var(--pp-primary);
+    margin-top: 8px; opacity: 0; transition: opacity 0.2s;
   }
   .pp-stat-card-drillable:hover .pp-stat-drill-hint { opacity: 1; }
 
-  /* ── Drill-down modal ────────────────────────────────────────── */
+  /* ── Drill-down modal ─────────────────────────────────────── */
   .pp-drill-overlay {
-    display: none;
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.45);
-    z-index: 9000;
-    align-items: center; justify-content: center;
-    padding: 20px;
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45); z-index: 9000;
+    align-items: center; justify-content: center; padding: 20px;
   }
   .pp-drill-overlay.open { display: flex; }
   .pp-drill-modal {
-    background: var(--pp-card);
-    border-radius: 20px;
+    background: var(--pp-card); border-radius: 20px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-    width: 100%; max-width: 560px;
-    max-height: 80vh;
+    width: 100%; max-width: 560px; max-height: 80vh;
     display: flex; flex-direction: column;
     animation: ppModalIn 0.22s ease;
   }
@@ -117,34 +33,24 @@
   }
   .pp-drill-modal-header {
     display: flex; align-items: center; gap: 12px;
-    padding: 18px 20px 14px;
-    border-bottom: 1px solid var(--pp-border);
-    flex-shrink: 0;
+    padding: 18px 20px 14px; border-bottom: 1px solid var(--pp-border); flex-shrink: 0;
   }
   .pp-drill-modal-icon {
     width: 40px; height: 40px; border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
-    font-family: 'Material Symbols Outlined'; font-size: 20px;
-    flex-shrink: 0;
+    font-family: 'Material Symbols Outlined'; font-size: 20px; flex-shrink: 0;
   }
-  .pp-drill-modal-title {
-    font-size: 15px; font-weight: 700; color: var(--pp-text-1); flex: 1;
-  }
-  .pp-drill-modal-sub {
-    font-size: 12px; color: var(--pp-text-4); margin-top: 2px;
-  }
+  .pp-drill-modal-title { font-size: 15px; font-weight: 700; color: var(--pp-text-1); flex: 1; }
+  .pp-drill-modal-sub   { font-size: 12px; color: var(--pp-text-4); margin-top: 2px; }
   .pp-drill-modal-close {
     background: var(--pp-bg); border: none; cursor: pointer;
     width: 32px; height: 32px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     font-family: 'Material Symbols Outlined'; font-size: 18px;
-    color: var(--pp-text-3); transition: background 0.15s;
-    flex-shrink: 0;
+    color: var(--pp-text-3); transition: background 0.15s; flex-shrink: 0;
   }
   .pp-drill-modal-close:hover { background: var(--pp-border); }
-  .pp-drill-modal-body {
-    overflow-y: auto; padding: 16px 20px 20px; flex: 1;
-  }
+  .pp-drill-modal-body { overflow-y: auto; padding: 16px 20px 20px; flex: 1; }
   .pp-drill-row {
     display: flex; align-items: center; gap: 12px;
     padding: 12px 0; border-bottom: 1px solid var(--pp-border-light);
@@ -156,31 +62,185 @@
     display: flex; align-items: center; justify-content: center;
     font-family: 'Material Symbols Outlined'; font-size: 18px;
   }
-  .pp-drill-row-name { font-size: 13.5px; font-weight: 600; color: var(--pp-text-1); }
-  .pp-drill-row-meta { font-size: 11.5px; color: var(--pp-text-4); margin-top: 2px; }
+  .pp-drill-row-name  { font-size: 13.5px; font-weight: 600; color: var(--pp-text-1); }
+  .pp-drill-row-meta  { font-size: 11.5px; color: var(--pp-text-4); margin-top: 2px; }
   .pp-drill-row-right { margin-left: auto; text-align: right; flex-shrink: 0; }
-  .pp-drill-row-pct { font-size: 20px; font-weight: 800; line-height: 1; }
-  .pp-drill-row-bar { margin-top: 6px; width: 100px; }
-  .pp-drill-empty {
-    text-align: center; padding: 32px 0;
-    color: var(--pp-text-4); font-size: 13px;
-  }
+  .pp-drill-row-pct   { font-size: 20px; font-weight: 800; line-height: 1; }
+  .pp-drill-row-bar   { margin-top: 6px; width: 100px; }
+  .pp-drill-empty     { text-align: center; padding: 32px 0; color: var(--pp-text-4); font-size: 13px; }
   .pp-drill-empty .ms { font-size: 36px; display: block; margin-bottom: 8px; }
 
-  /* Attendance course cards */
+  /* ── Quick action cards ────────────────────────────────────── */
+  .pp-action-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+  }
+  @media (max-width: 700px) { .pp-action-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 400px) { .pp-action-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; } }
+  .pp-action-card {
+    background: var(--pp-card); border: 1px solid var(--pp-border);
+    border-radius: 14px; padding: 16px 12px;
+    text-decoration: none; display: flex; flex-direction: column;
+    align-items: center; gap: 8px; text-align: center;
+    transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+  }
+  .pp-action-card:hover {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1); transform: translateY(-2px);
+    border-color: var(--pp-primary);
+  }
+  .pp-action-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Material Symbols Outlined'; font-size: 22px;
+  }
+  .pp-action-label { font-size: 12px; font-weight: 600; color: var(--pp-text-2); line-height: 1.3; }
+
+  /* ── Responsive two-col grids ─────────────────────────────── */
+  @media (max-width: 900px) {
+    .pp-dash-two-col { grid-template-columns: 1fr !important; }
+  }
+
+  /* ── Bar chart ────────────────────────────────────────────── */
+  .pp-att-chart-wrap {
+    padding: 16px 20px 20px; overflow-x: auto;
+  }
+  .pp-att-chart-inner {
+    display: flex; align-items: flex-end; gap: 10px;
+    min-height: 160px; min-width: max-content;
+  }
+  .pp-att-bar-col {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    flex: 1; min-width: 56px; max-width: 90px;
+  }
+  .pp-att-bar-pct {
+    font-size: 11.5px; font-weight: 800; line-height: 1;
+  }
+  .pp-att-bar-track {
+    width: 100%; background: var(--pp-border-light);
+    border-radius: 8px 8px 4px 4px; height: 120px;
+    display: flex; align-items: flex-end; overflow: hidden;
+  }
+  .pp-att-bar-fill {
+    width: 100%; border-radius: 6px 6px 3px 3px;
+    transition: height 1s cubic-bezier(0.16,1,0.3,1);
+  }
+  .pp-att-bar-name {
+    font-size: 10.5px; font-weight: 600; color: var(--pp-text-3);
+    text-align: center; line-height: 1.3;
+    overflow: hidden; text-overflow: ellipsis;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    max-width: 80px;
+  }
+  .pp-att-bar-thresh {
+    width: 100%; height: 1px; background: var(--pp-danger); opacity: 0.4;
+    position: relative; margin-bottom: -1px;
+  }
+
+  /* ── RFID swipe rows ──────────────────────────────────────── */
+  .pp-rfid-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 20px; border-bottom: 1px solid var(--pp-border);
+    transition: background 0.12s;
+  }
+  .pp-rfid-row:last-child { border-bottom: none; }
+  .pp-rfid-row:hover { background: #fafafa; }
+  .pp-rfid-icon {
+    width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Material Symbols Outlined'; font-size: 17px;
+  }
+  .pp-rfid-time { font-size: 15px; font-weight: 700; color: var(--pp-text-1); }
+  .pp-rfid-meta { font-size: 11.5px; color: var(--pp-text-4); margin-top: 1px; }
+
+  /* ── Schedule rows ────────────────────────────────────────── */
+  .pp-sched-date-group { margin-bottom: 18px; }
+  .pp-sched-date-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--pp-text-4);
+    padding: 0 20px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+  }
+  .pp-sched-date-label span.today-pill {
+    background: var(--pp-primary); color: #fff;
+    font-size: 10px; padding: 2px 8px; border-radius: 20px;
+    font-weight: 700; letter-spacing: 0.04em;
+  }
+  .pp-sched-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 20px; border-bottom: 1px solid var(--pp-border);
+    transition: background 0.12s;
+  }
+  .pp-sched-row:last-child { border-bottom: none; }
+  .pp-sched-row:hover { background: #fafafa; }
+  .pp-sched-time-col { flex-shrink: 0; text-align: center; min-width: 54px; }
+  .pp-sched-from { font-size: 13px; font-weight: 700; color: var(--pp-primary); }
+  .pp-sched-to   { font-size: 11px; color: var(--pp-text-4); }
+  .pp-sched-divider { width: 1px; height: 36px; background: var(--pp-border); flex-shrink: 0; }
+  .pp-sched-course { font-size: 13.5px; font-weight: 600; color: var(--pp-text-1); }
+  .pp-sched-meta   { font-size: 11.5px; color: var(--pp-text-4); margin-top: 2px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+  /* ── Attendance course list (dashboard) ──────────────────── */
   .pp-att-course-row {
-    display: flex; align-items: center; gap: 14px; padding: 13px 20px;
-    border-bottom: 1px solid var(--pp-border);
+    display: flex; align-items: center; gap: 14px;
+    padding: 11px 20px; border-bottom: 1px solid var(--pp-border);
     transition: background 0.12s;
   }
   .pp-att-course-row:last-child { border-bottom: none; }
   .pp-att-course-row:hover { background: #fafafa; }
-  .pp-att-dot {
-    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  .pp-att-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .pp-att-course-name { font-size: 13.5px; font-weight: 600; color: var(--pp-text-1); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pp-att-bar-wrap    { flex: 1; min-width: 60px; max-width: 130px; }
+  .pp-att-pct         { font-size: 13px; font-weight: 800; min-width: 42px; text-align: right; }
+
+  /* ── Hostel card ─────────────────────────────────────────────── */
+  .pp-hostel-hero {
+    background: linear-gradient(135deg, var(--pp-primary-dark) 0%, var(--pp-primary) 100%);
+    padding: 20px 20px 18px;
+    display: flex; align-items: center; gap: 14px;
+    border-radius: 16px 16px 0 0;
+    position: relative; overflow: hidden;
   }
-  .pp-att-course-name { font-size: 13.5px; font-weight: 600; color: var(--pp-text-1); flex: 1; min-width: 0; }
-  .pp-att-bar-wrap { flex: 1; min-width: 60px; max-width: 140px; display: flex; align-items: center; gap: 8px; }
-  .pp-att-pct { font-size: 13px; font-weight: 800; min-width: 42px; text-align: right; }
+  .pp-hostel-hero::before {
+    content: ''; position: absolute; top: -24px; right: -24px;
+    width: 96px; height: 96px; border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+  }
+  .pp-hostel-hero-icon {
+    width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;
+    background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.25);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pp-hostel-hero-icon .ms { font-size: 26px; color: #fff; }
+  .pp-hostel-hero-info { flex: 1; min-width: 0; }
+  .pp-hostel-hero-name { font-size: 15px; font-weight: 700; color: #fff; line-height: 1.2; }
+  .pp-hostel-hero-sub  { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 3px; }
+  .pp-hostel-status-badge { flex-shrink: 0; font-size: 11.5px; font-weight: 600; }
+  .pp-hostel-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 1px; background: var(--pp-border);
+    border-bottom: 1px solid var(--pp-border);
+  }
+  .pp-hostel-stat {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 16px 8px 14px; background: var(--pp-card); text-align: center;
+    transition: background 0.15s;
+  }
+  .pp-hostel-stat:hover { background: var(--pp-bg); }
+  .pp-hostel-stat-icon {
+    font-family: 'Material Symbols Outlined'; font-size: 20px;
+    color: var(--pp-primary); margin-bottom: 6px;
+  }
+  .pp-hostel-stat-val { font-size: 15px; font-weight: 800; color: var(--pp-text-1); line-height: 1; }
+  .pp-hostel-stat-key { font-size: 10.5px; font-weight: 600; color: var(--pp-text-4); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
+  .pp-hostel-footer { padding: 10px 18px; font-size: 12px; color: var(--pp-text-4); display: flex; align-items: center; gap: 6px; }
+  .pp-hostel-footer strong { color: var(--pp-text-2); }
+  @media (max-width: 560px) { .pp-hostel-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  /* ── Result preview ────────────────────────────────────────── */
+  .pp-result-item { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--pp-border-light); }
+  .pp-result-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .pp-result-item:first-child { padding-top: 0; }
+  .pp-result-icon { width: 42px; height: 42px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-family: 'Material Symbols Outlined'; font-size: 20px; flex-shrink: 0; }
+  .pp-result-name { font-weight: 600; font-size: 13.5px; color: var(--pp-text-1); }
+  .pp-result-meta { font-size: 11.5px; color: var(--pp-text-4); margin-top: 2px; }
 
 {% endblock %}
 
@@ -189,13 +249,9 @@
 {# ── Ward Banner ───────────────────────────────────────────────── #}
 <div class="pp-ward-banner fade-in">
   <div class="pp-ward-banner-avatar">
-    {% if ward_photo %}
-      <img src="{{ ward_photo }}" alt="{{ ward_name }}">
-    {% else %}
-      {{ ward_initial }}
-    {% endif %}
+    {% if ward_photo %}<img src="{{ ward_photo }}" alt="{{ ward_name }}">
+    {% else %}{{ ward_initial }}{% endif %}
   </div>
-
   <div class="pp-ward-banner-info">
     {% set _h = frappe.utils.now_datetime().hour %}
     <div class="pp-ward-banner-eyebrow">
@@ -203,23 +259,22 @@
     </div>
     <div class="pp-ward-banner-name">{{ ward_name }}</div>
     <div class="pp-ward-banner-meta">
-      {% if ward_programme %}
-        <span>{{ ward_programme }}</span>
-      {% endif %}
-      {% if ward_batch %}
-        <span class="pp-ward-banner-pill">Batch {{ ward_batch }}</span>
-      {% endif %}
+      {% if ward_programme %}<span>{{ ward_programme }}</span>{% endif %}
+      {% if ward_batch %}<span class="pp-ward-banner-pill">Batch {{ ward_batch }}</span>{% endif %}
       {% if ward_status %}
-        <span class="pp-ward-banner-pill"
-              style="{% if ward_status != 'Active' %}background:rgba(220,38,38,0.25);{% endif %}">
+        <span class="pp-ward-banner-pill" style="{% if ward_status != 'Active' %}background:rgba(220,38,38,0.25);{% endif %}">
           {{ ward_status }}
         </span>
       {% endif %}
     </div>
   </div>
-
-  {# Mini stats in banner #}
-  <div style="display:flex;gap:10px;flex-shrink:0;margin-left:auto;" class="d-lg-flex" id="pp-banner-stats">
+  <div style="display:flex;gap:10px;flex-shrink:0;margin-left:auto;" id="pp-banner-stats">
+    {% if ward_enrolment_no %}
+    <div class="pp-banner-stat">
+      <div class="pp-banner-stat-val" style="font-size:13px;letter-spacing:0.02em;">{{ ward_enrolment_no }}</div>
+      <div class="pp-banner-stat-key">Enrolment No.</div>
+    </div>
+    {% endif %}
     <div class="pp-banner-stat">
       <div class="pp-banner-stat-val">{{ "%02d"|format(course_count) }}</div>
       <div class="pp-banner-stat-key">Courses</div>
@@ -231,7 +286,7 @@
 {% if ward_status and ward_status != 'Active' %}
 <div class="pp-alert pp-alert-warning fade-in" style="margin-bottom:14px;">
   <span class="ms">info</span>
-  <div>Your ward's enrollment status is currently <strong>{{ ward_status }}</strong>. Contact the Registrar's Office for details.</div>
+  <div>Your ward's enrolment status is currently <strong>{{ ward_status }}</strong>. Contact the Registrar's Office for details.</div>
 </div>
 {% endif %}
 
@@ -250,22 +305,15 @@
 {# ── Stat Cards ────────────────────────────────────────────────── #}
 <div class="pp-stat-grid fade-in" style="animation-delay:0.05s;">
 
-  {# Card 2 — Enrolled Courses → modal: all enrolled courses #}
-  <div class="pp-stat-card pp-stat-card-drillable"
-       style="--pp-stat-accent:var(--pp-primary);"
+  <div class="pp-stat-card pp-stat-card-drillable" style="--pp-stat-accent:var(--pp-primary);"
        onclick="ppOpenDrillModal('all')">
-    <div class="pp-stat-icon" style="background:var(--pp-primary-light);color:var(--pp-primary);">
-      menu_book
-    </div>
+    <div class="pp-stat-icon" style="background:var(--pp-primary-light);color:var(--pp-primary);">menu_book</div>
     <div class="pp-stat-label">Enrolled Courses</div>
     <div class="pp-stat-value" style="color:var(--pp-primary);">{{ "%02d"|format(course_count) }}</div>
     <div class="pp-stat-sub">Active this term</div>
-    <div class="pp-stat-drill-hint">
-      <span class="ms" style="font-size:13px;">expand_circle_down</span> View courses
-    </div>
+    <div class="pp-stat-drill-hint"><span class="ms" style="font-size:13px;">expand_circle_down</span> View courses</div>
   </div>
 
-  {# Card 3 — Below 75% → modal: only at-risk courses #}
   <div class="pp-stat-card pp-stat-card-drillable"
        style="--pp-stat-accent:{% if courses_below_75 == 0 %}var(--pp-success){% else %}var(--pp-danger){% endif %};"
        onclick="ppOpenDrillModal('below75')">
@@ -279,13 +327,11 @@
       {{ courses_below_75 }}
     </div>
     <div class="pp-stat-sub">{% if courses_below_75 == 0 %}All courses on track{% else %}Needs attention{% endif %}</div>
-    <div class="pp-stat-drill-hint">
-      <span class="ms" style="font-size:13px;">expand_circle_down</span>
+    <div class="pp-stat-drill-hint"><span class="ms" style="font-size:13px;">expand_circle_down</span>
       {% if courses_below_75 == 0 %}View courses{% else %}View at-risk{% endif %}
     </div>
   </div>
 
-  {# Card 4 — Exam Eligible → modal: eligible vs not-eligible #}
   <div class="pp-stat-card pp-stat-card-drillable"
        style="--pp-stat-accent:{% if courses_eligible == course_count and course_count > 0 %}var(--pp-success){% else %}var(--pp-warning){% endif %};"
        onclick="ppOpenDrillModal('eligible')">
@@ -299,9 +345,7 @@
       {{ courses_eligible }}/{{ course_count }}
     </div>
     <div class="pp-stat-sub">Courses cleared</div>
-    <div class="pp-stat-drill-hint">
-      <span class="ms" style="font-size:13px;">expand_circle_down</span> View eligibility
-    </div>
+    <div class="pp-stat-drill-hint"><span class="ms" style="font-size:13px;">expand_circle_down</span> View eligibility</div>
   </div>
 
 </div>
@@ -309,70 +353,77 @@
 {# ── Quick Actions ──────────────────────────────────────────────── #}
 <div class="pp-action-grid fade-in" style="margin-bottom:22px;animation-delay:0.08s;">
   <a href="/parent-portal/attendance{% if active_ward %}?ward={{ active_ward }}{% endif %}" class="pp-action-card">
-    <div class="pp-action-icon" style="background:var(--pp-primary-light);color:var(--pp-primary);">
-      event_available
-    </div>
-    <span class="pp-action-label">View Attendance</span>
+    <div class="pp-action-icon" style="background:var(--pp-primary-light);color:var(--pp-primary);">event_available</div>
+    <span class="pp-action-label">Attendance</span>
   </a>
   <a href="/parent-portal/results{% if active_ward %}?ward={{ active_ward }}{% endif %}" class="pp-action-card">
-    <div class="pp-action-icon" style="background:var(--pp-purple-bg);color:var(--pp-purple);">
-      school
-    </div>
+    <div class="pp-action-icon" style="background:var(--pp-purple-bg);color:var(--pp-purple);">school</div>
     <span class="pp-action-label">Results &amp; Grades</span>
+  </a>
+  <a href="/parent-portal/fees{% if active_ward %}?ward={{ active_ward }}{% endif %}" class="pp-action-card">
+    <div class="pp-action-icon" style="background:var(--pp-success-bg);color:var(--pp-success);">payments</div>
+    <span class="pp-action-label">Fees &amp; Payments</span>
+  </a>
+  <a href="#pp-rfid-section" class="pp-action-card">
+    <div class="pp-action-icon" style="background:var(--pp-info-bg);color:var(--pp-info);">contactless</div>
+    <span class="pp-action-label">RFID In/Out</span>
   </a>
 </div>
 
-{# ── Main 2-column Grid ─────────────────────────────────────────── #}
-<div class="pp-dash-grid fade-in" style="animation-delay:0.1s;">
+{# ── Main Content Grid ──────────────────────────────────────────── #}
+<div style="display:flex;flex-direction:column;gap:20px;" class="fade-in" style="animation-delay:0.1s;">
 
-  {# ── Left Column: Attendance + Results ─── #}
-  <div style="display:flex;flex-direction:column;gap:20px;">
+  {# ── Row 1: Attendance Chart (full width) ──────────────────── #}
+  <div>
 
-    {# Attendance by Course #}
+    {# Attendance Bar Chart #}
     {% if attendance_summaries %}
     <div class="pp-card">
       <div class="pp-card-header">
-        <div class="pp-card-title">
-          <span class="ms">event_available</span> Attendance by Course
-        </div>
+        <div class="pp-card-title"><span class="ms">bar_chart</span> Attendance by Course</div>
         <a href="/parent-portal/attendance{% if active_ward %}?ward={{ active_ward }}{% endif %}"
-           class="pp-card-link">
-          View Full <span style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;">arrow_forward</span>
-        </a>
+           class="pp-card-link">View Full <span style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;">arrow_forward</span></a>
       </div>
-
-      {% for s in attendance_summaries %}
-      {% set pct = s.attendance_percentage or 0 %}
-      <div class="pp-att-course-row">
-        <div class="pp-att-dot"
-             style="background:{% if pct >= att_good %}var(--pp-success){% elif pct >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};"></div>
-        <div class="pp-att-course-name">{{ s.course_name or s.course }}</div>
-        <div class="pp-att-bar-wrap">
-          <div class="pp-progress" style="flex:1;">
-            <div class="pp-progress-bar"
-                 style="width:{{ [pct,100]|min }}%;background:{% if pct >= att_good %}var(--pp-success){% elif pct >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};">
-            </div>
-          </div>
-        </div>
-        <div class="pp-att-pct"
-             style="color:{% if pct >= att_good %}var(--pp-success){% elif pct >= att_warn %}var(--pp-warning){% else %}var(--pp-danger){% endif %};">
-          {{ pct|round(1) }}%
-        </div>
-        <span class="pp-badge"
-              style="background:{% if s.eligible_for_exam %}var(--pp-success-bg);color:var(--pp-success){% else %}var(--pp-danger-bg);color:var(--pp-danger){% endif %};">
-          {% if s.eligible_for_exam %}
-            <span style="font-family:'Material Symbols Outlined';font-size:13px;margin-right:3px;vertical-align:-1px;">check_circle</span>Eligible
+      <div class="pp-att-chart-wrap">
+        <div class="pp-att-chart-inner" id="pp-att-chart">
+          {% for s in attendance_summaries %}
+          {% set pct = [s.attendance_percentage or 0, 100]|min %}
+          {% if pct >= att_good %}
+            {% set bar_color = "var(--pp-success)" %}
+          {% elif pct >= att_warn %}
+            {% set bar_color = "var(--pp-warning)" %}
           {% else %}
-            <span style="font-family:'Material Symbols Outlined';font-size:13px;margin-right:3px;vertical-align:-1px;">cancel</span>Not Eligible
+            {% set bar_color = "var(--pp-danger)" %}
           {% endif %}
-        </span>
+          <div class="pp-att-bar-col">
+            <div class="pp-att-bar-pct" style="color:{{ bar_color }};">{{ pct|round(0)|int }}%</div>
+            <div class="pp-att-bar-track">
+              <div class="pp-att-bar-fill" data-height="{{ pct }}"
+                   style="height:0%;background:{{ bar_color }};opacity:0.85;">
+              </div>
+            </div>
+            <div class="pp-att-bar-name" title="{{ s.course_name or s.course }}">{{ s.course_name or s.course }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {# Threshold reference line legend #}
+        <div style="display:flex;gap:14px;margin-top:10px;flex-wrap:wrap;font-size:11.5px;color:var(--pp-text-4);">
+          <span style="display:flex;align-items:center;gap:5px;">
+            <span style="display:inline-block;width:18px;height:3px;background:var(--pp-success);border-radius:2px;"></span>≥{{ att_good|int }}% Good
+          </span>
+          <span style="display:flex;align-items:center;gap:5px;">
+            <span style="display:inline-block;width:18px;height:3px;background:var(--pp-warning);border-radius:2px;"></span>{{ att_warn|int }}–{{ att_good|int }}% Low
+          </span>
+          <span style="display:flex;align-items:center;gap:5px;">
+            <span style="display:inline-block;width:18px;height:3px;background:var(--pp-danger);border-radius:2px;"></span>&lt;{{ att_warn|int }}% Critical
+          </span>
+        </div>
       </div>
-      {% endfor %}
     </div>
     {% else %}
-    <div class="pp-card fade-in">
+    <div class="pp-card">
       <div class="pp-card-header">
-        <div class="pp-card-title"><span class="ms">event_available</span> Attendance by Course</div>
+        <div class="pp-card-title"><span class="ms">bar_chart</span> Attendance by Course</div>
       </div>
       <div class="pp-empty">
         <span class="ms">event_busy</span>
@@ -382,14 +433,124 @@
     </div>
     {% endif %}
 
+  </div>{# end row 1 #}
+
+  {# ── Row 2: Class Schedule + RFID In/Out ────────────────────── #}
+  <div class="pp-dash-two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+
+    {# Class Schedule #}
+    <div class="pp-card" id="pp-schedule-section">
+      <div class="pp-card-header">
+        <div class="pp-card-title"><span class="ms">schedule</span> Class Schedule</div>
+        <span style="font-size:11px;color:var(--pp-text-4);font-weight:500;">Next 7 days</span>
+      </div>
+      {% if class_schedules %}
+        {% set ns = namespace(cur_date=None) %}
+        <div style="padding-bottom:4px;">
+        {% for sc in class_schedules %}
+          {% if sc.schedule_date != ns.cur_date %}
+            {% if ns.cur_date is not none %}
+            </div>{# close prev date group #}
+            {% endif %}
+            {% set ns.cur_date = sc.schedule_date %}
+            <div class="pp-sched-date-group" style="margin-bottom:0;">
+            <div class="pp-sched-date-label">
+              {{ sc.date_label }}
+              {% if sc.is_today %}<span class="today-pill">Today</span>{% endif %}
+            </div>
+          {% endif %}
+          <div class="pp-sched-row">
+            <div class="pp-sched-time-col">
+              <div class="pp-sched-from">{{ sc.from_time_fmt }}</div>
+              {% if sc.to_time_fmt %}<div class="pp-sched-to">{{ sc.to_time_fmt }}</div>{% endif %}
+            </div>
+            <div class="pp-sched-divider"></div>
+            <div style="flex:1;min-width:0;">
+              <div class="pp-sched-course">{{ sc.course_name }}</div>
+              <div class="pp-sched-meta">
+                {% if sc.instructor %}
+                <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">person</span>
+                {{ sc.instructor }}
+                {% endif %}
+                {% if sc.venue %}
+                <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">location_on</span>
+                {{ sc.venue }}
+                {% endif %}
+                {% if sc.duration_hours %}
+                <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">timer</span>
+                {{ sc.duration_hours }}h
+                {% endif %}
+              </div>
+            </div>
+            {% if sc.status and sc.status != 'Scheduled' %}
+            <span class="pp-badge"
+                  style="font-size:10px;background:{% if sc.status == 'Completed' %}var(--pp-success-bg);color:var(--pp-success){% else %}var(--pp-warning-bg);color:var(--pp-warning){% endif %};">
+              {{ sc.status }}
+            </span>
+            {% endif %}
+          </div>
+        {% endfor %}
+        {% if ns.cur_date is not none %}
+        </div>{# close last date group #}
+        {% endif %}
+        </div>
+      {% else %}
+      <div class="pp-empty" style="padding:32px 24px;">
+        <span class="ms">calendar_today</span>
+        <p class="pp-empty-title">No Classes Scheduled</p>
+        <p class="pp-empty-sub">No classes found for the next 7 days.</p>
+      </div>
+      {% endif %}
+    </div>
+
+    {# RFID In/Out #}
+    <div class="pp-card" id="pp-rfid-section">
+      <div class="pp-card-header">
+        <div class="pp-card-title"><span class="ms">contactless</span> RFID In/Out</div>
+        <span style="font-size:11px;color:var(--pp-text-4);font-weight:500;">Last 10 swipes</span>
+      </div>
+      {% if rfid_logs %}
+        {% for lg in rfid_logs %}
+        <div class="pp-rfid-row">
+          <div class="pp-rfid-icon" style="background:var(--pp-info-bg);color:var(--pp-info);">
+            contactless
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div class="pp-rfid-time">{{ lg.swipe_clock }}</div>
+            <div class="pp-rfid-meta">
+              {{ lg.swipe_date }}
+              {% if lg.location or lg.terminal_alias %}
+              &nbsp;·&nbsp;
+              <span style="font-family:'Material Symbols Outlined';font-size:12px;vertical-align:-2px;">location_on</span>
+              {{ lg.terminal_alias or lg.location }}
+              {% endif %}
+            </div>
+          </div>
+          <span class="pp-badge" style="background:var(--pp-info-bg);color:var(--pp-info);font-size:10.5px;">
+            {{ lg.source or "Swipe" }}
+          </span>
+        </div>
+        {% endfor %}
+      {% else %}
+      <div class="pp-empty" style="padding:32px 24px;">
+        <span class="ms">contactless</span>
+        <p class="pp-empty-title">No Swipe Records</p>
+        <p class="pp-empty-sub">RFID gate entries will appear here once recorded.</p>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>{# end row 2 #}
+
+  {# ── Row 3: Latest Results + Hostel ─────────────────────────── #}
+  <div style="display:grid;grid-template-columns:1fr{% if is_hosteller and hostel_details %} 1fr{% endif %};gap:20px;align-items:start;">
+
     {# Latest Results #}
     <div class="pp-card">
       <div class="pp-card-header">
         <div class="pp-card-title"><span class="ms">school</span> Results &amp; Grades</div>
         <a href="/parent-portal/results{% if active_ward %}?ward={{ active_ward }}{% endif %}"
-           class="pp-card-link">
-          View All <span style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;">arrow_forward</span>
-        </a>
+           class="pp-card-link">View All <span style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;">arrow_forward</span></a>
       </div>
       <div class="pp-card-body">
         {% if latest_result %}
@@ -419,94 +580,85 @@
       </div>
     </div>
 
-    {# Hostel Details — only shown if student is a hosteller #}
+    {# Hostel Details #}
     {% if is_hosteller and hostel_details %}
-    <div class="pp-card fade-in">
-      <div class="pp-card-header">
-        <div class="pp-card-title">
-          <span class="ms">apartment</span> Hostel Details
+    <div class="pp-card pp-hostel-card">
+
+      {# Hero banner #}
+      <div class="pp-hostel-hero">
+        <div class="pp-hostel-hero-icon">
+          <span class="ms">apartment</span>
         </div>
-        <span class="pp-badge" style="background:var(--pp-success-bg);color:var(--pp-success);">
-          <span class="ms" style="font-size:13px;margin-right:3px;vertical-align:-1px;">hotel</span>Hosteller
+        <div class="pp-hostel-hero-info">
+          <div class="pp-hostel-hero-name">{{ hostel_details.hostel_name or "Hostel" }}</div>
+          {% if hostel_details.hostel_block %}
+          <div class="pp-hostel-hero-sub">{{ hostel_details.hostel_block }}</div>
+          {% endif %}
+        </div>
+        <span class="pp-badge pp-hostel-status-badge"
+              style="background:{% if hostel_details.hostel_status|lower == 'active' %}rgba(255,255,255,0.18){% else %}rgba(255,200,0,0.22){% endif %};
+                     color:#fff;border:1px solid rgba(255,255,255,0.3);">
+          <span class="ms" style="font-size:13px;margin-right:3px;vertical-align:-1px;">
+            {% if hostel_details.hostel_status|lower == 'active' %}check_circle{% else %}info{% endif %}
+          </span>
+          {{ hostel_details.hostel_status or "Active" }}
         </span>
       </div>
-      <div class="pp-card-body" style="padding:14px 20px;">
 
-        {% if hostel_details.hostel_name %}
-        <div class="pp-profile-row">
-          <span class="pp-profile-key">Hostel</span>
-          <span class="pp-profile-val">{{ hostel_details.hostel_name }}</span>
-        </div>
-        {% endif %}
-
-        {% if hostel_details.hostel_block %}
-        <div class="pp-profile-row">
-          <span class="pp-profile-key">Block / Building</span>
-          <span class="pp-profile-val">{{ hostel_details.hostel_block }}</span>
-        </div>
-        {% endif %}
-
+      {# Key stats grid #}
+      <div class="pp-hostel-grid">
         {% if hostel_details.room_number %}
-        <div class="pp-profile-row">
-          <span class="pp-profile-key">Room Number</span>
-          <span class="pp-profile-val">{{ hostel_details.room_number }}</span>
+        <div class="pp-hostel-stat">
+          <span class="ms pp-hostel-stat-icon">meeting_room</span>
+          <div class="pp-hostel-stat-val">{{ hostel_details.room_number }}</div>
+          <div class="pp-hostel-stat-key">Room</div>
         </div>
         {% endif %}
-
         {% if hostel_details.bed_no %}
-        <div class="pp-profile-row">
-          <span class="pp-profile-key">Bed</span>
-          <span class="pp-profile-val">{{ hostel_details.bed_no }}</span>
+        <div class="pp-hostel-stat">
+          <span class="ms pp-hostel-stat-icon">bed</span>
+          <div class="pp-hostel-stat-val">{{ hostel_details.bed_no }}</div>
+          <div class="pp-hostel-stat-key">Bed</div>
         </div>
         {% endif %}
-
-        {% if hostel_details.meal_plan %}
-        <div class="pp-profile-row">
-          <span class="pp-profile-key">Meal Plan</span>
-          <span class="pp-profile-val">{{ hostel_details.meal_plan }}</span>
-        </div>
-        {% endif %}
-
         {% if hostel_details.key_number %}
-        <div class="pp-profile-row">
-          <span class="pp-profile-key">Key Number</span>
-          <span class="pp-profile-val">{{ hostel_details.key_number }}</span>
+        <div class="pp-hostel-stat">
+          <span class="ms pp-hostel-stat-icon">key</span>
+          <div class="pp-hostel-stat-val">{{ hostel_details.key_number }}</div>
+          <div class="pp-hostel-stat-key">Key</div>
         </div>
         {% endif %}
-
-        {% if hostel_details.hostel_status %}
-        <div class="pp-profile-row">
-          <span class="pp-profile-key">Status</span>
-          <span class="pp-profile-val"
-                style="color:{% if hostel_details.hostel_status|lower == 'active' %}var(--pp-success){% else %}var(--pp-warning){% endif %};">
-            {{ hostel_details.hostel_status }}
-          </span>
+        {% if hostel_details.meal_plan %}
+        <div class="pp-hostel-stat">
+          <span class="ms pp-hostel-stat-icon">restaurant</span>
+          <div class="pp-hostel-stat-val" style="font-size:13px;">{{ hostel_details.meal_plan }}</div>
+          <div class="pp-hostel-stat-key">Meal Plan</div>
         </div>
         {% endif %}
-
-        {% if hostel_details.allocation_date %}
-        <div class="pp-profile-row">
-          <span class="pp-profile-key">Allotted On</span>
-          <span class="pp-profile-val">{{ hostel_details.allocation_date }}</span>
-        </div>
-        {% endif %}
-
       </div>
+
+      {% if hostel_details.allocation_date %}
+      <div class="pp-hostel-footer">
+        <span class="ms" style="font-size:14px;vertical-align:-2px;color:var(--pp-text-4);">calendar_today</span>
+        Allotted on <strong>{{ hostel_details.allocation_date }}</strong>
+      </div>
+      {% endif %}
+
     </div>
     {% endif %}
 
-  </div>{# end left column #}
+  </div>{# end row 3 #}
 
-</div>{# end 2-col grid #}
+</div>{# end main content #}
 
-{# ── Drill-down modal (no page navigation) ─────────────────────── #}
+{# ── Drill-down modal ────────────────────────────────────────────── #}
 <div id="pp-drill-overlay" class="pp-drill-overlay" onclick="ppCloseDrillModal(event)">
   <div class="pp-drill-modal" id="pp-drill-modal">
     <div class="pp-drill-modal-header">
       <div class="pp-drill-modal-icon" id="pp-drill-modal-icon"></div>
       <div>
         <div class="pp-drill-modal-title" id="pp-drill-modal-title"></div>
-        <div class="pp-drill-modal-sub"  id="pp-drill-modal-sub"></div>
+        <div class="pp-drill-modal-sub"   id="pp-drill-modal-sub"></div>
       </div>
       <button class="pp-drill-modal-close" onclick="ppCloseDrillModal()">close</button>
     </div>
@@ -518,11 +670,19 @@
 
 {% block extra_js %}
 <script>
-// ── Course data embedded from server ────────────────────────────────
-const PP_COURSES = {{ attendance_summaries | tojson }};
-const PP_ATT_GOOD = {{ att_good }};
-const PP_ATT_WARN = {{ att_warn }};
+const PP_COURSES   = {{ attendance_summaries | tojson }};
+const PP_ATT_GOOD  = {{ att_good }};
+const PP_ATT_WARN  = {{ att_warn }};
 
+/* ── Animate bar chart on load ─────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.pp-att-bar-fill').forEach(function (el) {
+    var h = parseFloat(el.dataset.height) || 0;
+    setTimeout(function () { el.style.height = Math.min(h, 100) + '%'; }, 120);
+  });
+});
+
+/* ── Colour helpers ────────────────────────────────────────────── */
 function ppStatusColor(pct) {
   return pct >= PP_ATT_GOOD ? 'var(--pp-success)'
        : pct >= PP_ATT_WARN ? 'var(--pp-warning)'
@@ -534,86 +694,75 @@ function ppStatusBg(pct) {
        :                      'var(--pp-danger-bg)';
 }
 
+/* ── Drill-down modal ──────────────────────────────────────────── */
 function ppOpenDrillModal(type) {
-  const overlay   = document.getElementById('pp-drill-overlay');
-  const iconEl    = document.getElementById('pp-drill-modal-icon');
-  const titleEl   = document.getElementById('pp-drill-modal-title');
-  const subEl     = document.getElementById('pp-drill-modal-sub');
-  const bodyEl    = document.getElementById('pp-drill-modal-body');
+  var overlay = document.getElementById('pp-drill-overlay');
+  var iconEl  = document.getElementById('pp-drill-modal-icon');
+  var titleEl = document.getElementById('pp-drill-modal-title');
+  var subEl   = document.getElementById('pp-drill-modal-sub');
+  var bodyEl  = document.getElementById('pp-drill-modal-body');
 
-  let courses = PP_COURSES.slice();
-  let title, sub, iconName, iconStyle;
+  var courses = PP_COURSES.slice();
+  var title, sub, iconName, iconStyle;
 
   if (type === 'all') {
     title     = 'All Enrolled Courses';
-    sub       = `${courses.length} course${courses.length !== 1 ? 's' : ''} this semester`;
+    sub       = courses.length + ' course' + (courses.length !== 1 ? 's' : '') + ' this semester';
     iconName  = 'menu_book';
     iconStyle = 'background:var(--pp-primary-light);color:var(--pp-primary)';
   } else if (type === 'below75') {
-    courses   = courses.filter(c => parseFloat(c.attendance_percentage || 0) < PP_ATT_GOOD);
+    courses   = courses.filter(function(c){ return parseFloat(c.attendance_percentage||0) < PP_ATT_GOOD; });
     title     = courses.length ? 'Courses Below Attendance Threshold' : 'All Courses On Track';
-    sub       = courses.length
-                ? `${courses.length} course${courses.length !== 1 ? 's' : ''} need attention`
-                : 'No courses are below the required attendance';
+    sub       = courses.length ? courses.length + ' course' + (courses.length!==1?'s':'') + ' need attention'
+                               : 'No courses are below the required attendance';
     iconName  = courses.length ? 'warning' : 'verified';
-    iconStyle = courses.length
-                ? 'background:var(--pp-danger-bg);color:var(--pp-danger)'
-                : 'background:var(--pp-success-bg);color:var(--pp-success)';
+    iconStyle = courses.length ? 'background:var(--pp-danger-bg);color:var(--pp-danger)'
+                               : 'background:var(--pp-success-bg);color:var(--pp-success)';
   } else if (type === 'eligible') {
     title     = 'Exam Eligibility';
-    sub       = `${PP_COURSES.filter(c => c.eligible_for_exam).length} eligible · ${PP_COURSES.filter(c => !c.eligible_for_exam).length} not eligible`;
+    sub       = PP_COURSES.filter(function(c){return c.eligible_for_exam;}).length + ' eligible · '
+              + PP_COURSES.filter(function(c){return !c.eligible_for_exam;}).length + ' not eligible';
     iconName  = 'shield';
     iconStyle = 'background:var(--pp-success-bg);color:var(--pp-success)';
   }
 
-  // Header
-  iconEl.style.cssText   = iconStyle;
-  iconEl.textContent     = iconName;
-  titleEl.textContent    = title;
-  subEl.textContent      = sub;
+  iconEl.style.cssText = iconStyle;
+  iconEl.textContent   = iconName;
+  titleEl.textContent  = title;
+  subEl.textContent    = sub;
 
-  // Body rows
   if (!courses.length && type !== 'eligible') {
-    bodyEl.innerHTML = `<div class="pp-drill-empty">
-      <span class="ms">check_circle</span>All courses are above the required attendance threshold.
-    </div>`;
+    bodyEl.innerHTML = '<div class="pp-drill-empty"><span class="ms">check_circle</span>All courses are above the required attendance threshold.</div>';
   } else {
-    const list = type === 'eligible' ? PP_COURSES : courses;
-    bodyEl.innerHTML = list.map(c => {
-      const pct      = parseFloat(c.attendance_percentage || 0);
-      const pctRound = Math.round(pct * 10) / 10;
-      const color    = ppStatusColor(pct);
-      const bg       = ppStatusBg(pct);
-      const eligible = c.eligible_for_exam;
-      const eligBg   = eligible ? 'var(--pp-success-bg)' : 'var(--pp-danger-bg)';
-      const eligClr  = eligible ? 'var(--pp-success)'    : 'var(--pp-danger)';
-      const eligIcon = eligible ? 'shield' : 'block';
-      const eligTxt  = eligible ? 'Eligible' : 'Not Eligible';
-      const name     = c.course_name || c.course || '—';
-      const attended = c.attended_classes || 0;
-      const total    = c.total_classes    || 0;
-
-      // For eligible view: dim not-eligible slightly
-      const rowOpacity = (type === 'eligible' && !eligible) ? 'opacity:0.55;' : '';
-
-      return `<div class="pp-drill-row" style="${rowOpacity}">
-        <div class="pp-drill-row-icon" style="background:${bg};color:${color};">menu_book</div>
-        <div style="flex:1;min-width:0;">
-          <div class="pp-drill-row-name">${name}</div>
-          <div class="pp-drill-row-meta">${attended} / ${total} classes</div>
-          <div class="pp-progress pp-drill-row-bar" style="height:5px;margin-top:6px;">
-            <div class="pp-progress-bar" style="width:${Math.min(pctRound,100)}%;background:${color};"></div>
-          </div>
-        </div>
-        <div class="pp-drill-row-right">
-          <div class="pp-drill-row-pct" style="color:${color};">${pctRound}%</div>
-          <div style="margin-top:5px;">
-            <span class="pp-badge" style="background:${eligBg};color:${eligClr};font-size:11px;">
-              <span style="font-family:'Material Symbols Outlined';font-size:12px;margin-right:2px;vertical-align:-1px;">${eligIcon}</span>${eligTxt}
-            </span>
-          </div>
-        </div>
-      </div>`;
+    var list = type === 'eligible' ? PP_COURSES : courses;
+    bodyEl.innerHTML = list.map(function(c) {
+      var pct      = parseFloat(c.attendance_percentage||0);
+      var pctR     = Math.round(pct*10)/10;
+      var color    = ppStatusColor(pct);
+      var bg       = ppStatusBg(pct);
+      var eligible = c.eligible_for_exam;
+      var eligBg   = eligible ? 'var(--pp-success-bg)' : 'var(--pp-danger-bg)';
+      var eligClr  = eligible ? 'var(--pp-success)'    : 'var(--pp-danger)';
+      var eligIcon = eligible ? 'shield' : 'block';
+      var eligTxt  = eligible ? 'Eligible' : 'Not Eligible';
+      var name     = c.course_name || c.course || '—';
+      var attended = c.attended_classes || 0;
+      var total    = c.total_classes    || 0;
+      var rowOp    = (type==='eligible' && !eligible) ? 'opacity:0.55;' : '';
+      return '<div class="pp-drill-row" style="' + rowOp + '">'
+           + '<div class="pp-drill-row-icon" style="background:' + bg + ';color:' + color + ';">menu_book</div>'
+           + '<div style="flex:1;min-width:0;">'
+           + '<div class="pp-drill-row-name">' + name + '</div>'
+           + '<div class="pp-drill-row-meta">' + attended + ' / ' + total + ' classes</div>'
+           + '<div class="pp-progress pp-drill-row-bar" style="height:5px;margin-top:6px;">'
+           + '<div class="pp-progress-bar" style="width:' + Math.min(pctR,100) + '%;background:' + color + ';"></div>'
+           + '</div></div>'
+           + '<div class="pp-drill-row-right">'
+           + '<div class="pp-drill-row-pct" style="color:' + color + ';">' + pctR + '%</div>'
+           + '<div style="margin-top:5px;"><span class="pp-badge" style="background:' + eligBg + ';color:' + eligClr + ';font-size:11px;">'
+           + '<span style="font-family:\'Material Symbols Outlined\';font-size:12px;margin-right:2px;vertical-align:-1px;">' + eligIcon + '</span>'
+           + eligTxt + '</span></div>'
+           + '</div></div>';
     }).join('');
   }
 
@@ -622,13 +771,11 @@ function ppOpenDrillModal(type) {
 }
 
 function ppCloseDrillModal(evt) {
-  // If called from overlay click, only close if clicking the overlay itself
   if (evt && evt.target !== document.getElementById('pp-drill-overlay')) return;
   document.getElementById('pp-drill-overlay').classList.remove('open');
   document.body.style.overflow = '';
 }
 
-// Close on Escape key
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') ppCloseDrillModal();
 });

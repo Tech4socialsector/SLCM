@@ -602,6 +602,8 @@ def create_demand_payment_order(fee_demand_name):
         amount=outstanding,
         fee_demand=fee_demand_name,
         payment_mode="Online Payment",
+        paid_by_role="Student",
+        paid_by_name=payer_name,
         from_status=demand.status,
         to_status="Payment Initiated",
         remarks=f"Razorpay order created for Fee Demand {fee_demand_name} — {component}",
@@ -655,6 +657,7 @@ def cancel_demand_payment(fee_demand_name, integration_request=None):
         amount=flt(demand.outstanding_amount),
         fee_demand=fee_demand_name,
         payment_mode="Online Payment",
+        paid_by_role="Student",
         from_status="Payment Initiated",
         to_status=demand.status,
         remarks="Student dismissed Razorpay modal without completing payment",
@@ -752,6 +755,8 @@ def create_bulk_demand_payment_order(fee_demand_names):
             amount=flt(d.outstanding_amount),
             fee_demand=d.name,
             payment_mode="Online Payment",
+            paid_by_role="Student",
+            paid_by_name=payer_name,
             remarks=f"Bulk Razorpay order for {len(demands)} demands: {', '.join(x.name for x in demands)}",
         )
 
@@ -875,6 +880,7 @@ def confirm_bulk_demand_payment(fee_demand_names, integration_request,
             amount=flt(row["amount_allocated"]),
             fee_demand=row["fee_demand"],
             payment_mode="Online Payment",
+            paid_by_role="Student",
             razorpay_payment_id=razorpay_payment_id,
             razorpay_order_id=razorpay_order_id,
             webhook_status="Not Applicable",
@@ -891,7 +897,11 @@ def confirm_bulk_demand_payment(fee_demand_names, integration_request,
 
 @frappe.whitelist()
 def cancel_bulk_demand_payment(fee_demand_names, integration_request=None):
-    """Log a cancellation when the student closes the bulk-payment Razorpay modal."""
+    """Log a 'Payment Cancelled' entry when the student closes the Razorpay modal.
+
+    The JS _failedAlready flag ensures this is only called for true user cancels —
+    not for bank/gateway declines (those go through mark_demand_payment_failed).
+    """
     import json as _j
     student_name = _require_student()
     try:
@@ -915,6 +925,7 @@ def cancel_bulk_demand_payment(fee_demand_names, integration_request=None):
             "Payment Cancelled",
             fee_demand=dem_name,
             payment_mode="Online Payment",
+            paid_by_role="Student",
             remarks=f"Student dismissed bulk-payment modal for {len(names)} demands: {', '.join(names[:5])}",
         )
     frappe.db.commit()
@@ -2274,6 +2285,187 @@ def get_invoice_summary(invoice_name):
     }
 
 
+@frappe.whitelist()
+def mark_demand_payment_failed(fee_demand_names, integration_request=None,
+                               payment_id=None, error_code=None, error_description=None):
+    """Record a 'Payment Failed' audit log entry for one or more Fee Demands.
+
+    Called from the browser ``payment.failed`` Razorpay callback for student
+    bulk-demand payments.  Mirrors mark_payment_failed for invoices.
+
+    * Updates the Integration Request to Failed (best-effort).
+    * Writes a Payment Failed log row for every demand in the list.
+    * Never overwrites a Paid / Waived demand status.
+    * Idempotent — safe to call more than once.
+    """
+    import json as _j
+    student_name = _require_student()
+
+    try:
+        names = _j.loads(fee_demand_names) if isinstance(fee_demand_names, str) else list(fee_demand_names)
+    except Exception:
+        names = [fee_demand_names] if fee_demand_names else []
+
+    if not names:
+        return {"status": "noop"}
+
+    pid      = (payment_id or "").strip()
+    err_code = (error_code or "N/A")
+    err_desc = (error_description or "")[:200]
+
+    if integration_request:
+        try:
+            ir_status = frappe.db.get_value("Integration Request", integration_request, "status") or ""
+            if ir_status != "Completed":
+                upd = {"status": "Failed"}
+                if pid:
+                    upd["payment_id"] = pid
+                frappe.db.set_value("Integration Request", integration_request, upd,
+                                    update_modified=False)
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "mark_demand_payment_failed: IR update")
+
+    from slcm.slcm.doctype.student_master.student_master import _append_payment_log
+    for n in names:
+        d = frappe.db.get_value(
+            "Fee Demand",
+            {"name": n, "student": student_name},
+            ["name", "fee_component", "description", "status", "outstanding_amount"],
+            as_dict=True,
+        )
+        if not d or d.status in ("Paid", "Waived"):
+            continue
+        _append_payment_log(
+            student_name,
+            "Payment Failed",
+            fee_demand=n,
+            payment_mode="Online Payment",
+            paid_by_role="Student",
+            razorpay_payment_id=pid,
+            from_status=d.status,
+            to_status="Payment Failed",
+            error_message=f"Code: {err_code} — {err_desc}",
+            remarks=f"Razorpay payment.failed event for demand {n}",
+        )
+
+    frappe.db.commit()
+    return {"status": "logged", "demands": names}
+
+
+@frappe.whitelist()
+def parent_cancel_bulk_demand_payment(fee_demand_names, student_name, integration_request=None):
+    """Log a 'Payment Cancelled' entry when a parent dismisses the Razorpay modal.
+
+    The JS _failedAlready flag ensures this is only called for true user cancels —
+    not for bank/gateway declines (those go through parent_mark_demand_payment_failed).
+    """
+    import json as _j
+    _require_parent_for_student(student_name)
+
+    try:
+        names = _j.loads(fee_demand_names) if isinstance(fee_demand_names, str) else list(fee_demand_names)
+    except Exception:
+        return {"status": "noop"}
+
+    if integration_request:
+        try:
+            frappe.db.set_value(
+                "Integration Request", integration_request, "status", "Cancelled",
+                update_modified=False,
+            )
+        except Exception:
+            pass
+
+    _parent_full_name = (
+        frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user
+    )
+
+    from slcm.slcm.doctype.student_master.student_master import _append_payment_log
+    for dem_name in names:
+        _append_payment_log(
+            student_name,
+            "Payment Cancelled",
+            fee_demand=dem_name,
+            payment_mode="Online Payment",
+            paid_by_role="Parent",
+            paid_by_name=_parent_full_name,
+            remarks=f"Parent dismissed bulk-payment modal for {len(names)} demand(s): {', '.join(names[:5])}",
+        )
+    frappe.db.commit()
+    return {"status": "cancelled"}
+
+
+@frappe.whitelist()
+def parent_mark_demand_payment_failed(fee_demand_names, student_name,
+                                      integration_request=None,
+                                      payment_id=None, error_code=None, error_description=None):
+    """Record a 'Payment Failed' audit log for one or more Fee Demands — parent flow.
+
+    * Validates caller is a parent of student_name.
+    * Updates Integration Request to Failed (best-effort).
+    * Writes Payment Failed log rows with paid_by_role='Parent'.
+    * Never overwrites a Paid / Waived demand.
+    * Idempotent.
+    """
+    import json as _j
+    _require_parent_for_student(student_name)
+
+    try:
+        names = _j.loads(fee_demand_names) if isinstance(fee_demand_names, str) else list(fee_demand_names)
+    except Exception:
+        names = [fee_demand_names] if fee_demand_names else []
+
+    if not names:
+        return {"status": "noop"}
+
+    pid      = (payment_id or "").strip()
+    err_code = (error_code or "N/A")
+    err_desc = (error_description or "")[:200]
+
+    if integration_request:
+        try:
+            ir_status = frappe.db.get_value("Integration Request", integration_request, "status") or ""
+            if ir_status != "Completed":
+                upd = {"status": "Failed"}
+                if pid:
+                    upd["payment_id"] = pid
+                frappe.db.set_value("Integration Request", integration_request, upd,
+                                    update_modified=False)
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "parent_mark_demand_payment_failed: IR update")
+
+    _parent_full_name = (
+        frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user
+    )
+
+    from slcm.slcm.doctype.student_master.student_master import _append_payment_log
+    for n in names:
+        d = frappe.db.get_value(
+            "Fee Demand",
+            {"name": n, "student": student_name},
+            ["name", "fee_component", "description", "status", "outstanding_amount"],
+            as_dict=True,
+        )
+        if not d or d.status in ("Paid", "Waived"):
+            continue
+        _append_payment_log(
+            student_name,
+            "Payment Failed",
+            fee_demand=n,
+            payment_mode="Online Payment",
+            paid_by_role="Parent",
+            paid_by_name=_parent_full_name,
+            razorpay_payment_id=pid,
+            from_status=d.status,
+            to_status="Payment Failed",
+            error_message=f"Code: {err_code} — {err_desc}",
+            remarks=f"Parent payment.failed event for demand {n} — payer: {_parent_full_name}",
+        )
+
+    frappe.db.commit()
+    return {"status": "logged", "demands": names}
+
+
 # ── Parent Portal payment endpoints ───────────────────────────────────────
 # These mirror the student endpoints above but validate that the logged-in
 # user is a parent/guardian of the target student instead of the student
@@ -2548,4 +2740,421 @@ def parent_get_invoice_summary(invoice_name, student_name):
         "status":                inv.status,
         "formatted_outstanding": "₹{:,.0f}".format(max(flt(inv.outstanding_amount), 0)),
         "formatted_paid":        "₹{:,.0f}".format(flt(inv.paid_amount)),
+    }
+
+
+@frappe.whitelist()
+def parent_create_demand_payment_order(fee_demand_name, student_name):
+    """Create a Razorpay order for a parent paying a single Fee Demand.
+
+    Security:
+    * Caller must be a non-guest parent linked to student_name.
+    * Demand must belong to student_name (IDOR guard).
+    * Amount sourced server-side only.
+    """
+    _require_parent_for_student(student_name)
+
+    demand = frappe.db.get_value(
+        "Fee Demand",
+        {"name": fee_demand_name, "student": student_name},
+        ["name", "student", "fee_component", "description", "status",
+         "outstanding_amount", "net_payable", "demand_type"],
+        as_dict=True,
+    )
+    if not demand:
+        frappe.throw(
+            _("Fee Demand not found or access denied."),
+            frappe.PermissionError,
+        )
+
+    if demand.status in ("Paid", "Waived", "Cancelled"):
+        frappe.throw(_("This demand is already {0}.").format(demand.status))
+
+    outstanding = flt(demand.outstanding_amount)
+    if outstanding <= 0:
+        frappe.throw(_("There is no outstanding amount on this demand."))
+
+    sm = frappe.db.get_value(
+        "Student Master", student_name,
+        ["first_name", "last_name", "phone"], as_dict=True,
+    ) or {}
+    student_full = " ".join(filter(None, [sm.get("first_name"), sm.get("last_name")])) or student_name
+
+    parent_doc = frappe.db.get_value(
+        "User", frappe.session.user, ["full_name", "email"], as_dict=True,
+    ) or {}
+    payer_name  = parent_doc.get("full_name") or frappe.session.user
+    payer_email = parent_doc.get("email") or frappe.session.user
+    payer_phone = sm.get("phone") or ""
+
+    component  = demand.fee_component or demand.description or "Fee"
+    controller = _get_razorpay_controller()
+
+    try:
+        order = controller.create_order(
+            amount=outstanding,
+            currency="INR",
+            title=_("Fee Payment – {0}").format(component),
+            description=_("Fee demand payment for {0} (by parent)").format(student_full),
+            reference_doctype="Fee Demand",
+            reference_docname=fee_demand_name,
+            payer_email=payer_email,
+            payer_name=payer_name,
+            receipt=fee_demand_name,
+        )
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "parent_create_demand_payment_order")
+        frappe.throw(
+            _("Could not create payment order. Please try again or contact support."),
+            frappe.ValidationError,
+        )
+
+    from slcm.slcm.doctype.student_master.student_master import _append_payment_log
+    _append_payment_log(
+        student_name,
+        "Payment Initiated",
+        amount=outstanding,
+        fee_demand=fee_demand_name,
+        payment_mode="Online Payment",
+        paid_by_role="Parent",
+        paid_by_name=payer_name,
+        from_status=demand.status,
+        to_status="Payment Initiated",
+        remarks=f"Razorpay order created for Fee Demand {fee_demand_name} by parent — {component}",
+    )
+
+    return {
+        "order_id":            order.get("id"),
+        "integration_request": order.get("integration_request"),
+        "amount":              order.get("amount"),
+        "currency":            order.get("currency", "INR"),
+        "key_id":              controller.api_key,
+        "payer_name":          payer_name,
+        "payer_email":         payer_email,
+        "payer_phone":         payer_phone,
+        "fee_demand_name":     fee_demand_name,
+        "component":           component,
+        "outstanding":         outstanding,
+    }
+
+
+@frappe.whitelist()
+def parent_confirm_demand_payment(fee_demand_name, student_name, integration_request,
+                                  razorpay_payment_id, razorpay_order_id, razorpay_signature):
+    """Verify Razorpay signature and record a parent's payment against a Fee Demand."""
+    _require_parent_for_student(student_name)
+
+    demand = frappe.db.get_value(
+        "Fee Demand",
+        {"name": fee_demand_name, "student": student_name},
+        ["name", "fee_component", "description", "status", "outstanding_amount"],
+        as_dict=True,
+    )
+    if not demand:
+        frappe.throw(_("Fee Demand not found or access denied."), frappe.PermissionError)
+
+    if demand.status == "Paid" and flt(demand.outstanding_amount) <= 0:
+        return {"status": "already_paid"}
+
+    try:
+        rzp_settings = frappe.get_doc("Razorpay Settings")
+        secret = rzp_settings.get_password(fieldname="api_secret", raise_exception=False) or ""
+        if not secret:
+            frappe.throw(_("Payment gateway is not configured."), frappe.ValidationError)
+        message  = (razorpay_order_id + "|" + razorpay_payment_id).encode("utf-8")
+        expected = _hmac.new(secret.encode("utf-8"), message, hashlib.sha256).hexdigest()
+        if not _hmac.compare_digest(expected, razorpay_signature):
+            frappe.throw(_("Payment signature verification failed."), frappe.PermissionError)
+    except (frappe.PermissionError, frappe.ValidationError):
+        raise
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "parent_confirm_demand_payment: sig check")
+        frappe.throw(_("Could not verify payment. Please contact the Bursar's Office."))
+
+    try:
+        from payments.payment_gateways.doctype.razorpay_settings.razorpay_settings import order_payment_success
+        order_payment_success(
+            integration_request,
+            _json.dumps({
+                "razorpay_payment_id": razorpay_payment_id,
+                "razorpay_order_id":   razorpay_order_id,
+                "razorpay_signature":  razorpay_signature,
+            }),
+        )
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "parent_confirm_demand_payment: IR update (non-fatal)")
+
+    existing_fp = frappe.db.get_value(
+        "Fee Payment",
+        {"reference_number": razorpay_payment_id, "student": student_name, "docstatus": 1},
+        "name",
+    )
+    if existing_fp:
+        return {"status": "already_paid"}
+
+    outstanding = flt(demand.outstanding_amount)
+    fp = frappe.get_doc({
+        "doctype":         "Fee Payment",
+        "student":         student_name,
+        "payment_date":    today(),
+        "payment_mode":    "Online Payment",
+        "amount":          outstanding,
+        "reference_number": razorpay_payment_id,
+        "remarks":         f"Parent payment — Razorpay order {razorpay_order_id} — demand {fee_demand_name}",
+        "payment_demands": [{
+            "fee_demand":         fee_demand_name,
+            "demand_description": demand.fee_component or demand.description or "",
+            "outstanding_amount": outstanding,
+            "amount_allocated":   outstanding,
+        }],
+    })
+    fp.insert(ignore_permissions=True)
+    fp.submit()
+    frappe.db.commit()
+
+    _parent_full_name = (
+        frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user
+    )
+
+    from slcm.slcm.doctype.student_master.student_master import _append_payment_log
+    _append_payment_log(
+        student_name,
+        "Captured",
+        amount=outstanding,
+        fee_demand=fee_demand_name,
+        payment_mode="Online Payment",
+        paid_by_role="Parent",
+        paid_by_name=_parent_full_name,
+        razorpay_payment_id=razorpay_payment_id,
+        razorpay_order_id=razorpay_order_id,
+        webhook_status="Not Applicable",
+        remarks=f"Parent payment captured — demand {fee_demand_name} — Razorpay {razorpay_order_id}",
+    )
+
+    return {"status": "success", "total_paid": outstanding}
+
+
+@frappe.whitelist()
+def parent_create_bulk_demand_payment_order(fee_demand_names, student_name):
+    """Create a single Razorpay order covering multiple Fee Demands for a parent.
+
+    Security:
+    * Caller must be a non-guest parent linked to student_name.
+    * Every demand must belong to student_name (IDOR guard).
+    * Total amount computed server-side only.
+    """
+    import json as _j
+    _require_parent_for_student(student_name)
+
+    try:
+        names = _j.loads(fee_demand_names) if isinstance(fee_demand_names, str) else list(fee_demand_names)
+    except Exception:
+        frappe.throw(_("Invalid demand list."), frappe.ValidationError)
+
+    if not names:
+        frappe.throw(_("No fee demands provided."), frappe.ValidationError)
+    if len(names) > 50:
+        frappe.throw(_("Too many demands in a single payment (max 50)."), frappe.ValidationError)
+
+    demands = []
+    total = 0.0
+    for n in names:
+        d = frappe.db.get_value(
+            "Fee Demand",
+            {"name": n, "student": student_name},
+            ["name", "fee_component", "description", "status", "outstanding_amount", "net_payable"],
+            as_dict=True,
+        )
+        if not d:
+            frappe.throw(_("Demand {0} not found or access denied.").format(n), frappe.PermissionError)
+        if d.status in ("Paid", "Waived", "Cancelled"):
+            frappe.throw(_("Demand {0} is already {1}.").format(n, d.status), frappe.ValidationError)
+        out = flt(d.outstanding_amount)
+        if out <= 0:
+            frappe.throw(_("Demand {0} has no outstanding amount.").format(n), frappe.ValidationError)
+        total += out
+        demands.append(d)
+
+    if total <= 0:
+        frappe.throw(_("Total outstanding amount is zero."), frappe.ValidationError)
+
+    sm = frappe.db.get_value(
+        "Student Master", student_name,
+        ["first_name", "last_name", "phone"], as_dict=True,
+    ) or {}
+    student_full = " ".join(filter(None, [sm.get("first_name"), sm.get("last_name")])) or student_name
+
+    parent_doc = frappe.db.get_value(
+        "User", frappe.session.user, ["full_name", "email"], as_dict=True,
+    ) or {}
+    payer_name  = parent_doc.get("full_name") or frappe.session.user
+    payer_email = parent_doc.get("email") or frappe.session.user
+    payer_phone = sm.get("phone") or ""
+
+    components = ", ".join(d.fee_component or d.description or "Fee" for d in demands[:3])
+    if len(demands) > 3:
+        components += f" +{len(demands) - 3} more"
+
+    controller  = _get_razorpay_controller()
+    receipt_ref = demands[0].name
+
+    try:
+        order = controller.create_order(
+            amount=total,
+            currency="INR",
+            title=_("Fee Payment – {0} item(s)").format(len(demands)),
+            description=_("Fee payment for {0} (by parent)").format(student_full),
+            reference_doctype="Fee Demand",
+            reference_docname=receipt_ref,
+            payer_email=payer_email,
+            payer_name=payer_name,
+            receipt=receipt_ref,
+        )
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "parent_create_bulk_demand_payment_order")
+        frappe.throw(
+            _("Could not create payment order. Please try again or contact support."),
+            frappe.ValidationError,
+        )
+
+    from slcm.slcm.doctype.student_master.student_master import _append_payment_log
+    for d in demands:
+        _append_payment_log(
+            student_name,
+            "Payment Initiated",
+            amount=flt(d.outstanding_amount),
+            fee_demand=d.name,
+            payment_mode="Online Payment",
+            paid_by_role="Parent",
+            paid_by_name=payer_name,
+            remarks=f"Bulk parent payment order for {len(demands)} demands: {', '.join(x.name for x in demands)}",
+        )
+
+    return {
+        "order_id":            order.get("id"),
+        "integration_request": order.get("integration_request"),
+        "amount":              order.get("amount"),
+        "currency":            order.get("currency", "INR"),
+        "key_id":              controller.api_key,
+        "payer_name":          payer_name,
+        "payer_email":         payer_email,
+        "payer_phone":         payer_phone,
+        "total":               total,
+        "components":          components,
+        "demand_names":        [d.name for d in demands],
+    }
+
+
+@frappe.whitelist()
+def parent_confirm_bulk_demand_payment(fee_demand_names, student_name, integration_request,
+                                       razorpay_payment_id, razorpay_order_id, razorpay_signature):
+    """Verify HMAC signature and record a single Fee Payment covering all demands (parent)."""
+    import json as _j
+    _require_parent_for_student(student_name)
+
+    try:
+        names = _j.loads(fee_demand_names) if isinstance(fee_demand_names, str) else list(fee_demand_names)
+    except Exception:
+        frappe.throw(_("Invalid demand list."), frappe.ValidationError)
+
+    try:
+        rzp_settings = frappe.get_doc("Razorpay Settings")
+        secret = rzp_settings.get_password(fieldname="api_secret", raise_exception=False) or ""
+        if not secret:
+            frappe.throw(_("Payment gateway is not configured."), frappe.ValidationError)
+        message  = (razorpay_order_id + "|" + razorpay_payment_id).encode("utf-8")
+        expected = _hmac.new(secret.encode("utf-8"), message, hashlib.sha256).hexdigest()
+        if not _hmac.compare_digest(expected, razorpay_signature):
+            frappe.throw(_("Payment signature verification failed."), frappe.PermissionError)
+    except (frappe.PermissionError, frappe.ValidationError):
+        raise
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "parent_confirm_bulk_demand_payment: sig check")
+        frappe.throw(_("Could not verify payment. Please contact the Bursar's Office."))
+
+    try:
+        from payments.payment_gateways.doctype.razorpay_settings.razorpay_settings import order_payment_success
+        order_payment_success(
+            integration_request,
+            _json.dumps({
+                "razorpay_payment_id": razorpay_payment_id,
+                "razorpay_order_id":   razorpay_order_id,
+                "razorpay_signature":  razorpay_signature,
+            }),
+        )
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "parent_confirm_bulk_demand_payment: IR update (non-fatal)")
+
+    existing_fp = frappe.db.get_value(
+        "Fee Payment",
+        {"reference_number": razorpay_payment_id, "student": student_name, "docstatus": 1},
+        "name",
+    )
+    if existing_fp:
+        return {"status": "already_paid"}
+
+    demand_rows = []
+    total = 0.0
+    for n in names:
+        d = frappe.db.get_value(
+            "Fee Demand",
+            {"name": n, "student": student_name},
+            ["name", "fee_component", "description", "status", "outstanding_amount"],
+            as_dict=True,
+        )
+        if not d or d.status in ("Paid", "Waived", "Cancelled"):
+            continue
+        out = flt(d.outstanding_amount)
+        if out <= 0:
+            continue
+        demand_rows.append({
+            "fee_demand":         n,
+            "demand_description": d.fee_component or d.description or "",
+            "outstanding_amount": out,
+            "amount_allocated":   out,
+        })
+        total += out
+
+    if not demand_rows:
+        return {"status": "already_paid"}
+
+    fp = frappe.get_doc({
+        "doctype":          "Fee Payment",
+        "student":          student_name,
+        "payment_date":     today(),
+        "payment_mode":     "Online Payment",
+        "amount":           total,
+        "reference_number": razorpay_payment_id,
+        "remarks":          f"Parent bulk payment — Razorpay order {razorpay_order_id} — {len(demand_rows)} demands",
+        "payment_demands":  demand_rows,
+    })
+    fp.insert(ignore_permissions=True)
+    fp.submit()
+    frappe.db.commit()
+
+    _parent_full_name = (
+        frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user
+    )
+
+    from slcm.slcm.doctype.student_master.student_master import _append_payment_log
+    for row in demand_rows:
+        _append_payment_log(
+            student_name,
+            "Captured",
+            amount=flt(row["amount_allocated"]),
+            fee_demand=row["fee_demand"],
+            payment_mode="Online Payment",
+            paid_by_role="Parent",
+            paid_by_name=_parent_full_name,
+            razorpay_payment_id=razorpay_payment_id,
+            razorpay_order_id=razorpay_order_id,
+            webhook_status="Not Applicable",
+            remarks=f"Parent bulk payment captured — {len(demand_rows)} demands — Razorpay {razorpay_order_id}",
+        )
+
+    return {
+        "status":           "success",
+        "demands_paid":     len(demand_rows),
+        "total_paid":       total,
+        "formatted_total":  "₹{:,.0f}".format(total),
     }

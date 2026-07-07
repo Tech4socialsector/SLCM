@@ -346,27 +346,27 @@
     <div class="fi-summary-box">
       <div class="fi-sum-row">
         <span class="label">Gross Total</span>
-        <span class="value">₹ {{ frappe.utils.fmt_money(doc.total_amount or 0, currency="INR") }}</span>
+        <span class="value">{{ frappe.utils.fmt_money(doc.total_amount or 0, currency="INR") }}</span>
       </div>
       {% if doc.scholarship_amount and doc.scholarship_amount > 0 %}
       <div class="fi-sum-row discount">
         <span class="label">Scholarship Discount</span>
-        <span class="value">− ₹ {{ frappe.utils.fmt_money(doc.scholarship_amount, currency="INR") }}</span>
+        <span class="value">− {{ frappe.utils.fmt_money(doc.scholarship_amount, currency="INR") }}</span>
       </div>
       {% endif %}
       <div class="fi-sum-row">
         <span class="label">Net Payable</span>
-        <span class="value">₹ {{ frappe.utils.fmt_money(doc.final_payable_amount or doc.total_amount or 0, currency="INR") }}</span>
+        <span class="value">{{ frappe.utils.fmt_money(doc.final_payable_amount or doc.total_amount or 0, currency="INR") }}</span>
       </div>
       <div class="fi-sum-row">
         <span class="label">Amount Paid</span>
-        <span class="value">₹ {{ frappe.utils.fmt_money(doc.paid_amount or 0, currency="INR") }}</span>
+        <span class="value">{{ frappe.utils.fmt_money(doc.paid_amount or 0, currency="INR") }}</span>
       </div>
       {% set outstanding = [frappe.utils.flt(doc.outstanding_amount), 0] | max %}
       {% if outstanding > 0 %}
       <div class="fi-sum-row outstanding">
         <span class="label">Outstanding</span>
-        <span class="value">₹ {{ frappe.utils.fmt_money(outstanding, currency="INR") }}</span>
+        <span class="value">{{ frappe.utils.fmt_money(outstanding, currency="INR") }}</span>
       </div>
       {% endif %}
       <div class="fi-sum-row total-row">
@@ -396,7 +396,7 @@
         <td>{{ p.payment or "—" }}</td>
         <td>{{ frappe.format(p.payment_date, {"fieldtype": "Date"}) if p.payment_date else "—" }}</td>
         <td>{{ p.payment_mode or "—" }}</td>
-        <td class="right">₹ {{ frappe.utils.fmt_money(p.amount or 0, currency="INR") }}</td>
+        <td class="right">{{ frappe.utils.fmt_money(p.amount or 0, currency="INR") }}</td>
       </tr>
       {% endfor %}
     </tbody>

@@ -21,8 +21,8 @@ _DEFAULTS = {
     "background_color":      "#f3f6f5",
     "card_background":       "#ffffff",
     "nav_text_color":        "#ffffff",
-    "sidebar_bg_color":      "#ffffff",
-    "sidebar_text_color":    "#374151",
+    "sidebar_bg_color":      "#2b2e4a",
+    "sidebar_text_color":    "#e8e9f0",
     # Status colors
     "success_color":         "#16a34a",
     "warning_color":         "#d97706",

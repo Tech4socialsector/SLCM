@@ -13,12 +13,16 @@ authors = [
 dependencies = [
     "qrcode[pil]>=7.4.2",
     "Pillow>=10.2.0",
-    "pypdf>=3.0.0"
+    "pypdf>=3.0.0",
+    "pyodbc>=5.0.0"
 ]
 
 [build-system]
 requires = ["flit_core >=3.4,<4"]
 build-backend = "flit_core.buildapi"
+
+[deploy.dependencies.apt]
+packages = ["unixodbc", "unixodbc-dev", "tdsodbc"]
 
 [tool.bench.frappe-dependencies]
 frappe = ">=15,<18"

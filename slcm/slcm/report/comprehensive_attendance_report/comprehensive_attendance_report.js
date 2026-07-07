@@ -12,7 +12,7 @@ frappe.query_reports["Comprehensive Attendance Report"] = {
         },
         {
             "fieldname": "program",
-            "label": __("Program"),
+            "label": __("Cohort"),
             "fieldtype": "Link",
             "options": "Cohort",
             "reqd": 0
@@ -26,9 +26,16 @@ frappe.query_reports["Comprehensive Attendance Report"] = {
         },
         {
             "fieldname": "course",
-            "label": __("Course"),
+            "label": __("Course Offering"),
             "fieldtype": "Link",
-            "options": "Course",
+            "options": "Course Offering",
+            "reqd": 0
+        },
+        {
+            "fieldname": "source",
+            "label": __("Attendance Source"),
+            "fieldtype": "Select",
+            "options": "\nRFID\nManual\nQR\nAuto",
             "reqd": 0
         }
     ]

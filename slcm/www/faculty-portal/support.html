@@ -2,15 +2,51 @@
 
 {% block title %}Helpdesk{% endblock %}
 
+{% block extra_head %}
+<style>
+  /* Make iframe fill available height properly */
+  #hd-frame { border: none; }
+</style>
+{% endblock %}
+
 {% block content %}
 
 {# ── Page Header ────────────────────────────────────────────── #}
 <div class="fp-page-header fade-in" style="margin-bottom:20px;">
-  <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--fp-text-4);margin-bottom:4px;">Help Center</div>
+  <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--fp-text-4);margin-bottom:4px;">Help Centre</div>
   <h1 style="margin:0;font-size:24px;font-weight:700;color:var(--fp-text-1);">Helpdesk</h1>
 </div>
 
-{# ── Helpdesk Iframe ─────────────────────────────────────────── #}
+{% if is_hd_agent %}
+{# ── Agent View: open full helpdesk in iframe ─────────────────── #}
+<div class="fp-alert fp-alert-info fade-in" style="margin-bottom:16px;gap:14px;align-items:flex-start;">
+  <span class="fp-ms" style="font-size:22px;flex-shrink:0;color:var(--fp-info);">support_agent</span>
+  <div>
+    <div style="font-weight:700;margin-bottom:3px;">You have Agent access</div>
+    <div style="font-size:13px;color:var(--fp-text-3);">
+      You can manage and respond to support tickets below.
+      To raise a personal ticket, click <strong>New Ticket</strong> inside the helpdesk and set yourself as the requester.
+      Alternatively, <a href="/helpdesk" target="_blank" style="color:var(--fp-info);font-weight:600;">open the full Helpdesk</a> in a new tab.
+    </div>
+  </div>
+</div>
+<div class="fp-card fade-in" style="padding:0;overflow:hidden;border-radius:16px;margin-bottom:24px;min-height:80vh;display:flex;flex-direction:column;">
+  <div id="hd-loading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px;gap:16px;flex:1;">
+    <span class="fp-ms" style="font-size:48px;color:var(--fp-primary);animation:fp-spin 1.2s linear infinite;">progress_activity</span>
+    <p style="margin:0;font-size:14px;color:var(--fp-text-4);">Loading Helpdesk…</p>
+  </div>
+  <iframe
+    id="hd-frame"
+    src="/helpdesk"
+    style="width:100%;border:none;min-height:80vh;display:none;flex:1;"
+    title="Helpdesk"
+    allow="same-origin"
+    onload="hdFrameReady()"
+  ></iframe>
+</div>
+
+{% else %}
+{# ── Regular Faculty: show only their own tickets ─────────────── #}
 <div class="fp-card fade-in" style="padding:0;overflow:hidden;border-radius:16px;margin-bottom:24px;min-height:80vh;display:flex;flex-direction:column;">
   <div id="hd-loading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px;gap:16px;flex:1;">
     <span class="fp-ms" style="font-size:48px;color:var(--fp-primary);animation:fp-spin 1.2s linear infinite;">progress_activity</span>
@@ -37,6 +73,7 @@
     })();
   </script>
 </div>
+{% endif %}
 
 {% endblock %}
 
@@ -45,34 +82,87 @@
 (function () {
   'use strict';
 
+  /* ── CSS to inject into the helpdesk iframe ─────────────────────────
+     The helpdesk is a compiled Vue + Tailwind SPA.
+     DesktopLayout renders: <div class="flex h-screen w-screen">
+       <Sidebar />          ← first child div with border-r + bg-surface-menu-bar
+       <div class="flex-1"> ← second child (main area)
+     </div>
+     We hide the first child (sidebar) and let the second child expand.
+  ──────────────────────────────────────────────────────────────────── */
+  var HD_STYLE_ID = 'fp-hd-no-sidebar';
+  var HD_CSS = [
+    /* Sidebar wrapper — first flex child in the root h-screen w-screen div */
+    '.flex.h-screen.w-screen > div:first-child { display: none !important; }',
+    /* Make main area take full width */
+    '.flex.h-screen.w-screen > div:nth-child(2) { flex: 1 1 100% !important; max-width: 100% !important; }',
+    /* Also hide any element with border-r and bg-surface-menu-bar (the sidebar bg token) */
+    '[class*="border-r"][class*="bg-surface-menu-bar"] { display: none !important; }',
+    /* Hide UserMenu / sidebar toggle buttons that can re-open it */
+    '.sidebar-toggle, [class*="sidebar-toggle"] { display: none !important; }'
+  ].join('\n');
+
+  var _observer = null;
+
+  function injectStyleIntoFrame(frameDoc) {
+    if (!frameDoc || frameDoc.getElementById(HD_STYLE_ID)) return;
+    var style = frameDoc.createElement('style');
+    style.id = HD_STYLE_ID;
+    style.textContent = HD_CSS;
+    (frameDoc.head || frameDoc.documentElement).appendChild(style);
+  }
+
+  function watchFrameForMount(frame) {
+    try {
+      var doc = frame.contentDocument || frame.contentWindow.document;
+      if (!doc) return;
+
+      /* Inject immediately in case Vue already mounted */
+      injectStyleIntoFrame(doc);
+
+      /* Watch for Vue mounting the app after the iframe loads */
+      if (_observer) { _observer.disconnect(); _observer = null; }
+      _observer = new (frame.contentWindow.MutationObserver || MutationObserver)(function () {
+        injectStyleIntoFrame(doc);
+      });
+      _observer.observe(doc.documentElement, { childList: true, subtree: true });
+
+      /* Stop observing after 10s — Vue will have mounted by then */
+      setTimeout(function () {
+        if (_observer) { _observer.disconnect(); _observer = null; }
+      }, 10000);
+    } catch (e) { /* cross-origin safety */ }
+  }
+
   function hdFrameReady() {
     var frame = document.getElementById('hd-frame');
     var loader = document.getElementById('hd-loading');
     if (loader) loader.style.display = 'none';
-    if (frame) frame.style.display = 'block';
+    if (frame) {
+      frame.style.display = 'block';
+      watchFrameForMount(frame);
+    }
   }
 
   window.hdFrameReady = hdFrameReady;
 
-  /* Fallback: if onload fires before script runs */
   document.addEventListener('DOMContentLoaded', function () {
     var frame = document.getElementById('hd-frame');
-    if (frame && frame.contentDocument && frame.contentDocument.readyState === 'complete') {
-      hdFrameReady();
-    }
+    if (!frame) return;
 
-    /* Resize iframe to fill remaining viewport height */
+    /* Resize iframe to fill remaining viewport */
     function resizeFrame() {
-      var f = document.getElementById('hd-frame');
-      if (!f) return;
-      var rect = f.getBoundingClientRect();
-      var remaining = window.innerHeight - rect.top - 8;
-      var height = Math.max(500, remaining);
-      f.style.minHeight = height + 'px';
+      var rect = frame.getBoundingClientRect();
+      var h = Math.max(500, window.innerHeight - rect.top - 8);
+      frame.style.minHeight = h + 'px';
     }
-
     resizeFrame();
     window.addEventListener('resize', resizeFrame);
+
+    /* If onload already fired */
+    if (frame.contentDocument && frame.contentDocument.readyState === 'complete') {
+      hdFrameReady();
+    }
   });
 })();
 </script>
