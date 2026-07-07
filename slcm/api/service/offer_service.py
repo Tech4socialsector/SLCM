@@ -238,8 +238,8 @@ class OfferService:
             offer.payment_deadline = FeeService._calculate_deadline(fee_structure_name)
             
             # Freeze Fees from Fee Structure
-            nationality = frappe.db.get_value("Applicant", applicant, "nationality")
-            is_foreign = nationality != "Indian"
+            foriegn_national = frappe.db.get_value("Applicant", applicant, "foriegn_national")
+            is_foreign = foriegn_national == "Yes"
             fee_data = FeeService._calculate_and_freeze_fees(fee_structure_name, is_foreign=is_foreign)
             offer.payable_amount = fee_data.get("total_payable")
             

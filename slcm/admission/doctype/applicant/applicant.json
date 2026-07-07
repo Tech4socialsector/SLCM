@@ -1270,7 +1270,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-07 14:02:54.162532",
+ "modified": "2026-07-07 14:54:46.208296",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
@@ -1431,15 +1431,15 @@
  "sort_order": "DESC",
  "states": [
   {
-   "color": "Cyan",
+   "color": "Gray",
    "title": "Draft"
   },
   {
-   "color": "Light Blue",
+   "color": "Cyan",
    "title": "Submitted"
   },
   {
-   "color": "Green",
+   "color": "Pink",
    "title": "Completed"
   },
   {
@@ -1472,39 +1472,39 @@
   },
   {
    "color": "Green",
-   "title": " Offer Accepted"
+   "title": "Offer Accepted"
   },
   {
    "color": "Orange",
-   "title": " Offer Declined"
+   "title": "Offer Declined"
   },
   {
    "color": "Light Blue",
-   "title": " Offer Issued"
+   "title": "Offer Issued"
   },
   {
    "color": "Red",
-   "title": " Offer Expired"
+   "title": "Offer Expired"
   },
   {
    "color": "Green",
-   "title": " Exempted Entrance Test And Interview"
+   "title": "Exempted Entrance Test And Interview"
   },
   {
    "color": "Light Blue",
-   "title": " Interview Scheduled"
+   "title": "Interview Scheduled"
   },
   {
    "color": "Red",
-   "title": " Interview Rejected"
+   "title": "Interview Rejected"
   },
   {
    "color": "Green",
-   "title": " Interview Completed"
+   "title": "Interview Completed"
   },
   {
    "color": "Green",
-   "title": " Interview Exempted"
+   "title": "Interview Exempted"
   },
   {
    "color": "Green",
@@ -1512,7 +1512,7 @@
   },
   {
    "color": "Light Blue",
-   "title": " Entrance Test Allocated"
+   "title": "Entrance Test Allocated"
   },
   {
    "color": "Green",
@@ -1520,15 +1520,19 @@
   },
   {
    "color": "Red",
-   "title": " Entrance Test Rejected"
+   "title": "Entrance Test Rejected"
   },
   {
    "color": "Light Blue",
-   "title": " Entrance Test Scheduled"
+   "title": "Entrance Test Scheduled"
   },
   {
-   "color": "Blue",
-   "title": " Enrolled"
+   "color": "Purple",
+   "title": "Enrolled"
+  },
+  {
+   "color": "Red",
+   "title": "Withdrawn"
   }
  ],
  "title_field": "candidate_name"

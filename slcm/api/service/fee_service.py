@@ -127,8 +127,8 @@ class FeeService:
         if frappe.db.exists("Applicant Fee Assignment", {"offer_letter": offer.name, "status": ["!=", "Cancelled"]}):
             return
 
-        nationality = frappe.db.get_value("Applicant", offer.applicant, "nationality")
-        is_foreign = nationality != "Indian"
+        foriegn_national = frappe.db.get_value("Applicant", offer.applicant, "foriegn_national")
+        is_foreign = foriegn_national == "Yes"
         fee_data = FeeService._calculate_and_freeze_fees(offer.fee_structure, is_foreign=is_foreign)
 
         admission_cycle = offer.admission_cycle or frappe.db.get_value("Applicant", offer.applicant, "admission_cycle")
@@ -622,8 +622,8 @@ class FeeService:
                 return existing
 
             # 1. Fetch components directly
-            nationality = frappe.db.get_value("Applicant", offer_doc.applicant, "nationality")
-            is_foreign = nationality != "Indian"
+            foriegn_national = frappe.db.get_value("Applicant", offer_doc.applicant, "foriegn_national")
+            is_foreign = foriegn_national == "Yes"
             fee_data = FeeService._calculate_and_freeze_fees(offer_doc.fee_structure, is_foreign=is_foreign)
             
             total_payable = fee_data.get("total_payable")
@@ -1394,7 +1394,7 @@ class FeeService:
 
             from slcm.api.service.application_fee_service import get_application_fee_for_category, _get_applicant_category
             category = _get_applicant_category(applicant_doc.name)
-            is_foreign = getattr(applicant_doc, "nationality", "") != "Indian"
+            is_foreign = getattr(applicant_doc, "foriegn_national", "") == "Yes"
             fee_amount = flt(
                 get_application_fee_for_category(applicant_doc.program, applicant_doc.admission_cycle, category, is_foreign=is_foreign)
             )
