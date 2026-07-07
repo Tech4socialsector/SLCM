@@ -663,7 +663,7 @@ function _build_academic_progress_html(d) {
 		<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 18px;flex:1;display:flex;align-items:center;gap:16px;">
 			<span style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.04em;font-weight:600;">Current CGPA</span>
 			<span style="font-size:20px;font-weight:800;color:#1a3c6e;">${d.current_cgpa ? d.current_cgpa.toFixed(2) : "—"}</span>
-			<span style="margin-left:16px;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.04em;font-weight:600;">Attendance</span>
+			<span style="margin-left:16px;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.04em;font-weight:600;">Attendance percentage</span>
 			<span style="font-size:20px;font-weight:800;color:#166534;">${d.attendance_status ? enc(d.attendance_status) : "—"}</span>
 		</div>
 	</div>`;

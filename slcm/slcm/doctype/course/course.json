@@ -49,6 +49,7 @@
   {
    "fieldname": "description",
    "fieldtype": "Small Text",
+   "hidden": 1,
    "label": "Description"
   },
   {
@@ -58,6 +59,7 @@
   {
    "fieldname": "topics",
    "fieldtype": "Table",
+   "hidden": 1,
    "label": "Topics",
    "options": "Course Topic"
   },
@@ -95,13 +97,14 @@
   {
    "fieldname": "course_desctiption",
    "fieldtype": "Small Text",
+   "hidden": 1,
    "label": "Description"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-16 16:21:29.311509",
+ "modified": "2026-07-07 11:58:24.722377",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Course",
@@ -121,12 +124,12 @@
    "write": 1
   },
   {
-   "read": 1,
-   "role": "slcm_Faculty",
-   "report": 1,
+   "email": 1,
    "export": 1,
    "print": 1,
-   "email": 1
+   "read": 1,
+   "report": 1,
+   "role": "slcm_Faculty"
   },
   {
    "read": 1,

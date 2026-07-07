@@ -116,6 +116,7 @@
   {
    "fieldname": "description",
    "fieldtype": "Small Text",
+   "hidden": 1,
    "label": "Description"
   },
   {
@@ -166,7 +167,7 @@
    "link_fieldname": "cohort"
   }
  ],
- "modified": "2026-07-03 13:01:59.089889",
+ "modified": "2026-07-07 11:59:48.950498",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Cohort",
