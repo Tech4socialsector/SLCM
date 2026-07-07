@@ -62,7 +62,7 @@
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Applicant Type",
-   "options": "Domestic Applicants\nInternational Applicants",
+   "options": "Domestic Applicants\nInternational Applicants\nBoth",
    "reqd": 1
   },
   {
