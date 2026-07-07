@@ -3,7 +3,7 @@
  "allow_import": 1,
  "allow_rename": 1,
  "autoname": "format:{policy_name}",
- "creation": "2026-03-18 18:18:00.000000",
+ "creation": "2026-03-18 18:18:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -23,12 +23,14 @@
   {
    "fieldname": "days_from_payment",
    "fieldtype": "Int",
+   "in_list_view": 1,
    "label": "Days From Payment",
    "reqd": 1
   },
   {
    "fieldname": "refund_percentage",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Refund Percentage",
    "reqd": 1
   },
@@ -36,16 +38,17 @@
    "default": "1",
    "fieldname": "is_active",
    "fieldtype": "Check",
+   "in_list_view": 1,
    "label": "Is Active"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-18 18:18:00.000000",
+ "modified": "2026-07-07 10:04:15.776985",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Refund Policy",
- "naming_rule": "By fieldname",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
@@ -65,6 +68,7 @@
    "role": "Admission Manager"
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "days_from_payment",
  "sort_order": "ASC",
  "states": []

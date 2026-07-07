@@ -15,10 +15,12 @@
   "email",
   "mobile_number",
   "nationality",
+  "foriegn_national",
   "column_break_rrla",
   "date_of_birth",
   "alternate_contact",
   "annual_house_hold_income",
+  "copy_of_passport",
   "column_break_jgco",
   "gender",
   "religion",
@@ -1217,6 +1219,22 @@
    "label": "User ID",
    "options": "User",
    "permlevel": 1
+  },
+  {
+   "fieldname": "foriegn_national",
+   "fieldtype": "Select",
+   "label": "Are you a Foriegn National with a valid passport of a country other that India?",
+   "options": "\nYes\nNo",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.foriegn_national == \"Yes\"",
+   "description": "Max 5 MB \u2014 supported formats: png, jpeg, jpg, pdf",
+   "fieldname": "copy_of_passport",
+   "fieldtype": "Attach",
+   "label": "Copy of Passport",
+   "mandatory_depends_on": "eval:doc.foriegn_national == \"Yes\"",
+   "options": "png,jpeg,jpg,pdf"
   }
  ],
  "grid_page_length": 50,
@@ -1252,7 +1270,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-06 15:32:04.236914",
+ "modified": "2026-07-07 14:02:54.162532",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
