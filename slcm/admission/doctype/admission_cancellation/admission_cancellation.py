@@ -16,66 +16,54 @@ class AdmissionCancellation(Document):
 		self.set_cancellation_metadata()
 
 	def fetch_applicant_details(self):
-		if self.applicant:
-			# Fetch program and campus from applicant
-			applicant_doc = frappe.get_doc("Applicant", self.applicant)
-			self.program = applicant_doc.program
-			self.campus = applicant_doc.campus
-			
-			# Fetch the latest active Offer Letter for this applicant
-			offer_name = frappe.db.get_value("Offer Letter", 
-				{"applicant": self.applicant, "status": ["not in", ["Rejected", "Withdrawn"]]},
-				"name", order_by="creation desc"
-			)
-			if offer_name:
-				self.offer = offer_name
-				
-				# Try to find payment details from Applicant Fee Assignment
-				afa = frappe.get_all("Applicant Fee Assignment",
-					filters={"offer_letter": offer_name, "status": ["in", ["Paid", "Converted"]]},
-					fields=["name", "final_payable_amount", "fee_invoice"],
-					limit=1
-				)
-				
-				if afa:
-					self.amount_paid = flt(afa[0].final_payable_amount)
-					invoice = afa[0].fee_invoice
-					
-					# Find the fee payment linked to this invoice or assignment
-					payment = frappe.get_all("Fee Payment", 
-						filters={"fee_invoice": invoice, "status": ["in", ["Submitted", "Draft"]]},
-						fields=["name", "amount", "reference_number"],
-						order_by="creation desc",
-						limit=1
-					)
-					if payment:
-						self.payment_request = payment[0].name
-						if not self.amount_paid:
-							self.amount_paid = flt(payment[0].amount)
-						self.razorpay_id = payment[0].reference_number
-					else:
-						# Fallback for amount if no Fee Payment but core Payment Request found
-						pr = frappe.get_all("Payment Request",
-							filters={"reference_doctype": "Offer Letter", "reference_name": offer_name, "status": "Paid"},
-							fields=["name", "amount", "transaction_id"],
-							limit=1
-						)
-						if pr:
-							self.amount_paid = flt(pr[0].amount)
-							self.razorpay_id = pr[0].transaction_id
+		if not self.applicant:
+			return
 
-					# Always search for Applicant Payment Receipt for visibility/Audit Trail
-					receipt = frappe.get_all("Applicant Payment Receipt",
-						filters={"offer_letter": offer_name, "docstatus": ["<", 2]},
-						fields=["name", "total_amount", "transaction_id"],
-						limit=1
-					)
-					if receipt:
-						self.applicant_payment_receipt = receipt[0].name
-						if not self.amount_paid:
-							self.amount_paid = flt(receipt[0].total_amount)
-						if not self.razorpay_id:
-							self.razorpay_id = receipt[0].transaction_id
+		# Fetch program and campus from applicant
+		applicant_doc = frappe.get_doc("Applicant", self.applicant)
+		self.program = applicant_doc.program
+		self.campus = applicant_doc.campus
+
+		# Fetch the latest active Offer Letter for this applicant
+		offer_name = frappe.db.get_value(
+			"Offer Letter",
+			{"applicant": self.applicant, "status": ["not in", ["Rejected", "Withdrawn"]]},
+			"name",
+			order_by="creation desc"
+		)
+		if not offer_name:
+			return
+
+		self.offer = offer_name
+
+		# ── Primary: resolve via Applicant Payment Receipt linked to the Offer Letter ──
+		# APR.net_amount = actual amount paid (post-scholarship); APR.transaction_id = Razorpay pay_xxx
+		receipt = frappe.db.get_value(
+			"Applicant Payment Receipt",
+			{"offer_letter": offer_name, "docstatus": ["<", 2]},
+			["name", "net_amount", "total_amount", "transaction_id"],
+			as_dict=True,
+			order_by="creation desc"
+		)
+
+		if receipt:
+			self.applicant_payment_receipt = receipt.name
+			# Use net_amount (actual paid after scholarship); fallback to total_amount
+			self.amount_paid = flt(receipt.net_amount) if flt(receipt.net_amount) > 0 else flt(receipt.total_amount)
+			self.razorpay_id = receipt.transaction_id
+			return  # APR is the authoritative source — no need to fall through
+
+		# ── Fallback: no APR found, try Payment Request on Offer Letter ──
+		pr = frappe.db.get_value(
+			"Payment Request",
+			{"reference_doctype": "Offer Letter", "reference_name": offer_name, "status": "Paid"},
+			["name", "amount", "transaction_id"],
+			as_dict=True,
+			order_by="creation desc"
+		)
+		if pr:
+			self.amount_paid = flt(pr.amount)
+			self.razorpay_id = pr.transaction_id
 
 	def set_cancellation_metadata(self):
 		if self.is_new():
