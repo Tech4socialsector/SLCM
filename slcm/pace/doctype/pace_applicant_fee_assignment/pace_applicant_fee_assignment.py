@@ -58,22 +58,22 @@ class PACEApplicantFeeAssignment(Document):
 					user = frappe.get_doc("User", user_name)
 					roles_updated = False
 					
-					# Add Student role if not present
-					if not user.has_role("Student"):
-						user.add_roles("Student")
+					# Add slcm_Student role if not present
+					if not user.has_role("slcm_Student"):
+						user.add_roles("slcm_Student")
 						roles_updated = True
 					
-					# Remove Applicant role if present
-					if user.has_role("Applicant"):
-						user.remove_roles("Applicant")
-						roles_updated = True
+					# Remove Applicant role if present (Commented out as per user request)
+					# if user.has_role("Applicant"):
+					# 	user.remove_roles("Applicant")
+					# 	roles_updated = True
 					
-					# Remove Applicant Role Profile if present
-					if user.get("role_profiles"):
-						initial_profiles = len(user.role_profiles)
-						user.set("role_profiles", [p for p in user.role_profiles if p.role_profile != "Applicant"])
-						if len(user.role_profiles) < initial_profiles:
-							roles_updated = True
+					# Remove Applicant Role Profile if present (Commented out as per user request)
+					# if user.get("role_profiles"):
+					# 	initial_profiles = len(user.role_profiles)
+					# 	user.set("role_profiles", [p for p in user.role_profiles if p.role_profile != "Applicant"])
+					# 	if len(user.role_profiles) < initial_profiles:
+					# 		roles_updated = True
 						
 					if roles_updated:
 						user.save(ignore_permissions=True)

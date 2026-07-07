@@ -71,9 +71,36 @@ def get_offer_details(offer_name=None):
 
     # Get Live Fee Details
     fee_data = []
-    if fee_structure:
+
+    # First, try to fetch components from Applicant Fee Assignment (AFA)
+    afa = frappe.db.get_value("Applicant Fee Assignment",
+        {"offer_letter": offer_id, "fee_type": "Admission Fee", "docstatus": ["!=", 2]},
+        ["name", "final_payable_amount", "scholarship_amount", "scholarship_applied", "total_amount"],
+        as_dict=True)
+
+    if afa:
+        afa_components = frappe.get_all("Applicant Fee Component Child",
+            filters={"parent": afa.name, "parenttype": "Applicant Fee Assignment"},
+            fields=["component_name", "fee_component", "total_amount", "amount"],
+            ignore_permissions=True
+        )
+        for comp in afa_components:
+            fee_data.append({
+                "component": comp.component_name or comp.fee_component,
+                "amount": comp.total_amount or comp.amount
+            })
+
+    # If AFA doesn't have components or doesn't exist, fallback to Fee Structure
+    if not fee_data and fee_structure:
+        # Determine nationality for parentfield
+        applicant_nationality = "Indian"
+        if target_applicant:
+            applicant_nationality = frappe.db.get_value("Applicant", target_applicant, "nationality") or "Indian"
+
+        parentfield = "fee_components_for_indian" if applicant_nationality.strip().lower() == "indian" else "fee_components_for_foreign"
+
         fs_components = frappe.get_all("Fee Component Child",
-            filters={"parent": fee_structure, "parenttype": "Fee Structure"},
+            filters={"parent": fee_structure, "parenttype": "Fee Structure", "parentfield": parentfield},
             fields=["component_name", "fee_component", "total_amount", "amount"],
             ignore_permissions=True
         )
@@ -119,11 +146,6 @@ def get_offer_details(offer_name=None):
             scholarship_data.status = "Submitted" # Under Review
 
     # --- Scholarship: Override payable_amount with scholarship-adjusted amount ---
-    afa = frappe.db.get_value("Applicant Fee Assignment", 
-        {"offer_letter": offer_id, "fee_type": "Admission Fee", "docstatus": ["!=", 2]},
-        ["name", "final_payable_amount", "scholarship_amount", "scholarship_applied"],
-        as_dict=True)
-    
     applied_scholarship = 0
     if afa and afa.scholarship_applied and flt(afa.scholarship_amount) > 0:
         # Show the scholarship-reduced amount as the payable amount

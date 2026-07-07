@@ -266,8 +266,29 @@ class RefundRequest(Document):
 def create_refund_request(cancellation):
 	if isinstance(cancellation, str):
 		cancellation = frappe.get_doc("Admission Cancellation", cancellation)
+
+	# Dynamically resolve payment details if they are missing on cancellation
+	if not cancellation.get("payment_request") and cancellation.offer:
+		student_name = frappe.db.get_value("Student Master", {"application_number": cancellation.applicant}, "name")
+		if student_name:
+			payment_name = frappe.db.get_value("Fee Payment", {
+				"student": student_name,
+				"status": "Submitted"
+			}, "name")
+			if payment_name:
+				cancellation.payment_request = payment_name
+
+	if not cancellation.get("applicant_payment_receipt") and cancellation.offer:
+		receipt_name = frappe.db.get_value("Applicant Payment Receipt", {
+			"offer_letter": cancellation.offer,
+			"docstatus": ["<", 2]
+		}, "name", order_by="creation desc")
+		if receipt_name:
+			cancellation.applicant_payment_receipt = receipt_name
 		
-	if not cancellation.payment_request and not cancellation.applicant_payment_receipt:
+	if (not cancellation.get("payment_request") 
+		and not cancellation.get("applicant_payment_receipt") 
+		and not cancellation.get("razorpay_id")):
 		return None
 
 	refund = frappe.new_doc("Refund Request")
@@ -276,14 +297,14 @@ def create_refund_request(cancellation):
 	refund.status = "Draft"
 	refund.refund_reason = cancellation.cancellation_reason
 	
-	if cancellation.payment_request:
+	if cancellation.get("payment_request"):
 		payment = frappe.get_doc("Fee Payment", cancellation.payment_request)
 		refund.payment_request = cancellation.payment_request
 		refund.razorpay_payment_id = payment.reference_number
 		refund.amount_paid = flt(payment.amount)
 		refund.refund_amount = flt(payment.amount)
 	
-	if cancellation.applicant_payment_receipt:
+	if cancellation.get("applicant_payment_receipt"):
 		receipt = frappe.get_doc("Applicant Payment Receipt", cancellation.applicant_payment_receipt)
 		refund.applicant_payment_receipt = cancellation.applicant_payment_receipt
 		if not refund.razorpay_payment_id:
@@ -292,6 +313,12 @@ def create_refund_request(cancellation):
 			# Use net_amount (post-scholarship) as the actual amount paid
 			refund.amount_paid = flt(receipt.net_amount) if flt(receipt.get('net_amount')) > 0 else flt(receipt.total_amount)
 			refund.refund_amount = refund.amount_paid
+
+	# Fallback if paid via Payment Request directly (only razorpay_id exists)
+	if not refund.razorpay_payment_id and cancellation.get("razorpay_id"):
+		refund.razorpay_payment_id = cancellation.razorpay_id
+		refund.amount_paid = flt(cancellation.amount_paid)
+		refund.refund_amount = flt(cancellation.amount_paid)
 	
 	refund.insert(ignore_permissions=True)
 	return refund.name

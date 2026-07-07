@@ -642,22 +642,24 @@ def get_context(context):
              context.cancellation_details = None
              context.has_cancellation = False
         
-        # Show withdraw button ONLY if Enrolled and no existing cancellation
-        if not context.has_cancellation and applicant.status == "Enrolled":
-            # We fetch the latest active Offer Letter. If someone has paid, it should be 'Payment Completed' or 'Accepted'. 
-            # But we also include 'Issued' just in case the status sync is pending.
+        # Check for withdrawal/refund eligibility if no existing cancellation request
+        context.show_withdraw_button = False
+        if not context.has_cancellation:
+            # We fetch the latest active Offer Letter.
             _off_name = frappe.db.get_value("Offer Letter", 
                 {"applicant": applicant.name, "status": ["not in", ["Rejected", "Withdrawn", "Expired"]]}, 
                 "name", order_by="creation desc")
             context.offer_name = _off_name or ""
-            
-            # Withdrawal depends on an active Offer Letter
-            if context.offer_name:
+
+            # Withdrawal depends on an active Offer Letter and being in Enrolled/Fee Paid status
+            if context.offer_name and applicant.status in ["Enrolled", "Fee Paid"]:
+                context.show_withdraw_button = True
+                
                 # 1. Try finding Student-linked Fee Payment
                 student_name = frappe.db.get_value("Student Master", {"application_number": applicant.name}, "name")
                 if student_name:
                     payment_name = frappe.db.get_value("Fee Payment", {
-                        "student": student_name, 
+                        "student": student_name,
                         "status": "Submitted"
                     }, "name")
                     if payment_name:
@@ -677,7 +679,7 @@ def get_context(context):
         else:
             # Don't wipe offer_name — it may already be set from the initial offer
             # letter fetch above and is needed for the quick-status offer button.
-            # The withdrawal button is controlled by payment_details, not offer_name.
+            # The withdrawal button is controlled by show_withdraw_button, not offer_name.
             context.payment_details = None
 
         # Combined results
@@ -995,17 +997,20 @@ def get_context(context):
         program_slug = frappe.db.get_value("Program", app_doc.program, "program_slug") or ""
 
         # --- Withdrawal Data Logic ---
+        _show_withdraw_button = False
         _payment_details = None
         _offer_name = frappe.db.get_value("Offer Letter", {
             "applicant": app_doc.name, 
             "status": ["in", ["Accepted", "Payment Completed"]]
         }, "name")
         
-        student_name = frappe.db.get_value("Student Master", {"application_number": app_doc.name}, "name")
-        if student_name:
-            payment_name = frappe.db.get_value("Fee Payment", {"student": student_name, "status": "Submitted"}, "name")
-            if payment_name:
-                _payment_details = frappe.db.get_value("Fee Payment", payment_name, ["name", "amount", "payment_date"], as_dict=True)
+        if status in ["Enrolled", "Fee Paid"] and _offer_name:
+            _show_withdraw_button = True
+            student_name = frappe.db.get_value("Student Master", {"application_number": app_doc.name}, "name")
+            if student_name:
+                payment_name = frappe.db.get_value("Fee Payment", {"student": student_name, "status": "Submitted"}, "name")
+                if payment_name:
+                    _payment_details = frappe.db.get_value("Fee Payment", payment_name, ["name", "amount", "payment_date"], as_dict=True)
 
         _fee_st = (app_doc.application_fee_status or "").strip()
         summary = {
@@ -1013,6 +1018,7 @@ def get_context(context):
             "is_editable": is_application_editable(app_doc),
             "offer_name": _offer_name or "",
             "payment_details": _payment_details,
+            "show_withdraw_button": _show_withdraw_button,
             "application_fee_status": _fee_st,
             "fee_receipt_ready": (
                 _fee_st == "Paid"
