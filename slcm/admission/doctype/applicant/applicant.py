@@ -3706,6 +3706,7 @@ def _auto_allocate_international_entrance_test(applicant_doc):
     allocation.allocation_status    = "Allocated"
     allocation.entrance_test_status = "Scheduled"
     allocation.allocated_by         = frappe.session.user
+    allocation.is_international_applicant = 1
 
     # Attach applicant categories
     try:

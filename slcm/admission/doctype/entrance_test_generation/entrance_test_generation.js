@@ -7,6 +7,16 @@ frappe.ui.form.on("Entrance Test Generation", {
                 }
             };
         });
+        frm.set_query("program", function () {
+            return {
+                query: "slcm.admission.doctype.entrance_test_generation.entrance_test_generation.get_program_query",
+                filters: {
+                    "program_level": frm.doc.program_level,
+                    "admission_cycle": frm.doc.admission_cycle,
+                    "campus": frm.doc.campus
+                }
+            };
+        });
     },
 
     refresh: function (frm) {
@@ -36,21 +46,25 @@ frappe.ui.form.on("Entrance Test Generation", {
                     return;
                 }
 
+                let confirm_message = __(
+                    "Are you sure you want to generate the Entrance Test list with the following configuration?<br><br>"
+                    + "<b>Filters:</b><br>"
+                    + "Academic Year: {0}<br>"
+                    + "Campus: {1}<br>"
+                    + "Cycle: {2}<br>"
+                    + "Level: {3}",
+                    [
+                        frm.doc.academic_year,
+                        frm.doc.campus,
+                        frm.doc.admission_cycle,
+                        frm.doc.program_level
+                    ]
+                );
+                if (frm.doc.program) {
+                    confirm_message += `<br>` + __("Programme") + `: ${frm.doc.program}`;
+                }
                 frappe.confirm(
-                    __(
-                        "Are you sure you want to generate the Entrance Test list with the following configuration?<br><br>"
-                        + "<b>Filters:</b><br>"
-                        + "Academic Year: {0}<br>"
-                        + "Campus: {1}<br>"
-                        + "Cycle: {2}<br>"
-                        + "Level: {3}",
-                        [
-                            frm.doc.academic_year,
-                            frm.doc.campus,
-                            frm.doc.admission_cycle,
-                            frm.doc.program_level
-                        ]
-                    ),
+                    confirm_message,
                     () => {
                         // Start generation
                         frm.call({
@@ -192,12 +206,16 @@ frappe.ui.form.on("Entrance Test Generation", {
         frm.remove_custom_button("View Entrance Test List");
         if (["Completed", "Allocation Done"].includes(frm.doc.status)) {
             frm.add_custom_button(__("View Entrance Test List"), function () {
-                frappe.db.get_value("Entrance Test List", {
+                let filters = {
                     academic_year: frm.doc.academic_year,
                     campus: frm.doc.campus,
                     admission_cycle: frm.doc.admission_cycle,
                     program_level: frm.doc.program_level
-                }, "name", (r) => {
+                };
+                if (frm.doc.program) {
+                    filters.program = frm.doc.program;
+                }
+                frappe.db.get_value("Entrance Test List", filters, "name", (r) => {
                     if (r && r.name) {
                         frappe.set_route("Form", "Entrance Test List", r.name);
                     } else {
@@ -212,7 +230,11 @@ frappe.ui.form.on("Entrance Test Generation", {
     academic_year: function (frm) { frm.trigger("refresh"); },
     campus: function (frm) { frm.trigger("refresh"); },
     admission_cycle: function (frm) { frm.trigger("refresh"); },
-    program_level: function (frm) { frm.trigger("refresh"); },
+    program_level: function (frm) { 
+        frm.set_value("program", "");
+        frm.trigger("refresh"); 
+    },
+    program: function (frm) { frm.trigger("refresh"); },
     status: function (frm) { frm.trigger("refresh"); }
 
 });

@@ -344,6 +344,13 @@
    "label": "Result Published"
   },
   {
+   "default": "0",
+   "fieldname": "is_international_applicant",
+   "fieldtype": "Check",
+   "label": "Is International Applicant",
+   "read_only": 1
+  },
+  {
    "fetch_from": "applicant.candidate_photo",
    "fieldname": "profile",
    "fieldtype": "Attach Image",
