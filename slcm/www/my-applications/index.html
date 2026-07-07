@@ -3358,6 +3358,13 @@ or _app.current_stage)) or _status %}
                 {% endif %}
               </div>
               {% endif %}
+
+              {% if r_status in ['Processed', 'Completed'] %}
+              <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed {{ card_border }}; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500;">
+                <span class="material-symbols-outlined" style="font-size: 16px;">info</span>
+                Note: Your money will be credited to your bank account according to bank policy (5 to 7 working days).
+              </div>
+              {% endif %}
             </div>
           </div>
 
@@ -3366,7 +3373,7 @@ or _app.current_stage)) or _status %}
         </div>
 
         <!-- Meta Info Footer -->
-        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px dashed #fecaca; display: flex; flex-wrap: wrap; gap: 20px; font-size: 12px; color: #64748b;">
+        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px dashed {{ card_border }}; display: flex; flex-wrap: wrap; gap: 20px; font-size: 12px; color: #64748b;">
           <div style="display: flex; align-items: center; gap: 6px;">
             <span class="material-symbols-outlined" style="font-size: 16px;">id_card</span>
             Request ID: <span style="font-weight: 600; color: #334155;">{{ cancellation_details.name }}</span>
