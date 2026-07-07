@@ -3779,99 +3779,79 @@ or _app.current_stage)) or _status %}
          ║  MERIT RESULT & SEAT ALLOCATION              ║
          ╚══════════════════════════════════════════════╝ -->
     {% if all_merit and all_merit|length > 0 %}
-    <div class="ma-card merit-seat-card fade-up" style="animation-delay:.30s">
+    <div class="ma-card merit-card fade-up" style="animation-delay:.30s; border: 1px solid #bbf7d0; background: linear-gradient(to bottom, #ffffff, #f0fdf4); margin-bottom: 24px;">
       <div class="ma-card-head" style="border-bottom: 1px solid #bbf7d0; background: rgba(240, 253, 244, 0.5); display: flex; justify-content: space-between; align-items: center;">
-        <div class="ma-card-title">
-          <span class="ico"><span class="material-symbols-outlined">military_tech</span></span>
-          Merit Result and Seat Allocation
+        <div class="ma-card-title" style="color: #166534; font-weight: 700;">
+          <span class="ico" style="background: #dcfce7; color: #16a34a;"><span class="material-symbols-outlined">military_tech</span></span>
+          Merit Result
         </div>
-        {% set r = (all_results[0] if all_results and all_results|length > 0 else {}) %}
+        <span class="result-banner-badge" style="background:#dcfce7;color:#16a34a; font-weight: 700;">Published</span>
+      </div>
+
+      <div class="ma-card-body" style="padding: 24px;">
+        {% set m = all_merit[0] %}
+        <div class="result-score-grid" style="grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 16px;">
+          <div class="result-score-box" style="background: white; border: 1px solid #bbf7d0; border-radius: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); padding: 16px;">
+            <div class="lbl" style="font-size: 10px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Overall Rank</div>
+            <div class="val" style="font-size: 24px; font-weight: 800; color: #000000;">{{ m.overall_rank or '—' }}</div>
+          </div>
+          <div class="result-score-box" style="background: white; border: 1px solid #bbf7d0; border-radius: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); padding: 16px;">
+            <div class="lbl" style="font-size: 10px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Merit Score</div>
+            <div class="val" style="font-size: 24px; font-weight: 800; color: #000000;">{{ (m.total_score | round(1)) if m.total_score else '—' }} <small style="font-size:14px;color:#000000;font-weight:500;">/ {{ eligibility_result.et_total_marks or 150 }}</small></div>
+          </div>
+        </div>
+        {% if merit_list_published_date %}
+        <div class="ms2-date" style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed #bbf7d0; display: flex; align-items: center; gap: 6px; font-size: 12px; color: #166534;">
+          <span class="material-symbols-outlined" style="font-size:16px;">check_circle</span>
+          Published on <strong>{{ merit_list_published_date }}</strong>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+
+    <!-- ╔══════════════════════════════════════════════╗
+         ║  SEAT ALLOCATION CARD                        ║
+         ╚══════════════════════════════════════════════╝ -->
+    {% if all_results and all_results|length > 0 %}
+    <div class="ma-card seat-card fade-up" style="animation-delay:.33s; border: 1px solid #bbf7d0; background: linear-gradient(to bottom, #ffffff, #f0fdf4);">
+      <div class="ma-card-head" style="border-bottom: 1px solid #bbf7d0; background: rgba(240, 253, 244, 0.5); display: flex; justify-content: space-between; align-items: center;">
+        <div class="ma-card-title" style="color: #166534; font-weight: 700;">
+          <span class="ico" style="background: #dcfce7; color: #16a34a;"><span class="material-symbols-outlined">where_to_vote</span></span>
+          Seat Allocation Result
+        </div>
+        {% set r = all_results[0] %}
         {% if r.selection_status %}
-          <span class="result-banner-badge" style="{% if r.selection_status == 'Rejected' %}background:#fee2e2;color:#991b1b;{% elif r.selection_status == 'Waitlisted' %}background:#fef9c3;color:#854d0e;{% endif %}">
+          <span class="result-banner-badge" style="font-weight: 700; border-radius: 20px; padding: 2px 10px; font-size: 11px; {% if r.selection_status == 'Rejected' %}background:#fee2e2;color:#991b1b;{% elif r.selection_status == 'Waitlisted' %}background:#fef9c3;color:#854d0e;{% else %}background:#dcfce7;color:#16a34a;{% endif %}">
             {% if r.selection_status == 'Rejected' %}Rejected{% elif r.selection_status == 'Waitlisted' %}Waitlisted{% else %}Selected{% endif %}
           </span>
         {% endif %}
-
       </div>
 
-
-      <!-- Merit + Seat grid body -->
-      <div class="merit-seat-body">
-
-        <!-- ── Left: Merit result ── -->
-        <div class="merit-seat-col">
-          <div class="merit-seat-section-title">Merit result</div>
-          {% set m = all_merit[0] %}
-          <div class="result-score-grid" style="grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));">
-            <div class="result-score-box">
-              <div class="lbl">Overall rank</div>
-              <div class="val">{{ m.overall_rank or '—' }}</div>
-            </div>
-            <div class="result-score-box">
-              <div class="lbl">Merit score</div>
-              <div class="val">{{ (m.total_score | round(1)) if m.total_score else '—' }} <small style="font-size:15px;color:var(--text-3)">/ {{ eligibility_result.et_total_marks or 150 }}</small></div>
-            </div>
+      <div class="ma-card-body" style="padding: 24px;">
+        <div class="result-score-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px;">
+          <div class="result-score-box" style="background: white; border: 1px solid #bbf7d0; border-radius: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); padding: 16px;">
+            <div class="lbl" style="font-size: 10px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Programme</div>
+            <div class="val" style="font-size: 16px; line-height: 1.3; font-weight: 700; color: #000000;">{{ _prog }}</div>
           </div>
-          {% if merit_list_published_date %}
-          <div class="ms2-date" style="margin-top:10px">
-            <span class="material-symbols-outlined" style="font-size:14px;color:#16a34a">check_circle</span>
-            Published on <strong>{{ merit_list_published_date }}</strong>
+
+          {% if r.allocated_category %}
+          <div class="result-score-box" style="background: white; border: 1px solid #bbf7d0; border-radius: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); padding: 16px;">
+            <div class="lbl" style="font-size: 10px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Shortlisted Category</div>
+            <div class="val" style="font-size: 18px; font-weight: 700; color: #000000;">{{ r.allocated_category|title }}</div>
+          </div>
+          {% endif %}
+
+          {% if r.seat_type %}
+          <div class="result-score-box" style="background: white; border: 1px solid #bbf7d0; border-radius: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); padding: 16px;">
+            <div class="lbl" style="font-size: 10px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Seat Type</div>
+            <div class="val" style="font-size: 18px; font-weight: 700; color: #16a34a;">{{ r.seat_type|title }}</div>
           </div>
           {% endif %}
         </div>
-
-        <!-- ── Vertical divider ── -->
-        <div class="ms2-vdivider"></div>
-
-        <!-- ── Right: Seat allocation ── -->
-        <div class="merit-seat-col">
-          <div class="merit-seat-section-title">Seat allocation result</div>
-          {% if all_results and all_results|length > 0 %}
-            {% set r = all_results[0] %}
-            <style>
-              .seat-alloc-grid {
-                display: grid;
-                grid-template-columns: 2fr 1fr;
-                gap: 14px;
-              }
-              .seat-alloc-grid.has-3 {
-                grid-template-columns: 2fr 1fr 1fr;
-              }
-              @media (max-width: 600px) {
-                .seat-alloc-grid, .seat-alloc-grid.has-3 {
-                  grid-template-columns: 1fr !important;
-                }
-              }
-            </style>
-            <div class="seat-alloc-grid {% if r.allocated_category and r.seat_type %}has-3{% endif %}">
-              <div class="result-score-box">
-                <div class="lbl">Programme</div>
-                <div class="val" style="font-size:16px;line-height:1.2;font-weight:700">{{ _prog }}</div>
-              </div>
-
-              {% if r.allocated_category %}
-              <div class="result-score-box">
-                <div class="lbl">Category</div>
-                <div class="val" style="font-size:18px;font-weight:700">{{ r.allocated_category|title }}</div>
-              </div>
-              {% endif %}
-
-              {% if r.seat_type %}
-              <div class="result-score-box">
-                <div class="lbl">Seat type</div>
-                <div class="val" style="font-size:18px;font-weight:700">{{ r.seat_type|title }}</div>
-              </div>
-              {% endif %}
-
-            </div>
-          {% else %}
-            <p class="ms2-pending">Seat allocation pending</p>
-          {% endif %}
-        </div>
-
-      </div><!-- end merit-seat-body -->
-
-    </div><!-- end merit-seat-card -->
+      </div>
+    </div>
     {% endif %}
 
 
