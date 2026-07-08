@@ -86,7 +86,7 @@
    "fieldname": "total_seats",
    "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Domestic Seats ",
+   "label": "Total Seats For Domestic",
    "reqd": 1
   },
   {
@@ -225,7 +225,7 @@
   }
  ],
  "links": [],
- "modified": "2026-07-08 09:42:58.634670",
+ "modified": "2026-07-08 15:06:21.848256",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Reservation Policy",
