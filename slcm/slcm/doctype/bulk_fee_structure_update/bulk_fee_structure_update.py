@@ -134,7 +134,7 @@ def preview_bulk_fee_update(doc_name):
         frappe.throw(_("Please select a New Fee Structure before previewing."))
 
     fs = frappe.get_doc("Fee Structure", doc.new_fee_structure)
-    new_total = flt(fs.total_amount or 0)
+    new_total = flt(fs.total_amount_for_indian or 0)
     if not new_total:
         frappe.throw(_("The selected Fee Structure has no components or a zero total amount."))
 
@@ -238,7 +238,7 @@ def apply_bulk_fee_update(doc_name):
         frappe.throw(_("You do not have permission to apply bulk fee structure updates."))
 
     fs = frappe.get_doc("Fee Structure", doc.new_fee_structure)
-    new_total = flt(fs.total_amount or 0)
+    new_total = flt(fs.total_amount_for_indian or 0)
     fs_label = fs.fee_structure_name or doc.new_fee_structure
 
     success = 0

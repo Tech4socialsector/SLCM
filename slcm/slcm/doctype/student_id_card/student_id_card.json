@@ -147,7 +147,6 @@
    "label": "Photo"
   },
   {
-   "fetch_from": "student.department",
    "fieldname": "department",
    "fieldtype": "Link",
    "in_list_view": 1,

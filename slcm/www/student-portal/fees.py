@@ -743,7 +743,7 @@ def _ensure_student_fee_populated(student):
         current_date = frappe.utils.today()
         fs_rows = frappe.db.sql(
             """
-            SELECT name, total_amount, valid_from, valid_until
+            SELECT name, total_amount_for_indian AS total_amount, valid_from, valid_until
             FROM `tabFee Structure`
             WHERE program = %s
               AND status = 'Active'

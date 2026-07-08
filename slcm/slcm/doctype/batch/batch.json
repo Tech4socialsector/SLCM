@@ -2,6 +2,7 @@
  "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
+ "autoname": "field:batch_name",
  "creation": "2025-12-27 10:08:08.385290",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -93,7 +94,7 @@
    "label": "Term Year"
   },
   {
-   "fetch_from": "program.program_shortcode",
+   "fetch_from": "program.program_code",
    "fieldname": "program_shortcode",
    "fieldtype": "Data",
    "label": "Program shortcode"
@@ -145,10 +146,11 @@
    "link_fieldname": "cohort"
   }
  ],
- "modified": "2026-07-08 15:21:15.312316",
+ "modified": "2026-07-08 17:11:25.189673",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Batch",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
