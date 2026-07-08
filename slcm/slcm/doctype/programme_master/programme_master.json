@@ -7,9 +7,9 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "programme_code",
+  "column_break_dbxx",
   "programme_name",
-  "programme_shortcode",
+  "programme_code",
   "level_of_study",
   "programme_duration_in_years",
   "graduation_credits",
@@ -17,6 +17,7 @@
  ],
  "fields": [
   {
+   "description": "BALLB (B), BA (A ) , LLB(L), MPP(P), LLM(M), PHD (D) ",
    "fieldname": "programme_code",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -30,15 +31,6 @@
    "label": "Programme Name",
    "reqd": 1,
    "unique": 1
-  },
-  {
-   "description": "BALLB (B), BA (A ) , LLB(L), MPP(P), LLM(M), PHD (D) ",
-   "fieldname": "programme_shortcode",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Programme shortcode",
-   "options": "\nB\nA\nL\nP\nM\nD",
-   "reqd": 1
   },
   {
    "fieldname": "level_of_study",
@@ -64,12 +56,17 @@
    "label": "Programme Status",
    "options": "\nActive\nInactive",
    "reqd": 1
+  },
+  {
+   "fieldname": "column_break_dbxx",
+   "fieldtype": "Column Break",
+   "options": "\nB\nA\nL\nP\nM\nD"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-08 12:32:59.940616",
+ "modified": "2026-07-08 15:17:46.058292",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Programme Master",
