@@ -356,30 +356,14 @@ frappe.ui.form.on("Student Master", {
 		);
 
 		frappe.call({
-			method: "slcm.slcm.doctype.student_master.student_master.get_academic_progress",
+			method: "slcm.slcm.doctype.student_master.student_master.get_academic_progress_list",
 			args: { student_name: frm.doc.name },
 			callback(r) {
-				const d = r && r.message;
-				const html = d
-					? _build_academic_progress_html(d)
-					: `<div style="color:#ef4444;font-size:13px;">Could not load academic progress.</div>`;
-				frm.set_df_property("academic_progress_html", "options", html);
-				frm.refresh_field("academic_progress_html");
-
-				// Populate Year of Study field with ordinal label
-				const yr = (d && d.current_year) || frm.doc.current_year;
-				const new_yr_str = _ordinal_year(yr);
-				if (frm.doc.year_of_study !== new_yr_str) {
-					frm.set_value("year_of_study", new_yr_str);
-				}
+				const enrollments = r.message || [];
+				_load_academic_progress(frm, null, enrollments);
 			},
 			error() {
-				frm.set_df_property(
-					"academic_progress_html",
-					"options",
-					`<div style="color:#ef4444;font-size:13px;">Error loading academic progress. Check Error Log.</div>`
-				);
-				frm.refresh_field("academic_progress_html");
+				_load_academic_progress(frm, null, []);
 			},
 		});
 	},
@@ -586,6 +570,84 @@ function _ordinal_year(val) {
 	return `${n}${suffix} Year`;
 }
 
+function _load_academic_progress(frm, enrollment_name, enrollments) {
+	frappe.call({
+		method: "slcm.slcm.doctype.student_master.student_master.get_academic_progress",
+		args: {
+			student_name: frm.doc.name,
+			enrollment_name: enrollment_name || undefined,
+		},
+		callback(r) {
+			const d = r && r.message;
+			const selector_html = _build_progress_selector_html(frm, enrollments, enrollment_name);
+			const body_html = d
+				? _build_academic_progress_html(d)
+				: `<div style="color:#ef4444;font-size:13px;">Could not load academic progress.</div>`;
+			frm.set_df_property("academic_progress_html", "options", selector_html + body_html);
+			frm.refresh_field("academic_progress_html");
+			_bind_academic_progress_selector(frm, enrollments);
+
+			// Populate Year of Study field only when viewing current progress
+			if (!enrollment_name) {
+				const yr = (d && d.current_year) || frm.doc.current_year;
+				const new_yr_str = _ordinal_year(yr);
+				if (frm.doc.year_of_study !== new_yr_str) {
+					frm.set_value("year_of_study", new_yr_str);
+				}
+			}
+		},
+		error() {
+			const selector_html = _build_progress_selector_html(frm, enrollments, enrollment_name);
+			frm.set_df_property(
+				"academic_progress_html",
+				"options",
+				selector_html + `<div style="color:#ef4444;font-size:13px;">Error loading academic progress. Check Error Log.</div>`
+			);
+			frm.refresh_field("academic_progress_html");
+			_bind_academic_progress_selector(frm, enrollments);
+		},
+	});
+}
+
+function _build_progress_selector_html(frm, enrollments, selected_name) {
+	const enc = frappe.utils.escape_html;
+
+	if (!enrollments || enrollments.length < 2) return "";
+
+	const options = enrollments.map((en) => {
+		const label = `${en.ay_name || en.academic_year || "—"} · ${en.term_name || "—"}` +
+			(en.is_current ? " (Current)" : "");
+		const value = en.name;
+		const selected = (selected_name ? value === selected_name : en.is_current) ? "selected" : "";
+		return `<option value="${enc(value)}" ${selected}>${enc(label)}</option>`;
+	}).join("");
+
+	return `
+	<div style="margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+		<label style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.04em;font-weight:600;">
+			Viewing
+		</label>
+		<select class="academic-progress-selector" style="font-size:13px;padding:5px 10px;border:1px solid #d1d5db;
+		         border-radius:8px;background:#fff;color:#111827;font-weight:600;min-width:220px;">
+			${options}
+		</select>
+	</div>`;
+}
+
+function _bind_academic_progress_selector(frm, enrollments) {
+	const $wrapper = frm.get_field("academic_progress_html").$wrapper;
+	$wrapper.find(".academic-progress-selector").off("change").on("change", function () {
+		const chosen = $(this).val();
+		frm.set_df_property(
+			"academic_progress_html",
+			"options",
+			`<div style="color:#6b7280;font-size:13px;padding:8px 0;">Loading academic progress…</div>`
+		);
+		frm.refresh_field("academic_progress_html");
+		_load_academic_progress(frm, chosen, enrollments);
+	});
+}
+
 function _build_academic_progress_html(d) {
 	const enc = frappe.utils.escape_html;
 
@@ -672,17 +734,23 @@ function _build_academic_progress_html(d) {
 	let courses_html = "";
 	if (d.courses && d.courses.length) {
 		const course_type_color = { Core: "blue", Elective: "orange" };
-		const status_c = { Active: "green", Inactive: "gray" };
 
 		const rows = d.courses.map((c, idx) => {
 			const row_bg = idx % 2 === 0 ? "#fff" : "#f9fafb";
+			const att_pct = c.attendance_percentage;
+			const att_display = (att_pct === null || att_pct === undefined || att_pct === "")
+				? "—"
+				: `${flt(att_pct).toFixed(1)}%`;
+			const att_color = (att_pct === null || att_pct === undefined || att_pct === "")
+				? "#6b7280"
+				: (flt(att_pct) < 75 ? "#b91c1c" : "#166534");
 			return `
 			<tr style="background:${row_bg};">
 				<td style="padding:9px 12px;font-weight:600;color:#111827;">${enc(c.course || "")}</td>
 				<td style="padding:9px 12px;color:#374151;">${enc(c.course_name || "")}</td>
 				<td style="padding:9px 12px;">${badge(c.course_type || "Core", course_type_color[c.course_type] || "gray")}</td>
-				<td style="padding:9px 12px;text-align:center;color:#374151;">${c.credits || "—"}</td>
-				<td style="padding:9px 12px;">${badge(c.course_status || c.status || "Active", status_c[c.course_status || c.status] || "gray")}</td>
+				<td style="padding:9px 12px;text-align:center;color:#374151;">${c.credit_value || c.credits || "—"}</td>
+				<td style="padding:9px 12px;text-align:center;font-weight:600;color:${att_color};">${att_display}</td>
 			</tr>`;
 		}).join("");
 
@@ -705,8 +773,8 @@ function _build_academic_progress_html(d) {
 							           text-transform:uppercase;letter-spacing:0.04em;">Type</th>
 							<th style="padding:10px 12px;color:#fff;font-size:11px;font-weight:700;text-align:center;
 							           text-transform:uppercase;letter-spacing:0.04em;">Credits</th>
-							<th style="padding:10px 12px;color:#fff;font-size:11px;font-weight:700;text-align:left;
-							           text-transform:uppercase;letter-spacing:0.04em;border-radius:0 10px 0 0;">Status</th>
+							<th style="padding:10px 12px;color:#fff;font-size:11px;font-weight:700;text-align:center;
+							           text-transform:uppercase;letter-spacing:0.04em;border-radius:0 10px 0 0;">Attendance Percentage</th>
 						</tr>
 					</thead>
 					<tbody>${rows}</tbody>

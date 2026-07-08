@@ -745,11 +745,83 @@ def _rebuild_fee_invoices(sm_doc):
         return 0
 
 
-@frappe.whitelist()
-def get_academic_progress(student_name):
-    """Return current academic year, term, semester and enrolled courses for a student.
+def _enrollments_by_recency(student_name):
+    """Return the student's enrollments ordered by actual academic recency:
+    the enrollment still marked "Enrolled" first, then by the linked
+    Academic Year's start date (most recent first) — NOT by row creation
+    time, since enrollments (e.g. for a past term) may be entered into the
+    system after a later enrollment already exists."""
+    enrollments = frappe.get_all(
+        "Student Enrollment",
+        filters={"student": student_name, "docstatus": ["<", 2]},
+        fields=["name", "academic_year", "term_name", "status", "creation"],
+    )
+    if not enrollments:
+        return []
 
-    Also checks the active Promotion Policy to compute promotion eligibility.
+    ay_names = {e.academic_year for e in enrollments if e.academic_year}
+    ay_start = {}
+    if ay_names:
+        for ay in frappe.get_all(
+            "Academic Year",
+            filters={"name": ["in", list(ay_names)]},
+            fields=["name", "year_start_date"],
+        ):
+            ay_start[ay.name] = ay.year_start_date
+
+    enrollments.sort(
+        key=lambda e: (
+            1 if e.status == "Enrolled" else 0,
+            ay_start.get(e.academic_year) or e.creation,
+        ),
+        reverse=True,
+    )
+    return enrollments
+
+
+@frappe.whitelist()
+def get_academic_progress_list(student_name):
+    """Return all enrollments for a student (current first, then most
+    recent past terms) for the Current/Previous Academic Progress selector."""
+    if not frappe.db.exists("Student Master", student_name):
+        frappe.throw(_("Student Master not found: {0}").format(student_name))
+
+    enrollments = _enrollments_by_recency(student_name)
+
+    ay_names = {e.academic_year for e in enrollments if e.academic_year}
+    ay_map = {}
+    if ay_names:
+        for ay in frappe.get_all(
+            "Academic Year",
+            filters={"name": ["in", list(ay_names)]},
+            fields=["name", "academic_year_name"],
+        ):
+            ay_map[ay.name] = ay.academic_year_name
+
+    return [
+        {
+            "name": e.name,
+            "academic_year": e.academic_year or "",
+            "ay_name": ay_map.get(e.academic_year) or e.academic_year or "",
+            "term_name": e.term_name or "",
+            "status": e.status or "",
+            "is_current": idx == 0,
+        }
+        for idx, e in enumerate(enrollments)
+    ]
+
+
+@frappe.whitelist()
+def get_academic_progress(student_name, enrollment_name=None):
+    """Return academic year, term, semester and enrolled courses for a student.
+
+    By default returns the most recent (current) enrollment. Pass
+    `enrollment_name` to fetch a specific past enrollment instead, for the
+    "Previous Academic Progress" view.
+
+    Also checks the active Promotion Policy to compute promotion eligibility
+    (promotion eligibility always reflects the student's current standing,
+    regardless of which enrollment is being viewed).
     """
     if not frappe.db.exists("Student Master", student_name):
         frappe.throw(_("Student Master not found: {0}").format(student_name))
@@ -762,17 +834,30 @@ def get_academic_progress(student_name):
         as_dict=True,
     )
 
-    # ── Current enrollment: most recent non-cancelled enrollment ────────────
-    enrollment = frappe.db.get_value(
-        "Student Enrollment",
-        {"student": student_name, "docstatus": ["<", 2]},
-        [
-            "name", "academic_year", "term_name", "status",
-            "program", "cohort", "batch_year_ref", "enrollment_date",
-        ],
-        order_by="creation desc",
-        as_dict=True,
-    )
+    # ── Enrollment: a specific one if requested, else the current one ───────
+    if enrollment_name:
+        enrollment = frappe.db.get_value(
+            "Student Enrollment",
+            {"student": student_name, "docstatus": ["<", 2], "name": enrollment_name},
+            [
+                "name", "academic_year", "term_name", "status",
+                "program", "cohort", "batch_year_ref", "enrollment_date",
+            ],
+            as_dict=True,
+        )
+    else:
+        recent = _enrollments_by_recency(student_name)
+        enrollment = None
+        if recent:
+            enrollment = frappe.db.get_value(
+                "Student Enrollment",
+                recent[0].name,
+                [
+                    "name", "academic_year", "term_name", "status",
+                    "program", "cohort", "batch_year_ref", "enrollment_date",
+                ],
+                as_dict=True,
+            )
 
     result = {
         "student_name": student_name,
@@ -875,9 +960,26 @@ def get_academic_progress(student_name):
             ignore_permissions=True,
         ):
             co_map[co.name] = co
+
+    # ── Attendance percentage per course (from Attendance Summary) ──────────
+    att_map = {}
+    for a in frappe.get_all(
+        "Attendance Summary",
+        filters={"student": student_name},
+        fields=["course_offering", "course", "attendance_percentage"],
+        ignore_permissions=True,
+    ):
+        if a.course_offering:
+            att_map[a.course_offering] = a.attendance_percentage
+        if a.course:
+            att_map.setdefault(a.course, a.attendance_percentage)
+
     courses = []
     for r in sec_rows:
         co = co_map.get(r.course_offering) or frappe._dict()
+        att_pct = att_map.get(r.course_offering)
+        if att_pct is None:
+            att_pct = att_map.get(r.course)
         courses.append({
             "course_offering": r.course_offering or "",
             "course": r.course or "",
@@ -887,6 +989,7 @@ def get_academic_progress(student_name):
             "credit_value": co.get("credit_value") or r.credits or 0,
             "faculty": co.get("faculty") or "",
             "grade": r.grade or "",
+            "attendance_percentage": att_pct if att_pct is not None else None,
         })
     result["courses"] = courses
 
