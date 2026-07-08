@@ -126,3 +126,18 @@ class IntegrationTestInterviewConfiguration(IntegrationTestCase):
         self.assertEqual(applicants[0]["name"], "App2")
         self.assertEqual(applicants[1]["name"], "App1")
         self.assertEqual(applicants[2]["name"], "App3")
+
+    def test_general_category_fallback(self):
+        app_doc = frappe.get_doc({
+            "doctype": "Applicant",
+            "candidate_name": "Test General Applicant",
+            "email": "general@test.com",
+            "gender": "Male",
+            "ews": "No",
+            "whether_scstobc_ncl": "NA",
+            "pwd": "No",
+            "karnataka_category": "No"
+        })
+        categories = app_doc._get_applicant_categories()
+        self.assertIn("General", categories)
+        self.assertEqual(len(categories), 1)

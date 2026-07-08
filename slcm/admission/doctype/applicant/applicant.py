@@ -1147,6 +1147,8 @@ class Applicant(Document):
         sc_st_obc = (getattr(self, "whether_scstobc_ncl", None) or "").strip()
         if sc_st_obc and sc_st_obc.lower() != "na":
             cats.add(sc_st_obc)  # Only include real categories like "OBC-NCL", "ST", or "SC"
+        else:
+            cats.add("General")
 
         if (getattr(self, "pwd", None) or "").strip() == "Yes":
             cats.add("PWD")

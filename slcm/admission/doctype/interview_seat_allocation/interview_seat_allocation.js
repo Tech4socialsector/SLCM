@@ -64,8 +64,10 @@ frappe.ui.form.on("Interview Seat Allocation", {
 
                 // Show the category table and populate it from reservation fields
                 frm.clear_table("category");
-                if (app.whether_scstobc_ncl && app.whether_scstobc_ncl !== "NA") {
+                if (app.whether_scstobc_ncl && app.whether_scstobc_ncl.toUpperCase() !== "NA") {
                     frm.add_child("category", { category: app.whether_scstobc_ncl });
+                } else {
+                    frm.add_child("category", { category: "General" });
                 }
                 if (app.pwd === "Yes") {
                     frm.add_child("category", { category: "PWD" });
