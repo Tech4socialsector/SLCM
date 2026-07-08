@@ -153,10 +153,13 @@ class ProgramReservationPolicy(Document):
             cycle_doc = frappe.get_doc("Admission Cycle", self.admission_cycle)
             changed = False
             for row in (cycle_doc.programs or []):
-                same_program = row.program == self.program
+                same_program = (row.program == self.program) and (not self.campus or row.campus == self.campus)
                 if same_program:
                     if row.get("reservation_policy") != self.name:
                         row.reservation_policy = self.name
+                        changed = True
+                    if int(row.get("seats") or 0) != int(self.total_seats or 0):
+                        row.seats = int(self.total_seats or 0)
                         changed = True
                     break
             if changed:

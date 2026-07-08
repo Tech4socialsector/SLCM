@@ -438,6 +438,29 @@ frappe.ui.form.on("Admission Cycle Program", {
         }
     },
 
+    seats: function (frm, cdt, cdn) {
+        let row = locals[cdt][cdn];
+        if (row.reservation_policy && row.seats !== undefined) {
+            frappe.call({
+                method: "frappe.client.set_value",
+                args: {
+                    doctype: "Program Reservation Policy",
+                    name: row.reservation_policy,
+                    fieldname: "total_seats",
+                    value: row.seats
+                },
+                callback: function(r) {
+                    if (!r.exc) {
+                        frappe.show_alert({
+                            message: __("Reservation Policy Total Seats synced"),
+                            indicator: "green"
+                        });
+                    }
+                }
+            });
+        }
+    },
+
     add_reservation_policy: function (frm, cdt, cdn) {
         let row = locals[cdt][cdn];
         if (!row.campus) {
@@ -513,8 +536,9 @@ function open_reservation_policy(frm, row) {
                 priority: parseInt($(this).find(".priority").val()) || (idx + 1),
                 percentage: parseFloat($(this).find(".percentage").val()) || 0,
                 seats: parseInt($(this).find(".allocated_seats").val()) || 0,
-                application_fee: parseFloat($(this).find(".application_fee").val()) || 0,
-                min_percentile: parseFloat($(this).find(".min_percentile").val()) || 0
+                application_fee_for_indian: parseFloat($(this).find(".application_fee_for_indian").val()) || 0,
+                application_fee_for_foreign: parseFloat($(this).find(".application_fee_for_foreign").val()) || 0,
+                shortlisting_target: parseInt($(this).find(".shortlisting_target").val()) || 0
             };
         });
         // Horizontal
@@ -565,28 +589,30 @@ function open_reservation_policy(frm, row) {
     function render_vertical() {
         const rows = (vertical_rows.length ? vertical_rows : [{}]).map((r, idx) => `
             <tr>
-                <td style="width: 15%;"><select class="form-control category" style="height: 32px;"><option value="General" ${r.reservation_quota === "General" ? "selected" : ""}>General</option><option value="Government" ${r.reservation_quota === "Government" ? "selected" : ""}>Government</option><option value="Management" ${r.reservation_quota === "Management" ? "selected" : ""}>Management</option></select></td>
-                <td style="width: 20%;"><button class="btn btn-default btn-sm category-name-btn" style="width:100%; height: 32px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${r.category_name || __("Pick")}</button></td>
-                <td style="width: 10%;"><input type="number" class="form-control priority" style="height: 32px;" value="${r.priority || (idx + 1)}"></td>
+                <td style="width: 10%;"><select class="form-control category" style="height: 32px;"><option value="General" ${r.reservation_quota === "General" ? "selected" : ""}>General</option><option value="Government" ${r.reservation_quota === "Government" ? "selected" : ""}>Government</option><option value="Management" ${r.reservation_quota === "Management" ? "selected" : ""}>Management</option></select></td>
+                <td style="width: 16%;"><button class="btn btn-default btn-sm category-name-btn" style="width:100%; height: 32px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${r.category_name || __("Pick")}</button></td>
+                <td style="width: 8%;"><input type="number" class="form-control priority" style="height: 32px;" value="${r.priority || (idx + 1)}"></td>
                 <td style="width: 10%;"><input type="number" class="form-control percentage" style="height: 32px;" value="${r.percentage || ""}"></td>
-                <td style="width: 10%;"><input type="number" class="form-control allocated_seats" style="height: 32px;" value="${r.seats || ""}" readonly></td>
-                <td style="width: 15%;"><input type="number" class="form-control application_fee" style="height: 32px;" value="${r.application_fee || ""}"></td>
-                <td style="width: 15%;"><input type="number" class="form-control min_percentile" style="height: 32px;" value="${r.min_percentile || ""}"></td>
-                <td style="width: 5%; text-align: center;"><button class="btn btn-danger btn-xs remove-row" style="margin-top: 5px;"><i class="fa fa-times"></i></button></td>
+                <td style="width: 8%;"><input type="number" class="form-control allocated_seats" style="height: 32px;" value="${r.seats || ""}" readonly></td>
+                <td style="width: 16%;"><input type="number" class="form-control application_fee_for_indian" style="height: 32px;" value="${r.application_fee_for_indian || ""}"></td>
+                <td style="width: 16%;"><input type="number" class="form-control application_fee_for_foreign" style="height: 32px;" value="${r.application_fee_for_foreign || ""}"></td>
+                <td style="width: 12%;"><input type="number" class="form-control shortlisting_target" style="height: 32px;" value="${r.shortlisting_target || ""}"></td>
+                <td style="width: 4%; text-align: center;"><button class="btn btn-danger btn-xs remove-row" style="margin-top: 5px;"><i class="fa fa-times"></i></button></td>
             </tr>`).join("");
         dialog.fields_dict.vertical_html.$wrapper.html(`
             <div style="margin-bottom: 15px;">
                 <table class="table table-bordered vertical-table" style="table-layout: fixed; width: 100%;">
                     <thead>
                         <tr style="background-color: #f8f9fa;">
-                            <th style="width: 15%; font-size: 11px;">Quota</th>
-                            <th style="width: 20%; font-size: 11px;">Category</th>
-                            <th style="width: 10%; font-size: 11px;">Priority</th>
+                            <th style="width: 10%; font-size: 11px;">Quota</th>
+                            <th style="width: 16%; font-size: 11px;">Category</th>
+                            <th style="width: 8%; font-size: 11px;">Priority</th>
                             <th style="width: 10%; font-size: 11px;">Percentage</th>
-                            <th style="width: 10%; font-size: 11px;">Seats</th>
-                            <th style="width: 15%; font-size: 11px;">Application Fee</th>
-                            <th style="width: 15%; font-size: 11px;">Min Percentile Cutoff</th>
-                            <th style="width: 5%;"></th>
+                            <th style="width: 8%; font-size: 11px;">Seats</th>
+                            <th style="width: 16%; font-size: 11px;">Application Fee (Indian)</th>
+                            <th style="width: 16%; font-size: 11px;">Application Fee (Foreign)</th>
+                            <th style="width: 12%; font-size: 11px;">Shortlisting Target Seats</th>
+                            <th style="width: 4%;"></th>
                         </tr>
                     </thead>
                     <tbody>${rows}</tbody>

@@ -58,7 +58,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Select the campus for this program entry",
+   "description": "Select the campus for this programme entry",
    "fieldname": "campus",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -100,9 +100,10 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Direct link to program brochure PDF",
+   "description": "Direct link to programme brochure PDF",
    "fieldname": "brochure_url",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Brochure URL"
   },
   {
@@ -133,7 +134,7 @@
   },
   {
    "allow_on_submit": 1,
-   "description": "Auto-linked when Program Reservation Policy is saved for this program",
+   "description": "Auto-linked when Program Reservation Policy is saved for this programme",
    "fieldname": "reservation_policy",
    "fieldtype": "Link",
    "label": "Reservation policy",
@@ -141,18 +142,18 @@
    "read_only": 1
   },
   {
-   "description": "Featured image shown on the program card. Used if no Program Media is linked.",
+   "description": "Featured image shown on the programme card. Used if no Program Media is linked.",
    "fieldname": "program_image",
    "fieldtype": "Attach Image",
    "hidden": 1,
-   "label": "Program image"
+   "label": "Programme image"
   },
   {
-   "description": "Link to a Program Media record for multiple carousel images on the card.",
+   "description": "Link to a Programme Media record for multiple carousel images on the card.",
    "fieldname": "program_media",
    "fieldtype": "Link",
    "hidden": 1,
-   "label": "Program gallery",
+   "label": "Programme gallery",
    "options": "Program Media",
    "read_only": 1
   },
@@ -179,13 +180,13 @@
    "fetch_from": "program.level_of_study",
    "fieldname": "program_level",
    "fieldtype": "Data",
-   "label": "Program level",
+   "label": "Programme level",
    "read_only": 1
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-06-29 13:48:30.315938",
+ "modified": "2026-07-08 09:42:52.669292",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle Program",
