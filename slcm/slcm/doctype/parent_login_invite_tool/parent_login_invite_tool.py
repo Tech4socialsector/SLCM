@@ -8,7 +8,7 @@ class ParentLoginInviteTool(Document):
 
     @frappe.whitelist()
     def get_students(self):
-        if not any([self.student_status, self.academic_year, self.programme, self.batch, self.department]):
+        if not any([self.student_status, self.academic_year, self.batch]):
             frappe.throw(_("Select at least one filter before fetching students."))
 
         filters = {}
@@ -16,12 +16,8 @@ class ParentLoginInviteTool(Document):
             filters["student_status"] = self.student_status
         if self.academic_year:
             filters["academic_year"] = self.academic_year
-        if self.programme:
-            filters["programme"] = self.programme
         if self.batch:
-            filters["batch_year"] = self.batch
-        if self.department:
-            filters["department"] = self.department
+            filters["programme"] = self.batch
 
         students = frappe.get_all(
             "Student Master",
