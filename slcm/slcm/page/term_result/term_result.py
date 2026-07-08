@@ -339,7 +339,7 @@ def download_consolidated_report(exam_plan="", search="", inst_programmes="", in
 			srp.cumulative_gpa AS cgpa
 		FROM `tabStudent Course Marks` scm
 		INNER JOIN `tabStudent Master` sm ON sm.name = scm.student
-		LEFT JOIN `tabCohort` coh ON coh.name = sm.programme
+		LEFT JOIN `tabBatch` coh ON coh.name = sm.programme
 		LEFT JOIN `tabExam Plan` ep ON ep.name = scm.exam_plan
 		LEFT JOIN `tabAcademic Term` at ON at.name = ep.term
 		LEFT JOIN `tabCourse` c ON c.name = scm.course

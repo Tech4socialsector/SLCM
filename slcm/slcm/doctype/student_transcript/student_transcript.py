@@ -109,7 +109,7 @@ def get_transcript_context(student_id):
     # Programme display name
     prog_id = sm.get("programme")
     if prog_id:
-        cohort_name = frappe.db.get_value("Cohort", prog_id, "cohort_name")
+        cohort_name = frappe.db.get_value("Batch", prog_id, "cohort_name")
         sm["programme_name"] = cohort_name or prog_id
     else:
         sm["programme_name"] = ""
@@ -457,7 +457,7 @@ def get_year_based_transcript_context(student_id):
     # Programme display name
     prog_id = sm.get("programme")
     if prog_id:
-        cohort_name = frappe.db.get_value("Cohort", prog_id, "cohort_name")
+        cohort_name = frappe.db.get_value("Batch", prog_id, "cohort_name")
         sm["programme_name"] = cohort_name or prog_id
     else:
         sm["programme_name"] = ""

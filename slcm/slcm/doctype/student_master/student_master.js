@@ -429,7 +429,7 @@ frappe.ui.form.on("Student Master", {
 
 		// Fetch program_shortcode from the selected Cohort so the naming series
 		// in before_save can build the correct ID (e.g. BBA1.001)
-		frappe.db.get_value("Cohort", frm.doc.programme, "program_shortcode", function (r) {
+		frappe.db.get_value("Batch", frm.doc.programme, "program_shortcode", function (r) {
 			if (r && r.program_shortcode) {
 				frm.set_value("program_shortcode", r.program_shortcode);
 			}

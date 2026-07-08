@@ -63,7 +63,7 @@ class InterviewConfiguration(Document):
             FROM `tabApplicant` app
             INNER JOIN `tabEligibility Evaluation` ee
                     ON ee.applicant_name = app.name
-            INNER JOIN `tabProgram` p
+            INNER JOIN `tabProgramme` p
                     ON p.name = app.program
             WHERE
                 app.academic_year    = %(academic_year)s
@@ -101,7 +101,7 @@ class InterviewConfiguration(Document):
             FROM `tabEntrance Test Seat Allocation` etsa
             INNER JOIN `tabApplicant` app
                     ON app.name = etsa.applicant
-            INNER JOIN `tabProgram` p
+            INNER JOIN `tabProgramme` p
                     ON p.name = app.program
             WHERE
                 etsa.academic_year    = %(academic_year)s
@@ -134,7 +134,7 @@ class InterviewConfiguration(Document):
                 app.entrance_test,
                 app.intereview
             FROM `tabApplicant` app
-            INNER JOIN `tabProgram` p
+            INNER JOIN `tabProgramme` p
                     ON p.name = app.program
             WHERE
                 app.academic_year    = %(academic_year)s

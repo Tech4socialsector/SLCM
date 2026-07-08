@@ -7,7 +7,7 @@ from frappe.model.document import Document
 from frappe.utils import date_diff
 
 
-class Cohort(Document):
+class Batch(Document):
 	def before_save(self):
 		self._calculate_term_duration()
 

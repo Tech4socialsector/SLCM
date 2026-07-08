@@ -56,7 +56,7 @@
    "fieldname": "programme",
    "fieldtype": "Link",
    "label": "Programme (Cohort)",
-   "options": "Cohort"
+   "options": "Batch"
   },
   {
    "depends_on": "eval:doc.target_scope == 'Programme'",

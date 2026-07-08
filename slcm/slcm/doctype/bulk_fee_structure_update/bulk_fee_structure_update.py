@@ -26,7 +26,7 @@ class BulkFeeStructureUpdate(Document):
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _resolve_program_from_cohort(cohort):
-    program = frappe.db.get_value("Cohort", cohort, "program")
+    program = frappe.db.get_value("Batch", cohort, "program")
     if not program and frappe.db.exists("Programme", cohort):
         program = cohort
     return program
@@ -40,7 +40,7 @@ def _get_students_for_scope(target_scope, programme, program, batch_year=None, a
         filters["programme"] = programme
     else:
         # Resolve all cohorts that map to this program
-        cohorts = frappe.get_all("Cohort", filters={"program": program}, pluck="name")
+        cohorts = frappe.get_all("Batch", filters={"program": program}, pluck="name")
         if not cohorts:
             return []
         filters["programme"] = ["in", cohorts]

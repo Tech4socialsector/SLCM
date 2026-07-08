@@ -209,7 +209,7 @@ def get_context(context):
     if not _app_name and program_filter:
         _found = frappe.db.sql("""
             SELECT a.name FROM `tabApplicant` a
-            JOIN `tabProgram` p ON a.program = p.name
+            JOIN `tabProgramme` p ON a.program = p.name
             WHERE (a.owner = %s OR a.email = %s) AND (p.program_slug = %s OR p.name = %s)
             LIMIT 1
         """, (frappe.session.user, frappe.session.user, program_filter, program_filter))

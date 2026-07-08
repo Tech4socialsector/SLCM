@@ -2,7 +2,7 @@
  "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
- "autoname": "field:program_name",
+ "autoname": "doc.program_name + \"-\" + doc.academic_year + \"-\" + doc.academic_term",
  "creation": "2026-03-11 13:55:37.916716",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -18,7 +18,6 @@
   "image",
   "program_slug",
   "academic_year",
-  "current_year",
   "academic_term",
   "program_status",
   "application_form_link",
@@ -113,12 +112,6 @@
    "label": "Academic Year",
    "options": "Academic Year",
    "reqd": 1
-  },
-  {
-   "description": "Enter the last two digit of the current year",
-   "fieldname": "current_year",
-   "fieldtype": "Data",
-   "label": "Current Year"
   },
   {
    "fieldname": "academic_term",
@@ -296,7 +289,7 @@
  "links": [
   {
    "group": "Academics",
-   "link_doctype": "Cohort",
+   "link_doctype": "Batch",
    "link_fieldname": "program"
   },
   {
@@ -316,11 +309,11 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-08 12:34:15.382910",
+ "modified": "2026-07-08 14:19:27.848065",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Programme",
- "naming_rule": "By fieldname",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {

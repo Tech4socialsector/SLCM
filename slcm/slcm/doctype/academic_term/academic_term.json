@@ -7,14 +7,12 @@
  "engine": "InnoDB",
  "field_order": [
   "academic_year",
-  "term_name",
-  "term_type",
   "system",
-  "sequence",
   "previous_term",
   "number_of_terms_per_academic_year",
   "column_break_gvpt",
-  "how_many_months",
+  "term_name",
+  "term_type",
   "term_start_date",
   "term_end_date",
   "status"
@@ -47,13 +45,8 @@
    "fieldname": "system",
    "fieldtype": "Select",
    "label": "Academic System",
-   "options": "Semester\nTrimester\nQuarter\nYear",
+   "options": "\nSemester\nTrimester\nQuarter\nYear",
    "reqd": 1
-  },
-  {
-   "fieldname": "sequence",
-   "fieldtype": "Int",
-   "label": "Sequence"
   },
   {
    "fieldname": "previous_term",
@@ -71,12 +64,6 @@
   {
    "fieldname": "column_break_gvpt",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "how_many_months",
-   "fieldtype": "Select",
-   "label": "How many months?",
-   "options": "\n1\n2\n3\n4\n5\n6"
   },
   {
    "fieldname": "term_start_date",
@@ -100,13 +87,14 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "\nActive\nInactive"
+   "options": "\nActive\nInactive",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-08 10:17:33.538520",
+ "modified": "2026-07-08 13:04:08.255209",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Academic Term",

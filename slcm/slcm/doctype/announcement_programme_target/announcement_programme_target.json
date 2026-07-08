@@ -13,7 +13,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Programme",
-   "options": "Cohort",
+   "options": "Batch",
    "reqd": 1
   }
  ],

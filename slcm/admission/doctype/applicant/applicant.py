@@ -1250,7 +1250,7 @@ class Applicant(Document):
             programs = frappe.db.sql("""
                 SELECT DISTINCT acp.program
                 FROM `tabAdmission Cycle Program` acp
-                JOIN `tabProgram` p ON p.name = acp.program
+                JOIN `tabProgramme` p ON p.name = acp.program
                 WHERE acp.parent = %(cycle)s
                   AND acp.is_active = 1
                   AND p.level_of_study = %(program_level)s
@@ -1266,7 +1266,7 @@ class Applicant(Document):
         # 3. Fallback: all programs of that level if no cycle or no programs found in cycle
         programs = frappe.db.sql("""
             SELECT name AS program
-            FROM `tabProgram`
+            FROM `tabProgramme`
             WHERE level_of_study = %(program_level)s
             ORDER BY name ASC
         """, {"program_level": program_level}, as_dict=True)

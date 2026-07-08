@@ -209,7 +209,7 @@ def create_invoice(docname):
 	cohort = None
 	if doc.program and doc.academic_year:
 		cohort = frappe.db.get_value(
-			"Cohort",
+			"Batch",
 			{"program": doc.program, "academic_year": doc.academic_year},
 			"name",
 		)

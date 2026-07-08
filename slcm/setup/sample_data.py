@@ -74,9 +74,9 @@ def create_sample_student():
     # 4. Cohort                                                             #
     # ------------------------------------------------------------------ #
     cohort_name = "BTech CSE 2025 - Semester 1"
-    if not frappe.db.exists("Cohort", cohort_name):
+    if not frappe.db.exists("Batch", cohort_name):
         cohort = frappe.get_doc({
-            "doctype": "Cohort",
+            "doctype": "Batch",
             "cohort_code": "BTCSE-2025-S1",
             "cohort_name": cohort_name,
             "program": prog.name,
@@ -92,7 +92,7 @@ def create_sample_student():
         cohort.insert(ignore_permissions=True, ignore_mandatory=True)
         print(f"  [OK] Created Cohort:     {cohort.name}")
     else:
-        cohort = frappe.get_doc("Cohort", cohort_name)
+        cohort = frappe.get_doc("Batch", cohort_name)
         print(f"  [--] Cohort exists:      {cohort.name}")
 
     # ------------------------------------------------------------------ #

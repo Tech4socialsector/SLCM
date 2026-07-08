@@ -627,7 +627,7 @@ def get_form_config_for_cycles():
                 programs = frappe.db.sql("""
                     SELECT acp.program, p.program_level, acp.intake_type
                     FROM `tabAdmission Cycle Program` acp
-                    LEFT JOIN `tabProgram` p ON p.name = acp.program
+                    LEFT JOIN `tabProgramme` p ON p.name = acp.program
                     WHERE acp.parent = %s
                 """, (cycle_name,), as_dict=True)
             levels = set()

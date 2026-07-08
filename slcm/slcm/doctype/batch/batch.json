@@ -15,7 +15,7 @@
   "cohort_code",
   "term_name",
   "term_year",
-  "batch",
+  "section",
   "seat_limit",
   "section_schedule",
   "start_date",
@@ -127,11 +127,11 @@
    "label": "Seat Limit"
   },
   {
-   "fieldname": "batch",
+   "fieldname": "section",
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Batch"
+   "label": "Section"
   },
   {
    "description": "Term of the Current Year",
@@ -170,7 +170,7 @@
  "modified": "2026-07-07 11:59:48.950498",
  "modified_by": "Administrator",
  "module": "SLCM",
- "name": "Cohort",
+ "name": "Batch",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [

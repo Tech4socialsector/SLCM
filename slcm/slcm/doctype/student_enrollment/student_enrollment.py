@@ -20,7 +20,7 @@ class StudentEnrollment(Document):
 
     def fetch_program_and_courses(self):
         if not self.program and self.cohort:
-            self.program = frappe.db.get_value("Cohort", self.cohort, "program")
+            self.program = frappe.db.get_value("Batch", self.cohort, "program")
 
         if self.program and self.cohort and not self.enrolled_courses:
             program_doc = frappe.get_doc("Programme", self.program)
@@ -43,7 +43,7 @@ class StudentEnrollment(Document):
         """Block enrollment if cohort has reached its seat limit."""
         if not self.cohort:
             return
-        seat_limit = frappe.db.get_value("Cohort", self.cohort, "seat_limit")
+        seat_limit = frappe.db.get_value("Batch", self.cohort, "seat_limit")
         if not seat_limit:
             return
         existing_count = frappe.db.count(

@@ -329,7 +329,7 @@
    "label": "Programme",
    "max_length": 0,
    "max_value": 0,
-   "options": "Cohort",
+   "options": "Batch",
    "precision": "",
    "read_only": 0,
    "reqd": 1,

@@ -68,7 +68,7 @@
    "fieldname": "program",
    "fieldtype": "Link",
    "label": "Programme",
-   "options": "Cohort",
+   "options": "Batch",
    "read_only": 1
   },
   {
