@@ -54,7 +54,7 @@
    "fieldname": "program",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Program",
+   "label": "Programme",
    "read_only": 1
   },
   {

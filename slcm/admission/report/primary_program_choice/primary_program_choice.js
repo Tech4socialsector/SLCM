@@ -25,9 +25,9 @@ frappe.query_reports["Primary Program Choice"] = {
 		},
 		{
 			"fieldname": "program",
-			"label": __("Program"),
+			"label": __("Programme"),
 			"fieldtype": "Link",
-			"options": "Program",
+			"options": "Programme",
 			"get_query": function () {
 				var program_level = frappe.query_report.get_filter_value('program_level');
 			}

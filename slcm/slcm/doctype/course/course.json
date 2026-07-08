@@ -8,16 +8,15 @@
  "field_order": [
   "course_code",
   "course_name",
-  "department",
-  "department_name",
   "credit_value",
   "course_type",
-  "column_break_hzli",
-  "course_desctiption",
+  "programme",
   "status",
+  "column_break_hzli",
+  "department",
+  "department_name",
   "section_break_efuf",
-  "topics",
-  "description"
+  "topics"
  ],
  "fields": [
   {
@@ -26,11 +25,13 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Course Name",
-   "options": "Course Master"
+   "options": "Course Master",
+   "reqd": 1
   },
   {
    "fieldname": "department",
    "fieldtype": "Link",
+   "hidden": 1,
    "in_standard_filter": 1,
    "label": "Department",
    "options": "Department"
@@ -39,6 +40,7 @@
    "fetch_from": "department.department_name",
    "fieldname": "department_name",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Department Name",
    "read_only": 1
   },
@@ -47,17 +49,13 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "description",
-   "fieldtype": "Small Text",
-   "label": "Description"
-  },
-  {
    "fieldname": "section_break_efuf",
    "fieldtype": "Section Break"
   },
   {
    "fieldname": "topics",
    "fieldtype": "Table",
+   "hidden": 1,
    "label": "Topics",
    "options": "Course Topic"
   },
@@ -67,7 +65,8 @@
    "in_global_search": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Course Code"
+   "label": "Course Code",
+   "reqd": 1
   },
   {
    "fieldname": "credit_value",
@@ -90,22 +89,24 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "\nActive\nInactive"
+   "options": "\nActive\nInactive",
+   "reqd": 1
   },
   {
-   "fieldname": "course_desctiption",
-   "fieldtype": "Small Text",
-   "label": "Description"
+   "fieldname": "programme",
+   "fieldtype": "Link",
+   "label": "Programme",
+   "options": "Programme",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-16 16:21:29.311509",
+ "modified": "2026-07-08 15:07:36.885240",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Course",
- "naming_rule": "Set by user",
  "owner": "Administrator",
  "permissions": [
   {
@@ -121,12 +122,12 @@
    "write": 1
   },
   {
-   "read": 1,
-   "role": "slcm_Faculty",
-   "report": 1,
+   "email": 1,
    "export": 1,
    "print": 1,
-   "email": 1
+   "read": 1,
+   "report": 1,
+   "role": "slcm_Faculty"
   },
   {
    "read": 1,

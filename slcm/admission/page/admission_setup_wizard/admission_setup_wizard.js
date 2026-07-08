@@ -223,7 +223,7 @@ frappe.pages['admission-setup-wizard'].on_page_load = function(wrapper) {
 
         if (stepId === 'complete') {
             const items = [
-                { label: 'Programs & Courses', doctype: 'Program', description: 'Add programs offered by your institution' },
+                { label: 'Programs & Courses', doctype: 'Programme', description: 'Add programs offered by your institution' },
                 { label: 'Exam Types', doctype: 'Exam Type Config', description: 'Configure CLAT, NLSAT, or custom exams' },
                 { label: 'Reservation Categories', doctype: 'Quota Policy', description: 'Set up SC/ST/OBC or custom categories' },
                 { label: 'Admission Stages', doctype: 'Admission Stage Template', description: 'Build your admission workflow' },

@@ -119,7 +119,7 @@ function add_students_by_filter(frm) {
                 fieldname: 'programme',
                 fieldtype: 'Link',
                 label: __('Programme'),
-                options: 'Program',
+                options: 'Programme',
                 default: frm.doc.programme
             },
             {

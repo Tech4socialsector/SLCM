@@ -266,7 +266,7 @@
    "fieldname": "admission_type",
    "fieldtype": "Select",
    "label": "Admission Type",
-   "options": "\nRegular\nPACE\nOther"
+   "options": "\nCLAT\nNLSAT\nPACE\nRegular"
   },
   {
    "fieldname": "quota",
@@ -278,13 +278,14 @@
   {
    "fieldname": "intake",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Intake"
   },
   {
    "fieldname": "academic_status",
    "fieldtype": "Select",
    "label": "Academic Status",
-   "options": "Active\nInactive\nGraduated\nDropped\nAlumni\nDormant"
+   "options": "Active\nInactive\nGraduated\nDropped\nDormant"
   },
   {
    "fieldname": "tab_finance",
@@ -307,7 +308,7 @@
    "fieldname": "scholarship_type",
    "fieldtype": "Select",
    "label": "Scholarship Type",
-   "options": "\nMerit\nNeed-Based\nSports\nCultural\nOther"
+   "options": "\nCultural\nMerit\nNeed-Based\nOther\nSports"
   },
   {
    "depends_on": "eval:doc.applying_scholarship=='Yes'",
@@ -470,8 +471,8 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Cohort",
-   "options": "Cohort"
+   "label": "Batch",
+   "options": "Batch"
   },
   {
    "fieldname": "specialisation",
@@ -479,7 +480,7 @@
    "label": "Specialisation"
   },
   {
-   "fetch_from": "programme.batch",
+   "fetch_from": "programme.section",
    "fieldname": "batch_year",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -507,7 +508,7 @@
   {
    "fieldname": "cumulative_percentage",
    "fieldtype": "Float",
-   "label": "Cumulative Percentage",
+   "label": "CGPA Equivalent Percentage",
    "read_only": 1
   },
   {
@@ -962,6 +963,7 @@
   {
    "fieldname": "account_status",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Account Status",
    "options": "Active\nBlocked"
   },
@@ -1201,6 +1203,7 @@
    "fetch_from": "programme.term_name",
    "fieldname": "term_name",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Term Name"
   },
   {
@@ -1229,6 +1232,7 @@
    "fetch_from": "programme.term_year",
    "fieldname": "term_year",
    "fieldtype": "Int",
+   "hidden": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Term Year"

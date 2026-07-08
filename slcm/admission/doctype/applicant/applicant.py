@@ -99,7 +99,7 @@ class Applicant(Document):
         Exemption flags (exempts_entrance_test, exempts_interview) are handled by validate_eligibility.
         """
         if self.program:
-            program_stages = frappe.db.get_value("Program", self.program, ["entrance_test", "intereview"], as_dict=True)
+            program_stages = frappe.db.get_value("Programme", self.program, ["entrance_test", "intereview"], as_dict=True)
             if program_stages:
                 self.entrance_test = program_stages.get("entrance_test", 0)
                 self.intereview = program_stages.get("intereview", 0)
@@ -1226,7 +1226,7 @@ class Applicant(Document):
         """
         if not self.program:
             return None
-        return frappe.db.get_value("Program", self.program, "level_of_study")
+        return frappe.db.get_value("Programme", self.program, "level_of_study")
 
     def _get_all_programs_for_level(self, program_level):
         """
@@ -1252,7 +1252,7 @@ class Applicant(Document):
             programs = frappe.db.sql("""
                 SELECT DISTINCT acp.program
                 FROM `tabAdmission Cycle Program` acp
-                JOIN `tabProgram` p ON p.name = acp.program
+                JOIN `tabProgramme` p ON p.name = acp.program
                 WHERE acp.parent = %(cycle)s
                   AND acp.is_active = 1
                   AND p.level_of_study = %(program_level)s
@@ -1268,7 +1268,7 @@ class Applicant(Document):
         # 3. Fallback: all programs of that level if no cycle or no programs found in cycle
         programs = frappe.db.sql("""
             SELECT name AS program
-            FROM `tabProgram`
+            FROM `tabProgramme`
             WHERE level_of_study = %(program_level)s
             ORDER BY name ASC
         """, {"program_level": program_level}, as_dict=True)
@@ -1479,7 +1479,7 @@ class Applicant(Document):
             if not is_ok:
                 continue
             eligible_count += 1
-            display = frappe.db.get_value("Program", prog_name, "program_name") or prog_name
+            display = frappe.db.get_value("Programme", prog_name, "program_name") or prog_name
             programs_out.append(
                 {
                     "program": prog_name,
@@ -1679,7 +1679,7 @@ class Applicant(Document):
         ).format(
             heading = heading_html,
             summary = summary_html,
-            col1    = _("Program"),
+            col1    = _("Programme"),
             col2    = _("Status"),
             rows    = rows_html,
         )
@@ -2677,7 +2677,7 @@ def set_intake_type(doc, method=None):
     PhD Law                      = Direct Merit
     """
     if doc.program:
-        intake = frappe.db.get_value("Program", doc.program, "intake_type")
+        intake = frappe.db.get_value("Programme", doc.program, "intake_type")
         if intake:
             doc.intake_type = intake
 
@@ -3181,7 +3181,7 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
         frappe.log_error("Auto Allocate skipped: no program", "Auto Allocate Debug")
         return
 
-    if not _truthy(frappe.db.get_value("Program", applicant_doc.program, "entrance_test")):
+    if not _truthy(frappe.db.get_value("Programme", applicant_doc.program, "entrance_test")):
         frappe.log_error(f"Auto Allocate skipped: entrance_test not enabled for program {applicant_doc.program}", "Auto Allocate Debug")
         return
 

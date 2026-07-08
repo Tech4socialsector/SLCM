@@ -27,7 +27,7 @@
   {"fieldname": "section_break_filters", "fieldtype": "Section Break", "label": "Report Filters"},
   {"fieldname": "filter_by_cycle", "fieldtype": "Link", "label": "Admission Cycle", "options": "Admission Cycle"},
   {"fieldname": "filter_by_campus", "fieldtype": "Link", "label": "Campus", "options": "Company"},
-  {"fieldname": "filter_by_program", "fieldtype": "Link", "label": "Program", "options": "Program"},
+  {"fieldname": "filter_by_program", "fieldtype": "Link", "label": "Programme", "options": "Programme"},
   {"fieldname": "filter_by_category", "fieldtype": "Data", "label": "Category Code"},
   {"fieldname": "section_break_output", "fieldtype": "Section Break", "label": "Output Settings"},
   {"fieldname": "output_format", "fieldtype": "Select", "label": "Output Format",

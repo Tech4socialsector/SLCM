@@ -138,7 +138,7 @@ class AttendanceQuickView {
 		const progFilter = (ctx.restricted && ctx.programmes && ctx.programmes.length)
 			? {"name": ["in", ctx.programmes]}
 			: null;
-		this.ctrls.programme = this._link($grid, "Programme", "Program", progFilter);
+		this.ctrls.programme = this._link($grid, "Programme", "Programme", progFilter);
 
 		// Course Offering — restricted to faculty's visible offerings
 		const coFilter = (ctx.restricted && ctx.course_offerings && ctx.course_offerings.length)

@@ -20,7 +20,7 @@ content = [
     {"id":"mst_sp0",      "type":"spacer",    "data":{"col":12}},
     {"id":"mst_h1",       "type":"paragraph", "data":{"text": hdr("&#127979;","Academic Structure"),          "col":12}},
     {"id":"mst_sc_dept",  "type":"shortcut",  "data":{"shortcut_name":"Department",    "col":3}},
-    {"id":"mst_sc_prog",  "type":"shortcut",  "data":{"shortcut_name":"Program",       "col":3}},
+    {"id":"mst_sc_prog",  "type":"shortcut",  "data":{"shortcut_name":"Programme",       "col":3}},
     {"id":"mst_sc_crs",   "type":"shortcut",  "data":{"shortcut_name":"Course",        "col":3}},
     {"id":"mst_sc_cm",    "type":"shortcut",  "data":{"shortcut_name":"Course Master", "col":3}},
     {"id":"mst_sp1",      "type":"spacer",    "data":{"col":12}},
@@ -64,7 +64,7 @@ content = [
 
 shortcuts = [
     {"color":"Blue",   "doc_view":"List","label":"Department",               "link_to":"Department",               "type":"DocType"},
-    {"color":"Green",  "doc_view":"List","label":"Program",                  "link_to":"Program",                  "type":"DocType"},
+    {"color":"Green",  "doc_view":"List","label":"Programme",                  "link_to":"Programme",                  "type":"DocType"},
     {"color":"Purple", "doc_view":"List","label":"Course",                   "link_to":"Course",                   "type":"DocType"},
     {"color":"Cyan",   "doc_view":"List","label":"Course Master",            "link_to":"Course Master",            "type":"DocType"},
     {"color":"Green",  "doc_view":"List","label":"Curriculum",               "link_to":"Curriculum",               "type":"DocType"},
@@ -98,7 +98,7 @@ shortcuts = [
 
 links = [
     {"label":"Department",               "link_to":"Department",               "link_type":"DocType","onboard":1,"type":"Link","hidden":0,"is_query_report":0},
-    {"label":"Program",                  "link_to":"Program",                  "link_type":"DocType","onboard":1,"type":"Link","hidden":0,"is_query_report":0},
+    {"label":"Programme",                  "link_to":"Programme",                  "link_type":"DocType","onboard":1,"type":"Link","hidden":0,"is_query_report":0},
     {"label":"Course",                   "link_to":"Course",                   "link_type":"DocType","onboard":1,"type":"Link","hidden":0,"is_query_report":0},
     {"label":"Course Master",            "link_to":"Course Master",            "link_type":"DocType","onboard":0,"type":"Link","hidden":0,"is_query_report":0},
     {"label":"Curriculum",               "link_to":"Curriculum",               "link_type":"DocType","onboard":1,"type":"Link","hidden":0,"is_query_report":0},

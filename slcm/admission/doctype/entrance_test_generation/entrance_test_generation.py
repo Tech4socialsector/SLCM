@@ -61,7 +61,7 @@ class EntranceTestGeneration(Document):
                 COALESCE(ee.exempts_interview, 0) AS exempts_interview
             FROM `tabApplicant` app
             LEFT JOIN `tabEligibility Evaluation` ee ON ee.applicant_name = app.name
-            INNER JOIN `tabProgram` p ON p.name = app.program
+            INNER JOIN `tabProgramme` p ON p.name = app.program
             WHERE 
                 app.academic_year = %(academic_year)s
                 AND app.campus = %(campus)s

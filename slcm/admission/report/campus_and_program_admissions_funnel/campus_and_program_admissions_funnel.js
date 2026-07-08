@@ -15,9 +15,9 @@ frappe.query_reports["Campus and Program Admissions Funnel"] = {
         },
         {
             "fieldname": "program",
-            "label": __("Program"),
+            "label": __("Programme"),
             "fieldtype": "Link",
-            "options": "Program"
+            "options": "Programme"
         }
     ],
     "get_chart_data": function (columns, result) {
