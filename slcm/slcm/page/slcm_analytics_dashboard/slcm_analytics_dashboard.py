@@ -30,32 +30,64 @@ def _require_dashboard_access():
 
 # ── Filter helpers ────────────────────────────────────────────────────────────
 
+def _as_list(val):
+	"""Normalise a filter value: always return a list, or None if empty."""
+	if val is None:
+		return None
+	if isinstance(val, list):
+		cleaned = [v for v in val if v]
+		return cleaned if cleaned else None
+	if isinstance(val, str) and val:
+		return [val]
+	return None
+
+
 def _build_filters(academic_year=None, term=None, program=None, cohort=None, student_status=None):
-	"""Return (where_clause, params) tuples for common filter sets."""
+	"""Return (where_clause, params) tuples for common filter sets.
+
+	Each argument accepts either a single string value or a list of values
+	(from multiselect filters) — both are handled uniformly via IN clauses.
+	"""
 	conditions = []
 	params = {}
 
-	if academic_year:
-		conditions.append("sm.academic_year = %(academic_year)s")
-		params["academic_year"] = academic_year
+	ay_list = _as_list(academic_year)
+	if ay_list:
+		if len(ay_list) == 1:
+			conditions.append("sm.academic_year = %(academic_year)s")
+			params["academic_year"] = ay_list[0]
+		else:
+			conditions.append("sm.academic_year IN %(academic_year)s")
+			params["academic_year"] = tuple(ay_list)
 
-	if student_status:
-		conditions.append("sm.student_status = %(student_status)s")
-		params["student_status"] = student_status
+	ss_list = _as_list(student_status)
+	if ss_list:
+		if len(ss_list) == 1:
+			conditions.append("sm.student_status = %(student_status)s")
+			params["student_status"] = ss_list[0]
+		else:
+			conditions.append("sm.student_status IN %(student_status)s")
+			params["student_status"] = tuple(ss_list)
 
-	if cohort:
-		conditions.append("sm.programme = %(cohort)s")
-		params["cohort"] = cohort
-	elif program:
-		# Filter by cohorts belonging to the program
-		cohorts = frappe.db.get_all(
-			"Cohort",
-			filters={"program": program},
-			pluck="name",
-		)
+	cohort_list = _as_list(cohort)
+	program_list = _as_list(program)
+
+	if cohort_list:
+		if len(cohort_list) == 1:
+			conditions.append("sm.programme = %(cohort)s")
+			params["cohort"] = cohort_list[0]
+		else:
+			conditions.append("sm.programme IN %(cohort)s")
+			params["cohort"] = tuple(cohort_list)
+	elif program_list:
+		prog_filter = program_list[0] if len(program_list) == 1 else program_list
+		if len(program_list) == 1:
+			cohorts = frappe.db.get_all("Cohort", filters={"program": prog_filter}, pluck="name")
+		else:
+			cohorts = frappe.db.get_all("Cohort", filters=[["program", "in", program_list]], pluck="name")
 		if cohorts:
 			conditions.append("sm.programme IN %(cohorts)s")
-			params["cohorts"] = cohorts
+			params["cohorts"] = tuple(cohorts)
 		else:
 			conditions.append("1=0")
 
@@ -194,7 +226,7 @@ def get_overview_stats(academic_year=None, term=None, program=None, cohort=None,
 
 	# ── Placement offers ──────────────────────────────────────────────────────
 	total_offers = frappe.db.count("Placement Offer")
-	accepted_offers = frappe.db.count("Placement Offer", filters={"status": "Accepted"})
+	accepted_offers = frappe.db.count("Placement Offer", filters={"offer_status": "Accepted"})
 
 	return {
 		"total_students": student_totals.total_students or 0,
@@ -1157,13 +1189,13 @@ def get_placement_analytics(academic_year=None, term=None, program=None, cohort=
 	total_opportunities = frappe.db.count("Placement Opportunity")
 	total_applications = frappe.db.count("Placement Application")
 	total_offers = frappe.db.count("Placement Offer")
-	accepted_offers = frappe.db.count("Placement Offer", filters={"status": "Accepted"})
+	accepted_offers = frappe.db.count("Placement Offer", filters={"offer_status": "Accepted"})
 
 	avg_compensation = frappe.db.sql(
 		"""
 		SELECT COALESCE(AVG(compensation), 0) AS avg_comp
 		FROM `tabPlacement Offer`
-		WHERE status = 'Accepted' AND compensation > 0
+		WHERE offer_status = 'Accepted' AND compensation > 0
 		""",
 		as_dict=True,
 	)[0].get("avg_comp", 0)
@@ -1916,6 +1948,124 @@ def get_ticketing_analytics(**kwargs):
 		"team_dist":              team_dist,
 		"sla_dist":               sla_dist,
 		"monthly_trend":          monthly_trend,
+	}
+
+
+@frappe.whitelist()
+def get_rfid_analytics(**kwargs):
+	"""RFID swipe analytics from Attendance Log and Student RFID Card."""
+	_require_dashboard_access()
+
+	# ── KPI totals ────────────────────────────────────────────────────────────
+	totals = frappe.db.sql(
+		"""
+		SELECT
+			COUNT(*)                                              AS total_swipes,
+			COUNT(DISTINCT rfid_uid)                              AS unique_cards,
+			SUM(CASE WHEN processed = 1 THEN 1 ELSE 0 END)       AS processed,
+			SUM(CASE WHEN processed = 0 THEN 1 ELSE 0 END)       AS unprocessed,
+			COUNT(DISTINCT device_id)                             AS active_devices,
+			COUNT(DISTINCT DATE(swipe_time))                      AS active_days
+		FROM `tabAttendance Log`
+		""",
+		as_dict=True,
+	)[0]
+
+	# ── RFID card status ──────────────────────────────────────────────────────
+	card_status = frappe.db.sql(
+		"""
+		SELECT COALESCE(NULLIF(card_status,''), 'Unknown') AS label,
+		       COUNT(*) AS value
+		FROM `tabStudent RFID Card`
+		GROUP BY card_status ORDER BY value DESC
+		""",
+		as_dict=True,
+	)
+
+	total_cards   = sum(r["value"] for r in card_status)
+	active_cards  = next((r["value"] for r in card_status if r["label"] == "Active"), 0)
+
+	# ── Swipes by location ────────────────────────────────────────────────────
+	location_dist = frappe.db.sql(
+		"""
+		SELECT COALESCE(NULLIF(location,''), 'Unknown') AS label,
+		       COUNT(*) AS value
+		FROM `tabAttendance Log`
+		GROUP BY location ORDER BY value DESC LIMIT 10
+		""",
+		as_dict=True,
+	)
+
+	# ── Top terminals ─────────────────────────────────────────────────────────
+	terminal_dist = frappe.db.sql(
+		"""
+		SELECT COALESCE(NULLIF(terminal_alias,''), 'Unknown') AS label,
+		       COUNT(*) AS value
+		FROM `tabAttendance Log`
+		WHERE terminal_alias IS NOT NULL AND terminal_alias != ''
+		GROUP BY terminal_alias ORDER BY value DESC LIMIT 10
+		""",
+		as_dict=True,
+	)
+
+	# ── Processing status ─────────────────────────────────────────────────────
+	processing_dist = [
+		{"label": "Processed",   "value": int(totals.processed or 0)},
+		{"label": "Unprocessed", "value": int(totals.unprocessed or 0)},
+	]
+
+	# ── Hourly distribution ───────────────────────────────────────────────────
+	hourly_dist = frappe.db.sql(
+		"""
+		SELECT CONCAT(LPAD(HOUR(swipe_time), 2, '0'), ':00') AS label,
+		       COUNT(*) AS value
+		FROM `tabAttendance Log`
+		GROUP BY HOUR(swipe_time) ORDER BY HOUR(swipe_time)
+		""",
+		as_dict=True,
+	)
+
+	# ── Monthly trend (last 12 months) ────────────────────────────────────────
+	monthly_trend = frappe.db.sql(
+		"""
+		SELECT DATE_FORMAT(swipe_time, '%b %Y') AS label,
+		       COUNT(*) AS value,
+		       DATE_FORMAT(swipe_time, '%Y-%m') AS sort_key
+		FROM `tabAttendance Log`
+		WHERE swipe_time >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+		GROUP BY DATE_FORMAT(swipe_time, '%Y-%m')
+		ORDER BY sort_key ASC
+		""",
+		as_dict=True,
+	)
+
+	# ── Today's swipes ────────────────────────────────────────────────────────
+	today_swipes = frappe.db.sql(
+		"SELECT COUNT(*) AS cnt FROM `tabAttendance Log` WHERE DATE(swipe_time) = CURDATE()",
+		as_dict=True,
+	)[0].get("cnt", 0)
+
+	processing_pct = round(
+		(totals.processed or 0) / (totals.total_swipes or 1) * 100, 1
+	)
+
+	return {
+		"total_swipes":     int(totals.total_swipes or 0),
+		"unique_cards":     int(totals.unique_cards or 0),
+		"processed":        int(totals.processed or 0),
+		"unprocessed":      int(totals.unprocessed or 0),
+		"active_devices":   int(totals.active_devices or 0),
+		"active_days":      int(totals.active_days or 0),
+		"total_cards":      total_cards,
+		"active_cards":     active_cards,
+		"today_swipes":     int(today_swipes or 0),
+		"processing_pct":   processing_pct,
+		"card_status":      card_status,
+		"location_dist":    location_dist,
+		"terminal_dist":    terminal_dist,
+		"processing_dist":  processing_dist,
+		"hourly_dist":      hourly_dist,
+		"monthly_trend":    monthly_trend,
 	}
 
 
@@ -3013,6 +3163,60 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 		return {"rows": rows, "total": total,
 				"columns": ["name", "subject", "raised_by", "status", "priority",
 							"ticket_type", "agent_group", "agreement_status", "opening_date"]}
+
+	# ── RFID ──────────────────────────────────────────────────────────────────
+	if module == "rfid":
+		att_log_cols = ["name", "student", "rfid_uid", "swipe_time",
+						"location", "terminal_alias", "source", "processed"]
+
+		if dimension == "location":
+			# "Unknown" was a display alias for blank/null
+			if value == "Unknown":
+				filters = [["Attendance Log", "location", "in", ["", None]]]
+			else:
+				filters = {"location": value}
+			rows = frappe.db.get_all(
+				"Attendance Log", filters=filters, fields=att_log_cols,
+				limit_start=offset, limit_page_length=page_size, order_by="swipe_time desc",
+			)
+			total = frappe.db.count("Attendance Log", filters=filters)
+			return {"rows": rows, "total": total,
+					"columns": ["student", "rfid_uid", "swipe_time", "location", "terminal_alias", "processed"]}
+
+		elif dimension == "terminal":
+			if value == "Unknown":
+				filters = [["Attendance Log", "terminal_alias", "in", ["", None]]]
+			else:
+				filters = {"terminal_alias": value}
+			rows = frappe.db.get_all(
+				"Attendance Log", filters=filters, fields=att_log_cols,
+				limit_start=offset, limit_page_length=page_size, order_by="swipe_time desc",
+			)
+			total = frappe.db.count("Attendance Log", filters=filters)
+			return {"rows": rows, "total": total,
+					"columns": ["student", "rfid_uid", "swipe_time", "location", "terminal_alias", "processed"]}
+
+		elif dimension == "processing":
+			is_processed = 1 if value == "Processed" else 0
+			filters = {"processed": is_processed}
+			rows = frappe.db.get_all(
+				"Attendance Log", filters=filters, fields=att_log_cols,
+				limit_start=offset, limit_page_length=page_size, order_by="swipe_time desc",
+			)
+			total = frappe.db.count("Attendance Log", filters=filters)
+			return {"rows": rows, "total": total,
+					"columns": ["student", "rfid_uid", "swipe_time", "location", "terminal_alias", "processed"]}
+
+		elif dimension == "card_status":
+			filters = {"card_status": value}
+			rows = frappe.db.get_all(
+				"Student RFID Card", filters=filters,
+				fields=["name", "student", "rfid_uid", "card_status", "issue_date", "expiry_date"],
+				limit_start=offset, limit_page_length=page_size, order_by="issue_date desc",
+			)
+			total = frappe.db.count("Student RFID Card", filters=filters)
+			return {"rows": rows, "total": total,
+					"columns": ["student", "rfid_uid", "card_status", "issue_date", "expiry_date"]}
 
 	return {"rows": [], "total": 0, "columns": [],
 			"message": "No drilldown configured for this dimension."}

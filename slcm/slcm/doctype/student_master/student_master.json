@@ -266,7 +266,7 @@
    "fieldname": "admission_type",
    "fieldtype": "Select",
    "label": "Admission Type",
-   "options": "Regular\nPACE\nOther"
+   "options": "\nRegular\nPACE\nOther"
   },
   {
    "fieldname": "quota",
@@ -957,7 +957,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Student Status",
-   "options": "Active\nInactive\nGraduated\nDropped\nAlumni\nDormant\nWithdrawn"
+   "options": "Active\nInactive\nGraduated\nDropped\nAlumni\nDormant\nWithdrawn\nDeferral"
   },
   {
    "fieldname": "account_status",

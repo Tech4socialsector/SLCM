@@ -62,7 +62,13 @@
       <div style="display:flex;flex-direction:column;gap:16px;">
 
         <div class="fp-form-group">
-          <label class="fp-label">Current Password</label>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <label class="fp-label" style="margin-bottom:0;">Current Password</label>
+            <button type="button" id="fp-forgot-btn" onclick="fpForgotPassword()"
+              style="background:none;border:none;cursor:pointer;font-size:12px;font-weight:600;color:var(--fp-primary);padding:0;font-family:inherit;text-decoration:underline;text-underline-offset:2px;">
+              Forgot Password?
+            </button>
+          </div>
           <div class="fp-pwd-wrap">
             <input type="password" class="fp-input fp-pwd-input" id="fp-pwd-current"
               placeholder="Enter your current password" autocomplete="current-password">
@@ -233,6 +239,46 @@ function fpClearPwdForm() {
   if (err) err.style.display = 'none';
   var ok = document.getElementById('fp-pwd-ok');
   if (ok) ok.style.display = 'none';
+}
+
+/* ── Forgot Password — redirects directly to /update-password on the correct host ── */
+function fpForgotPassword() {
+  var btn   = document.getElementById('fp-forgot-btn');
+  var errEl = document.getElementById('fp-pwd-err');
+  var okEl  = document.getElementById('fp-pwd-ok');
+
+  errEl.style.display = 'none';
+  okEl.style.display  = 'none';
+
+  btn.disabled = true;
+  btn.textContent = 'Redirecting…';
+
+  var csrf = window._fp_csrf ||
+    decodeURIComponent((document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/) || [])[1] || '');
+
+  fetch('/api/method/slcm.api.faculty_portal.get_reset_password_url', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-Frappe-CSRF-Token': csrf
+    }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.message && data.message.url) {
+      /* Redirect to the update-password page on the correct host */
+      window.location.href = data.message.url;
+    } else {
+      throw new Error('No URL returned');
+    }
+  })
+  .catch(function() {
+    btn.disabled = false;
+    btn.textContent = 'Forgot Password?';
+    errEl.style.display = 'flex';
+    errEl.querySelector('div').textContent = 'Could not generate reset link. Please contact the administrator.';
+  });
 }
 
 /* ── Change Password ── */

@@ -23,6 +23,10 @@ def get_context(context):
 
     context.not_a_faculty = False
 
+    # Detect if the user has the HD Agent role — agents use a different helpdesk URL
+    user_roles = frappe.get_roles(frappe.session.user)
+    context.is_hd_agent = "HD Agent" in user_roles or "HD Manager" in user_roles
+
     try:
         faculty = frappe.get_doc("Faculty", faculty_name)
         set_faculty_nav(context, faculty)

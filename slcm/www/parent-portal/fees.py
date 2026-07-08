@@ -410,6 +410,35 @@ def get_context(context):
             context.overdue_demand_count = len(overdue_list)
             context.overdue_total        = sum(frappe.utils.flt(d.outstanding_amount or 0) for d in overdue_list)
             context.formatted_overdue_total = "₹{:,.0f}".format(context.overdue_total)
+
+            # ── Demand Analytics (for the Payment Analytics panel) ──────────
+            _flt = frappe.utils.flt
+            da_total      = len(demands_raw)
+            da_paid       = sum(1 for d in demands_raw if d.status == "Paid")
+            da_waived     = sum(1 for d in demands_raw if d.status == "Waived")
+            da_overdue    = len(overdue_list)
+            da_total_amt  = sum(_flt(d.net_payable or 0)        for d in demands_raw)
+            da_paid_amt   = sum(_flt(d.paid_amount or 0) +
+                                _flt(d.credit_adjusted or 0)    for d in demands_raw)
+            da_waived_amt = sum(_flt(d.waiver_amount or 0)      for d in demands_raw)
+            da_outstanding= sum(_flt(d.outstanding_amount or 0) for d in demands_raw
+                                if d.status not in ("Paid","Waived","Cancelled"))
+            da_pct = int(round(da_paid_amt / da_total_amt * 100)) if da_total_amt > 0 else 0
+
+            context.da_total            = da_total
+            context.da_paid             = da_paid
+            context.da_waived           = da_waived
+            context.da_overdue          = da_overdue
+            context.da_pending          = da_total - da_paid - da_waived - da_overdue
+            context.da_total_amt        = da_total_amt
+            context.da_paid_amt         = da_paid_amt
+            context.da_waived_amt       = da_waived_amt
+            context.da_outstanding      = da_outstanding
+            context.da_pct              = da_pct
+            context.da_fmt_total        = "₹{:,.0f}".format(da_total_amt)
+            context.da_fmt_paid         = "₹{:,.0f}".format(da_paid_amt)
+            context.da_fmt_waived       = "₹{:,.0f}".format(da_waived_amt)
+            context.da_fmt_outstanding  = "₹{:,.0f}".format(da_outstanding)
         except Exception:
             context.fee_demands          = []
             context.has_fee_demands      = False
@@ -418,6 +447,12 @@ def get_context(context):
             context.overdue_demand_count = 0
             context.overdue_total        = 0
             context.formatted_overdue_total = "₹0"
+            context.da_total = context.da_paid = context.da_waived = 0
+            context.da_overdue = context.da_pending = 0
+            context.da_pct = 0
+            context.da_fmt_total = context.da_fmt_paid = "₹0"
+            context.da_fmt_waived = context.da_fmt_outstanding = "₹0"
+            context.da_outstanding = 0
 
         # ── Fee Refunds ────────────────────────────────────────────────────────
         try:

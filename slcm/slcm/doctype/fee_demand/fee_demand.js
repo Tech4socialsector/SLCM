@@ -382,6 +382,23 @@ function _fd_render_timeline(logs) {
 				🧾 Download Receipt</button>`
 			: "";
 
+		// Payer badge
+		let payer_html = "";
+		if (row.paid_by_role || row.paid_by_name) {
+			const role_colors = {
+				"Parent":  { bg: "#fef3c7", text: "#92400e", icon: "👨‍👩‍👧" },
+				"Student": { bg: "#dbeafe", text: "#1e40af", icon: "🎓" },
+				"Staff":   { bg: "#d1fae5", text: "#065f46", icon: "🏫" },
+				"System":  { bg: "#f3f4f6", text: "#374151", icon: "⚙️" },
+			};
+			const rc = role_colors[row.paid_by_role] || { bg: "#f3f4f6", text: "#374151", icon: "👤" };
+			const role_label = row.paid_by_role ? `${rc.icon} ${row.paid_by_role}` : "👤 Unknown";
+			const name_part  = row.paid_by_name  ? ` — ${frappe.utils.escape_html(row.paid_by_name)}` : "";
+			payer_html = `<span style="display:inline-block;background:${rc.bg};color:${rc.text};
+				padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;
+				white-space:nowrap;margin-left:6px;">${role_label}${name_part}</span>`;
+		}
+
 		let chips = [];
 		if (row.fee_demand)           chips.push(`<span class="plog-chip">📋 ${row.fee_demand}</span>`);
 		if (row.razorpay_payment_id)  chips.push(`<span class="plog-chip">💳 ${row.razorpay_payment_id}</span>`);
@@ -422,7 +439,7 @@ function _fd_render_timeline(logs) {
 
 		const line_display = idx === logs.length - 1 ? "none" : "block";
 		const search_text  = [row.event_type, row.fee_demand, row.razorpay_payment_id,
-		                       row.transaction_id, row.remarks]
+		                       row.transaction_id, row.paid_by_role, row.paid_by_name, row.remarks]
 		                     .filter(Boolean).join(" ").toLowerCase()
 		                     .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
@@ -441,6 +458,7 @@ function _fd_render_timeline(logs) {
 					<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
 						<span style="font-size:16px;">${style.icon}</span>
 						${badge_html}
+						${payer_html}
 						${amount_str ? `<span style="font-weight:700;font-size:14px;color:#1f2937;">${amount_str}</span>` : ""}
 					</div>
 					<div style="display:flex;align-items:center;gap:6px;">
@@ -476,6 +494,7 @@ function _fd_download_csv(logs, label) {
 		return;
 	}
 	const cols = ["event_type", "timestamp", "amount", "fee_demand", "payment_mode",
+	              "paid_by_role", "paid_by_name",
 	              "razorpay_payment_id", "razorpay_order_id", "from_status", "to_status",
 	              "ip_address", "remarks"];
 	const esc    = v => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;

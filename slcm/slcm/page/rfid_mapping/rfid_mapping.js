@@ -13,6 +13,9 @@ frappe.pages["rfid-mapping"].on_page_load = function (wrapper) {
 		countdown_interval: null,
 		countdown_val:      30,
 		last_swipe_time:    null,
+		unassigned_dt:      null,
+		linked_dt:          null,
+		feed_dt:            null,
 	};
 
 	$(build_html()).appendTo($(wrapper).find(".page-content, .layout-main-section").first());
@@ -26,10 +29,12 @@ frappe.pages["rfid-mapping"].on_page_load = function (wrapper) {
 frappe.pages["rfid-mapping"].on_page_show = function (wrapper) {
 	if (!wrapper._rfid) return;
 	if (!wrapper._rfid.live_interval) {
+		wrapper._rfid.countdown_val      = 30;
 		wrapper._rfid.live_interval      = setInterval(() => live_refresh(wrapper), 30000);
 		wrapper._rfid.countdown_interval = setInterval(() => tick(wrapper), 1000);
-		wrapper._rfid.countdown_val      = 30;
 	}
+	// Always reset display countdown on page show
+	$(wrapper).find("#next-refresh").text(wrapper._rfid.countdown_val || 30);
 };
 
 frappe.pages["rfid-mapping"].on_page_hide = function (wrapper) {
@@ -71,7 +76,7 @@ function live_refresh(wrapper) {
 			const d = r.message;
 			render_stats(wrapper, d.stats, null);
 			if (d.new_logs && d.new_logs.length) {
-				prepend_feed(wrapper, d.new_logs);
+				wrapper._rfid.feed_dt.prepend(d.new_logs);
 				wrapper._rfid.last_swipe_time = d.stats.last_swipe;
 				frappe.show_alert({ message: `${d.new_logs.length} new swipe(s)`, indicator: "green" }, 4);
 			}
@@ -87,7 +92,6 @@ function live_refresh(wrapper) {
 function render_stats(wrapper, s, ss) {
 	const $w = $(wrapper);
 	$w.find("#st-total").text(fmt(s.total_logs));
-	$w.find("#st-att-logs").text(fmt(s.total_logs));   // same source — every SQL row = one Attendance Log
 	$w.find("#st-linked").text(fmt(s.linked_logs));
 	$w.find("#st-unlinked").text(fmt(s.unlinked_logs));
 
@@ -97,8 +101,11 @@ function render_stats(wrapper, s, ss) {
 		$w.find("#st-no-card").text(fmt(ss.students_without_rfid));
 	}
 
+	// Update tab badges independently
 	const u = parseInt(s.unlinked_logs) || 0;
-	$w.find(".badge-unlinked").text(u).toggle(u > 0);
+	$w.find("#count-unassigned").text(u).toggle(u > 0);
+	const l = parseInt(s.linked_logs) || 0;
+	$w.find("#count-linked").text(l).toggle(l > 0);
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -117,128 +124,442 @@ function bind_events(wrapper) {
 	$w.on("click", ".btn-assign",        function () { show_assign_dialog($(this).data("uid"), wrapper); });
 	$w.on("click", "#btn-export-vendor", () => do_export(wrapper));
 	$w.on("click", "#btn-bulk-import",   () => show_import_dialog(wrapper));
+	$w.on("click", "#btn-refresh-now",   () => refresh_now(wrapper));
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Manual "Refresh Now" — force an immediate SQL Server pull
+// ─────────────────────────────────────────────────────────────────
+function refresh_now(wrapper) {
+	const $btn = $(wrapper).find("#btn-refresh-now");
+	$btn.prop("disabled", true).find(".btn-refresh-label").text("Refreshing…");
+	set_dot(wrapper, "syncing");
+
+	frappe.call({
+		method: "slcm.slcm.utils.rfid_sql_poller.poll_now",
+		callback(r) {
+			$btn.prop("disabled", false).find(".btn-refresh-label").text("Refresh Now");
+			if (r.message && r.message.success) {
+				frappe.show_alert({ message: r.message.message, indicator: "green" }, 5);
+			} else {
+				frappe.msgprint({
+					title: "Refresh Failed",
+					message: r.message ? r.message.message : "Unknown error.",
+					indicator: "red",
+				});
+			}
+			full_load(wrapper);
+		},
+		error() {
+			$btn.prop("disabled", false).find(".btn-refresh-label").text("Refresh Now");
+			set_dot(wrapper, "live");
+		},
+	});
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Generic lightweight DataTable
+// ─────────────────────────────────────────────────────────────────
+function make_datatable(config) {
+	const {
+		wrapper,
+		data: initial_data,
+		columns,
+		page_size = 25,
+		empty_msg = "No records found.",
+		on_action,
+	} = config;
+
+	let _data        = initial_data ? initial_data.slice() : [];
+	let _filtered    = _data.slice();
+	let _sort_col    = null;
+	let _sort_dir    = "asc";   // "asc" or "desc"
+	let _page        = 0;       // 0-indexed current page
+	let _query       = "";
+
+	// ── DOM refs ──
+	const $toolbar   = wrapper.find(".dt-toolbar");
+	const $search    = wrapper.find(".dt-search");
+	const $page_info = wrapper.find(".dt-page-info");
+	const $btn_prev  = wrapper.find(".dt-btn-prev");
+	const $btn_next  = wrapper.find(".dt-btn-next");
+	const $tbody     = wrapper.find("tbody");
+	const $thead     = wrapper.find("thead tr");
+
+	// ── Wire up column headers ──
+	$thead.find("th").each(function (i) {
+		const col = columns[i];
+		if (!col || col.sortable === false) return;
+		$(this).addClass("th-sort").on("click", function () {
+			if (_sort_col === i) {
+				_sort_dir = _sort_dir === "asc" ? "desc" : "asc";
+			} else {
+				_sort_col = i;
+				_sort_dir = "asc";
+			}
+			_page = 0;
+			_apply_sort();
+			_render();
+		});
+	});
+
+	// ── Wire up search ──
+	$search.on("input", function () {
+		_query = $(this).val().toLowerCase();
+		_page  = 0;
+		_apply_filter();
+		_render();
+	});
+
+	// ── Wire up pagination ──
+	$btn_prev.on("click", function () {
+		if (_page > 0) { _page--; _render(); }
+	});
+	$btn_next.on("click", function () {
+		const max_page = Math.max(0, Math.ceil(_filtered.length / page_size) - 1);
+		if (_page < max_page) { _page++; _render(); }
+	});
+
+	// ── Internal: apply text filter ──
+	function _apply_filter() {
+		if (!_query) {
+			_filtered = _data.slice();
+		} else {
+			_filtered = _data.filter(row => {
+				return columns.some(col => {
+					if (col.searchable === false) return false;
+					const val = row[col.key];
+					return val && String(val).toLowerCase().indexOf(_query) !== -1;
+				});
+			});
+		}
+		_apply_sort_in_place();
+	}
+
+	// ── Internal: sort _filtered in place ──
+	function _apply_sort_in_place() {
+		if (_sort_col === null) return;
+		const col = columns[_sort_col];
+		if (!col || col.sortable === false) return;
+		const key = col.sort_key || col.key;
+		_filtered.sort((a, b) => {
+			const av = a[key] == null ? "" : a[key];
+			const bv = b[key] == null ? "" : b[key];
+			let cmp;
+			if (typeof av === "number" && typeof bv === "number") {
+				cmp = av - bv;
+			} else {
+				cmp = String(av).localeCompare(String(bv));
+			}
+			return _sort_dir === "asc" ? cmp : -cmp;
+		});
+	}
+
+	// ── Internal: apply sort then re-filter ──
+	function _apply_sort() {
+		_apply_sort_in_place();
+	}
+
+	// ── Internal: render current page ──
+	function _render() {
+		// Update sort indicators on headers
+		$thead.find("th").each(function (i) {
+			$(this).removeClass("asc desc");
+			if (i === _sort_col) {
+				$(this).addClass(_sort_dir);
+			}
+		});
+
+		const total  = _filtered.length;
+		const start  = _page * page_size;
+		const end    = Math.min(start + page_size, total);
+		const page_rows = _filtered.slice(start, end);
+
+		// Update pagination info
+		if (total === 0) {
+			$page_info.text("No results");
+		} else {
+			$page_info.text(`Showing ${start + 1}–${end} of ${total}`);
+		}
+
+		const max_page = Math.max(0, Math.ceil(total / page_size) - 1);
+		$btn_prev.prop("disabled", _page === 0);
+		$btn_next.prop("disabled", _page >= max_page);
+
+		// Render rows
+		$tbody.empty();
+		if (!page_rows.length) {
+			const colspan = columns.length;
+			$tbody.append(`<tr><td colspan="${colspan}">${empty_msg}</td></tr>`);
+			return;
+		}
+
+		page_rows.forEach(row => {
+			const cells = columns.map(col => {
+				const html = col.render ? col.render(row) : esc(row[col.key] != null ? row[col.key] : "—");
+				return `<td>${html}</td>`;
+			}).join("");
+			$tbody.append(`<tr>${cells}</tr>`);
+		});
+
+		// Re-bind action buttons (on_action callback)
+		if (on_action) {
+			$tbody.find("[data-action]").on("click", function () {
+				const $el  = $(this);
+				const action = $el.data("action");
+				const key_val = $el.data("row-key");
+				const row = _filtered.find(r => String(r[config.row_key || "_key"]) === String(key_val)) || null;
+				on_action(action, row, $el);
+			});
+		}
+	}
+
+	// ── Public API ──
+	function refresh(new_data) {
+		_data     = new_data ? new_data.slice() : [];
+		_page     = 0;
+		_apply_filter();
+		_render();
+	}
+
+	function prepend(rows) {
+		if (!rows || !rows.length) return;
+
+		// Dedup by rfid_uid|swipe_time key
+		const existing_keys = new Set(
+			_data.map(r => (r.rfid_uid || "") + "|" + (r.swipe_time || r.swipe_time || ""))
+		);
+
+		const new_rows = rows.filter(r => {
+			const k = (r.rfid_uid || "") + "|" + (r.swipe_time || "");
+			if (existing_keys.has(k)) return false;
+			existing_keys.add(k);
+			return true;
+		});
+
+		if (!new_rows.length) return;
+
+		_data = new_rows.concat(_data);
+		// Trim to 200 max
+		if (_data.length > 200) _data = _data.slice(0, 200);
+
+		_apply_filter();
+		_render();
+
+		// Gold flash on newly prepended rows (first N rows in tbody)
+		const flash_count = Math.min(new_rows.length, page_size);
+		$tbody.find("tr").slice(0, flash_count).each(function () {
+			const $tds = $(this).find("td");
+			$tds.css({ background: "#d0d4e8", transition: "" });
+			setTimeout(() => $tds.css({ background: "", transition: "background 3s" }), 100);
+			setTimeout(() => $tds.css("background", ""), 3100);
+		});
+	}
+
+	// Initial render (with default sort if set by config)
+	if (config.default_sort_col !== undefined) {
+		_sort_col = config.default_sort_col;
+		_sort_dir = config.default_sort_dir || "desc";
+		_apply_sort_in_place();
+	}
+	_render();
+
+	return { refresh, prepend };
 }
 
 // ─────────────────────────────────────────────────────────────────
 // TAB 1 — Unassigned Cards
-// Columns: RFID UID (emp_code) | Total Swipes | Terminal (terminal_alias) |
-//          Area (location/area_alias) | Last Punch Time (swipe_time) | Action
 // ─────────────────────────────────────────────────────────────────
 function render_unassigned(wrapper, cards) {
-	const $tbody = $(wrapper).find("#tbody-unassigned").empty();
-	$(wrapper).find("#count-unassigned").text(cards ? cards.length : 0);
+	const $w = $(wrapper);
+	const uCount = cards ? cards.length : 0;
+	$w.find("#count-unassigned").text(uCount).toggle(uCount > 0);
 
-	if (!cards || !cards.length) {
-		$tbody.append(`<tr><td colspan="7">
-			<div class="all-ok">
-				<i class="fa fa-check-circle"></i>
-				All RFID cards are assigned to students.
-			</div></td></tr>`);
-		return;
-	}
+	const columns = [
+		{
+			key: "rfid_uid", label: "RFID UID (emp_code)",
+			sortable: true, searchable: true,
+			render: row => `<code class="uid">${esc(row.rfid_uid)}</code>`,
+		},
+		{
+			key: "swipe_count", label: "Total Swipes",
+			sortable: true, searchable: false,
+			render: row => `<span class="pill-count">${row.swipe_count || 0}</span>`,
+		},
+		{
+			key: "terminal_id", label: "Terminal ID",
+			sortable: true, searchable: true,
+			render: row => `<span class="muted tc">${esc(row.terminal_id || "—")}</span>`,
+		},
+		{
+			key: "terminal", label: "Terminal / Room",
+			sortable: true, searchable: true,
+			render: row => `<span class="pill-room">${esc(row.terminal || "—")}</span>`,
+		},
+		{
+			key: "area", label: "Area",
+			sortable: true, searchable: true,
+			render: row => `<span class="muted">${esc(row.area || "—")}</span>`,
+		},
+		{
+			key: "last_seen", label: "Last Punch Time",
+			sort_key: "last_seen",
+			sortable: true, searchable: false,
+			render: row => `<span class="muted">${row.last_seen ? frappe.datetime.str_to_user(row.last_seen) : "—"}</span>`,
+		},
+		{
+			key: "_action", label: "Action",
+			sortable: false, searchable: false,
+			render: row => `<button class="btn-assign" data-uid="${esc(row.rfid_uid)}">
+				<i class="fa fa-link"></i> Assign Student
+			</button>`,
+		},
+	];
 
-	cards.forEach(row => {
-		const punch = row.last_seen ? frappe.datetime.str_to_user(row.last_seen) : "—";
-		$tbody.append(`<tr>
-			<td><code class="uid">${esc(row.rfid_uid)}</code></td>
-			<td class="tc"><span class="pill-count">${row.swipe_count}</span></td>
-			<td class="muted tc">${esc(row.terminal_id || "—")}</td>
-			<td><span class="pill-room">${esc(row.terminal || "—")}</span></td>
-			<td class="muted">${esc(row.area || "—")}</td>
-			<td class="muted">${punch}</td>
-			<td>
-				<button class="btn-assign" data-uid="${esc(row.rfid_uid)}">
-					<i class="fa fa-link"></i> Assign Student
-				</button>
-			</td>
-		</tr>`);
+	const empty_html = !cards || !cards.length
+		? `<div class="all-ok"><i class="fa fa-check-circle"></i>All RFID cards are assigned to students.</div>`
+		: `<div class="tc muted" style="padding:32px">No matching records.</div>`;
+
+	wrapper._rfid.unassigned_dt = make_datatable({
+		wrapper:   $w.find("#panel-unassigned"),
+		data:      cards || [],
+		columns,
+		page_size: 25,
+		empty_msg: `<div class="tc muted" style="padding:32px">${!cards || !cards.length ? "All RFID cards are assigned to students." : "No matching records."}</div>`,
 	});
 }
 
 // ─────────────────────────────────────────────────────────────────
 // TAB 2 — Student Cards
-// Columns: Student | RFID UID | Programme | Batch | Department |
-//          Total Swipes | Last Punch Time
 // ─────────────────────────────────────────────────────────────────
 function render_student_cards(wrapper, students) {
-	const $tbody = $(wrapper).find("#tbody-linked").empty();
-	$(wrapper).find("#count-linked").text(students ? students.length : 0);
+	const $w = $(wrapper);
+	const lCount = students ? students.length : 0;
+	$w.find("#count-linked").text(lCount).toggle(lCount > 0);
 
-	if (!students || !students.length) {
-		$tbody.append(`<tr><td colspan="7" class="tc muted" style="padding:32px">
-			No students have cards assigned yet.</td></tr>`);
-		return;
-	}
+	const columns = [
+		{
+			key: "student_name", label: "Student",
+			sortable: true, searchable: true,
+			render: row => `<a class="stud-link" href="/app/student-master/${esc(row.student_id)}" target="_blank">
+				${esc(row.student_name || row.student_id)}
+			</a>
+			<div class="sub-id">${esc(row.student_id)}</div>`,
+		},
+		{
+			key: "rfid_uid", label: "RFID UID",
+			sortable: true, searchable: true,
+			render: row => `<code class="uid">${esc(row.rfid_uid)}</code>`,
+		},
+		{
+			key: "programme", label: "Programme",
+			sortable: true, searchable: true,
+			render: row => esc(row.programme || "—"),
+		},
+		{
+			key: "batch_year", label: "Batch",
+			sortable: true, searchable: false,
+			render: row => esc(row.batch_year || "—"),
+		},
+		{
+			key: "department", label: "Department",
+			sortable: true, searchable: true,
+			render: row => esc(row.department || "—"),
+		},
+		{
+			key: "total_swipes", label: "Total Swipes",
+			sortable: true, searchable: false,
+			render: row => `<span class="pill-count">${row.total_swipes || 0}</span>`,
+		},
+		{
+			key: "last_swipe", label: "Last Punch Time",
+			sort_key: "last_swipe",
+			sortable: true, searchable: false,
+			render: row => `<span class="muted">${row.last_swipe ? frappe.datetime.str_to_user(row.last_swipe) : "Never"}</span>`,
+		},
+	];
 
-	students.forEach(s => {
-		const last = s.last_swipe ? frappe.datetime.str_to_user(s.last_swipe) : "Never";
-		$tbody.append(`<tr>
-			<td>
-				<a class="stud-link" href="/app/student-master/${s.student_id}" target="_blank">
-					${esc(s.student_name || s.student_id)}
-				</a>
-				<div class="sub-id">${esc(s.student_id)}</div>
-			</td>
-			<td><code class="uid">${esc(s.rfid_uid)}</code></td>
-			<td>${esc(s.programme || "—")}</td>
-			<td>${esc(s.batch_year || "—")}</td>
-			<td>${esc(s.department || "—")}</td>
-			<td class="tc"><span class="pill-count">${s.total_swipes || 0}</span></td>
-			<td class="muted">${last}</td>
-		</tr>`);
+	wrapper._rfid.linked_dt = make_datatable({
+		wrapper:   $w.find("#panel-linked"),
+		data:      students || [],
+		columns,
+		page_size: 25,
+		empty_msg: `<div class="tc muted" style="padding:32px">No students have cards assigned yet.</div>`,
 	});
 }
 
 // ─────────────────────────────────────────────────────────────────
 // TAB 3 — Live Punch Feed
-// Columns: RFID UID (emp_code) | Student | Terminal (terminal_alias) |
-//          Area (location/area_alias) | Punch Time (swipe_time) | Processed
 // ─────────────────────────────────────────────────────────────────
 function render_feed(wrapper, logs, clear) {
-	const $tbody = $(wrapper).find("#tbody-feed");
-	if (clear) $tbody.empty();
-	if (!logs || !logs.length) {
-		if (clear) $tbody.append(`<tr><td colspan="7" class="tc muted" style="padding:32px">
-			No swipes yet.</td></tr>`);
+	const $w = $(wrapper);
+
+	// If already initialised and not a full clear, just add rows
+	if (wrapper._rfid.feed_dt && !clear) {
+		wrapper._rfid.feed_dt.prepend(logs || []);
 		return;
 	}
-	logs.forEach(l => $tbody.append(feed_row(l)));
-}
 
-function prepend_feed(wrapper, logs) {
-	const $tbody = $(wrapper).find("#tbody-feed");
-	$tbody.find("td[colspan]").closest("tr").remove();
-	logs.forEach(l => {
-		const $tr = $(feed_row(l)).prependTo($tbody);
-		// Flash green, then fade back
-		$tr.find("td").css({ background: "#d0d4e8", transition: "background 3s" });
-		setTimeout(() => $tr.find("td").css("background", ""), 100);
+	const columns = [
+		{
+			key: "rfid_uid", label: "RFID UID (emp_code)",
+			sortable: false, searchable: true,
+			render: row => `<code class="uid">${esc(row.rfid_uid)}</code>`,
+		},
+		{
+			key: "student_name", label: "Student",
+			sortable: false, searchable: true,
+			render: row => row.student
+				? `<a class="stud-link" href="/app/student-master/${esc(row.student)}" target="_blank">
+					<i class="fa fa-user-circle"></i> ${esc(row.student_name || row.student)}</a>`
+				: `<span class="unknown-lbl"><i class="fa fa-question-circle"></i> Unknown — assign card</span>`,
+		},
+		{
+			key: "device_id", label: "Terminal ID",
+			sortable: false, searchable: true,
+			render: row => `<span class="muted tc">${esc(row.device_id || "—")}</span>`,
+		},
+		{
+			key: "terminal_alias", label: "Terminal / Room",
+			sortable: false, searchable: true,
+			render: row => `<span class="pill-room">${esc(row.terminal_alias || "—")}</span>`,
+		},
+		{
+			key: "area_alias", label: "Area",
+			sortable: false, searchable: true,
+			render: row => `<span class="muted">${esc(row.area_alias || "—")}</span>`,
+		},
+		{
+			key: "swipe_time", label: "Punch Time",
+			sort_key: "swipe_time",
+			sortable: true, searchable: false,
+			render: row => `<span class="muted">${row.swipe_time ? frappe.datetime.str_to_user(row.swipe_time) : "—"}</span>`,
+		},
+		{
+			key: "processed", label: "Status",
+			sortable: false, searchable: false,
+			render: row => row.processed
+				? `<span class="pill-done">Processed</span>`
+				: `<span class="pill-pend">Pending</span>`,
+		},
+	];
+
+	wrapper._rfid.feed_dt = make_datatable({
+		wrapper:          $w.find("#panel-feed"),
+		data:             logs || [],
+		columns,
+		page_size:        25,
+		empty_msg:        `<div class="tc muted" style="padding:32px">No swipes yet.</div>`,
+		default_sort_col: 5,   // Punch Time column index
+		default_sort_dir: "desc",
 	});
-	const $rows = $tbody.find("tr");
-	if ($rows.length > 200) $rows.slice(200).remove();
 }
 
-function feed_row(l) {
-	const student_cell = l.student
-		? `<a class="stud-link" href="/app/student-master/${l.student}" target="_blank">
-			<i class="fa fa-user-circle"></i> ${esc(l.student_name || l.student)}</a>`
-		: `<span class="unknown-lbl"><i class="fa fa-question-circle"></i> Unknown — assign card</span>`;
-
-	const status = l.processed
-		? `<span class="pill-done">Processed</span>`
-		: `<span class="pill-pend">Pending</span>`;
-
-	const punch = l.swipe_time ? frappe.datetime.str_to_user(l.swipe_time) : "—";
-
-	return `<tr>
-		<td><code class="uid">${esc(l.rfid_uid)}</code></td>
-		<td>${student_cell}</td>
-		<td class="muted tc">${esc(l.device_id || "—")}</td>
-		<td><span class="pill-room">${esc(l.terminal_alias || "—")}</span></td>
-		<td class="muted">${esc(l.area_alias || "—")}</td>
-		<td class="muted">${punch}</td>
-		<td>${status}</td>
-	</tr>`;
+// Legacy wrapper kept so nothing else breaks — now delegates to feed_dt
+function prepend_feed(wrapper, logs) {
+	if (wrapper._rfid && wrapper._rfid.feed_dt) {
+		wrapper._rfid.feed_dt.prepend(logs);
+	}
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -326,12 +647,13 @@ function show_import_dialog(wrapper) {
 					<ol class="import-steps">
 						<li>Click <strong>Export for Vendor</strong> — downloads a CSV with all student IDs and names.</li>
 						<li>Send the CSV to the vendor. They fill the <code>rfid_uid</code> column for each student.</li>
-						<li>Upload the completed CSV here, or paste it below.</li>
+						<li>Upload the completed CSV or Excel (.xlsx) here, or paste it below.</li>
 					</ol>
 					<div style="margin-top:10px">
-						<strong>Required columns in CSV:</strong>
+						<strong>Required columns:</strong>
 						<code class="uid" style="margin-left:6px">student_id</code>
 						<code class="uid" style="margin-left:6px">rfid_uid</code>
+						&nbsp;·&nbsp; Accepts <strong>.csv</strong> or <strong>.xlsx</strong>
 					</div>
 					<button class="btn-outline" id="dl-template" style="margin-top:12px; font-size:.8rem; padding:5px 12px">
 						<i class="fa fa-download"></i> Download Sample Template
@@ -342,13 +664,13 @@ function show_import_dialog(wrapper) {
 			{
 				fieldname: "file_upload", fieldtype: "Attach",
 				label: "Choose File",
-				description: "Upload the CSV file returned by the vendor.",
+				description: "Upload the CSV or Excel (.xlsx) file returned by the vendor.",
 			},
 			{ fieldname: "sb2", fieldtype: "Section Break",
 			  label: "— or Paste CSV Content Directly —" },
 			{
 				fieldname: "csv_paste", fieldtype: "Code",
-				label: "Paste CSV here", options: "Plain Text",
+				label: "Paste CSV here", options: "None",
 				description: "Format: student_id,rfid_uid — one row per student.",
 			},
 		],
@@ -356,16 +678,16 @@ function show_import_dialog(wrapper) {
 		primary_action(val) {
 			const pasted = (val.csv_paste || "").trim();
 			if (val.file_upload) {
+				// Read file content server-side to handle both private and public files
 				frappe.call({
-					method: "frappe.client.get",
-					args: { doctype: "File", name: val.file_upload },
+					method: "slcm.slcm.page.rfid_mapping.rfid_mapping.read_uploaded_file",
+					args: { file_url: val.file_upload },
 					callback(fr) {
-						const url = fr.message && fr.message.file_url;
-						if (!url) { frappe.msgprint("Could not read file."); return; }
-						fetch(url)
-							.then(res => res.text())
-							.then(txt => run_import(txt, d, wrapper))
-							.catch(() => frappe.msgprint("Failed to read uploaded file."));
+						if (fr.message && fr.message.success) {
+							run_import(fr.message.content, d, wrapper);
+						} else {
+							frappe.msgprint(fr.message ? fr.message.error : "Failed to read uploaded file.");
+						}
 					},
 				});
 			} else if (pasted) {
@@ -429,7 +751,7 @@ function set_dot(wrapper, state) {
 	$d.removeClass("dot-live dot-syncing");
 	if (state === "live") {
 		$d.addClass("dot-live");
-		$t.text("Live — SQL Server syncs automatically every 5 minutes");
+		$t.text("Live — SQL Server syncs automatically every minute");
 	} else {
 		$d.addClass("dot-syncing");
 		$t.text("Syncing…");
@@ -662,6 +984,35 @@ function build_html() {
 .result-ok   { color:#155724; font-weight:600; margin-bottom:4px; }
 .result-skip { color:var(--navy-mid); font-weight:600; margin-bottom:4px; }
 .result-err  { color:var(--maroon); font-weight:600; margin-bottom:4px; }
+
+/* ── DataTable toolbar ── */
+.dt-toolbar {
+	display:flex; align-items:center; justify-content:space-between;
+	gap:12px; flex-wrap:wrap; margin-bottom:10px;
+}
+.dt-search {
+	flex:1; min-width:180px; max-width:320px;
+	padding:6px 12px; font-size:.84rem;
+	border:1.5px solid var(--border); border-radius:6px;
+	color:var(--navy); background:var(--white); outline:none;
+}
+.dt-search:focus { border-color:var(--navy); box-shadow:0 0 0 2px rgba(43,46,74,.12); }
+.dt-search::placeholder { color:#bbb; }
+.dt-pagination { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.dt-page-info { font-size:.78rem; color:#888; white-space:nowrap; }
+.dt-btn {
+	background:var(--white); color:var(--navy);
+	border:1.5px solid var(--navy); border-radius:6px;
+	padding:4px 12px; font-size:.8rem; font-weight:600; cursor:pointer;
+}
+.dt-btn:hover:not(:disabled) { background:var(--navy-lt); }
+.dt-btn:disabled { color:#bbb; border-color:#ddd; cursor:default; }
+
+/* ── Sortable header indicators ── */
+.th-sort { cursor:pointer; user-select:none; }
+.th-sort:hover { background:var(--navy-mid); }
+.th-sort.asc::after  { content:" ▲"; font-size:.65rem; opacity:.85; }
+.th-sort.desc::after { content:" ▼"; font-size:.65rem; opacity:.85; }
 </style>
 
 <div class="rfid-wrap">
@@ -669,35 +1020,35 @@ function build_html() {
 	<!-- Status bar -->
 	<div class="rfid-status">
 		<div class="sync-dot dot-live" id="sync-dot"></div>
-		<span id="sync-text">Live — SQL Server syncs automatically every 5 minutes</span>
+		<span id="sync-text">Live — SQL Server syncs automatically every minute</span>
 		<span class="cdown">Display refreshes in <strong id="next-refresh">30</strong>s</span>
+		<button class="btn-outline" id="btn-refresh-now" style="margin-left:14px">
+			<i class="fa fa-refresh"></i> <span class="btn-refresh-label">Refresh Now</span>
+		</button>
 	</div>
 
 	<!-- Swipe log stats (matches SQL Server columns) -->
 	<div class="sec-lbl">Swipe Log Statistics</div>
-	<div class="stats-grid g4" style="margin-bottom:22px">
+	<div class="stats-grid g3" style="margin-bottom:22px">
 		<div class="stat-card sc-navy">
 			<div class="stat-num sn-navy" id="st-total">—</div>
-			<div class="stat-lbl">Total Records Imported</div>
-			<div class="stat-sub">from dbo.iclock_trans_ajim</div>
-		</div>
-		<div class="stat-card sc-navy">
-			<div class="stat-num sn-navy" id="st-att-logs">—</div>
-			<div class="stat-lbl">Attendance Logs Created</div>
+			<div class="stat-lbl">Total Swipes Imported</div>
 			<div class="stat-sub">
+				from dbo.iclock_trans_ajim &nbsp;·&nbsp;
 				<a href="/app/attendance-log" target="_blank" style="color:var(--navy-mid); font-size:.72rem">
-					View Attendance Log →
+					View Log →
 				</a>
 			</div>
 		</div>
 		<div class="stat-card sc-gold">
 			<div class="stat-num sn-gold" id="st-linked">—</div>
-			<div class="stat-lbl">Linked to a Student</div>
+			<div class="stat-lbl">Swipes Identified</div>
+			<div class="stat-sub">card matched to a known student</div>
 		</div>
 		<div class="stat-card sc-maroon">
 			<div class="stat-num sn-maroon" id="st-unlinked">—</div>
-			<div class="stat-lbl">Student Unknown</div>
-			<div class="stat-sub">Assign cards below to resolve</div>
+			<div class="stat-lbl">Swipes Unidentified</div>
+			<div class="stat-sub">card not yet assigned — resolve below</div>
 		</div>
 	</div>
 
@@ -756,6 +1107,14 @@ function build_html() {
 				</button>
 			</div>
 		</div>
+		<div class="dt-toolbar">
+			<input class="dt-search" type="search" placeholder="Search RFID UID, terminal, area…">
+			<div class="dt-pagination">
+				<span class="dt-page-info"></span>
+				<button class="dt-btn dt-btn-prev" disabled>&#8592; Previous</button>
+				<button class="dt-btn dt-btn-next" disabled>Next &#8594;</button>
+			</div>
+		</div>
 		<div class="tbl-scroll">
 			<table class="rfid-tbl">
 				<thead>
@@ -774,7 +1133,6 @@ function build_html() {
 				</tbody>
 			</table>
 		</div>
-		<div class="tbl-footer">Showing up to 500 unassigned UIDs, sorted by most recent punch.</div>
 	</div>
 
 	<!-- ══ TAB 2: Student Cards ══ -->
@@ -786,6 +1144,14 @@ function build_html() {
 					Each student below has an RFID card. Their punches are automatically
 					linked to attendance records.
 				</div>
+			</div>
+		</div>
+		<div class="dt-toolbar">
+			<input class="dt-search" type="search" placeholder="Search student, RFID, programme, department…">
+			<div class="dt-pagination">
+				<span class="dt-page-info"></span>
+				<button class="dt-btn dt-btn-prev" disabled>&#8592; Previous</button>
+				<button class="dt-btn dt-btn-next" disabled>Next &#8594;</button>
 			</div>
 		</div>
 		<div class="tbl-scroll">
@@ -816,11 +1182,20 @@ function build_html() {
 			the machine logs it in the SQL Server database (<code>dbo.iclock_trans_ajim</code>)
 			with the columns: <code>emp_code</code>, <code>punch_time</code>,
 			<code>terminal_alias</code>, <code>area_alias</code>.<br><br>
-			SLCM pulls those records every <strong>5 minutes</strong> automatically in the background.
+			SLCM pulls those records every <strong>minute</strong> automatically in the background,
+			or immediately if you click <strong>Refresh Now</strong> above.
 			This page refreshes the display every <strong>30 seconds</strong> —
 			new rows appear at the <strong>top</strong>, highlighted briefly.
 			A student showing <em>Unknown</em> means that card is not yet assigned —
 			go to the <strong>Unassigned Cards</strong> tab to fix it.
+		</div>
+		<div class="dt-toolbar">
+			<input class="dt-search" type="search" placeholder="Search RFID UID, student, terminal, area…">
+			<div class="dt-pagination">
+				<span class="dt-page-info"></span>
+				<button class="dt-btn dt-btn-prev" disabled>&#8592; Previous</button>
+				<button class="dt-btn dt-btn-next" disabled>Next &#8594;</button>
+			</div>
 		</div>
 		<div class="tbl-scroll">
 			<table class="rfid-tbl">
@@ -841,7 +1216,7 @@ function build_html() {
 			</table>
 		</div>
 		<div class="tbl-footer">
-			Showing last 200 punches. All records are in the Attendance Log doctype.
+			All records are in the Attendance Log doctype. Use the search box to filter.
 		</div>
 	</div>
 

@@ -43,23 +43,24 @@ def get_rfid_summary():
         WHERE al.student IS NULL OR al.student = ''
         GROUP BY al.rfid_uid
         ORDER BY last_seen DESC
-        LIMIT 500
     """, as_dict=True)
 
-    # Students already linked
+    # Students already linked — either rfid_uid set on Student Master OR
+    # they appear as student on an Attendance Log (covers backfill gap).
     linked_students = frappe.db.sql("""
         SELECT
-            sm.name         AS student_id,
-            sm.first_name   AS student_name,
-            sm.programme    AS programme,
+            sm.name                                         AS student_id,
+            sm.first_name                                   AS student_name,
+            sm.programme                                    AS programme,
             sm.batch_year,
             sm.department,
-            sm.rfid_uid,
-            COUNT(al.name)  AS total_swipes,
-            MAX(al.swipe_time) AS last_swipe
+            COALESCE(sm.rfid_uid, MAX(al.rfid_uid))         AS rfid_uid,
+            COUNT(al.name)                                  AS total_swipes,
+            MAX(al.swipe_time)                              AS last_swipe
         FROM `tabStudent Master` sm
         LEFT JOIN `tabAttendance Log` al ON al.student = sm.name
-        WHERE sm.rfid_uid IS NOT NULL AND sm.rfid_uid != ''
+        WHERE (sm.rfid_uid IS NOT NULL AND sm.rfid_uid != '')
+           OR (al.student IS NOT NULL AND al.student != '')
         GROUP BY sm.name, sm.first_name, sm.programme, sm.batch_year, sm.department, sm.rfid_uid
         ORDER BY sm.first_name ASC
     """, as_dict=True)
@@ -78,7 +79,6 @@ def get_rfid_summary():
         FROM `tabAttendance Log` al
         LEFT JOIN `tabStudent Master` sm ON sm.name = al.student
         ORDER BY al.swipe_time DESC
-        LIMIT 100
     """, as_dict=True)
 
     return {
@@ -107,7 +107,8 @@ def get_live_feed(since_swipe_time=None):
     args = []
     where = ""
     if since_swipe_time:
-        where = "WHERE al.swipe_time > %s"
+        # Use >= to avoid missing swipes at the exact same second; JS deduplicates by rfid_uid+swipe_time
+        where = "WHERE al.swipe_time >= %s"
         args.append(since_swipe_time)
 
     new_logs = frappe.db.sql(f"""
@@ -124,7 +125,6 @@ def get_live_feed(since_swipe_time=None):
         LEFT JOIN `tabStudent Master` sm ON sm.name = al.student
         {where}
         ORDER BY al.swipe_time DESC
-        LIMIT 50
     """, args, as_dict=True)
 
     return {"stats": stats, "new_logs": new_logs}
@@ -138,6 +138,8 @@ def link_rfid_to_student(rfid_uid, student):
     Assign rfid_uid to a Student Master record.
     Backfills all existing Attendance Logs for that UID.
     """
+    frappe.only_for("System Manager")
+
     rfid_uid = (rfid_uid or "").strip()
     student  = (student  or "").strip()
 
@@ -181,12 +183,19 @@ def link_rfid_to_student(rfid_uid, student):
 
 @frappe.whitelist()
 def unlink_rfid_from_student(student):
-    """Remove the rfid_uid from a Student Master record."""
+    """Remove the rfid_uid from a Student Master record and clear linked Attendance Logs."""
     frappe.only_for("System Manager")
     if not frappe.db.exists("Student Master", student):
         frappe.throw(f"Student '{student}' not found.")
     old_uid = frappe.db.get_value("Student Master", student, "rfid_uid")
     frappe.db.set_value("Student Master", student, "rfid_uid", None)
+    # Clear student link from all logs for this card so they re-appear as unassigned
+    if old_uid:
+        frappe.db.sql("""
+            UPDATE `tabAttendance Log`
+            SET student = NULL
+            WHERE student = %s AND rfid_uid = %s
+        """, (student, old_uid))
     frappe.db.commit()
     return {"success": True, "message": f"RFID UID '{old_uid}' removed from student."}
 
@@ -200,6 +209,8 @@ def get_export_data():
     program RFID cards: Student ID, Name, Programme, Batch, Department.
     Excludes students who already have an RFID UID assigned.
     """
+    frappe.only_for("System Manager")
+
     rows = frappe.db.sql("""
         SELECT
             sm.name         AS student_id,
@@ -217,6 +228,38 @@ def get_export_data():
 
 
 # ── Bulk import (CSV upload) ──────────────────────────────────────
+
+@frappe.whitelist()
+def read_uploaded_file(file_url):
+    """Read an uploaded CSV or Excel file and return its content as CSV text."""
+    frappe.only_for("System Manager")
+
+    import os
+    try:
+        file_doc = frappe.get_doc("File", {"file_url": file_url})
+        file_path = file_doc.get_full_path()
+        if not os.path.exists(file_path):
+            return {"success": False, "error": "File not found on server."}
+
+        if file_path.endswith(".xlsx") or file_path.endswith(".xls"):
+            # Convert Excel to CSV text
+            import openpyxl, io
+            wb = openpyxl.load_workbook(file_path, data_only=True)
+            ws = wb.active
+            lines = []
+            for row in ws.iter_rows(values_only=True):
+                if any(cell is not None for cell in row):
+                    lines.append(",".join(f'"{str(c) if c is not None else ""}"' for c in row))
+            content = "\n".join(lines)
+        else:
+            with open(file_path, "r", encoding="utf-8-sig") as f:
+                content = f.read()
+
+        return {"success": True, "content": content}
+    except Exception:
+        frappe.log_error(title="RFID read_uploaded_file error", message=frappe.get_traceback())
+        return {"success": False, "error": "Could not read file. Ensure it is a valid CSV or Excel (.xlsx) file."}
+
 
 @frappe.whitelist()
 def bulk_import_rfid(csv_data):

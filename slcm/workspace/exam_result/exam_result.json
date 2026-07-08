@@ -1,7 +1,16 @@
 {
  "app": "slcm",
- "charts": [],
- "content": "[{\"id\":\"er-hdr-overview\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Overview</b></span>\",\"col\":12}},{\"id\":\"er-nc-1\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Exam Plans\",\"col\":3}},{\"id\":\"er-nc-2\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Exam Plans\",\"col\":3}},{\"id\":\"er-nc-3\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Courses Mapped\",\"col\":3}},{\"id\":\"er-hdr-access\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Access &amp; Settings</span>\",\"col\":12}},{\"id\":\"er-sc-3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Result Access Settings\",\"col\":3}},{\"id\":\"K-YiSThWuA\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Term Result Settings\",\"col\":3}},{\"id\":\"er-hdr-results\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Results</b></span>\",\"col\":12}},{\"id\":\"er-sc-1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Course Results\",\"col\":3}},{\"id\":\"WZHBU8OIJf\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Term Result\",\"col\":3}},{\"id\":\"lnDHp7XAtv\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Publish Result\",\"col\":3}}]",
+ "charts": [
+  {
+   "chart_name": "Re-Exam Payment Status",
+   "label": "Re-Exam Payment Status"
+  },
+  {
+   "chart_name": "Improvement Exam Payment Status",
+   "label": "Improvement Exam Payment Status"
+  }
+ ],
+ "content": "[{\"id\":\"er-hdr-overview\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Overview</b></span>\",\"col\":12}},{\"id\":\"er-nc-1\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Re Exam Registrations\",\"col\":3}},{\"id\":\"er-nc-2\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Re Exam Paid\",\"col\":3}},{\"id\":\"er-nc-3\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Improvement Exam Registrations\",\"col\":3}},{\"id\":\"er-nc-4\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Improvement Exam Paid\",\"col\":3}},{\"id\":\"er-hdr-analytics\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Analytics</span>\",\"col\":12}},{\"id\":\"er-ch-1\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Re-Exam Payment Status\",\"col\":6}},{\"id\":\"er-ch-2\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Improvement Exam Payment Status\",\"col\":6}},{\"id\":\"er-hdr-access\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Access &amp; Settings</span>\",\"col\":12}},{\"id\":\"er-sc-3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Result Access Settings\",\"col\":3}},{\"id\":\"K-YiSThWuA\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Term Result Settings\",\"col\":3}},{\"id\":\"er-hdr-results\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Results</b></span>\",\"col\":12}},{\"id\":\"er-sc-1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Course Results\",\"col\":3}},{\"id\":\"WZHBU8OIJf\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Term Result\",\"col\":3}},{\"id\":\"lnDHp7XAtv\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Publish Result\",\"col\":3}}]",
  "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
@@ -15,21 +24,25 @@
  "link_to": null,
  "link_type": "DocType",
  "links": [],
- "modified": "2026-04-08 21:06:15.789485",
+ "modified": "2026-06-29 00:00:00.000000",
  "module": "SLCM",
  "name": "Exam Result",
  "number_cards": [
   {
-   "label": "Total Exam Plans",
-   "number_card_name": "Total Exam Plans"
+   "label": "Re Exam Registrations",
+   "number_card_name": "Re Exam Registrations"
   },
   {
-   "label": "Active Exam Plans",
-   "number_card_name": "Active Exam Plans"
+   "label": "Re Exam Paid",
+   "number_card_name": "Re Exam Paid"
   },
   {
-   "label": "Courses Mapped",
-   "number_card_name": "Courses Mapped"
+   "label": "Improvement Exam Registrations",
+   "number_card_name": "Improvement Exam Registrations"
+  },
+  {
+   "label": "Improvement Exam Paid",
+   "number_card_name": "Improvement Exam Paid"
   }
  ],
  "parent_page": null,

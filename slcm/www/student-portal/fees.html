@@ -1183,6 +1183,54 @@ window.SP_FEE_CHART = {
   {% if has_fee_demands %}
   <div id="fee-tab-demands" class="fee-tab-panel">
 
+    {# ── Payment Analytics Panel ─────────────────────────── #}
+    {% if da_total > 0 %}
+    <div class="spda-wrap">
+      {# Progress bar #}
+      <div class="spda-progress-row">
+        <div class="spda-progress-bar">
+          <div class="spda-progress-fill spda-fill-paid"   style="width:{{ ((da_paid_amt / da_total_amt * 100) if da_total_amt > 0 else 0)|round|int }}%;"></div>
+          <div class="spda-progress-fill spda-fill-waived" style="width:{{ ((da_waived_amt / da_total_amt * 100) if da_total_amt > 0 else 0)|round|int }}%;"></div>
+        </div>
+        <span class="spda-pct-label">{{ da_pct }}% settled</span>
+      </div>
+      {# Stat cards #}
+      <div class="spda-stats">
+        <div class="spda-stat spda-stat-total">
+          <div class="spda-stat-val">{{ da_fmt_total }}</div>
+          <div class="spda-stat-lbl">Total Levied</div>
+          <div class="spda-stat-sub">{{ da_total }} demand{{ 's' if da_total != 1 else '' }}</div>
+        </div>
+        <div class="spda-stat spda-stat-paid">
+          <div class="spda-stat-val">{{ da_fmt_paid }}</div>
+          <div class="spda-stat-lbl">Settled</div>
+          <div class="spda-stat-sub">{{ da_paid }} paid{% if da_waived %} · {{ da_waived }} waived{% endif %}</div>
+        </div>
+        {% if da_waived_amt > 0 %}
+        <div class="spda-stat spda-stat-waived">
+          <div class="spda-stat-val">{{ da_fmt_waived }}</div>
+          <div class="spda-stat-lbl">Waived Off</div>
+          <div class="spda-stat-sub">concessions applied</div>
+        </div>
+        {% endif %}
+        <div class="spda-stat {% if da_overdue > 0 %}spda-stat-overdue{% else %}spda-stat-due{% endif %}">
+          <div class="spda-stat-val">{{ da_fmt_outstanding }}</div>
+          <div class="spda-stat-lbl">Outstanding</div>
+          <div class="spda-stat-sub">
+            {% if da_overdue > 0 %}{{ da_overdue }} overdue{% elif da_pending > 0 %}{{ da_pending }} pending{% else %}all clear{% endif %}
+          </div>
+        </div>
+      </div>
+      {# Legend dots #}
+      <div class="spda-legend">
+        <span class="spda-dot spda-dot-paid"></span><span class="spda-legend-lbl">Settled</span>
+        {% if da_waived_amt > 0 %}<span class="spda-dot spda-dot-waived"></span><span class="spda-legend-lbl">Waived</span>{% endif %}
+        {% if da_outstanding > 0 %}<span class="spda-dot {% if da_overdue > 0 %}spda-dot-overdue{% else %}spda-dot-pending{% endif %}"></span>
+        <span class="spda-legend-lbl">{% if da_overdue > 0 %}Overdue{% else %}Outstanding{% endif %}</span>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+
     {# Auto-calculate all payable demands server-side #}
     {% if payment_enabled %}
     {% set ns_pay = namespace(total=0, count=0, names=[]) %}
@@ -2218,6 +2266,9 @@ function spFeeTab(tab) {
   };
 
   function _launchBulk(order, names){
+    /* Prevent ondismiss from logging "Cancelled" when payment.failed already fired */
+    var _failedAlready = false;
+
     var opts = {
       key:         order.key_id,
       amount:      order.amount,
@@ -2230,6 +2281,7 @@ function spFeeTab(tab) {
       modal: {
         confirm_close: true,
         ondismiss: function(){
+          if (_failedAlready) { return; }
           toast('Cancelled', 'Payment was cancelled. No charges applied.', 'info');
           spCall('slcm.api.student_payment.cancel_bulk_demand_payment',
             { fee_demand_names: JSON.stringify(names), integration_request: order.integration_request||'' },
@@ -2268,8 +2320,23 @@ function spFeeTab(tab) {
     };
     var rzp = new Razorpay(opts);
     rzp.on('payment.failed', function(r){
-      toast('Payment Failed', (r.error && r.error.description) || 'Payment was not completed.', 'error');
-      setTimeout(function(){ window.location.reload(); }, 2200);
+      _failedAlready = true;
+      var errDesc = (r.error && r.error.description) || 'Payment was not completed.';
+      var errCode = (r.error && r.error.code)        || '';
+      var pid     = (r.error && r.error.metadata && r.error.metadata.payment_id) || '';
+      toast('Payment Failed', errDesc, 'error');
+      spCall(
+        'slcm.api.student_payment.mark_demand_payment_failed',
+        {
+          fee_demand_names:    JSON.stringify(names),
+          integration_request: order.integration_request || '',
+          payment_id:          pid,
+          error_code:          errCode,
+          error_description:   errDesc,
+        },
+        function(){ setTimeout(function(){ window.location.reload(); }, 2200); },
+        function(){ setTimeout(function(){ window.location.reload(); }, 2200); }
+      );
     });
     rzp.open();
   }
@@ -2351,8 +2418,105 @@ function spFeeTab(tab) {
 })();
 </script>
 
-{# ── Bulk payment styles ──────────────────────────────────────────── #}
+{# ── Demand analytics + bulk payment styles ──────────────────────── #}
 <style>
+/* ── Demand Payment Analytics ────────────────────────────────────── */
+.spda-wrap {
+  margin: 12px 0 16px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.spda-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.spda-progress-bar {
+  flex: 1;
+  height: 8px;
+  background: #f3f4f6;
+  border-radius: 99px;
+  overflow: hidden;
+  display: flex;
+}
+.spda-progress-fill {
+  height: 100%;
+  transition: width .5s ease;
+}
+.spda-fill-paid   { background: #22c55e; }
+.spda-fill-waived { background: #a78bfa; }
+.spda-pct-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  white-space: nowrap;
+}
+.spda-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.spda-stat {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+.spda-stat-total  { background: #f9fafb; }
+.spda-stat-paid   { background: #f0fdf4; border-color: #bbf7d0; }
+.spda-stat-waived { background: #faf5ff; border-color: #e9d5ff; }
+.spda-stat-due    { background: #eff6ff; border-color: #bfdbfe; }
+.spda-stat-overdue{ background: #fff1f2; border-color: #fecdd3; }
+.spda-stat-val {
+  font-size: 15px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -.3px;
+}
+.spda-stat-paid   .spda-stat-val { color: #16a34a; }
+.spda-stat-waived .spda-stat-val { color: #7c3aed; }
+.spda-stat-overdue .spda-stat-val{ color: #be123c; }
+.spda-stat-due    .spda-stat-val { color: #1d4ed8; }
+.spda-stat-lbl {
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  margin-top: 2px;
+}
+.spda-stat-sub {
+  font-size: 10px;
+  color: #9ca3af;
+  margin-top: 1px;
+}
+.spda-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.spda-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.spda-dot-paid    { background: #22c55e; }
+.spda-dot-waived  { background: #a78bfa; }
+.spda-dot-overdue { background: #f43f5e; }
+.spda-dot-pending { background: #60a5fa; }
+.spda-legend-lbl {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 500;
+  margin-right: 8px;
+}
+@media (max-width: 480px) {
+  .spda-stats { grid-template-columns: 1fr 1fr; }
+}
 /* ── Pay All bar ─────────────────────────────────────────────────── */
 .spd-pay-all-bar {
   display: flex;

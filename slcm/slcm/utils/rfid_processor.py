@@ -1,22 +1,24 @@
 import frappe
 from frappe.utils import get_datetime, add_to_date
 
+
 def process_log_entry(log_doc):
-	"""Process a raw attendance log entry"""
+	"""Process a raw attendance log entry and mark Student Attendance via RFID."""
 	if log_doc.processed:
 		return
-		
+
 	swipe_time = get_datetime(log_doc.swipe_time)
-	
-	# 1. Anti-Flood / Debounce Check
-	# Ignore if same student swiped within last 10 minutes
-	recent_logs = frappe.db.count("Attendance Log", {
-		"rfid_uid": log_doc.rfid_uid,
-		"name": ["!=", log_doc.name],
-		"swipe_time": [">", add_to_date(swipe_time, minutes=-10)],
-		"swipe_time": ["<", swipe_time]
-	})
-	
+
+	# 1. Anti-Flood / Debounce — ignore if same RFID swiped within last 10 minutes
+	window_start = add_to_date(swipe_time, minutes=-10)
+	recent_logs = frappe.db.sql("""
+		SELECT COUNT(*) FROM `tabAttendance Log`
+		WHERE rfid_uid = %s
+		AND name != %s
+		AND swipe_time > %s
+		AND swipe_time < %s
+	""", (log_doc.rfid_uid, log_doc.name, window_start, swipe_time))[0][0]
+
 	if recent_logs > 0:
 		log_doc.processed = 1
 		log_doc.db_update()
@@ -25,29 +27,42 @@ def process_log_entry(log_doc):
 	# 2. Identify Student
 	student = frappe.db.get_value("Student Master", {"rfid_uid": log_doc.rfid_uid})
 	if not student:
-		frappe.msgprint(f"Unknown RFID Tag: {log_doc.rfid_uid}")
-		# We can leave it unprocessed or mark as 'Unknown'
+		frappe.log_error(
+			message=f"Unknown RFID Tag: {log_doc.rfid_uid}",
+			title="RFID Processor - Unknown Tag"
+		)
+		log_doc.processed = 1
+		log_doc.db_update()
 		return
 
 	log_doc.student = student
 	log_doc.db_update()
-	
-	# 3. Identify Session context
+
+	# 3. Resolve device → room
 	if not log_doc.device_id:
+		# No device info — cannot match a session; mark processed to avoid infinite retry
+		log_doc.processed = 1
+		log_doc.db_update()
 		return
-		
-	# Get Device Location (Room)
-	device_location = frappe.db.get_value("RFID Device", {"device_id": log_doc.device_id}, "location")
+
+	device_location = frappe.db.get_value(
+		"RFID Device", {"device_id": log_doc.device_id}, "location"
+	)
 	if not device_location:
+		frappe.log_error(
+			message=f"RFID device '{log_doc.device_id}' has no location configured.",
+			title="RFID Processor - Device Not Configured"
+		)
+		log_doc.processed = 1
+		log_doc.db_update()
 		return
-		
-	# Find matching session
-	# Matches: Same Room, Same Date, Time overlapping
+
+	# 4. Find a matching Attendance Session (same room, same date, swipe within session window)
 	log_date = swipe_time.date()
 	log_time_str = swipe_time.strftime('%H:%M:%S')
-	
+
 	sessions = frappe.db.sql("""
-		SELECT name, course_schedule, course_offering
+		SELECT name, course_schedule, course_offering, session_type, duration_hours
 		FROM `tabAttendance Session`
 		WHERE room = %s
 		AND session_date = %s
@@ -56,20 +71,29 @@ def process_log_entry(log_doc):
 		AND session_status != 'Cancelled'
 		LIMIT 1
 	""", (device_location, log_date, log_time_str, log_time_str), as_dict=True)
-	
+
 	if not sessions:
-		# No active session found for this room/time
+		# No active session at this time — mark processed so it isn't retried forever
+		frappe.log_error(
+			message=(
+				f"No active session found for student {student}, "
+				f"device {log_doc.device_id}, room {device_location}, "
+				f"date {log_date}, time {log_time_str}"
+			),
+			title="RFID Processor - No Session Found"
+		)
+		log_doc.processed = 1
+		log_doc.db_update()
 		return
-		
+
 	session = sessions[0]
-	
-	# 4. Mark Attendance
-	# Find existing student attendance record for this session
+
+	# 5. Mark Attendance on the existing Student Attendance record for this session
 	attendance_name = frappe.db.exists("Student Attendance", {
 		"student": student,
 		"attendance_session": session.name
 	})
-	
+
 	if attendance_name:
 		doc = frappe.get_doc("Student Attendance", attendance_name)
 		if doc.status != "Present":
@@ -77,14 +101,35 @@ def process_log_entry(log_doc):
 			doc.source = "RFID"
 			doc.in_time = swipe_time
 			doc.attendance_log = log_doc.name
+			# Ensure course_offer is set so recalculation triggers correctly
+			if not doc.course_offer and session.course_offering:
+				doc.course_offer = session.course_offering
+			# Keep hours_counted aligned with the session duration
+			if session.duration_hours:
+				doc.hours_counted = session.duration_hours
 			doc.save(ignore_permissions=True)
-			
 			log_doc.student_attendance = doc.name
 	else:
-		# If record doesn't exist (student not enrolled or session not initialized properly)
-		# We could optionally create it if 'Ad-hoc' attendance is allowed
-		# For now, we only update existing records to be safe
-		pass
+		# Record doesn't exist — session wasn't initialised for this student.
+		# Create it now so RFID presence is captured.
+		if session.course_offering:
+			new_att = frappe.get_doc({
+				"doctype": "Student Attendance",
+				"student": student,
+				"attendance_session": session.name,
+				"course_offer": session.course_offering,
+				"course_schedule": session.course_schedule,
+				"attendance_date": log_date,
+				"date": log_date,
+				"session_type": session.session_type or "Lecture",
+				"status": "Present",
+				"source": "RFID",
+				"in_time": swipe_time,
+				"attendance_log": log_doc.name,
+				"hours_counted": session.duration_hours or 1.0,
+			})
+			new_att.insert(ignore_permissions=True)
+			log_doc.student_attendance = new_att.name
 
 	log_doc.processed = 1
 	log_doc.db_update()

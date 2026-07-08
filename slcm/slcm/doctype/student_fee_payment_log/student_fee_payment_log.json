@@ -17,6 +17,8 @@
   "razorpay_order_id",
   "transaction_id",
   "triggered_by",
+  "paid_by_role",
+  "paid_by_name",
   "col_break_2",
   "attempt_type",
   "retry_count",
@@ -128,6 +130,23 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Triggered By",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "paid_by_role",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Paid By",
+   "options": "\nStudent\nParent\nStaff\nSystem",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "paid_by_name",
+   "fieldtype": "Data",
+   "in_list_view": 0,
+   "label": "Payer Name",
    "read_only": 1
   },
   {

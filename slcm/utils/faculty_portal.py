@@ -8,12 +8,13 @@ def get_faculty_name():
     """
     Return the Faculty doc name for the current session user.
 
-    Tries four strategies in order so the lookup succeeds even when the
-    Faculty record was created before the portal user account existed:
+    Tries five strategies in order:
       1. Faculty.user_id == session user  (fastest, canonical)
       2. Faculty.email   == session user  (common setup path)
       3. Faculty.email   == User.email    (handles aliased logins)
       4. Faculty.user_id == User.email    (cross-field alias)
+      5. Admin/System Manager preview — returns first active Faculty record
+         so administrators can preview the portal without a personal Faculty record.
 
     On first successful match via strategies 2-4, back-fills user_id so
     future lookups hit strategy 1.
@@ -48,7 +49,43 @@ def get_faculty_name():
     except Exception:
         pass
 
+    # Strategy 5 — admin/system-manager preview using any active Faculty record
+    if _is_admin_user(user):
+        name = frappe.db.get_value("Faculty", {"status": "Active"}, "name", order_by="name asc")
+        if name:
+            return name
+
     return None
+
+
+def _is_admin_user(user):
+    """Return True if the user holds the Administrator or System Manager role."""
+    if user == "Administrator":
+        return True
+    try:
+        roles = frappe.get_roles(user)
+        return "System Manager" in roles or "Administrator" in roles
+    except Exception:
+        return False
+
+
+def is_admin_preview(user=None):
+    """
+    Return True when the current user is viewing the portal in admin-preview mode
+    (i.e. they are an admin/system manager with no personal Faculty record).
+    """
+    if user is None:
+        user = frappe.session.user
+    if not user or user == "Guest":
+        return False
+    if not _is_admin_user(user):
+        return False
+    # They have a real faculty record — not preview mode
+    direct = (
+        frappe.db.get_value("Faculty", {"user_id": user}, "name")
+        or frappe.db.get_value("Faculty", {"email": user}, "name")
+    )
+    return not direct
 
 
 def _backfill_user_id(faculty_name, user):
@@ -83,6 +120,7 @@ def set_portal_settings(context):
         context.fp_settings = get_faculty_portal_settings()
     except Exception:
         context.fp_settings = {}
+    context.is_admin_preview = is_admin_preview()
 
 
 def set_nav_defaults(context):

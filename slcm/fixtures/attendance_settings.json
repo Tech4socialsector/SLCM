@@ -1,0 +1,56 @@
+[
+ {
+  "allow_condonation": 1,
+  "allow_fa_mfa": 1,
+  "attendance_lock_days": 7,
+  "attendance_unit": "Session",
+  "auto_calculate_summary": 1,
+  "calculation_frequency": "Daily",
+  "condonation_approval_role": "",
+  "condonation_min_percentage": 60.0,
+  "core_course_hours": 60,
+  "core_office_hours": 1,
+  "docstatus": 0,
+  "doctype": "Attendance Settings",
+  "elective_course_hours": 40,
+  "elective_office_hours": 2,
+  "enable_parent_rfid_alert": 1,
+  "enable_rfid": 1,
+  "fa_application_days_after_exam": 10,
+  "fa_application_days_before_exam": 10,
+  "include_office_hours_in_attendance": 1,
+  "late_entry_buffer_minutes": 15,
+  "minimum_attendance_percentage": 75.0,
+  "modified": "2026-06-23 10:40:36.287251",
+  "mssql_database": "etpdb",
+  "mssql_last_processed_id": 1699905,
+  "mssql_password": "********",
+  "mssql_port": 1433,
+  "mssql_server": "192.168.10.10",
+  "mssql_username": "ajim",
+  "mssql_view": "dbo.iclock_trans_ajim",
+  "name": "Attendance Settings",
+  "parent_alert_active_days": [
+   {
+    "day": "Monday"
+   },
+   {
+    "day": "Tuesday"
+   },
+   {
+    "day": "Wednesday"
+   },
+   {
+    "day": "Thursday"
+   },
+   {
+    "day": "Friday"
+   }
+  ],
+  "parent_alert_email_template": "Parent RFID Absence Alert",
+  "parent_alert_from_time": null,
+  "parent_alert_to_time": null,
+  "rfid_absence_threshold_hours": 12,
+  "rfid_swipe_mode": "In and Out"
+ }
+]

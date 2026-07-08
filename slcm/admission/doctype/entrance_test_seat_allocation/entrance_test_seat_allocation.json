@@ -616,6 +616,7 @@
   }
  ],
  "grid_page_length": 50,
+ "image_field": "profile",
  "index_web_pages_for_search": 1,
  "links": [],
  "modified": "2026-07-08 15:03:23.614989",

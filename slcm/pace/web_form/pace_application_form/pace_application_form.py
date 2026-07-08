@@ -43,7 +43,7 @@ def _pace_portal_user_owns_application(application_name):
         return True
 
     roles = frappe.get_roles(user)
-    admin_roles = {"System Manager", "PACE Admission Manager", "Admission Admin"}
+    admin_roles = {"System Manager", "PACE Admission Manager", "Admission Admin", "Document Verification Admin"}
     if set(roles).intersection(admin_roles):
         return True
 
@@ -56,8 +56,13 @@ def _pace_portal_user_owns_application(application_name):
     ) or {}
     
     if "Document Verifier" in roles:
+        # Document Verifier can edit if they are assigned
         if row.get("assigned_verifier") == user:
             return True
+        # Or if we want to allow all document verifiers, we could just add it to admin_roles,
+        # but let's keep the assigned check if that was intended, or just let them if they have write permission.
+        # Actually, let's just check `has_permission("read")` or similar later.
+
 
     if row.get("owner") == user:
         return True
@@ -135,8 +140,12 @@ def get_context(context):
             doc_email = frappe.db.get_value("PACE Application", doc_name, "email_address")
             
             if owner != user and (doc_email or "").lower() != (email or "").lower():
-                admin_roles = ["System Manager", "Admission Admin", "Administrator", "Campus Admin", "PACE Admission Manager"]
+                admin_roles = ["System Manager", "Admission Admin", "Administrator", "Campus Admin", "PACE Admission Manager", "Document Verification Admin"]
                 has_admin = any(r in admin_roles for r in frappe.get_roles(user))
+                # Allow assigned document verifier
+                if not has_admin and "Document Verifier" in frappe.get_roles(user):
+                    if frappe.db.get_value("PACE Application", doc_name, "assigned_verifier") == user:
+                        has_admin = True
                 if not has_admin:
                     frappe.throw(_("You do not have permission to view this PACE Application."), frappe.PermissionError)
 
@@ -391,9 +400,9 @@ def save_pace_draft(data, ignore_mandatory=True, retain_draft_status=False):
 
     # Load existing or create new
     if name and frappe.db.exists("PACE Application", name):
-        doc = frappe.get_doc("PACE Application", name, check_permission=False)
-        if doc.owner != user and (getattr(doc, "email_address", "") or "").lower() != (email or "").lower():
+        if not _pace_portal_user_owns_application(name):
             return {"status": "error", "message": _("You do not have permission to edit this application.")}
+        doc = frappe.get_doc("PACE Application", name, check_permission=False)
         current_status = (getattr(doc, "status", "") or "").strip()
         if current_status and current_status not in ("Draft", "Returned for Correction", ""):
             return {"status": "error", "message": _("Only Draft or Returned for Correction applications can be saved from the portal.")}
