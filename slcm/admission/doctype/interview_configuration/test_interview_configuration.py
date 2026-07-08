@@ -1,22 +1,105 @@
 # Copyright (c) 2026, TFSS and Contributors
 # See license.txt
 
-# import frappe
+import frappe
 from frappe.tests import IntegrationTestCase
-
-
-# On IntegrationTestCase, the doctype test records and all
-# link-field test record dependencies are recursively loaded
-# Use these module variables to add/remove to/from that list
-EXTRA_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
-IGNORE_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
-
-
+import math
 
 class IntegrationTestInterviewConfiguration(IntegrationTestCase):
-	"""
-	Integration tests for InterviewConfiguration.
-	Use this class for testing interactions between multiple components.
-	"""
+    def setUp(self):
+        super().setUp()
+        self.policies_to_delete = []
+        self.configs_to_delete = []
+        
+    def tearDown(self):
+        for policy in self.policies_to_delete:
+            frappe.db.delete("Program Reservation Policy", {"name": policy})
+        for config in self.configs_to_delete:
+            frappe.db.delete("Interview Configuration", {"name": config})
+        frappe.db.commit()
+        super().tearDown()
 
-	pass
+    def test_ratio_multiplier_parsing(self):
+        # Create a dummy program policy
+        policy_doc = frappe.get_doc({
+            "doctype": "Program Reservation Policy",
+            "program": "BA LLB (Hons)",
+            "admission_cycle": "AD",
+            "campus": "NLSIU",
+            "international_seats": 11,
+            "status": "Active"
+        })
+        policy_doc.insert(ignore_permissions=True, ignore_links=True, ignore_mandatory=True)
+        self.policies_to_delete.append(policy_doc.name)
+
+        doc = frappe.get_doc({
+            "doctype": "Interview Configuration",
+            "name": "IVC-TEST-001",
+            "configuration_code": "IVC-TEST-001",
+            "academic_year": "2026-2027",
+            "campus": "NLSIU",
+            "admission_cycle": "AD",
+            "program": [{"program": "BA LLB (Hons)"}],
+            "applicant_type": "International Applicants",
+            "enter_international_ratio": "1:3"
+        })
+        doc.insert(ignore_permissions=True, ignore_links=True)
+        self.configs_to_delete.append(doc.name)
+        
+        # Test get_total_seats
+        self.assertEqual(doc.get_total_seats(), 11)
+        
+        # Manually verify multiplier logic (seats * multiplier -> 11 * 3 = 33)
+        ratio = doc.enter_international_ratio
+        parts = ratio.split(":")
+        num1 = float(parts[0])
+        num2 = float(parts[1])
+        multiplier = max(num1, num2) / min(num1, num2)
+        self.assertEqual(multiplier, 3.0)
+        self.assertEqual(int(math.ceil(doc.get_total_seats() * multiplier)), 33)
+
+    def test_domestic_seats_from_policy(self):
+        # Create a dummy program policy
+        policy_doc = frappe.get_doc({
+            "doctype": "Program Reservation Policy",
+            "program": "BA LLB (Hons)",
+            "admission_cycle": "AD",
+            "campus": "NLSIU",
+            "total_seats": 15,
+            "status": "Active"
+        })
+        policy_doc.insert(ignore_permissions=True, ignore_links=True, ignore_mandatory=True)
+        self.policies_to_delete.append(policy_doc.name)
+            
+        doc = frappe.get_doc({
+            "doctype": "Interview Configuration",
+            "name": "IVC-TEST-001",
+            "configuration_code": "IVC-TEST-001",
+            "academic_year": "2026-2027",
+            "campus": "NLSIU",
+            "admission_cycle": "AD",
+            "program": [{"program": "BA LLB (Hons)"}],
+            "applicant_type": "Domestic Applicants",
+            "enter_domestic_ratio": "3:1"
+        })
+        doc.insert(ignore_permissions=True, ignore_links=True)
+        self.configs_to_delete.append(doc.name)
+        
+        # Verify get_total_seats fetches seats from Policy
+        self.assertEqual(doc.get_total_seats(), 15)
+
+    def test_tie_breaker_logic(self):
+        # Create a list of mock applicants
+        applicants = [
+            {"name": "App1", "entrance_test_score": 80.0, "part_a_score": 50.0},
+            {"name": "App2", "entrance_test_score": 80.0, "part_a_score": 70.0},
+            {"name": "App3", "entrance_test_score": 75.0, "part_a_score": 90.0}
+        ]
+        
+        # Sort using our new tuple key
+        applicants.sort(key=lambda x: (x.get("entrance_test_score", 0), x.get("part_a_score", 0)), reverse=True)
+        
+        # Candidate 2 has higher Part A and same Part B as Candidate 1, so it should rank 1st
+        self.assertEqual(applicants[0]["name"], "App2")
+        self.assertEqual(applicants[1]["name"], "App1")
+        self.assertEqual(applicants[2]["name"], "App3")

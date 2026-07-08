@@ -169,14 +169,18 @@ def get_program_query(doctype, txt, searchfield, start, page_len, filters):
     admission_cycle = filters.get("admission_cycle")
     campus = filters.get("campus")
 
-    if not admission_cycle or not program_level:
+    if not admission_cycle:
         return []
 
     query_filters = {
         "admission_cycle": admission_cycle,
-        "program_level": program_level,
         "txt": f"%{txt}%"
     }
+
+    level_filter = ""
+    if program_level:
+        level_filter = "AND p.level_of_study = %(program_level)s"
+        query_filters["program_level"] = program_level
 
     campus_filter = ""
     if campus:
@@ -188,7 +192,7 @@ def get_program_query(doctype, txt, searchfield, start, page_len, filters):
         FROM `tabProgram` p
         INNER JOIN `tabAdmission Cycle Program` ac_p ON ac_p.program = p.name
         WHERE ac_p.parent = %(admission_cycle)s
-          AND p.level_of_study = %(program_level)s
+          {level_filter}
           {campus_filter}
           AND (p.name LIKE %(txt)s OR p.program_name LIKE %(txt)s)
         ORDER BY p.name ASC
