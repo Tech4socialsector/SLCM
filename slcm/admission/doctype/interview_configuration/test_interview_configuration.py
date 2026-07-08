@@ -10,12 +10,35 @@ class IntegrationTestInterviewConfiguration(IntegrationTestCase):
         super().setUp()
         self.policies_to_delete = []
         self.configs_to_delete = []
+        self.restored_policies = []
+        
+        # Back up and temporarily remove any conflicting existing policies
+        existing_policies = frappe.get_all(
+            "Program Reservation Policy",
+            filters={"program": "BA LLB (Hons)", "admission_cycle": "AD", "campus": "NLSIU"}
+        )
+        for ep in existing_policies:
+            doc = frappe.get_doc("Program Reservation Policy", ep.name)
+            self.restored_policies.append(doc.as_dict())
+            frappe.db.delete("Program Reservation Policy", {"name": ep.name})
+        frappe.db.commit()
         
     def tearDown(self):
         for policy in self.policies_to_delete:
             frappe.db.delete("Program Reservation Policy", {"name": policy})
         for config in self.configs_to_delete:
             frappe.db.delete("Interview Configuration", {"name": config})
+        frappe.db.commit()
+        
+        # Restore original policies
+        for p_dict in self.restored_policies:
+            p_dict.pop("name", None)
+            p_dict.pop("owner", None)
+            p_dict.pop("creation", None)
+            p_dict.pop("modified", None)
+            p_dict.pop("modified_by", None)
+            doc = frappe.get_doc(p_dict)
+            doc.insert(ignore_permissions=True, ignore_links=True, ignore_mandatory=True)
         frappe.db.commit()
         super().tearDown()
 

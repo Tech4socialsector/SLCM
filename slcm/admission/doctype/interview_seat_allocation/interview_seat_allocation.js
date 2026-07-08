@@ -13,6 +13,7 @@ frappe.ui.form.on("Interview Seat Allocation", {
     },
 
     refresh(frm) {
+        calculate_final_cumulative(frm, true);
         // Administrator can do everything — skip all restrictions
         if (frappe.user_roles.includes("Administrator")) {
             // Ensure all tabs/sections are visible and editable
@@ -82,16 +83,69 @@ frappe.ui.form.on("Interview Seat Allocation", {
     },
 
     interview_score: function (frm) {
-        if (frm.doc.interview_score > 100) {
+        if (frm.doc.interview_score > 30) {
             frappe.msgprint({
                 title: __("Invalid Score"),
                 indicator: "red",
-                message: __("Interview Score cannot be more than 100. The field has been cleared.")
+                message: __("Interview Score cannot be more than 30. The field has been cleared.")
             });
             frm.set_value("interview_score", "");
+            return;
         }
+        calculate_final_cumulative(frm);
     },
+ 
+    interview_status: function (frm) {
+        calculate_final_cumulative(frm);
+    }
 });
+ 
+function calculate_final_cumulative(frm, skip_dirty = false) {
+    const et_marks = flt(frm.doc.et_total_marks_secured_in_part_a_b || 0);
+    const et_max = flt(frm.doc.et_total_marks || 0);
+    const interview_max = 30.0;
+    
+    let score = flt(frm.doc.interview_score || 0);
+    let cumulative = 0;
+    let max_marks = et_max + interview_max;
+    let percentage = 0;
+    let offered = 0;
+    let result_status = frm.doc.interview_result_status;
+    
+    if (frm.doc.interview_status === "Attended") {
+        cumulative = et_marks + score;
+        percentage = max_marks > 0 ? (cumulative / max_marks * 100.0) : 0;
+        offered = (frm.doc.result_published == 1 && percentage >= 70.0) ? 1 : 0;
+        result_status = percentage >= 70.0 ? "Pass" : "Fail";
+    } else if (frm.doc.interview_status === "Absent") {
+        cumulative = 0;
+        percentage = 0;
+        offered = 0;
+        result_status = "Fail";
+    } else {
+        cumulative = 0;
+        percentage = 0;
+        offered = 0;
+        result_status = "Pending";
+    }
+    
+    const opt = skip_dirty ? { dirty: false } : null;
+    const skip_dirty_arg = skip_dirty ? true : false;
+    
+    if (frm.doc.final_cumulative_score !== cumulative) {
+        frm.set_value("final_cumulative_score", cumulative, null, skip_dirty_arg);
+    }
+    if (frm.doc.final_percentage !== percentage) {
+        frm.set_value("final_percentage", percentage, null, skip_dirty_arg);
+    }
+    if (frm.doc.offered_admission !== offered) {
+        frm.set_value("offered_admission", offered, null, skip_dirty_arg);
+    }
+    if (frm.doc.interview_result_status !== result_status) {
+        frm.set_value("interview_result_status", result_status, null, skip_dirty_arg);
+    }
+}
+
 
 function _apply_applicant_permissions(frm) {
     // Reference section read-only

@@ -53,6 +53,9 @@
   "interview_status",
   "attendance_marked_on",
   "interview_score",
+  "final_cumulative_score",
+  "final_percentage",
+  "offered_admission",
   "interview_result_status",
   "rank",
   "result_published",
@@ -346,6 +349,27 @@
    "fieldtype": "Float",
    "label": "Score",
    "precision": "2"
+  },
+  {
+   "fieldname": "final_cumulative_score",
+   "fieldtype": "Float",
+   "label": "Final Cumulative Score",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "final_percentage",
+   "fieldtype": "Float",
+   "label": "Final Percentage",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "offered_admission",
+   "fieldtype": "Check",
+   "label": "Offered Admission",
+   "read_only": 1
   },
   {
    "fieldname": "interview_result_status",
