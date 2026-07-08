@@ -1147,6 +1147,8 @@ class Applicant(Document):
         sc_st_obc = (getattr(self, "whether_scstobc_ncl", None) or "").strip()
         if sc_st_obc and sc_st_obc.lower() != "na":
             cats.add(sc_st_obc)  # Only include real categories like "OBC-NCL", "ST", or "SC"
+        else:
+            cats.add("General")
 
         if (getattr(self, "pwd", None) or "").strip() == "Yes":
             cats.add("PWD")
@@ -1710,7 +1712,8 @@ class Applicant(Document):
                 return True, ""
 
             # Rule mappings for this program (direct link now)
-            applicant_type = "Domestic Applicants" if getattr(self, "nationality", "") == "Indian" else "International Applicants"
+            # Determine applicant type from foriegn_national field (Yes = International, No/blank = Domestic)
+            applicant_type = "International Applicants" if getattr(self, "foriegn_national", "") == "Yes" else "Domestic Applicants"
             rule_mappings = frappe.db.sql("""
                 SELECT erm.name
                 FROM `tabEligibility Rule Mapping` erm
@@ -1718,7 +1721,7 @@ class Applicant(Document):
                   AND erm.campus          = %(campus)s
                   AND erm.admission_cycle = %(admission_cycle)s
                   AND erm.program         = %(program)s
-                  AND erm.applicant_type  = %(applicant_type)s
+                  AND (erm.applicant_type = %(applicant_type)s OR erm.applicant_type = 'Both')
             """, {
                 "campus":          self.campus,
                 "admission_cycle": self.admission_cycle,
@@ -1837,7 +1840,8 @@ class Applicant(Document):
     # ──────────────────────────────────────────────
 
     def _get_rule_mappings_for_applicant(self):
-        applicant_type = "Domestic Applicants" if getattr(self, "nationality", "") == "Indian" else "International Applicants"
+        # Determine applicant type from foriegn_national field (Yes = International, No/blank = Domestic)
+        applicant_type = "International Applicants" if getattr(self, "foriegn_national", "") == "Yes" else "Domestic Applicants"
         return frappe.db.sql("""
             SELECT erm.name
             FROM `tabEligibility Rule Mapping` erm
@@ -1845,7 +1849,7 @@ class Applicant(Document):
               AND erm.campus            = %(campus)s
               AND erm.admission_cycle   = %(admission_cycle)s
               AND erm.program           = %(program)s
-              AND erm.applicant_type    = %(applicant_type)s
+              AND (erm.applicant_type   = %(applicant_type)s OR erm.applicant_type = 'Both')
         """, {
             "campus":          self.campus,
             "admission_cycle": self.admission_cycle,
@@ -3149,8 +3153,13 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
     - Skip exempted-from-entrance-test applicants
     - Only when Program has `entrance_test` enabled
     - Resolve Entrance Test by programme in Admission Cycle, else by programme level
-    - Allocate first available preferred center (1st/2nd/3rd)
-    - If none available, skip silently so manual Entrance Test Generation/List flow can be used
+    - International applicants (foriegn_national == "Yes"):
+        * Bypass all center/seat capacity checks
+        * Create ETSA record without center/room/seat fields
+        * No admit card generated or sent
+        * Dedicated email template "International Entrance Test Allocation" is used
+    - Domestic applicants: Allocate first available preferred center (1st/2nd/3rd)
+    - If no center available, skip silently so manual Entrance Test Generation/List flow can be used
     """
     if not applicant_doc or not getattr(applicant_doc, "name", None):
         frappe.log_error("Auto Allocate skipped: No applicant_doc or name", "Auto Allocate Debug")
@@ -3175,6 +3184,13 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
     if not _truthy(frappe.db.get_value("Program", applicant_doc.program, "entrance_test")):
         frappe.log_error(f"Auto Allocate skipped: entrance_test not enabled for program {applicant_doc.program}", "Auto Allocate Debug")
         return
+
+    # ── International applicant branch ──────────────────────────────────────
+    # Identified by foriegn_national == "Yes" (not nationality field)
+    if (getattr(applicant_doc, "foriegn_national", "") or "").strip() == "Yes":
+        _auto_allocate_international_entrance_test(applicant_doc)
+        return
+    # ─────────────────────────────────────────────────────────────────────────
 
     # Idempotency: a seat allocation already exists for this applicant
     existing = frappe.db.get_value(
@@ -3562,7 +3578,7 @@ def _get_or_create_auto_entrance_test_list(applicant_doc):
 
 def _send_automated_entrance_test_allocation_email(allocation, email):
     """
-    Send dedicated email for automated entrance test allocation.
+    Send dedicated email for automated entrance test allocation (domestic applicants).
     Uses Email Template: 'Automated Entrance Test Allocation'
     """
     if not allocation or not email:
@@ -3618,4 +3634,285 @@ def _send_automated_entrance_test_allocation_email(allocation, email):
         frappe.log_error(
             message=traceback.format_exc(),
             title=f"Automated Allocation Email Failed: {allocation.name if allocation else 'unknown'}",
+        )
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# INTERNATIONAL APPLICANT — ENTRANCE TEST ALLOCATION
+# No center/seat/room logic; online test; no admit card; dedicated email template
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _auto_allocate_international_entrance_test(applicant_doc):
+    """
+    Create an Entrance Test Seat Allocation for an international applicant
+    (foriegn_national == "Yes") without any center/seat/room assignment.
+
+    Rules:
+    - No center availability or seat capacity checks.
+    - test name and test date resolved from Admission Cycle config (same as domestic).
+    - No admit card generated or attached.
+    - Sends "International Entrance Test Allocation" email template.
+    - Adds a Notification Log entry like the domestic flow.
+    """
+    if not applicant_doc or not getattr(applicant_doc, "name", None):
+        return
+
+    # Idempotency: a seat allocation already exists for this applicant
+    existing = frappe.db.get_value(
+        "Entrance Test Seat Allocation",
+        {"applicant": applicant_doc.name},
+        "name",
+    )
+    if existing:
+        frappe.log_error(
+            f"International Auto Allocate skipped: existing allocation {existing}",
+            "Auto Allocate Debug",
+        )
+        return
+
+    # Resolve test config from Admission Cycle (same logic as domestic)
+    test_cfg = _resolve_entrance_test_config_for_applicant(applicant_doc)
+    if not test_cfg or not test_cfg.get("entrance_test_name"):
+        frappe.log_error(
+            "International Auto Allocate skipped: no entrance_test_name in cycle config",
+            "Auto Allocate Debug",
+        )
+        return
+
+    # Get or create the shared Entrance Test List (same as domestic)
+    entrance_test_list_name = _get_or_create_auto_entrance_test_list(applicant_doc)
+    if not entrance_test_list_name:
+        return
+
+    # Build allocation record — NO center/room/seat fields set
+    allocation = frappe.new_doc("Entrance Test Seat Allocation")
+    allocation.entrance_test_list   = entrance_test_list_name
+    allocation.academic_year        = applicant_doc.academic_year
+    allocation.admission_cycle      = applicant_doc.admission_cycle
+    allocation.campus               = applicant_doc.campus
+    allocation.program_level        = applicant_doc.program_level
+    allocation.entrance_test_name   = test_cfg.get("entrance_test_name")
+    allocation.allocation_date      = test_cfg.get("entrance_test_date")
+
+    allocation.applicant            = applicant_doc.name
+    allocation.candidate_name       = applicant_doc.candidate_name
+    allocation.program              = applicant_doc.program
+    allocation.email                = applicant_doc.email
+    allocation.gender               = applicant_doc.gender
+    allocation.entrance_test        = getattr(applicant_doc, "entrance_test", 0)
+    allocation.intereview           = getattr(applicant_doc, "intereview", 0)
+    allocation.exempts_entrance_test = cint(getattr(applicant_doc, "exempts_entrance_test", 0))
+    allocation.exempts_interview    = cint(getattr(applicant_doc, "exempts_interview", 0))
+
+    # Mark as allocated (online); leave center/room/seat fields blank
+    allocation.allocation_status    = "Allocated"
+    allocation.entrance_test_status = "Scheduled"
+    allocation.allocated_by         = frappe.session.user
+    allocation.is_international_applicant = 1
+
+    # Attach applicant categories
+    try:
+        categories = applicant_doc._get_applicant_categories()
+        for cat in categories:
+            allocation.append("category", {"category": cat})
+    except Exception:
+        pass
+
+    allocation.insert(ignore_permissions=True)
+
+    # Keep Entrance Test List child table in sync for operational visibility
+    try:
+        etl = frappe.get_doc("Entrance Test List", entrance_test_list_name)
+        exists_row = any(
+            (row.applicant_id or "").strip() == applicant_doc.name
+            for row in (etl.entrance_test_applicant or [])
+        )
+        if not exists_row:
+            etl.append(
+                "entrance_test_applicant",
+                {
+                    "applicant_id":         applicant_doc.name,
+                    "candidate_name":       applicant_doc.candidate_name,
+                    "program":              applicant_doc.program,
+                    "program_level":        applicant_doc.program_level,
+                    "email":                applicant_doc.email,
+                    "gender":               applicant_doc.gender,
+                    "exempts_entrance_test": cint(getattr(applicant_doc, "exempts_entrance_test", 0)),
+                    "exempts_interview":    cint(getattr(applicant_doc, "exempts_interview", 0)),
+                    "allocation_status":    "Allocated",
+                },
+            )
+            etl.save(ignore_permissions=True)
+    except Exception:
+        frappe.log_error(
+            frappe.get_traceback(),
+            f"International auto allocation list sync failed for Applicant {applicant_doc.name}",
+        )
+
+    # Send international-specific email (NO admit card attached)
+    try:
+        from slcm.admission.doctype.entrance_test_list.entrance_test_list import (
+            _send_allocation_notification,
+        )
+
+        if allocation.email:
+            _send_international_entrance_test_email(allocation, allocation.email)
+            _send_allocation_notification(allocation, allocation.email)
+    except Exception:
+        frappe.log_error(
+            frappe.get_traceback(),
+            f"International auto allocation email failed for {allocation.name}",
+        )
+
+
+def _send_international_entrance_test_email(allocation, email):
+    """
+    Send the international applicant entrance test notification email.
+    Uses Email Template: 'International Entrance Test Allocation'
+
+    This email:
+    - Informs the applicant their entrance test is scheduled as an ONLINE test
+    - Provides test name, test date, and basic application info
+    - Does NOT include any admit card or center details
+
+    If the template does not exist, a default fallback HTML email is sent
+    so that the applicant is always notified.
+    """
+    if not allocation or not email:
+        return
+
+    try:
+        template_name = "International Entrance Test Allocation"
+
+        # Resolve institution name for fallback
+        institution_name = (
+            frappe.db.get_single_value("Institution Settings", "institution_name")
+            or "Admissions Office"
+        )
+        portal_url = frappe.utils.get_url(
+            "/merit-and-scholarship/admission_dashboard?panel=applications"
+        )
+
+        # Format test date for display
+        test_date_raw = allocation.allocation_date
+        test_date_display = (
+            frappe.utils.formatdate(str(test_date_raw), "dd MMM yyyy")
+            if test_date_raw
+            else "To be announced"
+        )
+
+        args = {
+            "doc": allocation.as_dict(),
+            "candidate_name":    allocation.candidate_name or "",
+            "entrance_test_name": allocation.entrance_test_name or "Entrance Test",
+            "test_date":         test_date_display,
+            "program":           allocation.program or "",
+            "institution_name":  institution_name,
+            "portal_url":        portal_url,
+        }
+
+        subject = ""
+        message_body = ""
+
+        if frappe.db.exists("Email Template", template_name):
+            template = frappe.get_doc("Email Template", template_name)
+            subject = frappe.render_template(template.subject or "", args)
+            if template.get("use_html"):
+                message_body = frappe.render_template(template.response_html or "", args)
+            else:
+                message_body = frappe.render_template(template.response or "", args)
+            if not message_body:
+                message_body = frappe.render_template(template.get("message") or "", args)
+
+            cc_list = []
+            cc_field_value = template.get("cc")
+            if cc_field_value:
+                cc_list = [
+                    c.strip()
+                    for c in cc_field_value.replace(";", ",").split(",")
+                    if c.strip()
+                ]
+
+            sender = None
+            if template.get("email_account"):
+                sender = (
+                    frappe.db.get_value(
+                        "Email Account", template.get("email_account"), "email_id"
+                    )
+                    or template.get("email_account")
+                )
+        else:
+            # ── Fallback: built-in HTML (template not yet created) ────────────
+            frappe.log_error(
+                f"Email Template '{template_name}' not found — using built-in fallback.",
+                "International Allocation Email",
+            )
+            subject = (
+                f"Entrance Test Scheduled (Online) — "
+                f"{allocation.entrance_test_name or 'Entrance Test'} | "
+                f"{allocation.candidate_name or email}"
+            )
+            message_body = f"""
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+  <h2 style="color:#1a5276;">Entrance Test Allocated — Online</h2>
+  <p>Dear <strong>{allocation.candidate_name or 'Applicant'}</strong>,</p>
+  <p>
+    Congratulations! Your entrance test has been scheduled for the programme
+    <strong>{allocation.program or ''}</strong>.
+  </p>
+  <table style="border-collapse:collapse;width:100%;margin:16px 0;">
+    <tr>
+      <td style="padding:8px;border:1px solid #ddd;font-weight:bold;width:40%;">Test Name</td>
+      <td style="padding:8px;border:1px solid #ddd;">{allocation.entrance_test_name or '—'}</td>
+    </tr>
+    <tr>
+      <td style="padding:8px;border:1px solid #ddd;font-weight:bold;">Test Date</td>
+      <td style="padding:8px;border:1px solid #ddd;">{test_date_display}</td>
+    </tr>
+    <tr>
+      <td style="padding:8px;border:1px solid #ddd;font-weight:bold;">Test Mode</td>
+      <td style="padding:8px;border:1px solid #ddd;">
+        <strong style="color:#1a5276;">Online</strong>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:8px;border:1px solid #ddd;font-weight:bold;">Programme</td>
+      <td style="padding:8px;border:1px solid #ddd;">{allocation.program or '—'}</td>
+    </tr>
+  </table>
+  <p>
+    As an international applicant, your entrance test will be conducted
+    <strong>online</strong>. Further instructions regarding the online test
+    platform, login credentials, and technical requirements will be shared
+    with you separately.
+  </p>
+  <p>
+    You can view your application and test details on your admission dashboard:
+    <a href="{portal_url}" style="color:#1a5276;font-weight:bold;">Click here to view</a>.
+  </p>
+  <p>We wish you the best of luck!</p>
+  <p style="color:#555;">Regards,<br/><strong>{institution_name}</strong></p>
+</div>
+"""
+            cc_list = []
+            sender = None
+
+        if not message_body:
+            return
+
+        frappe.sendmail(
+            recipients=[email],
+            sender=sender,
+            cc=cc_list,
+            subject=subject,
+            message=message_body,
+            reference_doctype="Entrance Test Seat Allocation",
+            reference_name=allocation.name,
+            now=False,
+        )
+
+    except Exception:
+        frappe.log_error(
+            message=traceback.format_exc(),
+            title=f"International Entrance Test Email Failed: {allocation.name if allocation else 'unknown'}",
         )
