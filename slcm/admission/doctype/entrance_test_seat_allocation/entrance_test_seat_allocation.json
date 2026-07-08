@@ -598,9 +598,10 @@
   }
  ],
  "grid_page_length": 50,
+ "image_field": "profile",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-06-30 15:20:04.737395",
+ "modified": "2026-07-07 14:20:07.459181",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",
