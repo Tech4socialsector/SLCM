@@ -255,12 +255,12 @@ fixtures = [
     # --- Workspace Sidebars ---
     {
         "doctype": "Workspace Sidebar",
-        "filters": [["name", "in", ["Faculty", "Fees Management", "Admission Fee"]]]
+        "filters": [["name", "in", ["Faculty Management", "Fees Management", "Admission Fee"]]]
     },
     # --- Desktop Icons ---
     {
         "doctype": "Desktop Icon",
-        "filters": [["name", "in", ["Faculty"]]]
+        "filters": [["name", "in", ["Faculty Management"]]]
     },
     # --- Web Forms / Custom Fields / Property Setters ---
     # NOTE: "Custom Field" with no filter exports ALL custom fields (including those

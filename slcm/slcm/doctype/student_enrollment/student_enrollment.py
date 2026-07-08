@@ -10,6 +10,7 @@ class StudentEnrollment(Document):
     def validate(self):
         self.validate_duplicate_enrollment()
         self._validate_cohort_seat_limit()
+        self._validate_status_transition()
 
     def before_save(self):
         self.fetch_program_and_courses()
@@ -68,6 +69,21 @@ class StudentEnrollment(Document):
                 _("Cohort {0} has reached its seat limit of {1}").format(self.cohort, seat_limit)
             )
 
+    def _validate_status_transition(self):
+        """Guard against status changes that don't make sense.
+
+        Full lifecycle rules (e.g. Pending -> Enrolled -> Dropped/Completed
+        ordering) are not enforced yet - only the one transition that is
+        wrong under any policy: un-completing a Completed enrollment.
+        Extend here once the intended lifecycle is finalized.
+        """
+        if not self.is_new() and self.has_value_changed("status"):
+            previous = self.get_doc_before_save()
+            if previous and previous.status == "Completed" and self.status != "Completed":
+                frappe.throw(
+                    _("Cannot change status from Completed to {0}").format(self.status)
+                )
+
     def validate_duplicate_enrollment(self):
         """Prevent duplicate enrollment for same student + cohort + academic_year."""
         filters = {
@@ -107,3 +123,53 @@ class StudentEnrollment(Document):
             frappe.db.set_value("Student Master", self.student, {
                 "student_status": "Graduated",
             })
+
+
+@frappe.whitelist()
+def get_other_terms(student, exclude=None):
+    """List a student's other Student Enrollment records (other terms),
+    most recent academic year first, for the 'Other Terms' selector on
+    the Student Enrollment form."""
+    if not student:
+        return []
+
+    enrollments = frappe.get_all(
+        "Student Enrollment",
+        filters={"student": student, "docstatus": ["<", 2]},
+        fields=["name", "academic_year", "term_name", "status"],
+    )
+
+    ay_names = {e.academic_year for e in enrollments if e.academic_year}
+    ay_start = {}
+    if ay_names:
+        for ay in frappe.get_all(
+            "Academic Year",
+            filters={"name": ["in", list(ay_names)]},
+            fields=["name", "year_start_date"],
+        ):
+            ay_start[ay.name] = ay.year_start_date
+
+    enrollments.sort(key=lambda e: ay_start.get(e.academic_year) or "", reverse=True)
+
+    return [e for e in enrollments if e.name != exclude]
+
+
+@frappe.whitelist()
+def bulk_update_enrollment_status(names, status):
+    """Update status on multiple Student Enrollment records via save(),
+    so validate() (duplicate/seat-limit/transition checks) still applies.
+    """
+    if isinstance(names, str):
+        names = frappe.parse_json(names)
+
+    updated, failed = [], []
+    for name in names:
+        try:
+            doc = frappe.get_doc("Student Enrollment", name)
+            doc.status = status
+            doc.save()
+            updated.append(name)
+        except Exception as e:
+            failed.append({"name": name, "error": str(e)})
+
+    return {"updated": updated, "failed": failed}
