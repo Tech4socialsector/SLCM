@@ -38,15 +38,12 @@ def _get_program_quotas(campus: str, admission_cycle: str, program: str) -> dict
         for q in (policy.categories or []):
             seats = int(q.seats or 0)
             
-            # Map to GEN pool if quota type is General
-            if q.reservation_quota == "General":
+            # Map to GEN pool if category name is General or empty
+            if q.category_name == "General" or not q.category_name:
                 result["GEN"] += seats
             else:
                 # Use category_name for Reserved mapping
                 category = q.category_name
-                if not category:
-                    result["GEN"] += seats
-                    continue
                 result["Reserved"][category] = result["Reserved"].get(category, 0) + seats
     else:
         # Fallback to total seats if no policy defined
@@ -155,7 +152,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> list
     
     # Define active statuses that occupy or want a seat
     # We include people who already have offers to allow them to "slide" to GEN and free up reserved seats
-    selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Fee Paid", "Accepted"]
+    selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Fee Paid", "Accepted", "Payment Completed", "Enrolled", "Seat Selected"]
     waitlist_statuses = ["Waitlisted"]
     
     # 1. Gather all active candidates for this program
@@ -217,6 +214,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> list
                 # PROMOTION from Waitlist
                 row.selection_status = "Selected"
                 row.allocation_type = new_type
+                row.vertical_category = new_cat
                 row.allocated_category = new_cat
                 total_promoted += 1
                 promoted_list.append((row.applicant_id, program))
@@ -241,6 +239,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> list
             elif old_type != new_type or old_cat != new_cat:
                 # UPGRADATION / SLIDING
                 row.allocation_type = new_type
+                row.vertical_category = new_cat
                 row.allocated_category = new_cat
                 
                 log_seat_allocation_action(

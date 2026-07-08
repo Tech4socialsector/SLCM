@@ -415,25 +415,34 @@ frappe.ui.form.on("Seat Allocation", {
                                     fieldtype: "HTML",
                                     fieldname: "promotions_html",
                                     options: `
-                                        <div class="promotions-wrapper" style="border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; max-height: 400px; overflow-y: auto;">
+                                        <div class="promotions-wrapper" style="border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; max-height: 550px; overflow-y: auto;">
                                             <table class="table table-bordered" style="margin: 0; background: #fff;">
                                                 <thead style="background: #f8fafc; font-size: 12px; color: #475569; position: sticky; top: 0; z-index: 10;">
                                                     <tr>
                                                         <th style="width: 40px; text-align: center;"><input type="checkbox" id="check-all-promotions" checked></th>
-                                                        <th>${__('Candidate')}</th>
+                                                        <th style="width: 50%;">${__('Candidate')}</th>
                                                         <th>${__('Promoted Category')}</th>
                                                         <th>${__('Vacancy Filled')}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody id="promotions-body">
-                                                    ${data.promotions.map((p, i) => `
-                                                        <tr>
+                                                    ${data.promotions.map((p, i) => {
+                                                        const options_html = (p.eligible_candidates || []).map(cand => {
+                                                            const selected = cand.applicant_id === p.applicant_id ? 'selected' : '';
+                                                            return `<option value="${cand.applicant_id}" ${selected} data-name="${cand.candidate_name}" data-score="${cand.total_score}" data-rank="${cand.overall_rank}">
+                                                                ${cand.candidate_name} (${cand.applicant_id}) - Score: ${cand.total_score || 0}, Rank: ${cand.overall_rank || 0}
+                                                            </option>`;
+                                                        }).join('');
+
+                                                        return `
+                                                        <tr class="promotion-row" data-idx="${i}">
                                                             <td style="text-align: center; vertical-align: middle;">
-                                                                <input type="checkbox" class="promotion-check" data-idx="${i}" checked>
+                                                                <input type="checkbox" class="promotion-check" checked>
                                                             </td>
                                                             <td style="vertical-align: middle;">
-                                                                <div style="font-weight: 600; color: #1e293b; font-size: 13px;">${p.candidate_name}</div>
-                                                                <div style="font-size: 11px; color: #64748b;">${p.applicant_id}</div>
+                                                                <select class="form-control candidate-select" style="font-size: 13px; font-weight: 600; color: #1e293b; border-color: #cbd5e1; border-radius: 6px; padding: 6px 12px; width: 100%; max-width: 100%; height: 38px; background-color: #fff; cursor: pointer; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+                                                                    ${options_html}
+                                                                </select>
                                                             </td>
                                                             <td style="vertical-align: middle;">
                                                                 <span style="background: #e0f2fe; color: #0284c7; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap;">
@@ -452,7 +461,8 @@ frappe.ui.form.on("Seat Allocation", {
                                                                 </div>
                                                             </td>
                                                         </tr>
-                                                    `).join('')}
+                                                        `;
+                                                    }).join('')}
                                                 </tbody>
                                             </table>
                                         </div>
@@ -461,12 +471,27 @@ frappe.ui.form.on("Seat Allocation", {
                             ],
                             primary_action_label: __("Promote Selected"),
                             primary_action(values) {
-                                const selected_indices = [];
-                                $(d.wrapper).find('.promotion-check:checked').each(function() {
-                                    selected_indices.push($(this).data('idx'));
+                                const selected = [];
+                                $(d.wrapper).find('.promotion-row').each(function() {
+                                    const row = $(this);
+                                    const is_checked = row.find('.promotion-check').is(':checked');
+                                    if (is_checked) {
+                                        const idx = row.data('idx');
+                                        const orig_promotion = data.promotions[idx];
+                                        const select_el = row.find('.candidate-select');
+                                        const applicant_id = select_el.val();
+                                        const option_el = select_el.find('option:selected');
+                                        
+                                        selected.push({
+                                            applicant_id: applicant_id,
+                                            candidate_name: option_el.data('name'),
+                                            program: orig_promotion.program,
+                                            allocated_category: orig_promotion.allocated_category,
+                                            overall_rank: option_el.data('rank'),
+                                            total_score: option_el.data('score')
+                                        });
+                                    }
                                 });
-                                
-                                const selected = selected_indices.map(idx => data.promotions[idx]);
                                 
                                 if (selected.length === 0) {
                                     frappe.msgprint(__('Please select at least one candidate to promote.'));
@@ -498,9 +523,17 @@ frappe.ui.form.on("Seat Allocation", {
                         });
 
                         d.show();
+                        d.$wrapper.find('.modal-dialog').css({
+                            "max-width": "1300px",
+                            "width": "1300px"
+                        });
 
-                        // Handle select all checkbox
+                        // Handle select all checkbox and dialog sizing
                         setTimeout(() => {
+                            d.$wrapper.find('.modal-dialog').css({
+                                "max-width": "1300px",
+                                "width": "1300px"
+                            });
                             $(d.wrapper).find('#check-all-promotions').on('change', function() {
                                 const is_checked = $(this).is(':checked');
                                 $(d.wrapper).find('.promotion-check').prop('checked', is_checked);
