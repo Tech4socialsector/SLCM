@@ -16,6 +16,8 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
   },
 
   refresh: function (frm) {
+    _handle_international_applicant_visibility(frm);
+
     frm.set_query("entrance_test_provider", function () {
       const preferences = (frm.doc.assigned_preferences || []).map(p => p.provider);
       return { filters: { name: ["in", preferences] } };
@@ -61,7 +63,7 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
       frm.set_df_property("part_b_all_india_rank", "read_only", 0);
     }
 
-    if (["Allocated", "Reallocated"].includes(frm.doc.allocation_status)){
+    if (["Allocated", "Reallocated"].includes(frm.doc.allocation_status) && !frm.doc.is_international_applicant){
       
       // Ensure we don't add multiple buttons if refresh is called multiple times
       if (!frm.page.wrapper.find('.btn-center-change').length) {
@@ -255,8 +257,10 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
 
         // Show the category table and populate it from reservation fields
         frm.clear_table("category");
-        if (app.whether_scstobc_ncl && app.whether_scstobc_ncl !== "NA") {
+        if (app.whether_scstobc_ncl && app.whether_scstobc_ncl.toUpperCase() !== "NA") {
           frm.add_child("category", { category: app.whether_scstobc_ncl });
+        } else {
+          frm.add_child("category", { category: "General" });
         }
         if (app.pwd === "Yes") {
           frm.add_child("category", { category: "PWD" });
@@ -1157,4 +1161,27 @@ function _calculate_total_and_percentage(frm) {
   } else {
     frm.set_value("percentage", 0);
   }
+}
+
+function _handle_international_applicant_visibility(frm) {
+  const is_intl = frm.doc.is_international_applicant === 1;
+  // Hide the tab "Seat Allocation"
+  frm.set_df_property("tab_allocation", "hidden", is_intl ? 1 : 0);
+
+  // Hide the individual fields in that tab
+  const fields = [
+    "entrance_test_provider",
+    "assigned_preferences",
+    "center_name",
+    "center_address",
+    "room_code",
+    "room_name",
+    "building",
+    "floor",
+    "seat_number",
+    "admit_card_download"
+  ];
+  fields.forEach(f => {
+    frm.set_df_property(f, "hidden", is_intl ? 1 : 0);
+  });
 }

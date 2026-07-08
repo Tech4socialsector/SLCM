@@ -279,7 +279,7 @@ function _injectCSS() {
 		'#slcm-stepper-wrap::-webkit-scrollbar{display:none;}',
 		'.slcm-stepper{box-sizing:border-box;width:100%;max-width:100%;min-width:0;padding:0 6px;}',
 		'.slcm-step{display:flex;flex-direction:row;align-items:center;gap:14px;cursor:pointer;position:relative;' +
-			'min-width:104px;width:max-content;transition:background .25s,border-color .25s;padding:10px 18px 10px 14px;' +
+			'min-width:104px;width:max-content;flex-shrink:0;transition:background .25s,border-color .25s;padding:10px 18px 10px 14px;' +
 			'border-radius:14px;border:1px solid transparent;background:#f3f4f6;}',
 		'.slcm-step-connector{align-self:center;width:100%;min-width:12px;height:2px;background:#e5e7eb;' +
 			'border-radius:1px;pointer-events:none;}',
@@ -4711,28 +4711,19 @@ function setupStepper() {
 function _renderStepper(wf) {
 	// ── 1. Build step list from Page Break fields (= Applicant DocType Tab Breaks) ──
 	// The very first page never has a Page Break; it's always "Personal Information".
-	const steps = [{ label: 'Personal Information', index: 0 }];
+	const steps = [{ label: 'Personal Information', index: 0, depends_on: null }];
 
 	(wf.fields || []).forEach(function (f) {
 		if (f.fieldtype === 'Page Break' && f.label) {
-			steps.push({ label: f.label, index: steps.length });
+			steps.push({ label: f.label, index: steps.length, depends_on: f.depends_on || null });
 		}
 	});
 
-	// ── 2. Build stepper HTML (grid: pill | growing line | pill | …) ───────
-	var gridCols = [];
-	for (var gi = 0; gi < steps.length; gi++) {
-		gridCols.push('max-content');
-		if (gi < steps.length - 1) {
-			gridCols.push('minmax(12px,1fr)');
-		}
-	}
-	var gridInline =
-		'display:grid;width:100%;max-width:100%;box-sizing:border-box;' +
-		'grid-template-columns:' +
-		gridCols.join(' ') +
-			';align-items:center;column-gap:0;row-gap:10px;';
-	let html = '<div id="slcm-stepper-wrap"><div class="slcm-stepper" style="' + gridInline + '">';
+	window._slcm_wf_steps = steps;
+
+	// ── 2. Build stepper HTML (flex: pill | growing line | pill | …) ───────
+	var flexInline = 'display:flex;width:max-content;min-width:100%;box-sizing:border-box;align-items:center;column-gap:0;row-gap:10px;';
+	let html = '<div id="slcm-stepper-wrap"><div class="slcm-stepper" style="' + flexInline + '">';
 	steps.forEach(function (step, i) {
 		var lbl = step.label || '';
 		var safeTitle = lbl.replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -4750,7 +4741,7 @@ function _renderStepper(wf) {
 			'</div>' +
 			'</div>';
 		if (i < steps.length - 1) {
-			html += '<div class="slcm-step-connector" aria-hidden="true"></div>';
+			html += '<div class="slcm-step-connector" data-connector-index="' + i + '" aria-hidden="true" style="flex:1 1 12px;"></div>';
 		}
 	});
 	html += '</div></div>';
@@ -4793,27 +4784,70 @@ function _renderStepper(wf) {
 	}
 
 	// ── 5. Update stepper visual state ────────────────────────────────────
+	function slcmEvalDependsOn(condition) {
+		if (!condition) return true;
+		const doc = window.frappe && frappe.web_form && frappe.web_form.doc;
+		if (!doc) return true;
+		if (condition.startsWith('eval:')) {
+			try {
+				return !!eval(condition.substr(5));
+			} catch (e) {
+				return false;
+			}
+		}
+		return !!doc[condition];
+	}
+
 	function updateStepperUI() {
 		const curr = getCurrentPageIdx();
 		const $wrap = $('#slcm-stepper-wrap');
 		const draft = typeof slcmApplicationIsDraft === 'function' && slcmApplicationIsDraft();
 
+		const stepsArr = window._slcm_wf_steps || [];
+		let visibleIndices = [];
+		stepsArr.forEach(function(s) {
+			if (slcmEvalDependsOn(s.depends_on)) {
+				visibleIndices.push(s.index);
+			}
+		});
+
+		let visualIndex = 1;
+
 		if (draft) {
 			$wrap.removeClass('slcm-stepper-post-draft');
-			$('.slcm-step').each(function () {
-				const idx = parseInt($(this).attr('data-index'), 10);
-				$(this).removeClass('active completed');
-				if (idx === curr) $(this).addClass('active');
-				else if (idx < curr) $(this).addClass('completed');
-			});
 		} else {
 			$wrap.addClass('slcm-stepper-post-draft');
-			$('.slcm-step').each(function () {
-				const idx = parseInt($(this).attr('data-index'), 10);
-				$(this).removeClass('active').addClass('completed');
-				if (idx === curr) $(this).addClass('active');
-			});
 		}
+
+		$('.slcm-step').each(function () {
+			const $step = $(this);
+			const idx = parseInt($step.attr('data-index'), 10);
+			const isVisible = visibleIndices.includes(idx);
+
+			if (!isVisible) {
+				$step.hide();
+				$('.slcm-step-connector[data-connector-index="' + idx + '"]').hide();
+			} else {
+				$step.show();
+				$step.find('.slcm-step-circle').text(visualIndex++);
+
+				const isLastVisible = (idx === visibleIndices[visibleIndices.length - 1]);
+				if (!isLastVisible) {
+					$('.slcm-step-connector[data-connector-index="' + idx + '"]').show();
+				} else {
+					$('.slcm-step-connector[data-connector-index="' + idx + '"]').hide();
+				}
+
+				$step.removeClass('active completed');
+				if (draft) {
+					if (idx === curr) $step.addClass('active');
+					else if (idx < curr) $step.addClass('completed');
+				} else {
+					$step.addClass('completed');
+					if (idx === curr) $step.addClass('active');
+				}
+			}
+		});
 	}
 
 	// Initial render + keep in sync (Next/Previous updates current_section)

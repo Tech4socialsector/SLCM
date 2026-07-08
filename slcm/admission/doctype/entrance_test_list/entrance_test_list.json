@@ -9,6 +9,7 @@
   "campus",
   "admission_cycle",
   "program_level",
+  "program",
   "generated_on",
   "status",
   "entrance_test_applicant"
@@ -37,6 +38,13 @@
    "fieldtype": "Select",
    "label": "Programme Level",
    "options": "Undergraduate\nPostgraduate\nResearch Course"
+  },
+  {
+   "depends_on": "program_level",
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Programme",
+   "options": "Program"
   },
   {
    "fieldname": "generated_on",

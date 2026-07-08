@@ -510,8 +510,8 @@ def save_applicant_draft(data, ignore_mandatory=True):
 
             raw_cat = (getattr(doc, "whether_scstobc_ncl", "") or "").strip()
             cat     = raw_cat if raw_cat and raw_cat.upper() != "NA" else None
-            nationality = getattr(doc, "nationality", "") or ""
-            is_foreign = nationality != "Indian" if nationality else False
+            foriegn_national = getattr(doc, "foriegn_national", "") or ""
+            is_foreign = foriegn_national == "Yes" if foriegn_national else False
             computed = flt(get_application_fee_for_category(doc.program, doc.admission_cycle, cat, is_foreign=is_foreign), 2)
             fee_status = (getattr(doc, "application_fee_status", "") or "").strip()
             if fee_status not in ("Paid", "Waived"):
@@ -1059,8 +1059,8 @@ def switch_applicant_program(applicant_name, program):
             raw_cat = (getattr(doc, "whether_scstobc_ncl", "") or "").strip()
             cat = raw_cat if raw_cat and raw_cat.upper() != "NA" else None
             fee_status = (getattr(doc, "application_fee_status", "") or "").strip()
-            nationality = getattr(doc, "nationality", "") or ""
-            is_foreign = nationality != "Indian" if nationality else False
+            foriegn_national = getattr(doc, "foriegn_national", "") or ""
+            is_foreign = foriegn_national == "Yes" if foriegn_national else False
             if fee_status not in ("Paid", "Waived"):
                 doc.application_fee_amount = flt(
                     get_application_fee_for_category(doc.program, doc.admission_cycle, cat, is_foreign=is_foreign), 2

@@ -6,6 +6,9 @@ frappe.ui.form.on("Program Reservation Policy", {
         frm.set_query("category_name", "categories", function () {
             return { filters: { reservation_type: "Vertical" } };
         });
+        frm.set_query("compartmentalized_category", "categories", function () {
+            return { filters: { reservation_type: "Compartmentalised Horizontal" } };
+        });
         frm.set_query("category_name", "horizontal_reservations", function () {
             return { filters: { reservation_type: "Horizontal" } };
         });

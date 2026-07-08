@@ -53,6 +53,9 @@
   "interview_status",
   "attendance_marked_on",
   "interview_score",
+  "final_cumulative_score",
+  "final_percentage",
+  "offered_admission",
   "interview_result_status",
   "rank",
   "result_published",
@@ -343,9 +346,30 @@
   },
   {
    "fieldname": "interview_score",
-   "fieldtype": "Int",
-   "hidden": 1,
-   "label": "Score"
+   "fieldtype": "Float",
+   "label": "Score",
+   "precision": "2"
+  },
+  {
+   "fieldname": "final_cumulative_score",
+   "fieldtype": "Float",
+   "label": "Final Cumulative Score",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "final_percentage",
+   "fieldtype": "Float",
+   "label": "Final Percentage",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "offered_admission",
+   "fieldtype": "Check",
+   "label": "Offered Admission",
+   "read_only": 1
   },
   {
    "fieldname": "interview_result_status",
@@ -508,6 +532,7 @@
    "read_only": 1
   },
   {
+   "default": "0",
    "fieldname": "et_result_published",
    "fieldtype": "Check",
    "label": "ET Result Published",
@@ -517,7 +542,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-08 12:42:34.577239",
+ "modified": "2026-07-07 16:48:39.386477",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Seat Allocation",

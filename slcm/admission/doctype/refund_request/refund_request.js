@@ -1,5 +1,17 @@
 frappe.ui.form.on('Refund Request', {
 	refresh: function(frm) {
+		// ── Filter: only Admission Fee, submitted AFA for this applicant ──
+		frm.set_query('applicant_fee_assignment', function() {
+			const filters = {
+				fee_type: 'Admission Fee',
+				docstatus: 1
+			};
+			if (frm.doc.applicant) {
+				filters['applicant'] = frm.doc.applicant;
+			}
+			return { filters };
+		});
+
 		if (frm.is_new()) return;
 		
 		frm.clear_custom_buttons();
@@ -55,6 +67,18 @@ frappe.ui.form.on('Refund Request', {
 							method: 'slcm.admission_cancel_api.process_refund',
 							args: { name: frm.doc.name },
 							callback: function(r) {
+								// Show server-side exceptions (frappe.throw, validation errors)
+								if (r.exc) {
+									frm.doc.status = 'Failed';
+									frm.refresh_field('status');
+									frappe.show_alert({
+										message: __('Refund failed: ') + (r.exc || __('Unknown server error')),
+										indicator: 'red'
+									});
+									setTimeout(function() { frm.reload_doc(); }, 1500);
+									return;
+								}
+
 								if (r.message && r.message.status === 'Success') {
 
 									// ── Step 3: Backend done → update UI to Processed ──
@@ -78,10 +102,19 @@ frappe.ui.form.on('Refund Request', {
 									frm.doc.status = 'Failed';
 									frm.refresh_field('status');
 
+									var failMsg = (r.message && r.message.message)
+										? r.message.message
+										: __('Refund processing failed. Please retry.');
+
 									frappe.show_alert({
-										message: r.message && r.message.message
-											? r.message.message
-											: __('Refund processing failed. Please retry.'),
+										message: failMsg,
+										indicator: 'red'
+									});
+
+									// Also show as a msgprint dialog so it's not missed
+									frappe.msgprint({
+										title: __('Refund Failed'),
+										message: failMsg,
 										indicator: 'red'
 									});
 
@@ -96,10 +129,12 @@ frappe.ui.form.on('Refund Request', {
 								frm.doc.status = 'Failed';
 								frm.refresh_field('status');
 
+								var errMsg = (err && err.message) ? err.message : __('An error occurred while processing the refund.');
 								frappe.show_alert({
-									message: __('An error occurred while processing the refund.'),
+									message: errMsg,
 									indicator: 'red'
 								});
+								frappe.msgprint({ title: __('Refund Error'), message: errMsg, indicator: 'red' });
 
 								setTimeout(function() {
 									frm.reload_doc();
@@ -184,6 +219,22 @@ frappe.ui.form.on('Refund Request', {
 		}
 	},
 
+	// ── Re-apply AFA filter when applicant changes ──
+	applicant: function(frm) {
+		frm.set_query('applicant_fee_assignment', function() {
+			const filters = {
+				fee_type: 'Admission Fee',
+				docstatus: 1
+			};
+			if (frm.doc.applicant) {
+				filters['applicant'] = frm.doc.applicant;
+			}
+			return { filters };
+		});
+		// Clear AFA if applicant changes
+		frm.set_value('applicant_fee_assignment', '');
+	},
+
 	// ── Clear polling interval when form is refreshed/navigated away ──
 	before_unload: function(frm) {
 		if (frm._processing_poll) {
@@ -192,21 +243,32 @@ frappe.ui.form.on('Refund Request', {
 		}
 	},
 
-	payment_request: function(frm) {
-		if (frm.doc.payment_request) {
-			frappe.db.get_value('Fee Payment', frm.doc.payment_request, ['amount', 'reference_number', 'payment_date'], (r) => {
-				if (r) {
-					frm.set_value('amount_paid', r.amount);
-					frm.set_value('razorpay_payment_id', r.reference_number);
-					
-					if (frm.doc.refund_type === 'Partial' && r.payment_date) {
-						frm.trigger('select_policy_by_days');
-					} else {
-						frm.trigger('calculate_refund_amount');
+	applicant_fee_assignment: function(frm) {
+		if (!frm.doc.applicant_fee_assignment) return;
+
+		// Fetch the offer_letter from the AFA, then get the Payment Receipt
+		frappe.db.get_value('Applicant Fee Assignment', frm.doc.applicant_fee_assignment,
+			['offer_letter', 'final_payable_amount'], (afa) => {
+			if (!afa || !afa.offer_letter) return;
+
+			frappe.db.get_value('Applicant Payment Receipt',
+				{ offer_letter: afa.offer_letter },
+				['net_amount', 'total_amount', 'transaction_id'],
+				(r) => {
+					if (r) {
+						const paidAmt = (r.net_amount && r.net_amount > 0) ? r.net_amount : r.total_amount;
+						frm.set_value('amount_paid', paidAmt);
+						frm.set_value('razorpay_payment_id', r.transaction_id);
+
+						if (frm.doc.refund_type === 'Partial') {
+							frm.trigger('select_policy_by_days');
+						} else {
+							frm.trigger('calculate_refund_amount');
+						}
 					}
 				}
-			});
-		}
+			);
+		});
 	},
 
 	refund_type: function(frm) {
@@ -222,42 +284,51 @@ frappe.ui.form.on('Refund Request', {
 	},
 
 	select_policy_by_days: function(frm) {
-		if (!frm.doc.payment_request) return;
+		// Uses applicant_payment_receipt payment_date if available, falls back to today
+		let paymentDatePromise;
+		if (frm.doc.applicant_payment_receipt) {
+			paymentDatePromise = frappe.db.get_value('Applicant Payment Receipt',
+				frm.doc.applicant_payment_receipt, 'payment_date');
+		} else {
+			// No payment source available, skip
+			return;
+		}
 
-		frappe.db.get_value('Fee Payment', frm.doc.payment_request, 'payment_date', (r) => {
-			if (r && r.payment_date) {
-				const today = frappe.datetime.get_today();
-				const days = frappe.datetime.get_diff(today, r.payment_date);
-				
-				frappe.call({
-					method: 'frappe.client.get_list',
-					args: {
-						doctype: 'Refund Policy',
-						filters: { is_active: 1 },
-						fields: ['name', 'days_from_payment'],
-						order_by: 'days_from_payment asc'
-					},
-					callback: function(res) {
-						if (res.message && res.message.length > 0) {
-							let selected_policy = null;
-							for (let p of res.message) {
-								if (days <= p.days_from_payment) {
-									selected_policy = p.name;
-									break;
-								}
-							}
-							if (!selected_policy) {
-								selected_policy = res.message[res.message.length - 1].name;
-							}
-							
-							if (selected_policy) {
-								frm.set_value('refund_policy', selected_policy);
-								frm.trigger('calculate_refund_amount');
+		paymentDatePromise.then(r => {
+			const paymentDate = r && r.message && r.message.payment_date;
+			if (!paymentDate) return;
+
+			const today = frappe.datetime.get_today();
+			const days = frappe.datetime.get_diff(today, paymentDate);
+			
+			frappe.call({
+				method: 'frappe.client.get_list',
+				args: {
+					doctype: 'Refund Policy',
+					filters: { is_active: 1 },
+					fields: ['name', 'days_from_payment'],
+					order_by: 'days_from_payment asc'
+				},
+				callback: function(res) {
+					if (res.message && res.message.length > 0) {
+						let selected_policy = null;
+						for (let p of res.message) {
+							if (days <= p.days_from_payment) {
+								selected_policy = p.name;
+								break;
 							}
 						}
+						if (!selected_policy) {
+							selected_policy = res.message[res.message.length - 1].name;
+						}
+						
+						if (selected_policy) {
+							frm.set_value('refund_policy', selected_policy);
+							frm.trigger('calculate_refund_amount');
+						}
 					}
-				});
-			}
+				}
+			});
 		});
 	},
 

@@ -370,17 +370,17 @@ def get_context(context):
                 {"label": "Photo", "field": "candidate_photo", "required": True},
             ]
 
-            if target_applicant.whether_scstobc_ncl and target_applicant.whether_scstobc_ncl != "NA":
+            if target_applicant.get("whether_scstobc_ncl") and target_applicant.get("whether_scstobc_ncl") != "NA":
                 standard_checklist.append({"label": "Category Certificate", "field": "caste_certificate", "required": True})
                 
-            if target_applicant.pwd == "Yes":
+            if target_applicant.get("pwd") == "Yes":
                 standard_checklist.append({"label": "PwD Certificate", "field": "pwd_certificate", "required": True})
                 
-            if target_applicant.program_level == "Research Course":
+            if target_applicant.get("program_level") == "Research Course":
                 standard_checklist.append({"label": "Research Proposal", "field": "phd_proposal", "required": True})
                 standard_checklist.append({"label": "CV", "field": "cv", "required": True})
             
-            if target_applicant.ka_study_7yrs:
+            if target_applicant.get("ka_study_7yrs"):
                 standard_checklist.append({"label": "Karnataka Study Certificate", "field": "ka_study_7yrs_certificate", "required": True})
 
             for item in standard_checklist:

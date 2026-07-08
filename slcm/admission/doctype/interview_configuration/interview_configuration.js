@@ -7,29 +7,68 @@ frappe.ui.form.on("Interview Configuration", {
                 }
             };
         });
+        frm.set_query("program", function () {
+            return {
+                query: "slcm.admission.doctype.entrance_test_generation.entrance_test_generation.get_program_query",
+                filters: {
+                    "admission_cycle": frm.doc.admission_cycle,
+                    "campus": frm.doc.campus
+                }
+            };
+        });
+    },
+
+    before_save: function (frm) {
+        let pattern = /^[1-9]\d*:[1-9]\d*$/;
+        if (frm.doc.enter_domestic_ratio && !pattern.test(frm.doc.enter_domestic_ratio)) {
+            frappe.throw(__("Domestic Ratio must be in the format 'X:Y' (e.g. '3:1') where both X and Y are positive integers."));
+        }
+        if (frm.doc.enter_international_ratio && !pattern.test(frm.doc.enter_international_ratio)) {
+            frappe.throw(__("International Ratio must be in the format 'X:Y' (e.g. '3:1') where both X and Y are positive integers."));
+        }
     },
 
     refresh: function (frm) {
-
         // Remove any previously added buttons (safety)
+        frm.remove_custom_button("Fetch Applicant");
         frm.remove_custom_button("Generate Interview List");
         frm.remove_custom_button("View Interview List");
 
-        // ── "Generate Interview List" button ─────────────────────────────────
-        // Visible only when:
-        //   1. Document is unsaved / not submitted (docstatus = 0)
-        //   2. Status is Draft, In Progress or Failed
-        //   3. All required fields are filled
-        if (
+        const show_actions = (
             !frm.is_new() &&
             frm.doc.docstatus === 0 &&
             ["Draft", "In Progress", "Failed"].includes(frm.doc.status || "Draft") &&
             frm.doc.academic_year &&
             frm.doc.campus &&
             frm.doc.admission_cycle &&
-            frm.doc.program_level
-        ) {
+            (frm.doc.program && frm.doc.program.length > 0)
+        );
+
+        if (show_actions) {
+            // ── "Fetch Applicant" button ──────────────────────────────────────
+            frm.add_custom_button(__("Fetch Applicant"), function () {
+                frm.call({
+                    method: "fetch_applicant_counts",
+                    doc: frm.doc,
+                    freeze: true,
+                    freeze_message: __("Fetching applicant counts..."),
+                    callback: (r) => {
+                        if (!r.exc) {
+                            frm.reload_doc();
+                            frappe.show_alert({
+                                message: __("Applicant counts updated successfully."),
+                                indicator: "green"
+                            });
+                        }
+                    }
+                });
+            }).addClass("btn-primary");
+
+            // ── "Generate Interview List" button ─────────────────────────────────
             frm.add_custom_button(__("Generate Interview List"), function () {
+                let program_list = (frm.doc.program || []).map(p => p.program).filter(Boolean).join(", ");
+                let program_row = program_list ? 
+                    `<tr><td style="color: #adb5bd; font-weight: 500;">Programme</td><td style="font-weight: 700; text-align: right; color: #495057;">${program_list}</td></tr>` : '';
 
                 frappe.confirm(
                     __(
@@ -45,7 +84,7 @@ frappe.ui.form.on("Interview Configuration", {
                                     <tr><td style="color: #adb5bd; font-weight: 500;">Academic Year</td><td style="font-weight: 700; text-align: right; color: #495057;">{0}</td></tr>
                                     <tr><td style="color: #adb5bd; font-weight: 500;">Campus</td><td style="font-weight: 700; text-align: right; color: #495057;">{1}</td></tr>
                                     <tr><td style="color: #adb5bd; font-weight: 500;">Admission Cycle</td><td style="font-weight: 700; text-align: right; color: #495057;">{2}</td></tr>
-                                    <tr><td style="color: #adb5bd; font-weight: 500;">Program Level</td><td style="font-weight: 700; text-align: right; color: #495057;">{3}</td></tr>
+                                    ${program_row}
                                 </table>
                             </div>
                             <p style="font-size: 12px; color: #adb5bd; font-style: italic;">This process will only fetch new eligible candidates.</p>
@@ -53,8 +92,7 @@ frappe.ui.form.on("Interview Configuration", {
                         [
                             frm.doc.academic_year,
                             frm.doc.campus,
-                            frm.doc.admission_cycle,
-                            frm.doc.program_level
+                            frm.doc.admission_cycle
                         ]
                     ),
                     () => {
@@ -76,36 +114,62 @@ frappe.ui.form.on("Interview Configuration", {
                     }
                 );
 
-            }, __("Actions"))
-                .addClass("btn-primary")
-                .css({ "font-weight": "bold" });
+            }).addClass("btn-primary").css({ "font-weight": "bold" });
         }
 
         // ── "View Interview List" button ──────────────────────────────────────
         // Visible when the list has already been generated
         if (["Completed"].includes(frm.doc.status)) {
             frm.add_custom_button(__("View Interview List"), function () {
-                frappe.db.get_value("Interview List", {
+                let filters = {
                     academic_year: frm.doc.academic_year,
                     campus: frm.doc.campus,
-                    admission_cycle: frm.doc.admission_cycle,
-                    program_level: frm.doc.program_level
-                }, "name", (r) => {
+                    admission_cycle: frm.doc.admission_cycle
+                };
+                let first_program = (frm.doc.program && frm.doc.program.length > 0) ? frm.doc.program[0].program : null;
+                if (first_program) {
+                    filters.program = first_program;
+                }
+                frappe.db.get_value("Interview List", filters, "name", (r) => {
                     if (r && r.name) {
                         frappe.set_route("Form", "Interview List", r.name);
                     } else {
                         frappe.msgprint(__("Associated Interview List not found."));
                     }
                 });
-            }, __("Actions"));
+            });
         }
+
+        toggle_ratio_fields(frm);
     },
 
     // Re-evaluate button visibility on field changes
     academic_year: function (frm) { frm.trigger("refresh"); },
     campus: function (frm) { frm.trigger("refresh"); },
     admission_cycle: function (frm) { frm.trigger("refresh"); },
-    program_level: function (frm) { frm.trigger("refresh"); },
-    status: function (frm) { frm.trigger("refresh"); }
+    program: function (frm) { frm.trigger("refresh"); },
+    status: function (frm) { frm.trigger("refresh"); },
 
+    applicant_type: function (frm) {
+        if (frm.doc.applicant_type === "Domestic Applicants") {
+            frm.set_value("enter_international_ratio", "");
+        } else if (frm.doc.applicant_type === "International Applicants") {
+            frm.set_value("enter_domestic_ratio", "");
+        }
+        toggle_ratio_fields(frm);
+    },
+
+    fetch_exempted_applicant: function (frm) {
+        toggle_ratio_fields(frm);
+    }
 });
+
+function toggle_ratio_fields(frm) {
+    let show_domestic = !frm.doc.fetch_exempted_applicant && (frm.doc.applicant_type === "Domestic Applicants" || frm.doc.applicant_type === "Both");
+    let show_international = !frm.doc.fetch_exempted_applicant && (frm.doc.applicant_type === "International Applicants" || frm.doc.applicant_type === "Both");
+    let show_exempted = !!frm.doc.fetch_exempted_applicant;
+
+    frm.toggle_display("enter_domestic_ratio", show_domestic);
+    frm.toggle_display("enter_international_ratio", show_international);
+    frm.toggle_display("part_b_score", show_exempted);
+}

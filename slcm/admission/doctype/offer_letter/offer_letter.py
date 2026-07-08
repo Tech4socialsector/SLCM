@@ -120,21 +120,6 @@ class OfferLetter(Document):
         if db_status == self.status:
             return
 
-        allowed_transitions = {
-            "Draft": ["Issued", "Withdrawn"],
-            "Issued": ["Accepted", "Rejected", "Expired", "Withdrawn"],
-            # Expired: scheduler (payment deadline passed without Payment Completed)
-            "Accepted": ["Withdrawn", "Payment Completed", "Expired"],
-            "Payment Completed": ["Withdrawn"],
-            "Rejected": [],
-            "Expired": ["Issued"],
-            "Withdrawn": ["Draft"]
-        }
-
-        if self.status not in allowed_transitions.get(db_status, []):
-            throw(_("Invalid status transition: From {0} to {1}").format(db_status, self.status))
-
-
 
     @frappe.whitelist()
     def sync_fee_amount(self):
