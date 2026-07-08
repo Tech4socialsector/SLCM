@@ -507,12 +507,15 @@ function open_reservation_policy(frm, row) {
     function sync_tables() {
         // Vertical
         dialog.$wrapper.find(".vertical-table tbody tr").each(function (idx) {
+            const comp_cat_text = $(this).find(".comp-category-btn").text().trim();
             vertical_rows[idx] = {
                 reservation_quota: $(this).find(".category").val(),
                 category_name: $(this).find(".category-name-btn").text().trim(),
+                compartmentalized_category: (comp_cat_text === __("Pick") || comp_cat_text === "None") ? "" : comp_cat_text,
                 priority: parseInt($(this).find(".priority").val()) || (idx + 1),
                 percentage: parseFloat($(this).find(".percentage").val()) || 0,
                 seats: parseInt($(this).find(".allocated_seats").val()) || 0,
+                compartmentalized_waitlist_seats: parseInt($(this).find(".comp_waitlist").val()) || 0,
                 application_fee: parseFloat($(this).find(".application_fee").val()) || 0,
                 min_percentile: parseFloat($(this).find(".min_percentile").val()) || 0
             };
@@ -562,31 +565,50 @@ function open_reservation_policy(frm, row) {
         }, __("Select Category"));
     }
 
+    function open_comp_category_picker(idx) {
+        const p = frappe.prompt([{
+            fieldtype: "Link", fieldname: "val", label: __("Compartmentalised Category"),
+            options: "Admission Category",
+            get_query: () => {
+                return {
+                    filters: { "reservation_type": "Compartmentalised Horizontal", "is_active": 1 }
+                };
+            }
+        }], function (values) {
+            dialog.$wrapper.find(`.vertical-table tbody tr`).eq(idx).find(".comp-category-btn").text(values.val || "None");
+            sync_tables();
+        }, __("Select Compartmentalised Category"));
+    }
+
     function render_vertical() {
         const rows = (vertical_rows.length ? vertical_rows : [{}]).map((r, idx) => `
             <tr>
-                <td style="width: 15%;"><select class="form-control category" style="height: 32px;"><option value="General" ${r.reservation_quota === "General" ? "selected" : ""}>General</option><option value="Government" ${r.reservation_quota === "Government" ? "selected" : ""}>Government</option><option value="Management" ${r.reservation_quota === "Management" ? "selected" : ""}>Management</option></select></td>
-                <td style="width: 20%;"><button class="btn btn-default btn-sm category-name-btn" style="width:100%; height: 32px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${r.category_name || __("Pick")}</button></td>
-                <td style="width: 10%;"><input type="number" class="form-control priority" style="height: 32px;" value="${r.priority || (idx + 1)}"></td>
-                <td style="width: 10%;"><input type="number" class="form-control percentage" style="height: 32px;" value="${r.percentage || ""}"></td>
-                <td style="width: 10%;"><input type="number" class="form-control allocated_seats" style="height: 32px;" value="${r.seats || ""}" readonly></td>
-                <td style="width: 15%;"><input type="number" class="form-control application_fee" style="height: 32px;" value="${r.application_fee || ""}"></td>
-                <td style="width: 15%;"><input type="number" class="form-control min_percentile" style="height: 32px;" value="${r.min_percentile || ""}"></td>
-                <td style="width: 5%; text-align: center;"><button class="btn btn-danger btn-xs remove-row" style="margin-top: 5px;"><i class="fa fa-times"></i></button></td>
+                <td style="width: 10%;"><select class="form-control category" style="height: 32px;"><option value="General" ${r.reservation_quota === "General" ? "selected" : ""}>General</option><option value="Government" ${r.reservation_quota === "Government" ? "selected" : ""}>Government</option><option value="Management" ${r.reservation_quota === "Management" ? "selected" : ""}>Management</option></select></td>
+                <td style="width: 15%;"><button class="btn btn-default btn-sm category-name-btn" style="width:100%; height: 32px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${r.category_name || __("Pick")}</button></td>
+                <td style="width: 15%;"><button class="btn btn-default btn-sm comp-category-btn" style="width:100%; height: 32px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${r.compartmentalized_category || "None"}</button></td>
+                <td style="width: 8%;"><input type="number" class="form-control priority" style="height: 32px;" value="${r.priority || (idx + 1)}"></td>
+                <td style="width: 8%;"><input type="number" class="form-control percentage" style="height: 32px;" value="${r.percentage || ""}"></td>
+                <td style="width: 8%;"><input type="number" class="form-control allocated_seats" style="height: 32px;" value="${r.seats || ""}" readonly></td>
+                <td style="width: 10%;"><input type="number" class="form-control comp_waitlist" style="height: 32px;" value="${r.compartmentalized_waitlist_seats || ""}"></td>
+                <td style="width: 12%;"><input type="number" class="form-control application_fee" style="height: 32px;" value="${r.application_fee || r.application_fee_for_indian || ""}"></td>
+                <td style="width: 10%;"><input type="number" class="form-control min_percentile" style="height: 32px;" value="${r.min_percentile || ""}"></td>
+                <td style="width: 4%; text-align: center;"><button class="btn btn-danger btn-xs remove-row" style="margin-top: 5px;"><i class="fa fa-times"></i></button></td>
             </tr>`).join("");
         dialog.fields_dict.vertical_html.$wrapper.html(`
             <div style="margin-bottom: 15px;">
                 <table class="table table-bordered vertical-table" style="table-layout: fixed; width: 100%;">
                     <thead>
                         <tr style="background-color: #f8f9fa;">
-                            <th style="width: 15%; font-size: 11px;">Quota</th>
-                            <th style="width: 20%; font-size: 11px;">Category</th>
-                            <th style="width: 10%; font-size: 11px;">Priority</th>
-                            <th style="width: 10%; font-size: 11px;">Percentage</th>
-                            <th style="width: 10%; font-size: 11px;">Seats</th>
-                            <th style="width: 15%; font-size: 11px;">Application Fee</th>
-                            <th style="width: 15%; font-size: 11px;">Min Percentile Cutoff</th>
-                            <th style="width: 5%;"></th>
+                            <th style="width: 10%; font-size: 11px;">Quota</th>
+                            <th style="width: 15%; font-size: 11px;">Category</th>
+                            <th style="width: 15%; font-size: 11px;">Compartmentalised</th>
+                            <th style="width: 8%; font-size: 11px;">Priority</th>
+                            <th style="width: 8%; font-size: 11px;">Percentage</th>
+                            <th style="width: 8%; font-size: 11px;">Seats</th>
+                            <th style="width: 10%; font-size: 11px;">Comp Waitlist</th>
+                            <th style="width: 12%; font-size: 11px;">Application Fee</th>
+                            <th style="width: 10%; font-size: 11px;">Min Percentile Cutoff</th>
+                            <th style="width: 4%;"></th>
                         </tr>
                     </thead>
                     <tbody>${rows}</tbody>
@@ -690,6 +712,11 @@ function open_reservation_policy(frm, row) {
         // Specifically look for classes ending in -table to avoid matching the generic 'table' class
         const tbl = $tr.closest("table").attr("class").split(" ").find(c => c.endsWith("-table"));
         open_category_picker(tbl, idx);
+    });
+    dialog.$wrapper.on("click", ".comp-category-btn", (e) => {
+        const $tr = $(e.currentTarget).closest("tr");
+        const idx = $tr.index();
+        open_comp_category_picker(idx);
     });
     dialog.$wrapper.on("input", ".percentage", (e) => {
         const $tr = $(e.currentTarget).closest("tr");

@@ -80,13 +80,6 @@ class ScholarshipScheme(Document):
 					frappe.throw(frappe._("Row #{0}: Coverage Value cannot be negative").format(row.idx))
 
 	def validate_limits(self):
-		# exclusive_scheme and max_schemes_per_applicant were renamed to match this logic
-		exclusive_scheme = self.get("exclusive_scheme")
-		max_schemes_per_applicant = self.get("max_schemes_per_applicant") or 0
-		
-		if exclusive_scheme and max_schemes_per_applicant > 1:
-			frappe.throw(frappe._("Exclusive scheme must allow only 1 per applicant"))
-
 		max_beneficiaries = self.get("max_beneficiaries")
 		current_beneficiaries = self.get("current_beneficiaries") or 0
 		if max_beneficiaries and current_beneficiaries > max_beneficiaries:
@@ -134,21 +127,7 @@ class ScholarshipScheme(Document):
 			"status": status
 		})
 		
-		self.rebuild_mapping_counts()
-		
 		return {"status": "Success", "utilized_budget": self.utilized_budget, "current_beneficiaries": self.current_beneficiaries}
-
-	def rebuild_mapping_counts(self):
-		"""
-		Recalculates current_count for all mappings linked to this scheme.
-		"""
-		mappings = frappe.get_all("Scholarship Scheme Mapping", 
-								filters={"scholarship_scheme": self.name},
-								fields=["name"])
-		
-		for m in mappings:
-			doc = frappe.get_doc("Scholarship Scheme Mapping", m.name)
-			doc.sync_count()
 
 	def autoname(self):
 		if not self.admission_cycle:

@@ -359,8 +359,19 @@ frappe.ui.form.on("Student Master", {
 			method: "slcm.slcm.doctype.student_master.student_master.get_academic_progress_list",
 			args: { student_name: frm.doc.name },
 			callback(r) {
-				const enrollments = r.message || [];
-				_load_academic_progress(frm, null, enrollments);
+				const d = r && r.message;
+				const html = d
+					? _build_academic_progress_html(d)
+					: `<div style="color:#ef4444;font-size:13px;">Could not load academic progress.</div>`;
+				frm.set_df_property("academic_progress_html", "options", html);
+				frm.refresh_field("academic_progress_html");
+
+				// Populate Year of Study field with ordinal label
+				// const yr = (d && d.current_year) || frm.doc.current_year;
+				// const new_yr_str = _ordinal_year(yr);
+				// if (new_yr_str && (frm.doc.year_of_study || "") !== new_yr_str) {
+				// 	frm.set_value("year_of_study", new_yr_str);
+				// }
 			},
 			error() {
 				_load_academic_progress(frm, null, []);

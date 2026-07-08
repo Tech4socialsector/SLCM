@@ -169,7 +169,7 @@ def sync_application_fee_assignment_for_applicant(applicant_name):
 		return None
 
 	category = _get_applicant_category(applicant_name)
-	is_foreign = applicant.nationality != "Indian"
+	is_foreign = applicant.foriegn_national == "Yes"
 	fee_amount = flt(
 		get_application_fee_for_category(applicant.program, applicant.admission_cycle, category, is_foreign=is_foreign), 2
 	)
@@ -297,7 +297,7 @@ def get_application_fee_details(applicant_name):
 	"""
 	applicant = frappe.get_doc("Applicant", applicant_name)
 	category = _get_applicant_category(applicant_name)
-	is_foreign = applicant.nationality != "Indian"
+	is_foreign = applicant.foriegn_national == "Yes"
 
 	fee_amount = get_application_fee_for_category(
 		applicant.program, applicant.admission_cycle, category, is_foreign=is_foreign

@@ -14,6 +14,7 @@
   "program",
   "column_break_app_1",
   "payment_request",
+  "applicant_payment_receipt",
   "amount_paid",
   "razorpay_id",
   "section_cancellation",
@@ -80,6 +81,13 @@
    "fieldtype": "Link",
    "label": "Fee Payment",
    "options": "Fee Payment",
+   "read_only": 1
+  },
+  {
+   "fieldname": "applicant_payment_receipt",
+   "fieldtype": "Link",
+   "label": "Payment Receipt",
+   "options": "Applicant Payment Receipt",
    "read_only": 1
   },
   {

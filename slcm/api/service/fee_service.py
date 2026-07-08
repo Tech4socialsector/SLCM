@@ -127,8 +127,8 @@ class FeeService:
         if frappe.db.exists("Applicant Fee Assignment", {"offer_letter": offer.name, "status": ["!=", "Cancelled"]}):
             return
 
-        nationality = frappe.db.get_value("Applicant", offer.applicant, "nationality")
-        is_foreign = nationality != "Indian"
+        foriegn_national = frappe.db.get_value("Applicant", offer.applicant, "foriegn_national")
+        is_foreign = foriegn_national == "Yes"
         fee_data = FeeService._calculate_and_freeze_fees(offer.fee_structure, is_foreign=is_foreign)
 
         admission_cycle = offer.admission_cycle or frappe.db.get_value("Applicant", offer.applicant, "admission_cycle")
@@ -622,8 +622,8 @@ class FeeService:
                 return existing
 
             # 1. Fetch components directly
-            nationality = frappe.db.get_value("Applicant", offer_doc.applicant, "nationality")
-            is_foreign = nationality != "Indian"
+            foriegn_national = frappe.db.get_value("Applicant", offer_doc.applicant, "foriegn_national")
+            is_foreign = foriegn_national == "Yes"
             fee_data = FeeService._calculate_and_freeze_fees(offer_doc.fee_structure, is_foreign=is_foreign)
             
             total_payable = fee_data.get("total_payable")
@@ -674,17 +674,17 @@ class FeeService:
             total_from_components = 0
             for comp in components:
                 # Use total_amount if available, fallback to amount
-                comp_total = _flt(getattr(comp, "total_amount", 0)) or _flt(getattr(comp, "amount", 0))
+                comp_total = _flt(comp.get("total_amount", 0)) or _flt(comp.get("amount", 0))
                 total_from_components += comp_total
 
                 receipt.append("fee_components", {
-                    "fee_component": comp.fee_component,
-                    "component_name": comp.component_name,
-                    "amount": comp.amount,
-                    "is_taxable": comp.is_taxable,
-                    "tax_rate": comp.tax_rate,
-                    "tax_amount": comp.tax_amount,
-                    "total_amount": comp.total_amount
+                    "fee_component": comp.get("fee_component"),
+                    "component_name": comp.get("component_name"),
+                    "amount": comp.get("amount"),
+                    "is_taxable": comp.get("is_taxable"),
+                    "tax_rate": comp.get("tax_rate"),
+                    "tax_amount": comp.get("tax_amount"),
+                    "total_amount": comp.get("total_amount")
                 })
 
             # Store scholarship in dedicated header fields (no Fee Component record needed)
@@ -1394,7 +1394,7 @@ class FeeService:
 
             from slcm.api.service.application_fee_service import get_application_fee_for_category, _get_applicant_category
             category = _get_applicant_category(applicant_doc.name)
-            is_foreign = getattr(applicant_doc, "nationality", "") != "Indian"
+            is_foreign = getattr(applicant_doc, "foriegn_national", "") == "Yes"
             fee_amount = flt(
                 get_application_fee_for_category(applicant_doc.program, applicant_doc.admission_cycle, category, is_foreign=is_foreign)
             )

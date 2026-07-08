@@ -78,19 +78,45 @@ class RefundRequest(Document):
 				frappe.logger().info(f"Seat released for Applicant {self.applicant} in Allocation {parent_allocation}")
 
 	def validate(self):
+		self.validate_afa_fee_type()
 		self.fetch_payment_details()
 		self.apply_refund_policy()
 		self.handle_refund_type()
 		self.validate_refund_amount()
 		self.set_approval_details()
-		self.process_gateway_refund()
+		# NOTE: process_gateway_refund() is intentionally NOT called here.
+		# Gateway refunds are only triggered via the 'Process Refund' button
+		# (slcm.admission_cancel_api.process_refund) which sets a Processing lock
+		# before calling Razorpay, preventing duplicate API calls.
+
+
+	def validate_afa_fee_type(self):
+		"""Ensure only Admission Fee type AFA can be linked to a Refund Request."""
+		if self.applicant_fee_assignment:
+			fee_type = frappe.db.get_value(
+				"Applicant Fee Assignment", self.applicant_fee_assignment, "fee_type"
+			)
+			if fee_type != "Admission Fee":
+				frappe.throw(
+					_("Only 'Admission Fee' Applicant Fee Assignments can be linked to a Refund Request. "
+					  "The selected assignment is of type '{0}'.").format(fee_type or "Unknown")
+				)
 
 	def fetch_payment_details(self):
-		if self.payment_request and not self.razorpay_payment_id:
-			payment = frappe.get_doc("Fee Payment", self.payment_request)
-			self.amount_paid = flt(payment.amount)
-			self.razorpay_payment_id = payment.reference_number
-		elif self.applicant_payment_receipt and not self.razorpay_payment_id:
+		"""Resolve payment details from Applicant Fee Assignment → Applicant Payment Receipt."""
+		if self.applicant_fee_assignment and not self.razorpay_payment_id:
+			# Get the latest paid Applicant Payment Receipt linked to this AFA
+			receipt_name = frappe.db.get_value(
+				"Applicant Payment Receipt",
+				{"offer_letter": frappe.db.get_value("Applicant Fee Assignment", self.applicant_fee_assignment, "offer_letter"),
+				 "docstatus": ["<", 2]},
+				"name",
+				order_by="creation desc"
+			)
+			if receipt_name:
+				self.applicant_payment_receipt = receipt_name
+		
+		if self.applicant_payment_receipt and not self.razorpay_payment_id:
 			receipt = frappe.get_doc("Applicant Payment Receipt", self.applicant_payment_receipt)
 			# Use net_amount (post-scholarship) as the actual amount paid
 			self.amount_paid = flt(receipt.net_amount) if flt(receipt.get('net_amount')) > 0 else flt(receipt.total_amount)
@@ -165,16 +191,16 @@ class RefundRequest(Document):
 			ref_field = "applicant_payment_receipt"
 			ref_value = self.applicant_payment_receipt
 			frappe.db.sql("SELECT name FROM `tabApplicant Payment Receipt` WHERE name = %s FOR UPDATE", ref_value)
-		elif self.payment_request:
-			ref_field = "payment_request"
-			ref_value = self.payment_request
-			frappe.db.sql("SELECT name FROM `tabFee Payment` WHERE name = %s FOR UPDATE", ref_value)
+		elif self.applicant_fee_assignment:
+			ref_field = "applicant_fee_assignment"
+			ref_value = self.applicant_fee_assignment
+			frappe.db.sql("SELECT name FROM `tabApplicant Fee Assignment` WHERE name = %s FOR UPDATE", ref_value)
 
 		if ref_field and ref_value:
 			already_refunded = frappe.db.sql(f"""
 				SELECT SUM(refund_amount) FROM `tabRefund Request`
 				WHERE {ref_field} = %s AND name != %s AND status NOT IN ('Rejected', 'Failed')
-			""", (ref_value, self.name))[0][0] or 0
+				""", (ref_value, self.name))[0][0] or 0
 			
 			if flt(already_refunded) + flt(self.refund_amount) > flt(self.amount_paid):
 				frappe.throw(_(
@@ -242,7 +268,7 @@ class RefundRequest(Document):
 			txn = frappe.get_doc({
 				"doctype": "Refund Transaction",
 				"refund_request": self.name,
-				"payment_request": self.payment_request,
+				"applicant_fee_assignment": self.get("applicant_fee_assignment"),
 				"razorpay_payment_id": self.razorpay_payment_id,
 				"razorpay_refund_id": self.razorpay_refund_id or (response.get("id") if response else None),
 				"refund_amount": flt(self.refund_amount),
@@ -266,8 +292,42 @@ class RefundRequest(Document):
 def create_refund_request(cancellation):
 	if isinstance(cancellation, str):
 		cancellation = frappe.get_doc("Admission Cancellation", cancellation)
-		
-	if not cancellation.payment_request and not cancellation.applicant_payment_receipt:
+
+	# Resolve Applicant Fee Assignment for this applicant's offer
+	afa_name = None
+	if cancellation.offer:
+		afa_name = frappe.db.get_value("Applicant Fee Assignment", {
+			"applicant": cancellation.applicant,
+			"offer_letter": cancellation.offer,
+			"fee_type": "Admission Fee",
+			"docstatus": 1
+		}, "name", order_by="creation desc")
+
+	# Resolve Payment Receipt — prefer the one already on the cancellation doc
+	# (set by fetch_applicant_details), then fall back to querying via offer_letter
+	receipt_name = cancellation.get("applicant_payment_receipt")
+
+	if not receipt_name and cancellation.offer:
+		receipt_name = frappe.db.get_value(
+			"Applicant Payment Receipt",
+			{"offer_letter": cancellation.offer, "docstatus": ["<", 2]},
+			"name",
+			order_by="creation desc"
+		)
+
+	# If still no receipt, try via the AFA's offer_letter (handles Converted AFA)
+	if not receipt_name and afa_name:
+		offer_letter = frappe.db.get_value("Applicant Fee Assignment", afa_name, "offer_letter")
+		if offer_letter:
+			receipt_name = frappe.db.get_value(
+				"Applicant Payment Receipt",
+				{"offer_letter": offer_letter, "docstatus": ["<", 2]},
+				"name",
+				order_by="creation desc"
+			)
+
+	# Nothing to refund if we have no payment source at all
+	if not afa_name and not receipt_name and not cancellation.get("razorpay_id"):
 		return None
 
 	refund = frappe.new_doc("Refund Request")
@@ -275,23 +335,35 @@ def create_refund_request(cancellation):
 	refund.admission_cancellation = cancellation.name
 	refund.status = "Draft"
 	refund.refund_reason = cancellation.cancellation_reason
-	
-	if cancellation.payment_request:
-		payment = frappe.get_doc("Fee Payment", cancellation.payment_request)
-		refund.payment_request = cancellation.payment_request
-		refund.razorpay_payment_id = payment.reference_number
-		refund.amount_paid = flt(payment.amount)
-		refund.refund_amount = flt(payment.amount)
-	
-	if cancellation.applicant_payment_receipt:
-		receipt = frappe.get_doc("Applicant Payment Receipt", cancellation.applicant_payment_receipt)
-		refund.applicant_payment_receipt = cancellation.applicant_payment_receipt
-		if not refund.razorpay_payment_id:
-			refund.razorpay_payment_id = receipt.transaction_id
-		if not refund.amount_paid:
-			# Use net_amount (post-scholarship) as the actual amount paid
-			refund.amount_paid = flt(receipt.net_amount) if flt(receipt.get('net_amount')) > 0 else flt(receipt.total_amount)
-			refund.refund_amount = refund.amount_paid
-	
+
+	# Link the AFA (Admission Fee type, submitted)
+	if afa_name:
+		refund.applicant_fee_assignment = afa_name
+
+	# Resolve actual paid amount & Razorpay ID from Payment Receipt
+	if receipt_name:
+		receipt = frappe.get_doc("Applicant Payment Receipt", receipt_name)
+		refund.applicant_payment_receipt = receipt_name
+		refund.razorpay_payment_id = receipt.transaction_id
+		# net_amount = actual amount after scholarship deduction
+		refund.amount_paid = flt(receipt.net_amount) if flt(receipt.get('net_amount')) > 0 else flt(receipt.total_amount)
+		refund.refund_amount = refund.amount_paid
+
+	# Last fallback: razorpay_id stored directly on cancellation (legacy path)
+	if not refund.razorpay_payment_id and cancellation.get("razorpay_id"):
+		refund.razorpay_payment_id = cancellation.razorpay_id
+		refund.amount_paid = flt(cancellation.amount_paid)
+		refund.refund_amount = flt(cancellation.amount_paid)
+
+	# Safety guard: never create a refund with no amount and no payment ID
+	if not refund.razorpay_payment_id and not flt(refund.amount_paid):
+		frappe.log_error(
+			f"Skipped Refund Request creation for Cancellation {cancellation.name}: "
+			f"no Razorpay payment ID and no amount resolved.",
+			"Refund Request Creation"
+		)
+		return None
+
 	refund.insert(ignore_permissions=True)
 	return refund.name
+

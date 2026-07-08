@@ -78,6 +78,13 @@ frappe.listview_settings['Entrance Test Seat Allocation'] = {
                                 reqd: 1
                             },
                             {
+                                label: __("Programme"),
+                                fieldname: "program",
+                                fieldtype: "Link",
+                                options: "Program",
+                                depends_on: "eval:doc.program_level"
+                            },
+                            {
                                 label: __("Entrance Test List"),
                                 fieldname: "entrance_test_list",
                                 fieldtype: "Link",
@@ -114,6 +121,18 @@ frappe.listview_settings['Entrance Test Seat Allocation'] = {
                             }
                         };
                     });
+                    d.set_query("program", function () {
+                        return {
+                            query: "slcm.admission.doctype.entrance_test_generation.entrance_test_generation.get_program_query",
+                            filters: {
+                                "program_level": d.get_value("program_level"),
+                                "admission_cycle": d.get_value("admission_cycle")
+                            }
+                        };
+                    });
+                    d.fields_dict.program_level.df.on_change = () => {
+                        d.set_value("program", "");
+                    };
                     d.show();
                 });
                 ubtn.addClass('btn-update-rank');

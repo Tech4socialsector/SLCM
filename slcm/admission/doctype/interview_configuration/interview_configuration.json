@@ -12,7 +12,18 @@
   "campus",
   "admission_cycle",
   "column_break_ivc1",
-  "program_level",
+  "program",
+  "applicant_type",
+  "fetch_exempted_applicant",
+  "sec_break_counts",
+  "domestic_applicants_count",
+  "col_break_counts",
+  "international_applicants_count",
+  "sec_break_ratios",
+  "enter_domestic_ratio",
+  "col_break_ratios",
+  "enter_international_ratio",
+  "part_b_score",
   "status",
   "generated_on",
   "generated_by"
@@ -61,14 +72,75 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "Research Course",
-   "fieldname": "program_level",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Program Level",
-   "options": "Undergraduate\nPostgraduate\nResearch Course",
+   "fieldname": "program",
+   "fieldtype": "Table MultiSelect",
+   "label": "Programme",
+   "options": "Interview Configuration Program",
    "reqd": 1
+  },
+  {
+   "fieldname": "applicant_type",
+   "fieldtype": "Select",
+   "label": "Applicant Type",
+   "options": "Domestic Applicants\nInternational Applicants\nBoth",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "fetch_exempted_applicant",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Fetch Exempted Applicant"
+  },
+  {
+   "fieldname": "sec_break_counts",
+   "fieldtype": "Section Break",
+   "label": "Applicant Counts"
+  },
+  {
+   "fieldname": "domestic_applicants_count",
+   "fieldtype": "Int",
+   "label": "Domestic Applicants Count",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_break_counts",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "international_applicants_count",
+   "fieldtype": "Int",
+   "label": "International Applicants Count",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sec_break_ratios",
+   "fieldtype": "Section Break",
+   "label": "Ratio Configuration",
+   "depends_on": "eval:!doc.fetch_exempted_applicant"
+  },
+  {
+   "fieldname": "enter_domestic_ratio",
+   "fieldtype": "Data",
+   "label": "Enter Domestic Ratio",
+   "depends_on": "eval:!doc.fetch_exempted_applicant && (doc.applicant_type == 'Domestic Applicants' || doc.applicant_type == 'Both')"
+  },
+  {
+   "fieldname": "col_break_ratios",
+   "fieldtype": "Column Break",
+   "depends_on": "eval:!doc.fetch_exempted_applicant"
+  },
+  {
+   "fieldname": "enter_international_ratio",
+   "fieldtype": "Data",
+   "label": "Enter International Ratio",
+   "depends_on": "eval:!doc.fetch_exempted_applicant && (doc.applicant_type == 'International Applicants' || doc.applicant_type == 'Both')"
+  },
+  {
+   "fieldname": "part_b_score",
+   "fieldtype": "Float",
+   "label": "Part B Score",
+   "depends_on": "eval:doc.fetch_exempted_applicant"
   },
   {
    "default": "Draft",

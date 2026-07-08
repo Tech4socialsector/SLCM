@@ -103,11 +103,14 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
     # ── Programme ─────────────────────────────────────────────────────────────
     student.programme_of_study = program
 
-    # ── Department (derived from programme/program) ────────────────────────────
+    # ── Department & Level of Study (derived from programme/program) ────────────────────────────
     if program:
-        dept = frappe.db.get_value("Programme", program, "department")
-        if dept:
-            student.department = dept
+        program_data = frappe.db.get_value("Program", program, ["department", "level_of_study"], as_dict=True)
+        if program_data:
+            if program_data.get("department"):
+                student.department = program_data.department
+            if program_data.get("level_of_study"):
+                student.level_of_study = program_data.level_of_study
 
     # ── Academic Year ──────────────────────────────────────────────────────────
     # Priority: 1. Applicant's academic_year, 2. Derived from Admission Cycle
@@ -211,8 +214,8 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
     student.entrance_exam_score_marksheet = applicant.get("national_test_certificate") or None
 
     #User
-    student.user = applicant.get("email") or None 
-    
+    student.user = applicant.get("email") or None
+
     if offer_letter_name:
         offer_pdf = frappe.db.get_value("Offer Letter", offer_letter_name, "offer_letter_pdf")
         if offer_pdf:
@@ -411,9 +414,9 @@ def _sync_finance_to_student(
         effective_total = total_amount if total_amount > 0 else existing_total
         net_fee = max(effective_total - disc, 0)
         update_fields["net_program_fee"]     = net_fee
-        update_fields["outstanding_balance"] = max(net_fee - paid, 0)
 
         # Fee payment status — map AFA vocabulary → Student Master options
+        mapped_status = None
         if fee_payment_status:
             afa_to_student_status = {
                 "Paid":           "Paid",
@@ -421,9 +424,16 @@ def _sync_finance_to_student(
                 "Assigned":       "Unpaid",
                 "Converted":      "Paid",
             }
-            mapped = afa_to_student_status.get(fee_payment_status)
-            if mapped:
-                update_fields["fee_payment_status"] = mapped
+            mapped_status = afa_to_student_status.get(fee_payment_status)
+            if mapped_status:
+                update_fields["fee_payment_status"] = mapped_status
+
+        # If fully paid, override the paid and outstanding values
+        if mapped_status == "Paid":
+            update_fields["total_paid_amount"] = net_fee
+            update_fields["outstanding_balance"] = 0
+        else:
+            update_fields["outstanding_balance"] = max(net_fee - paid, 0)
 
         if update_fields:
             frappe.db.set_value(
@@ -523,6 +533,9 @@ def convert_applicant_to_student(applicant_name, program, admission_cycle, offer
             f"[convert_applicant_to_student] Student Master {existing_by_app_no} "
             f"already exists for Applicant {applicant_name}. Returning existing."
         )
+        if applicant.status != "Enrolled":
+            applicant.status = "Enrolled"
+            applicant.save(ignore_permissions=True)
         return {"student_name": existing_by_app_no, "created": False}
 
     # ── 2. Guard: block if Active student with same email belongs to different applicant ──
@@ -591,31 +604,35 @@ def convert_applicant_to_student(applicant_name, program, admission_cycle, offer
             "fee_type": "Admission Fee",
             "docstatus": 1
         }, "name")
-        
+
         if afa_name:
             from slcm.admission.doctype.applicant_fee_assignment.applicant_fee_assignment import create_invoice
-            # We don't call create_invoice here because that would create a DUPLICATE invoice 
+            # We don't call create_invoice here because that would create a DUPLICATE invoice
             # if this was called FROM create_invoice.
             # Instead, we just sync the finance data if it hasn't been done.
             afa_doc = frappe.get_doc("Applicant Fee Assignment", afa_name)
-            
+
             # Re-use the logic from AFA.py to fetch scholarship details
             scholarship_type = None
             scholarship_percentage = 0
             scholarship_approval_date = None
-            
+
             if afa_doc.get("scholarship_application"):
-                sa_data = frappe.db.get_value("Scholarship Application", afa_doc.scholarship_application, 
+                sa_data = frappe.db.get_value("Scholarship Application", afa_doc.scholarship_application,
                     ["scholarship_scheme", "approval_date"], as_dict=True)
                 if sa_data:
                     scholarship_approval_date = sa_data.approval_date
                     if sa_data.scholarship_scheme:
-                        scheme_data = frappe.db.get_value("Scholarship Scheme", sa_data.scholarship_scheme, 
+                        scheme_data = frappe.db.get_value("Scholarship Scheme", sa_data.scholarship_scheme,
                             ["scheme_type", "coverage_type", "coverage_value"], as_dict=True)
                         if scheme_data:
                             scholarship_type = scheme_data.scheme_type
                             if scheme_data.coverage_type == "Percentage":
                                 scholarship_percentage = scheme_data.coverage_value
+
+            offer_fee_structure = None
+            if afa_doc.get("offer_letter"):
+                offer_fee_structure = frappe.db.get_value("Offer Letter", afa_doc.offer_letter, "fee_structure")
 
             _sync_finance_to_student(
                 student_name=student_name,
@@ -627,7 +644,7 @@ def convert_applicant_to_student(applicant_name, program, admission_cycle, offer
                 total_amount=flt(afa_doc.total_amount),
                 final_payable_amount=flt(afa_doc.get("final_payable_amount") or 0),
                 fee_payment_status=afa_doc.status,
-                fee_structure=afa_doc.get("fee_structure") or None,
+                fee_structure=offer_fee_structure,
             )
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), f"Finance sync during conversion failed for {applicant_name}")

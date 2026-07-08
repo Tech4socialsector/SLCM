@@ -13,21 +13,21 @@ class ScholarshipApplication(Document):
 	def autoname(self):
 		if not self.admission_cycle:
 			frappe.throw(frappe._("Admission Cycle is mandatory for naming"))
-		
+
 		# Naming Series: SA-{CYCLE}-.#####
 		self.name = make_autoname(f"SA-{self.admission_cycle}-.#####")
-		
+
 	def validate(self):
 		if not self.status:
 			self.status = "Submitted"
-			
+
 		# Auto-populate Reviewed By and Approval Date when approved
 		if self.status == "Approved":
 			if not self.reviewed_by:
 				self.reviewed_by = frappe.session.user
 			if not self.approval_date:
 				self.approval_date = now_datetime()
-			
+
 		if self.approval_date and get_datetime(self.approval_date) > get_datetime(now_datetime()):
 			frappe.throw(frappe._("Approval Date cannot be in the future."))
 
@@ -71,7 +71,7 @@ class ScholarshipApplication(Document):
 		# Resolve admission year
 		campus = self.campus or frappe.db.get_value("Applicant", self.applicant_id, "campus")
 		cycle = self.admission_cycle or frappe.db.get_value("Applicant", self.applicant_id, "admission_cycle")
-		
+
 		try:
 			admission_year = OfferService.resolve_admission_year(self.applicant_id, campus, cycle)
 			if not admission_year:
@@ -79,14 +79,14 @@ class ScholarshipApplication(Document):
 
 			# Get active config
 			config = OfferService.get_config(admission_year, cycle, campus)
-			
+
 			fee_structure_name = None
 			for row in config.fee_structure:
 				fs_program = frappe.db.get_value("Fee Structure", row.fee_structure, "program")
 				if fs_program == self.program:
 					fee_structure_name = row.fee_structure
 					break
-			
+
 			if fee_structure_name:
 				nationality = frappe.db.get_value("Applicant", self.applicant_id, "nationality")
 				is_foreign = nationality != "Indian"
@@ -111,34 +111,23 @@ class ScholarshipApplication(Document):
 			frappe.throw(frappe._("You have already applied for this scholarship."))
 
 	def validate_scheme_mapping(self):
-		mappings = frappe.get_all(
-			"Scholarship Scheme Mapping",
-			filters={
-				"scholarship_scheme": self.scholarship_scheme,
-				"admission_cycle": self.admission_cycle,	
-				"campus": self.campus,
-				"is_active": 1
-			},
-			fields=["program", "category"]
-		)
-		
-		is_applicable = False
+		scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
+
+		# Validate cycle/campus match
+		if scheme.admission_cycle != self.admission_cycle or scheme.campus != self.campus:
+			frappe.throw(frappe._("Scholarship is not applicable for selected admission cycle or campus."))
+
 		from slcm.admission.doctype.seat_allocation.seat_allocation import get_applicant_categories
 		applicant_categories = get_applicant_categories(self.applicant_id)
-		
-		for m in mappings:
-			# Check program match (mapping has specific program or is global)
-			program_match = not m.program or m.program == self.program
-			
-			# Check category match (if mapping has category, student must have it in their multi-category list)
-			category_match = not m.category or m.category in applicant_categories
-			
-			if program_match and category_match:
-				is_applicable = True
-				break
 
-		if not is_applicable:
-			frappe.throw(frappe._("Scholarship not applicable or inactive for selected cycle/program/campus/category."))
+		# Check program match
+		program_match = not scheme.program or scheme.program == self.program
+
+		# Check category match
+		category_match = not scheme.category or scheme.category in applicant_categories
+
+		if not (program_match and category_match):
+			frappe.throw(frappe._("Scholarship not applicable for selected program/category."))
 
 	def validate_requirements(self):
 		# Always mandatory as per user request
@@ -148,7 +137,7 @@ class ScholarshipApplication(Document):
 			frappe.throw(frappe._("Income Certificate is mandatory for this scholarship"))
 
 		scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
-		
+
 		# 1. Income Validation
 		if scheme.scheme_type == "Need" and scheme.income_certificate_required:
 			if scheme.max_income and flt(self.family_income) > flt(scheme.max_income):
@@ -169,7 +158,7 @@ class ScholarshipApplication(Document):
 				},
 				"total_score"
 			)
-			
+
 			if merit_score is None:
 				# Fallback to Entrance Test Seat Allocation entrance test score
 				merit_score = frappe.db.get_value(
@@ -193,7 +182,7 @@ class ScholarshipApplication(Document):
 		# Skip availability checks if rejecting or revoking
 		if self.status in ["Rejected", "Revoked"]:
 			return
-			
+
 		# Skip if already approved and just being updated, to avoid blocking saves on archived schemes
 		if not self.is_new():
 			old_doc = self.get_doc_before_save()
@@ -201,10 +190,10 @@ class ScholarshipApplication(Document):
 				return
 
 		from slcm.admission.utils.scholarship_availability import check_scholarship_availability
-		
+
 		# Get applicant status
 		applicant_status = frappe.db.get_value("Applicant", self.applicant_id, "status")
-		
+
 		check_scholarship_availability(
 			self.scholarship_scheme,
 			applicant_status
@@ -212,7 +201,7 @@ class ScholarshipApplication(Document):
 
 	def calculate_benefit(self):
 		from slcm.admission.utils.scholarship_coverage_engine import calculate_scholarship_amount
-		
+
 		self.calculated_benefit = calculate_scholarship_amount(self)
 		self.final_fee_amount = flt(self.original_fee_amount or 0) - flt(self.calculated_benefit or 0)
 
@@ -221,31 +210,7 @@ class ScholarshipApplication(Document):
 			frappe.throw(frappe._("Rejection reason is mandatory"))
 
 	def validate_conflicts(self):
-		scheme = frappe.get_doc("Scholarship Scheme", self.scholarship_scheme)
-		
-		# 1. Check if applicant already has an APPROVED Exclusive scholarship
-		# If they do, they cannot have ANY other scholarship.
-		exclusive_exists = frappe.db.exists("Scholarship Application", {
-			"applicant_id": self.applicant_id,
-			"status": "Approved",
-			"name": ["!=", self.name],
-			"scholarship_scheme": ["in", frappe.get_all("Scholarship Scheme", filters={"exclusive_scheme": 1}, pluck="name")]
-		})
-		
-		if exclusive_exists:
-			frappe.throw(frappe._("Applicant already has an Approved Exclusive scholarship and cannot hold any other schemes."))
-
-		# 2. If THIS scheme is Exclusive, check if they have ANY other Approved scholarship
-		if scheme.exclusive_scheme:
-			any_approved = frappe.db.exists("Scholarship Application", {
-				"applicant_id": self.applicant_id,
-				"status": "Approved",
-				"name": ["!=", self.name]
-			})
-			if any_approved:
-				frappe.throw(frappe._("This is an Exclusive scholarship. It cannot be approved because the applicant already has another active scholarship."))
-
-		# 3. Check Max Schemes Per Applicant limit from Admission Cycle
+		# Check Max Schemes Per Applicant limit from Admission Cycle
 		limit = frappe.db.get_value("Admission Cycle", self.admission_cycle, "max_schemes_per_applicant")
 		if limit and limit > 0:
 			approved_count = frappe.db.count("Scholarship Application", {
@@ -254,7 +219,7 @@ class ScholarshipApplication(Document):
 				"name": ["!=", self.name],
 				"admission_cycle": self.admission_cycle # Limit per cycle
 			})
-			
+
 			if approved_count >= limit:
 				frappe.throw(frappe._("Limit Reached: This admission cycle allows a maximum of {0} approved scholarships per applicant. Applicant already has {1}.").format(limit, approved_count))
 
@@ -288,7 +253,7 @@ class ScholarshipApplication(Document):
 		Records status changes and application creation in the Scholarship Audit Log.
 		"""
 		old_doc = self.get_doc_before_save()
-		
+
 		is_new = not old_doc
 		if not is_new and old_doc.status == self.status:
 			# Only log if status has changed
@@ -302,7 +267,7 @@ class ScholarshipApplication(Document):
 			"Revoked": "Revoke",
 			"Cancelled": "Revoke"
 		}
-		
+
 		# If new, use Apply action
 		if is_new:
 			action_type = "Apply"
@@ -399,7 +364,7 @@ class ScholarshipApplication(Document):
 
 	def on_update_after_submit(self):
 		"""
-		Called when a SUBMITTED doc (docstatus=1) is updated 
+		Called when a SUBMITTED doc (docstatus=1) is updated
 		via direct save (e.g. status field changed by admin on submitted doc).
 		"""
 		self.create_audit_log()
@@ -463,14 +428,14 @@ class ScholarshipApplication(Document):
 
 		afa_name = afa_data.name
 		total_amount = flt(afa_data.total_amount)
-		
+
 		# Calculate cumulative scholarship amount from ALL OTHER approved applications
 		# for this specific applicant in this cycle.
 		other_scholarships = frappe.db.sql("""
 			SELECT SUM(calculated_benefit)
 			FROM `tabScholarship Application`
-			WHERE applicant_id = %s 
-			AND admission_cycle = %s 
+			WHERE applicant_id = %s
+			AND admission_cycle = %s
 			AND status = 'Approved'
 			AND name != %s
 		""", (self.applicant_id, self.admission_cycle, self.name))[0][0] or 0
@@ -479,7 +444,7 @@ class ScholarshipApplication(Document):
 		current_benefit = 0
 		if not reverse and self.status == "Approved":
 			current_benefit = flt(self.calculated_benefit)
-		
+
 		total_scholarship = flt(other_scholarships) + current_benefit
 
 		# Cap scholarship so it never exceeds the gross fee
@@ -487,38 +452,36 @@ class ScholarshipApplication(Document):
 
 		scholarship_applied = 1 if total_scholarship > 0 else 0
 		final_payable_amount = max(0, total_amount - flt(total_scholarship))
-		
+
 		# Apply changes directly to DB to ensure persistence
 		frappe.db.set_value("Applicant Fee Assignment", afa_name, {
 			"scholarship_amount": total_scholarship,
 			"scholarship_applied": scholarship_applied,
 			"final_payable_amount": final_payable_amount
 		}, update_modified=True)
-		
+
 		frappe.db.commit()
-		
+
 		# Also update any existing Payment Request amount to match the new final payable amount
 		pr_list = frappe.get_all("Payment Request", filters={
 			"reference_doctype": "Offer Letter",
 			"reference_name": self.get("offer_letter") or frappe.db.get_value("Applicant Fee Assignment", afa_name, "offer_letter"),
 			"status": ["not in", ["Paid", "Cancelled"]]
 		}, fields=["name"])
-		
+
 		for pr in pr_list:
 			frappe.db.set_value("Payment Request", pr.name, "amount", final_payable_amount, update_modified=True)
-		
+
 		msg = frappe._("Fee Assignment {0} synced. Total Scholarship: {1}, Final Payable: {2}")\
 			.format(afa_name, total_scholarship, final_payable_amount)
 		frappe.msgprint(msg, indicator="green")
 
 	def apply_financial_effects(self):
 		from slcm.admission.utils.scholarship_availability import update_scheme_usage
-		mapping_name = self.find_mapping()
-		update_scheme_usage(self.scholarship_scheme, self.calculated_benefit, mapping_name=mapping_name)
+		update_scheme_usage(self.scholarship_scheme, self.calculated_benefit)
 
 	def reverse_financial_effects(self):
 		from slcm.admission.utils.scholarship_availability import update_scheme_usage
-		mapping_name = self.find_mapping()
 		benefit = self.calculated_benefit
 		try:
 			old_doc = self.get_doc_before_save()
@@ -526,39 +489,7 @@ class ScholarshipApplication(Document):
 				benefit = old_doc.calculated_benefit
 		except Exception:
 			pass
-		update_scheme_usage(self.scholarship_scheme, benefit, mapping_name=mapping_name, reverse=True)
-
-	def find_mapping(self):
-		"""
-		Finds the applicable Scholarship Scheme Mapping for this application.
-		"""
-		from slcm.admission.doctype.seat_allocation.seat_allocation import get_applicant_categories
-		applicant_categories = get_applicant_categories(self.applicant_id)
-		
-		# Get applicant program level
-		applicant_program_level = frappe.db.get_value("Applicant", self.applicant_id, "program_level")
-		if not applicant_program_level and self.program:
-			applicant_program_level = frappe.db.get_value("Programme", self.program, "level_of_study")
-		
-		mappings = frappe.get_all(
-			"Scholarship Scheme Mapping",
-			filters={
-				"scholarship_scheme": self.scholarship_scheme,
-				"admission_cycle": self.admission_cycle,
-				"campus": self.campus,
-				"is_active": 1
-			},
-			fields=["name", "program", "program_level", "category"],
-			order_by="program desc, program_level desc, category desc" 
-		)
-		
-		for m in mappings:
-			program_match = not m.program or m.program == self.program
-			level_match = not m.program_level or m.program_level == applicant_program_level
-			category_match = not m.category or m.category in applicant_categories
-			if program_match and level_match and category_match:
-				return m.name
-		return None
+		update_scheme_usage(self.scholarship_scheme, benefit, reverse=True)
 
 
 @frappe.whitelist()
@@ -568,24 +499,24 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 	"""
 	user = frappe.session.user
 	frappe.log_error(f"Applying for scheme {scheme} by user {user}", "Scholarship Application Debug")
-	
+
 	if user == "Guest" or not user:
 		frappe.throw(frappe._("You must be logged in to apply for a scholarship."))
 
 	# Get applicant record
-	applicant = frappe.db.get_value("Applicant", {"email": user}, 
+	applicant = frappe.db.get_value("Applicant", {"email": user},
 		["name", "candidate_name", "program", "campus", "admission_cycle"], as_dict=1)
-	
+
 	if not applicant:
 		# Fallback 1: check Entrance Test Seat Allocation if Applicant email doesn't match
 		applicant_id = frappe.db.get_value("Entrance Test Seat Allocation", {"email": user}, "applicant")
 		if applicant_id:
-			applicant = frappe.db.get_value("Applicant", applicant_id, 
+			applicant = frappe.db.get_value("Applicant", applicant_id,
 				["name", "candidate_name", "program", "campus", "admission_cycle"], as_dict=1)
-	
+
 	if not applicant:
 		# Fallback 2: search by owner (User ID)
-		applicant = frappe.db.get_value("Applicant", {"owner": user}, 
+		applicant = frappe.db.get_value("Applicant", {"owner": user},
 			["name", "candidate_name", "program", "campus", "admission_cycle"], as_dict=1)
 
 	if not applicant:
@@ -600,13 +531,25 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 		try:
 			from frappe.utils.file_manager import save_file
 			import base64
-			
+			import os
+
+			# Validate extension
+			allowed_extensions = ['.pdf', '.jpg', '.jpeg', '.png']
+			ext = os.path.splitext(income_certificate_name.lower())[1]
+			if ext not in allowed_extensions:
+				frappe.throw(frappe._("Income Certificate must be a PDF, JPG, or PNG file."))
+
 			if "," in income_certificate_data:
 				income_certificate_data = income_certificate_data.split(",")[1]
-				
+
 			file_content = base64.b64decode(income_certificate_data)
+
+			# Validate size (Max 5MB)
+			if len(file_content) > 5 * 1024 * 1024:
+				frappe.throw(frappe._("Income Certificate file size must not exceed 5MB."))
+
 			# Save file without attachment initially to avoid name mandatory error
-			saved_file = save_file(income_certificate_name, file_content, None, None, is_private=0)
+			saved_file = save_file(income_certificate_name, file_content, None, None, is_private=1)
 			income_cert_url = saved_file.file_url
 		except Exception as e:
 			frappe.log_error(f"File upload error (Income): {e}", "Scholarship Application Debug")
@@ -617,16 +560,29 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 		try:
 			from frappe.utils.file_manager import save_file
 			import base64
-			
+			import os
+
+			# Validate extension
+			allowed_extensions = ['.pdf', '.jpg', '.jpeg', '.png']
+			ext = os.path.splitext(supporting_documents_name.lower())[1]
+			if ext not in allowed_extensions:
+				frappe.throw(frappe._("Supporting Documents must be a PDF, JPG, or PNG file."))
+
 			if "," in supporting_documents_data:
 				supporting_documents_data = supporting_documents_data.split(",")[1]
-				
+
 			file_content = base64.b64decode(supporting_documents_data)
+
+			# Validate size (Max 5MB)
+			if len(file_content) > 5 * 1024 * 1024:
+				frappe.throw(frappe._("Supporting Documents file size must not exceed 5MB."))
+
 			# Save file without attachment initially to avoid name mandatory error
-			saved_file = save_file(supporting_documents_name, file_content, None, None, is_private=0)
+			saved_file = save_file(supporting_documents_name, file_content, None, None, is_private=1)
 			supporting_docs_url = saved_file.file_url
 		except Exception as e:
 			frappe.log_error(f"File upload error (Supporting): {e}", "Scholarship Application Debug")
+			frappe.throw(frappe._("Failed to upload Supporting Documents: {0}").format(str(e)))
 
 	# Create the application
 	try:
@@ -644,10 +600,10 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 			"status": "Submitted",
 			"workflow_state": "Submitted"
 		})
-		
+
 		# Insert with ignore permissions to allow creation from portal
 		app.insert(ignore_permissions=True)
-		
+
 		# Update file references
 		if income_cert_url:
 			frappe.db.set_value("File", {"file_url": income_cert_url}, {
@@ -659,7 +615,7 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 				"attached_to_doctype": "Scholarship Application",
 				"attached_to_name": app.name
 			}, update_modified=False)
-			
+
 		frappe.db.commit()
 		return app.name
 	except Exception as e:
@@ -670,12 +626,12 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 def get_calculated_benefit(doc):
 	if isinstance(doc, str):
 		doc = frappe._dict(json.loads(doc))
-	
+
 	from slcm.admission.utils.scholarship_coverage_engine import calculate_scholarship_amount
-	
+
 	benefit = calculate_scholarship_amount(doc)
 	final_fee = flt(doc.original_fee_amount or 0) - flt(benefit or 0)
-	
+
 	return {
 		"benefit": benefit,
 		"final_fee": final_fee
@@ -719,14 +675,14 @@ def get_original_fee_amount(applicant_id, program, campus=None, cycle=None):
 			return 0
 
 		config = OfferService.get_config(admission_year, cycle, campus)
-		
+
 		fee_structure_name = None
 		for row in config.fee_structure:
 			fs_program = frappe.db.get_value("Fee Structure", row.fee_structure, "program")
 			if fs_program == program:
 				fee_structure_name = row.fee_structure
 				break
-		
+
 		if fee_structure_name:
 			nationality = frappe.db.get_value("Applicant", applicant_id, "nationality")
 			is_foreign = nationality != "Indian"
@@ -734,7 +690,7 @@ def get_original_fee_amount(applicant_id, program, campus=None, cycle=None):
 			return flt(fee_data.get("total_payable") or 0)
 	except Exception:
 		pass
-	
+
 	return 0
 
 
@@ -744,8 +700,8 @@ def get_applicant_details():
 	user = frappe.session.user
 	if user == "Guest" or not user:
 		return None
-	
-	applicant = frappe.db.get_value("Applicant", {"email": user}, 
+
+	applicant = frappe.db.get_value("Applicant", {"email": user},
 		["name", "candidate_name", "program", "campus", "admission_cycle"], as_dict=1)
 	return applicant
 
@@ -756,29 +712,28 @@ def get_eligible_scholarship_schemes(applicant_id, program, campus, admission_cy
 	if not all([applicant_id, program, campus, admission_cycle]):
 		return []
 
-	mappings = frappe.get_all(
-		"Scholarship Scheme Mapping",
+	schemes = frappe.get_all(
+		"Scholarship Scheme",
 		filters={
 			"admission_cycle": admission_cycle,
-			"campus": campus
+			"campus": campus,
+			"status": "Active"
 		},
-		fields=["scholarship_scheme", "program", "category"]
+		fields=["name", "program", "category"]
 	)
-	
+
 	applicant_categories = frappe.get_all("Applicant Category", filters={"parent": applicant_id}, fields=["category"])
 	applicant_category_names = [c.category for c in applicant_categories]
-	
+
 	eligible_schemes = []
-	for m in mappings:
-		# Check program match (mapping has specific program or is global)
-		program_match = not m.program or m.program == program
-		
-		# Check category match (mapping has specific category or is global)
-		category_match = not m.category or m.category in applicant_category_names
-		
+	for s in schemes:
+		# Check program match (scheme has specific program or is global)
+		program_match = not s.program or s.program == program
+
+		# Check category match (scheme has specific category or is global)
+		category_match = not s.category or s.category in applicant_category_names
+
 		if program_match and category_match:
-			scheme_status = frappe.db.get_value("Scholarship Scheme", m.scholarship_scheme, "status")
-			if scheme_status == "Active":
-				eligible_schemes.append(m.scholarship_scheme)
-				
+			eligible_schemes.append(s.name)
+
 	return list(set(eligible_schemes))

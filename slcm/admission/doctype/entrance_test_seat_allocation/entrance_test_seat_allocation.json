@@ -344,6 +344,13 @@
    "label": "Result Published"
   },
   {
+   "default": "0",
+   "fieldname": "is_international_applicant",
+   "fieldtype": "Check",
+   "label": "Is International Applicant",
+   "read_only": 1
+  },
+  {
    "fetch_from": "applicant.candidate_photo",
    "fieldname": "profile",
    "fieldtype": "Attach Image",
@@ -591,9 +598,10 @@
   }
  ],
  "grid_page_length": 50,
+ "image_field": "profile",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-06-30 15:20:04.737395",
+ "modified": "2026-07-07 14:20:07.459181",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",

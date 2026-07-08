@@ -342,8 +342,30 @@
         const iconEl = box.querySelector('.material-symbols-outlined');
 
         if (input.files && input.files[0]) {
+            const file = input.files[0];
+            const maxSizeBytes = 5 * 1024 * 1024; // 5MB
+            const allowedExtensions = /(\.pdf|\.jpg|\.jpeg|\.png)$/i;
+
+            if (!allowedExtensions.exec(file.name)) {
+                showToast('Only PDF, JPG, and PNG files are allowed.', 'error');
+                input.value = '';
+                box.classList.remove('has-file');
+                fileNameEl.classList.add('hidden');
+                if (iconEl) iconEl.style.color = '#cbd5e1';
+                return;
+            }
+
+            if (file.size > maxSizeBytes) {
+                showToast('File size must not exceed 5MB.', 'error');
+                input.value = '';
+                box.classList.remove('has-file');
+                fileNameEl.classList.add('hidden');
+                if (iconEl) iconEl.style.color = '#cbd5e1';
+                return;
+            }
+
             box.classList.add('has-file');
-            fileNameEl.innerText = '✓ ' + input.files[0].name;
+            fileNameEl.innerText = '✓ ' + file.name;
             fileNameEl.classList.remove('hidden');
             if (iconEl) iconEl.style.color = 'var(--primary)';
         } else {
@@ -378,6 +400,31 @@
         if (!incomeCertFile) {
             showToast('Income Certificate is mandatory', 'error');
             return;
+        }
+
+        const allowedExtensions = /(\.pdf|\.jpg|\.jpeg|\.png)$/i;
+        const maxSizeBytes = 5 * 1024 * 1024; // 5MB
+
+        if (!allowedExtensions.exec(incomeCertFile.name)) {
+            showToast('Income Certificate must be a PDF, JPG, or PNG file.', 'error');
+            return;
+        }
+
+        if (incomeCertFile.size > maxSizeBytes) {
+            showToast('Income Certificate file size must not exceed 5MB.', 'error');
+            return;
+        }
+
+        const suppDocsFile = document.getElementById('supporting_documents').files[0];
+        if (suppDocsFile) {
+            if (!allowedExtensions.exec(suppDocsFile.name)) {
+                showToast('Supporting Documents must be a PDF, JPG, or PNG file.', 'error');
+                return;
+            }
+            if (suppDocsFile.size > maxSizeBytes) {
+                showToast('Supporting Documents file size must not exceed 5MB.', 'error');
+                return;
+            }
         }
 
         const originalText = btn.innerHTML;

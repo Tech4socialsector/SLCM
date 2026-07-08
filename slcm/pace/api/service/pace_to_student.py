@@ -15,9 +15,10 @@ def _map_pace_to_student(student, pace_app):
     student.application_number = pace_app.name
     
     # Programme & Academic Year
-    student.programme = pace_app.programme
+    student.pace_programme = pace_app.programme
     student.academic_year = pace_app.academic_year
     student.admission_type = "PACE"
+    student.level_of_study = "Diploma"
     
     # Department (derived from programme/PACE Programme)
     # PACE Programme doesn't seem to have a department field in its JSON, 
@@ -111,6 +112,46 @@ def _map_pace_to_student(student, pace_app):
     
     return student
 
+def _update_application_and_assignments_status(pace_app):
+    pace_app_name = pace_app.name
+    pace_app.status = "Enrolled"
+    
+    # Generate and attach Admission Letter if not already attached
+    if not pace_app.admission_letter:
+        try:
+            pdf_content = frappe.get_print(
+                "PACE Application",
+                pace_app_name,
+                "PACE Admission Letter",
+                as_pdf=True
+            )
+            file_name = f"Admission_Letter_{pace_app_name}.pdf"
+            saved_file = save_file(
+                file_name,
+                pdf_content,
+                "PACE Application",
+                pace_app_name,
+                is_private=1
+            )
+            pace_app.admission_letter = saved_file.file_url
+        except Exception as e:
+            frappe.log_error(f"Failed to generate admission letter for {pace_app_name}: {str(e)}", "Admission Letter Generation Error")
+
+    pace_app.save(ignore_permissions=True)
+    
+    # Update active Course Fee assignment status
+    assignments = frappe.get_all("PACE Applicant Fee Assignment", filters={
+        "applicant": pace_app_name,
+        "fee_type": "Course Fee",
+        "academic_year": pace_app.academic_year
+    }, pluck="name")
+    
+    for assignment_name in assignments:
+        assignment_doc = frappe.get_doc("PACE Applicant Fee Assignment", assignment_name)
+        if assignment_doc.status != "Enrolled":
+            assignment_doc.status = "Enrolled"
+            assignment_doc.save(ignore_permissions=True)
+
 def _update_user_roles(email):
     """
     Swap PACE Applicant/Applicant roles for Student role.
@@ -149,6 +190,8 @@ def convert_pace_to_student(pace_app_name):
     # 1. Deduplication guard
     existing = frappe.db.get_value("Student Master", {"application_number": pace_app_name}, "name")
     if existing:
+        if pace_app.status != "Enrolled":
+            _update_application_and_assignments_status(pace_app)
         return {"student_name": existing, "created": False}
         
     # 2. Email guard
@@ -169,44 +212,37 @@ def convert_pace_to_student(pace_app_name):
         student_name = student.name
         
         # 4. Update PACE Application status
-        pace_app.status = "Enrolled"
-        
-        # Generate and attach Admission Letter
-        try:
-            pdf_content = frappe.get_print(
-                "PACE Application",
-                pace_app_name,
-                "PACE Admission Letter",
-                as_pdf=True
-            )
-            file_name = f"Admission_Letter_{pace_app_name}.pdf"
-            saved_file = save_file(
-                file_name,
-                pdf_content,
-                "PACE Application",
-                pace_app_name,
-                is_private=1
-            )
-            pace_app.admission_letter = saved_file.file_url
-        except Exception as e:
-            frappe.log_error(f"Failed to generate admission letter for {pace_app_name}: {str(e)}", "Admission Letter Generation Error")
-
-        pace_app.save(ignore_permissions=True)
-        
-        # 4b. Update active Course Fee assignment status
-        assignments = frappe.get_all("PACE Applicant Fee Assignment", filters={
-            "applicant": pace_app_name,
-            "fee_type": "Course Fee",
-            "academic_year": pace_app.academic_year
-        }, pluck="name")
-        for assignment_name in assignments:
-            assignment_doc = frappe.get_doc("PACE Applicant Fee Assignment", assignment_name)
-            if assignment_doc.status != "Enrolled":
-                assignment_doc.status = "Enrolled"
-                assignment_doc.save(ignore_permissions=True)
+        _update_application_and_assignments_status(pace_app)
         
         # 5. Update user roles
         _update_user_roles(pace_app.email_address)
+        
+        # 6. Trigger Finance Sync if AFA exists
+        try:
+            afa_name = frappe.db.get_value("PACE Applicant Fee Assignment", {
+                "applicant": pace_app_name,
+                "fee_type": "Course Fee",
+                "docstatus": 1
+            }, "name")
+            
+            if afa_name:
+                afa_doc = frappe.get_doc("PACE Applicant Fee Assignment", afa_name)
+                from slcm.api.service.applicant_to_student import _sync_finance_to_student
+                
+                _sync_finance_to_student(
+                    student_name=student_name,
+                    scholarship_amount=0,   
+                    scholarship_type=None,
+                    scholarship_percentage=0,
+                    scholarship_approval_date=None,
+                    fee_waiver_remarks=None,
+                    total_amount=flt(afa_doc.total_amount),
+                    final_payable_amount=flt(afa_doc.get("final_payable_amount") or 0),
+                    fee_payment_status=afa_doc.status,
+                    fee_structure=None,
+                )
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), f"Finance sync during conversion failed for PACE {pace_app_name}")
         
         return {"student_name": student_name, "created": True}
     except Exception as e:

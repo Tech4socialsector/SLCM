@@ -50,7 +50,7 @@ def process_refund(name):
 		# Create a 0-amount transaction for audit trail
 		rt = frappe.new_doc("Refund Transaction")
 		rt.refund_request = refund.name
-		rt.payment_request = refund.payment_request
+		rt.applicant_fee_assignment = refund.get("applicant_fee_assignment")
 		rt.razorpay_payment_id = refund.razorpay_payment_id
 		rt.razorpay_refund_id = "INTERNAL_NO_REFUND"
 		rt.refund_amount = 0
@@ -127,7 +127,7 @@ def process_refund(name):
 			# Create Refund Transaction
 			rt = frappe.new_doc("Refund Transaction")
 			rt.refund_request = refund.name
-			rt.payment_request = refund.payment_request
+			rt.applicant_fee_assignment = refund.get("applicant_fee_assignment")
 			rt.razorpay_payment_id = refund.razorpay_payment_id
 			rt.razorpay_refund_id = rzp_refund.get("id")
 			rt.refund_amount = refund.refund_amount
@@ -155,16 +155,16 @@ def process_refund(name):
 			return {"status": "Success", "message": _("Refund processed successfully.")}
 		else:
 			refund.db_set("status", "Failed")
-			refund.db_set("failure_message", _("Refund failed at Razorpay."))
-			frappe.msgprint(_("Refund failed at Razorpay."))
-			return {"status": "Error", "message": _("Refund failed at Razorpay.")}
+			error_msg = _("Refund failed at Razorpay: empty response received.")
+			refund.db_set("failure_message", error_msg)
+			return {"status": "Error", "message": error_msg}
 			
 	except Exception as e:
 		refund.db_set("status", "Failed")
-		refund.db_set("failure_message", str(e))
+		error_detail = str(e)
+		refund.db_set("failure_message", error_detail)
 		frappe.log_error(frappe.get_traceback(), _("Razorpay Refund Error"))
-		frappe.msgprint(_("Razorpay Error: {0}").format(str(e)))
-		return {"status": "Error", "message": str(e)}
+		return {"status": "Error", "message": _("Razorpay Error: {0}").format(error_detail)}
 
 @frappe.whitelist()
 def process_bulk_refunds(names):
@@ -298,7 +298,7 @@ def reconcile_refund_status(name):
 				if not frappe.db.exists("Refund Transaction", {"refund_request": refund.name, "status": "Processed"}):
 					rt = frappe.new_doc("Refund Transaction")
 					rt.refund_request = refund.name
-					rt.payment_request = refund.payment_request
+					rt.applicant_fee_assignment = refund.get("applicant_fee_assignment")
 					rt.razorpay_payment_id = refund.razorpay_payment_id
 					rt.razorpay_refund_id = rzp_refund_id
 					rt.refund_amount = refund.refund_amount
