@@ -1,0 +1,97 @@
+{
+ "actions": [],
+ "allow_bulk_edit": 1,
+ "allow_rename": 1,
+ "autoname": "field:programme_name",
+ "creation": "2026-07-08 12:26:41.423201",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "programme_code",
+  "programme_name",
+  "programme_shortcode",
+  "level_of_study",
+  "programme_duration_in_years",
+  "graduation_credits",
+  "programme_status"
+ ],
+ "fields": [
+  {
+   "fieldname": "programme_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Programme Code",
+   "reqd": 1
+  },
+  {
+   "fieldname": "programme_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Programme Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "description": "BALLB (B), BA (A ) , LLB(L), MPP(P), LLM(M), PHD (D) ",
+   "fieldname": "programme_shortcode",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Programme shortcode",
+   "options": "\nB\nA\nL\nP\nM\nD",
+   "reqd": 1
+  },
+  {
+   "fieldname": "level_of_study",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Level of Study",
+   "options": "\nUndergraduate\nPostgraduate\nResearch Course",
+   "reqd": 1
+  },
+  {
+   "fieldname": "programme_duration_in_years",
+   "fieldtype": "Data",
+   "label": "Programme duration (in years)"
+  },
+  {
+   "fieldname": "graduation_credits",
+   "fieldtype": "Data",
+   "label": "Graduation Credits"
+  },
+  {
+   "fieldname": "programme_status",
+   "fieldtype": "Select",
+   "label": "Programme Status",
+   "options": "\nActive\nInactive",
+   "reqd": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-07-08 12:32:59.940616",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Programme Master",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

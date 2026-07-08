@@ -5983,7 +5983,7 @@
     "kanban_board": null,
     "label": "Payment Report",
     "link_to": "FLE Payment Report",
-    "report_ref_doctype": "FLE Payment Log",
+    "report_ref_doctype": null,
     "restrict_to_domain": null,
     "stats_filter": null,
     "type": "Report",
@@ -7815,7 +7815,6 @@
     "type": "DocType",
     "url": null
    },
-
    {
     "color": "Grey",
     "doc_view": "List",
@@ -7844,7 +7843,6 @@
     "type": "DocType",
     "url": null
    },
-
    {
     "color": "Grey",
     "doc_view": "List",

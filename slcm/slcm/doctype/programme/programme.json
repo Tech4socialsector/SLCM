@@ -7,21 +7,21 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "program_code",
-  "program_slug",
   "program_name",
+  "program_code",
   "program_shortcode",
-  "department",
-  "image",
-  "application_form_link",
-  "column_break_aosh",
   "level_of_study",
   "program_duration",
+  "graduation_credits",
+  "department",
+  "column_break_aosh",
+  "image",
+  "program_slug",
   "academic_year",
   "current_year",
   "academic_term",
-  "graduation_credits",
   "program_status",
+  "application_form_link",
   "section_break_fwyh",
   "table_fela",
   "portal_details_tab",
@@ -48,6 +48,7 @@
  ],
  "fields": [
   {
+   "fetch_from": "program_name.programme_code",
    "fieldname": "program_code",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -57,17 +58,19 @@
   {
    "description": "Do not use special characters such as &.",
    "fieldname": "program_name",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Programme Name",
+   "options": "Programme Master",
    "reqd": 1,
    "unique": 1
   },
   {
+   "fetch_from": "program_name.programme_shortcode",
    "fieldname": "program_shortcode",
    "fieldtype": "Data",
-   "label": "ProgrammeShortcode"
+   "label": "Programme Shortcode"
   },
   {
    "fieldname": "department",
@@ -87,6 +90,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "fetch_from": "program_name.level_of_study",
    "fieldname": "level_of_study",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -96,6 +100,7 @@
    "reqd": 1
   },
   {
+   "fetch_from": "program_name.programme_duration_in_years",
    "fieldname": "program_duration",
    "fieldtype": "Int",
    "label": "Programme duration (in years)"
@@ -122,6 +127,7 @@
    "options": "Academic Term"
   },
   {
+   "fetch_from": "program_name.graduation_credits",
    "fieldname": "graduation_credits",
    "fieldtype": "Int",
    "label": "Graduation Credits"
@@ -130,7 +136,7 @@
    "fieldname": "program_status",
    "fieldtype": "Select",
    "in_standard_filter": 1,
-   "label": "Programme Status",
+   "label": "Status",
    "options": "\nActive\nInactive"
   },
   {
@@ -145,7 +151,7 @@
   {
    "fieldname": "portal_details_tab",
    "fieldtype": "Tab Break",
-   "label": "Portal Details"
+   "label": "Admissions"
   },
   {
    "fieldname": "intake_type",
@@ -310,7 +316,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-08 12:11:32.578733",
+ "modified": "2026-07-08 12:34:15.382910",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Programme",
