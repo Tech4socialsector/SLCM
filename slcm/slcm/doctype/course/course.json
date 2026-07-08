@@ -103,11 +103,10 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-08 12:38:47.704123",
+ "modified": "2026-07-08 15:07:36.885240",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Course",
- "naming_rule": "Set by user",
  "owner": "Administrator",
  "permissions": [
   {
