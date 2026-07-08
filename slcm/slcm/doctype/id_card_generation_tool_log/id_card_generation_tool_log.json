@@ -67,7 +67,7 @@
   {
    "fieldname": "program",
    "fieldtype": "Link",
-   "label": "Program",
+   "label": "Programme",
    "options": "Cohort",
    "read_only": 1
   },

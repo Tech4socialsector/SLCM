@@ -14,7 +14,7 @@ def verify():
         print(f'  AdmStageConfig.{r}: {"OK" if exists else "MISSING"}')
 
     # 2. Program.intake_type
-    meta2 = frappe.get_meta('Program')
+    meta2 = frappe.get_meta('Programme')
     exists = any(f.fieldname == 'intake_type' for f in meta2.fields)
     if not exists: ok = False
     print(f'  Program.intake_type: {"OK" if exists else "MISSING"}')

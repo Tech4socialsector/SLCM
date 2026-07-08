@@ -74,8 +74,8 @@
    "fetch_from": "cohort.program",
    "fieldname": "program",
    "fieldtype": "Link",
-   "label": "Program",
-   "options": "Program",
+   "label": "Programme",
+   "options": "Programme",
    "read_only": 1
   },
   {

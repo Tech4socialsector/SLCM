@@ -10,7 +10,7 @@ def simulate_load_children():
     ]
     
     parent_name = "Ph.D. in Interdisciplinary Legal Studies"
-    parent_type = "Program"
+    parent_type = "Programme"
     
     for table in child_tables:
         print(f"Simulating query for {table}...")

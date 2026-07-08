@@ -36,7 +36,7 @@ def get_summary(data):
 def get_columns():
     return [
         {"label": _("Campus"), "fieldname": "campus", "fieldtype": "Link", "options": "Campus", "width": 120},
-        {"label": _("Program"), "fieldname": "program", "fieldtype": "Link", "options": "Program", "width": 150},
+        {"label": _("Programme"), "fieldname": "program", "fieldtype": "Link", "options": "Programme", "width": 150},
         {"label": _("Category"), "fieldname": "category", "fieldtype": "Data", "width": 120},
         {"label": _("Total Seats"), "fieldname": "total_seats", "fieldtype": "Int", "width": 100, "align": "right"},
         {"label": _("Allocated"), "fieldname": "allocated", "fieldtype": "Int", "width": 100, "align": "right"},

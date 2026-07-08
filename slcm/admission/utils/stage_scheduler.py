@@ -30,7 +30,7 @@ def auto_advance_applicant_stages():
             continue
 
         # Get intake from Program
-        intake = frappe.db.get_value("Program", a.program, "intake_type") or "All"
+        intake = frappe.db.get_value("Programme", a.program, "intake_type") or "All"
 
         try:
             from slcm.admission.utils.stage_control import get_cycle_stages

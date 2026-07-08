@@ -24,8 +24,8 @@ def create_test_data():
     ]
     created_programs = []
     for p in programs:
-        if not frappe.db.exists("Program", p["program_name"]):
-            prog = frappe.get_doc({"doctype": "Program", **p})
+        if not frappe.db.exists("Programme", p["program_name"]):
+            prog = frappe.get_doc({"doctype": "Programme", **p})
             prog.insert(ignore_permissions=True)
             print(f"Created Program: {prog.name}")
             created_programs.append(prog.name)

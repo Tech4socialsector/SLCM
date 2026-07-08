@@ -196,7 +196,7 @@ def patch_web_form_program_link_options_once() -> None:
 	_orig = wf_mod.process_link_field
 
 	def _process_link_field(field, web_form_name):
-		if web_form_name in _APPLICANT_PORTAL_WEB_FORM_NAMES and field.get("options") in ["Program", "PACE Programme"]:
+		if web_form_name in _APPLICANT_PORTAL_WEB_FORM_NAMES and field.get("options") in ["Programme", "PACE Programme"]:
 			field["allow_read_on_all_link_options"] = 1
 		return _orig(field, web_form_name)
 

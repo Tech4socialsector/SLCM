@@ -23,7 +23,7 @@ class StudentEnrollment(Document):
             self.program = frappe.db.get_value("Cohort", self.cohort, "program")
 
         if self.program and self.cohort and not self.enrolled_courses:
-            program_doc = frappe.get_doc("Program", self.program)
+            program_doc = frappe.get_doc("Programme", self.program)
             if program_doc.table_fela:
                 for pc in program_doc.table_fela:
                     offering = frappe.db.get_value(

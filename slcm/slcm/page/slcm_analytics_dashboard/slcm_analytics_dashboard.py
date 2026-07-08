@@ -107,7 +107,7 @@ def get_filter_options():
 	)
 
 	programs = frappe.db.get_all(
-		"Program",
+		"Programme",
 		filters={"program_status": "Active"},
 		fields=["name", "program_name", "program_shortcode"],
 		order_by="program_name asc",
@@ -1368,8 +1368,8 @@ def get_programme_analytics(academic_year=None, term=None, program=None, cohort=
 	)
 
 	# ── Summary counts ────────────────────────────────────────────────────────
-	total_programs    = frappe.db.count("Program")
-	active_programs   = frappe.db.count("Program", filters={"program_status": "Active"})
+	total_programs    = frappe.db.count("Programme")
+	active_programs   = frappe.db.count("Programme", filters={"program_status": "Active"})
 	total_cohorts     = frappe.db.count("Cohort", filters=cohort_filters)
 	active_cohorts    = frappe.db.count("Cohort", filters={**cohort_filters, "status": "Active"})
 	total_enrollments = frappe.db.sql(
@@ -2658,12 +2658,12 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 			if value and value not in ("all", "All"):
 				filters["program_status"] = value
 			rows = frappe.db.get_all(
-				"Program", filters=filters,
+				"Programme", filters=filters,
 				fields=["name", "program_name", "program_shortcode", "department",
 						"level_of_study", "program_status"],
 				limit_start=offset, limit_page_length=page_size, order_by="program_name asc",
 			)
-			total = frappe.db.count("Program", filters=filters)
+			total = frappe.db.count("Programme", filters=filters)
 			return {"rows": rows, "total": total,
 					"columns": ["program_name", "program_shortcode", "department",
 								"level_of_study", "program_status"]}
@@ -2673,11 +2673,11 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 			if value and value not in ("all", "All"):
 				filters["level_of_study"] = value
 			rows = frappe.db.get_all(
-				"Program", filters=filters,
+				"Programme", filters=filters,
 				fields=["name", "program_name", "department", "level_of_study", "program_status"],
 				limit_start=offset, limit_page_length=page_size, order_by="program_name asc",
 			)
-			total = frappe.db.count("Program", filters=filters)
+			total = frappe.db.count("Programme", filters=filters)
 			return {"rows": rows, "total": total,
 					"columns": ["program_name", "department", "level_of_study", "program_status"]}
 
@@ -2685,11 +2685,11 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 			dept_id = frappe.db.get_value("Department", {"department_name": value}, "name") or value
 			filters = {"department": dept_id}
 			rows = frappe.db.get_all(
-				"Program", filters=filters,
+				"Programme", filters=filters,
 				fields=["name", "program_name", "level_of_study", "program_status"],
 				limit_start=offset, limit_page_length=page_size, order_by="program_name asc",
 			)
-			total = frappe.db.count("Program", filters=filters)
+			total = frappe.db.count("Programme", filters=filters)
 			return {"rows": rows, "total": total,
 					"columns": ["program_name", "level_of_study", "program_status"]}
 
@@ -2728,7 +2728,7 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 								"status", "enrollment_date"]}
 
 		elif dimension == "program_enrollment":
-			prog_id = frappe.db.get_value("Program", {"program_name": value}, "name") or value
+			prog_id = frappe.db.get_value("Programme", {"program_name": value}, "name") or value
 			filters = {"program": prog_id}
 			if academic_year:
 				filters["academic_year"] = academic_year
@@ -2777,7 +2777,7 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 								"academic_year", "status", "maximum_students"]}
 
 		elif dimension == "offering_program":
-			prog_id = frappe.db.get_value("Program", {"program_name": value}, "name") or value
+			prog_id = frappe.db.get_value("Programme", {"program_name": value}, "name") or value
 			filters = {"program": prog_id}
 			if academic_year:
 				filters["academic_year"] = academic_year
@@ -2941,7 +2941,7 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 			aa_filters = {}
 			if value and value not in ("all", "All"):
 				# value may be program_name; resolve to program id
-				prog_id = frappe.db.get_value("Program", {"program_name": value}, "name") or value
+				prog_id = frappe.db.get_value("Programme", {"program_name": value}, "name") or value
 				aa_filters["program"] = prog_id
 			rows = frappe.db.get_all(
 				"Admission Application", filters=aa_filters,

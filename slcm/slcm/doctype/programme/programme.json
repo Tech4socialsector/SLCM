@@ -51,7 +51,7 @@
    "fieldname": "program_code",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Program Code",
+   "label": "Programme Code",
    "reqd": 1
   },
   {
@@ -60,18 +60,19 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Program Name",
+   "label": "Programme Name",
    "reqd": 1,
    "unique": 1
   },
   {
    "fieldname": "program_shortcode",
    "fieldtype": "Data",
-   "label": "Program Shortcode"
+   "label": "ProgrammeShortcode"
   },
   {
    "fieldname": "department",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Department",
    "options": "Department"
   },
@@ -97,7 +98,7 @@
   {
    "fieldname": "program_duration",
    "fieldtype": "Int",
-   "label": "Program Duration"
+   "label": "Programme duration (in years)"
   },
   {
    "fieldname": "academic_year",
@@ -129,7 +130,7 @@
    "fieldname": "program_status",
    "fieldtype": "Select",
    "in_standard_filter": 1,
-   "label": "Program Status",
+   "label": "Programme Status",
    "options": "\nActive\nInactive"
   },
   {
@@ -309,10 +310,10 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-02 14:09:41.880591",
+ "modified": "2026-07-08 12:11:32.578733",
  "modified_by": "Administrator",
  "module": "SLCM",
- "name": "Program",
+ "name": "Programme",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [

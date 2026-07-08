@@ -9,7 +9,7 @@ def execute(filters: dict | None = None):
 	columns = [
 		{"label": _("Admission Cycle"), "fieldname": "admission_cycle", "fieldtype": "Link", "options": "Admission Cycle", "width": 150},
 		{"label": _("Campus"), "fieldname": "campus", "fieldtype": "Link", "options": "Campus", "width": 150},
-		{"label": _("Program"), "fieldname": "program", "fieldtype": "Link", "options": "Program", "width": 200},
+		{"label": _("Programme"), "fieldname": "program", "fieldtype": "Link", "options": "Programme", "width": 200},
 		{"label": _("Scholarship Scheme"), "fieldname": "scholarship_scheme", "fieldtype": "Link", "options": "Scholarship Scheme", "width": 200},
 		{"label": _("Total Beneficiaries"), "fieldname": "total_beneficiaries", "fieldtype": "Int", "width": 150},
 		{"label": _("Total Scholarship Utilized"), "fieldname": "total_utilized", "fieldtype": "Currency", "width": 200}

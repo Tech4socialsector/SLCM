@@ -26,7 +26,7 @@ frappe.ui.form.on("Student Enrollment", {
 		}
 
 		// 4️⃣ Fetch Program curriculum then match each course to a Course Offering
-		frappe.db.get_doc("Program", frm.doc.program).then((program_doc) => {
+		frappe.db.get_doc("Programme", frm.doc.program).then((program_doc) => {
 			if (!program_doc.table_fela || program_doc.table_fela.length === 0) {
 				frm.refresh_field("enrolled_courses");
 				return;

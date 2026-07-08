@@ -23,7 +23,7 @@ frappe.listview_settings['Applicant Payment Receipt'] = {
 		// 				label: __('Programme'),
 		// 				fieldname: 'program',
 		// 				fieldtype: 'Link',
-		// 				options: 'Program'
+		// 				options: 'Programme'
 		// 			},
 		// 			{
 		// 				label: __('Academic Year'),

@@ -59,12 +59,12 @@
    "options": "Cohort"
   },
   {
-   "depends_on": "eval:doc.target_scope == 'Program'",
+   "depends_on": "eval:doc.target_scope == 'Programme'",
    "description": "All active students enrolled in this Program (across all cohorts) will be affected",
    "fieldname": "program",
    "fieldtype": "Link",
-   "label": "Program",
-   "options": "Program"
+   "label": "Programme",
+   "options": "Programme"
   },
   {
    "fieldname": "col_break_target",

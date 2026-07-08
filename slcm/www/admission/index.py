@@ -17,7 +17,7 @@ def _load_program_detail(context, slug):
         context.portal_config = None
 
     prog_name = frappe.db.get_value(
-        "Program", {"program_slug": slug}, "name")
+        "Programme", {"program_slug": slug}, "name")
 
     if not prog_name:
         context.program_not_found = True
@@ -26,7 +26,7 @@ def _load_program_detail(context, slug):
         return
 
     try:
-        prog = frappe.get_doc("Program", prog_name)
+        prog = frappe.get_doc("Programme", prog_name)
     except Exception:
         context.program_not_found = True
         context.program = None
@@ -490,7 +490,7 @@ def get_context(context):
     if _slug:
         _load_program_detail(context, _slug)
         context.show_detail = True
-        context.title = (context.prog_name or "Program") + " — Admissions"
+        context.title = (context.prog_name or "Programme") + " — Admissions"
         return   # ← exit early, index.html renders detail view
 
     context.show_detail = False

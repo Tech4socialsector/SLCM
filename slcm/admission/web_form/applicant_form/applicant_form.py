@@ -249,7 +249,7 @@ def validate_new_application_access(program=None):
     
     if program:
         # Resolve from slug if needed
-        slug_match = frappe.db.get_value("Program", {"program_slug": program}, "name")
+        slug_match = frappe.db.get_value("Programme", {"program_slug": program}, "name")
         if slug_match:
             resolved_program = slug_match
 
@@ -320,7 +320,7 @@ def get_open_programmes():
         if not prog:
             continue
         
-        prog_data = frappe.db.get_value("Program", prog, ["program_name", "program_slug"], as_dict=True) or {}
+        prog_data = frappe.db.get_value("Programme", prog, ["program_name", "program_slug"], as_dict=True) or {}
         label = prog_data.get("program_name") or prog
         slug = prog_data.get("program_slug") or prog
         
@@ -958,7 +958,7 @@ def _portal_program_row(program, admission_cycle):
     admission_cycle = (admission_cycle or "").strip()
     if not program:
         return out
-    prog_title = (frappe.db.get_value("Program", program, "program_name") or "").strip()
+    prog_title = (frappe.db.get_value("Programme", program, "program_name") or "").strip()
     out["program_label"] = prog_title or program
     if admission_cycle:
         acp = frappe.db.get_value(
@@ -972,7 +972,7 @@ def _portal_program_row(program, admission_cycle):
             out["intake_type"] = acp.get("intake_type")
             out["campus"] = acp.get("campus")
     if not out["program_level"]:
-        out["program_level"] = frappe.db.get_value("Program", program, "level_of_study")
+        out["program_level"] = frappe.db.get_value("Programme", program, "level_of_study")
     return out
 
 

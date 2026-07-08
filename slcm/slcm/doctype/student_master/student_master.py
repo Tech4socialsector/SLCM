@@ -65,7 +65,7 @@ def _get_valid_fee_structure_for_program(program):
 def _resolve_program(programme):
     """Resolve a Cohort name (or bare Program name) to a Program name."""
     program = frappe.db.get_value("Cohort", programme, "program")
-    if not program and frappe.db.exists("Program", programme):
+    if not program and frappe.db.exists("Programme", programme):
         program = programme
     return program
 
@@ -822,7 +822,7 @@ def get_academic_progress(student_name):
     # Program details
     program_name = ""
     if enrollment.program:
-        program_name = frappe.db.get_value("Program", enrollment.program, "program_name") or enrollment.program
+        program_name = frappe.db.get_value("Programme", enrollment.program, "program_name") or enrollment.program
 
     # Faculty advisor name
     faculty_advisor_name = ""

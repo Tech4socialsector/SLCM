@@ -1,7 +1,7 @@
 import frappe
 
 def check_program_meta():
-    meta = frappe.get_meta("Program")
+    meta = frappe.get_meta("Programme")
     print(f"DocType: {meta.name}")
     print("Table Fields:")
     for field in meta.get_table_fields():

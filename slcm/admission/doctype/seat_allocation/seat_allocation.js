@@ -189,8 +189,8 @@ frappe.ui.form.on("Seat Allocation", {
                                 {
                                     fieldname: "program",
                                     fieldtype: "Link",
-                                    options: "Program",
-                                    label: __("Program"),
+                                    options: "Programme",
+                                    label: __("Programme"),
                                     in_list_view: 1,
                                     read_only: 1
                                 },

@@ -38,7 +38,7 @@ frappe.pages['slcm-data-map'].on_page_load = function (wrapper) {
 			docs: [
 				{ name: 'Course Master',       dt: 'Course Master' },
 				{ name: 'Course',              dt: 'Course' },
-				{ name: 'Program',             dt: 'Program' },
+				{ name: 'Programme',             dt: 'Programme' },
 				{ name: 'Curriculum',          dt: 'Curriculum' },
 				{ name: 'Cohort',              dt: 'Cohort' },
 				{ name: 'Course Offering',     dt: 'Course Offering' },
@@ -173,7 +173,7 @@ frappe.pages['slcm-data-map'].on_page_load = function (wrapper) {
 
 	const QUICKSTART = [
 		'Department', 'Academic Year', 'Academic Term',
-		'Program', 'Course', 'Cohort', 'Course Offering',
+		'Programme', 'Course', 'Cohort', 'Course Offering',
 		'Student Master', 'Student Enrollment', 'Student Enrollment Course',
 		'Exam Plan', 'Student Course Marks', 'Student Result Publish',
 	];

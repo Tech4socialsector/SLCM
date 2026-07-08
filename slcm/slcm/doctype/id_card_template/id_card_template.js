@@ -1921,7 +1921,7 @@ class IDCardEditor {
 				{ label: "Blood Group", field: "blood_group" },
 				{ label: "Date of Birth", field: "date_of_birth" },
 				{ label: "Academic Year", field: "academic_year" },
-				{ label: "Program", field: "program" },
+				{ label: "Programme", field: "program" },
 				{ label: "Department", field: "department" },
 				{ label: "Email", field: "email" },
 				{ label: "Phone", field: "phone" },

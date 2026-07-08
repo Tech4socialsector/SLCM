@@ -97,7 +97,7 @@
    "fieldname": "program",
    "fieldtype": "Link",
    "label": "Programme",
-   "options": "Program",
+   "options": "Programme",
    "reqd": 1
   },
   {

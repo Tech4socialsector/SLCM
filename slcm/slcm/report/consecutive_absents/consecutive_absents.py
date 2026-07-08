@@ -19,7 +19,7 @@ def execute(filters=None):
 		},
 		{
 			"fieldname": "program",
-			"label": _("Program"),
+			"label": _("Programme"),
 			"fieldtype": "Data",
 			"width": 150
 		},

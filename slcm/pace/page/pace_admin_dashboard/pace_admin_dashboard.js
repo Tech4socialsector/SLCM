@@ -476,7 +476,7 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function (wrapper) {
 				<tr>
 					<th>${__('Application ID')}</th>
 					<th>${__('Applicant Name')}</th>
-					<th>${__('Program')}</th>
+					<th>${__('Programme')}</th>
 					<th>${__('Status')}</th>
 					<th>${__('Assigned To')}</th>
 					<th>${__('Last Action')}</th>

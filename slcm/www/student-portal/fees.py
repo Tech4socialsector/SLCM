@@ -735,7 +735,7 @@ def _ensure_student_fee_populated(student):
 
     try:
         program = frappe.db.get_value("Cohort", student.programme, "program")
-        if not program and frappe.db.exists("Program", student.programme):
+        if not program and frappe.db.exists("Programme", student.programme):
             program = student.programme
         if not program:
             return

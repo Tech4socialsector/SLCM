@@ -17,8 +17,8 @@ class BulkFeeStructureUpdate(Document):
     def _validate_inputs(self):
         if self.target_scope == "Programme" and not self.programme:
             frappe.throw(_("Programme (Cohort) is required when Update Scope is 'Programme'."))
-        if self.target_scope == "Program" and not self.program:
-            frappe.throw(_("Program is required when Update Scope is 'Program'."))
+        if self.target_scope == "Programme" and not self.program:
+            frappe.throw(_("Program is required when Update Scope is 'Programme'."))
         if self.status == "Applied":
             frappe.throw(_("This Bulk Fee Structure Update has already been applied and cannot be modified."))
 
@@ -27,7 +27,7 @@ class BulkFeeStructureUpdate(Document):
 
 def _resolve_program_from_cohort(cohort):
     program = frappe.db.get_value("Cohort", cohort, "program")
-    if not program and frappe.db.exists("Program", cohort):
+    if not program and frappe.db.exists("Programme", cohort):
         program = cohort
     return program
 

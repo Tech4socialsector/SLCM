@@ -903,7 +903,7 @@ def _resolve_invoice_print_format(student_name):
             programme = frappe.db.get_value("Student Master", student_name, "programme")
             if programme:
                 program = frappe.db.get_value("Cohort", programme, "program")
-                if not program and frappe.db.exists("Program", programme):
+                if not program and frappe.db.exists("Programme", programme):
                     program = programme
                 if program:
                     fs_name = frappe.db.get_value(

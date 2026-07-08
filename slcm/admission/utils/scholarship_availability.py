@@ -128,7 +128,7 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
     # Get applicant program level
     applicant_program_level = frappe.db.get_value("Applicant", applicant_id, "program_level")
     if not applicant_program_level and program:
-        applicant_program_level = frappe.db.get_value("Program", program, "level_of_study")
+        applicant_program_level = frappe.db.get_value("Programme", program, "level_of_study")
 
     applicable_schemes = []
     for m in mappings:

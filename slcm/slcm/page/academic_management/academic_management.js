@@ -411,7 +411,7 @@ class AcademicManagement {
                     fieldname: 'programme',
                     fieldtype: 'Link',
                     label: __('Programme'),
-                    options: 'Program',
+                    options: 'Programme',
                     reqd: 1
                 },
                 {

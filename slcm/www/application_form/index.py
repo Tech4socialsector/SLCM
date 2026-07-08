@@ -314,7 +314,7 @@ def get_context(context):
     program_code = context.prefill_program or (app_data.get("program") if app_data else None)
     if program_code:
         context.program_display_name = (
-            frappe.db.get_value("Program", program_code, "program_name") or program_code
+            frappe.db.get_value("Programme", program_code, "program_name") or program_code
         )
     else:
         context.program_display_name = ""
@@ -381,14 +381,14 @@ def get_context(context):
         # level_of_study is the correct fieldname; program_level is null for PG/Research
         try:
             raw_programs = frappe.get_all(
-                "Program",
+                "Programme",
                 fields=["name", "level_of_study"],
                 filters={"program_status": "Active"},
                 order_by="name asc"
             )
         except Exception:
             raw_programs = frappe.get_all(
-                "Program",
+                "Programme",
                 fields=["name", "level_of_study"],
                 order_by="name asc"
             )
@@ -634,7 +634,7 @@ def get_form_config_for_cycles():
             intake_types = set()
             for row in programs or []:
                 prog = row.get("program") if isinstance(row, dict) else getattr(row, "program", None)
-                pl = (row.get("program_level") if isinstance(row, dict) else getattr(row, "program_level", None)) or (frappe.db.get_value("Program", prog, "program_level") if prog else None)
+                pl = (row.get("program_level") if isinstance(row, dict) else getattr(row, "program_level", None)) or (frappe.db.get_value("Programme", prog, "program_level") if prog else None)
                 it = row.get("intake_type") if isinstance(row, dict) else getattr(row, "intake_type", None)
                 if pl:
                     levels.add(pl)
@@ -890,7 +890,7 @@ def save_form(data):
     if getattr(doc, "program", None):
         try:
             level_of_study, intake_type = frappe.db.get_value(
-                "Program",
+                "Programme",
                 doc.program,
                 ["level_of_study", "intake_type"],
             ) or (None, None)
@@ -961,7 +961,7 @@ def save_form(data):
             program_name = ""
             campus_name = ""
             if getattr(doc, "program", None):
-                program_name = frappe.db.get_value("Program", doc.program, "program_name") or doc.program or ""
+                program_name = frappe.db.get_value("Programme", doc.program, "program_name") or doc.program or ""
             if getattr(doc, "campus", None):
                 campus_name = frappe.db.get_value("Campus", doc.campus, "campus_name") or doc.campus or ""
 
@@ -1105,7 +1105,7 @@ def check_portal_eligibility(applicant_data):
 
         doc.flags.ignore_permissions = True
 
-        program_level = doc._get_selected_program_level() if hasattr(doc, '_get_selected_program_level') else frappe.db.get_value("Program", program, "level_of_study")
+        program_level = doc._get_selected_program_level() if hasattr(doc, '_get_selected_program_level') else frappe.db.get_value("Programme", program, "level_of_study")
         all_programs  = doc._get_all_programs_for_level(program_level) if hasattr(doc, '_get_all_programs_for_level') else [program]
 
         programs_result = []

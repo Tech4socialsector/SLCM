@@ -183,8 +183,8 @@
    "fetch_from": "course_schedule.program",
    "fieldname": "program",
    "fieldtype": "Link",
-   "label": "Program",
-   "options": "Program",
+   "label": "Programme",
+   "options": "Programme",
    "read_only": 1
   },
   {

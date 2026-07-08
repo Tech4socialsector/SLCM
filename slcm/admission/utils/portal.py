@@ -788,7 +788,7 @@ def get_active_programs():
                 except Exception:
                     p["campus_label"] = p.get("campus")
             # Fetch slug, abbreviation, and other details from Program
-            prog_info = frappe.db.get_value("Program", p.program, 
+            prog_info = frappe.db.get_value("Programme", p.program, 
                 ["program_slug", "program_shortcode", "program_duration", "program_image", "program_description", "brochure_file", "level_of_study", "application_form_link"], 
                 as_dict=True
             )
@@ -925,7 +925,7 @@ def api_get_program_detail(program, cycle):
         res = {
             "program": program,
             "program_name": cp.program_name or program,
-            "program_abbreviation": frappe.db.get_value("Program", program, "program_shortcode") or "",
+            "program_abbreviation": frappe.db.get_value("Programme", program, "program_shortcode") or "",
             "total_seats": cp.seats or 0,
             "eligibility_hint": cp.eligibility_hint or "",
             "brochure_url": cp.brochure_url or "",
