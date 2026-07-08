@@ -46,6 +46,8 @@ frappe.ui.form.on("ID Card Generation", {
 			frm.set_value("non_faculty_name", null);
 			frm.set_value("designation", null);
 			frm.set_value("department", null);
+			frm.set_value("batch", null);
+			frm.set_value("programme", null);
 			frm.set_value("photo", null);
 		};
 		if (frm.doc.qr_code_image) {

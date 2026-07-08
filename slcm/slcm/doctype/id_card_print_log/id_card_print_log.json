@@ -59,13 +59,14 @@
    "fieldname": "program",
    "fieldtype": "Link",
    "label": "Programme",
-   "options": "Batch",
+   "options": "Programme",
    "read_only": 1
   },
   {
    "fieldname": "batch",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Batch",
+   "options": "Batch",
    "read_only": 1
   },
   {

@@ -636,7 +636,7 @@ def _validate_transition_requirements(student, new_status):
             ).format(student.fee_payment_status))
 
     elif new_status == "Pending Print & Scan":
-        required_fields = ["first_name", "last_name", "dob", "gender", "email", "phone", "programme", "department"]
+        required_fields = ["first_name", "last_name", "dob", "gender", "email", "phone", "programme", "programme_of_study"]
         missing = [f for f in required_fields if not student.get(f)]
         if missing:
             labels = [frappe.get_meta("Student Master").get_label(f) for f in missing]

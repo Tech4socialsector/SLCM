@@ -83,7 +83,7 @@ class IDCardEditor {
 		}
 
 		this.current_side = "front";
-		this.scale = 1.5;
+		this.scale = 2;
 		this.render();
 	}
 
@@ -359,7 +359,7 @@ class IDCardEditor {
 				this.data.front.push({
 					type: "text",
 					mapping: "student_id",
-					content: "[ID]",
+					content: "[Student ID]",
 					x: 65,
 					y: 125,
 					style: { fontSize: "7px", fontWeight: "bold" },
@@ -652,8 +652,8 @@ class IDCardEditor {
 					});
 					this.data.front.push({
 						type: "text",
-						mapping: "program",
-						content: "[Program]",
+						mapping: "batch",
+						content: "[Batch]",
 						x: 10,
 						y: 190,
 						style: {
@@ -674,8 +674,8 @@ class IDCardEditor {
 					});
 					this.data.front.push({
 						type: "text",
-						mapping: "department",
-						content: "Dept: [Department]",
+						mapping: "programme",
+						content: "Prog: [Programme]",
 						x: 30,
 						y: 235,
 						style: { fontSize: "10px", color: "#444" },
@@ -835,7 +835,7 @@ class IDCardEditor {
 					this.data.front.push({
 						type: "text",
 						mapping: "student_id",
-						content: "[ID]",
+						content: "[Student ID]",
 						x: 10,
 						y: 135,
 						style: {
@@ -877,7 +877,7 @@ class IDCardEditor {
 					});
 					this.data.front.push({
 						type: "text",
-						content: "[Program] | [Dept]",
+						content: "[Programme] | [Batch]",
 						x: 130,
 						y: 85,
 						style: { fontSize: "10px", color: "#666", width: "200px" },
@@ -1212,8 +1212,8 @@ class IDCardEditor {
 					});
 					this.data.front.push({
 						type: "text",
-						mapping: "department",
-						content: "Dept: [Department]",
+						mapping: "programme",
+						content: "Prog: [Programme]",
 						x: 110,
 						y: 130,
 						style: { fontSize: "12px" },
@@ -1738,7 +1738,7 @@ class IDCardEditor {
 		}
 
 		this.current_side = "front";
-		this.scale = 1.5;
+		this.scale = 2;
 		this.save();
 		this.render();
 	}
@@ -1759,10 +1759,14 @@ class IDCardEditor {
                 .canvas-element { user-select: none; box-sizing: border-box; }
                 .canvas-element:hover { outline: 1px dashed #999; }
                 .canvas-element.selected { outline: 1px solid blue; }
-                .prop-label { font-size: 11px; color: #777; margin-bottom: 2px; display: block; }
+                .prop-label { font-size: 11px; color: #777; margin-bottom: 2px; display: block; letter-spacing: 0.5px; }
+                .tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; margin-bottom: 4px; }
+                .tool-grid .tool-btn { margin-bottom: 0; }
+                .panel { margin-bottom: 12px; }
+                .panel-heading { font-weight: 600; }
             </style>
             <div class="row">
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <div class="panel panel-default">
                         <div class="panel-heading">Card Settings</div>
                         <div class="panel-body" style="padding: 10px;">
@@ -1796,74 +1800,94 @@ class IDCardEditor {
                                     </div>
                                 </div>
                             </div>
-                            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;">
                                 <button class="btn btn-danger btn-block btn-sm" id="btn-change-template">
                                     <i class="fa fa-refresh"></i> Reset / Change Template
                                 </button>
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="panel panel-default">
-                        <div class="panel-heading">Tools</div>
-                        <div class="panel-body" style="padding: 10px;">
-                            <label class="prop-label">DESIGN</label>
-                            <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_text">Add Text</button>
-                            <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_image">Add Image</button>
-                            <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_watermark">Add Watermark</button>
-                            <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_shape" data-shape="box">Add Box</button>
-                            <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_shape" data-shape="header">Add Header</button>
-                             <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_shape" data-shape="footer">Add Footer</button>
-                             <div style="margin-top: 5px;">
+                            <div style="margin-top: 4px;">
                                 <label class="checkbox-inline" style="font-size: 11px; margin-left: 0;">
                                     <input type="checkbox" id="toggle-guides" ${
 										this.show_guides ? "checked" : ""
 									}> Show Guides
                                 </label>
                              </div>
-
-                            <hr style="margin: 10px 0;">
-                            <label class="prop-label">FIELDS</label>
-                            <hr style="margin: 10px 0;">
-                            <label class="prop-label">FIELDS</label>
-                            ${this.get_field_buttons_html()}
-
-                            <hr style="margin: 10px 0;">
-                            <label class="prop-label">INSTITUTE</label>
-                            <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_field" data-field="institute_logo">Institute Logo</button>
-                            <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_field" data-field="authority_signature">Authority Signature</button>
-                            <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_field" data-field="institute_name">Institute Name</button>
-                             <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_field" data-field="address">Address</button>
-                             <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_field" data-field="institute_address">Institute Address</button>
-                             <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_field" data-field="department">Department</button>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div style="margin-bottom: 10px; font-weight: bold; text-align: center;">
-                        ${this.current_side.toUpperCase()}
-                    </div>
-                    <div id="card-canvas-container" style="
-                        width: 100%;
-                        display: flex;
-                        justify-content: center;
-                        background: #eee;
-                        padding: 20px;
-                        border-radius: 12.5px;
-                        min-height: 400px;
-                        align-items: center;
-                    ">
+                <div class="col-md-4">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">Tools &amp; Fields</div>
+                        <div class="panel-body" style="padding: 10px; max-height: 260px; overflow-y: auto;">
+                            <label class="prop-label">DESIGN</label>
+                            <div class="tool-grid">
+                                <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_text">Add Text</button>
+                                <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_image">Add Image</button>
+                                <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_watermark">Add Watermark</button>
+                                <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_shape" data-shape="box">Add Box</button>
+                                <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_shape" data-shape="header">Add Header</button>
+                                <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_shape" data-shape="footer">Add Footer</button>
+                            </div>
 
-                        <div id="card-canvas-wrapper" style="position: relative;">
+                            <hr style="margin: 8px 0;">
+                            <label class="prop-label">FIELDS</label>
+                            <div class="tool-grid">${this.get_field_buttons_html()}</div>
+
+                            <hr style="margin: 8px 0;">
+                            <label class="prop-label">INSTITUTE</label>
+                            <div class="tool-grid">
+                                <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_field" data-field="institute_logo">Institute Logo</button>
+                                <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_field" data-field="authority_signature">Authority Signature</button>
+                                <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_field" data-field="institute_name">Institute Name</button>
+                                <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_field" data-field="address">Address</button>
+                                <button class="btn btn-default btn-block btn-xs tool-btn" data-action="add_field" data-field="institute_address">Institute Address</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="panel panel-default">
+                         <div class="panel-heading">Properties</div>
+                         <div id="element-properties" class="panel-body" style="max-height: 260px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading" style="text-align: center; letter-spacing: 1px;">
+                            ${this.current_side.toUpperCase()}
+                        </div>
+                        <div class="panel-body" style="padding: 0;">
+                            <div id="card-canvas-container" style="
+                                width: 100%;
+                                min-height: 460px;
+                                display: flex;
+                                justify-content: center;
+                                align-items: center;
+                                background: repeating-linear-gradient(45deg, #f3f3f3, #f3f3f3 10px, #ececec 10px, #ececec 20px);
+                                padding: 32px;
+                                box-sizing: border-box;
+                            ">
+
+                        <div id="card-canvas-wrapper" style="
+                            position: relative;
+                            width: ${width * this.scale}px;
+                            height: ${height * this.scale}px;
+                            flex-shrink: 0;
+                        ">
                             <div id="card-canvas" style="
                                 width: ${width}px;
                                 height: ${height}px;
                                 background: ${this.data.bg_color[this.current_side] || "#ffffff"};
-                                position: relative;
+                                position: absolute;
+                                top: 0;
+                                left: 0;
                                 overflow: hidden;
+                                border-radius: 10px;
                                 transform: scale(${this.scale});
-                                transform-origin: center center;
-                                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                                transform-origin: top left;
+                                box-shadow: 0 6px 16px rgba(0,0,0,0.18);
                                 z-index: 10;
                             ">
                             </div>
@@ -1871,7 +1895,7 @@ class IDCardEditor {
                             <div id="canvas-guides" style="
                                 position: absolute; top:0; left:0; pointer-events: none; z-index: 5;
                                 width: ${width}px; height: ${height}px;
-                                transform: scale(${this.scale}); transform-origin: center center;
+                                transform: scale(${this.scale}); transform-origin: top left;
                                 border: 1px dashed transparent;
                             ">
                                  ${
@@ -1884,12 +1908,8 @@ class IDCardEditor {
 									}
                             </div>
                         </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="panel panel-default">
-                         <div class="panel-heading">Properties</div>
-                         <div id="element-properties" class="panel-body"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1921,8 +1941,8 @@ class IDCardEditor {
 				{ label: "Blood Group", field: "blood_group" },
 				{ label: "Date of Birth", field: "date_of_birth" },
 				{ label: "Academic Year", field: "academic_year" },
-				{ label: "Programme", field: "program" },
-				{ label: "Department", field: "department" },
+				{ label: "Batch", field: "batch" },
+				{ label: "Programme", field: "programme" },
 				{ label: "Email", field: "email" },
 				{ label: "Phone", field: "phone" },
 				{ label: "Address", field: "address" },
