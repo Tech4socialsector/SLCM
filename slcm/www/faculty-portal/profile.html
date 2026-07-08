@@ -22,7 +22,7 @@
 
   {# ── Profile Card ─────────────────────────────────────────── #}
   <div class="fp-card fade-in" style="animation-delay:0.04s;">
-    <div style="background:linear-gradient(135deg,var(--fp-primary),#2d5a8e);padding:28px 24px;display:flex;flex-direction:column;align-items:center;gap:14px;border-radius:var(--fp-radius) var(--fp-radius) 0 0;">
+    <div style="background:linear-gradient(135deg,var(--fp-primary),#2b2e4a);padding:28px 24px;display:flex;flex-direction:column;align-items:center;gap:14px;border-radius:var(--fp-radius) var(--fp-radius) 0 0;">
       <div style="width:88px;height:88px;border-radius:50%;background:rgba(255,255,255,0.2);border:3px solid rgba(255,255,255,0.4);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;color:#fff;">
         {% if f.get('photo') %}
         <img src="{{ f.photo }}" alt="{{ faculty_name }}" style="width:100%;height:100%;object-fit:cover;">
@@ -75,11 +75,6 @@
       </div>
       {% endif %}
 
-      <div style="margin-top:18px;">
-        <button class="fp-btn fp-btn-primary" style="width:100%;justify-content:center;" onclick="fpOpenEditModal()">
-          <span class="fp-ms">edit</span>Edit Profile
-        </button>
-      </div>
     </div>
   </div>
 

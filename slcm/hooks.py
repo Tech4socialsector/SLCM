@@ -85,6 +85,10 @@ fixtures = [
         "doctype":"Admission Category",
         "doctype":"Notification"
     },
+    {
+        "doctype": "Day of Week",
+        "filters": [["name", "in", ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]]]
+    },
     # --- SLCM module roles (slcm_ prefix) ---
     {
         "doctype": "Role",
@@ -169,7 +173,11 @@ fixtures = [
                 "PACE Course Fee Payment Reminder",
                 "Admission Offer Letter",
                 "Pace Application Completed but Payment Pending",
-                "PACE Verifier Action Confirmation"
+                "PACE Verifier Action Confirmation",
+                "Parent RFID Absence Alert",
+                "HD Ticket SLA Escalation - New Agent",
+                "HD Ticket SLA Escalation - Previous Agent",
+                "HD Ticket SLA Escalation - Max Hops Reached"
             ]]
         ]
     },
@@ -177,6 +185,11 @@ fixtures = [
     {
         "doctype": "Student Portal Settings",
         "filters": [["name", "=", "Student Portal Settings"]]
+    },
+    # --- Attendance Settings (single doctype — ships with defaults) ---
+    {
+        "doctype": "Attendance Settings",
+        "filters": [["name", "=", "Attendance Settings"]]
     },
     # --- Student Registration Workflow ---
     {
@@ -431,14 +444,24 @@ on_logout = "slcm.utils.auth_routing.handle_logout"
 # RFID Attendance Processing
 scheduler_events = {
 	"cron": {
-		# Pull new RFID swipes from SQL Server into Attendance Log every 5 minutes
+		# Convert raw Attendance Log rows (created by the live device-push API)
+		# into Student Attendance records — runs every minute, the shortest
+		# interval Frappe's cron scheduler supports.
+		"* * * * *": [
+			"slcm.slcm.doctype.attendance_log.process_attendance_logs.process_pending_logs",
+		],
+		# RFID SQL Agent — independent ingestion path for devices that log to
+		# a SQL Server table instead of pushing over HTTP. Writes into its
+		# own RFID SQL Punch Log, separate from Attendance Log.
 		"*/5 * * * *": [
-			"slcm.slcm.utils.rfid_sql_poller.poll_rfid_swipes",
+			"slcm.slcm.rfid_sql_agent.poller.poll_rfid_sql_agent",
 		],
 		"*/10 * * * *": [
-			"slcm.slcm.doctype.attendance_log.process_attendance_logs.process_pending_logs",
 			"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist"
 		],
+        "*/5 * * * *": [
+            "slcm.api.helpdesk_escalation.run_sla_escalation"
+        ],
         "*/15 * * * *": [
             "slcm.admission.utils.scheduler.auto_manage_announcements",
             "slcm.api.service.fee_service.reconcile_pending_payments"
@@ -463,6 +486,8 @@ scheduler_events = {
 		"slcm.admission.events.auto_update_cycle_status",
         "slcm.admission.utils.notifications.check_and_send_offer_reminders",
         # "slcm.admission.utils.auto_draft.auto_save_all_drafts"
+        # Parent RFID absence alert — fires every hour; skips if outside configured window/days
+        "slcm.slcm.utils.parent_rfid_alert.check_and_send_absence_alerts",
 	],
 	"daily": [
 		"slcm.admission.doctype.important_dates.important_dates.update_important_dates_status",

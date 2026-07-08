@@ -176,14 +176,21 @@ def calculate_sessions(course_offering):
 		'conducted_hours': 0,
 		'conducted_sessions': 0
 	}
-	
-	if scheduled_hours and scheduled_hours[0]:
-		result['total_hours'] = scheduled_hours[0]['total_hours']
-	
+
+	sched_total = scheduled_hours[0]['total_hours'] if (scheduled_hours and scheduled_hours[0]) else 0
+
 	if conducted and conducted[0]:
 		result['conducted_hours'] = conducted[0]['conducted_hours']
 		result['conducted_sessions'] = conducted[0]['conducted_sessions']
-	
+
+	# Use Class Schedule hours as denominator when available.
+	# If no Class Schedule exists yet, fall back to conducted Attendance Session hours
+	# so the percentage is not stuck at 0% for the whole term.
+	if sched_total and sched_total > 0:
+		result['total_hours'] = sched_total
+	else:
+		result['total_hours'] = result['conducted_hours']
+
 	return result
 
 
@@ -214,80 +221,86 @@ def calculate_fa_mfa_hours(student, course_offering):
 	return {'total_hours': 0}
 
 
-def calculate_attendance_records(student, course_offering):
-	"""
-	Calculate attendance for Regular Class (Lecture/Tutorial).
-	Returns hours attended.
-	"""
-	# Get Course Context for Fallback
+def _get_offering_context(course_offering):
+	"""Fetch course_title and academic_year for a Course Offering."""
 	course = None
 	academic_year = None
 	if course_offering:
-		offering = frappe.db.get_value("Course Offering", course_offering, ["course_title", "academic_year"], as_dict=True)
+		offering = frappe.db.get_value(
+			"Course Offering", course_offering,
+			["course_title", "academic_year"], as_dict=True
+		)
 		if offering:
 			course = offering.course_title
 			academic_year = offering.academic_year
+	return course, academic_year
+
+
+def calculate_attendance_records(student, course_offering):
+	"""
+	Calculate attendance for Regular Class (Lecture/Tutorial).
+	Returns total hours attended across ALL sources (RFID + Manual + Auto).
+
+	Two-tier match:
+	  1. course_offer = offering name  (RFID / Auto / well-formed Manual)
+	  2. course_offer is NULL but course (course_title) matches  (older manual records)
+
+	NOTE: a third tier matching solely on academic_year was removed because it caused
+	every null-course_offer record to be counted against ALL offerings in the same year,
+	resulting in inflated attendance figures (ghost double-counting).
+	"""
+	course, _academic_year = _get_offering_context(course_offering)
 
 	attendance = frappe.db.sql("""
-		SELECT 
-			COALESCE(SUM(CASE 
-				WHEN status IN ('Present', 'Late', 'Excused') THEN hours_counted 
-				ELSE 0 
-			END), 0) as attended_hours
+		SELECT
+			COALESCE(SUM(CASE
+				WHEN status IN ('Present', 'Late', 'Excused') THEN hours_counted
+				ELSE 0
+			END), 0) AS attended_hours
 		FROM `tabStudent Attendance`
 		WHERE student = %s
 		AND (
 			course_offer = %s
 			OR (
 				(course_offer IS NULL OR course_offer = '')
-				AND course = %s 
-				AND academic_year = %s
+				AND course = %s
 			)
 		)
 		AND session_type IN ('Lecture', 'Tutorial')
 		AND docstatus < 2
-	""", (student, course_offering, course, academic_year), as_dict=True)
-	
+	""", (student, course_offering, course), as_dict=True)
+
 	if attendance:
 		return attendance[0]
-	
 	return {'attended_hours': 0}
 
 
 def calculate_office_hours(student, course_offering):
 	"""
-	Calculate office hours attendance for a student (from Student Attendance now).
+	Calculate office hours attendance for a student.
+	Same two-tier match as calculate_attendance_records.
 	"""
-	# Get Course Context for Fallback
-	course = None
-	academic_year = None
-	if course_offering:
-		offering = frappe.db.get_value("Course Offering", course_offering, ["course_title", "academic_year"], as_dict=True)
-		if offering:
-			course = offering.course_title
-			academic_year = offering.academic_year
+	course, _academic_year = _get_offering_context(course_offering)
 
 	office_hours = frappe.db.sql("""
-		SELECT 
-			COALESCE(SUM(hours_counted), 0) as total_hours
+		SELECT
+			COALESCE(SUM(hours_counted), 0) AS total_hours
 		FROM `tabStudent Attendance`
 		WHERE student = %s
 		AND (
 			course_offer = %s
 			OR (
-				course_offer IS NULL 
-				AND course = %s 
-				AND academic_year = %s
+				(course_offer IS NULL OR course_offer = '')
+				AND course = %s
 			)
 		)
 		AND session_type = 'Office Hour'
 		AND status IN ('Present', 'Late', 'Excused')
 		AND docstatus < 2
-	""", (student, course_offering, course, academic_year), as_dict=True)
-	
+	""", (student, course_offering, course), as_dict=True)
+
 	if office_hours:
 		return office_hours[0]
-	
 	return {'total_hours': 0}
 
 
@@ -345,18 +358,30 @@ def get_or_create_summary(student, course_offering):
 
 @frappe.whitelist()
 def calculate_course_attendance(course_offering):
-	"""Calculate attendance for all students in a course offering"""
+	"""Calculate attendance for all students in a course offering.
+	Uses the same three-tier match as calculate_attendance_records so that
+	Manual records with NULL course_offer are included.
+	"""
+	course, academic_year = _get_offering_context(course_offering)
+
 	students = frappe.db.sql("""
 		SELECT DISTINCT student
 		FROM `tabStudent Attendance`
-		WHERE course_offer = %s
-	""", course_offering, as_dict=True)
-	
+		WHERE (
+			course_offer = %s
+			OR (
+				(course_offer IS NULL OR course_offer = '')
+				AND course = %s
+			)
+		)
+		AND docstatus < 2
+	""", (course_offering, course), as_dict=True)
+
 	results = []
 	for student_row in students:
 		result = calculate_student_attendance(student_row.student, course_offering)
 		results.append(result)
-	
+
 	return results
 
 

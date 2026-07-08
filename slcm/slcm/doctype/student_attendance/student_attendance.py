@@ -63,7 +63,7 @@ class StudentAttendance(Document):
 				frappe.throw(_("Attendance already exists for this student on {0}").format(self.attendance_date))
 
 	def fetch_course_details(self):
-		"""Fetch course details based on based_on field"""
+		"""Fetch course details based on based_on field."""
 		if self.based_on == "Course Schedule" and self.course_schedule:
 			schedule = frappe.get_doc("Course Schedule", self.course_schedule)
 			if not self.course:
@@ -85,11 +85,34 @@ class StudentAttendance(Document):
 				self.academic_term = group.academic_term
 			if not self.program:
 				self.program = group.program
+			# Resolve course_offer from Student Group's course field when not already set.
+			# The Student Group's `course` is a course_title; find the matching Course Offering.
+			if not self.course_offer and group.course and self.academic_year:
+				co_match = frappe.db.sql("""
+					SELECT name FROM `tabCourse Offering`
+					WHERE course_title = %s AND academic_year = %s
+					LIMIT 1
+				""", (group.course, self.academic_year), as_dict=True)
+				if co_match:
+					self.course_offer = co_match[0].name
+
+		# Pull course_offer from the linked Attendance Session when not set directly.
+		# This fixes Manual records created without selecting a Course Offering.
+		if not self.course_offer and self.attendance_session:
+			session_co = frappe.db.get_value(
+				"Attendance Session", self.attendance_session, "course_offering"
+			)
+			if session_co:
+				self.course_offer = session_co
 
 		# Fetch course from course offering
 		if self.course_offer and not self.course:
 			offering = frappe.get_doc("Course Offering", self.course_offer)
 			self.course = offering.course_title
+
+		# Sync attendance_date → date (both fields are required)
+		if self.attendance_date and not self.date:
+			self.date = self.attendance_date
 	
 	def track_changes(self):
 		"""Track changes for audit log"""
@@ -165,19 +188,44 @@ class StudentAttendance(Document):
 		self.trigger_recalculation()
 		self.trigger_session_update()
 	
+	def resolve_course_offerings(self):
+		"""
+		Return a list of course_offering IDs to recalculate for this record.
+
+		Priority order:
+		  1. course_offer directly on the record (RFID / Auto / well-formed Manual)
+		  2. course_offering from the linked Attendance Session
+
+		NOTE: a previous fallback that matched all summaries by academic_year alone was
+		removed — it caused every ambiguous record to trigger recalculation for every
+		course in the same year, leading to ghost double-counting.
+		"""
+		if self.course_offer:
+			return [self.course_offer]
+
+		# Fallback — get from the linked session
+		if self.attendance_session:
+			co = frappe.db.get_value("Attendance Session", self.attendance_session, "course_offering")
+			if co:
+				return [co]
+
+		return []
+
 	def trigger_recalculation(self):
-		"""Trigger attendance summary recalculation"""
-		if self.student and self.course_offer:
-			try:
-				from slcm.slcm.utils.attendance_calculator import calculate_student_attendance
+		"""Trigger attendance summary recalculation for all relevant course offerings."""
+		if not self.student:
+			return
+		try:
+			from slcm.slcm.utils.attendance_calculator import calculate_student_attendance
+			for course_offering in self.resolve_course_offerings():
 				frappe.enqueue(
 					calculate_student_attendance,
 					student=self.student,
-					course_offering=self.course_offer,
+					course_offering=course_offering,
 					queue="short"
 				)
-			except Exception as e:
-				frappe.log_error(message=f"Error triggering recalculation: {str(e)}", title="Recalculation Trigger Error")
+		except Exception as e:
+			frappe.log_error(message=f"Error triggering recalculation: {str(e)}", title="Recalculation Trigger Error")
 
 	def trigger_session_update(self):
 		"""Update the parent Attendance Session counts"""
