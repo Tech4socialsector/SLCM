@@ -2,15 +2,6 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on("Student Master", {
-	before_save(frm) {
-		if (frm.doc.program_shortcode && frm.doc.current_year) {
-			frm.set_value(
-				"naming_series",
-				`${frm.doc.program_shortcode}${frm.doc.current_year}.###`
-			);
-		}
-	},
-
 	dob(frm) {
 		if (!frm.doc.dob) return;
 
@@ -318,7 +309,6 @@ frappe.ui.form.on("Student Master", {
 												.filter(Boolean)
 												.join(" "),
 											cohort: frm.doc.programme,
-											batch_year_ref: frm.doc.batch_year,
 											academic_year: frm.doc.academic_year,
 										});
 									} else {
@@ -437,14 +427,6 @@ frappe.ui.form.on("Student Master", {
 
 	programme(frm) {
 		if (!frm.doc.programme) return;
-
-		// Fetch program_shortcode from the selected Cohort so the naming series
-		// in before_save can build the correct ID (e.g. BBA1.001)
-		frappe.db.get_value("Batch", frm.doc.programme, "program_shortcode", function (r) {
-			if (r && r.program_shortcode) {
-				frm.set_value("program_shortcode", r.program_shortcode);
-			}
-		});
 
 		frappe.call({
 			method: "slcm.slcm.doctype.student_master.student_master.fetch_program_fee_details",

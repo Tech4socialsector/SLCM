@@ -9,13 +9,13 @@ from frappe.model.document import Document
 class Programme(Document):
 
 	def autoname(self):
-		if not (self.program_shortcode and self.academic_year and self.academic_term):
+		if not (self.program_code and self.academic_year and self.academic_term):
 			frappe.throw(
-				frappe._("Programme Shortcode, Academic Year and Academic Term are required to name the Programme.")
+				frappe._("Programme Code, Academic Year and Academic Term are required to name the Programme.")
 			)
 
 		self.name = "-".join([
-			self.program_shortcode.strip().upper(),
+			self.program_code.strip().upper(),
 			self.academic_year.strip(),
 			self._slugify(self.academic_term).upper(),
 		])

@@ -23,22 +23,13 @@
   "official_email_id",
   "tab_program_mapping",
   "program_mapping_section",
-  "department",
   "programme",
   "academic_year",
-  "programme_of_study",
-  "pace_programme",
-  "level_of_study",
-  "term_name",
-  "current_term",
+  "academic_term",
   "attendance_status",
   "column_break_bgkj",
-  "current_cgpa",
-  "program_shortcode",
   "specialisation",
   "current_year",
-  "term_year",
-  "batch_year",
   "cumulative_percentage",
   "tab_personal",
   "personal_details_section",
@@ -459,18 +450,8 @@
    "label": "Program & Academic Mapping"
   },
   {
-   "fieldname": "department",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Department",
-   "options": "Department"
-  },
-  {
    "fieldname": "programme",
    "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
    "label": "Batch",
    "options": "Batch"
   },
@@ -480,30 +461,9 @@
    "label": "Specialisation"
   },
   {
-   "fetch_from": "programme.section",
-   "fieldname": "batch_year",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Batch"
-  },
-  {
    "fieldname": "current_year",
    "fieldtype": "Data",
    "label": "Current Year"
-  },
-  {
-   "fetch_from": "programme.term_name",
-   "fieldname": "current_term",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Current Term"
-  },
-  {
-   "fieldname": "current_cgpa",
-   "fieldtype": "Float",
-   "label": "Current CGPA"
   },
   {
    "fieldname": "cumulative_percentage",
@@ -1200,13 +1160,6 @@
    "options": "User"
   },
   {
-   "fetch_from": "programme.term_name",
-   "fieldname": "term_name",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Term Name"
-  },
-  {
    "fieldname": "signature_ppkg",
    "fieldtype": "Signature",
    "label": "Residence Agreement"
@@ -1215,27 +1168,6 @@
    "fieldname": "official_email_id",
    "fieldtype": "Data",
    "label": "Official Email ID"
-  },
-  {
-   "fetch_from": "programme.program_shortcode",
-   "fieldname": "program_shortcode",
-   "fieldtype": "Data",
-   "label": "Program Shortcode"
-  },
-  {
-   "fetch_from": "programme.academic_year",
-   "fieldname": "academic_year",
-   "fieldtype": "Data",
-   "label": "Academic Year"
-  },
-  {
-   "fetch_from": "programme.term_year",
-   "fieldname": "term_year",
-   "fieldtype": "Int",
-   "hidden": 1,
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Term Year"
   },
   {
    "fieldname": "present_address",
@@ -1388,6 +1320,18 @@
    "fieldtype": "Column Break"
   },
   {
+   "fetch_from": "programme.academic_year",
+   "fieldname": "academic_year",
+   "fieldtype": "Data",
+   "label": "Academic year"
+  },
+  {
+   "fetch_from": "programme.academic_term",
+   "fieldname": "academic_term",
+   "fieldtype": "Data",
+   "label": "Academic Term"
+  },
+  {
    "depends_on": "eval:doc.admission_type != 'PACE'",
    "fieldname": "programme_of_study",
    "fieldtype": "Link",
@@ -1409,7 +1353,7 @@
   }
  ],
  "links": [],
- "modified": "2026-07-06 16:56:43.319807",
+ "modified": "2026-07-08 16:46:42.597270",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",

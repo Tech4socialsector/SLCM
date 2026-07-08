@@ -103,7 +103,7 @@ class FeeService:
 
         total_payable = fs_doc.get("total_amount_for_foreign") if is_foreign else fs_doc.get("total_amount_for_indian")
         if total_payable is None or total_payable == "":
-            total_payable = fs_doc.total_amount
+            total_payable = fs_doc.total_amount_for_indian
 
         return {
             "base_fee": base_fee, 

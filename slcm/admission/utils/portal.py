@@ -788,14 +788,14 @@ def get_active_programs():
                 except Exception:
                     p["campus_label"] = p.get("campus")
             # Fetch slug, abbreviation, and other details from Program
-            prog_info = frappe.db.get_value("Programme", p.program, 
-                ["program_slug", "program_shortcode", "program_duration", "program_image", "program_description", "brochure_file", "level_of_study", "application_form_link"], 
+            prog_info = frappe.db.get_value("Programme", p.program,
+                ["program_slug", "program_code", "program_duration", "program_image", "program_description", "brochure_file", "level_of_study", "application_form_link"],
                 as_dict=True
             )
             if prog_info:
                 prog_info = frappe._dict(prog_info)
                 p["program_slug"] = prog_info.program_slug or _re.sub(r'[^a-z0-9]+', '-', (p.program or "").lower()).strip('-')
-                p["program_abbreviation"] = prog_info.program_shortcode
+                p["program_abbreviation"] = prog_info.program_code
                 p["duration"] = f"{prog_info.program_duration} Years" if prog_info.program_duration else ""
                 p["program_image"] = prog_info.program_image or p.get("program_image")
                 p["program_description"] = prog_info.program_description
@@ -925,7 +925,7 @@ def api_get_program_detail(program, cycle):
         res = {
             "program": program,
             "program_name": cp.program_name or program,
-            "program_abbreviation": frappe.db.get_value("Programme", program, "program_shortcode") or "",
+            "program_abbreviation": frappe.db.get_value("Programme", program, "program_code") or "",
             "total_seats": cp.seats or 0,
             "eligibility_hint": cp.eligibility_hint or "",
             "brochure_url": cp.brochure_url or "",

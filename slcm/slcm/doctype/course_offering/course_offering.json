@@ -58,7 +58,7 @@
    "read_only": 1
   },
   {
-   "fetch_from": "cohort.term_name",
+   "fetch_from": "cohort.academic_term",
    "fieldname": "term_name",
    "fieldtype": "Data",
    "label": "Term",
@@ -74,7 +74,7 @@
    "reqd": 1
   },
   {
-   "fetch_from": "course.credits",
+   "fetch_from": "course_title.credit_value",
    "fieldname": "credit_value",
    "fieldtype": "Int",
    "in_list_view": 1,
