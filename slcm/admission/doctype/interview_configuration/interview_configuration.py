@@ -233,7 +233,14 @@ class InterviewConfiguration(Document):
                     row.part_a_score = 0.0
                 seen[row.applicant_id] = row
 
-        return list(seen.values())
+        # Filter out international applicants if international_interview is disabled on the program
+        filtered_list = []
+        for row in seen.values():
+            if row.get("foriegn_national") == "Yes":
+                if not frappe.db.get_value("Program", row.program, "international_interview"):
+                    continue
+            filtered_list.append(row)
+        return filtered_list
 
     @frappe.whitelist()
     def generate_interview_list(self):

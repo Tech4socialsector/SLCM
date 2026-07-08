@@ -970,6 +970,7 @@
    "default": "0",
    "fieldname": "exempts_entrance_test",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Entrance Test Exempted"
   },
   {
@@ -977,6 +978,7 @@
    "default": "0",
    "fieldname": "exempts_interview",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Interview Exempted"
   },
   {
@@ -1275,7 +1277,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-08 14:29:25.511095",
+ "modified": "2026-07-08 16:28:27.891041",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

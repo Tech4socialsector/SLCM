@@ -23,6 +23,7 @@
   "email",
   "gender",
   "date_of_birth",
+  "section_break_egxr",
   "category",
   "section_break_hynq",
   "mother_name",
@@ -37,17 +38,18 @@
   "entrance_test_name",
   "entrance_test_provider",
   "assigned_preferences",
-  "center_name",
-  "center_address",
-  "room_code",
-  "room_name",
-  "building",
-  "floor",
-  "seat_number",
-  "allocation_status",
   "allocation_date",
   "allocated_by",
   "admit_card_download",
+  "allocation_status",
+  "column_break_nivo",
+  "center_name",
+  "center_address",
+  "room_code",
+  "building",
+  "seat_number",
+  "floor",
+  "room_name",
   "tab_9_tab",
   "reschedule_seat_allocation_section",
   "re_entrance_test_name",
@@ -72,6 +74,7 @@
   "tab_result",
   "entrance_test_status",
   "attendance_marked_on",
+  "column_break_ecyc",
   "total_marks",
   "section_break_part_a",
   "part_a_total_marks_scored",
@@ -83,16 +86,17 @@
   "part_b_all_india_rank",
   "section_break_cumulative",
   "total_marks_secured_in_part_a_b",
-  "percentage",
   "entrance_test_rank",
   "percentile",
   "column_break_vvxb",
+  "percentage",
   "result_status",
   "result_published",
   "tab_communication",
   "admit_card_generated",
   "admit_card_number",
-  "entrance_test_result_card"
+  "entrance_test_result_card",
+  "is_international_applicant"
  ],
  "fields": [
   {
@@ -188,6 +192,7 @@
    "default": "0",
    "fieldname": "exempts_entrance_test",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Exempts Entrance Test",
    "read_only": 1
   },
@@ -195,6 +200,7 @@
    "default": "0",
    "fieldname": "exempts_interview",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Exempts Interview",
    "read_only": 1
   },
@@ -595,13 +601,25 @@
   {
    "fieldname": "column_break_vvxb",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_egxr",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_nivo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_ecyc",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "image_field": "profile",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-07 14:20:07.459181",
+ "modified": "2026-07-08 15:03:23.614989",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",

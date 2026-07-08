@@ -16,6 +16,10 @@ import zipfile
 from frappe.utils.file_manager import save_file
 
 class PACEApplication(Document):
+    def before_validate(self):
+        if self.status == "Draft":
+            self.flags.ignore_mandatory = True
+
     def validate(self):
         self.enforce_uppercase()
         self.set_applicant_name()
