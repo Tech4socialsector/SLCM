@@ -19,6 +19,8 @@
   "program_slug",
   "academic_year",
   "academic_term",
+  "term_start_date",
+  "term_end_date",
   "program_status",
   "application_form_link",
   "section_break_fwyh",
@@ -117,7 +119,8 @@
    "fieldname": "academic_term",
    "fieldtype": "Link",
    "label": "Academic Term",
-   "options": "Academic Term"
+   "options": "Academic Term",
+   "reqd": 1
   },
   {
    "fetch_from": "program_name.graduation_credits",
@@ -281,6 +284,18 @@
    "label": "Application Form Link",
    "options": "URL",
    "read_only": 1
+  },
+  {
+   "fetch_from": "academic_term.term_start_date",
+   "fieldname": "term_start_date",
+   "fieldtype": "Date",
+   "label": "Term start date"
+  },
+  {
+   "fetch_from": "academic_term.term_end_date",
+   "fieldname": "term_end_date",
+   "fieldtype": "Date",
+   "label": "Term end date"
   }
  ],
  "grid_page_length": 50,
@@ -309,7 +324,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-08 14:19:27.848065",
+ "modified": "2026-07-08 14:31:41.397484",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Programme",
