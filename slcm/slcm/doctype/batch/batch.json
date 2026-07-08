@@ -18,7 +18,7 @@
   "batch_name",
   "batch_code",
   "term_year",
-  "seat_limit",
+  "total_enrolled_count",
   "status",
   "section"
  ],
@@ -77,13 +77,6 @@
    "reqd": 1
   },
   {
-   "fieldname": "seat_limit",
-   "fieldtype": "Int",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Seat Limit"
-  },
-  {
    "fieldname": "section",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -131,6 +124,13 @@
    "in_standard_filter": 1,
    "label": "Batch code",
    "unique": 1
+  },
+  {
+   "fieldname": "total_enrolled_count",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Total enrolled count"
   }
  ],
  "links": [
@@ -145,7 +145,7 @@
    "link_fieldname": "cohort"
   }
  ],
- "modified": "2026-07-08 15:09:25.181175",
+ "modified": "2026-07-08 15:21:15.312316",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Batch",

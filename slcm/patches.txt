@@ -35,3 +35,4 @@ slcm.patches.v2_0.migrate_pace_admission_fee_to_course_fee
 slcm.patches.v2_0.enable_portal_navigation_menus_by_default
 slcm.patches.v2_0.set_web_form_field_label_max_length
 slcm.patches.v2_0.update_parent_portal_sidebar_colours
+slcm.patches.v2_0.backfill_batch_enrolled_count
