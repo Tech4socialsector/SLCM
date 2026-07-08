@@ -16,8 +16,8 @@ _DEFAULTS = {
     "font_family":           "Poppins",
     "font_size":             "Normal",
     # Theme
-    "primary_color":         "#1e3a5f",
-    "secondary_color":       "#e8a020",
+    "primary_color":         "#920c24",
+    "secondary_color":       "#c9a84c",
     "background_color":      "#f0f2f5",
     "card_background":       "#ffffff",
     "sidebar_theme":         "Light",

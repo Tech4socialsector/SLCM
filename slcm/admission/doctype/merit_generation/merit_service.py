@@ -796,6 +796,9 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                 "filled": 0,
                 "waitlist_seats": v.waitlist_seats or 0,
                 "waitlist_filled": 0,
+                "compartmentalized_category": v.compartmentalized_category,
+                "compartmentalized_waitlist_seats": v.compartmentalized_waitlist_seats or 0,
+                "compartmentalized_waitlist_filled": 0,
                 "min_percentile": v.min_percentile,
                 "priority": v.priority or 0
             }
@@ -997,7 +1000,10 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
             for v_cat in ordered_cats:
                 v_info = vertical_targets[v_cat]
                 w_limit = v_info.get("waitlist_seats", 0)
-                if w_limit <= 0: continue
+                w_comp_limit = v_info.get("compartmentalized_waitlist_seats", 0)
+                comp_cat = v_info.get("compartmentalized_category")
+                
+                if w_limit <= 0 and w_comp_limit <= 0: continue
                 
                 # Find remaining unallocated who are eligible for this category
                 potential_w = [u for u in unallocated if getattr(u, status_field) == "Rejected"]
@@ -1008,12 +1014,23 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                 potential_w.sort(key=lambda x: (-(float(getattr(x, "total_score", 0) or 0)), (x.overall_rank or 999999)))
                 
                 for w_cand in potential_w:
-                    if v_info["waitlist_filled"] < w_limit:
+                    is_comp = False
+                    if comp_cat and _has_trait(w_cand.applicant_id, comp_cat):
+                        is_comp = True
+                        
+                    assigned = False
+                    if is_comp and v_info.get("compartmentalized_waitlist_filled", 0) < w_comp_limit:
+                        assigned = True
+                        v_info["compartmentalized_waitlist_filled"] = v_info.get("compartmentalized_waitlist_filled", 0) + 1
+                    elif v_info.get("waitlist_filled", 0) < w_limit:
+                        assigned = True
+                        v_info["waitlist_filled"] = v_info.get("waitlist_filled", 0) + 1
+                        
+                    if assigned:
                         # Use _assign_seat_to_applicant to handle categorization strings
                         _assign_seat_to_applicant(w_cand, v_cat, w_cand.allocation_type, [], [], {"filled": 0}, status_field)
                         # Reset the status back to Waitlisted since _assign sets it to Selected/Shortlisted
                         setattr(w_cand, status_field, "Waitlisted")
-                        v_info["waitlist_filled"] += 1
 
         # --- POPULATE SUMMARY ---
         if hasattr(doc, "category_summary"):
@@ -1043,7 +1060,9 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
             # 1. Main Vertical Categories
             for v_cat in ordered_cats:
                 v_info = vertical_targets[v_cat]
-                append_sum(v_cat, v_info.get("original_seats", 0), v_info["seats"], v_info["filled"], v_info.get("waitlist_filled", 0), v_info.get("waitlist_seats", 0))
+                append_sum(v_cat, v_info.get("original_seats", 0), v_info["seats"], v_info["filled"], 
+                           v_info.get("waitlist_filled", 0) + v_info.get("compartmentalized_waitlist_filled", 0), 
+                           v_info.get("waitlist_seats", 0) + v_info.get("compartmentalized_waitlist_seats", 0))
                 
             # 2. Horizontal (PWD, Women, etc.)
             for h_info in ordered_h_cats:

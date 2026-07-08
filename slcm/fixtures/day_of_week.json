@@ -1,0 +1,58 @@
+[
+ {
+  "day_name": "Friday",
+  "day_order": 5,
+  "docstatus": 0,
+  "doctype": "Day of Week",
+  "modified": "2026-06-23 10:26:49",
+  "name": "Friday"
+ },
+ {
+  "day_name": "Monday",
+  "day_order": 1,
+  "docstatus": 0,
+  "doctype": "Day of Week",
+  "modified": "2026-06-23 10:26:49",
+  "name": "Monday"
+ },
+ {
+  "day_name": "Saturday",
+  "day_order": 6,
+  "docstatus": 0,
+  "doctype": "Day of Week",
+  "modified": "2026-06-23 10:26:49",
+  "name": "Saturday"
+ },
+ {
+  "day_name": "Sunday",
+  "day_order": 7,
+  "docstatus": 0,
+  "doctype": "Day of Week",
+  "modified": "2026-06-23 10:26:49",
+  "name": "Sunday"
+ },
+ {
+  "day_name": "Thursday",
+  "day_order": 4,
+  "docstatus": 0,
+  "doctype": "Day of Week",
+  "modified": "2026-06-23 10:26:49",
+  "name": "Thursday"
+ },
+ {
+  "day_name": "Tuesday",
+  "day_order": 2,
+  "docstatus": 0,
+  "doctype": "Day of Week",
+  "modified": "2026-06-23 10:26:49",
+  "name": "Tuesday"
+ },
+ {
+  "day_name": "Wednesday",
+  "day_order": 3,
+  "docstatus": 0,
+  "doctype": "Day of Week",
+  "modified": "2026-06-23 10:26:49",
+  "name": "Wednesday"
+ }
+]

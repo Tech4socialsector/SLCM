@@ -57,7 +57,11 @@ def save_categories(admission_cycle, program, total_seats, policy_document=None,
             "percentage": r.get("percentage"),
             "seats": r.get("seats"),
             "application_fee": r.get("application_fee"),
-            "min_percentile": r.get("min_percentile")
+            "application_fee_for_indian": r.get("application_fee_for_indian") or r.get("application_fee") or 0,
+            "application_fee_for_foreign": r.get("application_fee_for_foreign") or r.get("application_fee") or 0,
+            "min_percentile": r.get("min_percentile"),
+            "compartmentalized_category": r.get("compartmentalized_category"),
+            "compartmentalized_waitlist_seats": r.get("compartmentalized_waitlist_seats")
         })
 
     # 2. Horizontal Reservations

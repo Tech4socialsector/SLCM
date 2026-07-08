@@ -5,13 +5,17 @@ from __future__ import unicode_literals
 import frappe
 from frappe import _
 
+
 def execute(filters=None):
-	columns = get_columns(filters)
+	if not filters:
+		filters = {}
+	columns = get_columns()
 	data = get_data(filters)
 	return columns, data
 
-def get_columns(filters):
-	columns = [
+
+def get_columns():
+	return [
 		{
 			"fieldname": "student",
 			"label": _("Student"),
@@ -27,10 +31,10 @@ def get_columns(filters):
 		},
 		{
 			"fieldname": "program",
-			"label": _("Program"),
+			"label": _("Cohort"),
 			"fieldtype": "Link",
 			"options": "Cohort",
-			"width": 120
+			"width": 130
 		},
 		{
 			"fieldname": "section",
@@ -47,39 +51,57 @@ def get_columns(filters):
 		},
 		{
 			"fieldname": "total_classes",
-			"label": _("Total Classes"),
+			"label": _("Total Sessions"),
 			"fieldtype": "Float",
 			"width": 100
+		},
+		{
+			"fieldname": "total_class_hours",
+			"label": _("Total Class Hours"),
+			"fieldtype": "Float",
+			"width": 110
+		},
+		{
+			"fieldname": "manual_attended_hours",
+			"label": _("Manual Attended (hrs)"),
+			"fieldtype": "Float",
+			"width": 130
+		},
+		{
+			"fieldname": "rfid_attended_hours",
+			"label": _("RFID Attended (hrs)"),
+			"fieldtype": "Float",
+			"width": 130
 		},
 		{
 			"fieldname": "raw_attended_classes",
-			"label": _("Class Attended"),
+			"label": _("Total Class Attended (hrs)"),
 			"fieldtype": "Float",
-			"width": 100
+			"width": 150
 		},
 		{
 			"fieldname": "office_hours_attended",
-			"label": _("Office Hours Attended"),
-			"fieldtype": "Float",
-			"width": 100
-		},
-		{
-			"fieldname": "total_hours_attended_calc",
-			"label": _("Total Hours (Class+Office)"),
+			"label": _("Office Hours (hrs)"),
 			"fieldtype": "Float",
 			"width": 120
 		},
 		{
+			"fieldname": "total_hours_attended_calc",
+			"label": _("Total Attended (Class+Office)"),
+			"fieldtype": "Float",
+			"width": 160
+		},
+		{
 			"fieldname": "is_condonation_applied",
-			"label": _("Is Condonation Applied"),
+			"label": _("Condonation"),
 			"fieldtype": "Data",
-			"width": 100
+			"width": 90
 		},
 		{
 			"fieldname": "condonation_hours",
 			"label": _("Condonation Hours"),
 			"fieldtype": "Float",
-			"width": 100
+			"width": 110
 		},
 		{
 			"fieldname": "condonation_reason",
@@ -95,9 +117,9 @@ def get_columns(filters):
 		},
 		{
 			"fieldname": "is_fa_mfa_applied",
-			"label": _("Is FA/MFA Applied"),
+			"label": _("FA/MFA"),
 			"fieldtype": "Data",
-			"width": 100
+			"width": 80
 		},
 		{
 			"fieldname": "fa_mfa_reason",
@@ -115,13 +137,13 @@ def get_columns(filters):
 			"fieldname": "percentage_before_condonation",
 			"label": _("% Before Condonation"),
 			"fieldtype": "Percent",
-			"width": 100
+			"width": 130
 		},
 		{
 			"fieldname": "percentage_after_condonation",
 			"label": _("% After Condonation"),
 			"fieldtype": "Percent",
-			"width": 100
+			"width": 130
 		},
 		{
 			"fieldname": "status",
@@ -130,69 +152,130 @@ def get_columns(filters):
 			"width": 100
 		}
 	]
-	return columns
+
+
+def _attendance_match_clause(table_alias, offering_alias):
+	"""
+	Return the SQL WHERE fragment that matches a Student Attendance row to a
+	Course Offering, handling two cases:
+
+	  1. course_offer is set and matches the offering (RFID / Auto / well-formed Manual)
+	  2. course_offer is NULL but the course Link (course_title) matches (older manual records)
+
+	NOTE: a third tier matching solely on academic_year was removed — it caused every
+	null-course record to match ALL offerings in the same year, inflating attendance figures.
+
+	{sa}  = Student Attendance table alias
+	{co}  = Course Offering table alias (must expose: name, course_title)
+	"""
+	return """(
+		{sa}.course_offer = {co}.name
+		OR (
+			({sa}.course_offer IS NULL OR {sa}.course_offer = '')
+			AND {sa}.course = {co}.course_title
+		)
+	)""".format(sa=table_alias, co=offering_alias)
+
 
 def get_data(filters):
-	data = []
-	
 	conditions = ""
+	values = {}
+
 	if filters.get("department"):
 		conditions += " AND s.department = %(department)s"
+		values["department"] = filters["department"]
 	if filters.get("program"):
 		conditions += " AND s.programme = %(program)s"
+		values["program"] = filters["program"]
 	if filters.get("section"):
-		conditions += " AND att.section = %(section)s" # Fetch section from Attendance Summary
+		conditions += " AND att.section = %(section)s"
+		values["section"] = filters["section"]
 	if filters.get("course"):
-		conditions += " AND att.course = %(course)s"
+		conditions += " AND att.course_offering = %(course)s"
+		values["course"] = filters["course"]
+	if filters.get("source"):
+		conditions += (
+			" AND EXISTS ("
+			"  SELECT 1 FROM `tabStudent Attendance` sa_f"
+			"  JOIN `tabCourse Offering` co_f ON co_f.name = att.course_offering"
+			"  WHERE sa_f.student = att.student"
+			"  AND " + _attendance_match_clause("sa_f", "co_f") +
+			"  AND sa_f.source = %(source)s"
+			"  AND sa_f.status IN ('Present', 'Late', 'Excused')"
+			"  AND sa_f.docstatus < 2"
+			")"
+		)
+		values["source"] = filters["source"]
 
-	# Fetch data from Attendance Summary
+	# Build the match clause for the inline subqueries
+	match = _attendance_match_clause("sa", "co")
+
 	query = """
 		SELECT
 			att.student,
 			att.student_name,
-			s.programme as program,
-			att.section as section,
-			c.course_name as course,
+			s.programme AS program,
+			att.section,
+			COALESCE(co.course_name, att.course_offering) AS course,
 			att.total_classes,
-			
-			COALESCE(att.total_attended_class_hours, 0) as raw_attended_classes,
-			COALESCE(att.total_office_hours, 0) as office_hours_attended,
-			(COALESCE(att.total_attended_class_hours, 0) + COALESCE(att.total_office_hours, 0)) as total_hours_attended_calc,
-			
-			CASE WHEN (SELECT COUNT(*) FROM `tabAttendance Condonation Reference` WHERE parent=att.name) > 0 THEN 'Yes' ELSE 'No' END as is_condonation_applied,
-			(SELECT COALESCE(SUM(number_of_hours), 0) FROM `tabAttendance Condonation Reference` WHERE parent=att.name) as condonation_hours,
-			(SELECT GROUP_CONCAT(condonation_reason SEPARATOR ', ') FROM `tabAttendance Condonation Reference` WHERE parent=att.name) as condonation_reason,
-			(SELECT GROUP_CONCAT(proof_document SEPARATOR ', ') FROM `tabAttendance Condonation Reference` WHERE parent=att.name) as condonation_proof,
-			
-			CASE WHEN (SELECT COUNT(*) FROM `tabAttendance FA MFA Reference` WHERE parent=att.name) > 0 THEN 'Yes' ELSE 'No' END as is_fa_mfa_applied,
-			(SELECT GROUP_CONCAT(reason SEPARATOR ', ') FROM `tabAttendance FA MFA Reference` WHERE parent=att.name) as fa_mfa_reason,
-			(SELECT GROUP_CONCAT(proof_document SEPARATOR ', ') FROM `tabAttendance FA MFA Reference` WHERE parent=att.name) as fa_mfa_proof,
-			
-			CASE 
-				WHEN att.total_class_hours > 0 THEN 
-					((COALESCE(att.total_attended_class_hours, 0) + COALESCE(att.total_office_hours, 0)) / att.total_class_hours) * 100 
-				ELSE 0 
-			END as percentage_before_condonation,
-			
-			att.attendance_percentage as percentage_after_condonation,
-			
+			COALESCE(att.total_class_hours, 0) AS total_class_hours,
+
+			(
+				SELECT COALESCE(SUM(sa.hours_counted), 0)
+				FROM `tabStudent Attendance` sa
+				WHERE sa.student = att.student
+				AND {match}
+				AND sa.source != 'RFID'
+				AND sa.status IN ('Present', 'Late', 'Excused')
+				AND sa.session_type IN ('Lecture', 'Tutorial')
+				AND sa.docstatus < 2
+			) AS manual_attended_hours,
+
+			(
+				SELECT COALESCE(SUM(sa.hours_counted), 0)
+				FROM `tabStudent Attendance` sa
+				WHERE sa.student = att.student
+				AND {match}
+				AND sa.source = 'RFID'
+				AND sa.status IN ('Present', 'Late', 'Excused')
+				AND sa.session_type IN ('Lecture', 'Tutorial')
+				AND sa.docstatus < 2
+			) AS rfid_attended_hours,
+
+			COALESCE(att.total_attended_class_hours, 0) AS raw_attended_classes,
+			COALESCE(att.total_office_hours, 0) AS office_hours_attended,
+			(COALESCE(att.total_attended_class_hours, 0) + COALESCE(att.total_office_hours, 0)) AS total_hours_attended_calc,
+
+			CASE WHEN COALESCE(att.total_condonation_hours, 0) > 0 THEN 'Yes' ELSE 'No' END AS is_condonation_applied,
+			COALESCE(att.total_condonation_hours, 0) AS condonation_hours,
+			(SELECT GROUP_CONCAT(condonation_reason SEPARATOR ', ') FROM `tabAttendance Condonation Reference` WHERE parent = att.name) AS condonation_reason,
+			(SELECT GROUP_CONCAT(proof_document SEPARATOR ', ') FROM `tabAttendance Condonation Reference` WHERE parent = att.name) AS condonation_proof,
+
+			CASE WHEN COALESCE(att.total_fa_mfa_hours, 0) > 0 THEN 'Yes' ELSE 'No' END AS is_fa_mfa_applied,
+			(SELECT GROUP_CONCAT(reason SEPARATOR ', ') FROM `tabAttendance FA MFA Reference` WHERE parent = att.name) AS fa_mfa_reason,
+			(SELECT GROUP_CONCAT(proof_document SEPARATOR ', ') FROM `tabAttendance FA MFA Reference` WHERE parent = att.name) AS fa_mfa_proof,
+
+			CASE
+				WHEN COALESCE(att.total_class_hours, 0) > 0 THEN
+					(COALESCE(att.total_attended_class_hours, 0) / att.total_class_hours) * 100
+				ELSE 0
+			END AS percentage_before_condonation,
+
+			att.attendance_percentage AS percentage_after_condonation,
+
 			CASE
 				WHEN att.eligible_for_exam = 1 THEN 'Eligible'
 				ELSE 'Not Eligible'
-			END as status
-		FROM
-			`tabAttendance Summary` att
-		LEFT JOIN
-			`tabStudent Master` s ON att.student = s.name
-		LEFT JOIN
-			`tabCourse` c ON att.course = c.name
-		WHERE
-			att.docstatus < 2
-			{conditions}
-		ORDER BY
-			att.student, c.course_name
-	""".format(conditions=conditions)
+			END AS status
 
-	results = frappe.db.sql(query, filters, as_dict=True)
-	
-	return results
+		FROM `tabAttendance Summary` att
+		LEFT JOIN `tabStudent Master` s ON att.student = s.name
+		LEFT JOIN `tabCourse Offering` co ON att.course_offering = co.name
+		WHERE att.docstatus < 2
+		{conditions}
+		ORDER BY s.first_name, co.course_name
+	""".format(conditions=conditions, match=match)
+
+	if values:
+		return frappe.db.sql(query, values, as_dict=True)
+	return frappe.db.sql(query, as_dict=True)

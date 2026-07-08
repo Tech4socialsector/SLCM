@@ -11,11 +11,11 @@ frappe.listview_settings['Interview Seat Allocation'] = {
 
         // show buttons for anyone who is not a pure applicant or when the user is an admin
         if (!is_applicant || is_admin) {
-            // Send Email button (only once)
-            if (!listview.page.wrapper.find('.btn-send-email').length) {
-                const ubtn = listview.page.add_inner_button(__("Send Email"), function () {
+            // Update Rank button (only once)
+            if (!listview.page.wrapper.find('.btn-update-rank').length) {
+                const ubtn = listview.page.add_inner_button(__("Update Rank"), function () {
                     let d = new frappe.ui.Dialog({
-                        title: __("Send Email"),
+                        title: __("Update Rank"),
                         fields: [
                             {
                                 label: __("Academic Year"),
@@ -47,7 +47,7 @@ frappe.listview_settings['Interview Seat Allocation'] = {
                                 description: __("Optional - limit to this specific interview event")
                             }
                         ],
-                        primary_action_label: __("Send Email"),
+                        primary_action_label: __("Update Rank"),
                         primary_action(values) {
                             if (!values.academic_year || !values.admission_cycle || !values.program_level) {
                                 frappe.msgprint(__("Academic Year, Admission Cycle and Programme Level are required."));
@@ -64,7 +64,7 @@ frappe.listview_settings['Interview Seat Allocation'] = {
                                     if (r.message !== undefined) {
                                         // Show toast at the top center
                                         frappe.msgprint({
-                                            message: __("Emails sent successfully for {0} applicants.", [r.message]),
+                                            message: __("Ranks updated and emails sent successfully for {0} applicants.", [r.message]),
                                             indicator: 'green',
                                             alert: true
                                         });
@@ -83,7 +83,7 @@ frappe.listview_settings['Interview Seat Allocation'] = {
                     });
                     d.show();
                 });
-                ubtn.addClass('btn-send-email');
+                ubtn.addClass('btn-update-rank');
             }
 
             // Reschedule button (also only once)

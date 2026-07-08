@@ -5,12 +5,12 @@
 
 /* ── Design Tokens ────────────────────────────────────────── */
 :root {
-  --fp-primary:        #1e3a5f;
-  --fp-primary-dark:   #152b47;
-  --fp-primary-light:  rgba(30,58,95,0.08);
-  --fp-primary-mid:    rgba(30,58,95,0.16);
-  --fp-primary-glow:   rgba(30,58,95,0.25);
-  --fp-secondary:      #e8a020;
+  --fp-primary:        #920c24;
+  --fp-primary-dark:   #6e0919;
+  --fp-primary-light:  rgba(146,12,36,0.08);
+  --fp-primary-mid:    rgba(146,12,36,0.16);
+  --fp-primary-glow:   rgba(146,12,36,0.25);
+  --fp-secondary:      #c9a84c;
   --fp-accent:         #2563eb;
   --fp-accent-light:   rgba(37,99,235,0.10);
   --fp-nav-text:       #ffffff;
@@ -166,7 +166,7 @@ header[class*="navbar"], .website-header,
   position: fixed;
   top: 0; left: 0; right: 0;
   height: var(--fp-nav-h);
-  background: linear-gradient(135deg, var(--fp-primary) 0%, #1a3560 60%, #163060 100%);
+  background: linear-gradient(135deg, var(--fp-primary) 0%, #2b2e4a 60%, #1e2038 100%);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -460,15 +460,15 @@ header[class*="navbar"], .website-header,
   top: var(--fp-nav-h);
   left: 0; bottom: 0;
   width: var(--fp-sidebar-w);
-  background: var(--fp-card);
-  border-right: 1px solid var(--fp-border);
+  background: linear-gradient(180deg, #2b2e4a 0%, #1e2038 60%, #150a14 100%);
+  border-right: 1px solid rgba(255,255,255,0.06);
   overflow-y: auto;
   overflow-x: hidden;
   z-index: 300;
   padding: 0 0 100px;
   transition: transform 0.28s var(--fp-ease), width 0.28s var(--fp-ease);
   scrollbar-width: thin;
-  scrollbar-color: var(--fp-border) transparent;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
   display: flex;
   flex-direction: column;
 }
@@ -487,8 +487,8 @@ header[class*="navbar"], .website-header,
 
 /* ── Sidebar Profile Card ── */
 .fp-profile-hero {
-  background: var(--fp-card);
-  border-bottom: 1px solid var(--fp-border-light);
+  background: transparent;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
   padding: 20px 16px 16px;
   position: relative;
   overflow: hidden;
@@ -504,7 +504,7 @@ header[class*="navbar"], .website-header,
 .fp-sidebar-avatar {
   width: 56px; height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--fp-primary), #2d5a8e);
+  background: linear-gradient(135deg, var(--fp-primary), #2b2e4a);
   border: 2.5px solid var(--fp-primary-mid);
   overflow: hidden;
   display: flex; align-items: center; justify-content: center;
@@ -530,9 +530,9 @@ header[class*="navbar"], .website-header,
   70%  { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
   100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
 }
-.fp-faculty-name { font-weight: 700; font-size: 14px; color: var(--fp-text-1); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.fp-faculty-dept { font-size: 11px; color: var(--fp-text-3); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.fp-faculty-id   { font-size: 10px; color: var(--fp-text-4); font-family: var(--fp-mono); display: flex; align-items: center; gap: 4px; }
+.fp-faculty-name { font-weight: 700; font-size: 14px; color: #fff; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fp-faculty-dept { font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fp-faculty-id   { font-size: 10px; color: rgba(255,255,255,0.45); font-family: var(--fp-mono); display: flex; align-items: center; gap: 4px; }
 .fp-faculty-id .fp-ms { font-size: 12px; }
 
 /* Quick stats strip in sidebar */
@@ -541,7 +541,7 @@ header[class*="navbar"], .website-header,
   grid-template-columns: 1fr 1fr;
   gap: 6px;
   padding: 0 16px 14px;
-  background: linear-gradient(to bottom, #1d4080, var(--fp-primary));
+  background: linear-gradient(to bottom, #2b2e4a, var(--fp-primary));
   flex-shrink: 0;
 }
 .fp-sidebar-stat {
@@ -560,7 +560,7 @@ header[class*="navbar"], .website-header,
 /* Sidebar nav section */
 .fp-sidebar-section {
   font-size: 9.5px; font-weight: 700; letter-spacing: 0.10em;
-  text-transform: uppercase; color: var(--fp-text-4);
+  text-transform: uppercase; color: rgba(255,255,255,0.35);
   padding: 0 18px; margin: 16px 0 4px;
 }
 .fp-sidebar-section.fp-section-toggle {
@@ -569,7 +569,7 @@ header[class*="navbar"], .website-header,
   border-radius: 6px;
   transition: color 0.15s;
 }
-.fp-sidebar-section.fp-section-toggle:hover { color: var(--fp-text-3); }
+.fp-sidebar-section.fp-section-toggle:hover { color: rgba(255,255,255,0.6); }
 .fp-section-chevron {
   font-size: 15px !important;
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
@@ -592,7 +592,7 @@ header[class*="navbar"], .website-header,
   display: flex; align-items: center; gap: 10px;
   padding: 8px 12px; border-radius: 10px;
   text-decoration: none; font-size: 13px; font-weight: 500;
-  color: var(--fp-text-3);
+  color: rgba(255,255,255,0.65);
   transition: background 0.15s, color 0.15s, transform 0.15s;
   margin-bottom: 2px;
   cursor: pointer;
@@ -605,23 +605,23 @@ header[class*="navbar"], .website-header,
   left: 0; top: 50%;
   transform: translateY(-50%);
   width: 3px; height: 0;
-  background: var(--fp-primary);
+  background: var(--fp-secondary);
   border-radius: 0 3px 3px 0;
   transition: height 0.2s var(--fp-ease-spring);
 }
-.fp-nav-item:hover:not(.active) { background: var(--fp-bg); color: var(--fp-text-1); transform: translateX(2px); }
+.fp-nav-item:hover:not(.active) { background: rgba(255,255,255,0.08); color: #fff; transform: translateX(2px); }
 .fp-nav-item.active {
-  background: var(--fp-primary-light);
-  color: var(--fp-primary);
+  background: rgba(201,168,76,0.18);
+  color: var(--fp-secondary);
   font-weight: 600;
 }
 .fp-nav-item.active::before { height: 24px; }
-.fp-nav-item .fp-ms { font-size: 20px; color: var(--fp-text-4); flex-shrink: 0; transition: color 0.15s, font-variation-settings 0.15s; }
-.fp-nav-item.active .fp-ms { color: var(--fp-primary); font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-.fp-nav-item:hover:not(.active) .fp-ms { color: var(--fp-text-2); }
-.fp-nav-item.fp-danger { color: var(--fp-danger); }
-.fp-nav-item.fp-danger .fp-ms { color: var(--fp-danger); }
-.fp-nav-item.fp-danger:hover { background: var(--fp-danger-bg); transform: none; }
+.fp-nav-item .fp-ms { font-size: 20px; color: rgba(255,255,255,0.4); flex-shrink: 0; transition: color 0.15s, font-variation-settings 0.15s; }
+.fp-nav-item.active .fp-ms { color: var(--fp-secondary); font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+.fp-nav-item:hover:not(.active) .fp-ms { color: rgba(255,255,255,0.8); }
+.fp-nav-item.fp-danger { color: #f87171; }
+.fp-nav-item.fp-danger .fp-ms { color: #f87171; }
+.fp-nav-item.fp-danger:hover { background: rgba(220,38,38,0.2); transform: none; }
 .fp-nav-item.fp-danger::before { background: var(--fp-danger); }
 
 /* Nav badge pill */
@@ -653,15 +653,15 @@ header[class*="navbar"], .website-header,
 .fp-sidebar.fp-mini .fp-nav-pill { display: none; }
 body.fp-sidebar-mini .fp-main { margin-left: 64px; }
 
-.fp-sidebar-divider { border: none; border-top: 1px solid var(--fp-border); margin: 8px 16px; }
+.fp-sidebar-divider { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 8px 16px; }
 .fp-collapse-btn {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 12px; border-radius: 10px; width: 100%;
   background: none; border: none; cursor: pointer;
-  font-size: 13px; font-weight: 500; color: var(--fp-text-4);
+  font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.35);
   transition: all 0.15s; margin: 0 8px; width: calc(100% - 16px);
 }
-.fp-collapse-btn:hover { background: var(--fp-bg); color: var(--fp-text-2); }
+.fp-collapse-btn:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); }
 .fp-collapse-btn .fp-ms { font-size: 20px; flex-shrink: 0; }
 
 /* ══════════════════════════════════════════════════════════
@@ -1362,7 +1362,7 @@ body.fp-sidebar-mini .fp-main { margin-left: 64px; }
    HERO DASHBOARD SECTION
 ══════════════════════════════════════════════════════════ */
 .fp-dashboard-hero {
-  background: linear-gradient(135deg, var(--fp-primary) 0%, #1e4a8a 60%, #1a3a7a 100%);
+  background: linear-gradient(135deg, var(--fp-primary) 0%, #2b2e4a 60%, #1e2038 100%);
   border-radius: var(--fp-radius-lg);
   padding: 20px 24px;
   margin-bottom: 20px;

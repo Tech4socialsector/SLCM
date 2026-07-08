@@ -383,6 +383,190 @@
 .ppf-demand-badge-overdue { background: var(--pp-danger-bg); color: var(--pp-danger); }
 @media (max-width: 560px) { .ppf-col-hide-sm { display: none !important; } }
 
+/* ── Demand Payment Analytics ────────────────────────────────────────── */
+.ppfda-wrap {
+  margin: 14px 14px 10px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.ppfda-progress-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+}
+.ppfda-progress-bar {
+  flex: 1; height: 8px; background: #f3f4f6;
+  border-radius: 99px; overflow: hidden; display: flex;
+}
+.ppfda-progress-fill { height: 100%; transition: width .5s ease; }
+.ppfda-fill-paid   { background: #22c55e; }
+.ppfda-fill-waived { background: #a78bfa; }
+.ppfda-pct-label { font-size: 11px; font-weight: 700; color: #6b7280; white-space: nowrap; }
+.ppfda-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px; margin-bottom: 12px;
+}
+.ppfda-stat {
+  padding: 10px 12px; border-radius: 10px; border: 1px solid #e5e7eb;
+}
+.ppfda-stat-total  { background: #f9fafb; }
+.ppfda-stat-paid   { background: #f0fdf4; border-color: #bbf7d0; }
+.ppfda-stat-waived { background: #faf5ff; border-color: #e9d5ff; }
+.ppfda-stat-due    { background: #eff6ff; border-color: #bfdbfe; }
+.ppfda-stat-overdue{ background: #fff1f2; border-color: #fecdd3; }
+.ppfda-stat-val { font-size: 15px; font-weight: 800; color: #111827; letter-spacing: -.3px; }
+.ppfda-stat-paid   .ppfda-stat-val { color: #16a34a; }
+.ppfda-stat-waived .ppfda-stat-val { color: #7c3aed; }
+.ppfda-stat-overdue .ppfda-stat-val{ color: #be123c; }
+.ppfda-stat-due    .ppfda-stat-val { color: #1d4ed8; }
+.ppfda-stat-lbl { font-size: 11px; font-weight: 600; color: #374151; margin-top: 2px; }
+.ppfda-stat-sub { font-size: 10px; color: #9ca3af; margin-top: 1px; }
+.ppfda-legend { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ppfda-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.ppfda-dot-paid    { background: #22c55e; }
+.ppfda-dot-waived  { background: #a78bfa; }
+.ppfda-dot-overdue { background: #f43f5e; }
+.ppfda-dot-pending { background: #60a5fa; }
+.ppfda-legend-lbl { font-size: 11px; color: #6b7280; font-weight: 500; margin-right: 8px; }
+@media (max-width: 480px) {
+  .ppfda-stats { grid-template-columns: 1fr 1fr; }
+  .ppfda-wrap { margin: 10px 8px; padding: 12px; }
+}
+/* ── Demand Pay All bar ──────────────────────────────────────────────── */
+.ppf-pay-all-bar {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;
+  margin: 10px 14px 6px; padding: 14px 18px;
+  background: linear-gradient(135deg, #f0f5ff 0%, #e8f0fe 100%);
+  border: 1px solid rgba(43,46,74,0.15);
+  border-radius: 14px;
+}
+.ppf-pay-all-info  { display: flex; align-items: center; gap: 10px; }
+.ppf-pay-all-label { font-size: 13.5px; font-weight: 700; color: var(--pp-text-1); line-height: 1.3; }
+.ppf-pay-all-sub   { font-size: 11.5px; color: var(--pp-text-3); font-weight: 500; margin-top: 1px; }
+.ppf-pay-all-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.ppf-pay-all-total { font-size: 20px; font-weight: 800; color: var(--pp-primary,#2b2e4a); font-variant-numeric: tabular-nums; letter-spacing: -0.3px; }
+.ppf-pay-all-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--pp-primary, #2b2e4a); color: #fff;
+  border: none; border-radius: 10px; padding: 10px 22px;
+  font-size: 13.5px; font-weight: 700; cursor: pointer; font-family: inherit;
+  transition: background .15s, box-shadow .15s; white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(43,46,74,0.25);
+}
+.ppf-pay-all-btn:hover:not(:disabled) { opacity: .88; box-shadow: 0 4px 14px rgba(43,46,74,0.35); }
+.ppf-pay-all-btn:disabled { opacity: .55; cursor: not-allowed; box-shadow: none; }
+@media (max-width: 560px) {
+  .ppf-pay-all-bar { flex-direction: column; align-items: flex-start; }
+  .ppf-pay-all-right { width: 100%; justify-content: space-between; }
+}
+
+/* ── Payment Summary bottom sheet ───────────────────────────────────── */
+.ppf-bulk-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(3px); z-index: 8000;
+  animation: ppf-fade-in 0.2s ease;
+}
+.ppf-bulk-sheet {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 8001;
+  background: #fff; border-radius: 24px 24px 0 0;
+  display: none; flex-direction: column; max-height: 85vh;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform; box-shadow: 0 -12px 48px rgba(0,0,0,0.18);
+}
+.ppf-bulk-sheet-open { transform: translateY(0) !important; }
+.ppf-bulk-sheet-handle {
+  width: 36px; height: 4px; background: var(--pp-border);
+  border-radius: 4px; margin: 10px auto 0; flex-shrink: 0;
+}
+.ppf-bulk-sheet-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px 14px; border-bottom: 1px solid var(--pp-border); flex-shrink: 0;
+}
+.ppf-bulk-sheet-title {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 16px; font-weight: 700; color: var(--pp-text-1);
+}
+.ppf-bulk-sheet-title-icon {
+  width: 34px; height: 34px; border-radius: 10px;
+  background: #eef2ff; color: var(--pp-primary, #2b2e4a);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.ppf-bulk-sheet-close {
+  width: 32px; height: 32px; background: var(--pp-border-light);
+  border: 1px solid var(--pp-border); border-radius: 8px; cursor: pointer;
+  color: var(--pp-text-3); display: flex; align-items: center; justify-content: center;
+  transition: all .15s; flex-shrink: 0;
+}
+.ppf-bulk-sheet-close:hover { background: var(--pp-border); color: var(--pp-text-1); }
+.ppf-bulk-sheet-body {
+  flex: 1; overflow-y: auto; padding: 18px 20px 10px; overscroll-behavior: contain;
+}
+.ppf-bulk-sheet-note {
+  display: flex; align-items: center; gap: 6px; font-size: 12.5px;
+  color: var(--pp-text-3); background: var(--pp-border-light);
+  border: 1px solid var(--pp-border); border-radius: 10px;
+  padding: 9px 12px; margin-bottom: 16px; font-weight: 500;
+}
+.ppf-bulk-items { display: flex; flex-direction: column; gap: 8px; }
+.ppf-bulk-item {
+  display: flex; align-items: center; gap: 12px; padding: 13px 16px;
+  background: var(--pp-border-light); border: 1px solid var(--pp-border);
+  border-radius: 12px; transition: border-color .15s;
+}
+.ppf-bulk-item:hover { border-color: var(--pp-primary, #2b2e4a); }
+.ppf-bulk-item-num {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: #eef2ff; color: var(--pp-primary, #2b2e4a);
+  font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.ppf-bulk-item-label { flex: 1; font-size: 13.5px; font-weight: 600; color: var(--pp-text-1); }
+.ppf-bulk-item-amt {
+  font-size: 14px; font-weight: 700; color: var(--pp-primary, #2b2e4a);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.ppf-bulk-total-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; background: #eef2ff;
+  border: 1px solid rgba(43,46,74,0.15); border-radius: 12px; margin-top: 12px;
+}
+.ppf-bulk-total-label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14px; font-weight: 700; color: var(--pp-text-1);
+}
+.ppf-bulk-total-val {
+  font-size: 20px; font-weight: 800; color: var(--pp-primary, #2b2e4a);
+  font-variant-numeric: tabular-nums;
+}
+.ppf-bulk-sheet-foot {
+  display: flex; gap: 10px; padding: 14px 20px 24px;
+  flex-shrink: 0; border-top: 1px solid var(--pp-border);
+}
+.ppf-bulk-sheet-cancel {
+  flex: 1; background: transparent; color: var(--pp-text-2);
+  border: 1.5px solid var(--pp-border); border-radius: 12px;
+  padding: 13px; font-size: 14px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: all .15s;
+}
+.ppf-bulk-sheet-cancel:hover { background: var(--pp-border-light); border-color: var(--pp-text-3); }
+.ppf-bulk-sheet-confirm {
+  flex: 2; background: var(--pp-primary, #2b2e4a); color: #fff;
+  border: none; border-radius: 12px; padding: 13px 20px;
+  font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: 0 4px 14px rgba(43,46,74,0.3); transition: all .15s;
+}
+.ppf-bulk-sheet-confirm:not(:disabled):hover { opacity: .88; box-shadow: 0 6px 20px rgba(43,46,74,0.4); transform: translateY(-1px); }
+.ppf-bulk-sheet-confirm:disabled { background: var(--pp-border); color: var(--pp-text-4); cursor: not-allowed; box-shadow: none; }
+@keyframes ppf-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 600px) {
+  .ppf-bulk-sheet { max-height: 92vh; border-radius: 20px 20px 0 0; }
+  .ppf-bulk-sheet-foot { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+}
+
 /* ── Receipts Table ─────────────────────────────────────────────────── */
 .ppf-receipt-table-wrap { border-radius: 12px; overflow: hidden; border: 1px solid var(--pp-border); margin-bottom: 20px; }
 .ppf-receipt-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -1006,6 +1190,85 @@
     <div style="font-size:12px;color:var(--pp-text-4);padding:10px 14px 0;font-weight:500;">
       Additional charges (development fee, hostel, examinations, etc.) separate from the programme tuition fee above.
     </div>
+
+    {# ── Payment Analytics Panel ─────────────────────────── #}
+    {% if da_total > 0 %}
+    <div class="ppfda-wrap">
+      <div class="ppfda-progress-row">
+        <div class="ppfda-progress-bar">
+          <div class="ppfda-progress-fill ppfda-fill-paid"   style="width:{{ ((da_paid_amt / da_total_amt * 100) if da_total_amt > 0 else 0)|round|int }}%;"></div>
+          <div class="ppfda-progress-fill ppfda-fill-waived" style="width:{{ ((da_waived_amt / da_total_amt * 100) if da_total_amt > 0 else 0)|round|int }}%;"></div>
+        </div>
+        <span class="ppfda-pct-label">{{ da_pct }}% settled</span>
+      </div>
+      <div class="ppfda-stats">
+        <div class="ppfda-stat ppfda-stat-total">
+          <div class="ppfda-stat-val">{{ da_fmt_total }}</div>
+          <div class="ppfda-stat-lbl">Total Levied</div>
+          <div class="ppfda-stat-sub">{{ da_total }} demand{{ 's' if da_total != 1 else '' }}</div>
+        </div>
+        <div class="ppfda-stat ppfda-stat-paid">
+          <div class="ppfda-stat-val">{{ da_fmt_paid }}</div>
+          <div class="ppfda-stat-lbl">Settled</div>
+          <div class="ppfda-stat-sub">{{ da_paid }} paid{% if da_waived %} · {{ da_waived }} waived{% endif %}</div>
+        </div>
+        {% if da_waived_amt > 0 %}
+        <div class="ppfda-stat ppfda-stat-waived">
+          <div class="ppfda-stat-val">{{ da_fmt_waived }}</div>
+          <div class="ppfda-stat-lbl">Waived Off</div>
+          <div class="ppfda-stat-sub">concessions applied</div>
+        </div>
+        {% endif %}
+        <div class="ppfda-stat {% if da_overdue > 0 %}ppfda-stat-overdue{% else %}ppfda-stat-due{% endif %}">
+          <div class="ppfda-stat-val">{{ da_fmt_outstanding }}</div>
+          <div class="ppfda-stat-lbl">Outstanding</div>
+          <div class="ppfda-stat-sub">
+            {% if da_overdue > 0 %}{{ da_overdue }} overdue{% elif da_pending > 0 %}{{ da_pending }} pending{% else %}all clear{% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="ppfda-legend">
+        <span class="ppfda-dot ppfda-dot-paid"></span><span class="ppfda-legend-lbl">Settled</span>
+        {% if da_waived_amt > 0 %}<span class="ppfda-dot ppfda-dot-waived"></span><span class="ppfda-legend-lbl">Waived</span>{% endif %}
+        {% if da_outstanding > 0 %}<span class="ppfda-dot {% if da_overdue > 0 %}ppfda-dot-overdue{% else %}ppfda-dot-pending{% endif %}"></span>
+        <span class="ppfda-legend-lbl">{% if da_overdue > 0 %}Overdue{% else %}Outstanding{% endif %}</span>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {# Pay All bar — shown only when payment is enabled and there are payable demands #}
+    {% if payment_enabled %}
+    {% set ns_pay = namespace(total=0, count=0, names=[]) %}
+    {% for d in fee_demands %}
+      {% if d.outstanding_amount > 0 and d.status not in ('Paid','Waived','Cancelled') %}
+        {% set ns_pay.total = ns_pay.total + d.outstanding_amount %}
+        {% set ns_pay.count = ns_pay.count + 1 %}
+        {% set ns_pay.names = ns_pay.names + [d.name] %}
+      {% endif %}
+    {% endfor %}
+    {% if ns_pay.count > 0 %}
+    <div class="ppf-pay-all-bar">
+      <div class="ppf-pay-all-info">
+        <span class="ms" style="font-size:18px;color:var(--pp-primary,#2b2e4a);">pending_actions</span>
+        <div>
+          <div class="ppf-pay-all-label">{{ ns_pay.count }} outstanding demand{{ 's' if ns_pay.count != 1 else '' }}</div>
+          <div class="ppf-pay-all-sub">Total due across all unpaid charges</div>
+        </div>
+      </div>
+      <div class="ppf-pay-all-right">
+        <span class="ppf-pay-all-total">₹{{ "{:,.0f}".format(ns_pay.total) }}</span>
+        <button class="ppf-pay-all-btn" id="ppf-pay-all-demands-btn"
+          onclick="ppfPayAll()"
+          data-demands="{{ ns_pay.names | join(',') | e }}"
+          data-total="{{ ns_pay.total }}">
+          <span class="ms" style="font-size:16px;">shopping_cart_checkout</span>
+          Pay All
+        </button>
+      </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
     {% for demand_type, type_demands in fee_demands | groupby('demand_type', default='Other') %}
     <div class="ppf-demand-type-group" style="padding:10px 14px 4px;">
       <div class="ppf-demand-type-hdr">
@@ -1037,29 +1300,29 @@
           <thead>
             <tr>
               <th style="text-align:left;">Component</th>
-              <th style="text-align:centre;">Due Date</th>
+              <th style="text-align:center;">Due Date</th>
               <th class="ppf-col-hide-sm" style="text-align:right;">Net Payable</th>
               <th class="ppf-col-hide-sm" style="text-align:right;">Settled</th>
               <th style="text-align:right;">Outstanding</th>
-              <th style="text-align:centre;">Status</th>
+              <th style="text-align:center;">Status</th>
             </tr>
           </thead>
           <tbody>
             {% for d in type_demands %}
-            <tr class="{% if d.status == 'Overdue' or d.is_demand_overdue %}ppf-demand-row-overdue{% elif d.status in ('Paid','Waived') %}ppf-demand-row-settled{% endif %}">
+            <tr class="ppf-demand-row {% if d.status == 'Overdue' or d.is_demand_overdue %}ppf-demand-row-overdue{% elif d.status in ('Paid','Waived') %}ppf-demand-row-settled{% endif %}">
               <td>
                 <div class="ppf-demand-comp-name">{{ d.fee_component or d.description or "—" }}</div>
                 {% if d.trigger_ref_doctype %}
                 <span class="ppf-demand-source-chip">{{ d.trigger_ref_doctype | replace('_',' ') }}</span>
                 {% endif %}
               </td>
-              <td style="text-align:centre;white-space:nowrap;">
+              <td style="text-align:center;white-space:nowrap;">
                 {% if d.due_date_fmt %}
                   {% if d.status == 'Overdue' or d.is_demand_overdue %}
-                  <div class="ppf-demand-due-overdue" style="justify-content:centre;">
+                  <div class="ppf-demand-due-overdue" style="justify-content:center;">
                     <span class="ms" style="font-size:13px;">warning</span>{{ d.due_date_fmt }}
                   </div>
-                  <div class="ppf-demand-days-overdue" style="text-align:centre;">{{ d.days_overdue }}d overdue</div>
+                  <div class="ppf-demand-days-overdue" style="text-align:center;margin-top:2px;">{{ d.days_overdue }}d overdue</div>
                   {% else %}
                   <span style="font-size:12px;color:var(--pp-text-2);">{{ d.due_date_fmt }}</span>
                   {% endif %}
@@ -1077,12 +1340,12 @@
                 {% if d.has_credit_adj %}<div style="font-size:10px;color:#0891b2;font-weight:600;">incl. credit</div>{% endif %}
                 {% else %}<span style="color:var(--pp-text-4);">—</span>{% endif %}
               </td>
-              <td style="text-align:right;font-variant-numeric:tabular-nums;">
+              <td class="ppf-demand-outstanding" style="text-align:right;font-variant-numeric:tabular-nums;">
                 <span class="{% if d.outstanding_amount > 0 and d.status not in ('Paid','Waived') %}ppf-demand-amt-due{% else %}ppf-demand-amt-clear{% endif %}">
                   {{ d.formatted_outstanding }}
                 </span>
               </td>
-              <td style="text-align:centre;">
+              <td style="text-align:center;">
                 <span class="ppf-demand-badge ppf-demand-badge-{{ (d.status if not (d.is_demand_overdue and d.status == 'Pending') else 'overdue') | lower | replace(' ','-') }}">
                   {% if d.status == 'Paid' %}<span class="ms" style="font-size:9px;">check_circle</span>&nbsp;
                   {% elif d.status == 'Overdue' or d.is_demand_overdue %}<span class="ms" style="font-size:9px;">error</span>&nbsp;
@@ -1098,8 +1361,50 @@
       </div>
     </div>
     {% endfor %}
+
+  </div>{# end ppf-tab-demands #}
+
+  {# ── Payment Summary bottom sheet (mirrors student portal) ── #}
+  {% if payment_enabled and has_fee_demands %}
+  <div id="ppf-bulk-overlay" class="ppf-bulk-overlay" style="display:none;" onclick="ppfBulkSheetClose()"></div>
+  <div id="ppf-bulk-sheet" class="ppf-bulk-sheet" role="dialog" aria-modal="true" aria-label="Confirm Payment">
+    <div class="ppf-bulk-sheet-handle"></div>
+    <div class="ppf-bulk-sheet-head">
+      <div class="ppf-bulk-sheet-title">
+        <div class="ppf-bulk-sheet-title-icon">
+          <span class="ms" style="font-size:18px;">receipt_long</span>
+        </div>
+        Payment Summary
+      </div>
+      <button class="ppf-bulk-sheet-close" onclick="ppfBulkSheetClose()" aria-label="Close">
+        <span class="ms" style="font-size:18px;">close</span>
+      </button>
+    </div>
+    <div class="ppf-bulk-sheet-body">
+      <div class="ppf-bulk-sheet-note">
+        <span class="ms" style="font-size:14px;vertical-align:-2px;">info</span>
+        Review the charges below before proceeding to payment.
+      </div>
+      <div id="ppf-bulk-items" class="ppf-bulk-items"></div>
+      <div class="ppf-bulk-total-row">
+        <div class="ppf-bulk-total-label">
+          <span class="ms" style="font-size:16px;color:var(--pp-text-3);">payments</span>
+          Total Payable
+        </div>
+        <span id="ppf-bulk-total-amt" class="ppf-bulk-total-val"></span>
+      </div>
+    </div>
+    <div class="ppf-bulk-sheet-foot">
+      <button class="ppf-bulk-sheet-cancel" onclick="ppfBulkSheetClose()">Cancel</button>
+      <button class="ppf-bulk-sheet-confirm" id="ppf-bulk-confirm-btn" onclick="ppfBulkConfirmPay()">
+        <span class="ms" style="font-size:18px;">lock</span>
+        Proceed to Pay
+      </button>
+    </div>
   </div>
   {% endif %}
+
+  {% endif %}{# end has_fee_demands #}
 
   {# ── Tab: Receipts ───────────────────────────────────────── #}
   {% if has_transactions %}
@@ -1487,7 +1792,196 @@
     rzp.open();
   }
 
-  /* ── Public: initiate payment ────────────────────────────────── */
+  /* ══════════════════════════════════════════════════════════════
+     DEMAND PAYMENTS — bottom-sheet confirm → single Razorpay order
+     Mirrors student portal spPayAll / spBulkConfirmPay / _launchBulk
+     ══════════════════════════════════════════════════════════════ */
+  function _ppfFmtINR(n) { return '₹' + Number(n).toLocaleString('en-IN', {maximumFractionDigits: 0}); }
+  function _ppfEsc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+  /* "Pay All" button — build line items from DOM, open bottom sheet */
+  window.ppfPayAll = function () {
+    var btn = document.getElementById('ppf-pay-all-demands-btn');
+    if (!btn) return;
+    var names = (btn.getAttribute('data-demands') || '').split(',').filter(Boolean);
+    var total = parseFloat(btn.getAttribute('data-total')) || 0;
+    if (!names.length || total <= 0) return;
+
+    var items = document.getElementById('ppf-bulk-items');
+    var totEl = document.getElementById('ppf-bulk-total-amt');
+    if (items) {
+      var rows = document.querySelectorAll('.ppf-demand-row:not(.ppf-demand-row-settled)');
+      var html = '';
+      var idx  = 1;
+      rows.forEach(function (row) {
+        var comp = row.querySelector('.ppf-demand-comp-name');
+        var out  = row.querySelector('.ppf-demand-outstanding .ppf-demand-amt-due');
+        if (comp && out) {
+          html += '<div class="ppf-bulk-item">'
+            + '<span class="ppf-bulk-item-num">' + idx++ + '</span>'
+            + '<span class="ppf-bulk-item-label">' + _ppfEsc(comp.textContent.trim()) + '</span>'
+            + '<span class="ppf-bulk-item-amt">'  + _ppfEsc(out.textContent.trim())  + '</span>'
+            + '</div>';
+        }
+      });
+      items.innerHTML = html || '<div style="padding:12px;color:var(--pp-text-3);font-size:13px;">No payable demands found.</div>';
+    }
+    if (totEl) totEl.textContent = _ppfFmtINR(total);
+
+    var sheet   = document.getElementById('ppf-bulk-sheet');
+    var overlay = document.getElementById('ppf-bulk-overlay');
+    if (overlay) overlay.style.display = 'block';
+    if (sheet) {
+      sheet.style.display = 'flex';
+      requestAnimationFrame(function () { sheet.classList.add('ppf-bulk-sheet-open'); });
+    }
+    document.body.style.overflow = 'hidden';
+  };
+
+  window.ppfBulkSheetClose = function () {
+    var sheet   = document.getElementById('ppf-bulk-sheet');
+    var overlay = document.getElementById('ppf-bulk-overlay');
+    if (sheet)   sheet.classList.remove('ppf-bulk-sheet-open');
+    setTimeout(function () {
+      if (sheet)   sheet.style.display   = 'none';
+      if (overlay) overlay.style.display = 'none';
+      document.body.style.overflow = '';
+    }, 280);
+  };
+
+  /* "Proceed to Pay" in bottom sheet */
+  window.ppfBulkConfirmPay = function () {
+    var btn = document.getElementById('ppf-pay-all-demands-btn');
+    if (!btn || !STUDENT) return;
+    var names = (btn.getAttribute('data-demands') || '').split(',').filter(Boolean);
+    var confirmBtn = document.getElementById('ppf-bulk-confirm-btn');
+
+    ppfBulkSheetClose();
+    showOverlay('Creating payment order…');
+    if (confirmBtn) confirmBtn.disabled = true;
+
+    ppfCall(
+      'slcm.api.student_payment.parent_create_bulk_demand_payment_order',
+      { fee_demand_names: JSON.stringify(names), student_name: STUDENT },
+      function (r) {
+        var order = r && r.message;
+        if (!order || !order.order_id) {
+          hideOverlay();
+          toast('Error', 'Could not create payment order. Please try again.', 'error');
+          if (confirmBtn) confirmBtn.disabled = false;
+          return;
+        }
+        ensureRzp(function (le) {
+          hideOverlay();
+          if (le) {
+            toast('Unavailable', le || 'Payment gateway could not load.', 'error');
+            if (confirmBtn) confirmBtn.disabled = false;
+            return;
+          }
+          _ppfLaunchBulk(order, names);
+        });
+      },
+      function (e) {
+        hideOverlay();
+        toast('Error', e || 'Could not create payment order.', 'error');
+        if (confirmBtn) confirmBtn.disabled = false;
+      }
+    );
+  };
+
+  function _ppfLaunchBulk(order, names) {
+    /* Track whether payment.failed has already fired so ondismiss doesn't
+       double-log a failure as a cancellation. Razorpay fires payment.failed
+       first, then ondismiss — for bank declines in some modes it may fire
+       ondismiss ONLY, so ondismiss also handles the failure path. */
+    var _failedAlready = false;
+
+    var opts = {
+      key:         order.key_id,
+      amount:      order.amount,
+      currency:    order.currency || 'INR',
+      name:        'National Law School of India University',
+      description: order.components || (names.length + ' demand(s)') + ' — paid by parent/guardian',
+      order_id:    order.order_id,
+      prefill: {
+        name:    order.payer_name  || '',
+        email:   order.payer_email || '',
+        contact: order.payer_phone || '',
+      },
+      theme: { color: '#2b2e4a' },
+      modal: {
+        confirm_close: true,
+        ondismiss: function () {
+          /* If payment.failed already fired, skip — failure is already logged */
+          if (_failedAlready) { return; }
+          toast('Cancelled', 'Payment was cancelled. No charges applied.', 'info');
+          ppfCall(
+            'slcm.api.student_payment.parent_cancel_bulk_demand_payment',
+            {
+              fee_demand_names:    JSON.stringify(names),
+              student_name:        STUDENT,
+              integration_request: order.integration_request || '',
+            },
+            function () {}, function () {}
+          );
+        },
+      },
+      handler: function (resp) {
+        showOverlay('Confirming payment…');
+        ppfCall(
+          'slcm.api.student_payment.parent_confirm_bulk_demand_payment',
+          {
+            fee_demand_names:    JSON.stringify(names),
+            student_name:        STUDENT,
+            integration_request: order.integration_request,
+            razorpay_payment_id: resp.razorpay_payment_id,
+            razorpay_order_id:   resp.razorpay_order_id,
+            razorpay_signature:  resp.razorpay_signature,
+          },
+          function (r) {
+            hideOverlay();
+            var d = r && r.message;
+            if (d && d.status === 'already_paid') {
+              toast('Already Paid', 'These demands are already settled.', 'info');
+            } else {
+              toast('Payment Successful',
+                (d && d.demands_paid ? d.demands_paid + ' demand(s) cleared — ' : '') +
+                (d && d.formatted_total || ''), 'success');
+            }
+            setTimeout(function () { window.location.reload(); }, 2800);
+          },
+          function (e) {
+            hideOverlay();
+            toast('Pending', e || 'Payment captured but confirmation pending. Refresh in a few minutes.', 'warning');
+          }
+        );
+      },
+    };
+    var rzp = new Razorpay(opts);
+    rzp.on('payment.failed', function (r) {
+      _failedAlready = true;
+      var errDesc = (r.error && r.error.description) || 'Payment was not completed.';
+      var errCode = (r.error && r.error.code)        || '';
+      var pid     = (r.error && r.error.metadata && r.error.metadata.payment_id) || '';
+      toast('Payment Failed', errDesc, 'error');
+      ppfCall(
+        'slcm.api.student_payment.parent_mark_demand_payment_failed',
+        {
+          fee_demand_names:    JSON.stringify(names),
+          student_name:        STUDENT,
+          integration_request: order.integration_request || '',
+          payment_id:          pid,
+          error_code:          errCode,
+          error_description:   errDesc,
+        },
+        function () { setTimeout(function () { window.location.reload(); }, 2200); },
+        function () { setTimeout(function () { window.location.reload(); }, 2200); }
+      );
+    });
+    rzp.open();
+  }
+
+  /* ── Public: initiate invoice payment ───────────────────────── */
   window.ppfInitiatePayment = function (invName) {
     if (!invName || !STUDENT) return;
     showOverlay('Preparing payment…');

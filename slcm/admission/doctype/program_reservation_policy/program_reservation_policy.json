@@ -15,6 +15,7 @@
   "payment_receipt_template",
   "total_seats",
   "status",
+  "international_seats",
   "section_break_summary",
   "total_allocated",
   "total_filled",
@@ -85,7 +86,7 @@
    "fieldname": "total_seats",
    "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Total Seats",
+   "label": "Total Seats For Domestic",
    "reqd": 1
   },
   {
@@ -216,10 +217,15 @@
    "fieldname": "shortlisting_multiplier",
    "fieldtype": "Float",
    "label": "Shortlisting Merit List Ratio"
+  },
+  {
+   "fieldname": "international_seats",
+   "fieldtype": "Int",
+   "label": "International Seats "
   }
  ],
  "links": [],
- "modified": "2026-05-18 10:06:49.238315",
+ "modified": "2026-07-08 15:06:21.848256",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Program Reservation Policy",
