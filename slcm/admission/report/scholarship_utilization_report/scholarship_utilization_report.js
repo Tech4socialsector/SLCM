@@ -19,7 +19,7 @@ frappe.query_reports["Scholarship Utilization Report"] = {
 			"fieldname": "program",
 			"label": __("Programme"),
 			"fieldtype": "Link",
-			"options": "Program"
+			"options": "Programme"
 		},
 		{
 			"fieldname": "scholarship_scheme",

@@ -40,8 +40,8 @@
    "fieldname": "programme",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Program",
-   "options": "Program",
+   "label": "Programme",
+   "options": "Programme",
    "reqd": 1
   },
   {

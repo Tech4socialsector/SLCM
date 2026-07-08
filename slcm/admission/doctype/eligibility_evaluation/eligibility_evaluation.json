@@ -48,7 +48,7 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Programme",
-   "options": "Program"
+   "options": "Programme"
   },
   {
    "fieldname": "campus",

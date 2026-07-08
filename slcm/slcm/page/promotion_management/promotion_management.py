@@ -9,7 +9,7 @@ from frappe.utils import now_datetime, flt, cint
 
 @frappe.whitelist()
 def get_programs():
-	return frappe.db.get_all("Program", fields=["name", "program_name"], order_by="name asc")
+	return frappe.db.get_all("Programme", fields=["name", "program_name"], order_by="name asc")
 
 
 @frappe.whitelist()
@@ -611,7 +611,7 @@ def download_formatted_promotion_list(program, academic_year, university_name=No
 			for r in raw_year_rows
 		]
 
-	prog_name = frappe.db.get_value("Program", program, "program_name") or program
+	prog_name = frappe.db.get_value("Programme", program, "program_name") or program
 	univ      = (university_name or "").strip()
 
 	terms = frappe.db.get_all(

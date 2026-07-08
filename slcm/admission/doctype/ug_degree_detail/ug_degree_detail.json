@@ -50,7 +50,7 @@
    "ignore_user_permissions": 1,
    "in_list_view": 1,
    "label": "Name of degree (UG)",
-   "options": "Program",
+   "options": "Programme",
    "reqd": 1
   },
   {

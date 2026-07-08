@@ -326,7 +326,7 @@
    "fieldname": "programme",
    "fieldtype": "Link",
    "hidden": 0,
-   "label": "Program",
+   "label": "Programme",
    "max_length": 0,
    "max_value": 0,
    "options": "Cohort",

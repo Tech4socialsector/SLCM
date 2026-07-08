@@ -802,7 +802,7 @@ def drilldown_students():
             {"key": "student_id",   "label": "Student ID",    "type": "text"},
             {"key": "student_name", "label": "Name",          "type": "text"},
             {"key": "gender",       "label": "Gender",        "type": "text"},
-            {"key": "program",      "label": "Program",       "type": "text"},
+            {"key": "program",      "label": "Programme",       "type": "text"},
             {"key": "course_name",  "label": "Course",        "type": "text"},
             {"key": "term",         "label": "Term",          "type": "text"},
             {"key": "academic_year","label": "Academic Year", "type": "text"},

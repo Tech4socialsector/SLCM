@@ -198,7 +198,7 @@
    "fieldname": "target_program",
    "fieldtype": "Link",
    "label": "Target Program",
-   "options": "Program"
+   "options": "Programme"
   },
   {
    "depends_on": "eval:doc.target_audience=='By Cycle'",

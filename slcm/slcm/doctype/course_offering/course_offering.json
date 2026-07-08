@@ -34,8 +34,8 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Program",
-   "options": "Program",
+   "label": "Programme",
+   "options": "Programme",
    "reqd": 1
   },
   {

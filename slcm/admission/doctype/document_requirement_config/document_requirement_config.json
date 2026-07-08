@@ -6,7 +6,7 @@
   "autoname": "format:DRC-{program}-{quota_category}",
   "title_field": "program",
   "fields": [
-    {"fieldname": "program", "fieldtype": "Link", "label": "Program", "options": "Program", "reqd": 1, "in_list_view": 1},
+    {"fieldname": "program", "fieldtype": "Link", "label": "Programme", "options": "Programme", "reqd": 1, "in_list_view": 1},
     {"fieldname": "quota_category", "fieldtype": "Data", "label": "Quota Category", "reqd": 1, "in_list_view": 1, "default": "All", "description": "Enter 'All' to apply to all categories, or a specific category code e.g. SC, ST, OBC"},
     {"fieldname": "col_break_1", "fieldtype": "Column Break"},
     {"fieldname": "academic_year", "fieldtype": "Link", "label": "Academic Year", "options": "Admission Year", "in_list_view": 1},

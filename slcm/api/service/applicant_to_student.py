@@ -105,7 +105,7 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
 
     # ── Department (derived from programme/program) ────────────────────────────
     if program:
-        dept = frappe.db.get_value("Program", program, "department")
+        dept = frappe.db.get_value("Programme", program, "department")
         if dept:
             student.department = dept
 

@@ -51,7 +51,7 @@ function add_all_programmes(frm) {
     frappe.call({
         method: 'frappe.client.get_list',
         args: {
-            doctype: 'Program',
+            doctype: 'Programme',
             fields: ['name', 'program_name'],
             limit_page_length: 0
         },

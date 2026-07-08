@@ -31,9 +31,9 @@ def create_sample_student():
     # 2. Program                                                            #
     # ------------------------------------------------------------------ #
     program_name = "Bachelor of Technology - CSE"
-    if not frappe.db.exists("Program", program_name):
+    if not frappe.db.exists("Programme", program_name):
         prog = frappe.get_doc({
-            "doctype": "Program",
+            "doctype": "Programme",
             "program_name": program_name,
             "program_code": "BTCSE",
             "program_shortcode": "BTech CSE",
@@ -46,7 +46,7 @@ def create_sample_student():
         prog.insert(ignore_permissions=True, ignore_mandatory=True)
         print(f"  [OK] Created Program:    {prog.name}")
     else:
-        prog = frappe.get_doc("Program", program_name)
+        prog = frappe.get_doc("Programme", program_name)
         print(f"  [--] Program exists:     {prog.name}")
 
     # ------------------------------------------------------------------ #

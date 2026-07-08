@@ -36,7 +36,7 @@
             "fieldname": "programme",
             "fieldtype": "Link",
             "label": "Programme",
-            "options": "Program"
+            "options": "Programme"
         },
         {
             "fieldname": "student_status",

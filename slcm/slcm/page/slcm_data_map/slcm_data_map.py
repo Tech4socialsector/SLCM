@@ -12,7 +12,7 @@ def get_doctype_counts():
 		"Gender", "Student Category", "Skill", "Designation", "Condonation Reason",
 		"Department", "Faculty", "Room",
 		"Academic Year", "Academic Term", "Academic Holiday",
-		"Course Master", "Course", "Program", "Curriculum", "Cohort",
+		"Course Master", "Course", "Programme", "Curriculum", "Cohort",
 		"Course Offering", "Class Configuration", "Class Schedule",
 		"Grading Schema", "Evaluation Schema", "Exam Assessment Type",
 		"Exam Component", "CGPA Percentage Scale",

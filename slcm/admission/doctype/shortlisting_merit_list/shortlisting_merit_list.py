@@ -17,7 +17,7 @@ class ShortlistingMeritList(Document):
         level = (self.program_level or "ALL").upper()
 
         if self.program:
-            program_code = frappe.db.get_value("Program", self.program, "program_code") or self.program
+            program_code = frappe.db.get_value("Programme", self.program, "program_code") or self.program
             # Allow: - . , ( ) along with Alphanumeric
             prog = re.sub(r'[^A-Z0-9\-\.\,\(\)]', '', program_code.replace(" ", "").upper())
             # Use ignore_validate=True to allow parentheses and commas in naming series prefix
@@ -181,7 +181,7 @@ def download_merit_list(name, download_type, category=None):
     
     workbook.close()
     
-    prog = doc.program or "Program"
+    prog = doc.program or "Programme"
     year = frappe.db.get_value("Admission Cycle", doc.admission_cycle, "academic_year") or "Year"
     if download_type == "Overall":
         fname = f"overall shortlisting rank report - {prog} - {year}.xlsx"

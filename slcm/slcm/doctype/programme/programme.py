@@ -6,7 +6,7 @@ import frappe
 from frappe.model.document import Document
 
 
-class Program(Document):
+class Programme(Document):
 
 	def before_save(self):
 		self.generate_program_slug()
@@ -24,9 +24,9 @@ class Program(Document):
 
 		base_slug = self._slugify(self.program_name)
 
-		# Check for clash with other Program records
+		# Check for clash with other Programme records
 		existing = frappe.db.get_value(
-			"Program",
+			"Programme",
 			{"program_slug": base_slug, "name": ("!=", self.name)},
 			"name"
 		)

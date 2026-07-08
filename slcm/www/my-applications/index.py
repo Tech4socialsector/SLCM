@@ -102,7 +102,7 @@ def _set_offer_letter_entries(context):
                 ignore_permissions=True
             )
             for o in offers:
-                program_name = frappe.db.get_value("Program", o.get("program"), "program_name") or o.get("program") or ""
+                program_name = frappe.db.get_value("Programme", o.get("program"), "program_name") or o.get("program") or ""
                 campus_name = frappe.db.get_value("Campus", o.get("campus"), "campus_name") or o.get("campus") or ""
                 context.offer_letter_entries.append({
                     "offer_name": o.get("name"),
@@ -376,7 +376,7 @@ def get_context(context):
 
         context.selected_app = applicant
         # Ensure program_name is available on applicant object so Jinja can read it
-        applicant.program_name = frappe.db.get_value("Program", applicant.program, "program_name") or applicant.program
+        applicant.program_name = frappe.db.get_value("Programme", applicant.program, "program_name") or applicant.program
         context.is_editable = is_application_editable(applicant)
 
         # ── Fetch Eligibility Evaluation for exemptions ─────────────
@@ -428,7 +428,7 @@ def get_context(context):
                 
             enabled_stages = []
             if applicant.program:
-                program_doc = frappe.get_doc("Program", applicant.program, ignore_permissions=True)
+                program_doc = frappe.get_doc("Programme", applicant.program, ignore_permissions=True)
                 
                 # Potential stages mapping based on checkboxes in Program
                 # Using 'intereview' as per the doctype field name (note the typo)
@@ -991,8 +991,8 @@ def get_context(context):
         status = app_doc.status or "Draft"
         style = STATUS_STYLE.get(status, STATUS_STYLE["Draft"])
         
-        program_name = frappe.db.get_value("Program", app_doc.program, "program_name") or app_doc.program
-        program_slug = frappe.db.get_value("Program", app_doc.program, "program_slug") or ""
+        program_name = frappe.db.get_value("Programme", app_doc.program, "program_name") or app_doc.program
+        program_slug = frappe.db.get_value("Programme", app_doc.program, "program_slug") or ""
 
         # --- Withdrawal Data Logic ---
         _payment_details = None

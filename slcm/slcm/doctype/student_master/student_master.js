@@ -715,7 +715,7 @@ function _build_academic_progress_html(d) {
 		            e.enrollment_date ? "Since " + frappe.datetime.str_to_user(e.enrollment_date) : "")}
 	</div>
 	<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
-		${info_card("📚", "Program", e.program_name || e.program || "—", e.program && e.program_name && e.program !== e.program_name ? enc(e.program) : "")}
+		${info_card("📚", "Programme", e.program_name || e.program || "—", e.program && e.program_name && e.program !== e.program_name ? enc(e.program) : "")}
 		${info_card("👥", "Section / Cohort", e.cohort_name || e.cohort || "—",
 		            e.cohort_code ? enc(e.cohort_code) + (e.cohort_status ? " &nbsp;" + badge(e.cohort_status, e.cohort_status === "Active" ? "green" : "gray") : "") : (e.cohort_status ? badge(e.cohort_status, e.cohort_status === "Active" ? "green" : "gray") : ""))}
 		${info_card("🗂️", "Batch", e.batch_year || d.batch_year || "—", e.cohort_term_year ? `Term Year ${enc(String(e.cohort_term_year))}` : "")}

@@ -108,7 +108,7 @@ class SeatAllocation(Document):
         level = sanitize(self.program_level or "ALL")
 
         if self.program:
-            program_code = frappe.db.get_value("Program", self.program, "program_code") or self.program
+            program_code = frappe.db.get_value("Programme", self.program, "program_code") or self.program
             prog = sanitize(program_code)
             self.name = make_autoname(f"SA-{cycle}-{campus}-{prog}-.#####")
         else:
@@ -889,7 +889,7 @@ def download_allocation(name):
     make_xlsx(rows, "Seat Allocation", wb=workbook)
     workbook.close()
     
-    prog = doc.program or "Program"
+    prog = doc.program or "Programme"
     year = frappe.db.get_value("Admission Cycle", doc.admission_cycle, "academic_year") or "Year"
     frappe.response['filename'] = f"seat allocation report - {prog} - {year}.xlsx"
     frappe.response['filecontent'] = output.getvalue()

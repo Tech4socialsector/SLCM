@@ -12,7 +12,7 @@
  ],
  "fields": [
   {"fieldname": "policy_name", "fieldtype": "Data", "label": "Policy Name", "reqd": 1, "in_list_view": 1},
-  {"fieldname": "program", "fieldtype": "Link", "label": "Program", "options": "Program", "in_list_view": 1},
+  {"fieldname": "program", "fieldtype": "Link", "label": "Programme", "options": "Programme", "in_list_view": 1},
   {"fieldname": "academic_year", "fieldtype": "Link", "label": "Academic Year", "options": "Admission Year", "in_list_view": 1},
   {"fieldname": "col_break_1", "fieldtype": "Column Break"},
   {"fieldname": "is_legal_mandate", "fieldtype": "Check", "label": "Legally Mandated", "description": "If checked, this policy locks permanently on submit and cannot be cancelled."},

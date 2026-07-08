@@ -63,7 +63,7 @@ def update_applicant_status_from_evaluations(campus, academic_year, admission_cy
 
 	
 	programs = frappe.get_all(
-		"Program",
+		"Programme",
 		filters={"program_level": program_level},
 		pluck="name",
 	)
