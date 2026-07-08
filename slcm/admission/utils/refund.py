@@ -124,21 +124,13 @@ def get_applicant_refund_policies(applicant):
 
 def get_last_payment_date(applicant):
 	"""
-	Returns the date of the most recent submitted payment for the applicant.
-	Checks Fee Payment first, then falls back to Applicant Payment Receipt.
+	Returns the date of the most recent payment for the applicant.
+	Uses Applicant Payment Receipt (which is tied to admission fee payments).
 	"""
-	last_fee_payment = frappe.db.get_value(
-		"Fee Payment",
-		{"student": applicant, "status": "Submitted"},
-		"payment_date",
-		order_by="payment_date desc"
-	)
-
 	last_receipt = frappe.db.get_value(
 		"Applicant Payment Receipt",
 		{"applicant": applicant, "docstatus": ["<", 2]},
 		"payment_date",
 		order_by="payment_date desc"
 	)
-
-	return last_fee_payment or last_receipt
+	return last_receipt

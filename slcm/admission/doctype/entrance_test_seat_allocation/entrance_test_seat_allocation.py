@@ -17,6 +17,11 @@ class EntranceTestSeatAllocation(Document):
             frappe.throw(f"Total Score (Part A + Part B) cannot be more than {max_marks}.")
 
     def before_save(self):
+        # Check if the applicant is an international applicant
+        if self.applicant:
+            foreign_national = frappe.db.get_value("Applicant", self.applicant, "foriegn_national")
+            self.is_international_applicant = 1 if foreign_national == "Yes" else 0
+
         # Calculate total marks and percentage
         self.total_marks_secured_in_part_a_b = (self.part_a_total_marks_scored or 0) + (self.part_b_total_marks_scored or 0)
         
@@ -229,11 +234,11 @@ def bulk_download_all_records(names):
 
 
 @frappe.whitelist()
-def update_ranks_by_category(academic_year, admission_cycle, program_level, entrance_test_list=None):
+def update_ranks_by_category(academic_year, admission_cycle, program_level, entrance_test_list=None, program=None):
     """
     Ranks applicants based on total_marks_secured_in_part_a_b for a given batch and sends result emails.
     Filters: Academic Year, Admission Cycle, Program Level.
-    Optional: entrance_test_list
+    Optional: entrance_test_list, program
     """
     if not (academic_year and admission_cycle and program_level):
         frappe.throw("Academic Year, Admission Cycle, and Program Level are required for ranking.")
@@ -245,6 +250,8 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
         "program_level": program_level,
         "entrance_test_status": "Attended"
     }
+    if program:
+        attended_filters["program"] = program
     if entrance_test_list:
         attended_filters["entrance_test_list"] = entrance_test_list
 
@@ -346,6 +353,8 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
         "program_level": program_level,
         "entrance_test_status": ["in", ["Attended", "Absent"]]
     }
+    if program:
+        all_filters["program"] = program
     if entrance_test_list:
         all_filters["entrance_test_list"] = entrance_test_list
 

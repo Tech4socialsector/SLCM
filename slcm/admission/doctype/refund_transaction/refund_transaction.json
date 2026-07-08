@@ -9,7 +9,7 @@
  "field_order": [
   "section_linkage",
   "refund_request",
-  "payment_request",
+  "applicant_fee_assignment",
   "column_break_1",
   "status",
   "razorpay_payment_id",
@@ -37,11 +37,11 @@
    "reqd": 1
   },
   {
-   "fieldname": "payment_request",
+   "fieldname": "applicant_fee_assignment",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Fee Payment",
-   "options": "Fee Payment",
+   "label": "Applicant Fee Assignment",
+   "options": "Applicant Fee Assignment",
    "read_only": 1
   },
   {

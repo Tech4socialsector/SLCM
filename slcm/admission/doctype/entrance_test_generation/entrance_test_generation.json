@@ -11,6 +11,7 @@
   "campus",
   "admission_cycle",
   "program_level",
+  "program",
   "generation_code",
   "column_break_cihg",
   "status",
@@ -49,6 +50,13 @@
    "label": "Programme Level",
    "options": "Undergraduate\nPostgraduate\nResearch Course",
    "reqd": 1
+  },
+  {
+   "depends_on": "program_level",
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "label": "Programme",
+   "options": "Program"
   },
   {
    "default": "Draft",

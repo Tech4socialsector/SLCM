@@ -70,19 +70,35 @@ frappe.ui.form.on("Applicant", {
          });
          }
 
-        // Application completion indicator
-        const required_fields = [
-            "candidate_name", "email", "mobile_number",
-            "date_of_birth", "first_preference",
-            "class_x_percentage", "class_xii_percentage",
-            "declaration_undertaking"
-        ];
-        const filled = required_fields.filter(f => frm.doc[f]).length;
-        const pct = Math.round((filled / required_fields.length) * 100);
-        frm.dashboard.add_comment(
-            `Application Completion: ${pct}%`,
-            pct === 100 ? "green" : pct >= 50 ? "orange" : "red"
-        );
+        if (frm.doc.status === "Draft" || frm.doc.__islocal) {
+            frm.add_custom_button(__("Save as Draft"), function () {
+                frm.set_value("status", "Draft");
+                
+                frappe.call({
+                    method: "frappe.desk.form.save.savedocs",
+                    args: {
+                        doc: JSON.stringify(frm.doc),
+                        action: "Save"
+                    },
+                    freeze: true,
+                    freeze_message: __("Saving Draft..."),
+                    callback: function(r) {
+                        if (!r.exc) {
+                            frappe.show_alert({message: __("Saved as Draft"), indicator: "green"});
+                            frm.reload_doc();
+                        }
+                    }
+                });
+            });
+        }
+
+        if (!frm.doc.__islocal && (frm.doc.status === 'Fee Paid' || frm.doc.status === 'Enrolled')) {
+            frm.add_custom_button(__("Refund Request"), function () {
+                frappe.set_route("List", "Refund Request", {
+                    applicant: frm.doc.name
+                });
+            },);
+        }
 
         // Custom buttons for submitted docs
         // if (frm.doc.status && frm.doc.status !== "Draft") {
@@ -287,10 +303,10 @@ frappe.ui.form.on("Applicant", {
         frm.set_value("city", "");
     },
 
-    // ── VALIDATE (runs before every save / submit) ──
     validate: function (frm) {
         if (frm.doc.status === "Draft") {
             frm.ignore_mandatory = true;
+            return; // Skip all custom validations for draft
         } else {
             frm.ignore_mandatory = false;
         }

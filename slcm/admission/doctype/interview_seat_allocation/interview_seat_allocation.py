@@ -12,8 +12,38 @@ from datetime import datetime
 
 class InterviewSeatAllocation(Document):
     def validate(self):
-        if self.interview_score and self.interview_score > 100:
-            frappe.throw("Interview Score cannot be more than 100.")
+        if self.interview_score and self.interview_score > 30:
+            frappe.throw("Interview Score cannot be more than 30.")
+        self._fetch_entrance_test_details()
+        self.calculate_final_cumulative()
+
+    def calculate_final_cumulative(self):
+        et_marks = flt(self.et_total_marks_secured_in_part_a_b or 0)
+        et_max = flt(self.et_total_marks or 0)
+        interview_max = 30.0
+        
+        score = flt(self.interview_score or 0)
+        max_marks = et_max + interview_max
+        
+        if self.interview_status == "Attended":
+            self.final_cumulative_score = et_marks + score
+            self.final_percentage = (self.final_cumulative_score / max_marks * 100.0) if max_marks > 0 else 0.0
+            if self.result_published:
+                self.offered_admission = 1 if self.final_percentage >= 70.0 else 0
+            else:
+                self.offered_admission = 0
+            self.interview_result_status = "Pass" if self.final_percentage >= 70.0 else "Fail"
+        elif self.interview_status == "Absent":
+            self.final_cumulative_score = 0.0
+            self.final_percentage = 0.0
+            self.offered_admission = 0
+            self.interview_result_status = "Fail"
+        else:
+            self.final_cumulative_score = 0.0
+            self.final_percentage = 0.0
+            self.offered_admission = 0
+            self.interview_result_status = "Pending"
+
 
     def before_save(self):
         doc_before = self.get_doc_before_save()
@@ -165,12 +195,13 @@ def _update_applicant_status_for_interview_result_status(applicant_name, intervi
 @frappe.whitelist()
 def update_ranks_by_category(academic_year, admission_cycle, program_level, interview_list=None):
     """
-    Send interview result notification emails to applicants.
+    Recalculates cumulative marks, offered admission status, assigns ranks to Attended applicants,
+    publishes results, and sends notification emails.
     """
     if not (academic_year and admission_cycle and program_level):
         frappe.throw("Academic Year, Admission Cycle, and Programme Level are required.")
 
-    # Fetch ALL applicants (Attended + Absent) to send notifications and mark published
+    # Fetch ALL applicants (Attended + Absent) to process
     all_filters = {
         "academic_year": academic_year,
         "admission_cycle": admission_cycle,
@@ -182,10 +213,60 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, inte
 
     all_records = frappe.get_all("Interview Seat Allocation",
         filters=all_filters,
-        fields=["name", "applicant", "candidate_name", "email", "interview_status", 
-                "interview_score", "rank", "interview_list"]
+        fields=["name", "interview_status"]
     )
 
+    # 1. Update cumulative scores and publish result
+    for rec in all_records:
+        doc = frappe.get_doc("Interview Seat Allocation", rec.name)
+        doc.result_published = 1
+        # Calling save will trigger validate -> calculate_final_cumulative
+        doc.save(ignore_permissions=True)
+
+    frappe.db.commit()
+
+    # 2. Rank Attended applicants based on final_cumulative_score desc
+    attended_filters = {
+        "academic_year": academic_year,
+        "admission_cycle": admission_cycle,
+        "program_level": program_level,
+        "interview_status": "Attended"
+    }
+    if interview_list:
+        attended_filters["interview_list"] = interview_list
+
+    attended_records = frappe.get_all("Interview Seat Allocation",
+        filters=attended_filters,
+        fields=["name", "final_cumulative_score"],
+        order_by="final_cumulative_score desc"
+    )
+
+    total_attended = len(attended_records)
+    if total_attended > 0:
+        # Rank competitive sorting (ties get same rank)
+        sorted_recs = sorted(attended_records, key=lambda x: flt(x.get("final_cumulative_score")), reverse=True)
+        last_score = None
+        current_rank = 0
+        for idx, rec in enumerate(sorted_recs, start=1):
+            score = flt(rec.get("final_cumulative_score"))
+            if last_score is None or score != last_score:
+                current_rank = idx
+                last_score = score
+            
+            frappe.db.set_value("Interview Seat Allocation", rec.name, "rank", current_rank, update_modified=False)
+        
+        frappe.db.commit()
+
+    # Clear ranks for Absent/non-Attended
+    absent_filters = all_filters.copy()
+    absent_filters["interview_status"] = ["!=", "Attended"]
+    absent_records = frappe.get_all("Interview Seat Allocation", filters=absent_filters, fields=["name"])
+    for rec in absent_records:
+        frappe.db.set_value("Interview Seat Allocation", rec.name, "rank", 0, update_modified=False)
+    
+    frappe.db.commit()
+
+    # 3. Send email notifications and notification logs
     count = 0
     total = len(all_records)
     for i, rec in enumerate(all_records):
@@ -193,15 +274,12 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, inte
         percent = (float(i + 1) / total) * 100
         frappe.publish_progress(
             percent, 
-            title=_("Sending Emails..."), 
-            description=f"Notifying {i + 1} of {total}"
+            title=_("Updating Ranks & Sending Emails..."), 
+            description=f"Processing {i + 1} of {total}"
         )
 
+        # Reload doc to get updated rank
         doc = frappe.get_doc("Interview Seat Allocation", rec.name)
-        
-        # Set result_published for all notified candidates
-        if not doc.result_published:
-            doc.db_set("result_published", 1)
         
         # Resolve email
         email = doc.email or ""
@@ -226,6 +304,7 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, inte
 
     frappe.db.commit()
     return count
+
 
 
 def _send_result_notification_email(doc, email):

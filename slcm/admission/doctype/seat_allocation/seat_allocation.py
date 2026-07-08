@@ -124,7 +124,7 @@ class SeatAllocation(Document):
         self.total_rejected = 0
         
         rejection_statuses = ["Rejected", "Offer Declined", "Offer Expired", "Withdrawn"]
-        selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid"]
+        selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid", "Payment Completed", "Enrolled", "Seat Selected"]
         
         for row in (self.selection_applicant or []):
             if row.selection_status in selection_statuses:
@@ -475,7 +475,7 @@ class SeatAllocation(Document):
         self.total_waitlisted = 0
         self.total_rejected = 0
         
-        selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid"]
+        selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid", "Payment Completed", "Enrolled", "Seat Selected"]
         
         for row in self.selection_applicant:
             if row.selection_status in selection_statuses:
@@ -543,7 +543,7 @@ class SeatAllocation(Document):
         
         # Define statuses
         vacant_statuses = ["Offer Declined", "Offer Expired", "Withdrawn"]
-        selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Fee Paid", "Accepted"]
+        selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Fee Paid", "Accepted", "Payment Completed", "Enrolled", "Seat Selected"]
         waitlist_statuses = ["Waitlisted"]
         
         for program in programs:
@@ -565,6 +565,21 @@ class SeatAllocation(Document):
             if not active_pool and not recent_vacancies:
                 continue
 
+            # Calculate current active selected counts to compute net unfilled vacancies
+            active_selected = [
+                r for r in self.selection_applicant
+                if r.program == program and r.selection_status in selection_statuses
+            ]
+            active_gen = len([r for r in active_selected if (r.vertical_category or "General") == "General"])
+            active_reserved = {
+                cat: len([r for r in active_selected if r.vertical_category == cat])
+                for cat in quotas["Reserved"].keys()
+            }
+            net_vacancies = {
+                "GEN": max(0, quotas["GEN"] - active_gen),
+                "Reserved": {cat: max(0, quotas["Reserved"][cat] - active_reserved[cat]) for cat in quotas["Reserved"].keys()}
+            }
+
             # Sort by Merit
             active_pool.sort(key=lambda x: (-(x.total_score or 0), x.overall_rank or 999999))
             
@@ -573,10 +588,26 @@ class SeatAllocation(Document):
             
             vacancies = {
                 "GEN": 0,
-                "Reserved": {k: 0 for k in quotas["Reserved"].keys()}
+                "Reserved": {k: 0 for k in quotas["Reserved"].keys()},
+                "Compartmentalized": {}
             }
             
             for v in recent_vacancies:
+                v_cat = v.get("vertical_category") or "General"
+                comp_cat = v.get("compartmentalized_category")
+                
+                # Verify if there is an unfilled vacancy in this vertical category
+                has_unfilled = False
+                if v_cat == "General" and net_vacancies["GEN"] > 0:
+                    has_unfilled = True
+                    net_vacancies["GEN"] -= 1
+                elif v_cat in net_vacancies["Reserved"] and net_vacancies["Reserved"][v_cat] > 0:
+                    has_unfilled = True
+                    net_vacancies["Reserved"][v_cat] -= 1
+                    
+                if not has_unfilled:
+                    continue
+
                 vacancies_data.append({
                     "applicant_id": v.applicant_id,
                     "candidate_name": v.candidate_name,
@@ -586,11 +617,14 @@ class SeatAllocation(Document):
                     "total_score": v.total_score
                 })
                 # Tally up available seats from these specific vacancies
-                v_cat = v.get("vertical_category") or "General"
-                if v_cat == "General":
-                    vacancies["GEN"] += 1
-                elif v_cat in vacancies["Reserved"]:
-                    vacancies["Reserved"][v_cat] += 1
+                if comp_cat:
+                    key = (v_cat, comp_cat)
+                    vacancies["Compartmentalized"][key] = vacancies["Compartmentalized"].get(key, 0) + 1
+                else:
+                    if v_cat == "General":
+                        vacancies["GEN"] += 1
+                    elif v_cat in vacancies["Reserved"]:
+                        vacancies["Reserved"][v_cat] += 1
 
             # Simulate allocation to find who GETS a seat now
             promoted_this_prog = []
@@ -598,7 +632,15 @@ class SeatAllocation(Document):
                 assigned = False
                 new_cat = None
                 
-                if vacancies["GEN"] > 0:
+                # Check if this waitlisted candidate matches a compartmentalized vacancy
+                comp_cat = row.get("compartmentalized_category")
+                v_cat = row.get("vertical_category") or "General"
+                
+                if comp_cat and vacancies["Compartmentalized"].get((v_cat, comp_cat), 0) > 0:
+                    assigned = True
+                    new_cat = v_cat
+                    vacancies["Compartmentalized"][(v_cat, comp_cat)] -= 1
+                elif vacancies["GEN"] > 0:
                     assigned = True
                     new_cat = "General"
                     vacancies["GEN"] -= 1
@@ -616,23 +658,87 @@ class SeatAllocation(Document):
                             break
                 
                 if assigned:
+                    # Construct display category for preview
+                    # Use their compartmentalized and horizontal categories if present
+                    c_trait = row.get("compartmentalized_category")
+                    h_traits_str = row.get("horizontal_categories")
+                    
+                    parts = [new_cat]
+                    if c_trait:
+                        parts.append(c_trait)
+                    if h_traits_str:
+                        h_traits = sorted([c.strip() for c in h_traits_str.split(",") if c.strip()])
+                        parts.extend(h_traits)
+                    
+                    display_cat = " + ".join(parts)
+                    
                     promoted_this_prog.append({
                         "applicant_id": row.applicant_id,
                         "candidate_name": row.candidate_name,
                         "program": program,
                         "new_status": "Selected",
-                        "allocated_category": new_cat,
+                        "allocated_category": display_cat,
                         "overall_rank": row.overall_rank,
                         "total_score": row.total_score
                     })
             
             for i, promoted in enumerate(promoted_this_prog):
                 vacant_info = "Available Seat"
+                v = None
                 if i < len(recent_vacancies):
                     v = recent_vacancies[i]
                     vacant_info = f"{v.candidate_name} ({v.selection_status})"
                 
                 promoted["vacant_seat_info"] = vacant_info
+                
+                # Find all eligible candidates for this specific vacancy slot
+                eligible_candidates = []
+                if v:
+                    v_cat = v.get("vertical_category") or "General"
+                    v_comp = v.get("compartmentalized_category")
+                    
+                    for candidate in active_pool:
+                        c_cat = candidate.get("vertical_category") or "General"
+                        c_comp = candidate.get("compartmentalized_category")
+                        
+                        # Check vertical match
+                        vertical_match = False
+                        if v_cat == "General":
+                            vertical_match = True
+                        else:
+                            cand_cats = get_applicant_categories(candidate.applicant_id)
+                            if v_cat in cand_cats:
+                                vertical_match = True
+                                
+                        # Check compartmentalized match
+                        comp_match = False
+                        if not v_comp:
+                            comp_match = True
+                        else:
+                            if c_comp == v_comp:
+                                comp_match = True
+                                
+                        if vertical_match and comp_match:
+                            eligible_candidates.append({
+                                "applicant_id": candidate.applicant_id,
+                                "candidate_name": candidate.candidate_name,
+                                "overall_rank": candidate.overall_rank,
+                                "total_score": candidate.total_score
+                            })
+                
+                # Ensure the auto-selected candidate is always in the list of eligible candidates
+                if not any(ec["applicant_id"] == promoted["applicant_id"] for ec in eligible_candidates):
+                    eligible_candidates.append({
+                        "applicant_id": promoted["applicant_id"],
+                        "candidate_name": promoted["candidate_name"],
+                        "overall_rank": promoted["overall_rank"],
+                        "total_score": promoted["total_score"]
+                    })
+                
+                # Sort eligible candidates by merit (highest score first, then lowest rank)
+                eligible_candidates.sort(key=lambda x: (-(x["total_score"] or 0), x["overall_rank"] or 999999))
+                promoted["eligible_candidates"] = eligible_candidates
+                
                 preview_data.append(promoted)
 
         return {
@@ -656,6 +762,7 @@ class SeatAllocation(Document):
             
             promoted_ids = [p.get("applicant_id") for p in promoted_applicants]
             affected = False
+            promoted_rows = []
             
             for row in self.selection_applicant:
                 if row.applicant_id in promoted_ids and row.selection_status == "Waitlisted":
@@ -664,11 +771,17 @@ class SeatAllocation(Document):
                     old_status = row.selection_status
                     row.selection_status = "Selected"
                     if intended.get("allocated_category"):
-                        row.vertical_category = intended["allocated_category"]
+                        row.vertical_category = intended["allocated_category"].split("+")[0].strip()
                         row.allocated_category = intended["allocated_category"]
                     
                     affected = True
-                    
+                    promoted_rows.append((row, old_status))
+
+            if affected:
+                # Save the new status to the database so that generate_offer pre-flight checks pass
+                self.save(ignore_permissions=True)
+                
+                for row, old_status in promoted_rows:
                     log_seat_allocation_action(
                         seat_allocation=self.name,
                         admission_cycle=self.admission_cycle,
@@ -692,8 +805,7 @@ class SeatAllocation(Document):
                         )
                     except Exception as e:
                         frappe.log_error(f"Manual Promotion Offer Generation Failed: {str(e)}", "Waitlist Promotion")
-
-            if affected:
+                
                 self.save(ignore_permissions=True)
                 frappe.db.commit()
                 return True
