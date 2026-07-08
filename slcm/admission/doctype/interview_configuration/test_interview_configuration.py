@@ -141,3 +141,102 @@ class IntegrationTestInterviewConfiguration(IntegrationTestCase):
         categories = app_doc._get_applicant_categories()
         self.assertIn("General", categories)
         self.assertEqual(len(categories), 1)
+
+    def test_international_entrance_test_disabled_skipped(self):
+        # Create a mock program with international_entrance_test = 0
+        program = frappe.get_doc({
+            "doctype": "Program",
+            "program_code": "INT-STAGE-TEST-1",
+            "program_name": "Intl Stage Program 1",
+            "level_of_study": "Undergraduate",
+            "academic_year": "2026-2027",
+            "entrance_test": 1,
+            "international_entrance_test": 0
+        })
+        program.insert(ignore_permissions=True, ignore_mandatory=True)
+
+        app_doc = frappe.get_doc({
+            "doctype": "Applicant",
+            "candidate_name": "Test Intl Applicant",
+            "email": "intl1@test.com",
+            "gender": "Male",
+            "program": program.name,
+            "status": "Completed",
+            "evaluation_status": "Eligible",
+            "foriegn_national": "Yes"
+        })
+        
+        # Calling auto-allocate should be skipped because international_entrance_test is 0
+        from slcm.admission.doctype.applicant.applicant import _auto_allocate_entrance_test_on_submission
+        _auto_allocate_entrance_test_on_submission(app_doc)
+        
+        # Verify no Entrance Test Seat Allocation is created
+        allocation_exists = frappe.db.exists("Entrance Test Seat Allocation", {"applicant": app_doc.name})
+        self.assertIsNone(allocation_exists)
+
+        # Cleanup
+        frappe.db.delete("Program", {"name": program.name})
+        frappe.db.commit()
+
+    def test_international_interview_disabled_skipped(self):
+        # Create a mock program with international_interview = 0
+        program = frappe.get_doc({
+            "doctype": "Program",
+            "program_code": "INT-STAGE-TEST-2",
+            "program_name": "Intl Stage Program 2",
+            "level_of_study": "Undergraduate",
+            "academic_year": "2026-2027",
+            "intereview": 1,
+            "international_interview": 0
+        })
+        program.insert(ignore_permissions=True, ignore_mandatory=True)
+
+        doc = frappe.get_doc({
+            "doctype": "Interview Configuration",
+            "name": "IVC-TEST-INT-STAGE",
+            "configuration_code": "IVC-TEST-INT-STAGE",
+            "academic_year": "2026-2027",
+            "campus": "NLSIU",
+            "admission_cycle": "AD",
+            "program": [{"program": program.name}],
+            "applicant_type": "International Applicants"
+        })
+        doc.insert(ignore_permissions=True, ignore_links=True)
+        self.configs_to_delete.append(doc.name)
+
+        # Create a mock eligible applicant
+        app_doc = frappe.get_doc({
+            "doctype": "Applicant",
+            "candidate_name": "Test Intl Applicant 2",
+            "email": "intl2@test.com",
+            "gender": "Male",
+            "program": program.name,
+            "status": "Completed",
+            "evaluation_status": "Eligible",
+            "foriegn_national": "Yes"
+        })
+        app_doc.insert(ignore_permissions=True, ignore_mandatory=True)
+
+        # Create a mock eligibility evaluation
+        ee = frappe.get_doc({
+            "doctype": "Eligibility Evaluation",
+            "applicant_name": app_doc.name,
+            "academic_year": "2026-2027",
+            "admission_cycle": "AD",
+            "campus": "NLSIU",
+            "program": program.name,
+            "exempts_entrance_test": 1,
+            "exempts_interview": 0
+        })
+        ee.insert(ignore_permissions=True, ignore_mandatory=True)
+
+        # Retrieve eligible applicants
+        eligible = doc.get_eligible_applicants()
+        # Should be empty since international_interview is 0
+        self.assertEqual(len(eligible), 0)
+
+        # Cleanup
+        frappe.db.delete("Eligibility Evaluation", {"name": ee.name})
+        frappe.db.delete("Applicant", {"name": app_doc.name})
+        frappe.db.delete("Program", {"name": program.name})
+        frappe.db.commit()
