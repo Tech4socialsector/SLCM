@@ -2,7 +2,6 @@
  "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
- "autoname": "doc.program_name + \"-\" + doc.academic_year + \"-\" + doc.academic_term",
  "creation": "2026-03-11 13:55:37.916716",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -324,11 +323,10 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-08 14:31:41.397484",
+ "modified": "2026-07-08 14:37:49.751555",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Programme",
- "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
