@@ -68,12 +68,15 @@ class EntranceTestGeneration(Document):
                 AND app.admission_cycle = %(admission_cycle)s
                 AND app.program_level = %(program_level)s
                 {program_filter}
-                AND IFNULL(app.center_filled, 0) = 1
                 AND (ee.exempts_entrance_test IS NULL OR ee.exempts_entrance_test = 0)
                 AND app.name NOT IN (SELECT applicant_id FROM `tabEntrance Test Applicant`)
                 AND app.name NOT IN (SELECT applicant FROM `tabEntrance Test Seat Allocation`)
                 AND app.status = 'Completed'
-                AND p.entrance_test = 1
+                AND (
+                    (app.foriegn_national = 'Yes' AND p.international_entrance_test = 1)
+                    OR
+                    (COALESCE(app.foriegn_national, '') != 'Yes' AND p.entrance_test = 1 AND IFNULL(app.center_filled, 0) = 1)
+                )
         """, query_filters, as_dict=True)
 
         if not applicants:

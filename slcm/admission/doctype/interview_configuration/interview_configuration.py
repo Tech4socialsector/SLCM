@@ -138,7 +138,11 @@ class InterviewConfiguration(Document):
                 AND app.name NOT IN (SELECT applicant_id FROM `tabInterview Applicant`)
                 AND ee.exempts_entrance_test = 1
                 AND (ee.exempts_interview IS NULL OR ee.exempts_interview = 0)
-                AND p.intereview = 1
+                AND (
+                    (app.foriegn_national = 'Yes' AND p.international_interview = 1)
+                    OR
+                    (COALESCE(app.foriegn_national, '') != 'Yes' AND p.intereview = 1)
+                )
         """
 
         # Source 2: Entrance Test Passers
@@ -169,7 +173,11 @@ class InterviewConfiguration(Document):
                 AND app.status != 'Rejected'
                 AND app.name NOT IN (SELECT applicant_id FROM `tabInterview Applicant`)
                 AND COALESCE(etsa.exempts_interview, 0) = 0
-                AND p.intereview = 1
+                AND (
+                    (app.foriegn_national = 'Yes' AND p.international_interview = 1)
+                    OR
+                    (COALESCE(app.foriegn_national, '') != 'Yes' AND p.intereview = 1)
+                )
         """
 
         # Source 3: Academic Eligibility
@@ -197,8 +205,12 @@ class InterviewConfiguration(Document):
                 AND app.status != 'Rejected'
                 AND app.name NOT IN (SELECT applicant_id FROM `tabInterview Applicant`)
                 AND p.entrance_test = 0
-                AND p.intereview = 1
                 AND (app.exempts_interview IS NULL OR app.exempts_interview = 0)
+                AND (
+                    (app.foriegn_national = 'Yes' AND p.international_interview = 1)
+                    OR
+                    (COALESCE(app.foriegn_national, '') != 'Yes' AND p.intereview = 1)
+                )
         """
 
         seen = {}
