@@ -44,9 +44,6 @@
   "offer_letter",
   "admission_fee",
   "enrolled",
-  "sec_break_intl_stages",
-  "international_entrance_test",
-  "international_interview",
   "connections_tab_tab"
  ],
  "fields": [
@@ -284,23 +281,6 @@
    "label": "Application Form Link",
    "options": "URL",
    "read_only": 1
-  },
-  {
-   "fieldname": "sec_break_intl_stages",
-   "fieldtype": "Section Break",
-   "label": "International Applicant Stages"
-  },
-  {
-   "default": "0",
-   "fieldname": "international_entrance_test",
-   "fieldtype": "Check",
-   "label": "Entrance Test"
-  },
-  {
-   "default": "0",
-   "fieldname": "international_interview",
-   "fieldtype": "Check",
-   "label": "Interview"
   }
  ],
  "grid_page_length": 50,
