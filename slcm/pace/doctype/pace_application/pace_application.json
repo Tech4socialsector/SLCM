@@ -211,15 +211,13 @@
    "depends_on": "eval:doc.currently_employed ==\"Yes\"",
    "fieldname": "organization_name",
    "fieldtype": "Data",
-   "label": "Organization Name",
-   "mandatory_depends_on": "eval:doc.currently_employed ==\"Yes\""
+   "label": "Organization Name"
   },
   {
    "depends_on": "eval:doc.currently_employed ==\"Yes\"",
    "fieldname": "designation",
    "fieldtype": "Data",
-   "label": "Designation",
-   "mandatory_depends_on": "eval:doc.currently_employed ==\"Yes\""
+   "label": "Designation"
   },
   {
    "fieldname": "differently_abled",
@@ -705,7 +703,7 @@
    "link_fieldname": "applicant"
   }
  ],
- "modified": "2026-07-03 09:59:12.696429",
+ "modified": "2026-07-09 16:11:47.634185",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Application",
