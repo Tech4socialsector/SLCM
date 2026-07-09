@@ -13,7 +13,7 @@
    "fieldname": "program",
    "fieldtype": "Link",
    "label": "Programme",
-   "options": "Program"
+   "options": "Programme"
   }
  ],
  "grid_page_length": 50,

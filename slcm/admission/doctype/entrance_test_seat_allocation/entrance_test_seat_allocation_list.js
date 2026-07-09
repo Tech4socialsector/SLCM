@@ -81,7 +81,7 @@ frappe.listview_settings['Entrance Test Seat Allocation'] = {
                                 label: __("Programme"),
                                 fieldname: "program",
                                 fieldtype: "Link",
-                                options: "Program",
+                                options: "Programme",
                                 depends_on: "eval:doc.program_level"
                             },
                             {

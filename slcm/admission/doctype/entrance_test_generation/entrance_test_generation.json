@@ -56,7 +56,7 @@
    "fieldname": "program",
    "fieldtype": "Link",
    "label": "Programme",
-   "options": "Program"
+   "options": "Programme"
   },
   {
    "default": "Draft",

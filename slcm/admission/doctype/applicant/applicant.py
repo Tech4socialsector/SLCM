@@ -99,10 +99,17 @@ class Applicant(Document):
         Exemption flags (exempts_entrance_test, exempts_interview) are handled by validate_eligibility.
         """
         if self.program:
-            program_stages = frappe.db.get_value("Programme", self.program, ["entrance_test", "intereview"], as_dict=True)
-            if program_stages:
-                self.entrance_test = program_stages.get("entrance_test", 0)
-                self.intereview = program_stages.get("intereview", 0)
+            is_intl = (getattr(self, "foriegn_national", "") or "").strip() == "Yes"
+            if is_intl:
+                program_stages = frappe.db.get_value("Programme", self.program, ["international_entrance_test", "international_interview"], as_dict=True)
+                if program_stages:
+                    self.entrance_test = program_stages.get("international_entrance_test", 0)
+                    self.intereview = program_stages.get("international_interview", 0)
+            else:
+                program_stages = frappe.db.get_value("Programme", self.program, ["entrance_test", "intereview"], as_dict=True)
+                if program_stages:
+                    self.entrance_test = program_stages.get("entrance_test", 0)
+                    self.intereview = program_stages.get("intereview", 0)
 
     def validate_email(self):
         if not validate_email_address(self.email):
@@ -3211,15 +3218,19 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
         frappe.log_error("Auto Allocate skipped: no program", "Auto Allocate Debug")
         return
 
-    if not _truthy(frappe.db.get_value("Programme", applicant_doc.program, "entrance_test")):
-        frappe.log_error(f"Auto Allocate skipped: entrance_test not enabled for program {applicant_doc.program}", "Auto Allocate Debug")
-        return
+    is_international = (getattr(applicant_doc, "foriegn_national", "") or "").strip() == "Yes"
 
-    # ── International applicant branch ──────────────────────────────────────
-    # Identified by foriegn_national == "Yes" (not nationality field)
-    if (getattr(applicant_doc, "foriegn_national", "") or "").strip() == "Yes":
+    if is_international:
+        if not _truthy(frappe.db.get_value("Programme", applicant_doc.program, "international_entrance_test")):
+            frappe.log_error(f"Auto Allocate skipped: international_entrance_test not enabled for program {applicant_doc.program}", "Auto Allocate Debug")
+            return
+        # ── International applicant branch ──────────────────────────────────────
         _auto_allocate_international_entrance_test(applicant_doc)
         return
+    else:
+        if not _truthy(frappe.db.get_value("Programme", applicant_doc.program, "entrance_test")):
+            frappe.log_error(f"Auto Allocate skipped: entrance_test not enabled for program {applicant_doc.program}", "Auto Allocate Debug")
+            return
     # ─────────────────────────────────────────────────────────────────────────
 
     # Idempotency: a seat allocation already exists for this applicant
