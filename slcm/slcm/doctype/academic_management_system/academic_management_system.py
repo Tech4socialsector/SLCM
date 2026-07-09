@@ -17,8 +17,6 @@ def get_classes(filters=None):
 
 	# Base query for Student Groups which are "Classes"
 	query_filters = {}
-	if filters.get("department"):
-		query_filters["department"] = filters.get("department")
 	if filters.get("academic_term"):
 		query_filters["academic_term"] = filters.get("academic_term")
 	if filters.get("course"):
@@ -85,14 +83,13 @@ def create_class(data):
 
 @frappe.whitelist()
 def create_classes_by_section(
-	department, program, academic_year, batch, academic_term, course, class_type, faculty
+	program, academic_year, batch, academic_term, course, class_type, faculty
 ):
 	# Enqueue this to run in background
 	frappe.enqueue(
 		"slcm.slcm.doctype.academic_management_system.academic_management_system.process_bulk_class_creation",
 		queue="long",
 		timeout=1500,
-		department=department,
 		program=program,
 		academic_year=academic_year,
 		batch=batch,
@@ -106,7 +103,7 @@ def create_classes_by_section(
 
 
 def process_bulk_class_creation(
-	department, program, academic_year, batch, academic_term, course, class_type, faculty, user
+	program, academic_year, batch, academic_term, course, class_type, faculty, user
 ):
 	sections = frappe.get_all(
 		"Section",
@@ -141,7 +138,6 @@ def process_bulk_class_creation(
 		doc.academic_term = academic_term
 		doc.batch = batch  # Link batch if applicable
 		doc.course = course
-		doc.department = department
 		doc.class_type = class_type
 		doc.faculty = faculty
 		doc.section = section.name

@@ -321,16 +321,14 @@ class ClassSchedule(Document):
 
 
 @frappe.whitelist()
-def get_timetable_data(term=None, course=None, department=None, start_date=None, end_date=None):
+def get_timetable_data(term=None, course=None, start_date=None, end_date=None):
     """Get timetable data for calendar view"""
     filters = {}
-    
+
     if term:
         filters["term"] = term
     if course:
         filters["course"] = course
-    if department:
-        filters["department"] = department
     if start_date and end_date:
         filters["schedule_date"] = ["between", [start_date, end_date]]
     
@@ -398,7 +396,6 @@ def create_class_schedule(data):
         "repeat_frequency": data.get("repeat_frequency", "Never"),
         "repeats_till": data.get("repeats_till"),
         "term": data.get("term"),
-        "department": data.get("department"),
         "programme": data.get("programme"),
         "student_group": data.get("student_group"),
     })

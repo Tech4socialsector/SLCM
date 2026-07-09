@@ -26,7 +26,6 @@ frappe.ui.form.on("Term Administration", {
 					"starts",
 					"ends",
 					"system",
-					"sequence",
 				],
 				limit_page_length: 100,
 				order_by: "starts desc",
@@ -51,7 +50,6 @@ frappe.ui.form.on("Term Administration", {
 								<th>Starts</th>
 								<th>Ends</th>
 								<th>System</th>
-								<th>Sequence</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -60,7 +58,7 @@ frappe.ui.form.on("Term Administration", {
 				if (!terms.length) {
 					html += `
 						<tr>
-							<td colspan="6" class="text-center text-muted">
+							<td colspan="5" class="text-center text-muted">
 								No Terms Found
 							</td>
 						</tr>
@@ -74,7 +72,6 @@ frappe.ui.form.on("Term Administration", {
 								<td>${t.starts ? frappe.datetime.str_to_user(t.starts) : "-"}</td>
 								<td>${t.ends ? frappe.datetime.str_to_user(t.ends) : "-"}</td>
 								<td>${t.system || "-"}</td>
-								<td>${t.sequence || "-"}</td>
 							</tr>
 						`;
 					});

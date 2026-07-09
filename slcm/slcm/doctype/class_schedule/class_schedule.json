@@ -13,7 +13,6 @@
   "instructor",
   "section_break_details",
   "term",
-  "department",
   "programme",
   "course",
   "course_offering",
@@ -76,13 +75,6 @@
    "in_standard_filter": 1,
    "label": "Term",
    "options": "Term Configuration"
-  },
-  {
-   "fieldname": "department",
-   "fieldtype": "Link",
-   "in_standard_filter": 1,
-   "label": "Department",
-   "options": "Department"
   },
   {
    "fieldname": "programme",

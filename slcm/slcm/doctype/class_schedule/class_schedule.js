@@ -25,13 +25,12 @@ frappe.ui.form.on('Class Schedule', {
         if (frm.doc.class_configuration) {
             // Fetch details from Class Configuration
             frappe.db.get_value('Class Configuration', frm.doc.class_configuration,
-                ['course', 'faculty', 'programme', 'term', 'department'], (r) => {
+                ['course', 'faculty', 'programme', 'term'], (r) => {
                     if (r) {
                         frm.set_value('course', r.course);
                         frm.set_value('instructor', r.faculty);
                         frm.set_value('programme', r.programme);
                         frm.set_value('term', r.term);
-                        frm.set_value('department', r.department);
                     }
                 });
         }

@@ -124,13 +124,15 @@ function add_students_by_filter(frm) {
             },
             {
                 fieldname: 'batch',
-                fieldtype: 'Data',
+                fieldtype: 'Link',
+                options: 'Batch',
                 label: __('Batch'),
                 default: frm.doc.batch
             },
             {
                 fieldname: 'section',
-                fieldtype: 'Data',
+                fieldtype: 'Link',
+                options: 'Section',
                 label: __('Section'),
                 default: frm.doc.section
             }

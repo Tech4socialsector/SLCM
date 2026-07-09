@@ -11,7 +11,6 @@
   "group_based_on",
   "student_group_name",
   "max_strength",
-  "department",
   "status",
   "column_break_hamn",
   "academic_term",
@@ -84,13 +83,7 @@
    "fieldname": "batch",
    "fieldtype": "Link",
    "label": "Batch",
-   "options": "Student Batch Name"
-  },
-  {
-   "fieldname": "department",
-   "fieldtype": "Link",
-   "label": "Department",
-   "options": "Department"
+   "options": "Batch"
   },
   {
    "fieldname": "class_type",
