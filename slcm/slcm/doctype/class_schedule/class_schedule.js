@@ -73,8 +73,8 @@ frappe.ui.form.on('Class Schedule', {
     generate_title: function (frm) {
         if (frm.doc.course) {
             let title = frm.doc.course;
-            if (frm.doc.room) {
-                title += ' - ' + frm.doc.room;
+            if (frm.doc.venue) {
+                title += ' - ' + frm.doc.venue;
             }
             frm.set_value('title', title);
         }

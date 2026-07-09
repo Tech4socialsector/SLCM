@@ -134,7 +134,7 @@ def _get_students_raw(program, academic_year, from_year):
 			sm.programme     AS programme,
 			sm.batch_year    AS batch_year,
 			sm.current_year  AS current_year,
-			c.cohort_name    AS cohort_name
+			c.batch_name     AS cohort_name
 		FROM `tabStudent Master` sm
 		INNER JOIN `tabBatch` c ON c.name = sm.programme
 		WHERE
@@ -284,27 +284,27 @@ def _promote_enrollment(student, to_year):
 	current = frappe.db.get_value(
 		"Student Enrollment",
 		{"student": student, "status": "Enrolled", "docstatus": ["<", 2]},
-		["name", "cohort"],
+		["name", "batch"],
 		as_dict=True,
 		order_by="enrollment_date desc",
 	)
-	if not current or not current.cohort:
+	if not current or not current.batch:
 		frappe.throw(
 			frappe._("No active Student Enrollment found for {0} to promote from").format(student)
 		)
 
-	next_batch = _resolve_next_batch(current.cohort)
+	next_batch = _resolve_next_batch(current.batch)
 	if not next_batch:
 		frappe.throw(
 			frappe._(
 				"Cannot promote {0}: no Batch found for year {1} following {2}. "
 				"Create the target Batch first."
-			).format(student, to_year, current.cohort)
+			).format(student, to_year, current.batch)
 		)
 
 	existing = frappe.db.exists(
 		"Student Enrollment",
-		{"student": student, "cohort": next_batch, "docstatus": ["<", 2]},
+		{"student": student, "batch": next_batch, "docstatus": ["<", 2]},
 	)
 	if existing:
 		return existing
@@ -315,7 +315,7 @@ def _promote_enrollment(student, to_year):
 
 	new_doc = frappe.new_doc("Student Enrollment")
 	new_doc.student = student
-	new_doc.cohort = next_batch
+	new_doc.batch = next_batch
 	new_doc.status = "Enrolled"
 	new_doc.insert(ignore_permissions=True)
 	return new_doc.name

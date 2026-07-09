@@ -47,7 +47,7 @@ def get_context(context):
             "Student Enrollment",
             filters={"student": student_name},
             fields=[
-                "name", "cohort", "program", "academic_year",
+                "name", "batch", "program", "academic_year",
                 "term_name", "status", "faculty_advisor", "enrollment_date",
             ],
             order_by="creation desc",
@@ -65,7 +65,7 @@ def get_context(context):
             if cohort_doc:
                 enrollments = [frappe._dict({
                     "name": None,
-                    "cohort": cohort_doc.name,
+                    "batch": cohort_doc.name,
                     "program": None,
                     "academic_year": cohort_doc.academic_year,
                     "term_name": cohort_doc.term_name,
@@ -77,7 +77,7 @@ def get_context(context):
         enrollment_data = []
 
         for enr in enrollments:
-            cohort = enr.cohort
+            cohort = enr.batch
 
             # ── Step 1: courses from Student Enrollment Course child table ──
             child_courses = []

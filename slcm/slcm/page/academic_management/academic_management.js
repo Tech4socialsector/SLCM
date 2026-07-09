@@ -66,16 +66,6 @@ class AcademicManagement {
                     </div>
                 </div>
                 <div class="class-content" style="display: none;">
-                    <div class="class-filters">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <label>Department</label>
-                                <select class="form-control department-filter">
-                                    <option>Select Department</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
                     <div class="class-table-container">
                         <table class="table table-bordered class-table">
                             <thead>
@@ -132,7 +122,6 @@ class AcademicManagement {
 
             this.page.set_primary_action('Add Class', null, 'add');
             this.load_classes();
-            this.load_departments();
         } else if (tab === 'class_schedule') {
             this.page.set_title('Academic Management - Class Schedule');
             this.page.main.find('.schedule-content').show();
@@ -265,58 +254,10 @@ class AcademicManagement {
             fields: [
                 {
                     fieldname: 'term_name',
-                    fieldtype: 'Data',
-                    label: __('Term Name'),
-                    placeholder: 'Odd Semester 2022-2023',
-                    reqd: 1
-                },
-                {
-                    fieldname: 'academic_year',
                     fieldtype: 'Link',
-                    label: __('Academic Year'),
-                    options: 'Academic Year',
-                    reqd: 1
-                },
-                {
-                    fieldname: 'col_break_1',
-                    fieldtype: 'Column Break'
-                },
-                {
-                    fieldname: 'sequence',
-                    fieldtype: 'Int',
-                    label: __('Sequence'),
-                    default: 1
-                },
-                {
-                    fieldname: 'sec_break_1',
-                    fieldtype: 'Section Break'
-                },
-                {
-                    fieldname: 'starts',
-                    fieldtype: 'Date',
-                    label: __('Starts'),
-                    reqd: 1
-                },
-                {
-                    fieldname: 'col_break_2',
-                    fieldtype: 'Column Break'
-                },
-                {
-                    fieldname: 'ends',
-                    fieldtype: 'Date',
-                    label: __('Ends'),
-                    reqd: 1
-                },
-                {
-                    fieldname: 'sec_break_2',
-                    fieldtype: 'Section Break'
-                },
-                {
-                    fieldname: 'system',
-                    fieldtype: 'Select',
-                    label: __('System'),
-                    options: ['Semester', 'Trimester', 'Quarter', 'Year'],
-                    default: 'Semester',
+                    label: __('Term'),
+                    options: 'Academic Term',
+                    description: __('Academic Year, Dates and System are fetched from the selected Academic Term'),
                     reqd: 1
                 },
                 {
@@ -355,27 +296,6 @@ class AcademicManagement {
         dialog.show();
     }
 
-    load_departments() {
-        frappe.call({
-            method: 'frappe.client.get_list',
-            args: {
-                doctype: 'Department',
-                fields: ['name'],
-                limit_page_length: 0
-            },
-            callback: (r) => {
-                if (r.message) {
-                    const select = this.page.main.find('.department-filter');
-                    select.empty();
-                    select.append('<option value="">Select Department</option>');
-                    r.message.forEach(dept => {
-                        select.append(`<option value="${dept.name}">${dept.name}</option>`);
-                    });
-                }
-            }
-        });
-    }
-
     show_add_class_dialog(mode) {
         const dialog = new frappe.ui.Dialog({
             title: __(mode === 'single' ? 'Create Single Class' : 'Create Class by Section'),
@@ -398,16 +318,6 @@ class AcademicManagement {
                     fieldtype: 'Column Break'
                 },
                 {
-                    fieldname: 'department',
-                    fieldtype: 'Link',
-                    label: __('Department'),
-                    options: 'Department'
-                },
-                {
-                    fieldname: 'sec_break_1',
-                    fieldtype: 'Section Break'
-                },
-                {
                     fieldname: 'programme',
                     fieldtype: 'Link',
                     label: __('Programme'),
@@ -415,9 +325,14 @@ class AcademicManagement {
                     reqd: 1
                 },
                 {
+                    fieldname: 'sec_break_1',
+                    fieldtype: 'Section Break'
+                },
+                {
                     fieldname: 'batch',
-                    fieldtype: 'Data',
-                    label: __('Batch')
+                    fieldtype: 'Link',
+                    label: __('Batch'),
+                    options: 'Batch'
                 },
                 {
                     fieldname: 'col_break_2',
@@ -425,8 +340,9 @@ class AcademicManagement {
                 },
                 {
                     fieldname: 'section',
-                    fieldtype: 'Data',
-                    label: __('Section')
+                    fieldtype: 'Link',
+                    label: __('Section'),
+                    options: 'Section'
                 },
                 {
                     fieldname: 'sec_break_2',

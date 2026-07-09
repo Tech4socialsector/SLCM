@@ -554,7 +554,7 @@ def validate_new_enrollment(student_id):
 
     existing_enrollment = frappe.db.exists(
         "Student Enrollment",
-        {"student": student.name, "cohort": student.programme, "docstatus": ["<", 2]},
+        {"student": student.name, "batch": student.programme, "docstatus": ["<", 2]},
     )
 
     if existing_enrollment:
@@ -596,7 +596,7 @@ def bulk_student_enrollment(students):
                 "student_name": " ".join(filter(None, [
                     student.first_name, student.middle_name, student.last_name
                 ])),
-                "cohort":        student.programme,
+                "batch":         student.programme,
                 "batch_year_ref": frappe.db.get_value("Batch", student.programme, "section") or "",
                 "academic_year": student.academic_year,
                 "status":        "Enrolled",
@@ -845,7 +845,7 @@ def get_academic_progress(student_name, enrollment_name=None):
             {"student": student_name, "docstatus": ["<", 2], "name": enrollment_name},
             [
                 "name", "academic_year", "term_name", "status",
-                "program", "cohort", "batch_year_ref", "enrollment_date",
+                "program", "batch", "batch_year_ref", "enrollment_date",
             ],
             as_dict=True,
         )
@@ -858,7 +858,7 @@ def get_academic_progress(student_name, enrollment_name=None):
                 recent[0].name,
                 [
                     "name", "academic_year", "term_name", "status",
-                    "program", "cohort", "batch_year_ref", "enrollment_date",
+                    "program", "batch", "batch_year_ref", "enrollment_date",
                 ],
                 as_dict=True,
             )
@@ -898,13 +898,13 @@ def get_academic_progress(student_name, enrollment_name=None):
             as_dict=True,
         )
 
-    # Cohort / Section details
+    # Batch / Section details
     cohort_doc = None
-    if enrollment.cohort:
+    if enrollment.batch:
         cohort_doc = frappe.db.get_value(
             "Batch",
-            enrollment.cohort,
-            ["cohort_name", "cohort_code", "term_year", "current_year", "status"],
+            enrollment.batch,
+            ["batch_name", "batch_code", "term_year", "status"],
             as_dict=True,
         )
 
@@ -936,9 +936,9 @@ def get_academic_progress(student_name, enrollment_name=None):
         "status":               enrollment.status or "",
         "program":              enrollment.program or "",
         "program_name":         program_name,
-        "cohort":               enrollment.cohort or "",
-        "cohort_name":          cohort_doc.cohort_name if cohort_doc else (enrollment.cohort or ""),
-        "cohort_code":          cohort_doc.cohort_code if cohort_doc else "",
+        "cohort":               enrollment.batch or "",
+        "cohort_name":          cohort_doc.batch_name if cohort_doc else (enrollment.batch or ""),
+        "cohort_code":          cohort_doc.batch_code if cohort_doc else "",
         "cohort_term_year":     cohort_doc.term_year if cohort_doc else "",
         "cohort_status":        cohort_doc.status if cohort_doc else "",
         "batch_year":           enrollment.batch_year_ref or "",

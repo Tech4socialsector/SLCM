@@ -13,9 +13,9 @@
   "max_strength",
   "status",
   "column_break_hamn",
+  "batch",
   "academic_term",
   "program",
-  "batch",
   "course",
   "class_type",
   "section",
@@ -63,6 +63,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "fetch_from": "batch.academic_term",
    "fieldname": "academic_term",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -71,6 +72,7 @@
    "options": "Academic Term"
   },
   {
+   "fetch_from": "batch.program",
    "fieldname": "program",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -160,7 +162,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-16 19:11:37.655784",
+ "modified": "2026-07-09 13:57:05.264232",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Group",

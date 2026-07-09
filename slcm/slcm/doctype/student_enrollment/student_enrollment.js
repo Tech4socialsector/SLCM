@@ -1,5 +1,13 @@
 frappe.ui.form.on("Student Enrollment", {
 	refresh(frm) {
+		// Lightweight only - just keep the Section link filtered to this
+		// batch. The auto-fill of enrolled_courses must NOT re-run here,
+		// otherwise simply opening an existing enrollment would wipe out
+		// any manually edited rows (grades, status, faculty overrides).
+		frm.set_query("section", function () {
+			return { filters: { batch: frm.doc.batch } };
+		});
+
 		if (frm.is_new() || !frm.doc.student) return;
 
 		frappe.call({
@@ -17,28 +25,30 @@ frappe.ui.form.on("Student Enrollment", {
 		});
 	},
 
-	program(frm) {
-		// 1️⃣ Clear table if program removed
-		if (!frm.doc.program) {
+	batch(frm) {
+		// Fires on real user-driven changes only (not on load), which is
+		// exactly when we want to refill enrolled_courses for the new batch.
+		frm.set_query("section", function () {
+			return { filters: { batch: frm.doc.batch } };
+		});
+
+		// 1️⃣ Clear table if batch removed
+		if (!frm.doc.batch) {
+			frm.set_value("section", "");
 			frm.clear_table("enrolled_courses");
 			frm.refresh_field("enrolled_courses");
 			return;
 		}
 
-		// 2️⃣ Clear existing rows
+		// 2️⃣ Clear existing rows before refilling
 		frm.clear_table("enrolled_courses");
 
-		// 3️⃣ Need cohort to find Course Offerings
-		const cohort = frm.doc.cohort;
-		if (!cohort) {
-			frappe.msgprint("Please select a Cohort first before the courses can be auto-filled.");
-			frm.refresh_field("enrolled_courses");
-			return;
-		}
+		const batch = frm.doc.batch;
 
-		// 4️⃣ Fetch all Open Course Offerings for this cohort/batch directly
+		// 3️⃣ Fetch all Open Course Offerings for this batch directly
+		// (Course Offering's own link field is still named "cohort")
 		frappe.db.get_list("Course Offering", {
-			filters: [["cohort", "=", cohort], ["status", "=", "Open"]],
+			filters: [["cohort", "=", batch], ["status", "=", "Open"]],
 			fields: ["name", "course_title"],
 		}).then((offerings) => {
 			if (!offerings.length) {

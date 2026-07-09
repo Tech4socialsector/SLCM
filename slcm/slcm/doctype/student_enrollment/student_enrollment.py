@@ -18,23 +18,93 @@ class StudentEnrollment(Document):
     def on_update(self):
         """Sync Student Master when enrollment status changes."""
         self._sync_student_master_status()
-        self._refresh_batch_enrolled_count(self.cohort)
-        if self.has_value_changed("cohort"):
+        self._refresh_batch_enrolled_count(self.batch)
+        if self.has_value_changed("batch"):
             previous = self.get_doc_before_save()
-            if previous and previous.cohort and previous.cohort != self.cohort:
-                self._refresh_batch_enrolled_count(previous.cohort)
+            if previous and previous.batch and previous.batch != self.batch:
+                self._refresh_batch_enrolled_count(previous.batch)
+        self._sync_class_configuration_rosters()
+
+    def _sync_class_configuration_rosters(self):
+        """Add/remove this student on the Class Configuration roster of every
+        course they are enrolled/dropped in.
+
+        Enrolling a student only attaches a Course Offering to
+        `enrolled_courses` - nothing else in the system puts them on a
+        Class Configuration's student list. Exams/results read that list
+        (via the `Class Student` child table) to decide who is eligible for
+        a course, so without this a properly enrolled student would be
+        invisible to exams unless someone manually added them to the class.
+
+        Matches by course + batch, and additionally by section when the
+        student has one set - if a batch has multiple sections offering the
+        same course and the student's section is not recorded, they end up
+        on every matching section's roster since there is nothing to
+        disambiguate with.
+        """
+        if not self.student or not self.batch:
+            return
+
+        for row in self.enrolled_courses:
+            if not row.course:
+                continue
+
+            dropped = self.status == "Dropped" or row.status == "Dropped"
+
+            filters = {"course": row.course, "batch": self.batch}
+            if self.section:
+                filters["section"] = self.section
+
+            class_configs = frappe.get_all(
+                "Class Configuration",
+                filters=filters,
+                pluck="name",
+            )
+            for class_config_name in class_configs:
+                if dropped:
+                    self._remove_from_class_roster(class_config_name)
+                else:
+                    self._add_to_class_roster(class_config_name)
+
+    def _add_to_class_roster(self, class_config_name):
+        cc = frappe.get_doc("Class Configuration", class_config_name)
+        if any(r.student == self.student for r in cc.students):
+            return
+
+        first, middle, last, registration_id, email = frappe.db.get_value(
+            "Student Master",
+            self.student,
+            ["first_name", "middle_name", "last_name", "registration_id", "email"],
+        )
+        student_name = " ".join(filter(None, [first, middle, last]))
+
+        cc.append("students", {
+            "student": self.student,
+            "student_name": student_name,
+            "registration_id": registration_id,
+            "email": email,
+        })
+        cc.save(ignore_permissions=True)
+
+    def _remove_from_class_roster(self, class_config_name):
+        cc = frappe.get_doc("Class Configuration", class_config_name)
+        remaining = [r for r in cc.students if r.student != self.student]
+        if len(remaining) == len(cc.students):
+            return
+        cc.set("students", remaining)
+        cc.save(ignore_permissions=True)
 
     def after_delete(self):
-        self._refresh_batch_enrolled_count(self.cohort)
+        self._refresh_batch_enrolled_count(self.batch)
 
     def fetch_program_and_courses(self):
-        if not self.program and self.cohort:
-            self.program = frappe.db.get_value("Batch", self.cohort, "program")
+        if not self.program and self.batch:
+            self.program = frappe.db.get_value("Batch", self.batch, "program")
 
-        if self.program and self.cohort and not self.enrolled_courses:
+        if self.program and self.batch and not self.enrolled_courses:
             offerings = frappe.get_all(
                 "Course Offering",
-                filters={"cohort": self.cohort, "status": "Open"},
+                filters={"cohort": self.batch, "status": "Open"},
                 fields=["name", "course_title"],
             )
             for offering in offerings:
@@ -47,16 +117,16 @@ class StudentEnrollment(Document):
                 })
 
     def _validate_cohort_seat_limit(self):
-        """Block enrollment if cohort has reached its seat limit."""
-        if not self.cohort:
+        """Block enrollment if batch has reached its seat limit."""
+        if not self.batch:
             return
-        seat_limit = frappe.db.get_value("Batch", self.cohort, "seat_limit")
+        seat_limit = frappe.db.get_value("Batch", self.batch, "seat_limit")
         if not seat_limit:
             return
         existing_count = frappe.db.count(
             "Student Enrollment",
             {
-                "cohort": self.cohort,
+                "batch": self.batch,
                 "status": ["not in", ["Dropped"]],
                 "name": ["!=", self.name or "__new__"],
                 "docstatus": ["<", 2],
@@ -64,7 +134,7 @@ class StudentEnrollment(Document):
         )
         if existing_count >= seat_limit:
             frappe.throw(
-                _("Cohort {0} has reached its seat limit of {1}").format(self.cohort, seat_limit)
+                _("Batch {0} has reached its seat limit of {1}").format(self.batch, seat_limit)
             )
 
     def _validate_status_transition(self):
@@ -83,30 +153,30 @@ class StudentEnrollment(Document):
                 )
 
     def validate_duplicate_enrollment(self):
-        """Prevent duplicate enrollment for same student + cohort + academic_year."""
+        """Prevent duplicate enrollment for same student + batch + academic_year."""
         filters = {
             "student":       self.student,
-            "cohort":        self.cohort,
+            "batch":         self.batch,
             "academic_year": self.academic_year,
             "docstatus":     ["<", 2],
         }
         existing = frappe.db.exists("Student Enrollment", filters)
         if existing and existing != self.name:
-            frappe.throw(_("Enrollment already exists for this student in the selected cohort"))
+            frappe.throw(_("Enrollment already exists for this student in the selected batch"))
 
-    def _refresh_batch_enrolled_count(self, cohort):
+    def _refresh_batch_enrolled_count(self, batch):
         """Recompute the Batch's total_enrolled_count from actual enrollments."""
-        if not cohort or not frappe.db.exists("Batch", cohort):
+        if not batch or not frappe.db.exists("Batch", batch):
             return
         count = frappe.db.count(
             "Student Enrollment",
             {
-                "cohort": cohort,
+                "batch": batch,
                 "status": ["not in", ["Dropped"]],
                 "docstatus": ["<", 2],
             },
         )
-        frappe.db.set_value("Batch", cohort, "total_enrolled_count", count, update_modified=False)
+        frappe.db.set_value("Batch", batch, "total_enrolled_count", count, update_modified=False)
 
     def _sync_student_master_status(self):
         """When enrollment is dropped/completed, reflect on Student Master."""

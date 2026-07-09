@@ -15,6 +15,7 @@ class ClassSchedule(Document):
         self.validate_time()
         self.validate_repeat_settings()
         self.check_conflicts()
+        self.calculate_duration()
 
     def on_update(self):
         """Update the corresponding Attendance Session when Class Schedule is updated"""
@@ -25,6 +26,13 @@ class ClassSchedule(Document):
         if self.from_time and self.to_time:
             if to_timedelta(self.from_time) >= to_timedelta(self.to_time):
                 frappe.throw("To Time must be after From Time")
+
+    def calculate_duration(self):
+        """Keep duration_hours in sync with from_time/to_time (it's a plain
+        read-only field with no fetch_from, so nothing else sets it)."""
+        if self.from_time and self.to_time:
+            duration_seconds = (to_timedelta(self.to_time) - to_timedelta(self.from_time)).total_seconds()
+            self.duration_hours = round(duration_seconds / 3600, 2)
 
     def validate_repeat_settings(self):
         """Validate repeat frequency and repeats_till"""
@@ -343,7 +351,6 @@ def get_timetable_data(term=None, course=None, start_date=None, end_date=None):
             "schedule_date",
             "from_time",
             "to_time",
-            "room",
             "venue",
             "color",
             "class_configuration",
@@ -351,7 +358,19 @@ def get_timetable_data(term=None, course=None, start_date=None, end_date=None):
         ],
         order_by="schedule_date, from_time",
     )
-    
+
+    # Class Schedule has no "room" field of its own - room lives on the
+    # linked Venue Booking, so resolve it in one bulk lookup.
+    venue_names = {s.venue for s in schedules if s.venue}
+    room_by_venue = {}
+    if venue_names:
+        room_by_venue = {
+            v.name: v.room
+            for v in frappe.get_all(
+                "Venue Booking", filters={"name": ["in", list(venue_names)]}, fields=["name", "room"]
+            )
+        }
+
     # Format for calendar
     events = []
     for schedule in schedules:
@@ -364,13 +383,13 @@ def get_timetable_data(term=None, course=None, start_date=None, end_date=None):
             "extendedProps": {
                 "course": schedule.course,
                 "instructor": schedule.instructor,
-                "room": schedule.room,
+                "room": room_by_venue.get(schedule.venue),
                 "venue": schedule.venue,
                 "class_configuration": schedule.class_configuration,
                 "student_group": schedule.student_group,
             }
         })
-    
+
     return events
 
 
@@ -391,7 +410,6 @@ def create_class_schedule(data):
         "schedule_date": data.get("schedule_date"),
         "from_time": data.get("from_time"),
         "to_time": data.get("to_time"),
-        "room": data.get("room"),
         "venue": data.get("venue"),
         "repeat_frequency": data.get("repeat_frequency", "Never"),
         "repeats_till": data.get("repeats_till"),

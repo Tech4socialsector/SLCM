@@ -12,12 +12,12 @@
   "student_name",
   "enrollment_date",
   "column_break_1",
-  "cohort",
+  "batch",
   "program",
   "academic_year",
   "term_name",
   "term_duration_weeks",
-  "batch_year_ref",
+  "section",
   "section_courses",
   "enrolled_courses",
   "section_advisor",
@@ -60,16 +60,15 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "cohort",
+   "fieldname": "section",
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Batch",
-   "options": "Batch",
-   "reqd": 1
+   "label": "Section",
+   "options": "Section"
   },
   {
-   "fetch_from": "cohort.program",
+   "fetch_from": "batch.program",
    "fieldname": "program",
    "fieldtype": "Link",
    "label": "Programme",
@@ -77,7 +76,7 @@
    "read_only": 1
   },
   {
-   "fetch_from": "cohort.academic_year",
+   "fetch_from": "batch.academic_year",
    "fieldname": "academic_year",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -87,16 +86,16 @@
    "read_only": 1
   },
   {
-   "fetch_from": "cohort.academic_term",
+   "fetch_from": "batch.academic_term",
    "fieldname": "term_name",
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Term Name",
+   "label": "Term",
    "read_only": 1
   },
   {
-   "fetch_from": "cohort.term_weeks",
+   "fetch_from": "batch.term_weeks",
    "fieldname": "term_duration_weeks",
    "fieldtype": "Int",
    "label": "Term Duration (Weeks)",
@@ -143,17 +142,19 @@
    "options": "Student Enrollment Course"
   },
   {
-   "fieldname": "batch_year_ref",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Batch"
-  },
-  {
    "fieldname": "user",
    "fieldtype": "Link",
    "label": "User",
    "options": "User"
+  },
+  {
+   "fieldname": "batch",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Batch",
+   "options": "Batch",
+   "reqd": 1
   }
  ],
  "links": [
@@ -173,7 +174,7 @@
    "link_fieldname": "student"
   }
  ],
- "modified": "2026-07-08 23:11:57.662233",
+ "modified": "2026-07-09 12:27:52.562911",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Enrollment",
