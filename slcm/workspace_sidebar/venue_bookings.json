@@ -109,9 +109,31 @@
    "link_type": "Report",
    "show_arrow": 0,
    "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Notification Settings",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Section Break"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "mail",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Email Templates",
+   "link_to": "Email Template",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-05-29 14:57:13.336484",
+ "modified": "2026-07-09 10:41:38.155180",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Venue Bookings",
