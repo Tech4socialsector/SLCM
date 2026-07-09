@@ -411,6 +411,79 @@ class AdmissionCycle(Document):
 
 
 @frappe.whitelist()
+def activate_cycle(name):
+    """
+    Activate a Draft admission cycle.
+    Sets status to 'Active' and docstatus to 1 (Submitted) atomically via db_set.
+    This ensures the list view never shows 'Draft' for an Active cycle.
+    """
+    if not name:
+        return {"success": False, "message": _("Missing Cycle Name")}
+
+    doc = frappe.get_doc("Admission Cycle", name)
+    if doc.status == "Active":
+        return {"success": True, "message": _("Cycle is already Active")}
+
+    # Conflict check: only one Active cycle at a time
+    existing_active = frappe.db.get_value(
+        "Admission Cycle",
+        {"status": "Active", "name": ("!=", doc.name)},
+        "cycle_name"
+    )
+    if existing_active:
+        return {
+            "success": False,
+            "message": _("Cycle <b>{0}</b> is already Active. Close it before activating this one.").format(existing_active),
+            "conflict_name": existing_active
+        }
+
+    try:
+        doc.db_set("status", "Active")
+        doc.db_set("docstatus", 1)  # Ensure Frappe treats this as Submitted
+        doc._log_audit_entry(
+            changed_field="Status",
+            previous_value=doc.status,
+            new_value="Active",
+            change_type="Status Change",
+            reason="Cycle Activated"
+        )
+        return {"success": True, "message": _("Admission Cycle activated successfully.")}
+    except Exception as e:
+        frappe.log_error(f"Activate Admission Cycle fail: {e}", "Admission Cycle")
+        return {"success": False, "message": str(e)}
+
+
+@frappe.whitelist()
+def close_cycle(name):
+    """
+    Close an Active admission cycle.
+    Only the custom `status` field is changed to 'Closed'.
+    docstatus is intentionally left at 1 (Submitted) so that Frappe
+    does NOT render 'Cancelled' in the list and form views.
+    """
+    if not name:
+        return {"success": False, "message": _("Missing Cycle Name")}
+
+    doc = frappe.get_doc("Admission Cycle", name)
+    if doc.status == "Closed":
+        return {"success": True, "message": _("Cycle is already Closed")}
+
+    try:
+        doc.db_set("status", "Closed")
+        doc._log_audit_entry(
+            changed_field="Status",
+            previous_value="Active",
+            new_value="Closed",
+            change_type="Status Change",
+            reason="Cycle Closed"
+        )
+        return {"success": True, "message": _("Admission Cycle closed successfully.")}
+    except Exception as e:
+        frappe.log_error(f"Close Admission Cycle fail: {e}", "Admission Cycle")
+        return {"success": False, "message": str(e)}
+
+
+@frappe.whitelist()
 def reopen_cycle(name):
     """
     Reopen a Closed admission cycle.
@@ -450,7 +523,7 @@ def reopen_cycle(name):
     # Perform the reopen
     try:
         doc.db_set("status", "Active")
-        doc.db_set("docstatus", 1)  # Restore to Submitted state
+        # docstatus stays at 1 (Submitted) — we never change it on close/reopen.
         doc._log_audit_entry(
             changed_field="Status",
             previous_value="Closed",
