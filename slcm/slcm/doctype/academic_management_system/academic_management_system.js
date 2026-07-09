@@ -403,7 +403,7 @@ frappe.ui.form.on("Academic Management System", {
 					label: "Section",
 					fieldname: "section",
 					fieldtype: "Link",
-					options: "Program Batch Section",
+					options: "Section",
 					description: "Optional: Link to a specific batch section",
 				},
 				{

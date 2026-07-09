@@ -84,13 +84,8 @@ def process_bulk_class_creation(
 	department, program, academic_year, batch, academic_term, course, class_type, faculty, user
 ):
 	sections = frappe.get_all(
-		"Program Batch Section",
-		filters={
-			"department": department,
-			"program": program,
-			"academic_year": academic_year,
-			"batch": batch,
-		},
+		"Section",
+		filters={"batch": batch},
 		fields=["name", "section_name", "capacity"],
 	)
 

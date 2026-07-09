@@ -36,28 +36,28 @@ frappe.ui.form.on("Student Enrollment", {
 			return;
 		}
 
-		// 4️⃣ Fetch Program curriculum then match each course to a Course Offering
-		frappe.db.get_doc("Programme", frm.doc.program).then((program_doc) => {
-			if (!program_doc.table_fela || program_doc.table_fela.length === 0) {
+		// 4️⃣ Fetch all Open Course Offerings for this cohort/batch directly
+		frappe.db.get_list("Course Offering", {
+			filters: [["cohort", "=", cohort], ["status", "=", "Open"]],
+			fields: ["name", "course_title"],
+		}).then((offerings) => {
+			if (!offerings.length) {
 				frm.refresh_field("enrolled_courses");
 				return;
 			}
 
-			const courses = program_doc.table_fela.map(pc => pc.course).filter(Boolean);
+			frappe.db.get_list("Course", {
+				filters: [["name", "in", offerings.map(o => o.course_title)]],
+				fields: ["name", "course_type"],
+			}).then((courses) => {
+				const course_type_map = {};
+				courses.forEach(c => { course_type_map[c.name] = c.course_type; });
 
-			frappe.db.get_list("Course Offering", {
-				filters: [["cohort", "=", cohort], ["course_title", "in", courses]],
-				fields: ["name", "course_title", "course_name"],
-			}).then((offerings) => {
-				const offering_map = {};
-				offerings.forEach(o => { offering_map[o.course_title] = o.name; });
-
-				program_doc.table_fela.forEach((pc) => {
-					const offering = offering_map[pc.course];
-					if (!offering) return;
+				offerings.forEach((offering) => {
 					const row = frm.add_child("enrolled_courses");
-					frappe.model.set_value(row.doctype, row.name, "course_offering", offering);
-					frappe.model.set_value(row.doctype, row.name, "course_type", pc.course_type || "");
+					frappe.model.set_value(row.doctype, row.name, "course_offering", offering.name);
+					frappe.model.set_value(row.doctype, row.name, "course", offering.course_title);
+					frappe.model.set_value(row.doctype, row.name, "course_type", course_type_map[offering.course_title] || "");
 					frappe.model.set_value(row.doctype, row.name, "status", "Enrolled");
 				});
 

@@ -102,7 +102,7 @@
    "fieldname": "section",
    "fieldtype": "Link",
    "label": "Section",
-   "options": "Program Batch Section"
+   "options": "Section"
   },
   {
    "default": "Active",
