@@ -81,7 +81,7 @@ frappe.ui.form.on("PACE Application", {
         pace_setup_address_link_queries(frm);
 
         if (!frm.is_new()) {
-            frm.add_custom_button(__("View Invoice"), function() {
+            frm.add_custom_button(__("Application Fee Invoice"), function() {
                 frappe.call({
                     method: "frappe.client.get_value",
                     args: {
@@ -94,11 +94,30 @@ frappe.ui.form.on("PACE Application", {
                             const url = `/printview?doctype=PACE%20Applicant%20Fee%20Assignment&name=${encodeURIComponent(r.message.name)}&format=PACE%20Payment%20Invoice&trigger_print=0`;
                             window.open(url, "_blank");
                         } else {
-                            frappe.msgprint(__("No PACE Applicant Fee Assignment found for this application's fee."));
+                            frappe.msgprint(__("No Application Fee Assignment found for this application."));
                         }
                     }
                 });
-            });
+            }, __("View Invoice"));
+
+            frm.add_custom_button(__("Course Fee Invoice"), function() {
+                frappe.call({
+                    method: "frappe.client.get_value",
+                    args: {
+                        doctype: "PACE Applicant Fee Assignment",
+                        filters: { applicant: frm.doc.name, fee_type: "Course Fee" },
+                        fieldname: "name"
+                    },
+                    callback: function(r) {
+                        if (r.message && r.message.name) {
+                            const url = `/printview?doctype=PACE%20Applicant%20Fee%20Assignment&name=${encodeURIComponent(r.message.name)}&format=PACE%20Payment%20Invoice&trigger_print=0`;
+                            window.open(url, "_blank");
+                        } else {
+                            frappe.msgprint(__("No Course Fee Assignment found for this application."));
+                        }
+                    }
+                });
+            }, __("View Invoice"));
         }
 
         if (!frm.doc.__islocal) {
