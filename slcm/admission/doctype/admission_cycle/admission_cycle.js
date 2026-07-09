@@ -155,6 +155,11 @@ frappe.ui.form.on("Admission Cycle", {
             colors[frm.doc.status] || "gray"
         );
 
+        // Override the Frappe breadcrumb/header status pill (which defaults to
+        // docstatus-derived labels like "Cancelled") with the custom status field.
+        frm.page.set_indicator(__(frm.doc.status), colors[frm.doc.status] || "gray");
+
+
         // Intro messages
         if (frm.doc.status === "Active") {
             frm.set_intro(__("This admission cycle is currently <b>Active</b>. It is visible on the applicant portal."));
@@ -265,27 +270,24 @@ frappe.ui.form.on("Admission Cycle", {
 
                     frappe.confirm(build_close_confirm_msg(), function () {
                         frappe.call({
-                            method: "frappe.client.set_value",
+                            method: "slcm.admission.doctype.admission_cycle.admission_cycle.close_cycle",
                             args: {
-                                doctype: "Admission Cycle",
-                                name: frm.doc.name,
-                                fieldname: "status",
-                                value: "Closed"
+                                name: frm.doc.name
                             },
-                            callback: function () {
-                                // Also update docstatus to Closed (submitted → cancelled equivalent)
-                                frappe.call({
-                                    method: "frappe.client.set_value",
-                                    args: {
-                                        doctype: "Admission Cycle",
-                                        name: frm.doc.name,
-                                        fieldname: "docstatus",
-                                        value: 2  // Cancelled = Closed in Frappe
-                                    },
-                                    callback: function () {
-                                        frm.reload_doc();
-                                    }
-                                });
+                            callback: function (r) {
+                                if (r.message && r.message.success) {
+                                    frappe.show_alert({
+                                        message: r.message.message,
+                                        indicator: "green"
+                                    });
+                                } else if (r.message && !r.message.success) {
+                                    frappe.msgprint({
+                                        title: __("Error"),
+                                        message: r.message.message,
+                                        indicator: "red"
+                                    });
+                                }
+                                frm.reload_doc();
                             }
                         });
                     });
