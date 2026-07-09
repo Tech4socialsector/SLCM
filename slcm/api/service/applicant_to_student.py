@@ -120,6 +120,23 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
         if derived_year:
             student.academic_year = derived_year
 
+    # ── Batch Assignment ───────────────────────────────────────────────────────
+    if program and student.academic_year:
+        batch_data = frappe.db.get_value(
+            "Batch",
+            {
+                "program": program,
+                "academic_year": student.academic_year,
+                "status": "Active"
+            },
+            ["name", "academic_term"],
+            as_dict=True
+        )
+        if batch_data:
+            student.programme = batch_data.name
+            if batch_data.academic_term:
+                student.academic_term = batch_data.academic_term
+
     # ── Name: full candidate_name in first_name only (no split) ──────────────
     full_name = (applicant.get("candidate_name") or "").strip()
     student.first_name = full_name if full_name else (applicant.name or "Applicant")
