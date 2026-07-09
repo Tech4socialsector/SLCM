@@ -117,7 +117,7 @@ class EntranceTestGeneration(Document):
                         <strong style="color: #444;">Diagnostic Summary:</strong><br>
                         The system identified <b>{count_total} total applicants</b> matching this configuration. However, none were selected because they may be:
                         <ul style="margin-top: 5px; padding-left: 18px;">
-                            <li>Assigned to a different Program or Program Level</li>
+                            <li>Assigned to a different Programme or Programme Level</li>
                             <li>Already included in an existing Entrance Test List</li>
                             <li>Marked as 'Exempt' from the Entrance Test</li>
                             <li>Rejected or in an ineligible application status</li>
