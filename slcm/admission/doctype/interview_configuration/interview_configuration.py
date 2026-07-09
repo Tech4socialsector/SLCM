@@ -127,7 +127,7 @@ class InterviewConfiguration(Document):
             FROM `tabApplicant` app
             INNER JOIN `tabEligibility Evaluation` ee
                     ON ee.applicant_name = app.name
-            INNER JOIN `tabProgram` p
+            INNER JOIN `tabProgramme` p
                     ON p.name = app.program
             WHERE
                 app.academic_year    = %(academic_year)s
@@ -321,7 +321,7 @@ class InterviewConfiguration(Document):
             frappe.throw(msg, title=_("Generation Failed"))
 
         # Determine level_of_study from first chosen program
-        program_levels = {frappe.db.get_value("Program", p.program, "level_of_study") for p in self.program if p.program}
+        program_levels = {frappe.db.get_value("Programme", p.program, "level_of_study") for p in self.program if p.program}
         program_levels = {l for l in program_levels if l}
         program_level = list(program_levels)[0] if program_levels else "Undergraduate"
 

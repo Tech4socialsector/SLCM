@@ -13,14 +13,14 @@
    "fieldname": "program",
    "fieldtype": "Link",
    "label": "Programme",
-   "options": "Program"
+   "options": "Programme"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-07-08 10:48:00",
+ "modified": "2026-07-09 11:13:41.406466",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Configuration Program",

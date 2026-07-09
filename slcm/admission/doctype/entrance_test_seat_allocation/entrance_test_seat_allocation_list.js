@@ -71,7 +71,7 @@ frappe.listview_settings['Entrance Test Seat Allocation'] = {
                                 reqd: 1
                             },
                             {
-                                label: __("Program Level"),
+                                label: __("Programme Level"),
                                 fieldname: "program_level",
                                 fieldtype: "Select",
                                 options: "Undergraduate\nPostgraduate\nResearch Course",
@@ -81,7 +81,7 @@ frappe.listview_settings['Entrance Test Seat Allocation'] = {
                                 label: __("Programme"),
                                 fieldname: "program",
                                 fieldtype: "Link",
-                                options: "Program",
+                                options: "Programme",
                                 depends_on: "eval:doc.program_level"
                             },
                             {
@@ -222,7 +222,7 @@ function _show_reschedule_dialog(listview, all_providers) {
             // ── Filters (horizontal 4-column) ─────────────────────────────────
             { fieldtype: 'Section Break', label: __('Filters') },
             {
-                label: __('Program Level'),
+                label: __('Programme Level'),
                 fieldname: 'program_level',
                 fieldtype: 'Select',
                 options: 'Undergraduate\nPostgraduate\nResearch Course',
@@ -467,7 +467,7 @@ function fetch_absent_applicants(d) {
                                 <th style="width:40px;"></th>
                                 <th>Candidate Name</th>
                                 <th>Applicant ID</th>
-                                <th>Program</th>
+                                <th>Programme</th>
                             </tr>
                         </thead>
                         <tbody>`;

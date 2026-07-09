@@ -189,7 +189,7 @@ def get_program_query(doctype, txt, searchfield, start, page_len, filters):
 
     return frappe.db.sql(f"""
         SELECT DISTINCT p.name, p.program_name
-        FROM `tabProgram` p
+        FROM `tabProgramme` p
         INNER JOIN `tabAdmission Cycle Program` ac_p ON ac_p.program = p.name
         WHERE ac_p.parent = %(admission_cycle)s
           {level_filter}
