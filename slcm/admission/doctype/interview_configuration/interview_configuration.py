@@ -326,7 +326,7 @@ class InterviewConfiguration(Document):
                 f"<b>{_('Possible reasons for no candidates')}:</b><br>"
                 f"• {_('Applicants are already included in an existing Interview List.')}<br>"
                 f"• {_('Applicants are exempted from the Interview stage.')}<br>"
-                f"• {_('The selected Programs do not offer an Interview stage.')}<br>"
+                f"• {_('The selected Programmes do not offer an Interview stage.')}<br>"
                 f"• {_('Applicants have an incomplete application or were rejected.')}<br>"
                 f"</div>"
             )

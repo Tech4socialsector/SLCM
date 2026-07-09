@@ -42,7 +42,7 @@ frappe.ui.form.on("Entrance Test Generation", {
 
                 // Optional: extra client-side confirmation / validation
                 if (!frm.doc.program_level) {
-                    frappe.throw("Please select Program Level before generating");
+                    frappe.throw("Please select Programme Level before generating");
                     return;
                 }
 
