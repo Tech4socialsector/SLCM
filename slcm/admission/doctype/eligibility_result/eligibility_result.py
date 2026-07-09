@@ -315,7 +315,7 @@ def get_applicant_data():
         # Fetch Merit List Entries
         merit_entries = frappe.get_all("Merit List Applicant",
             filters={"applicant_id": res['applicant_id']},
-            fields=["total_score", "overall_rank", "program_rank", "status", "parent"]
+            fields=["total_score", "overall_rank", "category_rank", "status", "parent"]
         )
         for m in merit_entries:
             if m.get("parent"):
