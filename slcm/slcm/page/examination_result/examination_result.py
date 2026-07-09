@@ -966,7 +966,7 @@ def get_student_hover_info(student, course):
 	cohort_name = ""
 	if sm.get("programme"):
 		cohort_name = (
-			frappe.db.get_value("Cohort", sm["programme"], "cohort_name")
+			frappe.db.get_value("Batch", sm["programme"], "cohort_name")
 			or sm["programme"]
 		)
 
@@ -1348,7 +1348,7 @@ def get_student_profile(student):
 	# Get cohort/programme label
 	cohort_name = ""
 	if sm.get("programme"):
-		cohort_name = frappe.db.get_value("Cohort", sm["programme"], "cohort_name") or sm["programme"]
+		cohort_name = frappe.db.get_value("Batch", sm["programme"], "cohort_name") or sm["programme"]
 	sm["cohort_name"] = cohort_name
 	return sm
 

@@ -2162,8 +2162,8 @@ class SLCMAnalyticsDashboard {
 			'students:reg_status':            { dt: 'Student Master',                filters: f('student_status') },
 			'students:gender':                { dt: 'Student Master',                filters: f('gender') },
 			'students:cohort':                { dt: 'Student Master',                filters: {} },
-			'students:programs_list':         { dt: 'Program',                       filters: {} },
-			'students:cohorts_list':          { dt: 'Cohort',                        filters: {} },
+			'students:programs_list':         { dt: 'Programme',                       filters: {} },
+			'students:cohorts_list':          { dt: 'Batch',                        filters: {} },
 
 			// ── Admission ────────────────────────────────────────────────
 			'admission:app_status':           { dt: 'Admission Application',         filters: f('status') },
@@ -2206,10 +2206,10 @@ class SLCMAnalyticsDashboard {
 			'examination:barcode_course':     { dt: 'Exam Barcode',                  filters: f('course') },
 
 			// ── Programme ────────────────────────────────────────────────
-			'programme:program_status':       { dt: 'Program',                       filters: f('program_status') },
-			'programme:level_of_study':       { dt: 'Program',                       filters: f('level_of_study') },
-			'programme:department':           { dt: 'Program',                       filters: f('department') },
-			'programme:cohort_status':        { dt: 'Cohort',                        filters: f('status') },
+			'programme:program_status':       { dt: 'Programme',                       filters: f('program_status') },
+			'programme:level_of_study':       { dt: 'Programme',                       filters: f('level_of_study') },
+			'programme:department':           { dt: 'Programme',                       filters: f('department') },
+			'programme:cohort_status':        { dt: 'Batch',                        filters: f('status') },
 			'programme:enrollment_status':    { dt: 'Student Enrollment',            filters: f('enrollment_status') },
 			'programme:course_enroll_status': { dt: 'Student Enrollment',            filters: f('enrollment_status') },
 			'programme:program_enrollment':   { dt: 'Student Enrollment',            filters: {} },

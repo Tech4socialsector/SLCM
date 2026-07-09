@@ -22,13 +22,6 @@
   "late_entry_buffer_minutes": 15,
   "minimum_attendance_percentage": 75.0,
   "modified": "2026-06-23 10:40:36.287251",
-  "mssql_database": "etpdb",
-  "mssql_last_processed_id": 1699905,
-  "mssql_password": "********",
-  "mssql_port": 1433,
-  "mssql_server": "192.168.10.10",
-  "mssql_username": "ajim",
-  "mssql_view": "dbo.iclock_trans_ajim",
   "name": "Attendance Settings",
   "parent_alert_active_days": [
    {

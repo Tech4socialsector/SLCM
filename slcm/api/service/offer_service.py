@@ -803,7 +803,7 @@ class OfferService:
             
         if offer.program:
             try:
-                context["program"] = frappe.get_doc("Program", offer.program)
+                context["program"] = frappe.get_doc("Programme", offer.program)
             except Exception:
                 pass
             

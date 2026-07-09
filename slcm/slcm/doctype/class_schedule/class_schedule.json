@@ -88,8 +88,8 @@
    "fieldname": "programme",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Program",
-   "options": "Program"
+   "label": "Programme",
+   "options": "Programme"
   },
   {
    "fieldname": "course",

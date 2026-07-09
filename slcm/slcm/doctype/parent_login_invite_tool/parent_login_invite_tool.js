@@ -1,17 +1,33 @@
 frappe.ui.form.on("Parent Login Invite Tool", {
+    onload(frm) {
+        frm.set_query("batch", () => {
+            const filters = {};
+            if (frm.doc.academic_year) filters.academic_year = frm.doc.academic_year;
+            return { filters };
+        });
+    },
+
     get_students_btn(frm) {
-        frappe.dom.freeze("Fetching students…");
-        frm.call("get_students")
-            .then(r => {
-                frappe.dom.unfreeze();
-                const count = r.message || 0;
-                frappe.show_alert({
-                    message: `${count} parent record(s) loaded.`,
-                    indicator: "blue",
-                });
-                frm.refresh();
-            })
-            .catch(() => frappe.dom.unfreeze());
+        const fetch_students = () => {
+            frappe.dom.freeze("Fetching students…");
+            frm.call("get_students")
+                .then(r => {
+                    const count = r.message || 0;
+                    frappe.show_alert({
+                        message: `${count} parent record(s) loaded.`,
+                        indicator: "blue",
+                    });
+                    return frm.reload_doc();
+                })
+                .then(() => frappe.dom.unfreeze())
+                .catch(() => frappe.dom.unfreeze());
+        };
+
+        if (frm.is_new() || frm.is_dirty()) {
+            frm.save().then(fetch_students);
+        } else {
+            fetch_students();
+        }
     },
 
     send_invites_btn(frm) {
@@ -31,7 +47,6 @@ frappe.ui.form.on("Parent Login Invite Tool", {
                 frappe.dom.freeze("Sending invites…");
                 frm.call("send_invites")
                     .then(r => {
-                        frappe.dom.unfreeze();
                         const { invited, failed, skipped } = r.message || {};
                         frappe.msgprint({
                             title: __("Invites Sent"),
@@ -42,8 +57,9 @@ frappe.ui.form.on("Parent Login Invite Tool", {
                             `,
                             indicator: failed ? "orange" : "green",
                         });
-                        frm.refresh();
+                        return frm.reload_doc();
                     })
+                    .then(() => frappe.dom.unfreeze())
                     .catch(() => frappe.dom.unfreeze());
             }
         );

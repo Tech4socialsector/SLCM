@@ -10,7 +10,7 @@ class TestAdmissionApplication(unittest.TestCase):
         self.test_cycle = frappe.db.get_value(
             "Admission Cycle", {"status": "Active"}, "name"
         )
-        self.test_program = frappe.db.get_value("Program", {}, "name")
+        self.test_program = frappe.db.get_value("Programme", {}, "name")
 
     def test_create_application(self):
         """Test basic application creation"""

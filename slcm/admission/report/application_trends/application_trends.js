@@ -29,9 +29,9 @@ frappe.query_reports["Application Trends"] = {
 		},
 		{
 			"fieldname": "program",
-			"label": __("Program"),
+			"label": __("Programme"),
 			"fieldtype": "Link",
-			"options": "Program"
+			"options": "Programme"
 		},
 		{
 			"fieldname": "group_by",

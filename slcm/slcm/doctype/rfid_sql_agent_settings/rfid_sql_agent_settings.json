@@ -9,6 +9,8 @@
   "college_id",
   "cp_url",
   "column_break_general",
+  "poll_interval_seconds",
+  "last_polled_at",
   "batch_size",
   "add_to_deviceid",
   "is_deviceid_zero_padded",
@@ -43,7 +45,14 @@
   "cp_smtp_port",
   "cp_mail_username",
   "cp_mail_password",
-  "mail_subject"
+  "mail_subject",
+  "tab_remote_sync",
+  "remote_sync_note",
+  "enable_remote_push",
+  "remote_site_url",
+  "column_break_remote",
+  "remote_api_key",
+  "remote_api_secret"
  ],
  "fields": [
   {
@@ -73,6 +82,20 @@
   {
    "fieldname": "column_break_general",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "300",
+   "description": "How often to pull new swipes. The background scheduler ticks every minute (Frappe's finest interval), so this value is rounded up to a minimum of 60 seconds — e.g. 90 still means every 2 minutes.",
+   "fieldname": "poll_interval_seconds",
+   "fieldtype": "Int",
+   "label": "Poll Interval (seconds)"
+  },
+  {
+   "description": "When the poller last actually ran (based on Poll Interval above). Updated automatically.",
+   "fieldname": "last_polled_at",
+   "fieldtype": "Datetime",
+   "label": "Last Polled At",
+   "read_only": 1
   },
   {
    "default": "20",
@@ -289,6 +312,47 @@
    "fieldname": "mail_subject",
    "fieldtype": "Data",
    "label": "Mail Subject"
+  },
+  {
+   "fieldname": "tab_remote_sync",
+   "fieldtype": "Tab Break",
+   "label": "Remote Sync"
+  },
+  {
+   "fieldname": "remote_sync_note",
+   "fieldtype": "HTML",
+   "label": "Remote Sync Note",
+   "options": "<div style=\"background:#e8e9f0; border-left:4px solid #2b2e4a; border-radius:6px; padding:14px 16px; font-size:.84rem; line-height:1.8; color:#333\"><strong>Push to a live/cloud site</strong><br><br>If the campus SQL Server is only reachable from this machine (e.g. over a VPN a cloud-hosted site can't run), enable this to also forward every newly pulled punch to a remote SLCM site over its REST API, immediately after it's pulled here. Create an API Key/Secret on the remote site (User → API Access) and paste them below.</div>"
+  },
+  {
+   "default": "0",
+   "description": "Forward every newly pulled punch to the remote site below via its REST API.",
+   "fieldname": "enable_remote_push",
+   "fieldtype": "Check",
+   "label": "Enable Remote Push"
+  },
+  {
+   "depends_on": "eval:doc.enable_remote_push==1",
+   "description": "Base URL of the remote SLCM site, e.g. https://uat-slcm.m.frappe.cloud (no trailing slash).",
+   "fieldname": "remote_site_url",
+   "fieldtype": "Data",
+   "label": "Remote Site URL"
+  },
+  {
+   "fieldname": "column_break_remote",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.enable_remote_push==1",
+   "fieldname": "remote_api_key",
+   "fieldtype": "Data",
+   "label": "Remote API Key"
+  },
+  {
+   "depends_on": "eval:doc.enable_remote_push==1",
+   "fieldname": "remote_api_secret",
+   "fieldtype": "Password",
+   "label": "Remote API Secret"
   }
  ],
  "issingle": 1,

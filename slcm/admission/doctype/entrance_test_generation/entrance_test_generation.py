@@ -61,7 +61,7 @@ class EntranceTestGeneration(Document):
                 COALESCE(ee.exempts_interview, 0) AS exempts_interview
             FROM `tabApplicant` app
             LEFT JOIN `tabEligibility Evaluation` ee ON ee.applicant_name = app.name
-            INNER JOIN `tabProgram` p ON p.name = app.program
+            INNER JOIN `tabProgramme` p ON p.name = app.program
             WHERE 
                 app.academic_year = %(academic_year)s
                 AND app.campus = %(campus)s
@@ -189,7 +189,7 @@ def get_program_query(doctype, txt, searchfield, start, page_len, filters):
 
     return frappe.db.sql(f"""
         SELECT DISTINCT p.name, p.program_name
-        FROM `tabProgram` p
+        FROM `tabProgramme` p
         INNER JOIN `tabAdmission Cycle Program` ac_p ON ac_p.program = p.name
         WHERE ac_p.parent = %(admission_cycle)s
           {level_filter}

@@ -1,6 +1,8 @@
 [pre_model_sync]
 # Patches added in this section will be executed before doctypes are migrated
 # Read docs to understand patches: https://frappeframework.com/docs/v14/user/en/database-migrations
+slcm.patches.v2_0.rename_program_to_programme
+slcm.patches.v2_0.rename_cohort_to_batch
 
 [post_model_sync]
 
@@ -33,3 +35,4 @@ slcm.patches.v2_0.migrate_pace_admission_fee_to_course_fee
 slcm.patches.v2_0.enable_portal_navigation_menus_by_default
 slcm.patches.v2_0.set_web_form_field_label_max_length
 slcm.patches.v2_0.update_parent_portal_sidebar_colours
+slcm.patches.v2_0.backfill_batch_enrolled_count

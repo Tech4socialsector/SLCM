@@ -13,6 +13,7 @@ frappe.listview_settings["Student Master"] = {
 		add_bulk_delete_button(listview);
 		add_bulk_enroll_button(listview);
 		add_download_slip_button(listview);
+		add_generate_student_id_button(listview);
 		// Ensure status column is visible
 		ensure_status_column_visible(listview);
 	},
@@ -610,4 +611,317 @@ function inject_status_css() {
 	`;
 
 	document.head.appendChild(style);
+}
+
+/* --------------------------------------------------
+   List View → Generate Student ID (Bulk Upload / Auto Generate)
+-------------------------------------------------- */
+function add_generate_student_id_button(listview) {
+	const btn = listview.page.add_inner_button(__("Generate Student ID"), function () {
+		show_generate_id_chooser(listview);
+	});
+
+	btn.css({
+		"background-color": "#000",
+		"color": "#fff",
+		"border-color": "#000",
+		"box-shadow": "none",
+	});
+}
+
+function show_generate_id_chooser(listview) {
+	const chooser = new frappe.ui.Dialog({
+		title: __("Generate Student ID"),
+		fields: [
+			{
+				fieldtype: "HTML",
+				options: `
+					<div style="display:flex; gap:12px;">
+						<button class="btn btn-default" id="gen-id-bulk-upload" style="flex:1; height:76px; text-align:left; padding:10px 14px;">
+							<div style="font-weight:600;">${__("Bulk Upload")}</div>
+							<div style="font-size:12px; color:#6b7280; white-space:normal;">
+								${__("Download a template with existing students, fill in Student IDs, upload back")}
+							</div>
+						</button>
+						<button class="btn btn-default" id="gen-id-auto-generate" style="flex:1; height:76px; text-align:left; padding:10px 14px;">
+							<div style="font-weight:600;">${__("Auto Generate")}</div>
+							<div style="font-size:12px; color:#6b7280; white-space:normal;">
+								${__("Filter by Programme / Academic Year / Term and auto-assign IDs")}
+							</div>
+						</button>
+					</div>
+				`,
+			},
+		],
+	});
+
+	chooser.show();
+	chooser.$wrapper.find("#gen-id-bulk-upload").on("click", () => {
+		chooser.hide();
+		show_bulk_upload_dialog(listview);
+	});
+	chooser.$wrapper.find("#gen-id-auto-generate").on("click", () => {
+		chooser.hide();
+		show_auto_generate_dialog(listview);
+	});
+}
+
+function fetch_batch_filter_options(callback) {
+	frappe.call({
+		method: "slcm.slcm.doctype.student_master.student_master.get_batch_filter_options",
+		freeze: true,
+		freeze_message: __("Loading Batches..."),
+		callback: function (r) {
+			const options = r.message || [];
+			if (!options.length) {
+				frappe.msgprint({
+					title: __("No Batches"),
+					message: __("No Batch records found to filter by."),
+					indicator: "orange",
+				});
+				return;
+			}
+			callback(options);
+		},
+	});
+}
+
+function wire_programme_cascade(dialog, options, { includeBlank }) {
+	const blank = includeBlank ? [""] : [];
+	const programmes = [...new Set(options.map((o) => o.programme_label))];
+	dialog.set_df_property("programme", "options", [...blank, ...programmes]);
+
+	dialog.fields_dict.programme.df.change = function () {
+		const prog = dialog.get_value("programme");
+		const years = [...new Set(
+			options.filter((o) => o.programme_label === prog).map((o) => o.academic_year)
+		)];
+		dialog.set_df_property("academic_year", "options", [...blank, ...years]);
+		dialog.set_value("academic_year", "");
+		dialog.set_df_property("term_name", "options", blank);
+		dialog.set_value("term_name", "");
+	};
+
+	dialog.fields_dict.academic_year.df.change = function () {
+		const prog = dialog.get_value("programme");
+		const ay = dialog.get_value("academic_year");
+		const terms = [...new Set(
+			options
+				.filter((o) => o.programme_label === prog && o.academic_year === ay)
+				.map((o) => o.term_name)
+		)];
+		dialog.set_df_property("term_name", "options", [...blank, ...terms]);
+		dialog.set_value("term_name", "");
+	};
+}
+
+function resolve_selected_batches(dialog, options) {
+	const prog = dialog.get_value("programme");
+	const ay = dialog.get_value("academic_year");
+	const term = dialog.get_value("term_name");
+	if (!prog || !ay || !term) return null;
+	return options
+		.filter((o) => o.programme_label === prog && o.academic_year === ay && o.term_name === term)
+		.map((o) => o.batch);
+}
+
+/* ---------------- Auto Generate ---------------- */
+
+function show_auto_generate_dialog(listview) {
+	fetch_batch_filter_options((options) => render_auto_generate_dialog(listview, options));
+}
+
+function render_auto_generate_dialog(listview, options) {
+	let dialog;
+	dialog = new frappe.ui.Dialog({
+		title: __("Auto Generate Student IDs"),
+		size: "large",
+		fields: [
+			{ fieldtype: "Select", fieldname: "programme", label: __("Programme"), options: [], reqd: 1 },
+			{ fieldtype: "Select", fieldname: "academic_year", label: __("Academic Year"), options: [], reqd: 1 },
+			{ fieldtype: "Column Break" },
+			{ fieldtype: "Select", fieldname: "term_name", label: __("Term"), options: [], reqd: 1 },
+			{ fieldtype: "Button", fieldname: "load_preview", label: __("Show Students") },
+			{ fieldtype: "Section Break" },
+			{ fieldtype: "HTML", fieldname: "preview_html" },
+		],
+		primary_action_label: __("Proceed"),
+		primary_action() {
+			if (!dialog._preview || !dialog._preview.length) {
+				frappe.msgprint({
+					message: __("Load the student preview first."),
+					indicator: "orange",
+				});
+				return;
+			}
+			frappe.confirm(
+				__(
+					"This will (re)assign Student IDs for all {0} student(s) shown, in alphabetical order. " +
+					"Any student already having an ID may be renumbered. Continue?",
+					[dialog._preview.length]
+				),
+				() => {
+					frappe.call({
+						method: "slcm.slcm.doctype.student_master.student_master.apply_student_ids",
+						args: { assignments: dialog._preview },
+						freeze: true,
+						freeze_message: __("Updating Student IDs..."),
+						callback: function (r) {
+							frappe.show_alert({
+								message: __("Updated {0} student(s)", [(r.message || {}).updated || 0]),
+								indicator: "green",
+							});
+							dialog.hide();
+							listview.refresh();
+						},
+					});
+				}
+			);
+		},
+	});
+
+	wire_programme_cascade(dialog, options, { includeBlank: false });
+
+	dialog.fields_dict.load_preview.$input.on("click", function () {
+		const batches = resolve_selected_batches(dialog, options);
+		if (!batches || !batches.length) {
+			frappe.msgprint({
+				message: __("Select Programme, Academic Year and Term first."),
+				indicator: "orange",
+			});
+			return;
+		}
+
+		frappe.call({
+			method: "slcm.slcm.doctype.student_master.student_master.preview_student_ids",
+			args: { batches },
+			freeze: true,
+			freeze_message: __("Generating preview..."),
+			callback: function (r) {
+				const rows = r.message || [];
+				dialog._preview = rows;
+				render_student_id_preview_table(dialog.fields_dict.preview_html, rows);
+			},
+		});
+	});
+
+	dialog.show();
+}
+
+function render_student_id_preview_table(field, rows) {
+	if (!rows.length) {
+		field.$wrapper.html(
+			`<div class="text-muted">${__("No students found in this Batch.")}</div>`
+		);
+		return;
+	}
+	let html = `<table class="table table-bordered">
+		<thead><tr><th>${__("Student Name")}</th><th>${__("Current ID")}</th><th>${__("Proposed Student ID")}</th></tr></thead>
+		<tbody>`;
+	rows.forEach((r) => {
+		const changed = r.current_id && r.current_id !== r.student_id;
+		const current = r.current_id
+			? `<span style="${changed ? "text-decoration:line-through;color:#9ca3af;" : ""}">${frappe.utils.escape_html(r.current_id)}</span>`
+			: `<span class="text-muted">${__("None")}</span>`;
+		html += `<tr><td>${frappe.utils.escape_html(r.student_name)}</td><td>${current}</td><td><b>${frappe.utils.escape_html(r.student_id)}</b></td></tr>`;
+	});
+	html += "</tbody></table>";
+	field.$wrapper.html(html);
+}
+
+/* ---------------- Bulk Upload ---------------- */
+
+function show_bulk_upload_dialog(listview) {
+	fetch_batch_filter_options((options) => render_bulk_upload_dialog(listview, options));
+}
+
+function render_bulk_upload_dialog(listview, options) {
+	let dialog;
+	dialog = new frappe.ui.Dialog({
+		title: __("Bulk Upload Student IDs"),
+		size: "large",
+		fields: [
+			{
+				fieldtype: "HTML",
+				options: `<div class="text-muted" style="margin-bottom:8px;">
+					${__("Leave the filters blank to include all students, or narrow down to one Batch before downloading the template.")}
+				</div>`,
+			},
+			{ fieldtype: "Select", fieldname: "programme", label: __("Programme"), options: [] },
+			{ fieldtype: "Select", fieldname: "academic_year", label: __("Academic Year"), options: [] },
+			{ fieldtype: "Column Break" },
+			{ fieldtype: "Select", fieldname: "term_name", label: __("Term"), options: [] },
+			{ fieldtype: "Button", fieldname: "download_template", label: __("Download Sample Template") },
+			{ fieldtype: "Section Break" },
+			{ fieldtype: "Attach", fieldname: "filled_file", label: __("Upload Filled Template") },
+		],
+		primary_action_label: __("Upload"),
+		primary_action() {
+			const file_url = dialog.get_value("filled_file");
+			if (!file_url) {
+				frappe.msgprint({
+					message: __("Please attach the filled template first."),
+					indicator: "orange",
+				});
+				return;
+			}
+			frappe.call({
+				method: "slcm.slcm.doctype.student_master.student_master.upload_student_ids_bulk",
+				args: { file_url },
+				freeze: true,
+				freeze_message: __("Processing upload..."),
+				callback: function (r) {
+					const res = r.message || {};
+					let msg = __("Updated {0} student(s).", [res.updated || 0]);
+					if (res.skipped && res.skipped.length) {
+						msg += `<br>${__("Skipped (not found)")}: ${res.skipped.join(", ")}`;
+					}
+					frappe.msgprint({
+						title: __("Upload Complete"),
+						message: msg,
+						indicator: res.skipped && res.skipped.length ? "orange" : "green",
+					});
+					dialog.hide();
+					listview.refresh();
+				},
+			});
+		},
+	});
+
+	wire_programme_cascade(dialog, options, { includeBlank: true });
+
+	dialog.fields_dict.download_template.$input.on("click", function () {
+		const batches = resolve_selected_batches(dialog, options);
+
+		frappe.call({
+			method: "slcm.slcm.doctype.student_master.student_master.download_student_id_bulk_template",
+			args: { batches },
+			freeze: true,
+			freeze_message: __("Preparing template..."),
+			callback: function (r) {
+				const res = r.message;
+				if (!res) return;
+				download_base64_file(res.content, res.filename, res.mime);
+			},
+		});
+	});
+
+	dialog.show();
+}
+
+function download_base64_file(base64_content, filename, mime) {
+	const byteChars = atob(base64_content);
+	const byteNumbers = new Array(byteChars.length);
+	for (let i = 0; i < byteChars.length; i++) {
+		byteNumbers[i] = byteChars.charCodeAt(i);
+	}
+	const byteArray = new Uint8Array(byteNumbers);
+	const blob = new Blob([byteArray], { type: mime });
+	const a = document.createElement("a");
+	a.href = URL.createObjectURL(blob);
+	a.download = filename;
+	document.body.appendChild(a);
+	a.click();
+	a.remove();
+	URL.revokeObjectURL(a.href);
 }

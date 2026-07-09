@@ -47,7 +47,7 @@ frappe.pages["fee-reminder-tool"].on_page_load = function (wrapper) {
 		</select>
 	</div>`).appendTo($filters).find("select");
 
-	const $program = _select("Program", "program",
+	const $program = _select("Programme", "program",
 		Promise.resolve([]).then(() => window._frt_opts ? window._frt_opts.programs : []));
 	const $year    = _select("Academic Year", "academic_year",
 		Promise.resolve([]).then(() => window._frt_opts ? window._frt_opts.academic_years : []));

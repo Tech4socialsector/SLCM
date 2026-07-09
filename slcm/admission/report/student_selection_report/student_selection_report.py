@@ -37,10 +37,10 @@ def get_columns():
             "width": 100
         },
         {
-            "label": _("Program"),
+            "label": _("Programme"),
             "fieldname": "program",
             "fieldtype": "Link",
-            "options": "Program",
+            "options": "Programme",
             "width": 120
         },
         {

@@ -14,7 +14,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Degree Name",
-   "options": "Program"
+   "options": "Programme"
   }
  ],
  "grid_page_length": 50,

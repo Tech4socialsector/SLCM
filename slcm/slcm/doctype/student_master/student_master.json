@@ -23,22 +23,13 @@
   "official_email_id",
   "tab_program_mapping",
   "program_mapping_section",
-  "department",
   "programme",
   "academic_year",
-  "programme_of_study",
-  "pace_programme",
-  "level_of_study",
-  "term_name",
-  "current_term",
+  "academic_term",
   "attendance_status",
   "column_break_bgkj",
-  "current_cgpa",
-  "program_shortcode",
   "specialisation",
   "current_year",
-  "term_year",
-  "batch_year",
   "cumulative_percentage",
   "tab_personal",
   "personal_details_section",
@@ -266,7 +257,7 @@
    "fieldname": "admission_type",
    "fieldtype": "Select",
    "label": "Admission Type",
-   "options": "\nRegular\nPACE\nOther"
+   "options": "\nCLAT\nNLSAT\nPACE\nRegular"
   },
   {
    "fieldname": "quota",
@@ -278,13 +269,14 @@
   {
    "fieldname": "intake",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Intake"
   },
   {
    "fieldname": "academic_status",
    "fieldtype": "Select",
    "label": "Academic Status",
-   "options": "Active\nInactive\nGraduated\nDropped\nAlumni\nDormant"
+   "options": "Active\nInactive\nGraduated\nDropped\nDormant"
   },
   {
    "fieldname": "tab_finance",
@@ -307,7 +299,7 @@
    "fieldname": "scholarship_type",
    "fieldtype": "Select",
    "label": "Scholarship Type",
-   "options": "\nMerit\nNeed-Based\nSports\nCultural\nOther"
+   "options": "\nCultural\nMerit\nNeed-Based\nOther\nSports"
   },
   {
    "depends_on": "eval:doc.applying_scholarship=='Yes'",
@@ -458,20 +450,10 @@
    "label": "Program & Academic Mapping"
   },
   {
-   "fieldname": "department",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Department",
-   "options": "Department"
-  },
-  {
    "fieldname": "programme",
    "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Cohort",
-   "options": "Cohort"
+   "label": "Batch",
+   "options": "Batch"
   },
   {
    "fieldname": "specialisation",
@@ -479,35 +461,14 @@
    "label": "Specialisation"
   },
   {
-   "fetch_from": "programme.batch",
-   "fieldname": "batch_year",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Batch"
-  },
-  {
    "fieldname": "current_year",
    "fieldtype": "Data",
    "label": "Current Year"
   },
   {
-   "fetch_from": "programme.term_name",
-   "fieldname": "current_term",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Current Term"
-  },
-  {
-   "fieldname": "current_cgpa",
-   "fieldtype": "Float",
-   "label": "Current CGPA"
-  },
-  {
    "fieldname": "cumulative_percentage",
    "fieldtype": "Float",
-   "label": "Cumulative Percentage",
+   "label": "CGPA Equivalent Percentage",
    "read_only": 1
   },
   {
@@ -962,6 +923,7 @@
   {
    "fieldname": "account_status",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Account Status",
    "options": "Active\nBlocked"
   },
@@ -1198,12 +1160,6 @@
    "options": "User"
   },
   {
-   "fetch_from": "programme.term_name",
-   "fieldname": "term_name",
-   "fieldtype": "Data",
-   "label": "Term Name"
-  },
-  {
    "fieldname": "signature_ppkg",
    "fieldtype": "Signature",
    "label": "Residence Agreement"
@@ -1212,26 +1168,6 @@
    "fieldname": "official_email_id",
    "fieldtype": "Data",
    "label": "Official Email ID"
-  },
-  {
-   "fetch_from": "programme.program_shortcode",
-   "fieldname": "program_shortcode",
-   "fieldtype": "Data",
-   "label": "Program Shortcode"
-  },
-  {
-   "fetch_from": "programme.academic_year",
-   "fieldname": "academic_year",
-   "fieldtype": "Data",
-   "label": "Academic Year"
-  },
-  {
-   "fetch_from": "programme.term_year",
-   "fieldname": "term_year",
-   "fieldtype": "Int",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Term Year"
   },
   {
    "fieldname": "present_address",
@@ -1384,11 +1320,23 @@
    "fieldtype": "Column Break"
   },
   {
+   "fetch_from": "programme.academic_year",
+   "fieldname": "academic_year",
+   "fieldtype": "Data",
+   "label": "Academic year"
+  },
+  {
+   "fetch_from": "programme.academic_term",
+   "fieldname": "academic_term",
+   "fieldtype": "Data",
+   "label": "Academic Term"
+  },
+  {
    "depends_on": "eval:doc.admission_type != 'PACE'",
    "fieldname": "programme_of_study",
    "fieldtype": "Link",
    "label": "Programme Of Study",
-   "options": "Program"
+   "options": "Programme"
   },
   {
    "depends_on": "eval:doc.admission_type == 'PACE'",
@@ -1405,7 +1353,7 @@
   }
  ],
  "links": [],
- "modified": "2026-07-06 16:56:43.319807",
+ "modified": "2026-07-08 16:46:42.597270",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",

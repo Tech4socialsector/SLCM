@@ -26,7 +26,7 @@ Flow:
 
 import re
 import frappe
-from frappe.utils import now_datetime
+from frappe.utils import now_datetime, get_datetime
 
 
 # ---------------------------------------------------------------------------
@@ -34,7 +34,14 @@ from frappe.utils import now_datetime
 # ---------------------------------------------------------------------------
 
 def poll_rfid_sql_agent():
-    """Scheduled entry point. Silently exits when not configured/enabled."""
+    """
+    Scheduled entry point — ticks every minute (Frappe's finest cron interval)
+    but only actually polls once "Poll Interval (seconds)" has elapsed since
+    the last run, so admins can dial the effective frequency from the
+    RFID SQL Agent Settings form without touching code/hooks.py. The floor is
+    60 seconds since Frappe's scheduler itself can't tick faster than that.
+    Silently exits when not configured/enabled.
+    """
     try:
         cfg = frappe.get_single("RFID SQL Agent Settings")
 
@@ -43,6 +50,15 @@ def poll_rfid_sql_agent():
 
         if not cfg.db_server:
             return
+
+        interval = max(60, int(cfg.poll_interval_seconds or 300))
+        if cfg.last_polled_at:
+            elapsed = (now_datetime() - get_datetime(cfg.last_polled_at)).total_seconds()
+            if elapsed < interval:
+                return
+
+        frappe.db.set_single_value("RFID SQL Agent Settings", "last_polled_at", now_datetime())
+        frappe.db.commit()
 
         _run_poll(cfg)
 
@@ -160,6 +176,9 @@ def _run_poll(cfg):
             })
             doc.insert(ignore_permissions=True)
             imported += 1
+
+            if cfg.enable_remote_push:
+                _push_to_remote(cfg, doc)
         except Exception:
             frappe.log_error(
                 title=f"RFID SQL Agent — Failed to insert punch for emp {emp_code} (SQL id {sql_id})",
@@ -178,6 +197,85 @@ def _run_poll(cfg):
             f"RFID SQL Agent: imported={imported}, skipped={skipped}, "
             f"max_id={max_id}, ran_at={now_datetime()}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Remote push — forwards each punch to a remote/cloud SLCM site over its
+# REST API, for setups where the SQL Server is only reachable from this
+# machine (e.g. via a VPN a cloud-hosted site can't run itself).
+# ---------------------------------------------------------------------------
+
+def _push_to_remote(cfg, doc):
+    """POST one punch to the remote site's REST API. Best-effort: logs and
+    marks unsynced on failure so a later retry sweep can pick it up, never
+    raises (must not break the local import if the remote is unreachable)."""
+    import requests
+
+    site_url = (cfg.remote_site_url or "").rstrip("/")
+    api_key = cfg.remote_api_key
+    api_secret = cfg.get_password("remote_api_secret")
+
+    if not site_url or not api_key or not api_secret:
+        return
+
+    payload = {
+        "source_log_id": doc.source_log_id,
+        "emp_code": doc.emp_code,
+        "student": doc.student,
+        "punch_time": str(doc.punch_time),
+        "terminal_id": doc.terminal_id,
+        "terminal_alias": doc.terminal_alias,
+        "sync_status": doc.sync_status,
+    }
+
+    try:
+        resp = requests.post(
+            f"{site_url}/api/resource/RFID SQL Punch Log",
+            json=payload,
+            headers={"Authorization": f"token {api_key}:{api_secret}"},
+            timeout=15,
+        )
+        # A DuplicateEntryError (already pushed earlier) counts as success.
+        if resp.status_code in (200, 409) or (
+            resp.status_code == 417 and "DuplicateEntryError" in resp.text
+        ):
+            frappe.db.set_value("RFID SQL Punch Log", doc.name, "remote_synced", 1)
+        else:
+            frappe.log_error(
+                title=f"RFID SQL Agent — remote push failed for {doc.name}",
+                message=f"HTTP {resp.status_code}: {resp.text[:500]}"
+            )
+    except Exception:
+        frappe.log_error(
+            title=f"RFID SQL Agent — remote push error for {doc.name}",
+            message=frappe.get_traceback()
+        )
+
+
+@frappe.whitelist()
+def retry_unsynced_pushes(limit=200):
+    """Retry pushing any punches that failed to reach the remote site earlier.
+    bench execute slcm.slcm.rfid_sql_agent.poller.retry_unsynced_pushes"""
+    frappe.only_for("System Manager")
+
+    cfg = frappe.get_single("RFID SQL Agent Settings")
+    if not cfg.enable_remote_push:
+        return {"success": False, "message": "Remote Push is not enabled in RFID SQL Agent Settings."}
+
+    names = frappe.get_all(
+        "RFID SQL Punch Log",
+        filters={"remote_synced": 0},
+        pluck="name",
+        limit_page_length=int(limit),
+        order_by="punch_time asc",
+    )
+
+    for name in names:
+        doc = frappe.get_doc("RFID SQL Punch Log", name)
+        _push_to_remote(cfg, doc)
+
+    frappe.db.commit()
+    return {"success": True, "message": f"Retried {len(names)} unsynced punch(es)."}
 
 
 def _maybe_send_failure_mail(cfg, traceback_text):
@@ -267,12 +365,13 @@ def get_dashboard_summary():
         FROM `tabRFID SQL Punch Log` cpl
         LEFT JOIN `tabStudent Master` sm ON sm.name = cpl.student
         ORDER BY cpl.punch_time DESC
-        LIMIT 100
+        LIMIT 5000
     """, as_dict=True)
 
     return {
-        "enabled":      bool(cfg.enabled),
-        "last_log_id":  cfg.last_log_id,
-        "stats":        stats,
-        "recent":       recent,
+        "enabled":             bool(cfg.enabled),
+        "last_log_id":         cfg.last_log_id,
+        "poll_interval_seconds": max(60, int(cfg.poll_interval_seconds or 300)),
+        "stats":               stats,
+        "recent":              recent,
     }

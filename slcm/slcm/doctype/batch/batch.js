@@ -1,12 +1,12 @@
 // Copyright (c) 2025, Nishanth and contributors
 // For license information, please see license.txt
 
-// frappe.ui.form.on("Cohort", {
+// frappe.ui.form.on("Batch", {
 // 	refresh(frm) {
 
 // 	},
 // });
-frappe.ui.form.on("Cohort", {
+frappe.ui.form.on("Batch", {
 	start_date(frm) {
 		frm.trigger("calculate_term_duration");
 	},

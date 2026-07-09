@@ -3,19 +3,16 @@
  "allow_import": 1,
  "autoname": "field:term_name",
  "creation": "2025-12-18 11:49:11.173362",
- "custom": 0,
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "academic_year",
-  "term_name",
-  "term_type",
   "system",
-  "sequence",
   "previous_term",
   "number_of_terms_per_academic_year",
   "column_break_gvpt",
-  "how_many_months",
+  "term_name",
+  "term_type",
   "term_start_date",
   "term_end_date",
   "status"
@@ -25,12 +22,15 @@
    "fieldname": "academic_year",
    "fieldtype": "Link",
    "label": "Academic Year",
-   "options": "Academic Year"
+   "options": "Academic Year",
+   "reqd": 1
   },
   {
    "fieldname": "term_name",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Term Name",
+   "options": "Term Master",
+   "reqd": 1,
    "unique": 1
   },
   {
@@ -45,16 +45,13 @@
    "fieldname": "system",
    "fieldtype": "Select",
    "label": "Academic System",
-   "options": "Semester\nTrimester\nQuarter\nYear"
-  },
-  {
-   "fieldname": "sequence",
-   "fieldtype": "Int",
-   "label": "Sequence"
+   "options": "\nSemester\nTrimester\nQuarter\nYear",
+   "reqd": 1
   },
   {
    "fieldname": "previous_term",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Previous Term",
    "options": "Academic Term"
   },
@@ -67,12 +64,6 @@
   {
    "fieldname": "column_break_gvpt",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "how_many_months",
-   "fieldtype": "Select",
-   "label": "How many months?",
-   "options": "\n1\n2\n3\n4\n5\n6"
   },
   {
    "fieldname": "term_start_date",
@@ -96,13 +87,14 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "\nActive\nInactive"
+   "options": "\nActive\nInactive",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-23 17:08:09.117639",
+ "modified": "2026-07-08 13:04:08.255209",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Academic Term",
