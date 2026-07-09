@@ -39,8 +39,8 @@ def get_columns():
 			"width": 200,
 		},
 		{
-			"label": "Department",
-			"fieldname": "department_name",
+			"label": "Programme",
+			"fieldname": "programme",
 			"fieldtype": "Data",
 			"width": 150,
 		},
@@ -126,7 +126,7 @@ def get_data(filters):
 
 	courses = frappe.db.sql(
 		f"""
-		SELECT name, course_code, course_name, department_name, credit_value
+		SELECT name, course_code, course_name, programme, credit_value
 		FROM `tabCourse`
 		{search_cond}
 		ORDER BY course_name ASC
@@ -169,7 +169,7 @@ def get_data(filters):
 					"term":            ep_term.get(ep, ""),
 					"course_code":     c.get("course_code") or "",
 					"course_name":     c.get("course_name") or c.get("name"),
-					"department_name": c.get("department_name") or "",
+					"programme": c.get("programme") or "",
 					"credit_value":    c.get("credit_value") or 0,
 					"evaluation_schema": ev or None,
 					"max_marks":       max_marks,
@@ -187,7 +187,7 @@ def get_data(filters):
 				"term":            ep_term.get(exam_plan_filter, "") if exam_plan_filter else "",
 				"course_code":     c.get("course_code") or "",
 				"course_name":     c.get("course_name") or c.get("name"),
-				"department_name": c.get("department_name") or "",
+				"programme": c.get("programme") or "",
 				"credit_value":    c.get("credit_value") or 0,
 				"evaluation_schema": None,
 				"max_marks":       "",

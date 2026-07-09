@@ -541,8 +541,11 @@ def get_student_details(student, exam_plan=None, course=None):
 
 def _get_students_for_course(course, exam_plan):
 	"""
-	Return list of dicts {student, student_name, registration_id, section}
-	sourced from Student Course Marks — the same table used by Examination Result.
+	Return list of dicts {student, student_name, registration_id, section}.
+	Primary source: Student Course Marks — the same table used by Examination Result.
+	Falls back to Student Enrollment (Student Enrollment Course + Course Offering, same
+	join as exam_plan_api.get_courses_for_plan) when no Student Course Marks rows exist
+	yet for this exam plan/course — i.e. before anyone has run the marks sync.
 	Students are sorted by registration_id ascending.
 	"""
 	rows = frappe.db.sql(
@@ -566,6 +569,35 @@ def _get_students_for_course(course, exam_plan):
 		{"exam_plan": exam_plan, "course": course},
 		as_dict=True,
 	)
+
+	if not rows:
+		term_name = frappe.db.get_value("Exam Plan", exam_plan, "term")
+		rows = frappe.db.sql(
+			"""
+			SELECT
+				se.student AS student,
+				CONCAT_WS(' ', sm.first_name, sm.last_name) AS student_name,
+				COALESCE(NULLIF(sm.registration_id, ''), sm.name) AS registration_id,
+				COALESCE(cc.section, '') AS section
+			FROM `tabStudent Enrollment` se
+			INNER JOIN `tabStudent Enrollment Course` sec ON sec.parent = se.name
+			INNER JOIN `tabCourse Offering` co ON co.name = sec.course_offering
+			LEFT JOIN `tabStudent Master` sm ON sm.name = se.student
+			LEFT JOIN (
+				SELECT cs.student, cc2.section, cc2.course
+				FROM `tabClass Student` cs
+				INNER JOIN `tabClass Configuration` cc2 ON cc2.name = cs.parent
+			) cc ON cc.student = se.student AND cc.course = co.course_title
+			WHERE co.course_title = %(course)s
+			  AND sec.status = 'Enrolled'
+			  AND se.status = 'Enrolled'
+			  AND (%(term_name)s IS NULL OR se.term_name = %(term_name)s)
+			GROUP BY se.student
+			ORDER BY COALESCE(NULLIF(sm.registration_id, ''), sm.name) ASC
+			""",
+			{"course": course, "term_name": term_name},
+			as_dict=True,
+		)
 
 	# Deduplicate — a student could appear in multiple class configurations
 	seen = set()

@@ -206,14 +206,10 @@ def generate_term_results(exam_plan, student_names, action):
 			doc.flags.ignore_permissions = True
 			doc.insert(ignore_permissions=True)
 			doc_name = doc.name
-			# Null out all generated fields so 0.0 (default) ≠ "not generated";
-			# only the field being generated will be set to a real value below.
-			frappe.db.set_value(
-				"Student Result Publish", doc_name,
-				{"term_gpa": None, "term_percentage": None,
-				 "cumulative_gpa": None, "cumulative_percentage": None},
-				update_modified=False,
-			)
+			# term_gpa/term_percentage/cumulative_gpa/cumulative_percentage are Float
+			# columns, which Frappe always creates as NOT NULL DEFAULT 0 — they can't
+			# hold NULL, so a freshly inserted record already reads as 0.0 for every
+			# field until the action below sets a real value.
 
 		s_data = student_map.get(student_id, {})
 
@@ -293,7 +289,7 @@ def download_consolidated_report(exam_plan="", search="", inst_programmes="", in
 
 	if f_programmes:
 		placeholders = ",".join([f"%(prog_{i})s" for i in range(len(f_programmes))])
-		where_cond += f" AND sm.programme IN ({placeholders})"
+		where_cond += f" AND sm.programme_of_study IN ({placeholders})"
 		for i, v in enumerate(f_programmes):
 			params[f"prog_{i}"] = v
 
@@ -317,7 +313,6 @@ def download_consolidated_report(exam_plan="", search="", inst_programmes="", in
 			sm.batch_year,
 			sm.current_term AS trimester,
 			at.term_name AS term,
-			sm.department,
 			c.course_code,
 			c.course_name,
 			'' AS course_registration_type,
@@ -353,7 +348,7 @@ def download_consolidated_report(exam_plan="", search="", inst_programmes="", in
 
 	headers = [
 		"Registration ID", "Student Name", "Academic Year", "Programme Name",
-		"Programme Specialization", "Batch Year", "Trimester", "Term", "Department Name",
+		"Programme Specialization", "Batch Year", "Trimester", "Term",
 		"Course Code", "Course Name", "Course Registration Type", "Exam Type",
 		"Evaluation Schema", "Grade Schema", "Total Marks", "Grade", "Grade Points",
 		"Is Failed", "Attendance Status", "Consider For SGPA Calculation",
@@ -371,7 +366,6 @@ def download_consolidated_report(exam_plan="", search="", inst_programmes="", in
 			r.get("batch_year"),
 			r.get("trimester"),
 			r.get("term"),
-			r.get("department"),
 			r.get("course_code"),
 			r.get("course_name"),
 			r.get("course_registration_type"),
@@ -526,7 +520,7 @@ def get_term_inst_filter_options(exam_plan):
 		return {"programmes": [], "batches": []}
 	rows = frappe.db.sql(
 		"""
-		SELECT DISTINCT sm.programme, sm.batch_year
+		SELECT DISTINCT sm.programme_of_study AS programme, sm.batch_year
 		FROM `tabStudent Course Marks` scm
 		INNER JOIN `tabStudent Master` sm ON sm.name = scm.student
 		WHERE scm.exam_plan = %(exam_plan)s
@@ -555,7 +549,7 @@ def get_term_students(exam_plan, search="", page=1, page_length=20,
 	sort_col_map = {
 		"registration_id": "sm.registration_id",
 		"name":            "CONCAT_WS(' ', sm.first_name, sm.last_name)",
-		"programme":       "sm.programme",
+		"programme":       "sm.programme_of_study",
 	}
 	sort_col = sort_col_map.get(sort_by, "sm.registration_id")
 
@@ -573,7 +567,7 @@ def get_term_students(exam_plan, search="", page=1, page_length=20,
 		params["search"] = f"%{search}%"
 	if f_programmes:
 		placeholders = ",".join([f"%(prog_{i})s" for i in range(len(f_programmes))])
-		extra_cond += f" AND sm.programme IN ({placeholders})"
+		extra_cond += f" AND sm.programme_of_study IN ({placeholders})"
 		for i, v in enumerate(f_programmes):
 			params[f"prog_{i}"] = v
 	if f_batches:
@@ -591,7 +585,7 @@ def get_term_students(exam_plan, search="", page=1, page_length=20,
 				COALESCE(NULLIF(sm.middle_name,''), NULL),
 				sm.last_name))                                                  AS student_name,
 			sm.student_status,
-			sm.programme,
+			sm.programme_of_study AS programme,
 			sm.batch_year,
 			sm.current_cgpa,
 			sm.cumulative_percentage,
@@ -640,9 +634,11 @@ def get_student_courses(exam_plan, student):
 		"Student Master",
 		student,
 		["first_name", "middle_name", "last_name", "registration_id",
-		 "email", "programme", "batch_year", "passport_size_photo", "specialisation"],
+		 "email", "programme_of_study", "batch_year", "passport_size_photo", "specialisation"],
 		as_dict=True,
 	) or {}
+	if sm:
+		sm["programme"] = sm.pop("programme_of_study", "")
 
 	# ── Course marks with grading schema data ─────────────────────────────────
 	rows = frappe.db.sql(
