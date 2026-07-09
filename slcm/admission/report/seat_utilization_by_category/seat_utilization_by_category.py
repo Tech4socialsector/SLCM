@@ -5,7 +5,7 @@ def execute(filters=None):
     filters = filters or {}
     columns = [
         {"label": "Campus", "fieldname": "campus", "fieldtype": "Link", "options": "Company", "width": 180},
-        {"label": "Program", "fieldname": "program", "fieldtype": "Link", "options": "Program", "width": 180},
+        {"label": "Programme", "fieldname": "program", "fieldtype": "Link", "options": "Programme", "width": 180},
         {"label": "Category", "fieldname": "category", "fieldtype": "Data", "width": 150},
         {"label": "Total Seats", "fieldname": "intake_capacity", "fieldtype": "Int", "width": 120}
     ]

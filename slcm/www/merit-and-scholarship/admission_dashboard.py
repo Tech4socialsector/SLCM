@@ -87,11 +87,11 @@ def get_context(context):
     cards = []
     for a in applicants:
         program_name = frappe.db.get_value(
-            "Program", a.program, "program_name"
+            "Programme", a.program, "program_name"
         ) or a.program or "—"
 
         intake = frappe.db.get_value(
-            "Program", a.program, "intake_type"
+            "Programme", a.program, "intake_type"
         ) or "All"
 
         # current_stage is now a plain value (no Stage Master lookup needed)
@@ -182,8 +182,8 @@ def get_context(context):
             # Map candidate_name -> applicant_name for template compatibility
             app["applicant_name"] = app.get("candidate_name") or ""
             prog = app.get("program") or ""
-            app["program_name"] = (frappe.db.get_value("Program", prog, "program_name") if prog else None) or prog or "—"
-            app["program_image"] = frappe.db.get_value("Program", prog, "program_image") if prog else None
+            app["program_name"] = (frappe.db.get_value("Programme", prog, "program_name") if prog else None) or prog or "—"
+            app["program_image"] = frappe.db.get_value("Programme", prog, "program_image") if prog else None
             # current_stage is a plain field value — no Stage Master lookup
             app["current_stage_name"] = app.get("current_stage") or ""
     except Exception as e:

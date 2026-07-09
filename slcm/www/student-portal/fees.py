@@ -714,7 +714,7 @@ def _set_student_nav(context, student):
     context.student_photo  = student.passport_size_photo or ""
     context.student_initial = (context.student_name[0]).upper() if context.student_name else "S"
     context.programme_name = (
-        frappe.db.get_value("Cohort", student.programme, "cohort_name")
+        frappe.db.get_value("Batch", student.programme, "cohort_name")
         or student.programme or ""
     )
     context.department = student.department or ""
@@ -734,8 +734,8 @@ def _ensure_student_fee_populated(student):
         return
 
     try:
-        program = frappe.db.get_value("Cohort", student.programme, "program")
-        if not program and frappe.db.exists("Program", student.programme):
+        program = frappe.db.get_value("Batch", student.programme, "program")
+        if not program and frappe.db.exists("Programme", student.programme):
             program = student.programme
         if not program:
             return
@@ -743,7 +743,7 @@ def _ensure_student_fee_populated(student):
         current_date = frappe.utils.today()
         fs_rows = frappe.db.sql(
             """
-            SELECT name, total_amount, valid_from, valid_until
+            SELECT name, total_amount_for_indian AS total_amount, valid_from, valid_until
             FROM `tabFee Structure`
             WHERE program = %s
               AND status = 'Active'

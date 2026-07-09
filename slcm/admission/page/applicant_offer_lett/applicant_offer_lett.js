@@ -136,7 +136,7 @@ class ApplicantOfferLetter {
 							<div class="card-body">
 								<h6 class="text-muted text-uppercase small font-weight-bold mb-3">${__('Summary')}</h6>
 								<div class="summary-item mb-2">
-									<span class="text-muted text-small">${__('Program')}:</span>
+									<span class="text-muted text-small">${__('Programme')}:</span>
 									<div class="font-weight-bold text-primary">${offer.program}</div>
 								</div>
 								<div class="summary-item mb-2">

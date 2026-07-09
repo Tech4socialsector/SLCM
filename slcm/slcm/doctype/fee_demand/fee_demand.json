@@ -72,15 +72,15 @@
    "fieldname": "programme",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Cohort",
-   "options": "Cohort"
+   "label": "Batch",
+   "options": "Batch"
   },
   {
    "fieldname": "program",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Program",
-   "options": "Program"
+   "label": "Programme",
+   "options": "Programme"
   },
   {
    "fieldname": "column_break_1",

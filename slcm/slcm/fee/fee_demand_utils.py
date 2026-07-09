@@ -214,7 +214,7 @@ def _get_eligible_students(batch_year, program_level, academic_year):
 		level_of_study = level_map.get(program_level)
 		if level_of_study:
 			matching_programmes = frappe.get_all(
-				"Program",
+				"Programme",
 				filters={"level_of_study": level_of_study},
 				pluck="name",
 			)

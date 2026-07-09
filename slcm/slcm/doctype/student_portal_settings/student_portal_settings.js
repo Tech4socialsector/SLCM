@@ -240,8 +240,8 @@ function _show_reminder_dialog(opts) {
             {
                 fieldtype: "Link",
                 fieldname: "program",
-                label:     __("Program"),
-                options:   "Program",
+                label:     __("Programme"),
+                options:   "Programme",
             },
             { fieldtype: "Column Break", fieldname: "col_b2" },
             {

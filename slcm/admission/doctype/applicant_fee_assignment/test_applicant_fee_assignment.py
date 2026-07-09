@@ -100,8 +100,8 @@ class TestApplicantFeeAssignment(unittest.TestCase):
 		offer.insert(ignore_permissions=True, ignore_mandatory=True, ignore_links=True)
 
 		cohort_name = "TEST-AFA-COHORT-BCA-2026"
-		if not frappe.db.exists("Cohort", cohort_name):
-			ch = frappe.new_doc("Cohort")
+		if not frappe.db.exists("Batch", cohort_name):
+			ch = frappe.new_doc("Batch")
 			ch.cohort_code = "TEST-AFAC"
 			ch.cohort_name = cohort_name
 			ch.program = "BCA"

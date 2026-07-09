@@ -12,9 +12,9 @@ frappe.query_reports["Comprehensive Attendance Report"] = {
         },
         {
             "fieldname": "program",
-            "label": __("Cohort"),
+            "label": __("Batch"),
             "fieldtype": "Link",
-            "options": "Cohort",
+            "options": "Batch",
             "reqd": 0
         },
         {

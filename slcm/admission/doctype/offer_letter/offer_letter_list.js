@@ -62,7 +62,7 @@ frappe.listview_settings['Offer Letter'] = {
                         label: __('Programme'),
                         fieldname: 'program',
                         fieldtype: 'Link',
-                        options: 'Program'
+                        options: 'Programme'
                     },
                     {
                         label: __('Admission Cycle'),

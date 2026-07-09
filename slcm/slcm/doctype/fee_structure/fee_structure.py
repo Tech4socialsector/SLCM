@@ -124,7 +124,6 @@ class FeeStructure(Document):
 
         self.total_amount_for_indian = total_indian
         self.total_amount_for_foreign = total_foreign
-        self.total_amount = total_indian
 
     def on_update(self):
         # Extend offer letter fee deadline when valid_until changes
@@ -142,7 +141,7 @@ class FeeStructure(Document):
                 self.has_value_changed("status")
                 or self.has_value_changed("valid_from")
                 or self.has_value_changed("valid_until")
-                or self.has_value_changed("total_amount")
+                or self.has_value_changed("total_amount_for_indian")
             ):
                 frappe.enqueue(
                     "slcm.slcm.doctype.student_master.student_master.sync_fee_structures_for_program",

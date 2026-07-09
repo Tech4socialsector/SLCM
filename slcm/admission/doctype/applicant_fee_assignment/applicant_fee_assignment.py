@@ -95,7 +95,7 @@ class ApplicantFeeAssignment(Document):
 		self.total_amount = base_total
 		if self.fee_type == "Application Fee":
 			self.application_fee = base_total
-			
+
 		self.final_payable_amount = max(0, base_total - flt(self.scholarship_amount))
 
 	def validate_status_change(self):
@@ -188,18 +188,18 @@ def create_invoice(docname):
 
 	# ── 2. Sync Finance tab of Student Master (Scholarship Details + Fee Details) ──
 	# Fetching additional details from the linked Scholarship Application if present.
-	
+
 	scholarship_type = None
 	scholarship_percentage = 0
 	scholarship_approval_date = None
-	
+
 	if doc.get("scholarship_application"):
-		sa_data = frappe.db.get_value("Scholarship Application", doc.scholarship_application, 
+		sa_data = frappe.db.get_value("Scholarship Application", doc.scholarship_application,
 			["scholarship_scheme", "approval_date"], as_dict=True)
 		if sa_data:
 			scholarship_approval_date = sa_data.approval_date
 			if sa_data.scholarship_scheme:
-				scheme_data = frappe.db.get_value("Scholarship Scheme", sa_data.scholarship_scheme, 
+				scheme_data = frappe.db.get_value("Scholarship Scheme", sa_data.scholarship_scheme,
 					["scheme_type", "coverage_type", "coverage_value"], as_dict=True)
 				if scheme_data:
 					scholarship_type = scheme_data.scheme_type

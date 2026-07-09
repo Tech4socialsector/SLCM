@@ -26,9 +26,9 @@
   {
    "fieldname": "program",
    "fieldtype": "Link",
-   "label": "Program",
+   "label": "Programme",
    "mandatory": 0,
-   "options": "Program",
+   "options": "Programme",
    "wildcard_filter": 0
   },
   {

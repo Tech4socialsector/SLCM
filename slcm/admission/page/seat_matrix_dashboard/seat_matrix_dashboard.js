@@ -32,9 +32,9 @@ frappe.pages['seat-matrix-dashboard'].on_page_load = function(wrapper) {
 
 	let program_field = page.add_field({
 		fieldname: 'program',
-		label: __('Program'),
+		label: __('Programme'),
 		fieldtype: 'Link',
-		options: 'Program',
+		options: 'Programme',
 		change() { refresh_dashboard(page); }
 	});
 	program_field.$wrapper.appendTo('#filter-area').addClass('col-md-4').css('margin-bottom', '0');

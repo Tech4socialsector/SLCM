@@ -13,7 +13,8 @@
   "terminal_alias",
   "section_break_1",
   "sync_status",
-  "error_detail"
+  "error_detail",
+  "remote_synced"
  ],
  "fields": [
   {
@@ -80,6 +81,15 @@
    "fieldname": "error_detail",
    "fieldtype": "Small Text",
    "label": "Error Detail"
+  },
+  {
+   "default": "0",
+   "description": "Whether this punch has been successfully pushed to the remote/cloud site (if Remote Push is enabled).",
+   "fieldname": "remote_synced",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Remote Synced",
+   "read_only": 1
   }
  ],
  "links": [],

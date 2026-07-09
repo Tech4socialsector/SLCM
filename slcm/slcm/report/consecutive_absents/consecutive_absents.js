@@ -8,9 +8,9 @@ frappe.query_reports["Consecutive Absents"] = {
         },
         {
             "fieldname": "program",
-            "label": __("Program"),
+            "label": __("Programme"),
             "fieldtype": "Link",
-            "options": "Cohort"
+            "options": "Batch"
         }
     ]
 };

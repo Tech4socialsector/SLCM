@@ -13,7 +13,7 @@ class InterviewConfiguration(Document):
 
     def validate(self):
         pattern = re.compile(r"^[1-9]\d*:[1-9]\d*$")
-        
+
         if self.enter_domestic_ratio:
             if not pattern.match(str(self.enter_domestic_ratio)):
                 frappe.throw(_("Enter Domestic Ratio must be in the format 'X:Y' (e.g. '3:1') where both X and Y are positive integers."))
@@ -158,7 +158,7 @@ class InterviewConfiguration(Document):
             FROM `tabEntrance Test Seat Allocation` etsa
             INNER JOIN `tabApplicant` app
                     ON app.name = etsa.applicant
-            INNER JOIN `tabProgram` p
+            INNER JOIN `tabProgramme` p
                     ON p.name = app.program
             WHERE
                 etsa.academic_year    = %(academic_year)s
@@ -187,7 +187,7 @@ class InterviewConfiguration(Document):
                 0.0               AS entrance_test_score,
                 0.0               AS part_a_score
             FROM `tabApplicant` app
-            INNER JOIN `tabProgram` p
+            INNER JOIN `tabProgramme` p
                     ON p.name = app.program
             WHERE
                 app.academic_year    = %(academic_year)s

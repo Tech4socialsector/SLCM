@@ -34,7 +34,7 @@
    "fieldname": "program",
    "fieldtype": "Link",
    "label": "Programmes",
-   "options": "Program"
+   "options": "Programme"
   },
   {
    "fieldname": "academic_year",

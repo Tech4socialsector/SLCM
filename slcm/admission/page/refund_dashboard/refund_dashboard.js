@@ -75,7 +75,7 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 	page.add_field({
 		label: __('Programme'),
 		fieldtype: 'Link',
-		options: 'Program',
+		options: 'Programme',
 		fieldname: 'program',
 		change() { 
 			window.current_limit_start = 0;
@@ -360,7 +360,7 @@ frappe.pages['refund_dashboard'].on_page_load = function(wrapper) {
 					<th style="width: 40px;"><input type="checkbox" id="select_all_refunds" onclick="toggle_all_refunds(this)"></th>
 					<th>${__('Refund ID')}</th>
 					<th>${__('Applicant')}</th>
-					<th>${__('Program')}</th>
+					<th>${__('Programme')}</th>
 					<th class="text-right">${__('Paid')}</th>
 					<th class="text-right">${__('Refunded')}</th>
 					<th>${__('Status')}</th>

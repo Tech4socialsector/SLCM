@@ -17,13 +17,21 @@ class StudentEnrollment(Document):
     def on_update(self):
         """Sync Student Master when enrollment status changes."""
         self._sync_student_master_status()
+        self._refresh_batch_enrolled_count(self.cohort)
+        if self.has_value_changed("cohort"):
+            previous = self.get_doc_before_save()
+            if previous and previous.cohort and previous.cohort != self.cohort:
+                self._refresh_batch_enrolled_count(previous.cohort)
+
+    def after_delete(self):
+        self._refresh_batch_enrolled_count(self.cohort)
 
     def fetch_program_and_courses(self):
         if not self.program and self.cohort:
-            self.program = frappe.db.get_value("Cohort", self.cohort, "program")
+            self.program = frappe.db.get_value("Batch", self.cohort, "program")
 
         if self.program and self.cohort and not self.enrolled_courses:
-            program_doc = frappe.get_doc("Program", self.program)
+            program_doc = frappe.get_doc("Programme", self.program)
             if program_doc.table_fela:
                 for pc in program_doc.table_fela:
                     offering = frappe.db.get_value(
@@ -43,7 +51,7 @@ class StudentEnrollment(Document):
         """Block enrollment if cohort has reached its seat limit."""
         if not self.cohort:
             return
-        seat_limit = frappe.db.get_value("Cohort", self.cohort, "seat_limit")
+        seat_limit = frappe.db.get_value("Batch", self.cohort, "seat_limit")
         if not seat_limit:
             return
         existing_count = frappe.db.count(
@@ -71,6 +79,20 @@ class StudentEnrollment(Document):
         existing = frappe.db.exists("Student Enrollment", filters)
         if existing and existing != self.name:
             frappe.throw(_("Enrollment already exists for this student in the selected cohort"))
+
+    def _refresh_batch_enrolled_count(self, cohort):
+        """Recompute the Batch's total_enrolled_count from actual enrollments."""
+        if not cohort or not frappe.db.exists("Batch", cohort):
+            return
+        count = frappe.db.count(
+            "Student Enrollment",
+            {
+                "cohort": cohort,
+                "status": ["not in", ["Dropped"]],
+                "docstatus": ["<", 2],
+            },
+        )
+        frappe.db.set_value("Batch", cohort, "total_enrolled_count", count, update_modified=False)
 
     def _sync_student_master_status(self):
         """When enrollment is dropped/completed, reflect on Student Master."""

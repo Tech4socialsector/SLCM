@@ -258,7 +258,7 @@ def get_students(
         prog_ids = list({s["programme"] for s in students if s.get("programme")})
         if prog_ids:
             rows = frappe.db.sql(
-                "SELECT name, cohort_name FROM `tabCohort` WHERE name IN %(ids)s",
+                "SELECT name, cohort_name FROM `tabBatch` WHERE name IN %(ids)s",
                 {"ids": prog_ids},
                 as_dict=True,
             )
@@ -312,7 +312,7 @@ def get_students(
                 se.program,
                 p.program_name
             FROM `tabStudent Enrollment` se
-            LEFT JOIN `tabProgram` p ON p.name = se.program
+            LEFT JOIN `tabProgramme` p ON p.name = se.program
             WHERE se.student IN %(students)s
             ORDER BY se.creation ASC
             """,
@@ -408,7 +408,7 @@ def get_transcript_stats(search="", programme="", course="", academic_year="",
 def get_filter_options():
     """Return filter dropdown options: programmes, departments, academic_years, batches, courses, student_statuses."""
     programmes = frappe.db.sql(
-        "SELECT name, cohort_name FROM `tabCohort` ORDER BY cohort_name ASC LIMIT 500",
+        "SELECT name, cohort_name FROM `tabBatch` ORDER BY cohort_name ASC LIMIT 500",
         as_dict=True,
     )
     departments = frappe.db.sql(
@@ -905,7 +905,7 @@ def get_requests(
     prog_names = {}
     if prog_ids:
         prows = frappe.db.sql(
-            "SELECT name, cohort_name FROM `tabCohort` WHERE name IN %(ids)s",
+            "SELECT name, cohort_name FROM `tabBatch` WHERE name IN %(ids)s",
             {"ids": prog_ids}, as_dict=True,
         )
         prog_names = {p["name"]: p["cohort_name"] for p in prows}

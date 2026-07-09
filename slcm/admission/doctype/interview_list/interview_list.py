@@ -88,7 +88,7 @@ class InterviewList(Document):
 
             # Verify Program has Interview enabled in its Stages
             if row.program:
-                program_intereview = frappe.db.get_value("Program", row.program, "intereview")
+                program_intereview = frappe.db.get_value("Programme", row.program, "intereview")
                 if not program_intereview:
                     frappe.throw(_("Program {0} does not have Interview enabled in its Stages.").format(row.program))
 

@@ -21,7 +21,7 @@ class MeritGeneration(Document):
         level = (self.generation_type or "ALL").replace(" ", "").upper()
         
         if self.program:
-            program_code = frappe.db.get_value("Program", self.program, "program_code") or self.program
+            program_code = frappe.db.get_value("Programme", self.program, "program_code") or self.program
             # Allow: - . , ( ) along with Alphanumeric
             prog = re.sub(r'[^A-Z0-9\-\.\,\(\)]', '', program_code.replace(" ", "").upper())
             # Use ignore_validate=True to allow parentheses and commas in naming series prefix

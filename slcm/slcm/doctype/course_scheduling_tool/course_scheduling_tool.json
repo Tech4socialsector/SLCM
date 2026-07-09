@@ -51,9 +51,9 @@
   },
   {
    "fieldname": "program",
-   "label": "Program",
+   "label": "Programme",
    "fieldtype": "Link",
-   "options": "Program",
+   "options": "Programme",
    "read_only": 1
   },
   {

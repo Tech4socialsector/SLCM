@@ -2,7 +2,7 @@ import frappe
 import json
 
 def reproduce_issue():
-    doctype = "Program"
+    doctype = "Programme"
     name = "Ph.D. in Interdisciplinary Legal Studies"
     print(f"Loading {doctype} {name}...")
     try:

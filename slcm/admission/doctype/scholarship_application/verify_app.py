@@ -8,11 +8,11 @@ def run_application_tests():
         print("No Admission Cycle found")
         return
     cycle_name = cycle[0].name
-    
+
     scheme_name = f"SS-{cycle_name}-ATS"
     if frappe.db.exists("Scholarship Scheme", scheme_name):
         frappe.delete_doc("Scholarship Scheme", scheme_name)
-    
+
     # Create mapping
     program = frappe.get_all("Program", limit=1)
     program_name = program[0].name if program else "Test Program"
@@ -86,7 +86,7 @@ def run_application_tests():
     print("--- Test 2: Duplicate Prevention ---")
     app1.insert(ignore_permissions=True)
     frappe.db.commit()
-    
+
     app2 = frappe.get_doc({
         "doctype": "Scholarship Application",
         "applicant_id": applicant_name,

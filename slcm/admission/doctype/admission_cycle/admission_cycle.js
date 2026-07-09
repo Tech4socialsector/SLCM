@@ -647,7 +647,7 @@ function open_reservation_policy(frm, row) {
         fields: [
             { fieldtype: "Link", fieldname: "admission_cycle", label: __("Cycle"), options: "Admission Cycle", read_only: 1, default: frm.doc.name },
             { fieldtype: "Column Break" },
-            { fieldtype: "Link", fieldname: "program", label: __("Program"), options: "Program", read_only: 1, default: row.program },
+            { fieldtype: "Link", fieldname: "program", label: __("Programme"), options: "Programme", read_only: 1, default: row.program },
             { fieldtype: "Column Break" },
             { fieldtype: "Link", fieldname: "campus", label: __("Campus"), options: "Campus", read_only: 1, default: row.campus },
             { fieldtype: "Column Break" },
@@ -972,8 +972,8 @@ function open_program_media(frm, row) {
             {
                 fieldtype: "Link",
                 fieldname: "program",
-                label: __("Program"),
-                options: "Program",
+                label: __("Programme"),
+                options: "Programme",
                 read_only: 1,
                 default: row.program
             },

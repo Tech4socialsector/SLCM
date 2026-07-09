@@ -29,7 +29,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Academic System",
-   "options": "Semester\nTrimester\nQuarter\nYear",
+   "options": "\nSemester\nTrimester\nQuarter\nYear",
    "reqd": 1
   },
   {
@@ -52,13 +52,14 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "\nActive\nInactive"
+   "options": "\nActive\nInactive",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-19 15:31:28.233704",
+ "modified": "2026-07-08 13:00:36.430010",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Academic Year",

@@ -45,7 +45,7 @@ def get_context(context):
 
     # ── Fetch Program by slug ─────────────────────────────────────
     prog_name = frappe.db.get_value(
-        "Program", {"program_slug": slug}, "name")
+        "Programme", {"program_slug": slug}, "name")
 
     if not prog_name:
         context.program_not_found = True
@@ -54,7 +54,7 @@ def get_context(context):
         return
 
     try:
-        prog = frappe.get_doc("Program", prog_name)
+        prog = frappe.get_doc("Programme", prog_name)
     except Exception:
         context.program_not_found = True
         context.program = None
