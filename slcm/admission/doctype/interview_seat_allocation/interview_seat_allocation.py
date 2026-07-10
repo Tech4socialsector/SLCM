@@ -18,31 +18,28 @@ class InterviewSeatAllocation(Document):
         self.calculate_final_cumulative()
 
     def calculate_final_cumulative(self):
+        """
+        Auto-calculate only the numeric score fields.
+        Result Status (interview_result_status) and Offered Admission (offered_admission)
+        are purely manual — never auto-set or overwritten by the system.
+        """
         et_marks = flt(self.et_total_marks_secured_in_part_a_b or 0)
         et_max = flt(self.et_total_marks or 0)
         interview_max = 30.0
-        
         score = flt(self.interview_score or 0)
         max_marks = et_max + interview_max
-        
+
         if self.interview_status == "Attended":
             self.final_cumulative_score = et_marks + score
-            self.final_percentage = (self.final_cumulative_score / max_marks * 100.0) if max_marks > 0 else 0.0
-            if self.result_published:
-                self.offered_admission = 1 if self.final_percentage >= 70.0 else 0
-            else:
-                self.offered_admission = 0
-            self.interview_result_status = "Pass" if self.final_percentage >= 70.0 else "Fail"
+            self.final_percentage = (
+                self.final_cumulative_score / max_marks * 100.0
+            ) if max_marks > 0 else 0.0
         elif self.interview_status == "Absent":
             self.final_cumulative_score = 0.0
             self.final_percentage = 0.0
-            self.offered_admission = 0
-            self.interview_result_status = "Fail"
         else:
             self.final_cumulative_score = 0.0
             self.final_percentage = 0.0
-            self.offered_admission = 0
-            self.interview_result_status = "Pending"
 
 
     def before_save(self):

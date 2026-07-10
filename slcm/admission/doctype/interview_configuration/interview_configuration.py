@@ -138,7 +138,11 @@ class InterviewConfiguration(Document):
                 AND app.name NOT IN (SELECT applicant_id FROM `tabInterview Applicant`)
                 AND ee.exempts_entrance_test = 1
                 AND (ee.exempts_interview IS NULL OR ee.exempts_interview = 0)
-                AND p.intereview = 1
+                AND (
+                    (app.foriegn_national = 'Yes' AND p.international_interview = 1)
+                    OR
+                    (COALESCE(app.foriegn_national, '') != 'Yes' AND p.intereview = 1)
+                )
         """
 
         # Source 2: Entrance Test Passers
@@ -169,7 +173,11 @@ class InterviewConfiguration(Document):
                 AND app.status != 'Rejected'
                 AND app.name NOT IN (SELECT applicant_id FROM `tabInterview Applicant`)
                 AND COALESCE(etsa.exempts_interview, 0) = 0
-                AND p.intereview = 1
+                AND (
+                    (app.foriegn_national = 'Yes' AND p.international_interview = 1)
+                    OR
+                    (COALESCE(app.foriegn_national, '') != 'Yes' AND p.intereview = 1)
+                )
         """
 
         # Source 3: Academic Eligibility
@@ -197,8 +205,12 @@ class InterviewConfiguration(Document):
                 AND app.status != 'Rejected'
                 AND app.name NOT IN (SELECT applicant_id FROM `tabInterview Applicant`)
                 AND p.entrance_test = 0
-                AND p.intereview = 1
                 AND (app.exempts_interview IS NULL OR app.exempts_interview = 0)
+                AND (
+                    (app.foriegn_national = 'Yes' AND p.international_interview = 1)
+                    OR
+                    (COALESCE(app.foriegn_national, '') != 'Yes' AND p.intereview = 1)
+                )
         """
 
         seen = {}
@@ -233,14 +245,7 @@ class InterviewConfiguration(Document):
                     row.part_a_score = 0.0
                 seen[row.applicant_id] = row
 
-        # Filter out international applicants if international_interview is disabled on the program
-        filtered_list = []
-        for row in seen.values():
-            if row.get("foriegn_national") == "Yes":
-                if not frappe.db.get_value("Program", row.program, "international_interview"):
-                    continue
-            filtered_list.append(row)
-        return filtered_list
+        return list(seen.values())
 
     @frappe.whitelist()
     def generate_interview_list(self):
@@ -321,7 +326,7 @@ class InterviewConfiguration(Document):
                 f"<b>{_('Possible reasons for no candidates')}:</b><br>"
                 f"• {_('Applicants are already included in an existing Interview List.')}<br>"
                 f"• {_('Applicants are exempted from the Interview stage.')}<br>"
-                f"• {_('The selected Programs do not offer an Interview stage.')}<br>"
+                f"• {_('The selected Programmes do not offer an Interview stage.')}<br>"
                 f"• {_('Applicants have an incomplete application or were rejected.')}<br>"
                 f"</div>"
             )

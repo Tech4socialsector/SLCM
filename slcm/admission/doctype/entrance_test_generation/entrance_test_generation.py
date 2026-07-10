@@ -58,8 +58,6 @@ class EntranceTestGeneration(Document):
                 app.program_level,
                 app.entrance_test,
                 app.intereview,
-                app.foriegn_national,
-                p.international_entrance_test,
                 COALESCE(ee.exempts_interview, 0) AS exempts_interview
             FROM `tabApplicant` app
             LEFT JOIN `tabEligibility Evaluation` ee ON ee.applicant_name = app.name
@@ -70,18 +68,16 @@ class EntranceTestGeneration(Document):
                 AND app.admission_cycle = %(admission_cycle)s
                 AND app.program_level = %(program_level)s
                 {program_filter}
-                AND IFNULL(app.center_filled, 0) = 1
                 AND (ee.exempts_entrance_test IS NULL OR ee.exempts_entrance_test = 0)
                 AND app.name NOT IN (SELECT applicant_id FROM `tabEntrance Test Applicant`)
                 AND app.name NOT IN (SELECT applicant FROM `tabEntrance Test Seat Allocation`)
                 AND app.status = 'Completed'
-                AND p.entrance_test = 1
+                AND (
+                    (app.foriegn_national = 'Yes' AND p.international_entrance_test = 1)
+                    OR
+                    (COALESCE(app.foriegn_national, '') != 'Yes' AND p.entrance_test = 1 AND IFNULL(app.center_filled, 0) = 1)
+                )
         """, query_filters, as_dict=True)
-
-        applicants = [
-            app for app in applicants
-            if not (app.get("foriegn_national") == "Yes" and not app.get("international_entrance_test"))
-        ]
 
         if not applicants:
             self.db_set("status", "Failed")
@@ -121,7 +117,7 @@ class EntranceTestGeneration(Document):
                         <strong style="color: #444;">Diagnostic Summary:</strong><br>
                         The system identified <b>{count_total} total applicants</b> matching this configuration. However, none were selected because they may be:
                         <ul style="margin-top: 5px; padding-left: 18px;">
-                            <li>Assigned to a different Program or Program Level</li>
+                            <li>Assigned to a different Programme or Programme Level</li>
                             <li>Already included in an existing Entrance Test List</li>
                             <li>Marked as 'Exempt' from the Entrance Test</li>
                             <li>Rejected or in an ineligible application status</li>

@@ -43,7 +43,7 @@
   "offer_letter",
   "admission_fee",
   "enrolled",
-  "sec_break_intl_stages",
+  "international_applicant_stages_section",
   "international_entrance_test",
   "international_interview",
   "connections_tab_tab"
@@ -274,14 +274,7 @@
    "read_only": 1
   },
   {
-   "fieldname": "application_form_link",
-   "fieldtype": "Data",
-   "label": "Application Form Link",
-   "options": "URL",
-   "read_only": 1
-  },
-  {
-   "fieldname": "sec_break_intl_stages",
+   "fieldname": "international_applicant_stages_section",
    "fieldtype": "Section Break",
    "label": "International Applicant Stages"
   },
@@ -296,6 +289,25 @@
    "fieldname": "international_interview",
    "fieldtype": "Check",
    "label": "Interview"
+  },
+  {
+   "fieldname": "application_form_link",
+   "fieldtype": "Data",
+   "label": "Application Form Link",
+   "options": "URL",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "academic_term.term_start_date",
+   "fieldname": "term_start_date",
+   "fieldtype": "Date",
+   "label": "Term start date"
+  },
+  {
+   "fetch_from": "academic_term.term_end_date",
+   "fieldname": "term_end_date",
+   "fieldtype": "Date",
+   "label": "Term end date"
   }
  ],
  "grid_page_length": 50,

@@ -98,12 +98,6 @@ class EntranceTestList(Document):
             if getattr(app, "allocation_status", "") == "Allocated":
                 continue
 
-            if app.applicant_id:
-                is_intl = (frappe.db.get_value("Applicant", app.applicant_id, "foriegn_national") == "Yes")
-                if is_intl:
-                    if not frappe.db.get_value("Program", app.program, "international_entrance_test"):
-                        continue
-
             existing_allocation = frappe.db.get_value("Entrance Test Seat Allocation", {
                 "entrance_test_list": self.name,
                 "applicant": app.applicant_id
@@ -472,7 +466,7 @@ def generate_and_store_admit_card(allocation, is_rescheduled=False, html_content
         "attached_to_name": allocation.name,
         "attached_to_field": field_to_update,
         "content": pdf_content,
-        "is_private": 1
+        "is_private": 0
     })
     _file.save(ignore_permissions=True)    
     values = {

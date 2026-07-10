@@ -12,12 +12,12 @@ class PACEApplicantFeeAssignment(Document):
 	def check_readonly_if_paid(self):
 		if not self.is_new() and not self.flags.ignore_permissions:
 			doc_before_save = self.get_doc_before_save()
-			if doc_before_save and doc_before_save.status == "Paid":
+			if doc_before_save and doc_before_save.status in ["Paid", "Enrolled", "Converted"]:
 				user_roles = frappe.get_roles()
 				admin_roles = {"System Manager", "Administrator", "Academic Manager", "PACE Admission Manager", "Admission Admin"}
 				is_admin = any(role in user_roles for role in admin_roles)
 				if not is_admin:
-					frappe.throw(frappe._("You are not authorized to edit a Paid Fee Assignment."))
+					frappe.throw(frappe._("You are not authorized to edit a {0} Fee Assignment.").format(doc_before_save.status))
 
 	def on_update(self):
 		"""
