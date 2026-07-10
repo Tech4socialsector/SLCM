@@ -1,0 +1,75 @@
+{
+ "actions": [],
+ "creation": "2026-07-10 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "section",
+  "status",
+  "column_break_ssul_1",
+  "updated_on",
+  "updated_by",
+  "message"
+ ],
+ "fields": [
+  {
+   "columns": 3,
+   "fieldname": "section",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Section",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Success\nError",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_ssul_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "columns": 3,
+   "fieldname": "updated_on",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Updated On",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "updated_by",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Updated By",
+   "read_only": 1
+  },
+  {
+   "columns": 4,
+   "fieldname": "message",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Message",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-07-10 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Student Section Update Log",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "custom": 0
+}

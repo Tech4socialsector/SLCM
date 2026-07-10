@@ -127,6 +127,7 @@
    "in_standard_filter": 1,
    "label": "Enrollment Status",
    "options": "Enrolled\nDropped\nCompleted\nPending",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -144,7 +145,8 @@
    "fieldname": "user",
    "fieldtype": "Link",
    "label": "User",
-   "options": "User"
+   "options": "User",
+   "reqd": 1
   },
   {
    "fieldname": "batch",
@@ -173,7 +175,7 @@
    "link_fieldname": "student"
   }
  ],
- "modified": "2026-07-10 11:34:04.329901",
+ "modified": "2026-07-10 13:16:24.785007",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Enrollment",
