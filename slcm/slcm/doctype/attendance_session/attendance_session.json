@@ -132,7 +132,7 @@
    "fetch_from": "course_schedule.instructor",
    "fieldname": "instructor",
    "fieldtype": "Link",
-   "label": "Instructor",
+   "label": "Faculty",
    "options": "Faculty"
   },
   {
@@ -229,7 +229,7 @@
   }
  ],
  "links": [],
- "modified": "2026-07-10 12:41:06.200341",
+ "modified": "2026-07-10 15:14:03.138328",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Attendance Session",
