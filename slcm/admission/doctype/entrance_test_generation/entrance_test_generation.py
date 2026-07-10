@@ -58,6 +58,8 @@ class EntranceTestGeneration(Document):
                 app.program_level,
                 app.entrance_test,
                 app.intereview,
+                app.foriegn_national,
+                p.international_entrance_test,
                 COALESCE(ee.exempts_interview, 0) AS exempts_interview
             FROM `tabApplicant` app
             LEFT JOIN `tabEligibility Evaluation` ee ON ee.applicant_name = app.name
@@ -75,6 +77,11 @@ class EntranceTestGeneration(Document):
                 AND app.status = 'Completed'
                 AND p.entrance_test = 1
         """, query_filters, as_dict=True)
+
+        applicants = [
+            app for app in applicants
+            if not (app.get("foriegn_national") == "Yes" and not app.get("international_entrance_test"))
+        ]
 
         if not applicants:
             self.db_set("status", "Failed")

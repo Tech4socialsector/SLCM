@@ -3188,6 +3188,9 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
     # ── International applicant branch ──────────────────────────────────────
     # Identified by foriegn_national == "Yes" (not nationality field)
     if (getattr(applicant_doc, "foriegn_national", "") or "").strip() == "Yes":
+        if not _truthy(frappe.db.get_value("Program", applicant_doc.program, "international_entrance_test")):
+            frappe.log_error(f"Auto Allocate skipped: international_entrance_test not enabled for program {applicant_doc.program}", "Auto Allocate Debug")
+            return
         _auto_allocate_international_entrance_test(applicant_doc)
         return
     # ─────────────────────────────────────────────────────────────────────────
