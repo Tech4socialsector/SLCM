@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestCohort(FrappeTestCase):
+class TestBatch(FrappeTestCase):
 	pass

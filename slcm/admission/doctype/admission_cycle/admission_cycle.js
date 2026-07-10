@@ -155,6 +155,11 @@ frappe.ui.form.on("Admission Cycle", {
             colors[frm.doc.status] || "gray"
         );
 
+        // Override the Frappe breadcrumb/header status pill (which defaults to
+        // docstatus-derived labels like "Cancelled") with the custom status field.
+        frm.page.set_indicator(__(frm.doc.status), colors[frm.doc.status] || "gray");
+
+
         // Intro messages
         if (frm.doc.status === "Active") {
             frm.set_intro(__("This admission cycle is currently <b>Active</b>. It is visible on the applicant portal."));
@@ -213,27 +218,26 @@ frappe.ui.form.on("Admission Cycle", {
             if (frm.doc.status === "Draft") {
                 frm.add_custom_button(__("Activate"), function () {
                     slcm_run_activation_checks(frm, () => {
-                        const activate_cycle = () => {
+                        frappe.confirm(slcm_build_activate_confirm_msg(frm), () => {
                             frappe.call({
-                                method: "frappe.client.set_value",
-                                args: {
-                                    doctype: "Admission Cycle",
-                                    name: frm.doc.name,
-                                    fieldname: "status",
-                                    value: "Active"
-                                },
-                                callback: function () {
+                                method: "slcm.admission.doctype.admission_cycle.admission_cycle.activate_cycle",
+                                args: { name: frm.doc.name },
+                                callback: function (r) {
+                                    if (r.message && r.message.success) {
+                                        frappe.show_alert({
+                                            message: r.message.message,
+                                            indicator: "green"
+                                        });
+                                    } else if (r.message && !r.message.success) {
+                                        frappe.msgprint({
+                                            title: __("Cannot Activate"),
+                                            message: r.message.message,
+                                            indicator: "red"
+                                        });
+                                    }
                                     frm.reload_doc();
                                 }
                             });
-                        };
-
-                        frappe.confirm(slcm_build_activate_confirm_msg(frm), () => {
-                            if (frm.doc.docstatus === 0) {
-                                frm.save("Submit").then(activate_cycle);
-                            } else {
-                                activate_cycle();
-                            }
                         });
                     });
                 }, __("Actions"));
@@ -265,27 +269,24 @@ frappe.ui.form.on("Admission Cycle", {
 
                     frappe.confirm(build_close_confirm_msg(), function () {
                         frappe.call({
-                            method: "frappe.client.set_value",
+                            method: "slcm.admission.doctype.admission_cycle.admission_cycle.close_cycle",
                             args: {
-                                doctype: "Admission Cycle",
-                                name: frm.doc.name,
-                                fieldname: "status",
-                                value: "Closed"
+                                name: frm.doc.name
                             },
-                            callback: function () {
-                                // Also update docstatus to Closed (submitted → cancelled equivalent)
-                                frappe.call({
-                                    method: "frappe.client.set_value",
-                                    args: {
-                                        doctype: "Admission Cycle",
-                                        name: frm.doc.name,
-                                        fieldname: "docstatus",
-                                        value: 2  // Cancelled = Closed in Frappe
-                                    },
-                                    callback: function () {
-                                        frm.reload_doc();
-                                    }
-                                });
+                            callback: function (r) {
+                                if (r.message && r.message.success) {
+                                    frappe.show_alert({
+                                        message: r.message.message,
+                                        indicator: "green"
+                                    });
+                                } else if (r.message && !r.message.success) {
+                                    frappe.msgprint({
+                                        title: __("Error"),
+                                        message: r.message.message,
+                                        indicator: "red"
+                                    });
+                                }
+                                frm.reload_doc();
                             }
                         });
                     });
@@ -647,7 +648,7 @@ function open_reservation_policy(frm, row) {
         fields: [
             { fieldtype: "Link", fieldname: "admission_cycle", label: __("Cycle"), options: "Admission Cycle", read_only: 1, default: frm.doc.name },
             { fieldtype: "Column Break" },
-            { fieldtype: "Link", fieldname: "program", label: __("Program"), options: "Program", read_only: 1, default: row.program },
+            { fieldtype: "Link", fieldname: "program", label: __("Programme"), options: "Programme", read_only: 1, default: row.program },
             { fieldtype: "Column Break" },
             { fieldtype: "Link", fieldname: "campus", label: __("Campus"), options: "Campus", read_only: 1, default: row.campus },
             { fieldtype: "Column Break" },
@@ -972,8 +973,8 @@ function open_program_media(frm, row) {
             {
                 fieldtype: "Link",
                 fieldname: "program",
-                label: __("Program"),
-                options: "Program",
+                label: __("Programme"),
+                options: "Programme",
                 read_only: 1,
                 default: row.program
             },

@@ -31,10 +31,10 @@ def get_columns() -> list[dict]:
 			"width": 180
 		},
 		{
-			"label": _("Program"),
+			"label": _("Programme"),
 			"fieldname": "program",
 			"fieldtype": "Link",
-			"options": "Program",
+			"options": "Programme",
 			"width": 180
 		},
 		{

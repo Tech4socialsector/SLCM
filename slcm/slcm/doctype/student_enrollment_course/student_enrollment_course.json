@@ -31,7 +31,7 @@
    "read_only": 1
   },
   {
-   "fetch_from": "course_offering.course_title.course_type",
+   "fetch_from": "course.course_type",
    "fieldname": "course_type",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -39,7 +39,7 @@
    "read_only": 1
   },
   {
-   "fetch_from": "course_offering.course_title.credit_value",
+   "fetch_from": "course.credit_value",
    "fieldname": "credits",
    "fieldtype": "Int",
    "in_list_view": 1,

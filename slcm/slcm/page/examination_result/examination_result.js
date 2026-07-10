@@ -1146,7 +1146,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				{ fieldtype: 'Column Break' },
 				{ label: 'Academic Year', fieldname: 'academic_year', fieldtype: 'Link',   options: 'Academic Year' },
 				{ fieldtype: 'Section Break' },
-				{ label: 'Programme',     fieldname: 'programme',     fieldtype: 'Link',   options: 'Program' },
+				{ label: 'Programme',     fieldname: 'programme',     fieldtype: 'Link',   options: 'Programme' },
 				{ fieldtype: 'Column Break' },
 				{ label: 'Trimester',     fieldname: 'trimester',     fieldtype: 'Link',   options: 'Academic Term' },
 				{ fieldtype: 'Section Break' },

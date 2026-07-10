@@ -31,9 +31,9 @@ def get_columns():
 		},
 		{
 			"fieldname": "program",
-			"label": _("Cohort"),
+			"label": _("Batch"),
 			"fieldtype": "Link",
-			"options": "Cohort",
+			"options": "Batch",
 			"width": 130
 		},
 		{

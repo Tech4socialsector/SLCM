@@ -73,7 +73,7 @@
    "fieldname": "programme",
    "fieldtype": "Link",
    "label": "Programme",
-   "options": "Program",
+   "options": "Programme",
    "read_only": 1
   },
   {

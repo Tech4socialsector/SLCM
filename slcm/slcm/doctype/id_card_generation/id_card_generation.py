@@ -186,7 +186,7 @@ class IDCardGeneration(Document):
 		if self.card_type == "Student" and self.student:
 			programme = frappe.db.get_value("Student Master", self.student, "programme")
 			if programme:
-				cohort_end = frappe.db.get_value("Cohort", programme, "end_date")
+				cohort_end = frappe.db.get_value("Batch", programme, "end_date")
 				if cohort_end:
 					self.expiry_date = cohort_end
 

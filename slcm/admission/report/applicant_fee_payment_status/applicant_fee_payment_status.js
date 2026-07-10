@@ -16,9 +16,9 @@ frappe.query_reports["Applicant Fee Payment Status"] = {
         },
         {
             "fieldname": "program",
-            "label": __("Program"),
+            "label": __("Programme"),
             "fieldtype": "Link",
-            "options": "Program"
+            "options": "Programme"
         },
         {
             "fieldname": "status",

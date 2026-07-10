@@ -47,7 +47,7 @@ frappe.ui.form.on('Admission Application', {
 
     program(frm) {
         if (frm.doc.program) {
-            frappe.db.get_value('Program', frm.doc.program,
+            frappe.db.get_value('Programme', frm.doc.program,
                 ['program_name'], (r) => {
                     frm.set_value('program_name', r.program_name || '');
                 }

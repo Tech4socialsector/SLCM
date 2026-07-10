@@ -30,7 +30,7 @@ def get_programmes_for_exam_plan(exam_plan):
 		SELECT DISTINCT sm.programme, c.cohort_name AS programme_name
 		FROM `tabStudent Course Marks` scm
 		INNER JOIN `tabStudent Master` sm ON sm.name = scm.student
-		LEFT JOIN `tabCohort` c ON c.name = sm.programme
+		LEFT JOIN `tabBatch` c ON c.name = sm.programme
 		WHERE scm.exam_plan = %(exam_plan)s
 		  AND sm.programme IS NOT NULL AND sm.programme != ''
 		ORDER BY sm.programme

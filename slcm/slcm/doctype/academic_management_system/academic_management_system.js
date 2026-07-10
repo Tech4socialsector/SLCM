@@ -356,10 +356,10 @@ frappe.ui.form.on("Academic Management System", {
 					reqd: 1,
 				},
 				{
-					label: "Program",
+					label: "Programme",
 					fieldname: "program",
 					fieldtype: "Link",
-					options: "Program",
+					options: "Programme",
 					reqd: 1,
 				},
 				{
@@ -451,10 +451,10 @@ frappe.ui.form.on("Academic Management System", {
 					reqd: 1,
 				},
 				{
-					label: "Program",
+					label: "Programme",
 					fieldname: "program",
 					fieldtype: "Link",
-					options: "Program",
+					options: "Programme",
 					reqd: 1,
 				},
 				{

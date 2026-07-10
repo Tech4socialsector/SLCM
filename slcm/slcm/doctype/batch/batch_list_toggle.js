@@ -1,35 +1,35 @@
 // Copyright (c) 2025, Nishanth and contributors
 // For license information, please see license.txt
 
-frappe.listview_settings["Cohort"] = {
+frappe.listview_settings["Batch"] = {
 	onload(listview) {
-		hide_cohort_list_sidebar(listview);
+		hide_batch_list_sidebar(listview);
 	},
 	refresh(listview) {
-		hide_cohort_list_sidebar(listview);
+		hide_batch_list_sidebar(listview);
 	},
 };
 
-function hide_cohort_list_sidebar(listview) {
+function hide_batch_list_sidebar(listview) {
 	// Method 1: Use Frappe's built-in method (most reliable)
 	if (listview && listview.page) {
 		listview.page.hide_sidebar();
 	}
 
 	// Method 2: CSS reinforcement with more specific selectors
-	if (!document.getElementById("cohort-hide-sidebar-css")) {
+	if (!document.getElementById("batch-hide-sidebar-css")) {
 		const style = document.createElement("style");
-		style.id = "cohort-hide-sidebar-css";
+		style.id = "batch-hide-sidebar-css";
 		style.innerHTML = `
-			/* Target the specific page container for Cohort list */
-			[data-page-route*="Cohort"] .layout-side-section,
-			body[data-route*="Cohort"] .layout-side-section,
+			/* Target the specific page container for Batch list */
+			[data-page-route*="Batch"] .layout-side-section,
+			body[data-route*="Batch"] .layout-side-section,
 			.page-container .layout-side-section {
 				display: none !important;
 			}
 
-			[data-page-route*="Cohort"] .layout-main-section,
-			body[data-route*="Cohort"] .layout-main-section,
+			[data-page-route*="Batch"] .layout-main-section,
+			body[data-route*="Batch"] .layout-main-section,
 			.page-container .layout-main-section {
 				width: 100% !important;
 				margin-left: 0 !important;
@@ -37,8 +37,8 @@ function hide_cohort_list_sidebar(listview) {
 			}
 
 			/* Handle the container wrapper */
-			[data-page-route*="Cohort"] .layout-main-section-wrapper,
-			body[data-route*="Cohort"] .layout-main-section-wrapper {
+			[data-page-route*="Batch"] .layout-main-section-wrapper,
+			body[data-route*="Batch"] .layout-main-section-wrapper {
 				width: 100% !important;
 			}
 		`;

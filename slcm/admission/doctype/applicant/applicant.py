@@ -99,10 +99,17 @@ class Applicant(Document):
         Exemption flags (exempts_entrance_test, exempts_interview) are handled by validate_eligibility.
         """
         if self.program:
-            program_stages = frappe.db.get_value("Program", self.program, ["entrance_test", "intereview"], as_dict=True)
-            if program_stages:
-                self.entrance_test = program_stages.get("entrance_test", 0)
-                self.intereview = program_stages.get("intereview", 0)
+            is_intl = (getattr(self, "foriegn_national", "") or "").strip() == "Yes"
+            if is_intl:
+                program_stages = frappe.db.get_value("Programme", self.program, ["international_entrance_test", "international_interview"], as_dict=True)
+                if program_stages:
+                    self.entrance_test = program_stages.get("international_entrance_test", 0)
+                    self.intereview = program_stages.get("international_interview", 0)
+            else:
+                program_stages = frappe.db.get_value("Programme", self.program, ["entrance_test", "intereview"], as_dict=True)
+                if program_stages:
+                    self.entrance_test = program_stages.get("entrance_test", 0)
+                    self.intereview = program_stages.get("intereview", 0)
 
     def validate_email(self):
         if not validate_email_address(self.email):
@@ -1226,7 +1233,7 @@ class Applicant(Document):
         """
         if not self.program:
             return None
-        return frappe.db.get_value("Program", self.program, "level_of_study")
+        return frappe.db.get_value("Programme", self.program, "level_of_study")
 
     def _get_all_programs_for_level(self, program_level):
         """
@@ -1252,7 +1259,7 @@ class Applicant(Document):
             programs = frappe.db.sql("""
                 SELECT DISTINCT acp.program
                 FROM `tabAdmission Cycle Program` acp
-                JOIN `tabProgram` p ON p.name = acp.program
+                JOIN `tabProgramme` p ON p.name = acp.program
                 WHERE acp.parent = %(cycle)s
                   AND acp.is_active = 1
                   AND p.level_of_study = %(program_level)s
@@ -1268,7 +1275,7 @@ class Applicant(Document):
         # 3. Fallback: all programs of that level if no cycle or no programs found in cycle
         programs = frappe.db.sql("""
             SELECT name AS program
-            FROM `tabProgram`
+            FROM `tabProgramme`
             WHERE level_of_study = %(program_level)s
             ORDER BY name ASC
         """, {"program_level": program_level}, as_dict=True)
@@ -1479,7 +1486,7 @@ class Applicant(Document):
             if not is_ok:
                 continue
             eligible_count += 1
-            display = frappe.db.get_value("Program", prog_name, "program_name") or prog_name
+            display = frappe.db.get_value("Programme", prog_name, "program_name") or prog_name
             programs_out.append(
                 {
                     "program": prog_name,
@@ -1679,7 +1686,7 @@ class Applicant(Document):
         ).format(
             heading = heading_html,
             summary = summary_html,
-            col1    = _("Program"),
+            col1    = _("Programme"),
             col2    = _("Status"),
             rows    = rows_html,
         )
@@ -1926,14 +1933,20 @@ class Applicant(Document):
 
         append_lines(display_level, applied_threshold, applicant_val, score_failed)
 
-        if qualification_level == "XII" and base_rule.get("sslc_percentage"):
-            sslc_threshold = flt(base_rule.get("sslc_percentage"))
-            applicant_sslc = flt(getattr(self, "class_x_percentage", None) or 0)
-            sslc_failed = bool(sslc_threshold and applicant_sslc > 0 and not self._compare(applicant_sslc, sslc_threshold, operator))
-            
-            # Check if we should append SSLC lines (either failed or missing)
-            if sslc_failed or (sslc_threshold and applicant_sslc <= 0):
-                append_lines("Class X", sslc_threshold, applicant_sslc, sslc_failed)
+        if qualification_level == "XII":
+            sslc_threshold = None
+            if cat_row and cat_row.get("minimum_percentage_sslc"):
+                sslc_threshold = flt(cat_row.minimum_percentage_sslc)
+            elif base_rule.get("sslc_percentage"):
+                sslc_threshold = flt(base_rule.get("sslc_percentage"))
+                
+            if sslc_threshold:
+                applicant_sslc = flt(getattr(self, "class_x_percentage", None) or 0)
+                sslc_failed = bool(sslc_threshold and applicant_sslc > 0 and not self._compare(applicant_sslc, sslc_threshold, operator))
+                
+                # Check if we should append SSLC lines (either failed or missing)
+                if sslc_failed or (sslc_threshold and applicant_sslc <= 0):
+                    append_lines("Class X", sslc_threshold, applicant_sslc, sslc_failed)
 
         if cat_row and (cat_row.get("category") or "").strip():
             if score_lines:
@@ -2037,7 +2050,9 @@ class Applicant(Document):
 
         # 2. Get reservation overrides defined for this mapping
         reservation_rows = frappe.db.sql("""
-            SELECT category, priority, minimum_percentage
+            SELECT category, priority,
+                   minimum_percentage_hsc, minimum_percentage_sslc,
+                   minimum_cgpa_ug, minimum_cgpa_pg
             FROM `tabRule Mapping Category`
             WHERE parent = %(mapping_name)s
             ORDER BY priority ASC
@@ -2052,15 +2067,21 @@ class Applicant(Document):
             if (row.category or "").strip() in applicant_categories
         ]
 
-        primary_matched_row = None
         if matched_categories:
-            primary_matched_row = sorted(
+            matched_categories = sorted(
                 matched_categories,
                 key=lambda r: (flt(r.get("priority") or 999999), (r.get("category") or "").strip()),
-            )[0]
+            )
+            primary_matched_row = matched_categories[0]
+        else:
+            primary_matched_row = None
 
-        # evaluation_paths = [MatchedCategoryRow1, MatchedCategoryRow2, ..., None (for General)]
-        evaluation_paths = matched_categories + [None]
+        # If the applicant has matching category overrides, ONLY evaluate the highest priority matching category.
+        # Otherwise, fall back to evaluating General/base rules.
+        if matched_categories:
+            evaluation_paths = [primary_matched_row]
+        else:
+            evaluation_paths = [None]
 
         # Collect rule-specific ineligible messages to show if ALL paths fail (subset; see docstring)
         ineligible_messages = []
@@ -2074,14 +2095,22 @@ class Applicant(Document):
 
                 # Threshold: Category Override or Rule Default
                 if cat_row:
-                    required_val = flt(cat_row.minimum_percentage)
+                    qual_level = base_rule.get("qualification_level")
+                    if qual_level == "XII":
+                        required_val = flt(cat_row.minimum_percentage_hsc) if cat_row.minimum_percentage_hsc else self._get_required_value(base_rule)
+                    elif qual_level == "Undergraduate":
+                        required_val = flt(cat_row.minimum_cgpa_ug) if cat_row.minimum_cgpa_ug else self._get_required_value(base_rule)
+                    elif qual_level == "Postgraduate":
+                        required_val = flt(cat_row.minimum_cgpa_pg) if cat_row.minimum_cgpa_pg else self._get_required_value(base_rule)
+                    else:
+                        required_val = self._get_required_value(base_rule)
                 else:
                     required_val = self._get_required_value(base_rule)
 
                 operator = (base_rule.get("operator") or ">=")
                 
                 # Perform academic value comparison
-                passes_threshold = self._compare_any_academic_value(base_rule, required_val, operator)
+                passes_threshold = self._compare_any_academic_value(base_rule, required_val, operator, cat_row=cat_row)
                 # Perform non-percentage checks (Degrees/HSC Groups)
                 passes_non_percentage = self._evaluate_non_percentage_checks(base_rule)
 
@@ -2317,7 +2346,7 @@ class Applicant(Document):
     # MULTI-DEGREE ACADEMIC VALUE CHECK (CASE A)
     # ──────────────────────────────────────────────
 
-    def _compare_any_academic_value(self, rule, required_min, operator):
+    def _compare_any_academic_value(self, rule, required_min, operator, cat_row=None):
         if not rule:
             return self._compare(flt(getattr(self, "hsc_percentage", 0) or 0), required_min, operator)
 
@@ -2328,9 +2357,17 @@ class Applicant(Document):
             passed = self._compare(value, required_min, operator)
             if not passed:
                 return False
-            if rule.get("sslc_percentage"):
+            
+            # Determine required SSLC percentage
+            required_sslc = None
+            if cat_row and cat_row.get("minimum_percentage_sslc"):
+                required_sslc = flt(cat_row.minimum_percentage_sslc)
+            elif rule.get("sslc_percentage"):
+                required_sslc = flt(rule.get("sslc_percentage"))
+
+            if required_sslc is not None:
                 sslc_val = flt(getattr(self, "class_x_percentage", None) or 0)
-                if not self._compare(sslc_val, flt(rule.get("sslc_percentage")), operator):
+                if not self._compare(sslc_val, required_sslc, operator):
                     return False
             return True
 
@@ -2677,7 +2714,7 @@ def set_intake_type(doc, method=None):
     PhD Law                      = Direct Merit
     """
     if doc.program:
-        intake = frappe.db.get_value("Program", doc.program, "intake_type")
+        intake = frappe.db.get_value("Programme", doc.program, "intake_type")
         if intake:
             doc.intake_type = intake
 
@@ -3181,18 +3218,19 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
         frappe.log_error("Auto Allocate skipped: no program", "Auto Allocate Debug")
         return
 
-    if not _truthy(frappe.db.get_value("Program", applicant_doc.program, "entrance_test")):
-        frappe.log_error(f"Auto Allocate skipped: entrance_test not enabled for program {applicant_doc.program}", "Auto Allocate Debug")
-        return
+    is_international = (getattr(applicant_doc, "foriegn_national", "") or "").strip() == "Yes"
 
-    # ── International applicant branch ──────────────────────────────────────
-    # Identified by foriegn_national == "Yes" (not nationality field)
-    if (getattr(applicant_doc, "foriegn_national", "") or "").strip() == "Yes":
-        if not _truthy(frappe.db.get_value("Program", applicant_doc.program, "international_entrance_test")):
+    if is_international:
+        if not _truthy(frappe.db.get_value("Programme", applicant_doc.program, "international_entrance_test")):
             frappe.log_error(f"Auto Allocate skipped: international_entrance_test not enabled for program {applicant_doc.program}", "Auto Allocate Debug")
             return
+        # ── International applicant branch ──────────────────────────────────────
         _auto_allocate_international_entrance_test(applicant_doc)
         return
+    else:
+        if not _truthy(frappe.db.get_value("Programme", applicant_doc.program, "entrance_test")):
+            frappe.log_error(f"Auto Allocate skipped: entrance_test not enabled for program {applicant_doc.program}", "Auto Allocate Debug")
+            return
     # ─────────────────────────────────────────────────────────────────────────
 
     # Idempotency: a seat allocation already exists for this applicant

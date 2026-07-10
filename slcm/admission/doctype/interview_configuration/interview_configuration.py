@@ -13,7 +13,7 @@ class InterviewConfiguration(Document):
 
     def validate(self):
         pattern = re.compile(r"^[1-9]\d*:[1-9]\d*$")
-        
+
         if self.enter_domestic_ratio:
             if not pattern.match(str(self.enter_domestic_ratio)):
                 frappe.throw(_("Enter Domestic Ratio must be in the format 'X:Y' (e.g. '3:1') where both X and Y are positive integers."))
@@ -127,7 +127,7 @@ class InterviewConfiguration(Document):
             FROM `tabApplicant` app
             INNER JOIN `tabEligibility Evaluation` ee
                     ON ee.applicant_name = app.name
-            INNER JOIN `tabProgram` p
+            INNER JOIN `tabProgramme` p
                     ON p.name = app.program
             WHERE
                 app.academic_year    = %(academic_year)s
@@ -138,7 +138,11 @@ class InterviewConfiguration(Document):
                 AND app.name NOT IN (SELECT applicant_id FROM `tabInterview Applicant`)
                 AND ee.exempts_entrance_test = 1
                 AND (ee.exempts_interview IS NULL OR ee.exempts_interview = 0)
-                AND p.intereview = 1
+                AND (
+                    (app.foriegn_national = 'Yes' AND p.international_interview = 1)
+                    OR
+                    (COALESCE(app.foriegn_national, '') != 'Yes' AND p.intereview = 1)
+                )
         """
 
         # Source 2: Entrance Test Passers
@@ -158,7 +162,7 @@ class InterviewConfiguration(Document):
             FROM `tabEntrance Test Seat Allocation` etsa
             INNER JOIN `tabApplicant` app
                     ON app.name = etsa.applicant
-            INNER JOIN `tabProgram` p
+            INNER JOIN `tabProgramme` p
                     ON p.name = app.program
             WHERE
                 etsa.academic_year    = %(academic_year)s
@@ -169,7 +173,11 @@ class InterviewConfiguration(Document):
                 AND app.status != 'Rejected'
                 AND app.name NOT IN (SELECT applicant_id FROM `tabInterview Applicant`)
                 AND COALESCE(etsa.exempts_interview, 0) = 0
-                AND p.intereview = 1
+                AND (
+                    (app.foriegn_national = 'Yes' AND p.international_interview = 1)
+                    OR
+                    (COALESCE(app.foriegn_national, '') != 'Yes' AND p.intereview = 1)
+                )
         """
 
         # Source 3: Academic Eligibility
@@ -187,7 +195,7 @@ class InterviewConfiguration(Document):
                 0.0               AS entrance_test_score,
                 0.0               AS part_a_score
             FROM `tabApplicant` app
-            INNER JOIN `tabProgram` p
+            INNER JOIN `tabProgramme` p
                     ON p.name = app.program
             WHERE
                 app.academic_year    = %(academic_year)s
@@ -197,8 +205,12 @@ class InterviewConfiguration(Document):
                 AND app.status != 'Rejected'
                 AND app.name NOT IN (SELECT applicant_id FROM `tabInterview Applicant`)
                 AND p.entrance_test = 0
-                AND p.intereview = 1
                 AND (app.exempts_interview IS NULL OR app.exempts_interview = 0)
+                AND (
+                    (app.foriegn_national = 'Yes' AND p.international_interview = 1)
+                    OR
+                    (COALESCE(app.foriegn_national, '') != 'Yes' AND p.intereview = 1)
+                )
         """
 
         seen = {}
@@ -233,14 +245,7 @@ class InterviewConfiguration(Document):
                     row.part_a_score = 0.0
                 seen[row.applicant_id] = row
 
-        # Filter out international applicants if international_interview is disabled on the program
-        filtered_list = []
-        for row in seen.values():
-            if row.get("foriegn_national") == "Yes":
-                if not frappe.db.get_value("Program", row.program, "international_interview"):
-                    continue
-            filtered_list.append(row)
-        return filtered_list
+        return list(seen.values())
 
     @frappe.whitelist()
     def generate_interview_list(self):
@@ -321,14 +326,14 @@ class InterviewConfiguration(Document):
                 f"<b>{_('Possible reasons for no candidates')}:</b><br>"
                 f"• {_('Applicants are already included in an existing Interview List.')}<br>"
                 f"• {_('Applicants are exempted from the Interview stage.')}<br>"
-                f"• {_('The selected Programs do not offer an Interview stage.')}<br>"
+                f"• {_('The selected Programmes do not offer an Interview stage.')}<br>"
                 f"• {_('Applicants have an incomplete application or were rejected.')}<br>"
                 f"</div>"
             )
             frappe.throw(msg, title=_("Generation Failed"))
 
         # Determine level_of_study from first chosen program
-        program_levels = {frappe.db.get_value("Program", p.program, "level_of_study") for p in self.program if p.program}
+        program_levels = {frappe.db.get_value("Programme", p.program, "level_of_study") for p in self.program if p.program}
         program_levels = {l for l in program_levels if l}
         program_level = list(program_levels)[0] if program_levels else "Undergraduate"
 

@@ -105,7 +105,7 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
 
     # ── Department & Level of Study (derived from programme/program) ────────────────────────────
     if program:
-        program_data = frappe.db.get_value("Program", program, ["department", "level_of_study"], as_dict=True)
+        program_data = frappe.db.get_value("Programme", program, ["department", "level_of_study"], as_dict=True)
         if program_data:
             if program_data.get("department"):
                 student.department = program_data.department
@@ -119,6 +119,23 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
         derived_year = _get_academic_year_from_cycle(admission_cycle)
         if derived_year:
             student.academic_year = derived_year
+
+    # ── Batch Assignment ───────────────────────────────────────────────────────
+    if program and student.academic_year:
+        batch_data = frappe.db.get_value(
+            "Batch",
+            {
+                "program": program,
+                "academic_year": student.academic_year,
+                "status": "Active"
+            },
+            ["name", "academic_term"],
+            as_dict=True
+        )
+        if batch_data:
+            student.programme = batch_data.name
+            if batch_data.academic_term:
+                student.academic_term = batch_data.academic_term
 
     # ── Name: full candidate_name in first_name only (no split) ──────────────
     full_name = (applicant.get("candidate_name") or "").strip()
@@ -214,8 +231,8 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
     student.entrance_exam_score_marksheet = applicant.get("national_test_certificate") or None
 
     #User
-    student.user = applicant.get("email") or None 
-    
+    student.user = applicant.get("email") or None
+
     if offer_letter_name:
         offer_pdf = frappe.db.get_value("Offer Letter", offer_letter_name, "offer_letter_pdf")
         if offer_pdf:
@@ -604,26 +621,26 @@ def convert_applicant_to_student(applicant_name, program, admission_cycle, offer
             "fee_type": "Admission Fee",
             "docstatus": 1
         }, "name")
-        
+
         if afa_name:
             from slcm.admission.doctype.applicant_fee_assignment.applicant_fee_assignment import create_invoice
-            # We don't call create_invoice here because that would create a DUPLICATE invoice 
+            # We don't call create_invoice here because that would create a DUPLICATE invoice
             # if this was called FROM create_invoice.
             # Instead, we just sync the finance data if it hasn't been done.
             afa_doc = frappe.get_doc("Applicant Fee Assignment", afa_name)
-            
+
             # Re-use the logic from AFA.py to fetch scholarship details
             scholarship_type = None
             scholarship_percentage = 0
             scholarship_approval_date = None
-            
+
             if afa_doc.get("scholarship_application"):
-                sa_data = frappe.db.get_value("Scholarship Application", afa_doc.scholarship_application, 
+                sa_data = frappe.db.get_value("Scholarship Application", afa_doc.scholarship_application,
                     ["scholarship_scheme", "approval_date"], as_dict=True)
                 if sa_data:
                     scholarship_approval_date = sa_data.approval_date
                     if sa_data.scholarship_scheme:
-                        scheme_data = frappe.db.get_value("Scholarship Scheme", sa_data.scholarship_scheme, 
+                        scheme_data = frappe.db.get_value("Scholarship Scheme", sa_data.scholarship_scheme,
                             ["scheme_type", "coverage_type", "coverage_value"], as_dict=True)
                         if scheme_data:
                             scholarship_type = scheme_data.scheme_type

@@ -59,7 +59,7 @@ function _run_preview(frm) {
 		frappe.msgprint({ title: __("Required"), message: __("Please select a Programme (Cohort)."), indicator: "orange" });
 		return;
 	}
-	if (frm.doc.target_scope === "Program" && !frm.doc.program) {
+	if (frm.doc.target_scope === "Programme" && !frm.doc.program) {
 		frappe.msgprint({ title: __("Required"), message: __("Please select a Program."), indicator: "orange" });
 		return;
 	}
