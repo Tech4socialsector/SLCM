@@ -24,13 +24,12 @@ def get_programmes_for_exam_plan(exam_plan):
 		return []
 	rows = frappe.db.sql(
 		"""
-		SELECT DISTINCT sm.programme, c.cohort_name AS programme_name
+		SELECT DISTINCT sm.programme_of_study AS programme
 		FROM `tabStudent Course Marks` scm
 		INNER JOIN `tabStudent Master` sm ON sm.name = scm.student
-		LEFT JOIN `tabBatch` c ON c.name = sm.programme
 		WHERE scm.exam_plan = %(exam_plan)s
-		  AND sm.programme IS NOT NULL AND sm.programme != ''
-		ORDER BY sm.programme
+		  AND sm.programme_of_study IS NOT NULL AND sm.programme_of_study != ''
+		ORDER BY sm.programme_of_study
 		""",
 		{"exam_plan": exam_plan},
 		as_dict=True,
@@ -47,7 +46,7 @@ def get_courses_for_exam_plan(exam_plan, programme=""):
 	params = {"exam_plan": exam_plan}
 	if programme:
 		extra_join = "INNER JOIN `tabStudent Master` sm ON sm.name = scm.student"
-		extra_cond = " AND sm.programme = %(programme)s"
+		extra_cond = " AND sm.programme_of_study = %(programme)s"
 		params["programme"] = programme
 	rows = frappe.db.sql(
 		f"""
@@ -180,7 +179,7 @@ def get_failed_students(exam_plan, course, search="", page=1, page_length=20):
 			TRIM(CONCAT_WS(' ', sm.first_name,
 				COALESCE(NULLIF(sm.middle_name,''), NULL),
 				sm.last_name))                                                   AS student_name,
-			sm.programme,
+			sm.programme_of_study                                                AS programme,
 			sm.batch_year,
 			sm.passport_size_photo                                               AS image,
 			sm.email,
@@ -398,7 +397,7 @@ def get_re_exam_registrations(exam_plan, course=""):
 				COALESCE(NULLIF(sm.middle_name,''), NULL),
 				sm.last_name))                 AS student_name,
 			sm.registration_id,
-			sm.programme,
+			sm.programme_of_study                                                AS programme,
 			r.re_exam_fee,
 			r.status,
 			r.payment_status,

@@ -11,9 +11,13 @@ Logic (runs in before_validate on HD Ticket):
    - A rule with current_year blank matches any year.
    - More-specific rules (both filled) take priority over partial ones.
 5. If a match is found, set agent_group on the ticket.
+6. If the ticket was created via inbound email (not the customer portal)
+   and no rule matched, fall back to the default email team.
 """
 
 import frappe
+
+DEFAULT_EMAIL_TEAM = "PACE Team"
 
 
 def auto_assign_team_by_student(doc, method=None):
@@ -23,6 +27,7 @@ def auto_assign_team_by_student(doc, method=None):
         return
 
     if not doc.ticket_type:
+        _set_default_email_team(doc)
         return
 
     # Fetch year_wise_assignment_rules from HD Ticket Type (custom child table)
@@ -34,10 +39,12 @@ def auto_assign_team_by_student(doc, method=None):
     )
 
     if not rules:
+        _set_default_email_team(doc)
         return
 
     student = _get_student(doc.raised_by)
     if not student:
+        _set_default_email_team(doc)
         return
 
     student_programme = student.get("programme")   # Program name (via Cohort.program)
@@ -46,6 +53,16 @@ def auto_assign_team_by_student(doc, method=None):
     matched_team = _best_match(rules, student_programme, student_year)
     if matched_team:
         doc.agent_group = matched_team
+    else:
+        _set_default_email_team(doc)
+
+
+def _set_default_email_team(doc):
+    """Tickets created via inbound email (not the customer portal) that
+    didn't match any assignment rule all land on the same HD Team."""
+    if doc.agent_group or doc.via_customer_portal:
+        return
+    doc.agent_group = DEFAULT_EMAIL_TEAM
 
 
 def _get_student(email):

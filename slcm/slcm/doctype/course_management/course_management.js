@@ -11,10 +11,10 @@ frappe.ui.form.on("Course Management", {
 
 		// 1. Override the form instance save method
 		frm.save = function () {
-			if (frm.doc.program && frm.doc.academic_year && frm.doc.department) {
+			if (frm.doc.program && frm.doc.academic_year) {
 				frm.trigger("save_curriculum");
 			} else {
-				frappe.msgprint(__("Please select Program, Academic Year and Department first."));
+				frappe.msgprint(__("Please select Programme and Academic Year first."));
 			}
 			return Promise.resolve(); // Fake promise to satisfy callers
 		};
@@ -36,10 +36,9 @@ frappe.ui.form.on("Course Management", {
 		});
 
 		// Persistence: Restore filters
-		if (!frm.doc.department && !frm.doc.program && !frm.doc.academic_year) {
+		if (!frm.doc.program && !frm.doc.academic_year) {
 			const settings = frappe.model.user_settings[frm.doctype] || {};
 			if (settings.filters) {
-				if (settings.filters.department) frm.set_value("department", settings.filters.department);
 				if (settings.filters.program) frm.set_value("program", settings.filters.program);
 				if (settings.filters.academic_year) frm.set_value("academic_year", settings.filters.academic_year);
 				if (settings.filters.batch) frm.set_value("batch", settings.filters.batch);
@@ -48,7 +47,7 @@ frappe.ui.form.on("Course Management", {
 		}
 
 		// Load UI if data already present
-		if (frm.doc.department && frm.doc.program && frm.doc.academic_year) {
+		if (frm.doc.program && frm.doc.academic_year) {
 			frm.trigger("autorefresh");
 		} else if (frm.curriculum_data) {
 			// If we have curriculum data but filters changed, re-render to pick up settings changes
@@ -56,7 +55,6 @@ frappe.ui.form.on("Course Management", {
 		}
 
 		frm.add_custom_button(__("Reset Filters"), function () {
-			frm.set_value("department", "");
 			frm.set_value("program", "");
 			frm.set_value("academic_year", "");
 			frm.set_value("batch", "");
@@ -81,10 +79,6 @@ frappe.ui.form.on("Course Management", {
 
 	set_defaults: function (frm) {
 		// Handled by python onload
-	},
-
-	department: function (frm) {
-		frm.trigger("autorefresh");
 	},
 
 	program: function (frm) {
@@ -117,7 +111,6 @@ frappe.ui.form.on("Course Management", {
 	autorefresh: function (frm) {
 		// Persistence: Save filters
 		frappe.model.user_settings.save(frm.doctype, "filters", {
-			department: frm.doc.department,
 			program: frm.doc.program,
 			academic_year: frm.doc.academic_year,
 			batch: frm.doc.batch,
@@ -148,7 +141,6 @@ frappe.ui.form.on("Course Management", {
 						// Set values sequentially to allow triggers to check completeness
 						// We use promises explicitly to ensure order if needed, but standard set_value is enough
 						// as the 'autorefresh' check requires ALL fields.
-						if (r.message.department) frm.set_value("department", r.message.department);
 						if (r.message.program) frm.set_value("program", r.message.program);
 						if (r.message.academic_year) frm.set_value("academic_year", r.message.academic_year);
 						if (r.message.batch && r.message.batch !== frm.doc.batch) {
@@ -161,7 +153,7 @@ frappe.ui.form.on("Course Management", {
 	},
 
 	load_curriculum: function (frm) {
-		if (frm.doc.department && frm.doc.program && frm.doc.academic_year) {
+		if (frm.doc.program && frm.doc.academic_year) {
 			frappe.call({
 				method: "slcm.slcm.doctype.course_management.course_management.get_curriculum",
 				args: {
@@ -193,7 +185,7 @@ frappe.ui.form.on("Course Management", {
 			});
 		} else {
 			$(frm.fields_dict.ui_container.wrapper).html(
-				'<div class="text-muted text-center p-5">Please select Department, Program, Academic Year (and optional Batch)</div>'
+				'<div class="text-muted text-center p-5">Please select Programme, Academic Year (and optional Batch)</div>'
 			);
 		}
 	},
@@ -486,8 +478,8 @@ frappe.ui.form.on("Course Management", {
 	},
 
 	save_curriculum: function (frm) {
-		if (!frm.curriculum_data || !frm.doc.department) {
-			frappe.msgprint("Please select a Department");
+		if (!frm.curriculum_data || !frm.doc.program) {
+			frappe.msgprint("Please select a Programme");
 			return;
 		}
 
@@ -496,7 +488,6 @@ frappe.ui.form.on("Course Management", {
 			args: {
 				program: frm.doc.program,
 				academic_year: frm.doc.academic_year,
-				department: frm.doc.department,
 				academic_system: frm.doc.academic_system,
 				batch: frm.doc.batch,
 				section: frm.doc.section,
@@ -718,10 +709,10 @@ function add_course_dialog(frm, semester, course_type, course_fields, enrollment
 			},
 			{
 				fieldtype: "Link",
-				fieldname: "department",
-				label: "Department",
-				options: "Department",
-				default: frm.doc.department,
+				fieldname: "programme",
+				label: "Programme",
+				options: "Programme",
+				default: frm.doc.program,
 				onchange() { load_courses(); },
 			},
 			{
@@ -789,7 +780,6 @@ function add_course_dialog(frm, semester, course_type, course_fields, enrollment
 					course: c.name,
 					course_code: c.course_code,
 					credits: c.credit_value,
-					department_name: c.department_name,
 				});
 
 				added++;
@@ -813,7 +803,7 @@ function add_course_dialog(frm, semester, course_type, course_fields, enrollment
 			status: "Active",
 		};
 
-		if (values.department) filters.department = values.department;
+		if (values.programme) filters.programme = values.programme;
 		if (values.search) {
 			filters.course_name = ["like", `%${values.search}%`];
 		}
@@ -824,8 +814,7 @@ function add_course_dialog(frm, semester, course_type, course_fields, enrollment
 					"name",
 					"course_name",
 					"course_code",
-					"department",
-					"department_name",
+					"programme",
 					"credit_value",
 					"status",
 				],
@@ -840,7 +829,7 @@ function add_course_dialog(frm, semester, course_type, course_fields, enrollment
 	function render_table(rows) {
 		const wrapper = d.fields_dict.course_table.$wrapper;
 		wrapper.empty();
-		const table = $(`<table class="table table-bordered table-hover"><thead><tr><th style="width:40px; text-align: center;"><input type="checkbox" class="select-all"></th><th>Course Name</th><th>Course Code</th><th>Department</th><th>Credits</th><th>Status</th></tr></thead><tbody></tbody></table>`);
+		const table = $(`<table class="table table-bordered table-hover"><thead><tr><th style="width:40px; text-align: center;"><input type="checkbox" class="select-all"></th><th>Course Name</th><th>Course Code</th><th>Programme</th><th>Credits</th><th>Status</th></tr></thead><tbody></tbody></table>`);
 		const tbody = table.find("tbody");
 		const selectAll = table.find(".select-all");
 
@@ -876,7 +865,7 @@ function add_course_dialog(frm, semester, course_type, course_fields, enrollment
 			rows.forEach(r => {
 				const isExisting = existingCourses.has(r.name);
 				const isSelected = selected.has(r.name); // Correct check for Map
-				const tr = $(`<tr class="${isExisting ? 'table-active text-muted' : ''}"><td class="text-center"><input type="checkbox" class="course-checkbox" data-name="${r.name}" ${isExisting ? 'disabled checked' : ''} ${isSelected ? 'checked' : ''}></td><td>${r.course_name} <br><small class="text-muted">${r.name}</small></td><td>${r.course_code}</td><td>${r.department}</td><td>${r.credit_value} Credit(s)</td><td>${r.status}</td></tr>`).appendTo(tbody);
+				const tr = $(`<tr class="${isExisting ? 'table-active text-muted' : ''}"><td class="text-center"><input type="checkbox" class="course-checkbox" data-name="${r.name}" ${isExisting ? 'disabled checked' : ''} ${isSelected ? 'checked' : ''}></td><td>${r.course_name} <br><small class="text-muted">${r.name}</small></td><td>${r.course_code}</td><td>${r.programme || ''}</td><td>${r.credit_value} Credit(s)</td><td>${r.status}</td></tr>`).appendTo(tbody);
 
 				if (!isExisting) {
 					// Handle Individual Click

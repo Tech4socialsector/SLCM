@@ -414,7 +414,7 @@ function _csm_open(exam_plan, exam_name) {
 									<th style="width:40px;"><input type="checkbox" class="csm-chk-all"/></th>
 									<th class="csm-sortable" data-sort="course_name">Course Name <span class="csm-sort-icon">⇅</span></th>
 									<th class="csm-sortable" data-sort="credit_value">Credits <span class="csm-sort-icon">⇅</span></th>
-									<th class="csm-sortable" data-sort="department_name">Department <span class="csm-sort-icon">⇅</span></th>
+									<th class="csm-sortable" data-sort="programme">Programme <span class="csm-sort-icon">⇅</span></th>
 									<th>Enrolled Students</th>
 									<th class="csm-sortable" data-sort="evaluation_schema">Evaluation Schema <span class="csm-sort-icon">⇅</span></th>
 									<th class="csm-sortable" data-sort="max_marks">Max Marks <span class="csm-sort-icon">⇅</span></th>
@@ -623,7 +623,7 @@ function _csm_render(courses, $ov) {
 					${syncBadge}
 				</td>
 				<td>${c.credit_value != null ? c.credit_value : '<span class="csm-dash">--</span>'}</td>
-				<td>${c.department_name ? _esc(c.department_name) : '<span class="csm-dash">--</span>'}</td>
+				<td>${c.programme ? _esc(c.programme) : '<span class="csm-dash">--</span>'}</td>
 				<td>${enrolledCount}</td>
 				<td>${ev}</td>
 				<td>${c.max_marks !== '' && c.max_marks != null ? c.max_marks : '<span class="csm-dash">--</span>'}</td>

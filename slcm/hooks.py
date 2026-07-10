@@ -177,7 +177,10 @@ fixtures = [
                 "Parent RFID Absence Alert",
                 "HD Ticket SLA Escalation - New Agent",
                 "HD Ticket SLA Escalation - Previous Agent",
-                "HD Ticket SLA Escalation - Max Hops Reached"
+                "HD Ticket SLA Escalation - Max Hops Reached",
+                "Venue Booking - New Request (Admin)",
+                "Venue Booking - Status Update (Requester)",
+                "Venue Booking - Swap Request Decision (Requester)"
             ]]
         ]
     },
@@ -219,6 +222,9 @@ fixtures = [
             # Fees Management
             "Total Fee Demands", "Pending Fee Demands", "Overdue Fee Demands",
             "Fee Receipts This Month",
+            # Venue Bookings
+            "Total Venue Bookings", "Pending Venue Bookings", "Approved Venue Bookings",
+            "Rejected Venue Bookings", "Cancelled Venue Bookings", "Total Rooms",
         ]]]
     },
     # --- Dashboard: Charts ---
@@ -238,6 +244,9 @@ fixtures = [
             # Fees Management
             "Demand Status Distribution", "Demands by Fee Component",
             "Monthly Fee Collection",
+            # Venue Bookings
+            "Venue Bookings Trend Over Time", "Venue Booking Status Distribution",
+            "Venue Bookings by Venue Type",
         ]]]
     },
     # --- Kanban Board ---
@@ -255,12 +264,12 @@ fixtures = [
     # --- Workspace Sidebars ---
     {
         "doctype": "Workspace Sidebar",
-        "filters": [["name", "in", ["Faculty", "Fees Management", "Admission Fee"]]]
+        "filters": [["name", "in", ["Faculty Management", "Fees Management", "Admission Fee"]]]
     },
     # --- Desktop Icons ---
     {
         "doctype": "Desktop Icon",
-        "filters": [["name", "in", ["Faculty"]]]
+        "filters": [["name", "in", ["Faculty Management"]]]
     },
     # --- Web Forms / Custom Fields / Property Setters ---
     # NOTE: "Custom Field" with no filter exports ALL custom fields (including those

@@ -2395,7 +2395,7 @@
     "label": "Course Offerings by Status"
    }
   ],
-  "content": "[{\"id\":\"pm_h1\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Overview</span>\",\"col\":12}},{\"id\":\"pm_nc1\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Programs\",\"col\":3}},{\"id\":\"pm_nc2\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Cohorts\",\"col\":3}},{\"id\":\"pm_nc3\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Open Course Offerings\",\"col\":3}},{\"id\":\"pm_nc4\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Enrollments\",\"col\":3}},{\"id\":\"pm_sp1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"pm_h2\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Analytics</span>\",\"col\":12}},{\"id\":\"pm_ch1\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Student Enrollment by Program\",\"col\":6}},{\"id\":\"pm_ch2\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Cohort Status Distribution\",\"col\":6}},{\"id\":\"pm_ch3\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Course Offerings by Status\",\"col\":6}},{\"id\":\"pm_sp2\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"pm_h3\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Programme Setup</span>\",\"col\":12}},{\"id\":\"pm_sc1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Programme\",\"col\":3}},{\"id\":\"pm_sc2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Program Batch Section\",\"col\":3}},{\"id\":\"pm_sc3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Batch\",\"col\":3}},{\"id\":\"pm_sp3\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"pm_h4\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Student Enrollment</span>\",\"col\":12}},{\"id\":\"pm_sc4\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Enrollment\",\"col\":3}},{\"id\":\"pm_sc5\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Course Offering\",\"col\":3}},{\"id\":\"pm_sp4\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"pm_h5\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Course Administration</span>\",\"col\":12}},{\"id\":\"pm_sc6\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Course Management Tool\",\"col\":3}},{\"id\":\"pm_sc7\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Course List\",\"col\":3}},{\"id\":\"pm_sc8\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Term Administration\",\"col\":3}},{\"id\":\"pm_sc9\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Term Configuration List\",\"col\":3}},{\"id\":\"pm_sc10\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Class Configuration List\",\"col\":3}},{\"id\":\"pm_sc11\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Class Schedule List\",\"col\":3}},{\"id\":\"pm_sc12\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Event Schedule List\",\"col\":3}}]",
+  "content": "[{\"id\":\"pm_h1\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Overview</span>\",\"col\":12}},{\"id\":\"pm_nc1\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Programs\",\"col\":3}},{\"id\":\"pm_nc2\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Cohorts\",\"col\":3}},{\"id\":\"pm_nc3\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Open Course Offerings\",\"col\":3}},{\"id\":\"pm_nc4\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Enrollments\",\"col\":3}},{\"id\":\"pm_sp1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"pm_h2\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Analytics</span>\",\"col\":12}},{\"id\":\"pm_ch1\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Student Enrollment by Program\",\"col\":6}},{\"id\":\"pm_ch2\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Cohort Status Distribution\",\"col\":6}},{\"id\":\"pm_ch3\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Course Offerings by Status\",\"col\":6}},{\"id\":\"pm_sp2\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"pm_h3\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Programme Setup</span>\",\"col\":12}},{\"id\":\"pm_sc1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Programme\",\"col\":3}},{\"id\":\"pm_sc2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Section\",\"col\":3}},{\"id\":\"pm_sc3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Batch\",\"col\":3}},{\"id\":\"pm_sp3\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"pm_h4\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Student Enrollment</span>\",\"col\":12}},{\"id\":\"pm_sc4\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Enrollment\",\"col\":3}},{\"id\":\"pm_sc5\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Course Offering\",\"col\":3}},{\"id\":\"pm_sp4\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"pm_h5\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Course Administration</span>\",\"col\":12}},{\"id\":\"pm_sc6\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Course Management Tool\",\"col\":3}},{\"id\":\"pm_sc7\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Course List\",\"col\":3}},{\"id\":\"pm_sc8\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Term Administration\",\"col\":3}},{\"id\":\"pm_sc9\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Term Configuration List\",\"col\":3}},{\"id\":\"pm_sc10\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Class Configuration List\",\"col\":3}},{\"id\":\"pm_sc11\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Class Schedule List\",\"col\":3}},{\"id\":\"pm_sc12\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Event Schedule List\",\"col\":3}}]",
   "custom_blocks": [],
   "docstatus": 0,
   "doctype": "Workspace",
@@ -2457,8 +2457,8 @@
     "format": null,
     "icon": null,
     "kanban_board": null,
-    "label": "Program Batch Section",
-    "link_to": "Program Batch Section",
+    "label": "Section",
+    "link_to": "Section",
     "report_ref_doctype": null,
     "restrict_to_domain": null,
     "stats_filter": null,
@@ -5730,193 +5730,6 @@
  },
  {
   "app": "slcm",
-  "charts": [],
-  "content": "[{\"id\":\"er-hdr-overview\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Overview</b></span>\",\"col\":12}},{\"id\":\"er-nc-1\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Exam Plans\",\"col\":3}},{\"id\":\"er-nc-2\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Exam Plans\",\"col\":3}},{\"id\":\"er-nc-3\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Courses Mapped\",\"col\":3}},{\"id\":\"er-hdr-reexam\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Re Exam</b></span>\",\"col\":12}},{\"id\":\"er-nc-rx-1\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Re Exam Registrations\",\"col\":3}},{\"id\":\"er-nc-rx-2\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Re Exam Paid\",\"col\":3}},{\"id\":\"er-sc-rx-1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Re Exam\",\"col\":3}},{\"id\":\"er-sc-rx-2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Re Exam Registrations\",\"col\":3}},{\"id\":\"er-hdr-improv\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Improvement Exam</b></span>\",\"col\":12}},{\"id\":\"er-nc-ix-1\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Improvement Exam Registrations\",\"col\":3}},{\"id\":\"er-nc-ix-2\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Improvement Exam Paid\",\"col\":3}},{\"id\":\"er-sc-ix-1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Improvement Exam\",\"col\":3}},{\"id\":\"er-sc-ix-2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Improvement Exam Registrations\",\"col\":3}},{\"id\":\"er-hdr-access\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Access &amp; Settings</span>\",\"col\":12}},{\"id\":\"er-sc-3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Result Access Settings\",\"col\":3}},{\"id\":\"K-YiSThWuA\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Term Result Settings\",\"col\":3}},{\"id\":\"er-hdr-results\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Results</b></span>\",\"col\":12}},{\"id\":\"er-sc-1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Course Results\",\"col\":3}},{\"id\":\"WZHBU8OIJf\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Term Result\",\"col\":3}},{\"id\":\"lnDHp7XAtv\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Publish Result\",\"col\":3}}]",
-  "custom_blocks": [],
-  "docstatus": 0,
-  "doctype": "Workspace",
-  "external_link": null,
-  "for_user": null,
-  "hide_custom": 0,
-  "icon": "clipboard-check",
-  "indicator_color": "green",
-  "is_hidden": 0,
-  "label": "Exam Result",
-  "link_to": null,
-  "link_type": "DocType",
-  "links": [],
-  "modified": "2026-05-15 00:00:00",
-  "module": "SLCM",
-  "name": "Exam Result",
-  "number_cards": [
-   {
-    "label": "Total Exam Plans",
-    "number_card_name": "Total Exam Plans"
-   },
-   {
-    "label": "Active Exam Plans",
-    "number_card_name": "Active Exam Plans"
-   },
-   {
-    "label": "Courses Mapped",
-    "number_card_name": "Courses Mapped"
-   },
-   {
-    "label": "Re Exam Registrations",
-    "number_card_name": "Re Exam Registrations"
-   },
-   {
-    "label": "Re Exam Paid",
-    "number_card_name": "Re Exam Paid"
-   },
-   {
-    "label": "Improvement Exam Registrations",
-    "number_card_name": "Improvement Exam Registrations"
-   },
-   {
-    "label": "Improvement Exam Paid",
-    "number_card_name": "Improvement Exam Paid"
-   }
-  ],
-  "parent_page": null,
-  "public": 1,
-  "quick_lists": [],
-  "restrict_to_domain": null,
-  "roles": [],
-  "sequence_id": 0.0,
-  "shortcuts": [
-   {
-    "color": "Grey",
-    "doc_view": "List",
-    "format": null,
-    "icon": null,
-    "kanban_board": null,
-    "label": "Term Result",
-    "link_to": null,
-    "report_ref_doctype": null,
-    "restrict_to_domain": null,
-    "stats_filter": null,
-    "type": "URL",
-    "url": "/desk/term-result"
-   },
-   {
-    "color": "Grey",
-    "doc_view": "List",
-    "format": null,
-    "icon": null,
-    "kanban_board": null,
-    "label": "Term Result Settings",
-    "link_to": null,
-    "report_ref_doctype": null,
-    "restrict_to_domain": null,
-    "stats_filter": null,
-    "type": "URL",
-    "url": "/desk/result-settings"
-   },
-   {
-    "color": "Purple",
-    "doc_view": "",
-    "format": null,
-    "icon": null,
-    "kanban_board": null,
-    "label": "Course Results",
-    "link_to": "examination-result",
-    "report_ref_doctype": null,
-    "restrict_to_domain": null,
-    "stats_filter": null,
-    "type": "Page",
-    "url": null
-   },
-   {
-    "color": "Grey",
-    "doc_view": "List",
-    "format": null,
-    "icon": null,
-    "kanban_board": null,
-    "label": "Publish Result",
-    "link_to": null,
-    "report_ref_doctype": null,
-    "restrict_to_domain": null,
-    "stats_filter": null,
-    "type": "URL",
-    "url": "/desk/publish-result"
-   },
-   {
-    "color": "Blue",
-    "doc_view": "List",
-    "format": null,
-    "icon": null,
-    "kanban_board": null,
-    "label": "Result Access Settings",
-    "link_to": "Access Result Settings",
-    "report_ref_doctype": null,
-    "restrict_to_domain": null,
-    "stats_filter": null,
-    "type": "DocType",
-    "url": null
-   },
-   {
-    "color": "Red",
-    "doc_view": "",
-    "format": null,
-    "icon": null,
-    "kanban_board": null,
-    "label": "Re Exam",
-    "link_to": "re-exam",
-    "report_ref_doctype": null,
-    "restrict_to_domain": null,
-    "stats_filter": null,
-    "type": "Page",
-    "url": null
-   },
-   {
-    "color": "Red",
-    "doc_view": "List",
-    "format": null,
-    "icon": null,
-    "kanban_board": null,
-    "label": "Re Exam Registrations",
-    "link_to": "Re Exam Registration",
-    "report_ref_doctype": null,
-    "restrict_to_domain": null,
-    "stats_filter": null,
-    "type": "DocType",
-    "url": null
-   },
-   {
-    "color": "Purple",
-    "doc_view": "",
-    "format": null,
-    "icon": null,
-    "kanban_board": null,
-    "label": "Improvement Exam",
-    "link_to": "improvement-exam",
-    "report_ref_doctype": null,
-    "restrict_to_domain": null,
-    "stats_filter": null,
-    "type": "Page",
-    "url": null
-   },
-   {
-    "color": "Purple",
-    "doc_view": "List",
-    "format": null,
-    "icon": null,
-    "kanban_board": null,
-    "label": "Improvement Exam Registrations",
-    "link_to": "Improvement Exam Registration",
-    "report_ref_doctype": null,
-    "restrict_to_domain": null,
-    "stats_filter": null,
-    "type": "DocType",
-    "url": null
-   }
-  ],
-  "title": "Exam Result",
-  "type": "Workspace"
- },
- {
-  "app": "slcm",
   "charts": [
    {
     "chart_name": "Geography - State",
@@ -6468,7 +6281,7 @@
     "label": "FA MFA Application Status"
    }
   ],
-  "content": "[{\"id\": \"att-hdr-overview\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Overview</b></span>\", \"col\": 12}}, {\"id\": \"att-nc-1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Total Attendance Records\", \"col\": 3}}, {\"id\": \"att-nc-2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Present Count\", \"col\": 3}}, {\"id\": \"att-nc-3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Absent Count\", \"col\": 3}}, {\"id\": \"att-nc-4\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"OD Count\", \"col\": 3}}, {\"id\": \"att-nc-5\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Total Sessions\", \"col\": 3}}, {\"id\": \"att-nc-6\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Active Sessions\", \"col\": 3}}, {\"id\": \"att-nc-7\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Pending Condonations\", \"col\": 3}}, {\"id\": \"att-nc-8\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Pending FA / MFA\", \"col\": 3}}, {\"id\": \"att-hdr-ops\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Daily Operations</b></span>\", \"col\": 12}}, {\"id\": \"att-sc-1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Attendance Session\", \"col\": 3}}, {\"id\": \"att-sc-2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Student Attendance\", \"col\": 3}}, {\"id\": \"att-sc-3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Attendance Log\", \"col\": 3}}, {\"id\": \"att-sc-4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Student Attendance Tool\", \"col\": 3}}, {\"id\": \"att-hdr-approvals\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Applications &amp; Approvals</b></span>\", \"col\": 12}}, {\"id\": \"att-sc-5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Student Attendance Condonation\", \"col\": 3}}, {\"id\": \"att-sc-6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"FA MFA Application\", \"col\": 3}}, {\"id\": \"att-hdr-venue\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Venue &amp; Scheduling</b></span>\", \"col\": 12}}, {\"id\": \"att-sc-7\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Class Schedule\", \"col\": 3}}, {\"id\": \"att-sc-8\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Venue Booking\", \"col\": 3}}, {\"id\": \"att-sc-9\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Room\", \"col\": 3}}, {\"id\": \"att-sc-10\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Office Hours\", \"col\": 3}}, {\"id\": \"att-hdr-summary\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Summary &amp; Report</b></span>\", \"col\": 12}}, {\"id\": \"att-sc-11\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Attendance Summary\", \"col\": 3}}, {\"id\": \"att-sc-12\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Attendance Final Report\", \"col\": 3}}, {\"id\": \"att-hdr-analytics\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Analytics</b></span>\", \"col\": 12}}, {\"id\": \"att-ch-1\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Attendance Status Distribution\", \"col\": 6}}, {\"id\": \"att-ch-2\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Attendance Trend Over Time\", \"col\": 6}}, {\"id\": \"att-ch-3\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Session Type Breakdown\", \"col\": 6}}, {\"id\": \"att-ch-4\", \"type\": \"chart\", \"data\": {\"chart_name\": \"FA MFA Application Status\", \"col\": 6}}, {\"id\": \"att-hdr-config\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\">Configuration</b></span>\", \"col\": 12}}, {\"id\": \"att-sc-13\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Attendance Settings\", \"col\": 3}}]",
+  "content": "[{\"id\":\"att-hdr-overview\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Overview</b></span>\",\"col\":12}},{\"id\":\"att-nc-1\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Attendance Records\",\"col\":3}},{\"id\":\"att-nc-2\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Present Count\",\"col\":3}},{\"id\":\"att-nc-3\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Absent Count\",\"col\":3}},{\"id\":\"att-nc-4\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"OD Count\",\"col\":3}},{\"id\":\"att-nc-5\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Sessions\",\"col\":3}},{\"id\":\"att-nc-6\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Sessions\",\"col\":3}},{\"id\":\"att-nc-7\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Pending Condonations\",\"col\":3}},{\"id\":\"att-nc-8\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Pending FA / MFA\",\"col\":3}},{\"id\":\"att-hdr-config\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Configuration</span>\",\"col\":12}},{\"id\":\"att-sc-13\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Attendance Settings\",\"col\":3}},{\"id\":\"att-hdr-ops\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Daily Operations</b></span>\",\"col\":12}},{\"id\":\"att-sc-1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Attendance Session\",\"col\":3}},{\"id\":\"att-sc-2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Attendance\",\"col\":3}},{\"id\":\"att-sc-3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Attendance Log\",\"col\":3}},{\"id\":\"att-sc-4\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Attendance Tool\",\"col\":3}},{\"id\":\"att-hdr-approvals\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Applications &amp; Approvals</b></span>\",\"col\":12}},{\"id\":\"att-sc-5\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Attendance Condonation\",\"col\":3}},{\"id\":\"att-sc-6\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"FA MFA Application\",\"col\":3}},{\"id\":\"att-hdr-venue\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Venue &amp; Scheduling</b></span>\",\"col\":12}},{\"id\":\"att-sc-7\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Class Schedule\",\"col\":3}},{\"id\":\"att-sc-8\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Venue Booking\",\"col\":3}},{\"id\":\"att-sc-9\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Room\",\"col\":3}},{\"id\":\"att-sc-10\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Office Hours\",\"col\":3}},{\"id\":\"att-hdr-summary\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Summary &amp; Report</b></span>\",\"col\":12}},{\"id\":\"att-sc-11\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Attendance Summary\",\"col\":3}},{\"id\":\"att-sc-12\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Attendance Final Report\",\"col\":3}},{\"id\":\"jcm3VyNAer\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>RFID Configuration</b></span>\",\"col\":12}},{\"id\":\"qahZ61fU5H\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"RFID Settings\",\"col\":3}},{\"id\":\"Akb0yYOG7h\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"RFID Agent dashboard\",\"col\":3}},{\"id\":\"XtpeLvzR1K\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Punch log\",\"col\":3}},{\"id\":\"att-hdr-analytics\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Analytics</b></span>\",\"col\":12}},{\"id\":\"att-ch-1\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Attendance Status Distribution\",\"col\":6}},{\"id\":\"att-ch-2\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Attendance Trend Over Time\",\"col\":6}},{\"id\":\"att-ch-3\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Session Type Breakdown\",\"col\":6}},{\"id\":\"att-ch-4\",\"type\":\"chart\",\"data\":{\"chart_name\":\"FA MFA Application Status\",\"col\":6}}]",
   "custom_blocks": [],
   "docstatus": 0,
   "doctype": "Workspace",
@@ -6482,7 +6295,7 @@
   "link_to": null,
   "link_type": null,
   "links": [],
-  "modified": "2026-05-22 00:00:00",
+  "modified": "2026-07-08 22:46:15.829636",
   "module": "SLCM",
   "name": "Attendance",
   "number_cards": [
@@ -6541,6 +6354,20 @@
     "url": ""
    },
    {
+    "color": "Grey",
+    "doc_view": "List",
+    "format": null,
+    "icon": null,
+    "kanban_board": null,
+    "label": "RFID Settings",
+    "link_to": "RFID SQL Agent Settings",
+    "report_ref_doctype": null,
+    "restrict_to_domain": null,
+    "stats_filter": null,
+    "type": "DocType",
+    "url": null
+   },
+   {
     "color": "Green",
     "doc_view": "List",
     "format": null,
@@ -6560,6 +6387,20 @@
     "format": null,
     "icon": null,
     "kanban_board": null,
+    "label": "RFID Agent dashboard",
+    "link_to": "rfid-sql-agent-dashboard",
+    "report_ref_doctype": null,
+    "restrict_to_domain": null,
+    "stats_filter": null,
+    "type": "Page",
+    "url": null
+   },
+   {
+    "color": "Grey",
+    "doc_view": "List",
+    "format": null,
+    "icon": null,
+    "kanban_board": null,
     "label": "Attendance Log",
     "link_to": "Attendance Log",
     "report_ref_doctype": "",
@@ -6567,6 +6408,20 @@
     "stats_filter": "[]",
     "type": "DocType",
     "url": ""
+   },
+   {
+    "color": "Grey",
+    "doc_view": "List",
+    "format": null,
+    "icon": null,
+    "kanban_board": null,
+    "label": "Punch log",
+    "link_to": "RFID SQL Punch Log",
+    "report_ref_doctype": null,
+    "restrict_to_domain": null,
+    "stats_filter": "[]",
+    "type": "DocType",
+    "url": null
    },
    {
     "color": "Blue",
@@ -6710,430 +6565,6 @@
    }
   ],
   "title": "Attendance",
-  "type": "Workspace"
- },
- {
-  "app": "slcm",
-  "charts": [
-   {
-    "chart_name": "Faculty Attendance Trend",
-    "label": "Faculty Attendance Trend"
-   },
-   {
-    "chart_name": "Faculty Course Offerings by Status",
-    "label": "Faculty Course Offerings by Status"
-   }
-  ],
-  "content": "[{\"id\":\"fac-hdr-kpi\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>\\ud83c\\udfdb\\ufe0f Faculty Overview</b></span>\",\"col\":12}},{\"id\":\"fac-nc-1\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Faculty My Course Offerings\",\"col\":3}},{\"id\":\"fac-nc-2\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Faculty My Student Groups\",\"col\":3}},{\"id\":\"fac-nc-3\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Faculty Active Attendance Sessions\",\"col\":3}},{\"id\":\"fac-nc-4\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Faculty Pending Condonation Requests\",\"col\":3}},{\"id\":\"fac-nc-5\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Faculty Open Course Offerings\",\"col\":3}},{\"id\":\"fac-nc-6\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Faculty Office Hours Groups\",\"col\":3}},{\"id\":\"fac-hdr-academic\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Academic Management</b></span>\",\"col\":12}},{\"id\":\"fac-sc-course-offering\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Course Offerings\",\"col\":3}},{\"id\":\"fac-sc-course\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Courses\",\"col\":3}},{\"id\":\"fac-sc-course-schedule\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Course Schedule\",\"col\":3}},{\"id\":\"fac-sc-class-schedule\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Class Schedule\",\"col\":3}},{\"id\":\"fac-sc-student-group\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Student Groups\",\"col\":3}},{\"id\":\"fac-sc-enrollment\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Student Enrollments\",\"col\":3}},{\"id\":\"fac-hdr-attendance\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Attendance Management</b></span>\",\"col\":12}},{\"id\":\"fac-sc-att-session\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Attendance Session\",\"col\":3}},{\"id\":\"fac-sc-att-log\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Attendance Log\",\"col\":3}},{\"id\":\"fac-sc-att-record\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Student Attendance\",\"col\":3}},{\"id\":\"fac-sc-att-condonation\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Attendance Condonation\",\"col\":3}},{\"id\":\"fac-sc-att-summary\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Attendance Summary\",\"col\":3}},{\"id\":\"fac-sc-att-report\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Comprehensive Attendance Report\",\"col\":3}},{\"id\":\"fac-hdr-eval\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Examination &amp; Evaluation</b></span>\",\"col\":12}},{\"id\":\"fac-sc-marks-entry\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Marks Entry\",\"col\":3}},{\"id\":\"fac-sc-eval-schema\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Evaluation Schema\",\"col\":3}},{\"id\":\"fac-sc-result-access\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Result Access Settings\",\"col\":3}},{\"id\":\"fac-sc-course-results\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Course Results\",\"col\":3}},{\"id\":\"fac-sc-grade-appeal\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Grade Appeals\",\"col\":3}},{\"id\":\"fac-hdr-students\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Student Management</b></span>\",\"col\":12}},{\"id\":\"fac-sc-student-master\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Student Master\",\"col\":3}},{\"id\":\"fac-sc-office-hours\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Office Hours\",\"col\":3}},{\"id\":\"fac-sc-office-hours-session\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty Office Hours Session\",\"col\":3}},{\"id\":\"fac-hdr-venue\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>\\ud83d\\udccd Venue Booking</b></span>\",\"col\":12}},{\"id\":\"fac-nc-vb-total\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"My Venue Bookings\",\"col\":4}},{\"id\":\"fac-nc-vb-pending\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"My Pending Bookings\",\"col\":4}},{\"id\":\"fac-nc-vb-approved\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"My Approved Bookings\",\"col\":4}},{\"id\":\"fac-sc-vb-new\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty New Venue Booking\",\"col\":3}},{\"id\":\"fac-sc-vb-my\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty My Venue Bookings\",\"col\":3}},{\"id\":\"fac-sc-vb-pending\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty My Pending Bookings\",\"col\":3}},{\"id\":\"fac-sc-vb-approved\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Faculty My Approved Bookings\",\"col\":3}},{\"id\":\"fac-hdr-analytics\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Analytics</b></span>\",\"col\":12}},{\"id\":\"fac-ch-1\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Faculty Attendance Trend\",\"col\":6}},{\"id\":\"fac-ch-2\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Faculty Course Offerings by Status\",\"col\":6}}]",
-  "custom_blocks": [],
-  "docstatus": 0,
-  "doctype": "Workspace",
-  "external_link": null,
-  "for_user": "",
-  "hide_custom": 0,
-  "icon": "university",
-  "indicator_color": "blue",
-  "is_hidden": 0,
-  "label": "Faculty",
-  "link_to": null,
-  "link_type": null,
-  "links": [],
-  "modified": "2026-05-23 13:00:00",
-  "module": "SLCM",
-  "name": "Faculty",
-  "number_cards": [
-   {
-    "label": "Faculty My Course Offerings",
-    "number_card_name": "Faculty My Course Offerings"
-   },
-   {
-    "label": "Faculty My Student Groups",
-    "number_card_name": "Faculty My Student Groups"
-   },
-   {
-    "label": "Faculty Active Attendance Sessions",
-    "number_card_name": "Faculty Active Attendance Sessions"
-   },
-   {
-    "label": "Faculty Pending Condonation Requests",
-    "number_card_name": "Faculty Pending Condonation Requests"
-   },
-   {
-    "label": "Faculty Open Course Offerings",
-    "number_card_name": "Faculty Open Course Offerings"
-   },
-   {
-    "label": "Faculty Office Hours Groups",
-    "number_card_name": "Faculty Office Hours Groups"
-   },
-   {
-    "label": "My Venue Bookings",
-    "number_card_name": "My Venue Bookings"
-   },
-   {
-    "label": "My Pending Bookings",
-    "number_card_name": "My Pending Bookings"
-   },
-   {
-    "label": "My Approved Bookings",
-    "number_card_name": "My Approved Bookings"
-   }
-  ],
-  "parent_page": "",
-  "public": 1,
-  "quick_lists": [],
-  "restrict_to_domain": null,
-  "roles": [
-   {
-    "role": "slcm_Faculty"
-   },
-   {
-    "role": "slcm_Programme Chair"
-   },
-   {
-    "role": "System Manager"
-   }
-  ],
-  "sequence_id": 6.0,
-  "shortcuts": [
-   {
-    "color": "Blue",
-    "doc_view": "List",
-    "format": null,
-    "icon": "book-open",
-    "kanban_board": null,
-    "label": "Faculty Course Offerings",
-    "link_to": "Course Offering",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[]",
-    "type": "DocType",
-    "url": ""
-   },
-   {
-    "color": "Cyan",
-    "doc_view": "List",
-    "format": null,
-    "icon": "book",
-    "kanban_board": null,
-    "label": "Faculty Courses",
-    "link_to": "Course",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[]",
-    "type": "DocType",
-    "url": ""
-   },
-   {
-    "color": "Blue",
-    "doc_view": "List",
-    "format": null,
-    "icon": "calendar",
-    "kanban_board": null,
-    "label": "Faculty Course Schedule",
-    "link_to": "Course Schedule",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[]",
-    "type": "DocType",
-    "url": ""
-   },
-   {
-    "color": "Green",
-    "doc_view": "List",
-    "format": null,
-    "icon": "calendar-days",
-    "kanban_board": null,
-    "label": "Faculty Class Schedule",
-    "link_to": "Class Schedule",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[]",
-    "type": "DocType",
-    "url": ""
-   },
-   {
-    "color": "Purple",
-    "doc_view": "List",
-    "format": null,
-    "icon": "users",
-    "kanban_board": null,
-    "label": "Faculty Student Groups",
-    "link_to": "Student Group",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[]",
-    "type": "DocType",
-    "url": ""
-   },
-   {
-    "color": "Grey",
-    "doc_view": "List",
-    "format": null,
-    "icon": "user-check",
-    "kanban_board": null,
-    "label": "Faculty Student Enrollments",
-    "link_to": "Student Enrollment",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[]",
-    "type": "DocType",
-    "url": ""
-   },
-   {
-    "color": "Blue",
-    "doc_view": "List",
-    "format": null,
-    "icon": "clock",
-    "kanban_board": null,
-    "label": "Faculty Attendance Session",
-    "link_to": "Attendance Session",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[]",
-    "type": "DocType",
-    "url": ""
-   },
-   {
-    "color": "Grey",
-    "doc_view": "List",
-    "format": null,
-    "icon": "list",
-    "kanban_board": null,
-    "label": "Faculty Attendance Log",
-    "link_to": "Attendance Log",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[]",
-    "type": "DocType",
-    "url": ""
-   },
-   {
-    "color": "Green",
-    "doc_view": "List",
-    "format": null,
-    "icon": "check-square",
-    "kanban_board": null,
-    "label": "Faculty Student Attendance",
-    "link_to": "Student Attendance",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[]",
-    "type": "DocType",
-    "url": ""
-   },
-   {
-    "color": "Orange",
-    "doc_view": "List",
-    "format": null,
-    "icon": "alert-triangle",
-    "kanban_board": null,
-    "label": "Faculty Attendance Condonation",
-    "link_to": "Student Attendance Condonation",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[]",
-    "type": "DocType",
-    "url": ""
-   },
-   {
-    "color": "Cyan",
-    "doc_view": "List",
-    "format": null,
-    "icon": "bar-chart-2",
-    "kanban_board": null,
-    "label": "Faculty Attendance Summary",
-    "link_to": "Attendance Summary",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[]",
-    "type": "DocType",
-    "url": ""
-   },
-   {
-    "color": "Grey",
-    "doc_view": "List",
-    "format": null,
-    "icon": "file-text",
-    "kanban_board": null,
-    "label": "Faculty Comprehensive Attendance Report",
-    "link_to": "Comprehensive Attendance Report",
-    "report_ref_doctype": "Attendance Summary",
-    "restrict_to_domain": null,
-    "stats_filter": "",
-    "type": "Report",
-    "url": ""
-   },
-   {
-    "color": "Blue",
-    "doc_view": "List",
-    "format": null,
-    "icon": "edit",
-    "kanban_board": null,
-    "label": "Faculty Marks Entry",
-    "link_to": "Student Course Marks",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[]",
-    "type": "DocType",
-    "url": ""
-   },
-   {
-    "color": "Purple",
-    "doc_view": "List",
-    "format": null,
-    "icon": "clipboard-list",
-    "kanban_board": null,
-    "label": "Faculty Evaluation Schema",
-    "link_to": "Evaluation Schema",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[]",
-    "type": "DocType",
-    "url": ""
-   },
-   {
-    "color": "Grey",
-    "doc_view": "List",
-    "format": null,
-    "icon": "settings",
-    "kanban_board": null,
-    "label": "Faculty Result Access Settings",
-    "link_to": "Access Result Settings",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[]",
-    "type": "DocType",
-    "url": ""
-   },
-   {
-    "color": "Green",
-    "doc_view": "List",
-    "format": null,
-    "icon": "award",
-    "kanban_board": null,
-    "label": "Faculty Course Results",
-    "link_to": "Student Course Marks",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[]",
-    "type": "DocType",
-    "url": ""
-   },
-   {
-    "color": "Red",
-    "doc_view": "List",
-    "format": null,
-    "icon": "message-square",
-    "kanban_board": null,
-    "label": "Faculty Grade Appeals",
-    "link_to": "Grade Appeal",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[]",
-    "type": "DocType",
-    "url": ""
-   },
-   {
-    "color": "Blue",
-    "doc_view": "List",
-    "format": null,
-    "icon": "user",
-    "kanban_board": null,
-    "label": "Faculty Student Master",
-    "link_to": "Student Master",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[]",
-    "type": "DocType",
-    "url": ""
-   },
-   {
-    "color": "Purple",
-    "doc_view": "List",
-    "format": null,
-    "icon": "door-open",
-    "kanban_board": null,
-    "label": "Faculty Office Hours",
-    "link_to": "Office Hours Group",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[]",
-    "type": "DocType",
-    "url": ""
-   },
-   {
-    "color": "Cyan",
-    "doc_view": "List",
-    "format": null,
-    "icon": "clock",
-    "kanban_board": null,
-    "label": "Faculty Office Hours Session",
-    "link_to": "Office Hours Session",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[]",
-    "type": "DocType",
-    "url": ""
-   },
-   {
-    "color": "Blue",
-    "doc_view": "New",
-    "format": null,
-    "icon": "plus-circle",
-    "kanban_board": null,
-    "label": "Faculty New Venue Booking",
-    "link_to": "Venue Booking",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[]",
-    "type": "DocType",
-    "url": ""
-   },
-   {
-    "color": "Grey",
-    "doc_view": "List",
-    "format": null,
-    "icon": "map-pin",
-    "kanban_board": null,
-    "label": "Faculty My Venue Bookings",
-    "link_to": "Venue Booking",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[[\"owner\",\"=\",\"session:user\"]]",
-    "type": "DocType",
-    "url": ""
-   },
-   {
-    "color": "Orange",
-    "doc_view": "List",
-    "format": null,
-    "icon": "clock",
-    "kanban_board": null,
-    "label": "Faculty My Pending Bookings",
-    "link_to": "Venue Booking",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[[\"owner\",\"=\",\"session:user\"],[\"status\",\"=\",\"Pending\"]]",
-    "type": "DocType",
-    "url": ""
-   },
-   {
-    "color": "Green",
-    "doc_view": "List",
-    "format": null,
-    "icon": "check-circle",
-    "kanban_board": null,
-    "label": "Faculty My Approved Bookings",
-    "link_to": "Venue Booking",
-    "report_ref_doctype": "",
-    "restrict_to_domain": null,
-    "stats_filter": "[[\"owner\",\"=\",\"session:user\"],[\"status\",\"=\",\"Approved\"]]",
-    "type": "DocType",
-    "url": ""
-   }
-  ],
-  "title": "Faculty",
   "type": "Workspace"
  },
  {

@@ -684,7 +684,7 @@
     "indent": 0,
     "keep_closed": 0,
     "label": "Home",
-    "link_to": "Faculty",
+    "link_to": "Faculty Management",
     "link_type": "Workspace",
     "navigate_to_tab": null,
     "route_options": null,
@@ -1173,11 +1173,11 @@
     "url": null
    }
   ],
-  "modified": "2026-05-16 12:00:00",
+  "modified": "2026-07-08 23:52:31.463223",
   "module": "SLCM",
   "module_onboarding": null,
-  "name": "Faculty",
+  "name": "Faculty Management",
   "standard": 1,
-  "title": "Faculty"
+  "title": "Faculty Management"
  }
 ]

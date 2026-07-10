@@ -15,7 +15,6 @@ class TimetableConfiguration {
         this.current_week_start = moment().startOf('week');
         this.filters = {
             term: null,
-            department: null,
             course: null,
             type: null
         };
@@ -41,22 +40,6 @@ class TimetableConfiguration {
                 placeholder: 'Select Term',
                 change: () => {
                     this.filters.term = this.term_filter.get_value();
-                    this.load_timetable_data();
-                }
-            },
-            render_input: true
-        });
-
-        // Department Filter
-        this.department_filter = frappe.ui.form.make_control({
-            parent: this.wrapper.find('#department-filter'),
-            df: {
-                fieldtype: 'Link',
-                options: 'Department',
-                fieldname: 'department',
-                placeholder: 'All Departments',
-                change: () => {
-                    this.filters.department = this.department_filter.get_value();
                     this.load_timetable_data();
                 }
             },
@@ -173,7 +156,6 @@ class TimetableConfiguration {
             args: {
                 term: this.filters.term,
                 course: this.filters.course,
-                department: this.filters.department,
                 start_date: start_date,
                 end_date: end_date
             },
@@ -229,12 +211,11 @@ class TimetableConfiguration {
                         const class_config = this.get_value();
                         if (class_config) {
                             frappe.db.get_value('Class Configuration', class_config,
-                                ['course', 'faculty', 'term', 'department', 'programme'], (r) => {
+                                ['course', 'faculty', 'term', 'programme'], (r) => {
                                     if (r) {
                                         dialog.set_value('course', r.course);
                                         dialog.set_value('instructor', r.faculty);
                                         dialog.set_value('term', r.term);
-                                        dialog.set_value('department', r.department);
                                         dialog.set_value('programme', r.programme);
                                     }
                                 });
@@ -349,11 +330,6 @@ class TimetableConfiguration {
                 },
                 {
                     fieldtype: 'Data',
-                    fieldname: 'department',
-                    hidden: 1
-                },
-                {
-                    fieldtype: 'Data',
                     fieldname: 'programme',
                     hidden: 1
                 }
@@ -408,17 +384,17 @@ class TimetableConfiguration {
                 },
                 {
                     fieldtype: 'Link',
-                    label: __('Department'),
-                    fieldname: 'department',
-                    options: 'Department'
+                    label: __('Programme'),
+                    fieldname: 'programme',
+                    options: 'Programme'
                 },
                 {
                     fieldtype: 'Button',
                     label: __('Download Class List'),
                     fieldname: 'download_class_list',
                     click: () => {
-                        const dept = upload_dialog.get_value('department');
-                        this.download_class_list(dept);
+                        const programme = upload_dialog.get_value('programme');
+                        this.download_class_list(programme);
                     }
                 },
                 {
@@ -464,10 +440,10 @@ class TimetableConfiguration {
         }, 500);
     }
 
-    download_class_list(department) {
+    download_class_list(programme) {
         frappe.call({
             method: 'slcm.slcm.page.timetable_configuration.timetable_configuration.get_class_list_template',
-            args: { department: department },
+            args: { programme: programme },
             callback: (r) => {
                 if (r.message) {
                     this.export_to_csv(r.message, 'class_list.csv');

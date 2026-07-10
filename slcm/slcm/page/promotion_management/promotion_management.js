@@ -526,6 +526,15 @@ frappe.pages['promotion-management'].on_page_load = function (wrapper) {
 							+ '<strong>' + m.not_promoted + '</strong> Not Promoted &nbsp;|&nbsp; '
 							+ '<strong>' + m.conditional + '</strong> Conditional &nbsp;&mdash;&nbsp; Total: <strong>' + m.total + '</strong>'
 						);
+						if (m.enrollment_failures && m.enrollment_failures.length) {
+							frappe.msgprint({
+								title: __('Some students were not enrolled into the next term'),
+								indicator: 'orange',
+								message: m.enrollment_failures
+									.map((f) => `${f.student}: ${f.error}`)
+									.join('<br>'),
+							});
+						}
 						$('#pm-dl-bar').show();
 					},
 					error: function () {

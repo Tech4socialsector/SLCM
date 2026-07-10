@@ -246,7 +246,10 @@ def get_sections(programme=None, course_offering=None):
 
     filters = {}
     if programme:
-        filters["program"] = programme
+        batches = frappe.get_all("Batch", filters={"program": programme}, pluck="name")
+        if not batches:
+            return []
+        filters["batch"] = ["in", batches]
 
     if groups is not None:
         if not groups:
@@ -262,7 +265,7 @@ def get_sections(programme=None, course_offering=None):
         filters["name"] = ["in", visible_sections]
 
     return frappe.get_all(
-        "Program Batch Section",
+        "Section",
         filters=filters,
         fields=["name", "section_name"],
         order_by="section_name asc",

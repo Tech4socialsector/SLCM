@@ -251,5 +251,5 @@ def get_enrolled_cohorts(student):
 	return frappe.get_all(
 		"Student Enrollment",
 		filters={"student": student, "status": "Enrolled"},
-		pluck="cohort"
+		pluck="batch"
 	)

@@ -12,21 +12,19 @@
   "student_name",
   "enrollment_date",
   "column_break_1",
-  "cohort",
+  "batch",
   "program",
   "academic_year",
   "term_name",
   "term_duration_weeks",
-  "batch_year_ref",
+  "section",
   "section_courses",
   "enrolled_courses",
   "section_advisor",
   "faculty_advisor",
   "status",
   "remarks",
-  "user",
-  "section_links",
-  "html_links"
+  "user"
  ],
  "fields": [
   {
@@ -62,16 +60,15 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "cohort",
+   "fieldname": "section",
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Batch",
-   "options": "Batch",
-   "reqd": 1
+   "label": "Section",
+   "options": "Section"
   },
   {
-   "fetch_from": "cohort.program",
+   "fetch_from": "batch.program",
    "fieldname": "program",
    "fieldtype": "Link",
    "label": "Programme",
@@ -79,7 +76,7 @@
    "read_only": 1
   },
   {
-   "fetch_from": "cohort.academic_year",
+   "fetch_from": "batch.academic_year",
    "fieldname": "academic_year",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -89,16 +86,16 @@
    "read_only": 1
   },
   {
-   "fetch_from": "cohort.academic_term",
+   "fetch_from": "batch.academic_term",
    "fieldname": "term_name",
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Term Name",
+   "label": "Term",
    "read_only": 1
   },
   {
-   "fetch_from": "cohort.term_weeks",
+   "fetch_from": "batch.term_weeks",
    "fieldname": "term_duration_weeks",
    "fieldtype": "Int",
    "label": "Term Duration (Weeks)",
@@ -130,6 +127,7 @@
    "in_standard_filter": 1,
    "label": "Enrollment Status",
    "options": "Enrolled\nDropped\nCompleted\nPending",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -144,35 +142,43 @@
    "options": "Student Enrollment Course"
   },
   {
-   "fieldname": "batch_year_ref",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Batch"
-  },
-  {
    "fieldname": "user",
    "fieldtype": "Link",
    "label": "User",
    "options": "User"
   },
   {
-   "fieldname": "section_links",
-   "fieldtype": "Section Break",
-   "label": "Related Records"
-  },
-  {
-   "fieldname": "html_links",
-   "fieldtype": "HTML",
-   "label": "Quick Links"
+   "fieldname": "batch",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Batch",
+   "options": "Batch",
+   "reqd": 1
   }
  ],
- "links": [],
- "modified": "2026-01-01 17:36:33.057057",
+ "links": [
+  {
+   "group": "Fees",
+   "link_doctype": "Student Fee Assignment",
+   "link_fieldname": "enrollment"
+  },
+  {
+   "group": "Fees",
+   "link_doctype": "Fee Invoice",
+   "link_fieldname": "enrollment"
+  },
+  {
+   "group": "Academics",
+   "link_doctype": "Student Attendance",
+   "link_fieldname": "student"
+  }
+ ],
+ "modified": "2026-07-09 12:27:52.562911",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Enrollment",
- "naming_rule": "Expression (old style)",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
@@ -188,34 +194,25 @@
    "write": 1
   },
   {
-   "create": 0,
-   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "slcm_Faculty",
-   "share": 0,
-   "write": 0
+   "role": "slcm_Faculty"
   },
   {
-   "create": 0,
-   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "slcm_Programme Chair",
-   "share": 0,
-   "write": 0
+   "role": "slcm_Programme Chair"
   }
  ],
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "title_field": "student_name",
- "custom": 0
+ "title_field": "student_name"
 }

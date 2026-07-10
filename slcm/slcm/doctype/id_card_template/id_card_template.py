@@ -84,8 +84,9 @@ class IDCardTemplate(Document):
 			"school_logo": self.institute_logo or "",
 			"logo_url": self.institute_logo or "",  # Alias
 			"student_name": student.first_name or "Student Name",
-			"program": student.programme or "Programme",
-			"department": student.department or "Department",
+			"batch": student.programme or "Batch",
+			"program": student.programme_of_study or "Programme",
+			"programme": student.programme_of_study or "Programme",
 			"email": student.email or "email@example.com",
 			"phone": student.phone or "9999999999",
 			"address": getattr(student, "state_of_domicile", ""),

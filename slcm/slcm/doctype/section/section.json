@@ -1,52 +1,23 @@
 {
  "actions": [],
- "autoname": "format:{program}-{batch}-{section_name}",
- "creation": "2026-01-21 10:40:00",
+ "autoname": "format:{batch}-{section_name}",
+ "creation": "2026-07-09 10:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "department",
-  "program",
-  "academic_year",
   "batch",
   "section_name",
-  "capacity"
+  "capacity",
+  "status"
  ],
  "fields": [
-  {
-   "fieldname": "department",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Department",
-   "options": "Department",
-   "reqd": 1
-  },
-  {
-   "fieldname": "program",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Programme",
-   "options": "Programme",
-   "reqd": 1
-  },
-  {
-   "fieldname": "academic_year",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Academic Year",
-   "options": "Academic Year",
-   "reqd": 1
-  },
   {
    "fieldname": "batch",
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Batch",
-   "options": "Student Batch Name",
+   "options": "Batch",
    "reqd": 1
   },
   {
@@ -64,13 +35,23 @@
    "in_standard_filter": 1,
    "label": "Capacity",
    "reqd": 1
+  },
+  {
+   "default": "Active",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Active\nInactive",
+   "reqd": 1
   }
  ],
  "links": [],
- "modified": "2026-01-30 15:38:05.107434",
+ "modified": "2026-07-09 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
- "name": "Program Batch Section",
+ "name": "Section",
  "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
@@ -86,8 +67,18 @@
    "write": 1
   },
   {
+   "create": 1,
    "read": 1,
-   "role": "slcm_Student"
+   "role": "slcm_Registrar",
+   "report": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "slcm_Programme Chair",
+   "report": 1,
+   "write": 1
   },
   {
    "read": 1,
@@ -95,11 +86,7 @@
   },
   {
    "read": 1,
-   "role": "slcm_Programme Chair"
-  },
-  {
-   "read": 1,
-   "role": "slcm_Registrar"
+   "role": "slcm_Student"
   }
  ],
  "row_format": "Dynamic",
