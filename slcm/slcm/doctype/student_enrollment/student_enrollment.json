@@ -127,7 +127,6 @@
    "in_standard_filter": 1,
    "label": "Enrollment Status",
    "options": "Enrolled\nDropped\nCompleted\nPending",
-   "read_only": 1,
    "reqd": 1
   },
   {
@@ -174,7 +173,7 @@
    "link_fieldname": "student"
   }
  ],
- "modified": "2026-07-09 12:27:52.562911",
+ "modified": "2026-07-10 11:34:04.329901",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Enrollment",
