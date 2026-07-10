@@ -8,6 +8,7 @@
   "course_offering",
   "course",
   "course_type",
+  "faculty",
   "credits",
   "status",
   "grade"
@@ -58,12 +59,22 @@
   {
    "fieldname": "grade",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Grade"
+  },
+  {
+   "fetch_from": "course_offering.faculty",
+   "fieldname": "faculty",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Faculty",
+   "options": "Faculty"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-05-29 00:00:00.000000",
+ "modified": "2026-07-08 23:11:17.031272",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Enrollment Course",
@@ -72,6 +83,5 @@
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": [],
- "custom": 0
+ "states": []
 }

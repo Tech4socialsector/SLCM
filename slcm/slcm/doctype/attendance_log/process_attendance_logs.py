@@ -300,7 +300,7 @@ def _is_student_in_course_offering(student, course_offering):
         return False
     return bool(frappe.db.exists("Student Enrollment", {
         "student":  student,
-        "cohort":   cohort,
+        "batch":    cohort,
         "status":   "Enrolled",
     }))
 

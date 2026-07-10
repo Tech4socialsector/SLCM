@@ -148,8 +148,8 @@ class IDCardGeneration(Document):
 			self.phone = student.phone
 			if not self.photo:
 				self.photo = student.passport_size_photo
-			self.department = student.department
-			self.program = student.programme
+			self.batch = student.programme
+			self.programme = student.programme_of_study
 
 		elif self.card_type == "Faculty" and self.faculty:
 			faculty = frappe.get_doc("Faculty", self.faculty)
@@ -288,8 +288,8 @@ class IDCardGeneration(Document):
 			parts = [
 				person.first_name or "",
 				person.academic_year or "",
+				person.programme_of_study or "",
 				person.programme or "",
-				person.department or "",
 				person.blood_group or "",
 				person.email or "",
 			]
@@ -429,17 +429,13 @@ class IDCardGeneration(Document):
 		if not bulk_print_id:
 			bulk_print_id = frappe.utils.generate_hash(length=10)
 
-		batch_val = getattr(self, "batch", None)
-		if not batch_val and self.student:
-			batch_val = frappe.db.get_value("Student Master", self.student, "batch_year")
-
 		log = frappe.new_doc("ID Card Print Log")
 		log.id_card_generation = self.name
 		log.student = self.student
 		log.academic_year = self.academic_year
 		log.department = self.department
-		log.program = self.program
-		log.batch = batch_val
+		log.program = self.programme
+		log.batch = self.batch
 		log.print_type = p_type
 		log.print_layout = layout
 		log.bulk_print_id = bulk_print_id
@@ -594,15 +590,17 @@ class IDCardGeneration(Document):
 				"[Driver Name]": self.student_name,
 				"[Visitor Name]": self.student_name,
 				"[Staff Name]": self.student_name,
-				"[Student ID]": self.name,
+				"[Student ID]": getattr(student, "registration_id", None) or self.name,
 				"[Employee ID]": self.faculty,
 				"[Driver ID]": self.driver,
 				"[Blood Group]": getattr(student, "blood_group", ""),
 				"[Phone]": self.phone,
 				"[Email]": self.email,
-				"[Program]": self.program,
+				"[Batch]": self.batch,
+				"[Programme]": self.programme,
 				"[Academic Year]": self.academic_year,
 				"[Date of Birth]": frappe.utils.format_date(self.date_of_birth) if self.date_of_birth else "",
+				"[Expiry Date]": frappe.utils.format_date(self.expiry_date) if self.expiry_date else "",
 				"[Department]": self.department,
 				"[Institute Name]": template.institute_name,
 				"[Institute Address]": template.institute_address,

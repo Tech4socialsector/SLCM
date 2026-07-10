@@ -1279,7 +1279,7 @@ def get_programme_analytics(academic_year=None, term=None, program=None, cohort=
 		se_where_parts.append("se.program = %(program)s")
 		se_params["program"] = program
 	if cohort:
-		se_where_parts.append("se.cohort = %(cohort)s")
+		se_where_parts.append("se.batch = %(cohort)s")
 		se_params["cohort"] = cohort
 
 	se_where = ("WHERE " + " AND ".join(se_where_parts)) if se_where_parts else ""
@@ -1309,11 +1309,11 @@ def get_programme_analytics(academic_year=None, term=None, program=None, cohort=
 
 	cohort_enrollment = frappe.db.sql(
 		f"""
-		SELECT COALESCE(c.cohort_name, se.cohort, 'Unknown') AS label, COUNT(*) AS value
+		SELECT COALESCE(c.batch_name, se.batch, 'Unknown') AS label, COUNT(*) AS value
 		FROM `tabStudent Enrollment` se
-		LEFT JOIN `tabBatch` c ON c.name = se.cohort
+		LEFT JOIN `tabBatch` c ON c.name = se.batch
 		{se_where}
-		GROUP BY se.cohort ORDER BY value DESC LIMIT 10
+		GROUP BY se.batch ORDER BY value DESC LIMIT 10
 		""",
 		se_params,
 		as_dict=True,
@@ -2718,7 +2718,7 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 				filters["program"] = program
 			rows = frappe.db.get_all(
 				"Student Enrollment", filters=filters,
-				fields=["name", "student", "student_name", "cohort", "program",
+				fields=["name", "student", "student_name", "batch as cohort", "program",
 						"academic_year", "status", "enrollment_date"],
 				limit_start=offset, limit_page_length=page_size, order_by="enrollment_date desc",
 			)
@@ -2734,7 +2734,7 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 				filters["academic_year"] = academic_year
 			rows = frappe.db.get_all(
 				"Student Enrollment", filters=filters,
-				fields=["name", "student", "student_name", "cohort", "program",
+				fields=["name", "student", "student_name", "batch as cohort", "program",
 						"academic_year", "status", "enrollment_date"],
 				limit_start=offset, limit_page_length=page_size, order_by="enrollment_date desc",
 			)
@@ -2745,10 +2745,10 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 
 		elif dimension == "cohort_enrollment":
 			cohort_id = frappe.db.get_value("Batch", {"cohort_name": value}, "name") or value
-			filters = {"cohort": cohort_id}
+			filters = {"batch": cohort_id}
 			rows = frappe.db.get_all(
 				"Student Enrollment", filters=filters,
-				fields=["name", "student", "student_name", "cohort", "program",
+				fields=["name", "student", "student_name", "batch as cohort", "program",
 						"academic_year", "status", "enrollment_date"],
 				limit_start=offset, limit_page_length=page_size, order_by="enrollment_date desc",
 			)

@@ -76,10 +76,18 @@ def get_connection():
             title="RFID SQL Agent — SQL Server Not Configured"
         )
 
+    # FreeTDS first: it uses GnuTLS, whose TLS policy we can still relax at
+    # runtime via env vars inside a long-running Frappe worker (see below).
+    # Microsoft's driver links the process-wide OpenSSL library, which Frappe
+    # itself already initializes during startup (requests, crypto, etc.)
+    # *before* this code ever runs — OpenSSL only reads OPENSSL_CONF once, at
+    # that first init, so setting it here has no effect on Microsoft's driver
+    # once the worker is already running. Only reached for for the newer,
+    # stricter TLS modes FreeTDS can't do at all.
     drivers = [
+        "FreeTDS",
         "ODBC Driver 18 for SQL Server",
         "ODBC Driver 17 for SQL Server",
-        "FreeTDS",
         "SQL Server",
     ]
 

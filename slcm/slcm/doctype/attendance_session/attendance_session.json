@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "autoname": "AS-.YYYY.-.#####",
  "creation": "2026-02-03 02:24:00",
  "doctype": "DocType",
@@ -54,7 +55,7 @@
    "fieldname": "section",
    "fieldtype": "Link",
    "label": "Section",
-   "options": "Program Batch Section",
+   "options": "Section",
    "read_only": 1
   },
   {

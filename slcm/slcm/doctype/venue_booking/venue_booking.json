@@ -19,6 +19,11 @@
   "requester_type",
   "requester_name",
   "student",
+  "programme",
+  "academic_year",
+  "column_break_student",
+  "batch",
+  "level_of_study",
   "expected_attendees",
   "section_break_1",
   "reason",
@@ -46,6 +51,8 @@
   {
    "fieldname": "venue_type",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Venue Type",
    "options": "Classroom\nMoot Court\nOpen Spaces\nMeeting Room\nMess\nQuad\nConference Hall\nProject\nGuest House\nStaff Quarters",
    "reqd": 1
@@ -54,6 +61,7 @@
    "fieldname": "room",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Venue",
    "options": "Room",
    "reqd": 1
@@ -105,6 +113,7 @@
    "fieldname": "requester_type",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Requester Type",
    "options": "Student\nFaculty\nStaff\nOther",
    "reqd": 1
@@ -121,6 +130,49 @@
    "fieldtype": "Link",
    "label": "Student",
    "options": "Student Master",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.student",
+   "fetch_from": "student.programme",
+   "fieldname": "programme",
+   "fieldtype": "Link",
+   "label": "Batch",
+   "options": "Batch",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.student",
+   "fetch_from": "student.academic_year",
+   "fieldname": "academic_year",
+   "fieldtype": "Data",
+   "label": "Academic Year",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.student",
+   "fieldname": "column_break_student",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.student",
+   "fetch_from": "programme.program",
+   "fieldname": "batch",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Programme",
+   "options": "Programme",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.student",
+   "fetch_from": "student.level_of_study",
+   "fieldname": "level_of_study",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Level Of Study",
    "read_only": 1
   },
   {
@@ -227,7 +279,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-09 10:48:48.525480",
+ "modified": "2026-07-09 11:28:53.462489",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Venue Booking",

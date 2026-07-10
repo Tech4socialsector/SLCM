@@ -20,7 +20,8 @@
   "phone",
   "photo",
   "department",
-  "program",
+  "batch",
+  "programme",
   "date_of_birth",
   "academic_year",
   "id_card_template",
@@ -147,6 +148,7 @@
    "label": "Photo"
   },
   {
+   "depends_on": "eval:doc.card_type != 'Student'",
    "fieldname": "department",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -156,13 +158,25 @@
    "read_only": 1
   },
   {
+   "depends_on": "eval:doc.card_type == 'Student'",
    "fetch_from": "student.programme",
-   "fieldname": "program",
+   "fieldname": "batch",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Batch",
+   "options": "Batch",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.card_type == 'Student'",
+   "fetch_from": "student.programme_of_study",
+   "fieldname": "programme",
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Programme",
-   "options": "Batch",
+   "options": "Programme",
    "read_only": 1
   },
   {

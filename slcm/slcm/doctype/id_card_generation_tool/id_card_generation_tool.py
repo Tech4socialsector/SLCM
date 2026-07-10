@@ -12,7 +12,6 @@ class IDCardGenerationTool(Document):
 	@frappe.whitelist()
 	def reset_filters(self):
 		self.academic_year = None
-		self.department = None
 		self.program = None
 		self.batch = None
 		self.id_card_template = None
@@ -27,9 +26,9 @@ class IDCardGenerationTool(Document):
 
 	@frappe.whitelist()
 	def get_students(self):
-		if not any([self.academic_year, self.department, self.program, self.batch]):
+		if not any([self.academic_year, self.program, self.batch]):
 			frappe.throw(
-				"Please select at least one filter (Academic Year, Department, Program, or Batch) "
+				"Please select at least one filter (Academic Year, Program, or Batch) "
 				"before fetching students."
 			)
 
@@ -37,12 +36,10 @@ class IDCardGenerationTool(Document):
 
 		if self.academic_year:
 			filters["academic_year"] = self.academic_year
-		if self.department:
-			filters["department"] = self.department
 		if self.program:
-			filters["programme"] = self.program
+			filters["programme_of_study"] = self.program
 		if self.batch:
-			filters["batch_year"] = self.batch
+			filters["programme"] = self.batch
 
 		students = frappe.get_all(
 			"Student Master",
@@ -127,7 +124,6 @@ class IDCardGenerationTool(Document):
 				"generated_on": frappe.utils.now(),
 				"generated_by": frappe.session.user,
 				"academic_year": self.academic_year,
-				"department": self.department,
 				"program": self.program,
 				"batch": self.batch,
 				"template_used": self.id_card_template,
@@ -301,21 +297,18 @@ class IDCardGenerationTool(Document):
 			output_files.append(sheet_name)
 
 		# Name the ZIP/PDF based on convention
-		# <AcademicYear>_<DepartmentCode>_<ProgramCode>_<Batch>_ID_Cards.pdf
+		# <AcademicYear>_<ProgramCode>_<BatchCode>_ID_Cards.pdf
 		# We use the Generation Tool's filters to name it
 		ay = self.academic_year or "AY"
 		# Get short codes if possible, else use full names passing regex cleanup
-		dept_code = self.department or "All_Dept"
 		prog_code = self.program or "All_Prog"
-		batch_code = self.batch or "Batch"
+		batch_code = self.batch or "All_Batch"
 
 		# Sanitize filename components
 		def sanitize(s):
 			return "".join([c for c in s if c.isalnum() or c in ("-", "_")]).strip()
 
-		final_name = (
-			f"{sanitize(ay)}_{sanitize(dept_code)}_{sanitize(prog_code)}_{sanitize(batch_code)}_ID_Cards.zip"
-		)
+		final_name = f"{sanitize(ay)}_{sanitize(prog_code)}_{sanitize(batch_code)}_ID_Cards.zip"
 
 		zip_buffer = io.BytesIO()
 		with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
