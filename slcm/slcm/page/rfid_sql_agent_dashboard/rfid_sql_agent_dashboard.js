@@ -91,12 +91,12 @@ function build_html() {
 }
 
 const DT_COLUMNS = [
-	{ name: "Emp Code", id: "emp_code", width: 140 },
-	{ name: "Student", id: "student", width: 160 },
-	{ name: "Punch Time", id: "punch_time", width: 170 },
-	{ name: "Terminal", id: "terminal_id", width: 100 },
-	{ name: "Location", id: "terminal_alias", width: 140 },
-	{ name: "Status", id: "sync_status", width: 110 },
+	{ name: "Emp Code", id: "emp_code", width: 140, editable: false, focusable: false },
+	{ name: "Student", id: "student", width: 160, editable: false, focusable: false },
+	{ name: "Punch Time", id: "punch_time", width: 170, editable: false, focusable: false },
+	{ name: "Terminal", id: "terminal_id", width: 100, editable: false, focusable: false },
+	{ name: "Location", id: "terminal_alias", width: 140, editable: false, focusable: false },
+	{ name: "Status", id: "sync_status", width: 110, editable: false, focusable: false },
 ];
 
 function rows_to_datatable_data(recent) {

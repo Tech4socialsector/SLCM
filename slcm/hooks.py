@@ -462,13 +462,11 @@ scheduler_events = {
 		# interval Frappe's cron scheduler supports.
 		"* * * * *": [
 			"slcm.slcm.doctype.attendance_log.process_attendance_logs.process_pending_logs",
-		],
-		# RFID SQL Agent — independent ingestion path for devices that log to
+			# RFID SQL Agent — independent ingestion path for devices that log to
 			# a SQL Server table instead of pushing over HTTP. Writes into its
 			# own RFID SQL Punch Log, separate from Attendance Log. Ticks every
 			# minute (Frappe's finest interval) but only actually polls once
 			# "Poll Interval (seconds)" in RFID SQL Agent Settings has elapsed.
-		"*/5 * * * *": [
 			"slcm.slcm.rfid_sql_agent.poller.poll_rfid_sql_agent",
 		],
 		"*/10 * * * *": [
