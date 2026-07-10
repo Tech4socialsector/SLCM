@@ -468,9 +468,9 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
 
 def _apply_percentile_cutoffs(doc):
     """
-    Applies NLSAT minimum percentile eligibility from Program Reservation Policy.
+    Applies NLSAT minimum percentile eligibility from Programme Reservation Policy.
     """
-    policy_name = frappe.db.get_value("Program Reservation Policy", {
+    policy_name = frappe.db.get_value("Programme Reservation Policy", {
         "admission_cycle": doc.admission_cycle,
         "program": doc.program
     }, "name")
@@ -478,7 +478,7 @@ def _apply_percentile_cutoffs(doc):
     if not policy_name:
         return
         
-    policy = frappe.get_doc("Program Reservation Policy", policy_name)
+    policy = frappe.get_doc("Programme Reservation Policy", policy_name)
     
     vertical_targets = {}
     for v in policy.categories:
@@ -517,12 +517,12 @@ def _populate_category_lists(doc):
     policy = None
     multiplier = 1.0
     if getattr(doc, "program", None) and getattr(doc, "admission_cycle", None):
-        policy_name = frappe.db.get_value("Program Reservation Policy", {
+        policy_name = frappe.db.get_value("Programme Reservation Policy", {
             "admission_cycle": doc.admission_cycle,
             "program": doc.program
         }, "name")
         if policy_name:
-            policy = frappe.get_doc("Program Reservation Policy", policy_name)
+            policy = frappe.get_doc("Programme Reservation Policy", policy_name)
             multiplier = policy.get("shortlisting_multiplier") or 1.0
 
     comp_cat = "Karnataka"
@@ -604,12 +604,12 @@ def _populate_category_lists(doc):
         multiplier = 1.0
         is_shortlist = hasattr(doc, "shortlist_applicants")
         if getattr(doc, "program", None) and getattr(doc, "admission_cycle", None):
-            policy_name = frappe.db.get_value("Program Reservation Policy", {
+            policy_name = frappe.db.get_value("Programme Reservation Policy", {
                 "admission_cycle": doc.admission_cycle,
                 "program": doc.program
             }, "name")
             if policy_name:
-                policy = frappe.get_doc("Program Reservation Policy", policy_name)
+                policy = frappe.get_doc("Programme Reservation Policy", policy_name)
                 if is_shortlist:
                     multiplier = policy.get("shortlisting_multiplier") or 1.0
                 else:
@@ -772,13 +772,13 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
         _calculate_and_sync_percentiles(_prog_applicants, is_shortlist=is_shortlist_allocation)
 
     for program, applicants in grouped_by_program.items():
-        policy_name = frappe.db.get_value("Program Reservation Policy", {
+        policy_name = frappe.db.get_value("Programme Reservation Policy", {
             "admission_cycle": doc.admission_cycle,
             "program": program
         }, "name")
         
         if not policy_name: continue
-        policy = frappe.get_doc("Program Reservation Policy", policy_name)
+        policy = frappe.get_doc("Programme Reservation Policy", policy_name)
 
         multiplier = policy.get("shortlisting_multiplier") or 1.0
         is_shortlist_phase = is_shortlist_allocation or getattr(doc, "merit_processing_stage", "") == "Part A Ranking"
@@ -1099,7 +1099,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
 def _check_percentile_eligibility(app, vertical_targets, horizontal_targets=None):
     """
     Checks if an applicant meets the minimum percentile threshold for their ACTUAL category.
-    Targets are dynamically derived from the Program Reservation Policy.
+    Targets are dynamically derived from the Programme Reservation Policy.
     """
     v_traits, _, _ = _get_categorized_traits(app.applicant_id)
     primary_cat = v_traits[0] if v_traits else "General"
@@ -1312,16 +1312,16 @@ def execute_part_a_shortlisting(doc):
 
     applicants = getattr(doc, child_table)
 
-    # Fetch dynamic Program Reservation Policy targets
+    # Fetch dynamic Programme Reservation Policy targets
     policy = None
     multiplier = 1.0
     if getattr(doc, "program", None) and getattr(doc, "admission_cycle", None):
-        policy_name = frappe.db.get_value("Program Reservation Policy", {
+        policy_name = frappe.db.get_value("Programme Reservation Policy", {
             "admission_cycle": doc.admission_cycle,
             "program": doc.program
         }, "name")
         if policy_name:
-            policy = frappe.get_doc("Program Reservation Policy", policy_name)
+            policy = frappe.get_doc("Programme Reservation Policy", policy_name)
             multiplier = policy.get("shortlisting_multiplier") or 1.0
 
     # Determine dynamic compartmental category name

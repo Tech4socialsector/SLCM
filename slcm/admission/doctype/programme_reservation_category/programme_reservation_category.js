@@ -1,4 +1,4 @@
-frappe.ui.form.on("Program Reservation Category", {
+frappe.ui.form.on("Programme Reservation Category", {
     seats: function(frm, cdt, cdn) {
         _calc_available(cdt, cdn);
     },

@@ -65,7 +65,7 @@ def get_category_priority(admission_cycle, campus, program):
         policy_name = program_row.reservation_policy
 
     if not policy_name:
-        policy_name = frappe.db.get_value("Program Reservation Policy", {
+        policy_name = frappe.db.get_value("Programme Reservation Policy", {
             "admission_cycle": admission_cycle,
             "program": program,
             "status": ["!=", "Locked"]
@@ -73,7 +73,7 @@ def get_category_priority(admission_cycle, campus, program):
 
     priority_map = {}
     if policy_name:
-        policy = frappe.get_doc("Program Reservation Policy", policy_name)
+        policy = frappe.get_doc("Programme Reservation Policy", policy_name)
         for row in policy.categories:
             priority_map[row.category_name] = int(row.priority or 999)
 
@@ -283,7 +283,7 @@ class SeatAllocation(Document):
 
     def sync_filled_seats(self, reset_only=False):
         """
-        Updates the linked Program Reservation Policy for each program in this allocation
+        Updates the linked Programme Reservation Policy for each program in this allocation
         to reflect Filled and Available seats across all tables.
         """
         # 1. Identify programs in this allocation
@@ -299,7 +299,7 @@ class SeatAllocation(Document):
             return
 
         # 2. Map programs to their specific policies (Campus-aware)
-        policies = frappe.get_all("Program Reservation Policy", filters={
+        policies = frappe.get_all("Programme Reservation Policy", filters={
             "admission_cycle": self.admission_cycle,
             "program": ["in", list(affected_programs)],
             "campus": ["in", [self.campus, None, ""]], # Match current campus or legacy policies
@@ -316,7 +316,7 @@ class SeatAllocation(Document):
 
         # 3. Process each policy found
         for prog, policy_name in policy_map.items():
-            policy = frappe.get_doc("Program Reservation Policy", policy_name)
+            policy = frappe.get_doc("Programme Reservation Policy", policy_name)
             
             # Reset counts in all tables
             for table in ["categories", "horizontal_reservations", "compartmental_reservations"]:

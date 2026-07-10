@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class ProgramReservationSubQuota(Document):
+class ProgrammeReservationSubQuota(Document):
 	pass

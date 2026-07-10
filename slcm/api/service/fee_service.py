@@ -563,7 +563,7 @@ class FeeService:
     @staticmethod
     def _resolve_payment_receipt_print_format(applicant_name, campus=None):
         """
-        Print Format name from Program Reservation Policy (same rules as portal download_receipt).
+        Print Format name from Programme Reservation Policy (same rules as portal download_receipt).
         """
         if not applicant_name:
             return None
@@ -598,7 +598,7 @@ class FeeService:
             )
         if not policy_name:
             return None
-        return frappe.db.get_value("Program Reservation Policy", policy_name, "payment_receipt_template")
+        return frappe.db.get_value("Programme Reservation Policy", policy_name, "payment_receipt_template")
 
     @staticmethod
     def generate_receipt(offer_doc, transaction_id, payment_mode, 
@@ -1213,7 +1213,7 @@ class FeeService:
             if applicant.application_fee_status == "Paid":
                 return {"status": "success"}
 
-            # Use gateway from Payment Request (created with order), else from Program Reservation Policy, else default
+            # Use gateway from Payment Request (created with order), else from Programme Reservation Policy, else default
             pr_gateway = frappe.db.get_value(
                 "Payment Request",
                 {"reference_doctype": "Applicant", "reference_name": applicant_name, "transaction_id": razorpay_order_id},

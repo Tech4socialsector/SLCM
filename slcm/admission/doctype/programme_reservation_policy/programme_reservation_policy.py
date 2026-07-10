@@ -3,7 +3,7 @@ from frappe.model.document import Document
 from slcm.admission.utils.institution import is_multi_campus_enabled
 
 
-class ProgramReservationPolicy(Document):
+class ProgrammeReservationPolicy(Document):
 
     def validate(self):
         self._validate_campus_requirement()
@@ -49,7 +49,7 @@ class ProgramReservationPolicy(Document):
         }
 
         existing = frappe.db.get_value(
-            "Program Reservation Policy",
+            "Programme Reservation Policy",
             filters,
             "name"
         )
@@ -166,7 +166,7 @@ class ProgramReservationPolicy(Document):
                 frappe.db.commit()
         except Exception as e:
             frappe.log_error(
-                f"ProgramReservationPolicy._sync_link_to_cycle_program: {e}",
+                f"ProgrammeReservationPolicy._sync_link_to_cycle_program: {e}",
                 "Reservation Policy Sync"
             )
 
@@ -200,7 +200,7 @@ class ProgramReservationPolicy(Document):
 @frappe.whitelist()
 def generate_matrices(name):
     import math
-    doc = frappe.get_doc("Program Reservation Policy", name)
+    doc = frappe.get_doc("Programme Reservation Policy", name)
     doc.vertical_matrix = []
     doc.horizontal_matrix = []
     doc.compartmentalised_matrix = []
