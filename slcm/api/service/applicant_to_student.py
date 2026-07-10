@@ -105,7 +105,7 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
 
     # ── Department & Level of Study (derived from programme/program) ────────────────────────────
     if program:
-        program_data = frappe.db.get_value("Program", program, ["department", "level_of_study"], as_dict=True)
+        program_data = frappe.db.get_value("Programme", program, ["department", "level_of_study"], as_dict=True)
         if program_data:
             if program_data.get("department"):
                 student.department = program_data.department
@@ -119,6 +119,23 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
         derived_year = _get_academic_year_from_cycle(admission_cycle)
         if derived_year:
             student.academic_year = derived_year
+
+    # ── Batch Assignment ───────────────────────────────────────────────────────
+    if program and student.academic_year:
+        batch_data = frappe.db.get_value(
+            "Batch",
+            {
+                "program": program,
+                "academic_year": student.academic_year,
+                "status": "Active"
+            },
+            ["name", "academic_term"],
+            as_dict=True
+        )
+        if batch_data:
+            student.programme = batch_data.name
+            if batch_data.academic_term:
+                student.academic_term = batch_data.academic_term
 
     # ── Name: full candidate_name in first_name only (no split) ──────────────
     full_name = (applicant.get("candidate_name") or "").strip()

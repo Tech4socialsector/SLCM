@@ -1339,9 +1339,8 @@
    "fetch_from": "programme.program",
    "fieldname": "programme_of_study",
    "fieldtype": "Link",
-   "label": "Programme",
-   "options": "Programme",
-   "read_only": 1
+   "label": "Programme Of Study",
+   "options": "Programme"
   },
   {
    "depends_on": "eval:doc.admission_type == 'PACE'",

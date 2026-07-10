@@ -43,6 +43,9 @@
   "offer_letter",
   "admission_fee",
   "enrolled",
+  "international_applicant_stages_section",
+  "international_entrance_test",
+  "international_interview",
   "connections_tab_tab"
  ],
  "fields": [
@@ -269,6 +272,23 @@
    "fieldtype": "Check",
    "label": "Enrolled",
    "read_only": 1
+  },
+  {
+   "fieldname": "international_applicant_stages_section",
+   "fieldtype": "Section Break",
+   "label": "International Applicant Stages"
+  },
+  {
+   "default": "0",
+   "fieldname": "international_entrance_test",
+   "fieldtype": "Check",
+   "label": "Entrance Test"
+  },
+  {
+   "default": "0",
+   "fieldname": "international_interview",
+   "fieldtype": "Check",
+   "label": "Interview"
   },
   {
    "fieldname": "application_form_link",

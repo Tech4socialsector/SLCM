@@ -88,7 +88,7 @@ class EntranceTestSeatAllocation(Document):
                 "attached_to_doctype": self.doctype,
                 "attached_to_name": self.name,
                 "content": pdf_content,
-                "is_private": 0
+                "is_private": 1
             })
             _file.save(ignore_permissions=True)
             
@@ -227,7 +227,7 @@ def bulk_download_all_records(names):
         zip_buffer.getvalue(),
         "Entrance Test Seat Allocation",
         names[0],
-        is_private=0
+        is_private=1
     )
 
     return saved_zip.file_url

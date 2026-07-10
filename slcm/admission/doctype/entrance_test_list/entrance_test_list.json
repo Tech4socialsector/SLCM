@@ -44,7 +44,7 @@
    "fieldname": "program",
    "fieldtype": "Link",
    "label": "Programme",
-   "options": "Program"
+   "options": "Programme"
   },
   {
    "fieldname": "generated_on",

@@ -579,7 +579,7 @@ def _populate_category_lists(doc):
             
         # 3. Vertical Lists (only if allocated to that vertical specifically)
         target_field = None
-        if v_cat:
+        if v_cat and v_cat != "General":
             norm_v_cat = v_cat.lower().replace("-ncl", "").replace("-", "_")
             target_field = f"{norm_v_cat}_list"
         
@@ -602,6 +602,7 @@ def _populate_category_lists(doc):
         # Try to fetch the policy to get rich targets
         policy = None
         multiplier = 1.0
+        is_shortlist = hasattr(doc, "shortlist_applicants")
         if getattr(doc, "program", None) and getattr(doc, "admission_cycle", None):
             policy_name = frappe.db.get_value("Program Reservation Policy", {
                 "admission_cycle": doc.admission_cycle,
@@ -609,7 +610,10 @@ def _populate_category_lists(doc):
             }, "name")
             if policy_name:
                 policy = frappe.get_doc("Program Reservation Policy", policy_name)
-                multiplier = policy.get("shortlisting_multiplier") or 1.0
+                if is_shortlist:
+                    multiplier = policy.get("shortlisting_multiplier") or 1.0
+                else:
+                    multiplier = 1.0
         
         # Build map from vertical, compartmental, and horizontal categories to seats & required targets
         category_mapping = {}
@@ -638,8 +642,8 @@ def _populate_category_lists(doc):
                     if any(c.category_name in v_cat for c in policy.compartmental_reservations):
                         continue
                     v_info = category_mapping[v_cat]
-                    req = int((v_info["required"] * percentage) / 100.0)
                     seats = int((v_info["seats"] * percentage) / 100.0)
+                    req = int(seats * multiplier)
                     comp_name = f"{comp_cat} {v_cat}"
                     category_mapping[comp_name] = {
                         "seats": seats,
@@ -810,10 +814,12 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
             
             for v_cat, v_info in vertical_targets.items():
                 target_key = (comp_cat, v_cat)
+                comp_seats = int((v_info["original_seats"] * percentage) / 100.0)
+                comp_target_seats = int(comp_seats * multiplier) if is_shortlist_phase else comp_seats
                 compartmental_targets[target_key] = {
                     "category": comp_cat,
-                    "seats": int((v_info["seats"] * percentage) / 100.0),
-                    "original_seats": int((v_info["original_seats"] * percentage) / 100.0),
+                    "seats": comp_target_seats,
+                    "original_seats": comp_seats,
                     "filled": 0
                 }
 
@@ -1431,9 +1437,11 @@ def execute_part_a_shortlisting(doc):
                 comp_percentage = comp.percentage or 25.0
                 break
 
+        policy_seats = {v.category_name or "General": v.seats or 0 for v in policy.categories}
         for cat in vertical_cats:
-            req_total = targets[cat]["total"]
-            targets[cat][comp_key] = int((req_total * comp_percentage) / 100.0)
+            v_seats = policy_seats.get(cat, 0)
+            comp_seats = int((v_seats * comp_percentage) / 100.0)
+            targets[cat][comp_key] = int(comp_seats * multiplier)
 
         # 3. Horizontal reservations (Women, PWD)
         for h in policy.horizontal_reservations:
