@@ -82,8 +82,11 @@ fixtures = [
         "doctype": "State",
     },
     {
-        "doctype":"Admission Category",
-        "doctype":"Notification"
+        "doctype": "Admission Category",
+    },
+    {
+        "doctype": "Notification",
+        "filters": [["is_standard", "=", 0]]
     },
     {
         "doctype": "Day of Week",
