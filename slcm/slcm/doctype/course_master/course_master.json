@@ -7,18 +7,32 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "section_break_lwba"
+  "course_code",
+  "course_type",
+  "course_credit"
  ],
  "fields": [
   {
-   "fieldname": "section_break_lwba",
-   "fieldtype": "Section Break"
+   "fieldname": "course_code",
+   "fieldtype": "Data",
+   "label": "Course code"
+  },
+  {
+   "fieldname": "course_type",
+   "fieldtype": "Select",
+   "label": "Course type",
+   "options": "\nCore\nElactive"
+  },
+  {
+   "fieldname": "course_credit",
+   "fieldtype": "Data",
+   "label": "Course credit"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-06-03 16:17:31.426106",
+ "modified": "2026-07-10 12:22:11.331698",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Course Master",

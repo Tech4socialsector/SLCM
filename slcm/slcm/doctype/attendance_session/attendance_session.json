@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "autoname": "AS-.YYYY.-.#####",
  "creation": "2026-02-03 02:24:00",
  "doctype": "DocType",
@@ -64,11 +65,11 @@
    "options": "Class Schedule"
   },
   {
+   "depends_on": "eval:doc.based_on=='Office Hours'",
    "fieldname": "office_hours_group",
    "fieldtype": "Link",
    "label": "Office Hours Group",
-   "options": "Office Hours Group",
-   "depends_on": "eval:doc.based_on=='Office Hours'"
+   "options": "Office Hours Group"
   },
   {
    "fieldname": "course_schedule",
@@ -228,7 +229,7 @@
   }
  ],
  "links": [],
- "modified": "2026-02-16 21:32:43.834344",
+ "modified": "2026-07-10 12:41:06.200341",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Attendance Session",
@@ -274,6 +275,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 1,
- "custom": 0
+ "track_changes": 1
 }
