@@ -266,7 +266,7 @@ def merge_filters_for_doctype(doctype, base_filters, dashboard_filters):
         "academic_year": ["academic_year"],
         "term": ["academic_term", "term"],
         "program": ["program", "programme"],
-        "cohort": ["cohort", "programme"],
+        "cohort": ["batch", "cohort", "programme"],
         "student_status": ["student_status", "status"],
     }
 

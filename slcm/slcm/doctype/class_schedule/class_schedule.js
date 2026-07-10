@@ -25,13 +25,12 @@ frappe.ui.form.on('Class Schedule', {
         if (frm.doc.class_configuration) {
             // Fetch details from Class Configuration
             frappe.db.get_value('Class Configuration', frm.doc.class_configuration,
-                ['course', 'faculty', 'programme', 'term', 'department'], (r) => {
+                ['course', 'faculty', 'programme', 'term'], (r) => {
                     if (r) {
                         frm.set_value('course', r.course);
                         frm.set_value('instructor', r.faculty);
                         frm.set_value('programme', r.programme);
                         frm.set_value('term', r.term);
-                        frm.set_value('department', r.department);
                     }
                 });
         }
@@ -74,8 +73,8 @@ frappe.ui.form.on('Class Schedule', {
     generate_title: function (frm) {
         if (frm.doc.course) {
             let title = frm.doc.course;
-            if (frm.doc.room) {
-                title += ' - ' + frm.doc.room;
+            if (frm.doc.venue) {
+                title += ' - ' + frm.doc.venue;
             }
             frm.set_value('title', title);
         }

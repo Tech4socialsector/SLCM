@@ -345,18 +345,6 @@ class ExamBarcodeSheet {
 			margin-left:auto; font-size:11.5px; color:#94a3b8; white-space:nowrap;
 			display:flex; align-items:center; gap:5px;
 		}
-		.eas-btn-gen-panel {
-			height:34px; padding:0 16px; font-size:12.5px; font-weight:600;
-			border-radius:8px; border:none; cursor:pointer;
-			display:inline-flex; align-items:center; gap:7px;
-			background:linear-gradient(135deg,#059669,#10b981); color:#fff;
-			box-shadow:0 2px 8px rgba(5,150,105,.3);
-			transition:box-shadow .2s,transform .1s;
-		}
-		.eas-btn-gen-panel:hover {
-			box-shadow:0 4px 12px rgba(5,150,105,.4); transform:translateY(-1px);
-		}
-
 		/* ─── Student data table ────────────────────────────────────────────── */
 		.eas-stbl-wrap {
 			border:1px solid #c7d2fe; border-radius:12px;
@@ -927,7 +915,7 @@ class ExamBarcodeSheet {
 				<div style="padding:12px 0;color:#64748b;font-size:13px;">
 					<i class="fa fa-info-circle" style="color:#93c5fd;"></i>
 					No students enrolled in <b>${c.course_name || c.course}</b>.
-					Check that students are added to a Student Group linked to this course.
+					Check that students are enrolled in this course for the exam plan's term.
 				</div>`);
 			return;
 		}
@@ -1015,24 +1003,19 @@ class ExamBarcodeSheet {
 						</div>
 					</div>
 				</div>
-				<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-					<div class="eas-panel-stats">
-						<div class="eas-pstat">
-							<div class="eas-pstat-val pv-total">${total}</div>
-							<div class="eas-pstat-label">Enrolled</div>
-						</div>
-						<div class="eas-pstat">
-							<div class="eas-pstat-val pv-done">${done}</div>
-							<div class="eas-pstat-label">Barcoded</div>
-						</div>
-						<div class="eas-pstat">
-							<div class="eas-pstat-val pv-pend">${pending}</div>
-							<div class="eas-pstat-label">Pending</div>
-						</div>
+				<div class="eas-panel-stats">
+					<div class="eas-pstat">
+						<div class="eas-pstat-val pv-total">${total}</div>
+						<div class="eas-pstat-label">Enrolled</div>
 					</div>
-					<button class="eas-btn-gen-panel eas-gen-panel">
-						<i class="fa fa-qrcode"></i> Generate Barcodes
-					</button>
+					<div class="eas-pstat">
+						<div class="eas-pstat-val pv-done">${done}</div>
+						<div class="eas-pstat-label">Barcoded</div>
+					</div>
+					<div class="eas-pstat">
+						<div class="eas-pstat-val pv-pend">${pending}</div>
+						<div class="eas-pstat-label">Pending</div>
+					</div>
 				</div>
 			</div>
 

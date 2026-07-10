@@ -9,12 +9,12 @@ from datetime import datetime, timedelta
 
 
 @frappe.whitelist()
-def get_class_list_template(department=None):
+def get_class_list_template(programme=None):
     """Generate CSV template for class list"""
     filters = {}
-    if department:
-        filters["department"] = department
-    
+    if programme:
+        filters["programme"] = programme
+
     classes = frappe.get_all(
         "Class Configuration",
         filters=filters,
@@ -22,32 +22,32 @@ def get_class_list_template(department=None):
             "name as class_id",
             "course",
             "class_name",
-            "department",
+            "programme",
             "faculty",
         ],
-        order_by="department, course",
+        order_by="programme, course",
     )
-    
+
     # Get faculty details
     result = []
     for cls in classes:
         faculty_email = ""
         faculty_employee_id = ""
-        
+
         if cls.faculty:
             faculty_doc = frappe.get_doc("Faculty", cls.faculty)
             faculty_email = faculty_doc.email if hasattr(faculty_doc, 'email') else ""
             faculty_employee_id = faculty_doc.employee_id if hasattr(faculty_doc, 'employee_id') else ""
-        
+
         result.append({
             "Class ID": cls.class_id,
             "Course Name": cls.course,
             "Course Code": cls.course,
             "Class Name": cls.class_name,
-            "Department Name": cls.department,
+            "Programme": cls.programme,
             "Faculty": faculty_email or cls.faculty,
         })
-    
+
     return result
 
 
@@ -118,7 +118,6 @@ def upload_timetable_csv(csv_data):
                 "course": class_config.course,
                 "instructor": class_config.faculty,
                 "term": class_config.term,
-                "department": class_config.department,
                 "programme": class_config.programme,
                 "schedule_date": schedule_date,
                 "from_time": from_time,

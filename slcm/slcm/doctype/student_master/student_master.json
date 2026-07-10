@@ -26,6 +26,9 @@
   "programme",
   "academic_year",
   "academic_term",
+  "programme_of_study",
+  "pace_programme",
+  "level_of_study",
   "attendance_status",
   "column_break_bgkj",
   "specialisation",
@@ -1333,6 +1336,7 @@
   },
   {
    "depends_on": "eval:doc.admission_type != 'PACE'",
+   "fetch_from": "programme.program",
    "fieldname": "programme_of_study",
    "fieldtype": "Link",
    "label": "Programme Of Study",
@@ -1346,14 +1350,15 @@
    "options": "PACE Programme"
   },
   {
+   "fetch_from": "programme.level_of_study",
    "fieldname": "level_of_study",
-   "fieldtype": "Select",
+   "fieldtype": "Data",
    "label": "Level Of Study",
    "options": "\nUndergraduate\nPostgraduate\nResearch Course\nDiploma"
   }
  ],
  "links": [],
- "modified": "2026-07-08 16:46:42.597270",
+ "modified": "2026-07-08 23:53:34.864771",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",

@@ -61,13 +61,13 @@ frappe.ui.form.on("ID Card Generation Tool", {
 		});
 
 		frm.add_custom_button(__("Get Students"), function () {
-			const hasFilter = frm.doc.academic_year || frm.doc.department || frm.doc.program || frm.doc.batch;
+			const hasFilter = frm.doc.academic_year || frm.doc.program || frm.doc.batch;
 			if (!hasFilter) {
 				frappe.msgprint({
 					title: __("No Filters Selected"),
 					message: __(
-						"Please select at least one filter — <b>Academic Year</b>, <b>Department</b>, " +
-						"<b>Program</b>, or <b>Batch</b> — before fetching students."
+						"Please select at least one filter — <b>Academic Year</b>, <b>Program</b>, " +
+						"or <b>Batch</b> — before fetching students."
 					),
 					indicator: "orange",
 				});

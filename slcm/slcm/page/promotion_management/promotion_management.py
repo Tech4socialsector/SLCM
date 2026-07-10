@@ -134,7 +134,7 @@ def _get_students_raw(program, academic_year, from_year):
 			sm.programme     AS programme,
 			sm.batch_year    AS batch_year,
 			sm.current_year  AS current_year,
-			c.cohort_name    AS cohort_name
+			c.batch_name     AS cohort_name
 		FROM `tabStudent Master` sm
 		INNER JOIN `tabBatch` c ON c.name = sm.programme
 		WHERE
@@ -230,6 +230,95 @@ def _get_students_raw(program, academic_year, from_year):
 		).strip()
 
 	return students
+
+
+def _resolve_next_batch(current_cohort):
+	"""Given a Student Enrollment's current Batch, find the Batch for the
+	same program + entry cohort (section) one year_of_study ahead, in the
+	next Academic Year by start date. Returns None if no such Batch exists
+	yet (registrar hasn't created it) or the current batch has no section.
+
+	NOTE: this only covers promotion that happens once per Academic Year
+	(matches how Batches are seeded today - e.g. Semester I/III/V as
+	successive years of study for different entry cohorts). Trimester-wise
+	promotion (multiple Batch changes within a single academic year, as at
+	NLSIU) is not yet implemented here - see conversation with Nishanth
+	before extending this for that case.
+	"""
+	batch = frappe.db.get_value(
+		"Batch", current_cohort,
+		["program", "section", "term_year", "academic_year"], as_dict=True,
+	)
+	if not batch or not batch.section or batch.term_year is None:
+		return None
+
+	current_ay_start = frappe.db.get_value("Academic Year", batch.academic_year, "year_start_date")
+	if not current_ay_start:
+		return None
+
+	next_ay = frappe.db.get_value(
+		"Academic Year",
+		{"year_start_date": [">", current_ay_start]},
+		"name",
+		order_by="year_start_date asc",
+	)
+	if not next_ay:
+		return None
+
+	return frappe.db.get_value(
+		"Batch",
+		{
+			"program": batch.program,
+			"section": batch.section,
+			"term_year": cint(batch.term_year) + 1,
+			"academic_year": next_ay,
+		},
+		"name",
+	)
+
+
+def _promote_enrollment(student, to_year):
+	"""Mark the student's current Student Enrollment Completed and create a
+	new one in the resolved next Batch. Returns the new enrollment name, or
+	raises if the next Batch doesn't exist yet."""
+	current = frappe.db.get_value(
+		"Student Enrollment",
+		{"student": student, "status": "Enrolled", "docstatus": ["<", 2]},
+		["name", "batch"],
+		as_dict=True,
+		order_by="enrollment_date desc",
+	)
+	if not current or not current.batch:
+		frappe.throw(
+			frappe._("No active Student Enrollment found for {0} to promote from").format(student)
+		)
+
+	next_batch = _resolve_next_batch(current.batch)
+	if not next_batch:
+		frappe.throw(
+			frappe._(
+				"Cannot promote {0}: no Batch found for year {1} following {2}. "
+				"Create the target Batch first."
+			).format(student, to_year, current.batch)
+		)
+
+	existing = frappe.db.exists(
+		"Student Enrollment",
+		{"student": student, "batch": next_batch, "docstatus": ["<", 2]},
+	)
+	if existing:
+		return existing
+
+	old_doc = frappe.get_doc("Student Enrollment", current.name)
+	old_doc.status = "Completed"
+	old_doc.save(ignore_permissions=True)
+
+	new_doc = frappe.new_doc("Student Enrollment")
+	new_doc.student = student
+	new_doc.batch = next_batch
+	new_doc.status = "Enrolled"
+	new_doc.insert(ignore_permissions=True)
+	return new_doc.name
 
 
 # ── Public APIs ────────────────────────────────────────────────────────────────
@@ -358,7 +447,8 @@ def confirm_promotion(program, academic_year, from_year, to_year, policy_name=No
 		else:
 			conditional_count += 1
 
-	# Update Student Master year for promoted students
+	# Update Student Master year and create next-term enrollment for promoted students
+	enrollment_failures = []
 	if policy.auto_update_student_year:
 		promoted_students = frappe.db.get_all(
 			"Student Promotion",
@@ -367,15 +457,24 @@ def confirm_promotion(program, academic_year, from_year, to_year, policy_name=No
 		)
 		for sname in promoted_students:
 			frappe.db.set_value("Student Master", sname, "current_year", str(to_year), update_modified=False)
+			try:
+				_promote_enrollment(sname, to_year)
+			except Exception as e:
+				frappe.log_error(
+					title="Student Promotion: enrollment creation failed",
+					message=f"Student {sname}, policy {policy.name}: {e}",
+				)
+				enrollment_failures.append({"student": sname, "error": str(e)})
 
 	frappe.db.commit()
 
 	return {
-		"policy_name":  policy.name,
-		"total":        len(students),
-		"promoted":     promoted_count,
-		"not_promoted": not_promoted_count,
-		"conditional":  conditional_count,
+		"policy_name":         policy.name,
+		"total":               len(students),
+		"promoted":            promoted_count,
+		"not_promoted":        not_promoted_count,
+		"conditional":         conditional_count,
+		"enrollment_failures": enrollment_failures,
 	}
 
 

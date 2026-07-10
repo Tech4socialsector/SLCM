@@ -134,7 +134,7 @@
    "fieldname": "section",
    "fieldtype": "Link",
    "label": "Section",
-   "options": "Program Batch Section",
+   "options": "Section",
    "read_only": 1
   }
  ],

@@ -3,9 +3,9 @@ frappe.provide("slcm.templates");
 
 slcm.templates.field_map = {
 	student_name: { source: "student_name", type: "text", required: true },
-	student_id: { source: "name", type: "text", required: true },
-	program: { source: "program", type: "text", required: true },
-	department: { source: "department", type: "text", required: true },
+	student_id: { source: "registration_id", type: "text", required: true },
+	batch: { source: "batch", type: "text", required: false },
+	programme: { source: "programme", type: "text", required: true },
 	email: { source: "email", type: "text", required: false },
 	phone: { source: "phone", type: "text", required: false },
 	date_of_birth: { source: "date_of_birth", type: "date", required: false },
@@ -43,10 +43,10 @@ slcm.templates.registry = [
     <!-- Student Details -->
     <div style="text-align: center; margin-top: 40px; padding: 0 40px;">
         <h1 style="margin: 0; color: #333; font-size: 42px; font-weight: 700; text-transform: uppercase;">{{ student_name }}</h1>
-        <p style="margin: 10px 0 0 0; color: #666; font-size: 24px;">{{ program }}</p>
+        <p style="margin: 10px 0 0 0; color: #666; font-size: 24px;">{{ programme }}</p>
         <div style="margin-top: 30px; font-size: 22px; color: #444; line-height: 1.6;">
-            <strong>ID:</strong> {{ name }}<br>
-            <strong>Dept:</strong> {{ department }}<br>
+            <strong>ID:</strong> {{ registration_id }}<br>
+            <strong>Batch:</strong> {{ batch }}<br>
             <strong>DOB:</strong> {{ date_of_birth }}
         </div>
     </div>
@@ -102,7 +102,7 @@ slcm.templates.registry = [
         </div>
         <div style="margin-top: 30px; text-align: center; color: white;">
             <div style="font-size: 20px; font-weight: bold; opacity: 0.8;">STUDENT</div>
-            <div style="font-size: 32px; font-weight: bold; margin-top: 5px;">{{ name }}</div>
+            <div style="font-size: 32px; font-weight: bold; margin-top: 5px;">{{ registration_id }}</div>
         </div>
     </div>
 
@@ -115,7 +115,7 @@ slcm.templates.registry = [
 
         <div style="margin-top: 20px;">
             <h1 style="margin: 0; font-size: 40px; font-weight: 700; color: #333;">{{ student_name }}</h1>
-            <p style="margin: 10px 0 0 0; font-size: 24px; color: #666;">{{ program }} | {{ department }}</p>
+            <p style="margin: 10px 0 0 0; font-size: 24px; color: #666;">{{ programme }} | {{ batch }}</p>
 
             <div style="margin-top: 40px; font-size: 20px; color: #444;">
                 Valid To: <strong>{{ expiry_date }}</strong>
@@ -176,7 +176,7 @@ slcm.templates.registry = [
         <div style="font-size: 24px; color: #7f8c8d;">Room: 304 - Block B</div>
 
         <table style="width: 100%; margin-top: 40px; text-align: left; font-size: 20px; color: #34495e;">
-            <tr><td style="padding: 10px; font-weight: bold;">Student ID:</td><td>{{ name }}</td></tr>
+            <tr><td style="padding: 10px; font-weight: bold;">Student ID:</td><td>{{ registration_id }}</td></tr>
             <tr><td style="padding: 10px; font-weight: bold;">Blood Group:</td><td>{{ blood_group }}</td></tr>
             <tr><td style="padding: 10px; font-weight: bold;">Emergency:</td><td>{{ phone }}</td></tr>
         </table>
@@ -212,8 +212,8 @@ slcm.templates.registry = [
         </div>
         <div style="flex: 1; padding-left: 40px; display: flex; flex-direction: column; justify-content: center;">
             <div style="font-size: 36px; font-weight: bold; color: #3e2723; border-bottom: 2px solid #5d4037; display: inline-block;">{{ student_name }}</div>
-            <div style="font-size: 24px; margin-top: 20px;"><strong>Member ID:</strong> {{ name }}</div>
-            <div style="font-size: 24px; margin-top: 10px;"><strong>Dept:</strong> {{ department }}</div>
+            <div style="font-size: 24px; margin-top: 20px;"><strong>Member ID:</strong> {{ registration_id }}</div>
+            <div style="font-size: 24px; margin-top: 10px;"><strong>Programme:</strong> {{ programme }}</div>
         </div>
     </div>
     <div style="position: absolute; bottom: 30px; right: 40px;">
@@ -256,7 +256,7 @@ slcm.templates.registry = [
     </div>
     <div style="padding: 20px; font-size: 18px;">
         <p><strong>Name:</strong> {{ student_name }}</p>
-        <p><strong>ID:</strong> {{ name }}</p>
+        <p><strong>ID:</strong> {{ registration_id }}</p>
         <p><strong>Dept:</strong> {{ department }}</p>
     </div>
      <div style="text-align: center; margin-top: 50px;">

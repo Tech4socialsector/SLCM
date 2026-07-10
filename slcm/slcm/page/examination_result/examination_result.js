@@ -8,7 +8,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 	// ── State ─────────────────────────────────────────────────────────────────
 	var S = {
 		exam_plan:       null,
-		department:      null,
+		programme:       null,
 		course:          null,
 		info:            null,   // course_info response
 		students:        [],
@@ -666,10 +666,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					<div class="er2-fgroup" style="max-width:260px;">
 						<span class="er2-flabel">
 							<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px;margin-right:3px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-							Department
+							Programme
 						</span>
-						<select class="er2-select" id="er2-dept">
-							<option value="">Choose Department</option>
+						<select class="er2-select" id="er2-prog">
+							<option value="">Choose Programme</option>
 						</select>
 					</div>
 					<div class="er2-fgroup" style="max-width:320px;">
@@ -811,7 +811,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 						<circle cx="84" cy="84" r="18" fill="#4f46e5"/>
 						<path d="M76 84h16M84 76v16" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
 					</svg>
-					<div class="er2-empty-txt">Select a Department &amp; Course</div>
+					<div class="er2-empty-txt">Select a Programme &amp; Course</div>
 					<div class="er2-empty-sub">Choose from the filters above to view examination results</div>
 				</div>
 
@@ -926,7 +926,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 
 	// ── DOM refs ──────────────────────────────────────────────────────────────
 	var $examPlan = $body.find('#er2-exam-plan');
-	var $dept     = $body.find('#er2-dept');
+	var $prog     = $body.find('#er2-prog');
 	var $course   = $body.find('#er2-course');
 	var $info     = $body.find('#er2-info-panel');
 	var $actbar   = $body.find('#er2-actbar');
@@ -982,13 +982,13 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		},
 	});
 
-	// ── Load departments ──────────────────────────────────────────────────────
+	// ── Load programmes ───────────────────────────────────────────────────────
 	frappe.call({
-		method: 'slcm.slcm.page.examination_result.examination_result.get_departments',
+		method: 'slcm.slcm.page.examination_result.examination_result.get_programmes',
 		callback: function (r) {
-			(r.message || []).forEach(function (d) {
-				$dept.append('<option value="' + d.name + '">' +
-					frappe.utils.escape_html(d.department_name) + '</option>');
+			(r.message || []).forEach(function (p) {
+				$prog.append('<option value="' + p.name + '">' +
+					frappe.utils.escape_html(p.name) + '</option>');
 			});
 		},
 	});
@@ -996,35 +996,35 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 	// ── Exam Plan change ─────────────────────────────────────────────────────
 	$examPlan.on('change', function () {
 		S.exam_plan  = $(this).val();
-		S.department = null;
+		S.programme  = null;
 		S.course     = null;
 		S.page       = 1;
-		$dept.val('').find('option:not(:first)').remove();
+		$prog.val('').find('option:not(:first)').remove();
 		$course.val('').prop('disabled', true).find('option:not(:first)').remove();
 		hide_detail();
 		frappe.call({
-			method: 'slcm.slcm.page.examination_result.examination_result.get_departments',
+			method: 'slcm.slcm.page.examination_result.examination_result.get_programmes',
 			args: { exam_plan: S.exam_plan || '' },
 			callback: function (r) {
-				(r.message || []).forEach(function (d) {
-					$dept.append('<option value="' + d.name + '">' +
-						frappe.utils.escape_html(d.department_name) + '</option>');
+				(r.message || []).forEach(function (p) {
+					$prog.append('<option value="' + p.name + '">' +
+						frappe.utils.escape_html(p.name) + '</option>');
 				});
 			},
 		});
 	});
 
-	// ── Dept change ───────────────────────────────────────────────────────────
-	$dept.on('change', function () {
-		S.department = $(this).val();
+	// ── Programme change ──────────────────────────────────────────────────────
+	$prog.on('change', function () {
+		S.programme = $(this).val();
 		S.course     = null;
 		S.page       = 1;
 		$course.val('').prop('disabled', true).find('option:not(:first)').remove();
 		hide_detail();
-		if (!S.department) return;
+		if (!S.programme) return;
 		frappe.call({
-			method: 'slcm.slcm.page.examination_result.examination_result.get_courses_by_department',
-			args: { department: S.department, exam_plan: S.exam_plan || '' },
+			method: 'slcm.slcm.page.examination_result.examination_result.get_courses_by_programme',
+			args: { programme: S.programme, exam_plan: S.exam_plan || '' },
 			callback: function (r) {
 				(r.message || []).forEach(function (c) {
 					$course.append('<option value="' + c.name + '">' +
@@ -2811,7 +2811,6 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					prow('Email',        s.email) +
 					prow('Programme',    s.programme) +
 					prow('Batch',        s.batch) +
-					prow('Department',   s.department) +
 					prow('Term',         s.current_term) +
 					prow('Section',      s.section);
 
@@ -3006,7 +3005,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		};
 
 		var TYPES = [
-			{ key: 'programmes',   label: 'Department & Programme',
+			{ key: 'programmes',   label: 'Programme',
 			  icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
 			  items: opts.programmes },
 			{ key: 'batches',      label: 'Batch',

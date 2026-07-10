@@ -2,13 +2,12 @@
  "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
- "autoname": "format:{program}-{academic_year}",
+ "autoname": "format:{program}-{academic_year}-{batch}",
  "creation": "2026-01-20 15:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "academic_year",
-  "department",
   "program",
   "batch",
   "academic_system",
@@ -16,15 +15,6 @@
   "curriculum_courses"
  ],
  "fields": [
-  {
-   "fieldname": "department",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Department",
-   "options": "Department",
-   "reqd": 1
-  },
   {
    "fieldname": "program",
    "fieldtype": "Link",
@@ -64,8 +54,9 @@
   },
   {
    "fieldname": "batch",
-   "fieldtype": "Data",
-   "label": "Batch"
+   "fieldtype": "Link",
+   "label": "Batch",
+   "options": "Batch"
   }
  ],
  "links": [],

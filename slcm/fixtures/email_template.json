@@ -460,5 +460,47 @@
   "response_html": null,
   "subject": "Ticket #{{ ticket_name }} needs manual attention (escalation limit reached)",
   "use_html": 0
+ },
+ {
+  "cc": null,
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "email_account": null,
+  "enabled": 1,
+  "modified": "2026-07-09 00:00:00",
+  "name": "Venue Booking - New Request (Admin)",
+  "reference_doctype": "Venue Booking",
+  "response": "<p>A new venue booking has been submitted and requires your review.</p>\n\n  {% if programme %}{% endif %}\n  {% if academic_year %}{% endif %}\n  \n  {% if expected_attendees %}{% endif %}\n  {% if reason %}{% endif %}\n<table style=\"border-collapse:collapse;width:100%;font-size:14px\">\n  <tbody><tr><td style=\"padding:6px 12px;font-weight:600;color:#555;width:160px\">Reference</td><td style=\"padding:6px 12px\">{{ booking_name }}</td></tr>\n  <tr style=\"background:#f7f7f7\"><td style=\"padding:6px 12px;font-weight:600;color:#555\">Event / Purpose</td><td style=\"padding:6px 12px\">{{ event_name }}</td></tr>\n  <tr><td style=\"padding:6px 12px;font-weight:600;color:#555\">Requested By</td><td style=\"padding:6px 12px\">{{ requester_display }} ({{ requester_type }})</td></tr><tr style=\"background:#f7f7f7\"><td style=\"padding:6px 12px;font-weight:600;color:#555\">Programme / Batch</td><td style=\"padding:6px 12px\">{{ programme }}{% if batch %} / {{ batch }}{% endif %}</td></tr><tr><td style=\"padding:6px 12px;font-weight:600;color:#555\">Academic Year</td><td style=\"padding:6px 12px\">{{ academic_year }}</td></tr><tr style=\"background:#f7f7f7\"><td style=\"padding:6px 12px;font-weight:600;color:#555\">Venue</td><td style=\"padding:6px 12px\">{{ room }} ({{ venue_type }})</td></tr>\n  <tr><td style=\"padding:6px 12px;font-weight:600;color:#555\">Start</td><td style=\"padding:6px 12px\">{{ start_datetime }}</td></tr>\n  <tr style=\"background:#f7f7f7\"><td style=\"padding:6px 12px;font-weight:600;color:#555\">End</td><td style=\"padding:6px 12px\">{{ end_datetime }}</td></tr><tr><td style=\"padding:6px 12px;font-weight:600;color:#555\">Attendees</td><td style=\"padding:6px 12px\">{{ expected_attendees }}</td></tr><tr style=\"background:#f7f7f7\"><td style=\"padding:6px 12px;font-weight:600;color:#555\">Remarks</td><td style=\"padding:6px 12px\">{{ reason }}</td></tr></tbody></table>\n<p style=\"margin-top:20px\">\n  <a href=\"{{ booking_url }}\" style=\"display:inline-block;padding:10px 24px;background:#1e3a5f;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px\" rel=\"noopener noreferrer\">\n    Review &amp; Approve / Reject\n  </a>\n</p>\n<p style=\"font-size:12px;color:#888;margin-top:8px\">\n  Or copy this link: <a href=\"{{ booking_url }}\" style=\"color:#1e3a5f\" rel=\"noopener noreferrer\">{{ booking_url }}</a>\n</p>",
+  "response_html": null,
+  "subject": "[Venue Booking] New Request: {{ event_name }} — {{ room }}",
+  "use_html": 0
+ },
+ {
+  "cc": null,
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "email_account": null,
+  "enabled": 1,
+  "modified": "2026-07-09 00:00:00",
+  "name": "Venue Booking - Status Update (Requester)",
+  "reference_doctype": "Venue Booking",
+  "response": "<p>Hi {{ requester_name }},</p>\n<p>Your venue booking request has been <strong style=\"color:{\">{{ new_status_lower }}</strong>.</p>\n<div style=\"background:{\">\n  \n    {% if admin_remarks %}{% endif %}\n  <table style=\"border-collapse:collapse;width:100%\">\n    <tbody><tr><td style=\"padding:4px 0;font-weight:600;color:#555;width:140px\">Reference</td><td style=\"padding:4px 0\">{{ booking_name }}</td></tr>\n    <tr><td style=\"padding:4px 0;font-weight:600;color:#555\">Event</td><td style=\"padding:4px 0\">{{ event_name }}</td></tr>\n    <tr><td style=\"padding:4px 0;font-weight:600;color:#555\">Venue</td><td style=\"padding:4px 0\">{{ room }} ({{ venue_type }})</td></tr>\n    <tr><td style=\"padding:4px 0;font-weight:600;color:#555\">From</td><td style=\"padding:4px 0\">{{ start_datetime }}</td></tr>\n    <tr><td style=\"padding:4px 0;font-weight:600;color:#555\">To</td><td style=\"padding:4px 0\">{{ end_datetime }}</td></tr>\n    <tr><td style=\"padding:4px 0;font-weight:600;color:#555\">Status</td>\n        <td style=\"padding:4px 0;font-weight:700;color:{\">{{ new_status }}</td></tr><tr><td style=\"padding:4px 0;font-weight:600;color:#555\">Admin Remarks</td><td style=\"padding:4px 0\">{{ admin_remarks }}</td></tr></tbody></table>\n</div>\n<p style=\"font-size:13px;color:#666\">{{ footer_note }}</p>",
+  "response_html": null,
+  "subject": "[Venue Booking] {{ new_status }}: {{ event_name }} — {{ room }}",
+  "use_html": 0
+ },
+ {
+  "cc": null,
+  "docstatus": 0,
+  "doctype": "Email Template",
+  "email_account": null,
+  "enabled": 1,
+  "modified": "2026-07-09 00:00:00",
+  "name": "Venue Booking - Swap Request Decision (Requester)",
+  "reference_doctype": "Venue Booking",
+  "response": "<p>Hi {{ requester_name }},</p>\n<p>Your venue swap request has been <strong style=\"color:{\">{{ decision_lower }}</strong>.</p>\n<div style=\"background:{\">\n  \n    {% if admin_remarks %}{% endif %}\n  <table style=\"border-collapse:collapse;width:100%\">\n    <tbody><tr><td style=\"padding:4px 0;font-weight:600;color:#555;width:160px\">Booking Ref</td><td style=\"padding:4px 0\">{{ booking_name }}</td></tr>\n    <tr><td style=\"padding:4px 0;font-weight:600;color:#555\">Event</td><td style=\"padding:4px 0\">{{ event_name }}</td></tr>\n    <tr><td style=\"padding:4px 0;font-weight:600;color:#555\">Time Slot</td><td style=\"padding:4px 0\">{{ start_datetime }} → {{ end_datetime }}</td></tr>\n    <tr><td style=\"padding:4px 0;font-weight:600;color:#555\">Decision</td><td style=\"padding:4px 0;font-weight:700;color:{\">{{ decision }}</td></tr><tr><td style=\"padding:4px 0;font-weight:600;color:#555\">Admin Remarks</td><td style=\"padding:4px 0\">{{ admin_remarks }}</td></tr></tbody></table>\n  <p style=\"margin-top:10px;font-size:13px\">{{ body_detail }}</p>\n</div>",
+  "response_html": null,
+  "subject": "[Venue Booking] Swap Request {{ decision }}: {{ event_name }}",
+  "use_html": 0
  }
 ]

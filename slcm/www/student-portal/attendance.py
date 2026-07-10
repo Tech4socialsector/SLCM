@@ -250,7 +250,20 @@ def get_context(context):
 
         # ── Office Hours Sessions ──────────────────────────────────
         try:
-            enrolled_cos = [s.course_offering for s in summaries if s.course_offering]
+            enrolled_cos = frappe.get_all(
+                "Student Enrollment Course",
+                filters={
+                    "parenttype": "Student Enrollment",
+                    "parent": ["in", frappe.get_all(
+                        "Student Enrollment",
+                        filters={"student": student_name, "status": "Enrolled", "docstatus": ["<", 2]},
+                        pluck="name",
+                    )],
+                    "status": "Enrolled",
+                },
+                pluck="course_offering",
+            )
+            enrolled_cos = list(set(co for co in enrolled_cos if co))
             if enrolled_cos:
                 today_date = frappe.utils.today()
                 office_hours = frappe.get_all(
@@ -278,6 +291,15 @@ def get_context(context):
                     oh["start_fmt"] = _fmt_time(oh.start_time)
                     oh["end_fmt"] = _fmt_time(oh.end_time)
                     oh["is_scheduled"] = oh.session_status == "Scheduled"
+                    oh["already_registered"] = frappe.db.exists(
+                        "Student Attendance",
+                        {
+                            "student": student_name,
+                            "based_on": "Office Hours",
+                            "attendance_date": oh.session_date,
+                            "course_offer": oh.course_offering,
+                        },
+                    ) is not None
                 context.office_hours_sessions = office_hours
             else:
                 context.office_hours_sessions = []

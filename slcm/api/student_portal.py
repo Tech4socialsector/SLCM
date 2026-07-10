@@ -397,16 +397,21 @@ def register_office_hours_attendance(session_name):
     if existing:
         frappe.throw("You have already registered attendance for this office hours session.")
 
+    office_hours_group = frappe.db.get_value(
+        "Office Hours Group", {"office_hours_session": session.name}
+    )
+
     doc = frappe.new_doc("Student Attendance")
     doc.based_on = "Office Hours"
+    doc.office_hours_group = office_hours_group
     doc.student = student
     doc.course_offer = session.course_offering
     doc.attendance_date = session.session_date
     doc.date = session.session_date
     doc.status = "Present"
-    doc.in_time = session.start_time
-    doc.out_time = session.end_time
-    doc.session_type = "Office Hours"
+    doc.in_time = frappe.utils.get_datetime(f"{session.session_date} {session.start_time}")
+    doc.out_time = frappe.utils.get_datetime(f"{session.session_date} {session.end_time}")
+    doc.session_type = "Office Hour"
     doc.source = "Manual"
 
     try:

@@ -6,7 +6,6 @@
  "field_order": [
   "section_filters",
   "academic_year",
-  "department",
   "program",
   "batch",
   "get_students",
@@ -36,12 +35,6 @@
    "options": "Academic Year"
   },
   {
-   "fieldname": "department",
-   "fieldtype": "Link",
-   "label": "Department",
-   "options": "Department"
-  },
-  {
    "fieldname": "program",
    "fieldtype": "Link",
    "label": "Programme",
@@ -51,7 +44,7 @@
    "fieldname": "batch",
    "fieldtype": "Link",
    "label": "Batch",
-   "options": "Student Batch Name"
+   "options": "Batch"
   },
   {
    "fieldname": "get_students",
@@ -135,7 +128,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-01-08 15:20:16.786772",
+ "modified": "2026-07-08 23:02:09.844406",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "ID Card Generation Tool",
@@ -160,6 +153,5 @@
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": [],
- "custom": 0
+ "states": []
 }
