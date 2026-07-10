@@ -19,6 +19,7 @@
   "batch",
   "section",
   "instructor",
+  "office_hours_session",
   "students_section",
   "get_students",
   "students"
@@ -81,6 +82,14 @@
    "fieldtype": "Link",
    "label": "Instructor",
    "options": "Faculty"
+  },
+  {
+   "fieldname": "office_hours_session",
+   "fieldtype": "Link",
+   "label": "Office Hours Session",
+   "options": "Office Hours Session",
+   "read_only": 1,
+   "description": "Auto-created/synced so this office hours slot shows up on the Student Portal."
   },
   {
    "fieldname": "students_section",
