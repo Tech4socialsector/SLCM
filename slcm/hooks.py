@@ -314,7 +314,8 @@ doc_events = {
         "on_submit": "slcm.admission.events.on_document_submit"
     },
     "HD Ticket": {
-        "before_validate": "slcm.api.helpdesk_assignment.auto_assign_team_by_student"
+        "before_insert": "slcm.api.helpdesk_assignment.prefill_student_context_before_insert",
+        "before_validate": "slcm.api.helpdesk_assignment.apply_default_email_team"
     },
     "User": {
         "before_insert": "slcm.api.user_events.user_before_insert",
