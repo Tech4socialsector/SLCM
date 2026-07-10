@@ -103,49 +103,34 @@ frappe.ui.form.on("Interview Seat Allocation", {
 });
  
 function calculate_final_cumulative(frm, skip_dirty = false) {
+    // Only auto-calculate the numeric score fields.
+    // Result Status (interview_result_status) and Offered Admission (offered_admission)
+    // are purely manual — never auto-set or overwritten by the system.
     const et_marks = flt(frm.doc.et_total_marks_secured_in_part_a_b || 0);
     const et_max = flt(frm.doc.et_total_marks || 0);
     const interview_max = 30.0;
-    
+
     let score = flt(frm.doc.interview_score || 0);
-    let cumulative = 0;
     let max_marks = et_max + interview_max;
+    let cumulative = 0;
     let percentage = 0;
-    let offered = 0;
-    let result_status = frm.doc.interview_result_status;
-    
+
     if (frm.doc.interview_status === "Attended") {
         cumulative = et_marks + score;
         percentage = max_marks > 0 ? (cumulative / max_marks * 100.0) : 0;
-        offered = (frm.doc.result_published == 1 && percentage >= 70.0) ? 1 : 0;
-        result_status = percentage >= 70.0 ? "Pass" : "Fail";
-    } else if (frm.doc.interview_status === "Absent") {
-        cumulative = 0;
-        percentage = 0;
-        offered = 0;
-        result_status = "Fail";
-    } else {
-        cumulative = 0;
-        percentage = 0;
-        offered = 0;
-        result_status = "Pending";
     }
-    
-    const opt = skip_dirty ? { dirty: false } : null;
+    // Absent or Scheduled/blank → cumulative and percentage stay 0
+
     const skip_dirty_arg = skip_dirty ? true : false;
-    
+
     if (frm.doc.final_cumulative_score !== cumulative) {
         frm.set_value("final_cumulative_score", cumulative, null, skip_dirty_arg);
     }
     if (frm.doc.final_percentage !== percentage) {
         frm.set_value("final_percentage", percentage, null, skip_dirty_arg);
     }
-    if (frm.doc.offered_admission !== offered) {
-        frm.set_value("offered_admission", offered, null, skip_dirty_arg);
-    }
-    if (frm.doc.interview_result_status !== result_status) {
-        frm.set_value("interview_result_status", result_status, null, skip_dirty_arg);
-    }
+    // NOTE: offered_admission and interview_result_status are NOT touched here.
+    //       Admin/user sets these fields manually at their discretion.
 }
 
 

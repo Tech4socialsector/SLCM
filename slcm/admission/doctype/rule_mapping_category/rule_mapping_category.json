@@ -9,7 +9,10 @@
   "rule_mapping_category_details_section",
   "category",
   "priority",
-  "minimum_percentage"
+  "minimum_percentage_hsc",
+  "minimum_percentage_sslc",
+  "minimum_cgpa_ug",
+  "minimum_cgpa_pg"
  ],
  "fields": [
   {
@@ -31,10 +34,28 @@
    "label": "Rule Mapping Category Details "
   },
   {
-   "fieldname": "minimum_percentage",
+   "fieldname": "minimum_percentage_hsc",
    "fieldtype": "Percent",
    "in_list_view": 1,
-   "label": "Minimum percentage "
+   "label": "Minimum Percentage In HSC"
+  },
+  {
+   "fieldname": "minimum_percentage_sslc",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Minimum Percentage In SSLC"
+  },
+  {
+   "fieldname": "minimum_cgpa_ug",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Minimum CGPA in UG"
+  },
+  {
+   "fieldname": "minimum_cgpa_pg",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Minimum CGPA in PG"
   }
  ],
  "grid_page_length": 50,

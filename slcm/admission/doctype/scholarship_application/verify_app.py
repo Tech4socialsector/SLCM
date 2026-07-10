@@ -14,7 +14,7 @@ def run_application_tests():
         frappe.delete_doc("Scholarship Scheme", scheme_name)
 
     # Create mapping
-    program = frappe.get_all("Program", limit=1)
+    program = frappe.get_all("Programme", limit=1)
     program_name = program[0].name if program else "Test Program"
     campus = frappe.get_all("Campus", limit=1)
     campus_name = campus[0].name if campus else "Test Campus"

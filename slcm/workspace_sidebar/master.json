@@ -21,6 +21,10 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "book-open",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Academic Structure",
    "icon": "settings",
    "indent": 0,
    "keep_closed": 0,
@@ -32,7 +36,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "icon": "settings",
+   "icon": "building",
    "indent": 0,
    "keep_closed": 0,
    "label": "Academic Management System",
@@ -193,12 +197,12 @@
    "label": "Student Configuration",
    "link_type": "DocType",
    "show_arrow": 0,
-   "type": "Section Break"
+   "type": "Link"
   },
   {
    "child": 1,
    "collapsible": 1,
-   "icon": "tag",
+   "icon": "calendar",
    "indent": 0,
    "keep_closed": 0,
    "label": "Student Category",
@@ -245,7 +249,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "icon": "award",
+   "icon": "tag",
    "indent": 0,
    "keep_closed": 0,
    "label": "Skill",
@@ -257,7 +261,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "icon": "user",
+   "icon": "users",
    "indent": 0,
    "keep_closed": 0,
    "label": "Faculty",
@@ -284,7 +288,7 @@
    "icon": "edit-2",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Assessment Configuration",
+   "label": "Assessment & Grading",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Section Break"
@@ -375,18 +379,18 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "briefcase",
+   "icon": "settings",
    "indent": 0,
    "keep_closed": 0,
    "label": "Student Services",
    "link_type": "DocType",
    "show_arrow": 0,
-   "type": "Section Break"
+   "type": "Link"
   },
   {
    "child": 1,
    "collapsible": 1,
-   "icon": "home",
+   "icon": "check-square",
    "indent": 0,
    "keep_closed": 0,
    "label": "Hostel Settings",
@@ -398,7 +402,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "icon": "file",
+   "icon": "file-text",
    "indent": 0,
    "keep_closed": 0,
    "label": "Condonation Reason",
@@ -410,7 +414,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "icon": "file",
+   "icon": "send",
    "indent": 0,
    "keep_closed": 0,
    "label": "Transcript Settings",
@@ -428,12 +432,12 @@
    "label": "Portal Configuration",
    "link_type": "DocType",
    "show_arrow": 0,
-   "type": "Section Break"
+   "type": "Link"
   },
   {
    "child": 1,
    "collapsible": 1,
-   "icon": "monitor",
+   "icon": "home",
    "indent": 0,
    "keep_closed": 0,
    "label": "Student Portal Settings",
@@ -445,7 +449,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "icon": "monitor",
+   "icon": "file",
    "indent": 0,
    "keep_closed": 0,
    "label": "Faculty Portal Settings",
@@ -457,7 +461,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "icon": "monitor",
+   "icon": "lock",
    "indent": 0,
    "keep_closed": 0,
    "label": "Parent Portal Settings",
@@ -512,9 +516,42 @@
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "users",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Parent Portal",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Section Break"
+  },
+  {
+   "icon": "mail",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Parent Login Invite Tool",
+   "link_to": "Parent Login Invite Tool",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "mail",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Admission Settings",
+   "link_to": "Admission Settings",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-07-09 12:28:19.084668",
+ "modified": "2026-07-09 17:06:28.394199",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Master",
