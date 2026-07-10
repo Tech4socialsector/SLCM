@@ -64,11 +64,11 @@
    "options": "Class Schedule"
   },
   {
+   "depends_on": "eval:doc.based_on=='Office Hours'",
    "fieldname": "office_hours_group",
    "fieldtype": "Link",
    "label": "Office Hours Group",
-   "options": "Office Hours Group",
-   "depends_on": "eval:doc.based_on=='Office Hours'"
+   "options": "Office Hours Group"
   },
   {
    "fieldname": "course_schedule",
@@ -131,7 +131,7 @@
    "fetch_from": "course_schedule.instructor",
    "fieldname": "instructor",
    "fieldtype": "Link",
-   "label": "Instructor",
+   "label": "Faculty",
    "options": "Faculty"
   },
   {
@@ -228,7 +228,7 @@
   }
  ],
  "links": [],
- "modified": "2026-02-16 21:32:43.834344",
+ "modified": "2026-07-10 15:14:03.138328",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Attendance Session",
@@ -274,6 +274,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 1,
- "custom": 0
+ "track_changes": 1
 }
