@@ -529,7 +529,6 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 	income_cert_url = None
 	if income_certificate_data and income_certificate_name:
 		try:
-			from frappe.utils.file_manager import save_file
 			import base64
 			import os
 
@@ -548,9 +547,14 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 			if len(file_content) > 5 * 1024 * 1024:
 				frappe.throw(frappe._("Income Certificate file size must not exceed 5MB."))
 
-			# Save file without attachment initially to avoid name mandatory error
-			saved_file = save_file(income_certificate_name, file_content, None, None, is_private=1)
-			income_cert_url = saved_file.file_url
+			_file = frappe.get_doc({
+				"doctype": "File",
+				"file_name": income_certificate_name,
+				"content": file_content,
+				"is_private": 1
+			})
+			_file.insert(ignore_permissions=True)
+			income_cert_url = _file.file_url
 		except Exception as e:
 			frappe.log_error(f"File upload error (Income): {e}", "Scholarship Application Debug")
 			frappe.throw(frappe._("Failed to upload Income Certificate: {0}").format(str(e)))
@@ -558,7 +562,6 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 	supporting_docs_url = None
 	if supporting_documents_data and supporting_documents_name:
 		try:
-			from frappe.utils.file_manager import save_file
 			import base64
 			import os
 
@@ -577,9 +580,14 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 			if len(file_content) > 5 * 1024 * 1024:
 				frappe.throw(frappe._("Supporting Documents file size must not exceed 5MB."))
 
-			# Save file without attachment initially to avoid name mandatory error
-			saved_file = save_file(supporting_documents_name, file_content, None, None, is_private=1)
-			supporting_docs_url = saved_file.file_url
+			_file = frappe.get_doc({
+				"doctype": "File",
+				"file_name": supporting_documents_name,
+				"content": file_content,
+				"is_private": 1
+			})
+			_file.insert(ignore_permissions=True)
+			supporting_docs_url = _file.file_url
 		except Exception as e:
 			frappe.log_error(f"File upload error (Supporting): {e}", "Scholarship Application Debug")
 			frappe.throw(frappe._("Failed to upload Supporting Documents: {0}").format(str(e)))

@@ -5122,7 +5122,8 @@ LIST / DASHBOARD VIEW
             const api_args = {
                 applicant: applicant,
                 program: program,
-                campus: campus
+                campus: campus,
+                payment_request: document.getElementById('modal_payment_request').value
             };
             const res = await apiFetch('slcm.admission_cancel_api.get_refund_policies', api_args) || {};
             
@@ -5141,6 +5142,14 @@ LIST / DASHBOARD VIEW
                 // Sort policies by days just in case
                 policies.sort((a, b) => a.days_from_payment - b.days_from_payment);
 
+                const formatCurrency = (amt, curr) => {
+                    try {
+                        return new Intl.NumberFormat('en-IN', { style: 'currency', currency: curr || 'INR', maximumFractionDigits: 0 }).format(amt);
+                    } catch (e) {
+                        return (curr || '₹') + amt;
+                    }
+                };
+
                 policies.forEach(p => {
                     let isCurrent = false;
                     if (!highlighted && daysElapsed <= p.days_from_payment) {
@@ -5151,12 +5160,19 @@ LIST / DASHBOARD VIEW
                     const rowBg = isCurrent ? 'background-color: #f0fdf4 !important;' : '';
                     const rowBorder = isCurrent ? 'border-left: 4px solid #22c55e !important;' : 'border-bottom: 1px solid #f8fafc;';
                     const badgeHtml = isCurrent ? `<span class="badge bg-success ms-2" style="font-size: 9px; vertical-align: middle;">Current</span>` : '';
+                    
+                    const descHtml = p.description ? `<div style="font-size: 11px; color: #64748b; margin-top: 4px;">${p.description}</div>` : '';
+                    const amountHtml = p.amount ? formatCurrency(p.amount, p.currency) : '-';
 
                     rows += `
                         <tr style="${rowBg} ${rowBorder}">
-                            <td class="px-3 py-2 fw-600 text-dark">${p.policy_name}${badgeHtml}</td>
-                            <td class="px-3 py-2 text-center text-muted">${p.days_from_payment}</td>
-                            <td class="px-3 py-2 text-end fw-bold text-primary">${p.refund_percentage}%</td>
+                            <td class="px-3 py-2 text-dark">
+                                <div class="fw-600">${p.policy_name}${badgeHtml}</div>
+                                ${descHtml}
+                            </td>
+                            <td class="px-3 py-2 text-center text-muted" style="vertical-align: middle;">${p.days_from_payment}</td>
+                            <td class="px-3 py-2 text-end fw-bold text-primary" style="vertical-align: middle;">${p.refund_percentage}%</td>
+                            <td class="px-3 py-2 text-end fw-bold text-success" style="vertical-align: middle;">${amountHtml}</td>
                         </tr>
                     `;
                 });
@@ -5261,6 +5277,7 @@ LIST / DASHBOARD VIEW
                                             <th class="px-3 py-3 text-muted fw-700">{{ _('Policy Phase') }}</th>
                                             <th class="px-3 py-3 text-muted fw-700 text-center">{{ _('Payment Days') }}</th>
                                             <th class="px-3 py-3 text-muted fw-700 text-end">{{ _('Refund %') }}</th>
+                                            <th class="px-3 py-3 text-muted fw-700 text-end">{{ _('Refund Amount') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody id="refundPolicyTableBody">
