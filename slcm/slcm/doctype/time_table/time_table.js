@@ -1,7 +1,7 @@
 // Copyright (c) 2026, TFSS and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Class Schedule', {
+frappe.ui.form.on('Time Table', {
     refresh: function (frm) {
         // Auto-generate title if not set
         if (!frm.doc.title && frm.doc.course) {
@@ -11,7 +11,7 @@ frappe.ui.form.on('Class Schedule', {
         if (!frm.is_new()) {
             frm.add_custom_button(__('Mark Attendance'), function () {
                 frappe.route_options = {
-                    'based_on': 'Class Schedule',
+                    'based_on': 'Time Table',
                     'class_schedule': frm.doc.name,
                     'student_group': frm.doc.student_group,
                     'date': frm.doc.schedule_date
@@ -25,13 +25,12 @@ frappe.ui.form.on('Class Schedule', {
         if (frm.doc.class_configuration) {
             // Fetch details from Class Configuration
             frappe.db.get_value('Class Configuration', frm.doc.class_configuration,
-                ['course', 'faculty', 'programme', 'term', 'department'], (r) => {
+                ['course', 'faculty', 'programme', 'term'], (r) => {
                     if (r) {
                         frm.set_value('course', r.course);
                         frm.set_value('instructor', r.faculty);
                         frm.set_value('programme', r.programme);
                         frm.set_value('term', r.term);
-                        frm.set_value('department', r.department);
                     }
                 });
         }
@@ -74,8 +73,8 @@ frappe.ui.form.on('Class Schedule', {
     generate_title: function (frm) {
         if (frm.doc.course) {
             let title = frm.doc.course;
-            if (frm.doc.room) {
-                title += ' - ' + frm.doc.room;
+            if (frm.doc.venue) {
+                title += ' - ' + frm.doc.venue;
             }
             frm.set_value('title', title);
         }
@@ -152,9 +151,9 @@ frappe.ui.form.on('Class Schedule', {
 
         // Call server method to update Attendance Session in real-time
         frappe.call({
-            method: 'slcm.slcm.doctype.class_schedule.class_schedule.update_attendance_session_realtime',
+            method: 'slcm.slcm.doctype.time_table.time_table.update_attendance_session_realtime',
             args: {
-                class_schedule_name: frm.doc.name,
+                time_table_name: frm.doc.name,
                 from_time: frm.doc.from_time,
                 to_time: frm.doc.to_time,
                 schedule_date: frm.doc.schedule_date,

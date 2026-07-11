@@ -23,9 +23,7 @@ frappe.ui.form.on("Office Hours Group", {
 
         frm.set_query("section", () => {
             const filters = {};
-            if (frm.doc.program) filters.program = frm.doc.program;
             if (frm.doc.batch) filters.batch = frm.doc.batch;
-            if (frm.doc.academic_year) filters.academic_year = frm.doc.academic_year;
 
             return { filters: filters };
         });

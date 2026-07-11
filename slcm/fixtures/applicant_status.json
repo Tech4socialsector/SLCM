@@ -2,6 +2,36 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
+  "modified": "2026-03-30 10:10:53.730631",
+  "name": "Interview Excempted",
+  "next_step_note": null,
+  "stage_type": "Interview",
+  "status": "Interview Excempted",
+  "status_type": "Complete"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-03-30 12:29:14.369703",
+  "name": "Entrance Test Excempted",
+  "next_step_note": null,
+  "stage_type": "Entrance Test",
+  "status": "Entrance Test Excempted",
+  "status_type": "Complete"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-05-06 12:08:50.270915",
+  "name": "Entrance Test Allocated",
+  "next_step_note": "Please attend the entrance test on the scheduled date.",
+  "stage_type": "Entrance Test",
+  "status": "Entrance Test Allocated",
+  "status_type": "Active"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
   "modified": "2026-07-01 12:54:23.622845",
   "name": "Completed",
   "next_step_note": "Your application process is complete. Please proceed to the next stage as instructed.",

@@ -19,15 +19,17 @@
   },
   {
    "fieldname": "batch",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Batch"
+   "label": "Batch",
+   "options": "Batch"
   },
   {
    "fieldname": "section",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Section"
+   "label": "Section",
+   "options": "Section"
   }
  ],
  "index_web_pages_for_search": 1,

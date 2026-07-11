@@ -4,6 +4,8 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "tab_appearance",
+  "html_appearance_note",
   "branding_section",
   "portal_title",
   "portal_subtitle",
@@ -42,6 +44,8 @@
   "col_break_grade2",
   "grade_fail_color",
   "grade_fail_label",
+  "tab_layout",
+  "html_layout_note",
   "attendance_section",
   "att_good_threshold",
   "att_warn_threshold",
@@ -55,6 +59,8 @@
   "col_break_layout",
   "corner_style",
   "layout_density",
+  "tab_features",
+  "html_features_note",
   "features_section",
   "show_fee_summary",
   "show_attendance_overview",
@@ -66,10 +72,23 @@
   "col_break_menu_vis",
   "show_menu_results",
   "show_menu_fees",
+  "tab_advanced",
+  "html_advanced_note",
   "advanced_section",
   "custom_css"
  ],
  "fields": [
+  {
+   "fieldname": "tab_appearance",
+   "fieldtype": "Tab Break",
+   "label": "Appearance"
+  },
+  {
+   "fieldname": "html_appearance_note",
+   "fieldtype": "HTML",
+   "label": "Appearance Note",
+   "options": "<div class=\"alert alert-primary\" style=\"background:#e8f0fe;border-left:4px solid #4285f4;padding:10px 14px;border-radius:6px;margin-bottom:12px;\"><strong style=\"color:#1a56db;\">&#127912; Appearance</strong> &nbsp;Configure the portal's visual identity — branding, typography, theme colors, status indicators, and grade color bands. Changes apply globally to all parent portal pages.</div>"
+  },
   {
    "fieldname": "branding_section",
    "fieldtype": "Section Break",
@@ -123,7 +142,7 @@
    "fieldname": "font_family",
    "fieldtype": "Select",
    "label": "Font Family",
-   "options": "Inter\nPoppins\nRoboto\nSystem Default"
+   "options": "Inter\nPoppins\nRoboto\nMerriweather\nSystem Default"
   },
   {
    "fieldname": "col_break_typo",
@@ -310,6 +329,17 @@
    "label": "Fail Grade Label"
   },
   {
+   "fieldname": "tab_layout",
+   "fieldtype": "Tab Break",
+   "label": "Layout & Navigation"
+  },
+  {
+   "fieldname": "html_layout_note",
+   "fieldtype": "HTML",
+   "label": "Layout Note",
+   "options": "<div class=\"alert\" style=\"background:#fef3c7;border-left:4px solid #f59e0b;padding:10px 14px;border-radius:6px;margin-bottom:12px;\"><strong style=\"color:#b45309;\">&#128461;&#65039; Layout &amp; Navigation</strong> &nbsp;Control the portal's structural layout — sidebar width, navbar height, corner style, density, and attendance color thresholds. Changes take effect on the next page load for all parents.</div>"
+  },
+  {
    "collapsible": 1,
    "description": "Controls which color band is shown for each student's attendance percentage",
    "fieldname": "attendance_section",
@@ -401,6 +431,17 @@
    "options": "Compact\nNormal"
   },
   {
+   "fieldname": "tab_features",
+   "fieldtype": "Tab Break",
+   "label": "Dashboard Features"
+  },
+  {
+   "fieldname": "html_features_note",
+   "fieldtype": "HTML",
+   "label": "Features Note",
+   "options": "<div class=\"alert\" style=\"background:#ecfdf5;border-left:4px solid #10b981;padding:10px 14px;border-radius:6px;margin-bottom:12px;\"><strong style=\"color:#047857;\">&#128203; Dashboard Features</strong> &nbsp;Toggle individual panels and sidebar navigation links on or off for all parent users. Disabled panels are completely hidden from the parent portal.</div>"
+  },
+  {
    "description": "Toggle individual dashboard panels on or off for the parent view",
    "fieldname": "features_section",
    "fieldtype": "Section Break",
@@ -469,6 +510,17 @@
    "fieldname": "show_menu_fees",
    "fieldtype": "Check",
    "label": "Show Fees & Payments Menu"
+  },
+  {
+   "fieldname": "tab_advanced",
+   "fieldtype": "Tab Break",
+   "label": "Advanced"
+  },
+  {
+   "fieldname": "html_advanced_note",
+   "fieldtype": "HTML",
+   "label": "Advanced Note",
+   "options": "<div class=\"alert\" style=\"background:#fefce8;border-left:4px solid #eab308;padding:10px 14px;border-radius:6px;margin-bottom:12px;\"><strong style=\"color:#854d0e;\">&#9888;&#65039; Advanced — Custom CSS</strong> &nbsp;Inject raw CSS that is appended after all portal stylesheets. Use CSS variables like <code>--pp-primary</code> for theme-consistent overrides. Incorrect CSS here can break the portal layout — test changes carefully before saving.</div>"
   },
   {
    "collapsible": 1,

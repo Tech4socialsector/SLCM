@@ -9,15 +9,16 @@ from dateutil.relativedelta import relativedelta
 
 from frappe.utils import to_timedelta
 
-class ClassSchedule(Document):
+class TimeTable(Document):
     def validate(self):
-        """Validate the Class Schedule"""
+        """Validate the Time Table entry"""
         self.validate_time()
         self.validate_repeat_settings()
         self.check_conflicts()
+        self.calculate_duration()
 
     def on_update(self):
-        """Update the corresponding Attendance Session when Class Schedule is updated"""
+        """Update the corresponding Attendance Session when the Time Table entry is updated"""
         self.update_attendance_session()
 
     def validate_time(self):
@@ -25,6 +26,13 @@ class ClassSchedule(Document):
         if self.from_time and self.to_time:
             if to_timedelta(self.from_time) >= to_timedelta(self.to_time):
                 frappe.throw("To Time must be after From Time")
+
+    def calculate_duration(self):
+        """Keep duration_hours in sync with from_time/to_time (it's a plain
+        read-only field with no fetch_from, so nothing else sets it)."""
+        if self.from_time and self.to_time:
+            duration_seconds = (to_timedelta(self.to_time) - to_timedelta(self.from_time)).total_seconds()
+            self.duration_hours = round(duration_seconds / 3600, 2)
 
     def validate_repeat_settings(self):
         """Validate repeat frequency and repeats_till"""
@@ -39,7 +47,7 @@ class ClassSchedule(Document):
         if not self.schedule_date or not self.from_time or not self.to_time:
             return
 
-        # 1. Check for Duplicate Class Schedule (Same Student Group, Same Date, Overlapping Time)
+        # 1. Check for Duplicate Time Table entry (Same Student Group, Same Date, Overlapping Time)
         if self.student_group:
             filters = {
                 "name": ["!=", self.name],
@@ -61,7 +69,7 @@ class ClassSchedule(Document):
             # I will check for Student Group overlap.
             
             conflicts = frappe.get_all(
-                "Class Schedule",
+                "Time Table",
                 filters=filters,
                 fields=["name", "from_time", "to_time", "course", "student_group"],
             )
@@ -76,7 +84,7 @@ class ClassSchedule(Document):
         # 2. Check Instructor Conflict
         if self.instructor:
             conflicts = frappe.get_all(
-                "Class Schedule",
+                "Time Table",
                 filters={
                     "name": ["!=", self.name],
                     "instructor": self.instructor,
@@ -116,7 +124,7 @@ class ClassSchedule(Document):
 
         # Check if session already exists
         exists = frappe.db.exists("Attendance Session", {
-            "class_schedule": self.name,
+            "time_table": self.name,
             "session_date": self.schedule_date,
             "session_start_time": self.from_time
         })
@@ -131,8 +139,8 @@ class ClassSchedule(Document):
 
         doc = frappe.get_doc({
             "doctype": "Attendance Session",
-            "based_on": "Class Schedule",
-            "class_schedule": self.name,
+            "based_on": "Time Table",
+            "time_table": self.name,
             "student_group": self.student_group,
             "course_offering": self.course_offering,
             "course": self.course,
@@ -151,22 +159,22 @@ class ClassSchedule(Document):
         doc.insert(ignore_permissions=True)
 
     def update_attendance_session(self):
-        """Update the corresponding Attendance Session when Class Schedule is updated"""
+        """Update the corresponding Attendance Session when the Time Table entry is updated"""
         frappe.logger().info(f"update_attendance_session called for {self.name}")
         
         if not self.schedule_date or not self.from_time or not self.to_time:
             frappe.logger().info(f"Missing required fields: schedule_date={self.schedule_date}, from_time={self.from_time}, to_time={self.to_time}")
             return
 
-        # Find the Attendance Session linked to this Class Schedule
+        # Find the Attendance Session linked to this Time Table entry
         session_name = frappe.db.get_value("Attendance Session", {
-            "class_schedule": self.name
+            "time_table": self.name
         })
 
         if not session_name:
-            frappe.logger().info(f"No Attendance Session found for Class Schedule {self.name}")
+            frappe.logger().info(f"No Attendance Session found for Time Table entry {self.name}")
             frappe.msgprint(
-                f"No Attendance Session found for this Class Schedule. "
+                f"No Attendance Session found for this Time Table entry. "
                 "Please create an Attendance Session first.",
                 indicator="orange",
                 alert=True
@@ -183,7 +191,7 @@ class ClassSchedule(Document):
         if session.attendance_marked:
             frappe.msgprint(
                 f"Attendance has already been marked for session {session_name}. "
-                "Changes to Class Schedule will not update the session.",
+                "Changes to Time Table will not update the session.",
                 indicator="orange",
                 alert=True
             )
@@ -232,7 +240,7 @@ class ClassSchedule(Document):
             return
         
         # Prevent duplicate creation if this method is called multiple times
-        if frappe.db.exists("Class Schedule", {"parent_schedule": self.name}):
+        if frappe.db.exists("Time Table", {"parent_schedule": self.name}):
             return
 
         try:
@@ -261,7 +269,7 @@ class ClassSchedule(Document):
                 has_conflict = False
                 if self.instructor:
                     conflicts = frappe.get_all(
-                        "Class Schedule",
+                        "Time Table",
                         filters={
                             "instructor": self.instructor,
                             "schedule_date": current_date.strftime("%Y-%m-%d"),
@@ -321,21 +329,19 @@ class ClassSchedule(Document):
 
 
 @frappe.whitelist()
-def get_timetable_data(term=None, course=None, department=None, start_date=None, end_date=None):
+def get_timetable_data(term=None, course=None, start_date=None, end_date=None):
     """Get timetable data for calendar view"""
     filters = {}
-    
+
     if term:
         filters["term"] = term
     if course:
         filters["course"] = course
-    if department:
-        filters["department"] = department
     if start_date and end_date:
         filters["schedule_date"] = ["between", [start_date, end_date]]
     
     schedules = frappe.get_all(
-        "Class Schedule",
+        "Time Table",
         filters=filters,
         fields=[
             "name",
@@ -345,7 +351,6 @@ def get_timetable_data(term=None, course=None, department=None, start_date=None,
             "schedule_date",
             "from_time",
             "to_time",
-            "room",
             "venue",
             "color",
             "class_configuration",
@@ -353,7 +358,19 @@ def get_timetable_data(term=None, course=None, department=None, start_date=None,
         ],
         order_by="schedule_date, from_time",
     )
-    
+
+    # Time Table has no "room" field of its own - room lives on the
+    # linked Venue Booking, so resolve it in one bulk lookup.
+    venue_names = {s.venue for s in schedules if s.venue}
+    room_by_venue = {}
+    if venue_names:
+        room_by_venue = {
+            v.name: v.room
+            for v in frappe.get_all(
+                "Venue Booking", filters={"name": ["in", list(venue_names)]}, fields=["name", "room"]
+            )
+        }
+
     # Format for calendar
     events = []
     for schedule in schedules:
@@ -366,18 +383,18 @@ def get_timetable_data(term=None, course=None, department=None, start_date=None,
             "extendedProps": {
                 "course": schedule.course,
                 "instructor": schedule.instructor,
-                "room": schedule.room,
+                "room": room_by_venue.get(schedule.venue),
                 "venue": schedule.venue,
                 "class_configuration": schedule.class_configuration,
                 "student_group": schedule.student_group,
             }
         })
-    
+
     return events
 
 
 @frappe.whitelist()
-def create_class_schedule(data):
+def create_time_table(data):
     """Create a class schedule from timetable configuration"""
     import json
     
@@ -386,19 +403,17 @@ def create_class_schedule(data):
     
     # Create the schedule
     doc = frappe.get_doc({
-        "doctype": "Class Schedule",
+        "doctype": "Time Table",
         "class_configuration": data.get("class_configuration"),
         "course": data.get("course"),
         "instructor": data.get("instructor"),
         "schedule_date": data.get("schedule_date"),
         "from_time": data.get("from_time"),
         "to_time": data.get("to_time"),
-        "room": data.get("room"),
         "venue": data.get("venue"),
         "repeat_frequency": data.get("repeat_frequency", "Never"),
         "repeats_till": data.get("repeats_till"),
         "term": data.get("term"),
-        "department": data.get("department"),
         "programme": data.get("programme"),
         "student_group": data.get("student_group"),
     })
@@ -439,7 +454,7 @@ def get_events(start, end, filters=None):
             color,
             title,
             student_group
-        FROM `tabClass Schedule`
+        FROM `tabTime Table`
         WHERE
             schedule_date BETWEEN %(start)s AND %(end)s
             AND docstatus < 2
@@ -487,7 +502,7 @@ def get_events(start, end, filters=None):
 @frappe.whitelist()
 def update_event(args, field_map):
     """
-    Custom update method for Class Schedule calendar drag-and-drop.
+    Custom update method for Time Table calendar drag-and-drop.
     Handles the split date (schedule_date) and time (from_time, to_time) fields.
     """
     import json
@@ -530,16 +545,16 @@ def update_event(args, field_map):
 
 
 @frappe.whitelist()
-def update_attendance_session_realtime(class_schedule_name, from_time, to_time, schedule_date, duration_hours):
+def update_attendance_session_realtime(time_table_name, from_time, to_time, schedule_date, duration_hours):
 	"""
-	Update Attendance Session in real-time when Class Schedule times change.
+	Update Attendance Session in real-time when Time Table entry times change.
 	Called from client-side JavaScript without requiring a full save.
 	Also triggers recalculation of Attendance Summary for all affected students.
 	"""
 	try:
-		# Find the Attendance Session linked to this Class Schedule
+		# Find the Attendance Session linked to this Time Table entry
 		session_name = frappe.db.get_value("Attendance Session", {
-			"class_schedule": class_schedule_name
+			"time_table": time_table_name
 		})
 
 		if not session_name:

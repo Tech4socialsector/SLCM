@@ -134,7 +134,7 @@ def get_context(context):
     except Exception:
         context.rfid_logs = []
 
-    # ── Class Schedule — today + next 7 days ──────────────────────
+    # ── Time Table — today + next 7 days ──────────────────────
     try:
         today    = frappe.utils.today()
         end_date = frappe.utils.add_days(today, 7)
@@ -145,7 +145,7 @@ def get_context(context):
         schedules = []
         if active_offerings:
             schedules = frappe.get_all(
-                "Class Schedule",
+                "Time Table",
                 filters={
                     "schedule_date": ["between", [today, end_date]],
                     "course_offering": ["in", active_offerings],

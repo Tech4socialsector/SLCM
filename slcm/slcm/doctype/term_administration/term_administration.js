@@ -26,7 +26,6 @@ frappe.ui.form.on("Term Administration", {
 					"starts",
 					"ends",
 					"system",
-					"sequence",
 				],
 				limit_page_length: 100,
 				order_by: "starts desc",
@@ -51,7 +50,6 @@ frappe.ui.form.on("Term Administration", {
 								<th>Starts</th>
 								<th>Ends</th>
 								<th>System</th>
-								<th>Sequence</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -60,7 +58,7 @@ frappe.ui.form.on("Term Administration", {
 				if (!terms.length) {
 					html += `
 						<tr>
-							<td colspan="6" class="text-center text-muted">
+							<td colspan="5" class="text-center text-muted">
 								No Terms Found
 							</td>
 						</tr>
@@ -74,7 +72,6 @@ frappe.ui.form.on("Term Administration", {
 								<td>${t.starts ? frappe.datetime.str_to_user(t.starts) : "-"}</td>
 								<td>${t.ends ? frappe.datetime.str_to_user(t.ends) : "-"}</td>
 								<td>${t.system || "-"}</td>
-								<td>${t.sequence || "-"}</td>
 							</tr>
 						`;
 					});
@@ -184,11 +181,11 @@ frappe.ui.form.on("Term Administration", {
 		let html = `
 			<div class="text-center" style="padding: 40px 20px;">
 				<p style="margin-bottom: 25px; color: #6c757d;">
-					To view the Class Schedule, please check the Course Schedule list or Calendar view.
+					To view the Time Table, please check the Course Schedule list or Calendar view.
 				</p>
 				<div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
 					<button class="btn btn-primary btn-view-class-calendar" style="min-width: 180px;">
-						${frappe.utils.icon("calendar", "sm")} Class Schedule Calendar
+						${frappe.utils.icon("calendar", "sm")} Time Table Calendar
 					</button>
 					<button class="btn btn-default btn-view-event-calendar" style="min-width: 180px;">
 						${frappe.utils.icon("calendar", "sm")} Event Calendar
@@ -199,7 +196,7 @@ frappe.ui.form.on("Term Administration", {
 		$wrapper.html(html);
 
 		$wrapper.find(".btn-view-class-calendar").on("click", function () {
-			frappe.set_route("List", "Class Schedule", "Calendar");
+			frappe.set_route("List", "Time Table", "Calendar");
 		});
 
 		$wrapper.find(".btn-view-event-calendar").on("click", function () {

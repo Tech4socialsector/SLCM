@@ -82,8 +82,11 @@ fixtures = [
         "doctype": "State",
     },
     {
-        "doctype":"Admission Category",
-        "doctype":"Notification"
+        "doctype": "Admission Category",
+    },
+    {
+        "doctype": "Notification",
+        "filters": [["is_standard", "=", 0]]
     },
     {
         "doctype": "Day of Week",
@@ -177,7 +180,10 @@ fixtures = [
                 "Parent RFID Absence Alert",
                 "HD Ticket SLA Escalation - New Agent",
                 "HD Ticket SLA Escalation - Previous Agent",
-                "HD Ticket SLA Escalation - Max Hops Reached"
+                "HD Ticket SLA Escalation - Max Hops Reached",
+                "Venue Booking - New Request (Admin)",
+                "Venue Booking - Status Update (Requester)",
+                "Venue Booking - Swap Request Decision (Requester)"
             ]]
         ]
     },
@@ -219,6 +225,9 @@ fixtures = [
             # Fees Management
             "Total Fee Demands", "Pending Fee Demands", "Overdue Fee Demands",
             "Fee Receipts This Month",
+            # Venue Bookings
+            "Total Venue Bookings", "Pending Venue Bookings", "Approved Venue Bookings",
+            "Rejected Venue Bookings", "Cancelled Venue Bookings", "Total Rooms",
         ]]]
     },
     # --- Dashboard: Charts ---
@@ -238,6 +247,9 @@ fixtures = [
             # Fees Management
             "Demand Status Distribution", "Demands by Fee Component",
             "Monthly Fee Collection",
+            # Venue Bookings
+            "Venue Bookings Trend Over Time", "Venue Booking Status Distribution",
+            "Venue Bookings by Venue Type",
         ]]]
     },
     # --- Kanban Board ---
@@ -255,12 +267,12 @@ fixtures = [
     # --- Workspace Sidebars ---
     {
         "doctype": "Workspace Sidebar",
-        "filters": [["name", "in", ["Faculty", "Fees Management", "Admission Fee"]]]
+        "filters": [["name", "in", ["Faculty Management", "Fees Management", "Admission Fee"]]]
     },
     # --- Desktop Icons ---
     {
         "doctype": "Desktop Icon",
-        "filters": [["name", "in", ["Faculty"]]]
+        "filters": [["name", "in", ["Faculty Management"]]]
     },
     # --- Web Forms / Custom Fields / Property Setters ---
     # NOTE: "Custom Field" with no filter exports ALL custom fields (including those
@@ -305,7 +317,8 @@ doc_events = {
         "on_submit": "slcm.admission.events.on_document_submit"
     },
     "HD Ticket": {
-        "before_validate": "slcm.api.helpdesk_assignment.auto_assign_team_by_student"
+        "before_insert": "slcm.api.helpdesk_assignment.prefill_student_context_before_insert",
+        "before_validate": "slcm.api.helpdesk_assignment.apply_default_email_team"
     },
     "User": {
         "before_insert": "slcm.api.user_events.user_before_insert",
@@ -449,13 +462,11 @@ scheduler_events = {
 		# interval Frappe's cron scheduler supports.
 		"* * * * *": [
 			"slcm.slcm.doctype.attendance_log.process_attendance_logs.process_pending_logs",
-		],
-		# RFID SQL Agent — independent ingestion path for devices that log to
+			# RFID SQL Agent — independent ingestion path for devices that log to
 			# a SQL Server table instead of pushing over HTTP. Writes into its
 			# own RFID SQL Punch Log, separate from Attendance Log. Ticks every
 			# minute (Frappe's finest interval) but only actually polls once
 			# "Poll Interval (seconds)" in RFID SQL Agent Settings has elapsed.
-		"*/5 * * * *": [
 			"slcm.slcm.rfid_sql_agent.poller.poll_rfid_sql_agent",
 		],
 		"*/10 * * * *": [
@@ -582,8 +593,8 @@ permission_query_conditions = {
     # Student Master - role-based row-level filtering (faculty sees only their assigned students)
     "Student Master": "slcm.permissions.student_master_query_conditions",
 
-    # Class Schedule - faculty sees only their assigned groups' schedules
-    "Class Schedule":                  "slcm.permissions.class_schedule_query_conditions",
+    # Time Table - faculty sees only their assigned groups' schedules
+    "Time Table":                      "slcm.permissions.class_schedule_query_conditions",
 
     # Attendance - faculty sees only records for their assigned student groups
     "Attendance Session":              "slcm.permissions.attendance_session_query_conditions",

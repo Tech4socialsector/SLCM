@@ -1,6 +1,9 @@
 // Copyright (c) 2026, Nishanth and contributors
 // RFID SQL Agent Dashboard — monitoring for the SQL Server puller
 
+const AUTO_REFRESH_MS = 30000;
+const AUTO_REFRESH_STORAGE_KEY = "rfid_sql_agent_dashboard_auto_refresh";
+
 frappe.pages["rfid-sql-agent-dashboard"].on_page_load = function (wrapper) {
 	const page = frappe.ui.make_app_page({
 		parent: wrapper,
@@ -11,18 +14,57 @@ frappe.pages["rfid-sql-agent-dashboard"].on_page_load = function (wrapper) {
 	page.set_primary_action("Run Now", () => run_now(wrapper), "fa fa-refresh");
 	page.add_menu_item("Open Settings", () => frappe.set_route("Form", "RFID SQL Agent Settings"));
 
+	const stored = localStorage.getItem(AUTO_REFRESH_STORAGE_KEY);
+	wrapper._auto_refresh_on = stored === null ? true : stored === "1";
+
+	wrapper._auto_refresh_btn = page.add_inner_button(
+		auto_refresh_label(wrapper._auto_refresh_on),
+		() => toggle_auto_refresh(wrapper)
+	);
+
 	$(build_html()).appendTo($(wrapper).find(".page-content, .layout-main-section").first());
 	load(wrapper);
 
-	wrapper._rfid_sql_agent_interval = setInterval(() => load(wrapper), 30000);
+	if (wrapper._auto_refresh_on) {
+		start_auto_refresh(wrapper);
+	}
 };
 
 frappe.pages["rfid-sql-agent-dashboard"].on_page_hide = function (wrapper) {
+	stop_auto_refresh(wrapper);
+};
+
+function auto_refresh_label(on) {
+	return on ? "Auto Refresh: On (30s)" : "Auto Refresh: Off";
+}
+
+function start_auto_refresh(wrapper) {
+	stop_auto_refresh(wrapper);
+	wrapper._rfid_sql_agent_interval = setInterval(() => load(wrapper), AUTO_REFRESH_MS);
+}
+
+function stop_auto_refresh(wrapper) {
 	if (wrapper._rfid_sql_agent_interval) {
 		clearInterval(wrapper._rfid_sql_agent_interval);
 		wrapper._rfid_sql_agent_interval = null;
 	}
-};
+}
+
+function toggle_auto_refresh(wrapper) {
+	wrapper._auto_refresh_on = !wrapper._auto_refresh_on;
+	localStorage.setItem(AUTO_REFRESH_STORAGE_KEY, wrapper._auto_refresh_on ? "1" : "0");
+
+	if (wrapper._auto_refresh_btn) {
+		wrapper._auto_refresh_btn.text(auto_refresh_label(wrapper._auto_refresh_on));
+	}
+
+	if (wrapper._auto_refresh_on) {
+		load(wrapper);
+		start_auto_refresh(wrapper);
+	} else {
+		stop_auto_refresh(wrapper);
+	}
+}
 
 function build_html() {
 	return `
@@ -49,12 +91,12 @@ function build_html() {
 }
 
 const DT_COLUMNS = [
-	{ name: "Emp Code", id: "emp_code", width: 140 },
-	{ name: "Student", id: "student", width: 160 },
-	{ name: "Punch Time", id: "punch_time", width: 170 },
-	{ name: "Terminal", id: "terminal_id", width: 100 },
-	{ name: "Location", id: "terminal_alias", width: 140 },
-	{ name: "Status", id: "sync_status", width: 110 },
+	{ name: "Emp Code", id: "emp_code", width: 140, editable: false, focusable: false },
+	{ name: "Student", id: "student", width: 160, editable: false, focusable: false },
+	{ name: "Punch Time", id: "punch_time", width: 170, editable: false, focusable: false },
+	{ name: "Terminal", id: "terminal_id", width: 100, editable: false, focusable: false },
+	{ name: "Location", id: "terminal_alias", width: 140, editable: false, focusable: false },
+	{ name: "Status", id: "sync_status", width: 110, editable: false, focusable: false },
 ];
 
 function rows_to_datatable_data(recent) {
@@ -95,10 +137,12 @@ function render(wrapper, d) {
 	$w.find("#cp-watermark").text(d.last_log_id || 0);
 
 	$w.find("#cp-status-dot").css("background", d.enabled ? "#28a745" : "#dc3545");
+	const refreshed_at = new Date().toLocaleTimeString();
 	$w.find("#cp-status-text").text(
-		d.enabled
+		(d.enabled
 			? `Enabled — polling every ${format_interval(d.poll_interval_seconds)}. Last swipe: ${frappe.datetime.str_to_user(d.stats.last_punch) || "none yet"}`
-			: "Disabled — turn on 'Enable RFID SQL Agent' in RFID SQL Agent Settings."
+			: "Disabled — turn on 'Enable RFID SQL Agent' in RFID SQL Agent Settings.") +
+			`  ·  Dashboard refreshed at ${refreshed_at}`
 	);
 
 	const data = rows_to_datatable_data(d.recent);

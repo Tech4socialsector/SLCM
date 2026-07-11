@@ -370,7 +370,7 @@ def get_courses_for_plan(exam_plan, search=""):
 	if search:
 		courses = frappe.db.sql(
 			"""
-			SELECT name, course_name, course_code, department_name, credit_value
+			SELECT name, course_name, course_code, programme, credit_value
 			FROM `tabCourse`
 			WHERE course_name LIKE %(s)s OR course_code LIKE %(s)s
 			ORDER BY course_name ASC
@@ -382,7 +382,7 @@ def get_courses_for_plan(exam_plan, search=""):
 	else:
 		courses = frappe.get_all(
 			"Course",
-			fields=["name", "course_name", "course_code", "department_name", "credit_value"],
+			fields=["name", "course_name", "course_code", "programme", "credit_value"],
 			order_by="course_name asc",
 			page_length=page_length,
 		)
@@ -401,7 +401,7 @@ def get_courses_for_plan(exam_plan, search=""):
 		)
 		asgn_map = {a["course"]: a for a in assignments}
 	except Exception:
-		pass
+		frappe.log_error(frappe.get_traceback(), "get_courses_for_plan: assignment fetch failed")
 
 	# Fetch enrolled student counts grouped by course for the exam plan's term
 	enrolled_map = {}
@@ -423,7 +423,7 @@ def get_courses_for_plan(exam_plan, search=""):
 			)
 			enrolled_map = {row["course"]: row["enrolled_count"] for row in enrollment_counts}
 	except Exception:
-		pass
+		frappe.log_error(frappe.get_traceback(), "get_courses_for_plan: enrollment count fetch failed")
 
 	for c in courses:
 		asgn = asgn_map.get(c["name"], {})

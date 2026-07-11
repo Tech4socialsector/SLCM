@@ -503,7 +503,13 @@
       </div>
 
       {# Register button #}
-      {% if oh.is_scheduled %}
+      {% if oh.already_registered %}
+      <div style="margin-top:14px;">
+        <span class="sp-btn sp-btn-sm sp-btn-full" style="background:var(--sp-success);color:#fff;cursor:default;">
+          <span class="sp-ms">check_circle</span> Registered
+        </span>
+      </div>
+      {% elif oh.is_scheduled %}
       <div style="margin-top:14px;">
         <button class="sp-btn sp-btn-primary sp-btn-sm sp-btn-full"
           onclick="spRegisterOfficeHours('{{ oh.name }}', '{{ oh.course_display|replace("'", "\\'") }}')"
@@ -1124,10 +1130,16 @@
         }
       })
       .catch(function (err) {
-        spToast(err.message || 'Registration failed. Please try again.', 'danger');
+        var alreadyRegistered = (err.message || '').indexOf('already registered') !== -1;
+        spToast(err.message || 'Registration failed. Please try again.', alreadyRegistered ? 'info' : 'danger');
         if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = '<span class="sp-ms">how_to_reg</span> Register Attendance';
+          if (alreadyRegistered) {
+            btn.outerHTML = '<span class="sp-btn sp-btn-sm sp-btn-full" style="background:var(--sp-success);color:#fff;cursor:default;">'
+              + '<span class="sp-ms">check_circle</span> Registered</span>';
+          } else {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="sp-ms">how_to_reg</span> Register Attendance';
+          }
         }
       });
   };

@@ -1,8 +1,21 @@
 {
  "app": "slcm",
- "charts": [],
- "content": "[{\"id\":\"vb-hdr-overview\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Overview</b></span>\",\"col\":12}},{\"id\":\"vb-nc-total\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Venue Bookings\",\"col\":3}},{\"id\":\"vb-nc-pending\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Pending Venue Bookings\",\"col\":3}},{\"id\":\"vb-nc-approved\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Approved Venue Bookings\",\"col\":3}},{\"id\":\"vb-nc-rejected\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Rejected Venue Bookings\",\"col\":3}},{\"id\":\"vb-nc-cancelled\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Cancelled Venue Bookings\",\"col\":3}},{\"id\":\"vb-nc-rooms\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Rooms\",\"col\":3}},{\"id\":\"vb-hdr-quick\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Quick Actions</b></span>\",\"col\":12}},{\"id\":\"vb-sc-new\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"All Venue Booking\",\"col\":4}},{\"id\":\"vb-sc-pending\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Pending Approvals\",\"col\":4}},{\"id\":\"vb-sc-all\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Approved Bookings\",\"col\":4}},{\"id\":\"pjwSLlcS-p\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Rejected Bookings\",\"col\":3}},{\"id\":\"oDMUTPY-J-\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Cancelled Bookings\",\"col\":3}},{\"id\":\"vb-hdr-config\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Configuration &amp; Scheduling</span>\",\"col\":12}},{\"id\":\"vb-sc-room\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Room Master\",\"col\":3}},{\"id\":\"vb-sc-class\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Class Schedule\",\"col\":3}},{\"id\":\"vb-sc-availability\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Room Availability Checker\",\"col\":3}},{\"id\":\"vb-hdr-reports\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Reports</span>\",\"col\":12}},{\"id\":\"vb-sc-weekly\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Weekly Venue Booking Report\",\"col\":5}},{\"id\":\"vb-sc-monthly\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Monthly Venue Booking Report\",\"col\":4}}]",
- "creation": "2026-06-30 09:53:02.990205",
+ "charts": [
+  {
+   "chart_name": "Venue Bookings Trend Over Time",
+   "label": "Venue Bookings Trend Over Time"
+  },
+  {
+   "chart_name": "Venue Booking Status Distribution",
+   "label": "Venue Booking Status Distribution"
+  },
+  {
+   "chart_name": "Venue Bookings by Venue Type",
+   "label": "Venue Bookings by Venue Type"
+  }
+ ],
+ "content": "[{\"id\":\"vb-hdr-overview\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Overview</b></span>\",\"col\":12}},{\"id\":\"vb-nc-total\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Venue Bookings\",\"col\":3}},{\"id\":\"vb-nc-pending\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Pending Venue Bookings\",\"col\":3}},{\"id\":\"vb-nc-approved\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Approved Venue Bookings\",\"col\":3}},{\"id\":\"vb-nc-rejected\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Rejected Venue Bookings\",\"col\":3}},{\"id\":\"vb-nc-cancelled\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Cancelled Venue Bookings\",\"col\":3}},{\"id\":\"vb-nc-rooms\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Rooms\",\"col\":3}},{\"id\":\"vb-hdr-trends\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Trends</b></span>\",\"col\":12}},{\"id\":\"vb-chart-trend\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Venue Bookings Trend Over Time\",\"col\":12}},{\"id\":\"vb-chart-status\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Venue Booking Status Distribution\",\"col\":6}},{\"id\":\"vb-chart-venuetype\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Venue Bookings by Venue Type\",\"col\":6}},{\"id\":\"vb-hdr-quick\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Quick Actions</b></span>\",\"col\":12}},{\"id\":\"vb-sc-new\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"All Venue Booking\",\"col\":4}},{\"id\":\"vb-sc-pending\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Pending Approvals\",\"col\":4}},{\"id\":\"vb-sc-all\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Approved Bookings\",\"col\":4}},{\"id\":\"pjwSLlcS-p\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Rejected Bookings\",\"col\":3}},{\"id\":\"oDMUTPY-J-\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Cancelled Bookings\",\"col\":3}},{\"id\":\"vb-hdr-config\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Configuration &amp; Scheduling</span>\",\"col\":12}},{\"id\":\"vb-sc-room\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Room Master\",\"col\":3}},{\"id\":\"vb-sc-class\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Time Table\",\"col\":3}},{\"id\":\"vb-sc-availability\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Room Availability Checker\",\"col\":3}},{\"id\":\"vb-hdr-reports\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Reports</span>\",\"col\":12}},{\"id\":\"vb-sc-weekly\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Weekly Venue Booking Report\",\"col\":5}},{\"id\":\"vb-sc-monthly\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Monthly Venue Booking Report\",\"col\":4}},{\"id\":\"vb-hdr-notify\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Notification Settings</span>\",\"col\":12}},{\"id\":\"1r195mDGBK\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Email Template\",\"col\":3}}]",
+ "creation": "2026-07-09 10:58:27.342836",
  "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
@@ -14,7 +27,7 @@
  "is_hidden": 0,
  "label": "Venue Bookings",
  "links": [],
- "modified": "2026-06-30 10:09:45.457895",
+ "modified": "2026-07-09 11:25:42.085810",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Venue Bookings",
@@ -59,6 +72,14 @@
    "stats_filter": "[]",
    "type": "DocType",
    "url": ""
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Email Template",
+   "link_to": "Email Template",
+   "stats_filter": "[]",
+   "type": "DocType"
   },
   {
    "color": "Orange",
@@ -107,8 +128,8 @@
   {
    "color": "Blue",
    "doc_view": "List",
-   "label": "Class Schedule",
-   "link_to": "Class Schedule",
+   "label": "Time Table",
+   "link_to": "Time Table",
    "report_ref_doctype": "",
    "stats_filter": "[]",
    "type": "DocType",

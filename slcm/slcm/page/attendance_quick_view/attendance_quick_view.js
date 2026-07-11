@@ -154,7 +154,7 @@ class AttendanceQuickView {
 		const secFilter = (ctx.restricted && ctx.sections && ctx.sections.length)
 			? {"name": ["in", ctx.sections]}
 			: null;
-		this.ctrls.section = this._link($grid, "Section", "Program Batch Section", secFilter);
+		this.ctrls.section = this._link($grid, "Section", "Section", secFilter);
 
 		this.ctrls.status = this._select($grid, "Status",
 			["", "Present", "Absent", "Late", "OD", "Excused"]);

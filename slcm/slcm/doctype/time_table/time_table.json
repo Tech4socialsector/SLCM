@@ -13,7 +13,6 @@
   "instructor",
   "section_break_details",
   "term",
-  "department",
   "programme",
   "course",
   "course_offering",
@@ -61,7 +60,7 @@
   {
    "fieldname": "instructor",
    "fieldtype": "Link",
-   "label": "Instructor",
+   "label": "Faculty",
    "options": "Faculty"
   },
   {
@@ -76,13 +75,6 @@
    "in_standard_filter": 1,
    "label": "Term",
    "options": "Term Configuration"
-  },
-  {
-   "fieldname": "department",
-   "fieldtype": "Link",
-   "in_standard_filter": 1,
-   "label": "Department",
-   "options": "Department"
   },
   {
    "fieldname": "programme",
@@ -122,7 +114,7 @@
    "fieldname": "section",
    "fieldtype": "Link",
    "label": "Section",
-   "options": "Program Batch Section",
+   "options": "Section",
    "read_only": 1
   },
   {
@@ -178,7 +170,7 @@
    "fieldtype": "Link",
    "hidden": 1,
    "label": "Parent Schedule",
-   "options": "Class Schedule",
+   "options": "Time Table",
    "read_only": 1
   },
   {
@@ -203,7 +195,7 @@
   {
    "fieldname": "class_schedule_color",
    "fieldtype": "Select",
-   "label": "Class Schedule Color",
+   "label": "Time Table Color",
    "options": "Blue\nGreen\nRed\nYellow\nOrange\nPurple\nPink\nGray"
   },
   {
@@ -233,10 +225,10 @@
   }
  ],
  "links": [],
- "modified": "2026-02-16 21:09:15.037380",
+ "modified": "2026-07-10 16:28:11.520352",
  "modified_by": "Administrator",
  "module": "SLCM",
- "name": "Class Schedule",
+ "name": "Time Table",
  "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
@@ -263,34 +255,25 @@
    "write": 1
   },
   {
-   "create": 0,
-   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "slcm_Faculty",
-   "share": 0,
-   "write": 0
+   "role": "slcm_Faculty"
   },
   {
-   "create": 0,
-   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "slcm_Programme Chair",
-   "share": 0,
-   "write": 0
+   "role": "slcm_Programme Chair"
   }
  ],
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 1,
- "custom": 0
+ "track_changes": 1
 }

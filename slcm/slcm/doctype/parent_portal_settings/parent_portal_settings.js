@@ -57,18 +57,26 @@ const PP_PRESETS = [
         success_color: "#0d9488", warning_color: "#d97706",
         danger_color: "#dc2626", info_color: "#0284c7",
     },
+    {
+        name: "NLSIU",
+        font_family: "Merriweather",
+        primary_color: "#2b2e4a", secondary_color: "#920c24",
+        background_color: "#f3f6f5", card_background: "#ffffff",
+        nav_text_color: "#ffffff",
+        sidebar_bg_color: "#2b2e4a", sidebar_text_color: "#e8e9f0",
+        success_color: "#16a34a", warning_color: "#d97706",
+        danger_color: "#dc2626", info_color: "#0369a1",
+    },
 ];
 
 const PP_DEFAULTS = {
     portal_title: "Parent Portal", portal_subtitle: "",
     show_logo: 1, nav_brand_text: "", portal_favicon: "",
     font_family: "Inter", font_size: "Normal",
-    primary_color: "#e11d48", secondary_color: "#c8a14b",
-    background_color: "#f3f6f5", card_background: "#ffffff",
-    nav_text_color: "#ffffff",
-    sidebar_bg_color: "#2b2e4a", sidebar_text_color: "#e8e9f0",
-    success_color: "#16a34a", warning_color: "#d97706",
-    danger_color: "#dc2626", info_color: "#0369a1",
+    ...(() => {
+        const { name, ...colors } = PP_PRESETS[0];
+        return colors;
+    })(),
     grade_excellent_color: "#16a34a", grade_excellent_label: "A+ / A / S",
     grade_good_color: "#0369a1", grade_good_label: "B+ / B",
     grade_average_color: "#d97706", grade_average_label: "C+ / C",
@@ -133,9 +141,10 @@ function _add_action_buttons(frm) {
         frappe.confirm(
             __("Reset all settings to factory defaults?"),
             () => {
-                Object.entries(PP_DEFAULTS).forEach(([k, v]) => frm.set_value(k, v));
-                frappe.show_alert({ message: __("Defaults restored — click Save to apply."), indicator: "blue" });
-                setTimeout(() => _render_all_previews(frm), 300);
+                frm.set_value(PP_DEFAULTS).then(() => {
+                    frappe.show_alert({ message: __("Defaults restored — click Save to apply."), indicator: "blue" });
+                    _render_all_previews(frm);
+                });
             }
         );
     }, __("Actions"));
@@ -148,7 +157,7 @@ function _render_preset_bar(frm) {
     if (!section || !section.$wrapper) return;
 
     const wrapper = section.$wrapper;
-    wrapper.find(".pp-preset-bar").remove();
+    if (wrapper.find(".pp-preset-bar").length) return;
 
     const buttons = PP_PRESETS.map((preset, idx) => `
         <button class="pp-preset-btn" data-idx="${idx}"
@@ -173,11 +182,11 @@ function _render_preset_bar(frm) {
 
     $bar.find(".pp-preset-btn").on("click", function () {
         const preset = PP_PRESETS[$(this).data("idx")];
-        Object.entries(preset).forEach(([k, v]) => {
-            if (k !== "name") frm.set_value(k, v);
+        const { name, ...values } = preset;
+        frm.set_value(values).then(() => {
+            frappe.show_alert({ message: __("Theme {0} applied — click Save.", [frappe.utils.escape_html(name)]), indicator: "green" });
+            _render_all_previews(frm);
         });
-        frappe.show_alert({ message: __(`Theme "${preset.name}" applied — click Save.`), indicator: "green" });
-        setTimeout(() => _render_all_previews(frm), 200);
     });
 }
 
@@ -281,7 +290,7 @@ function _render_layout_preview(frm) {
     const radius = corners === "Sharp"   ? "3px" : corners === "Pill" ? "12px" : "8px";
     const navPad = density === "Compact" ? "3px 6px" : "5px 8px";
     const fsPx   = size    === "Small"   ? "9px" : size === "Large" ? "11px" : "10px";
-    const fontLabel = { "Inter": "Inter", "Poppins": "Poppins", "Roboto": "Roboto", "System Default": "System" }[font] || font;
+    const fontLabel = { "Inter": "Inter", "Poppins": "Poppins", "Roboto": "Roboto", "Merriweather": "Merriweather", "System Default": "System" }[font] || font;
 
     const navItems = [
         ["home", "Dashboard", true],
@@ -289,7 +298,7 @@ function _render_layout_preview(frm) {
         ["school", "Results", false],
         ["payments", "Fees", false],
     ].map(([icon, label, active]) => `
-        <div style="padding:${navPad};background:${active ? "rgba(225,29,72,0.1)" : "transparent"};
+        <div style="padding:${navPad};background:${active ? primary + "1a" : "transparent"};
              border-radius:${radius};font-size:${fsPx};color:${active ? primary : "#6b7280"};
              margin-bottom:2px;display:flex;align-items:center;gap:4px;
              border-left:2px solid ${active ? primary : "transparent"};">
@@ -374,7 +383,7 @@ function _mini_portal_card(primary, secondary, bg, card, navText) {
           ${["Dashboard","Attendance","Results","Fees"].map((l, i) => `
           <div style="padding:3px 5px;margin-bottom:2px;border-radius:4px;font-size:7px;
                color:${i===0 ? primary : "#6b7280"};
-               background:${i===0 ? "rgba(225,29,72,0.1)" : "transparent"};
+               background:${i===0 ? primary + "1a" : "transparent"};
                border-left:2px solid ${i===0 ? primary : "transparent"};">
             ${l}
           </div>`).join("")}

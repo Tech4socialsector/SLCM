@@ -1,4 +1,4 @@
-frappe.views.calendar["Class Schedule"] = {
+frappe.views.calendar["Time Table"] = {
     field_map: {
         start: "start",
         end: "end",
@@ -7,8 +7,8 @@ frappe.views.calendar["Class Schedule"] = {
         allDay: "allDay",
         color: "color",
     },
-    get_events_method: "slcm.slcm.doctype.class_schedule.class_schedule.get_events",
-    update_event_method: "slcm.slcm.doctype.class_schedule.class_schedule.update_event",
+    get_events_method: "slcm.slcm.doctype.time_table.time_table.get_events",
+    update_event_method: "slcm.slcm.doctype.time_table.time_table.update_event",
     options: {
         editable: true,
         select: function (startDate, endDate, jsEvent, view) {
@@ -17,8 +17,8 @@ frappe.views.calendar["Class Schedule"] = {
                 return;
             }
 
-            // Create new Class Schedule document
-            var new_doc = frappe.model.get_new_doc("Class Schedule");
+            // Create new Time Table document
+            var new_doc = frappe.model.get_new_doc("Time Table");
 
             // Extract date and time from startDate
             var start_moment = moment(startDate);
@@ -32,7 +32,7 @@ frappe.views.calendar["Class Schedule"] = {
             }
 
             // Navigate to the new form
-            frappe.set_route("Form", "Class Schedule", new_doc.name);
+            frappe.set_route("Form", "Time Table", new_doc.name);
         }
     },
 };

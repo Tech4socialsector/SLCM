@@ -40,7 +40,7 @@ def get_columns():
 			"fieldname": "section",
 			"label": _("Section"),
 			"fieldtype": "Link",
-			"options": "Program Batch Section",
+			"options": "Section",
 			"width": 100
 		},
 		{

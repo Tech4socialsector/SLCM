@@ -3,6 +3,7 @@ import frappe
 from frappe.model.document import Document
 from frappe import _
 from frappe.utils import get_datetime
+from frappe.email.doctype.email_template.email_template import get_email_template
 
 
 class VenueBooking(Document):
@@ -282,28 +283,32 @@ def _notify_requester_swap(booking_name, decision, old_room, new_room, admin_rem
         new_room_name = frappe.db.get_value("Room", new_room, "room_name") or new_room or "—"
         color = "#166534" if decision == "Approved" else "#991b1b"
         bg    = "#f0fdf4" if decision == "Approved" else "#fef2f2"
-
-        subject = f"[Venue Booking] Swap Request {decision}: {doc.event_name}"
         body_detail = (
             f"Your venue has been moved from <strong>{old_room}</strong> to <strong>{new_room_name}</strong>."
             if decision == "Approved"
             else f"Your request to move to <strong>{new_room_name}</strong> was not approved. Your booking remains in <strong>{old_room}</strong>."
         )
-        message = f"""
-<p>Hi {doc.requester_name or 'there'},</p>
-<p>Your venue swap request has been <strong style="color:{color};">{decision.lower()}</strong>.</p>
-<div style="background:{bg};border-radius:8px;padding:16px 20px;margin:16px 0;font-size:14px;">
-  <table style="border-collapse:collapse;width:100%;">
-    <tr><td style="padding:4px 0;font-weight:600;color:#555;width:160px;">Booking Ref</td><td style="padding:4px 0;">{booking_name}</td></tr>
-    <tr><td style="padding:4px 0;font-weight:600;color:#555;">Event</td><td style="padding:4px 0;">{doc.event_name}</td></tr>
-    <tr><td style="padding:4px 0;font-weight:600;color:#555;">Time Slot</td><td style="padding:4px 0;">{doc.start_datetime} → {doc.end_datetime}</td></tr>
-    <tr><td style="padding:4px 0;font-weight:600;color:#555;">Decision</td><td style="padding:4px 0;font-weight:700;color:{color};">{decision}</td></tr>
-    {f'<tr><td style="padding:4px 0;font-weight:600;color:#555;">Admin Remarks</td><td style="padding:4px 0;">{admin_remarks}</td></tr>' if admin_remarks else ""}
-  </table>
-  <p style="margin-top:10px;font-size:13px;">{body_detail}</p>
-</div>
-"""
-        frappe.sendmail(recipients=[requester_email], subject=subject, message=message, now=True)
+
+        args = {
+            "booking_name": booking_name,
+            "event_name": doc.event_name,
+            "requester_name": doc.requester_name or "there",
+            "start_datetime": doc.start_datetime,
+            "end_datetime": doc.end_datetime,
+            "decision": decision,
+            "decision_lower": decision.lower(),
+            "color": color,
+            "bg": bg,
+            "admin_remarks": admin_remarks or "",
+            "body_detail": body_detail,
+        }
+        rendered = get_email_template("Venue Booking - Swap Request Decision (Requester)", args)
+        frappe.sendmail(
+            recipients=[requester_email],
+            subject=rendered.get("subject"),
+            message=rendered.get("message"),
+            now=True,
+        )
     except Exception:
         frappe.log_error(frappe.get_traceback(), "Venue Swap — Requester Notification Error")
 
@@ -440,33 +445,27 @@ def _notify_admin_new_booking(doc):
 		site_url = frappe.utils.get_url()
 		booking_url = f"{site_url}/app/venue-booking/{doc.name}"
 
-		subject = f"[Venue Booking] New Request: {doc.event_name} — {doc.room}"
-		message = f"""
-<p>A new venue booking has been submitted and requires your review.</p>
-<table style="border-collapse:collapse;width:100%;font-size:14px;">
-  <tr><td style="padding:6px 12px;font-weight:600;color:#555;width:160px;">Reference</td><td style="padding:6px 12px;">{doc.name}</td></tr>
-  <tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">Event / Purpose</td><td style="padding:6px 12px;">{doc.event_name}</td></tr>
-  <tr><td style="padding:6px 12px;font-weight:600;color:#555;">Requested By</td><td style="padding:6px 12px;">{requester_display} ({doc.requester_type})</td></tr>
-  <tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">Venue</td><td style="padding:6px 12px;">{doc.room} ({doc.venue_type})</td></tr>
-  <tr><td style="padding:6px 12px;font-weight:600;color:#555;">Start</td><td style="padding:6px 12px;">{doc.start_datetime}</td></tr>
-  <tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">End</td><td style="padding:6px 12px;">{doc.end_datetime}</td></tr>
-  {f'<tr><td style="padding:6px 12px;font-weight:600;color:#555;">Attendees</td><td style="padding:6px 12px;">{doc.expected_attendees}</td></tr>' if doc.expected_attendees else ""}
-  {f'<tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">Remarks</td><td style="padding:6px 12px;">{doc.reason}</td></tr>' if doc.reason else ""}
-</table>
-<p style="margin-top:20px;">
-  <a href="{booking_url}"
-     style="display:inline-block;padding:10px 24px;background:#1e3a5f;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">
-    Review &amp; Approve / Reject
-  </a>
-</p>
-<p style="font-size:12px;color:#888;margin-top:8px;">
-  Or copy this link: <a href="{booking_url}" style="color:#1e3a5f;">{booking_url}</a>
-</p>
-"""
+		args = {
+			"booking_name": doc.name,
+			"booking_url": booking_url,
+			"event_name": doc.event_name,
+			"requester_display": requester_display,
+			"requester_type": doc.requester_type,
+			"programme": getattr(doc, "programme", None) or "",
+			"batch": getattr(doc, "batch", None) or "",
+			"academic_year": getattr(doc, "academic_year", None) or "",
+			"room": doc.room,
+			"venue_type": doc.venue_type,
+			"start_datetime": doc.start_datetime,
+			"end_datetime": doc.end_datetime,
+			"expected_attendees": doc.expected_attendees,
+			"reason": doc.reason,
+		}
+		rendered = get_email_template("Venue Booking - New Request (Admin)", args)
 		frappe.sendmail(
 			recipients=admin_emails,
-			subject=subject,
-			message=message,
+			subject=rendered.get("subject"),
+			message=rendered.get("message"),
 			now=True,
 		)
 	except Exception:
@@ -500,32 +499,32 @@ def _notify_requester(booking_name, new_status, admin_remarks=None):
 		}
 		color = status_colors.get(new_status, "#374151")
 		bg    = status_bg.get(new_status, "#f3f4f6")
+		footer_note = (
+			"Your booking is confirmed. Please ensure the venue is kept clean after use."
+			if new_status == "Approved"
+			else "If you have any questions, please contact the administration."
+		)
 
-		subject = f"[Venue Booking] {new_status}: {doc.event_name} — {doc.room}"
-		message = f"""
-<p>Hi {doc.requester_name or 'there'},</p>
-<p>Your venue booking request has been <strong style="color:{color};">{new_status.lower()}</strong>.</p>
-<div style="background:{bg};border-radius:8px;padding:16px 20px;margin:16px 0;font-size:14px;">
-  <table style="border-collapse:collapse;width:100%;">
-    <tr><td style="padding:4px 0;font-weight:600;color:#555;width:140px;">Reference</td><td style="padding:4px 0;">{booking_name}</td></tr>
-    <tr><td style="padding:4px 0;font-weight:600;color:#555;">Event</td><td style="padding:4px 0;">{doc.event_name}</td></tr>
-    <tr><td style="padding:4px 0;font-weight:600;color:#555;">Venue</td><td style="padding:4px 0;">{doc.room} ({doc.venue_type})</td></tr>
-    <tr><td style="padding:4px 0;font-weight:600;color:#555;">From</td><td style="padding:4px 0;">{doc.start_datetime}</td></tr>
-    <tr><td style="padding:4px 0;font-weight:600;color:#555;">To</td><td style="padding:4px 0;">{doc.end_datetime}</td></tr>
-    <tr><td style="padding:4px 0;font-weight:600;color:#555;">Status</td>
-        <td style="padding:4px 0;font-weight:700;color:{color};">{new_status}</td></tr>
-    {f'<tr><td style="padding:4px 0;font-weight:600;color:#555;">Admin Remarks</td><td style="padding:4px 0;">{admin_remarks}</td></tr>' if admin_remarks else ""}
-  </table>
-</div>
-<p style="font-size:13px;color:#666;">
-  {"Your booking is confirmed. Please ensure the venue is kept clean after use." if new_status == "Approved"
-   else "If you have any questions, please contact the administration." }
-</p>
-"""
+		args = {
+			"booking_name": booking_name,
+			"event_name": doc.event_name,
+			"requester_name": doc.requester_name or "there",
+			"room": doc.room,
+			"venue_type": doc.venue_type,
+			"start_datetime": doc.start_datetime,
+			"end_datetime": doc.end_datetime,
+			"new_status": new_status,
+			"new_status_lower": new_status.lower(),
+			"color": color,
+			"bg": bg,
+			"admin_remarks": admin_remarks or "",
+			"footer_note": footer_note,
+		}
+		rendered = get_email_template("Venue Booking - Status Update (Requester)", args)
 		frappe.sendmail(
 			recipients=[requester_email],
-			subject=subject,
-			message=message,
+			subject=rendered.get("subject"),
+			message=rendered.get("message"),
 			now=True,
 		)
 	except Exception:

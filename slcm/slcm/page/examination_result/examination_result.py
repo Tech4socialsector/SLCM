@@ -133,7 +133,7 @@ def get_courses_for_result(exam_plan, search=""):
 	if search:
 		courses = frappe.db.sql(
 			"""
-			SELECT name, course_name, course_code, department_name
+			SELECT name, course_name, course_code, programme
 			FROM `tabCourse`
 			WHERE course_name LIKE %(s)s OR course_code LIKE %(s)s
 			ORDER BY course_name ASC
@@ -145,7 +145,7 @@ def get_courses_for_result(exam_plan, search=""):
 	else:
 		courses = frappe.get_all(
 			"Course",
-			fields=["name", "course_name", "course_code", "department_name"],
+			fields=["name", "course_name", "course_code", "programme"],
 			order_by="course_name asc",
 			page_length=page_length,
 		)
@@ -393,39 +393,39 @@ def get_exam_types(search=""):
 
 
 @frappe.whitelist()
-def get_departments(search="", exam_plan=None):
-	"""Return departments for the Course Results page department filter."""
+def get_programmes(search="", exam_plan=None):
+	"""Return programmes for the Course Results page programme filter."""
 	if exam_plan:
-		search_clause = "AND d.department_name LIKE %(search)s" if search else ""
+		search_clause = "AND p.name LIKE %(search)s" if search else ""
 		return frappe.db.sql(
 			f"""
-			SELECT DISTINCT d.name, d.department_name
-			FROM `tabDepartment` d
-			JOIN `tabCourse` c ON c.department = d.name
+			SELECT DISTINCT p.name
+			FROM `tabProgramme` p
+			JOIN `tabCourse` c ON c.programme = p.name
 			JOIN `tabCourse Schema Assignment` csa ON csa.course = c.name AND csa.exam_plan = %(exam_plan)s
-			WHERE d.status = 'Active'
+			WHERE p.program_status = 'Active'
 			{search_clause}
-			ORDER BY d.department_name ASC
+			ORDER BY p.name ASC
 			LIMIT 100
 			""",
 			{"exam_plan": exam_plan, "search": f"%{search}%"},
 			as_dict=True,
 		)
-	filters = {"status": "Active"}
+	filters = {"program_status": "Active"}
 	if search:
-		filters["department_name"] = ["like", f"%{search}%"]
+		filters["name"] = ["like", f"%{search}%"]
 	return frappe.get_all(
-		"Department",
+		"Programme",
 		filters=filters,
-		fields=["name", "department_name"],
-		order_by="department_name asc",
+		fields=["name"],
+		order_by="name asc",
 		page_length=100,
 	)
 
 
 @frappe.whitelist()
-def get_courses_by_department(department, exam_plan=None, search=""):
-	"""Return courses in a department, optionally filtered by exam plan."""
+def get_courses_by_programme(programme, exam_plan=None, search=""):
+	"""Return courses in a programme, optionally filtered by exam plan."""
 	if exam_plan:
 		search_clause = "AND c.course_name LIKE %(search)s" if search else ""
 		return frappe.db.sql(
@@ -433,15 +433,15 @@ def get_courses_by_department(department, exam_plan=None, search=""):
 			SELECT DISTINCT c.name, c.course_name, c.course_code, c.credit_value
 			FROM `tabCourse` c
 			JOIN `tabCourse Schema Assignment` csa ON csa.course = c.name AND csa.exam_plan = %(exam_plan)s
-			WHERE c.department = %(department)s
+			WHERE c.programme = %(programme)s
 			{search_clause}
 			ORDER BY c.course_name ASC
 			LIMIT 200
 			""",
-			{"exam_plan": exam_plan, "department": department, "search": f"%{search}%"},
+			{"exam_plan": exam_plan, "programme": programme, "search": f"%{search}%"},
 			as_dict=True,
 		)
-	course_filters = {"department": department}
+	course_filters = {"programme": programme}
 	if search:
 		course_filters["course_name"] = ["like", f"%{search}%"]
 	return frappe.get_all(
@@ -511,7 +511,7 @@ def get_course_info(course, exam_plan=None):
 	"""Return full course info for the Course Results page."""
 	course_doc = frappe.db.get_value(
 		"Course", course,
-		["course_name", "course_code", "credit_value", "department_name", "department"],
+		["course_name", "course_code", "credit_value", "programme"],
 		as_dict=True,
 	) or {}
 
@@ -593,7 +593,7 @@ def get_course_info(course, exam_plan=None):
 		"course_name":     course_doc.get("course_name", ""),
 		"course_code":     course_doc.get("course_code", ""),
 		"credit_value":    course_doc.get("credit_value", 0),
-		"department_name": course_doc.get("department_name", ""),
+		"programme":       course_doc.get("programme", ""),
 		"exam_plan":       assignment.get("exam_plan", ""),
 		"exam_name":       assignment.get("exam_name", ""),
 		"evaluation_schema": assignment.get("evaluation_schema", ""),
@@ -681,7 +681,7 @@ def get_course_students_paged(course, exam_plan="", search="", page=1, page_leng
 		params["status_filter"] = status_filter
 	if f_programmes:
 		placeholders = ",".join([f"%(prog_{i})s" for i in range(len(f_programmes))])
-		extra_cond += f" AND sm.programme IN ({placeholders})"
+		extra_cond += f" AND sm.programme_of_study IN ({placeholders})"
 		for i, v in enumerate(f_programmes):
 			params[f"prog_{i}"] = v
 	if f_batches:
@@ -716,10 +716,9 @@ def get_course_students_paged(course, exam_plan="", search="", page=1, page_leng
 			CONCAT_WS(' ', sm.first_name, sm.last_name) AS student_name,
 			sm.student_status,
 			sm.account_status,
-			sm.programme,
 			sm.batch_year,
 			sm.intake,
-			sm.department,
+			sm.programme_of_study,
 			sm.passport_size_photo,
 			NULL AS section,
 			scm.manually_added
@@ -773,7 +772,7 @@ def get_institutional_filter_options(course):
 
 	rows = frappe.db.sql(
 		"""
-		SELECT DISTINCT sm.programme, sm.batch_year
+		SELECT DISTINCT sm.programme_of_study AS programme, sm.batch_year
 		FROM `tabStudent Course Marks` scm
 		LEFT JOIN `tabStudent Master` sm ON sm.name = scm.student
 		WHERE scm.course = %(course)s AND scm.exam_plan = %(exam_plan)s
@@ -957,21 +956,18 @@ def get_student_hover_info(student, course):
 		"Student Master", student,
 		["registration_id", "first_name", "last_name",
 		 "official_email_id", "email", "programme",
-		 "batch_year", "current_year", "current_term", "intake", "department"],
+		 "current_term", "intake", "programme_of_study"],
 		as_dict=True,
 	)
 	if not sm:
 		return {}
 
-	cohort_name = ""
+	batch_name = ""
 	if sm.get("programme"):
-		cohort_name = (
-			frappe.db.get_value("Batch", sm["programme"], "cohort_name")
+		batch_name = (
+			frappe.db.get_value("Batch", sm["programme"], "batch_name")
 			or sm["programme"]
 		)
-
-	# Batch: prefer batch_year, fall back to current_year
-	batch_val = sm.get("batch_year") or sm.get("current_year") or ""
 
 	section_row = frappe.db.sql(
 		"""
@@ -989,9 +985,8 @@ def get_student_hover_info(student, course):
 		"student_name":    " ".join(filter(None, [sm.first_name, sm.last_name])),
 		"registration_id": sm.registration_id or student,
 		"email":           sm.official_email_id or sm.email or "",
-		"programme":       cohort_name,
-		"department":      sm.department or "",
-		"batch":           batch_val,
+		"programme":       sm.programme_of_study or "",
+		"batch":           batch_name,
 		"current_term":    sm.current_term or "",
 		"intake":          sm.intake or "",
 		"section":         section_row[0]["section"] if section_row else "",
@@ -1207,7 +1202,7 @@ def get_course_overview(exam_plan, course):
 	course_doc = frappe.db.get_value(
 		"Course",
 		course,
-		["course_name", "course_code", "credit_value", "department_name"],
+		["course_name", "course_code", "credit_value", "programme"],
 		as_dict=True,
 	) or {}
 
@@ -1241,7 +1236,7 @@ def get_course_overview(exam_plan, course):
 		"course_name":              course_doc.get("course_name", ""),
 		"course_code":              course_doc.get("course_code", ""),
 		"credit_value":             course_doc.get("credit_value", 0),
-		"department_name":          course_doc.get("department_name", ""),
+		"programme":                course_doc.get("programme", ""),
 		"evaluation_schema":        schema.get("evaluation_schema", ""),
 		"grade_schema":             schema.get("grade_schema", ""),
 		"view_access":              int(access.get("view_access", 1)),
@@ -1281,10 +1276,9 @@ def get_course_students_with_marks(exam_plan, course, search="", page=1, page_le
 			sm.official_email_id,
 			sm.student_status,
 			sm.account_status,
-			sm.programme,
 			sm.batch_year,
 			sm.intake,
-			sm.department
+			sm.programme_of_study
 		FROM `tabClass Student` cs
 		INNER JOIN `tabClass Configuration` cc ON cs.parent = cc.name
 		LEFT JOIN `tabStudent Master` sm ON sm.name = cs.student
@@ -1340,7 +1334,7 @@ def get_student_profile(student):
 		student,
 		["registration_id", "first_name", "last_name", "email", "official_email_id",
 		 "programme", "batch_year", "intake", "student_status", "account_status",
-		 "phone", "department"],
+		 "phone", "programme_of_study"],
 		as_dict=True,
 	)
 	if not sm:
@@ -3064,7 +3058,7 @@ def search_students_for_add(course, exam_plan, search="", programme="", batch=""
 		)
 		params["search"] = f"%{search}%"
 	if programme:
-		conds += " AND sm.programme = %(programme)s"
+		conds += " AND sm.programme_of_study = %(programme)s"
 		params["programme"] = programme
 	if batch:
 		conds += " AND sm.batch_year = %(batch)s"
@@ -3078,7 +3072,7 @@ def search_students_for_add(course, exam_plan, search="", programme="", batch=""
 			TRIM(CONCAT_WS(' ', sm.first_name,
 				COALESCE(NULLIF(sm.middle_name,''), NULL),
 				sm.last_name))   AS student_name,
-			sm.programme,
+			sm.programme_of_study AS programme,
 			sm.batch_year,
 			sm.passport_size_photo AS image
 		FROM `tabStudent Master` sm

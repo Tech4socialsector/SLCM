@@ -66,12 +66,14 @@ _FONT_CSS = {
     "Inter":          "'Inter', system-ui, -apple-system, sans-serif",
     "Poppins":        "'Poppins', system-ui, -apple-system, sans-serif",
     "Roboto":         "'Roboto', system-ui, -apple-system, sans-serif",
+    "Merriweather":   "'Merriweather', Georgia, 'Times New Roman', serif",
     "System Default": "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
 }
 
 _FONT_GOOGLE_URL = {
-    "Poppins": "https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap",
-    "Roboto":  "https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap",
+    "Poppins":      "https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap",
+    "Roboto":       "https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap",
+    "Merriweather": "https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700;900&display=swap",
 }
 
 # ── Nav height mappings ───────────────────────────────────────────────

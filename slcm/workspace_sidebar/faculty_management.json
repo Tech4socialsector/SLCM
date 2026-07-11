@@ -1,6 +1,6 @@
 {
  "app": "slcm",
- "creation": "2026-05-16 10:00:00.000000",
+ "creation": "2026-07-08 23:55:37.954607",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
  "header_icon": "graduation-cap",
@@ -13,7 +13,7 @@
    "indent": 0,
    "keep_closed": 0,
    "label": "Home",
-   "link_to": "Faculty",
+   "link_to": "Faculty Management",
    "link_type": "Workspace",
    "show_arrow": 0,
    "type": "Link"
@@ -25,8 +25,6 @@
    "indent": 0,
    "keep_closed": 0,
    "label": "Academic Management",
-   "link_to": null,
-   "link_type": null,
    "show_arrow": 0,
    "type": "Section Break"
   },
@@ -72,8 +70,8 @@
    "icon": "calendar-days",
    "indent": 1,
    "keep_closed": 0,
-   "label": "Class Schedule",
-   "link_to": "Class Schedule",
+   "label": "Time Table",
+   "link_to": "Time Table",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
@@ -109,8 +107,6 @@
    "indent": 0,
    "keep_closed": 0,
    "label": "Attendance",
-   "link_to": null,
-   "link_type": null,
    "show_arrow": 0,
    "type": "Section Break"
   },
@@ -193,8 +189,6 @@
    "indent": 0,
    "keep_closed": 0,
    "label": "Examination & Evaluation",
-   "link_to": null,
-   "link_type": null,
    "show_arrow": 0,
    "type": "Section Break"
   },
@@ -241,8 +235,6 @@
    "indent": 0,
    "keep_closed": 0,
    "label": "Students",
-   "link_to": null,
-   "link_type": null,
    "show_arrow": 0,
    "type": "Section Break"
   },
@@ -289,8 +281,6 @@
    "indent": 0,
    "keep_closed": 0,
    "label": "Venue Booking",
-   "link_to": null,
-   "link_type": null,
    "show_arrow": 0,
    "type": "Section Break"
   },
@@ -325,8 +315,6 @@
    "indent": 0,
    "keep_closed": 0,
    "label": "Reports",
-   "link_to": null,
-   "link_type": null,
    "show_arrow": 0,
    "type": "Section Break"
   },
@@ -379,11 +367,11 @@
    "type": "Link"
   }
  ],
- "modified": "2026-05-29 12:00:00.000000",
+ "modified": "2026-07-08 23:52:31.463223",
  "modified_by": "Administrator",
  "module": "SLCM",
- "name": "Faculty",
+ "name": "Faculty Management",
  "owner": "Administrator",
  "standard": 1,
- "title": "Faculty"
+ "title": "Faculty Management"
 }
