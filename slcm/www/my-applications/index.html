@@ -1874,16 +1874,17 @@
 
   .info-tile-label {
     font-size: 12px;
-    font-weight: 600;
-    color: var(--text-1);
+    font-weight: 400;
+    color: rgb(0, 0, 0);
     text-transform: none;
     letter-spacing: .07em;
     margin-bottom: 4px;
+
   }
 
   .info-tile-value {
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 800;
     color: var(--text-1);
   }
 
@@ -2559,26 +2560,21 @@
 
   .et-field {
     display: flex;
-    flex-direction: row;
-    align-items: baseline;
-    gap: 8px;
+    flex-direction: column;
+    gap: 4px;
   }
 
   .et-label {
     font-size: 13px;
-    font-weight: 600;
-    color: var(--text-1);
+    font-weight: 400;
+    color: rgb(76, 70, 70);
     text-transform: none;
     letter-spacing: normal;
   }
 
-  .et-label::after {
-    content: " :";
-  }
-
   .et-value {
     font-size: 14.5px;
-    font-weight: 600;
+    font-weight: 800;
     color: var(--text-1);
     line-height: 1.4;
     display: inline-flex;
@@ -3460,7 +3456,7 @@ or _app.current_stage)) or _status %}
           <span class="material-symbols-outlined"
             style="font-size:17px;color:var(--text-4);flex-shrink:0">location_on</span>
           <div style="flex:1">
-            <div style="font-size:12px;font-weight:600;color:var(--text-1);letter-spacing:.04em;margin-bottom:4px">Venue address</div>
+            <div style="font-size:12px;font-weight:400;color:var(--text-4);letter-spacing:.04em;margin-bottom:4px">Venue address</div>
             <span style="font-size:13px;color:var(--text-2);line-height:1.5;display:block;margin-bottom:4px">{{ interview_current_slot.interview_address }}</span>
             {% if interview_current_slot.interview_location %}
             <a href="#" onclick="openMap('{{ interview_current_slot.interview_location | escape }}'); return false;" 
