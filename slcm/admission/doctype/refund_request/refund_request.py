@@ -333,7 +333,7 @@ def create_refund_request(cancellation):
 	refund = frappe.new_doc("Refund Request")
 	refund.applicant = cancellation.applicant
 	refund.admission_cancellation = cancellation.name
-	refund.status = "Draft"
+	refund.status = "Under Review"
 	refund.refund_reason = cancellation.cancellation_reason
 
 	# Link the AFA (Admission Fee type, submitted)
