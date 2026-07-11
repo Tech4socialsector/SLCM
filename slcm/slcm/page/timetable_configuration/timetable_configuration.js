@@ -152,7 +152,7 @@ class TimetableConfiguration {
         const end_date = moment(this.current_week_start).endOf('week').format('YYYY-MM-DD');
 
         frappe.call({
-            method: 'slcm.slcm.doctype.class_schedule.class_schedule.get_timetable_data',
+            method: 'slcm.slcm.doctype.time_table.time_table.get_timetable_data',
             args: {
                 term: this.filters.term,
                 course: this.filters.course,
@@ -193,7 +193,7 @@ class TimetableConfiguration {
         // Add click handlers
         this.wrapper.find('.calendar-event').on('click', (e) => {
             const schedule_id = $(e.currentTarget).data('id');
-            frappe.set_route('Form', 'Class Schedule', schedule_id);
+            frappe.set_route('Form', 'Time Table', schedule_id);
         });
     }
 
@@ -337,12 +337,12 @@ class TimetableConfiguration {
             primary_action_label: __('Create'),
             primary_action: (values) => {
                 frappe.call({
-                    method: 'slcm.slcm.doctype.class_schedule.class_schedule.create_class_schedule',
+                    method: 'slcm.slcm.doctype.time_table.time_table.create_time_table',
                     args: { data: values },
                     callback: (r) => {
                         if (r.message) {
                             frappe.show_alert({
-                                message: __('Class Schedule created successfully'),
+                                message: __('Time Table entry created successfully'),
                                 indicator: 'green'
                             });
                             dialog.hide();
@@ -547,7 +547,7 @@ class TimetableConfiguration {
         const end_date = moment(this.current_week_start).endOf('week').format('YYYY-MM-DD');
 
         window.open(`/api/method/frappe.desk.reportview.export_query?
-            doctype=Class Schedule&
+            doctype=Time Table&
             file_format_type=Excel&
             filters=[["schedule_date","between",["${start_date}","${end_date}"]]]`
         );

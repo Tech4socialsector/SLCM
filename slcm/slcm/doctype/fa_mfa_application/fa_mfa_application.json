@@ -74,13 +74,15 @@
    "depends_on": "eval:doc.reason=='University Representation'",
    "fieldname": "event_from_date",
    "fieldtype": "Date",
-   "label": "Event From Date"
+   "label": "Event From Date",
+   "reqd": 1
   },
   {
    "depends_on": "eval:doc.reason=='University Representation'",
    "fieldname": "event_to_date",
    "fieldtype": "Date",
-   "label": "Event To Date"
+   "label": "Event To Date",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_1",
@@ -98,7 +100,7 @@
    "fieldname": "reason",
    "fieldtype": "Select",
    "label": "Reason",
-   "options": "University Representation\nMedical Reasons\nBereavement",
+   "options": "University Representation\nMedical Reasons\nBereavement\nOther",
    "reqd": 1
   },
   {
@@ -141,6 +143,7 @@
    "fieldname": "rejection_reason",
    "fieldtype": "Small Text",
    "label": "Rejection Reason",
+   "mandatory_depends_on": "eval:doc.status=='Rejected'",
    "permlevel": 1
   },
   {
@@ -154,7 +157,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-02-11 12:40:37.485549",
+ "modified": "2026-07-10 15:21:45.475058",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "FA MFA Application",
@@ -185,13 +188,13 @@
    "write": 1
   },
   {
-   "read": 1,
-   "write": 1,
+   "email": 1,
    "export": 1,
    "print": 1,
-   "email": 1,
+   "read": 1,
    "report": 1,
-   "role": "slcm_Faculty"
+   "role": "slcm_Faculty",
+   "write": 1
   },
   {
    "permlevel": 1,
@@ -238,6 +241,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 1,
- "custom": 0
+ "track_changes": 1
 }

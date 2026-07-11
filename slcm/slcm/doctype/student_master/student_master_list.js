@@ -14,6 +14,7 @@ frappe.listview_settings["Student Master"] = {
 		add_bulk_enroll_button(listview);
 		add_download_slip_button(listview);
 		add_generate_student_id_button(listview);
+		add_bulk_section_upload_button(listview);
 		// Ensure status column is visible
 		ensure_status_column_visible(listview);
 	},
@@ -907,6 +908,139 @@ function render_bulk_upload_dialog(listview, options) {
 	});
 
 	dialog.show();
+}
+
+/* ---------------- Bulk Upload Section ---------------- */
+
+function add_bulk_section_upload_button(listview) {
+	const btn = listview.page.add_inner_button(__("Bulk Upload Section"), function () {
+		show_bulk_section_upload_dialog(listview);
+	});
+
+	btn.css({
+		"background-color": "#000",
+		"color": "#fff",
+		"border-color": "#000",
+		"box-shadow": "none",
+	});
+}
+
+function show_bulk_section_upload_dialog(listview) {
+	fetch_batch_filter_options((options) => render_bulk_section_upload_dialog(listview, options));
+}
+
+function render_bulk_section_upload_dialog(listview, options) {
+	let dialog;
+	dialog = new frappe.ui.Dialog({
+		title: __("Bulk Upload Section"),
+		size: "large",
+		fields: [
+			{
+				fieldtype: "HTML",
+				options: `<div class="text-muted" style="margin-bottom:8px;">
+					${__("Filter by Programme / Academic Year / Term (or leave blank for all students) before downloading the template. Fill in the Section column and upload it back.")}
+				</div>`,
+			},
+			{ fieldtype: "Select", fieldname: "programme", label: __("Programme"), options: [] },
+			{ fieldtype: "Select", fieldname: "academic_year", label: __("Academic Year"), options: [] },
+			{ fieldtype: "Column Break" },
+			{ fieldtype: "Select", fieldname: "term_name", label: __("Term"), options: [] },
+			{ fieldtype: "Button", fieldname: "download_template", label: __("Download Sample Template") },
+			{ fieldtype: "Section Break" },
+			{ fieldtype: "Attach", fieldname: "filled_file", label: __("Upload Filled Template") },
+			{ fieldtype: "Section Break", fieldname: "log_section", label: __("Upload Log") },
+			{ fieldtype: "HTML", fieldname: "log_html" },
+		],
+		primary_action_label: __("Upload"),
+		primary_action() {
+			const file_url = dialog.get_value("filled_file");
+			if (!file_url) {
+				frappe.msgprint({
+					message: __("Please attach the filled template first."),
+					indicator: "orange",
+				});
+				return;
+			}
+			frappe.call({
+				method: "slcm.slcm.doctype.student_master.student_master.upload_sections_bulk",
+				args: { file_url },
+				freeze: true,
+				freeze_message: __("Processing upload..."),
+				callback: function (r) {
+					const res = r.message || {};
+					render_section_upload_log(dialog.fields_dict.log_html, res.log || []);
+
+					let msg = __("Updated {0} student(s).", [res.updated || 0]);
+					if (res.errors) {
+						msg += `<br>${__("Errors")}: ${res.errors}`;
+					}
+					frappe.show_alert({
+						message: msg,
+						indicator: res.errors ? "orange" : "green",
+					});
+					listview.refresh();
+				},
+			});
+		},
+	});
+
+	wire_programme_cascade(dialog, options, { includeBlank: true });
+
+	dialog.fields_dict.download_template.$input.on("click", function () {
+		const batches = resolve_selected_batches(dialog, options);
+
+		frappe.call({
+			method: "slcm.slcm.doctype.student_master.student_master.download_section_bulk_template",
+			args: { batches },
+			freeze: true,
+			freeze_message: __("Preparing template..."),
+			callback: function (r) {
+				const res = r.message;
+				if (!res) return;
+				download_base64_file(res.content, res.filename, res.mime);
+			},
+		});
+	});
+
+	dialog.show();
+}
+
+function render_section_upload_log(field, log_rows) {
+	if (!log_rows.length) {
+		field.$wrapper.html("");
+		return;
+	}
+
+	const error_rows = log_rows.filter((r) => r.status === "Error");
+	const success_count = log_rows.length - error_rows.length;
+
+	let html = `<div style="margin-bottom:8px;">
+		<span class="indicator-pill green">${__("Success")}: ${success_count}</span>
+		${error_rows.length ? ` <span class="indicator-pill red">${__("Errors")}: ${error_rows.length}</span>` : ""}
+	</div>`;
+
+	html += `<div style="max-height:300px; overflow-y:auto;">
+		<table class="table table-bordered">
+			<thead><tr>
+				<th>${__("Student")}</th>
+				<th>${__("Section")}</th>
+				<th>${__("Status")}</th>
+				<th>${__("Message")}</th>
+			</tr></thead>
+			<tbody>`;
+
+	log_rows.forEach((r) => {
+		const pill = r.status === "Error" ? "red" : "green";
+		html += `<tr>
+			<td>${frappe.utils.escape_html(r.student_name || r.student)}</td>
+			<td>${frappe.utils.escape_html(r.section || "")}</td>
+			<td><span class="indicator-pill ${pill}">${r.status}</span></td>
+			<td>${frappe.utils.escape_html(r.message || "")}</td>
+		</tr>`;
+	});
+
+	html += "</tbody></table></div>";
+	field.$wrapper.html(html);
 }
 
 function download_base64_file(base64_content, filename, mime) {

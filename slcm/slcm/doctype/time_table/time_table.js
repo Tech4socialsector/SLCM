@@ -1,7 +1,7 @@
 // Copyright (c) 2026, TFSS and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Class Schedule', {
+frappe.ui.form.on('Time Table', {
     refresh: function (frm) {
         // Auto-generate title if not set
         if (!frm.doc.title && frm.doc.course) {
@@ -11,7 +11,7 @@ frappe.ui.form.on('Class Schedule', {
         if (!frm.is_new()) {
             frm.add_custom_button(__('Mark Attendance'), function () {
                 frappe.route_options = {
-                    'based_on': 'Class Schedule',
+                    'based_on': 'Time Table',
                     'class_schedule': frm.doc.name,
                     'student_group': frm.doc.student_group,
                     'date': frm.doc.schedule_date
@@ -151,9 +151,9 @@ frappe.ui.form.on('Class Schedule', {
 
         // Call server method to update Attendance Session in real-time
         frappe.call({
-            method: 'slcm.slcm.doctype.class_schedule.class_schedule.update_attendance_session_realtime',
+            method: 'slcm.slcm.doctype.time_table.time_table.update_attendance_session_realtime',
             args: {
-                class_schedule_name: frm.doc.name,
+                time_table_name: frm.doc.name,
                 from_time: frm.doc.from_time,
                 to_time: frm.doc.to_time,
                 schedule_date: frm.doc.schedule_date,

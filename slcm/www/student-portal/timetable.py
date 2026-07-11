@@ -69,11 +69,11 @@ def get_context(context):
         for i, co in enumerate(sorted(enrolled_co_set)):
             color_map[co] = _PALETTE[i % len(_PALETTE)]
 
-        # ── Fetch Class Schedules for the week ────────────────────
+        # ── Fetch Time Table entries for the week ────────────────────
         raw_schedules = []
         if enrolled_co_set:
             raw_schedules = frappe.get_all(
-                "Class Schedule",
+                "Time Table",
                 filters=[
                     ["course_offering", "in", list(enrolled_co_set)],
                     ["schedule_date", "between", [str(week_start), str(week_end)]],
@@ -88,7 +88,7 @@ def get_context(context):
             # ── Also handle weekly-repeating parent schedules ─────
             try:
                 recurring = frappe.get_all(
-                    "Class Schedule",
+                    "Time Table",
                     filters=[
                         ["course_offering", "in", list(enrolled_co_set)],
                         ["repeat_frequency", "=", "Weekly"],

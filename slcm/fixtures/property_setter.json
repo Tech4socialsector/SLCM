@@ -689,7 +689,7 @@
  },
  {
   "default_value": null,
-  "doc_type": "Class Schedule",
+  "doc_type": "Time Table",
   "docstatus": 0,
   "doctype": "Property Setter",
   "doctype_or_field": "DocField",
@@ -697,7 +697,7 @@
   "is_system_generated": 1,
   "modified": "2026-05-16 01:23:03.874811",
   "module": null,
-  "name": "Class Schedule-naming_series-options",
+  "name": "Time Table-naming_series-options",
   "property": "options",
   "property_type": "Text",
   "row_name": null,
