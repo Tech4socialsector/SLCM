@@ -1501,7 +1501,7 @@ def preview_student_ids(batches):
     whole group, so a student who now sorts earlier correctly takes over a
     lower number and everyone after them shifts up - existing IDs are not
     preserved across runs."""
-    batches = frappe.parse_json(batches) if isinstance(batches, str) else batches
+    batches = frappe.parse_json(batches) if isinstance(batches, str) and batches else batches
     if not batches:
         frappe.throw(_("Please select Programme, Academic Year and Term."))
 
@@ -1556,7 +1556,7 @@ def download_student_id_bulk_template(batches=None):
     except ImportError:
         frappe.throw(_("openpyxl is not installed. Run: bench pip install openpyxl"))
 
-    batches = frappe.parse_json(batches) if isinstance(batches, str) else batches
+    batches = frappe.parse_json(batches) if isinstance(batches, str) and batches else batches
 
     filters = {}
     if batches:
@@ -1662,6 +1662,205 @@ def upload_student_ids_bulk(file_url):
 
     frappe.db.commit()
     return {"updated": updated, "skipped": skipped}
+
+
+@frappe.whitelist()
+def download_section_bulk_template(batches=None):
+    """Build an xlsx template pre-filled with Student Name / Programme /
+    Academic Year / Term / Batch / current Section for the given Batches (or
+    all students if none given), for the admin to fill in the Section column
+    and upload back."""
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill
+    except ImportError:
+        frappe.throw(_("openpyxl is not installed. Run: bench pip install openpyxl"))
+
+    batches = frappe.parse_json(batches) if isinstance(batches, str) and batches else batches
+
+    filters = {}
+    if batches:
+        filters["programme"] = ["in", batches]
+
+    students = frappe.get_all(
+        "Student Master",
+        filters=filters,
+        fields=[
+            "name", "first_name", "last_name",
+            "academic_year", "academic_term", "programme", "section",
+        ],
+        order_by="first_name asc, last_name asc",
+    )
+    if not students:
+        frappe.throw(_("No students found for the selected filters."))
+
+    batch_names = {s["programme"] for s in students if s.get("programme")}
+    batch_rows = frappe.get_all(
+        "Batch",
+        filters={"name": ["in", list(batch_names)]},
+        fields=["name", "batch_name", "program"],
+    ) if batch_names else []
+    batch_info = {b["name"]: b for b in batch_rows}
+
+    programme_names = {b["program"] for b in batch_rows if b.get("program")}
+    programme_code = {
+        p["name"]: p["program_code"] for p in frappe.get_all(
+            "Programme",
+            filters={"name": ["in", list(programme_names)]},
+            fields=["name", "program_code"],
+        )
+    } if programme_names else {}
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Sections"
+
+    headers = ["Row Key", "Student Name", "Programme", "Academic Year", "Term", "Batch", "Section"]
+    ws.append(headers)
+    for ci in range(1, len(headers) + 1):
+        cell = ws.cell(row=1, column=ci)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill("solid", fgColor="3949AB")
+
+    for s in students:
+        student_name = f"{s.get('first_name') or ''} {s.get('last_name') or ''}".strip()
+        batch = batch_info.get(s.get("programme")) or {}
+        ws.append([
+            s["name"],
+            student_name,
+            programme_code.get(batch.get("program")) or "",
+            s.get("academic_year") or "",
+            s.get("academic_term") or "",
+            batch.get("batch_name") or s.get("programme") or "",
+            s.get("section") or "",
+        ])
+
+    ws.column_dimensions["A"].hidden = True
+    for col, width in zip("BCDEFG", [26, 14, 14, 16, 20, 16]):
+        ws.column_dimensions[col].width = width
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    return {
+        "filename": "student_section_bulk_template.xlsx",
+        "content":  base64.b64encode(output.read()).decode("utf-8"),
+        "mime":     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    }
+
+
+def _append_section_update_log(student, section, status, message, timestamp):
+    """Insert a Student Section Update Log row directly (bypassing Student
+    Master validate/on_update), so every bulk-upload attempt for a student
+    is kept as its own row instead of overwriting a single "last result"
+    field. This preserves full history when a student's Section is
+    changed by more than one bulk upload over time."""
+    frappe.get_doc({
+        "doctype":     "Student Section Update Log",
+        "parent":      student,
+        "parenttype":  "Student Master",
+        "parentfield": "section_update_log",
+        "section":     section,
+        "status":      status,
+        "message":     message,
+        "updated_on":  timestamp,
+        "updated_by":  frappe.session.user,
+    }).insert(ignore_permissions=True)
+
+
+@frappe.whitelist()
+def upload_sections_bulk(file_url):
+    """Read the filled-in Section template and update the `section` field for
+    each matched Student Master row. Matches on the hidden Row Key column
+    (column A, the Student Master document name) so edits to the other
+    display columns don't break matching.
+
+    Every processed row also gets a new row appended to that Student
+    Master's `section_update_log` child table, so the full history of
+    bulk-upload attempts (not just the latest one) is visible directly on
+    that student's Registration & Admission Details tab, not just in the
+    upload dialog.
+
+    Returns a per-row log (student, student_name, section, status, message)
+    so every row's outcome is visible, including validation errors, with no
+    row failing silently.
+    """
+    try:
+        import openpyxl
+    except ImportError:
+        frappe.throw(_("openpyxl is not installed. Run: bench pip install openpyxl"))
+
+    file_doc = frappe.get_doc("File", {"file_url": file_url})
+    wb = openpyxl.load_workbook(file_doc.get_full_path(), data_only=True)
+    ws = wb.active
+
+    log = []
+    updated = 0
+    section_cache = {}
+    now = now_datetime()
+
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        if not row or not row[0]:
+            continue
+
+        student = str(row[0]).strip()
+        student_display = str(row[1]).strip() if len(row) > 1 and row[1] else student
+        new_section = str(row[6]).strip() if len(row) > 6 and row[6] else ""
+
+        if not new_section:
+            continue
+
+        if not frappe.db.exists("Student Master", student):
+            log.append({
+                "student": student,
+                "student_name": student_display,
+                "section": new_section,
+                "status": "Error",
+                "message": _("Student Master not found."),
+            })
+            continue
+
+        if new_section not in section_cache:
+            section_cache[new_section] = frappe.db.exists("Section", new_section)
+
+        if not section_cache[new_section]:
+            message = _("Section '{0}' does not exist.").format(new_section)
+            _append_section_update_log(student, new_section, "Error", message, now)
+            log.append({
+                "student": student,
+                "student_name": student_display,
+                "section": new_section,
+                "status": "Error",
+                "message": message,
+            })
+            continue
+
+        try:
+            message = _("Section updated to '{0}'.").format(new_section)
+            frappe.db.set_value("Student Master", student, "section", new_section, update_modified=False)
+            _append_section_update_log(student, new_section, "Success", message, now)
+            updated += 1
+            log.append({
+                "student": student,
+                "student_name": student_display,
+                "section": new_section,
+                "status": "Success",
+                "message": message,
+            })
+        except Exception as e:
+            _append_section_update_log(student, new_section, "Error", str(e), now)
+            log.append({
+                "student": student,
+                "student_name": student_display,
+                "section": new_section,
+                "status": "Error",
+                "message": str(e),
+            })
+
+    frappe.db.commit()
+    errors = [row for row in log if row["status"] == "Error"]
+    return {"updated": updated, "errors": len(errors), "log": log}
 
 
 @frappe.whitelist()

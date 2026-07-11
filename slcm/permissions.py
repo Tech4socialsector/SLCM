@@ -368,7 +368,7 @@ def fa_mfa_application_query_conditions(user):
 
 
 # ==========================================================
-# CLASS SCHEDULE – FACULTY SEES ONLY THEIR ASSIGNED GROUPS
+# TIME TABLE – FACULTY SEES ONLY THEIR ASSIGNED GROUPS
 # ==========================================================
 
 def class_schedule_query_conditions(user):
@@ -394,12 +394,12 @@ def class_schedule_query_conditions(user):
         safe_fac = frappe.db.escape(faculty_name)
 
         if not groups:
-            return f"`tabClass Schedule`.instructor = {safe_fac}"
+            return f"`tabTime Table`.instructor = {safe_fac}"
 
         safe_groups = _escape_list(groups)
         return (
-            f"(`tabClass Schedule`.student_group IN ({safe_groups})"
-            f" OR `tabClass Schedule`.instructor = {safe_fac})"
+            f"(`tabTime Table`.student_group IN ({safe_groups})"
+            f" OR `tabTime Table`.instructor = {safe_fac})"
         )
 
     return "1=0"

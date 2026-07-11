@@ -10,7 +10,7 @@ and then triggers the Attendance Summary recalculation.
 Flow per student per day
 ------------------------
 1. Fetch Attendance Sessions for the student on that date.
-   If a Class Schedule exists but no Attendance Session was created yet,
+   If a Time Table entry exists but no Attendance Session was created yet,
    auto-create the session so RFID can still work without manual setup.
 2. Match each swipe to a session window (±20 min buffer).
 3. Apply RFID mode (In Only / In and Out) to determine Present/Absent.
@@ -113,7 +113,7 @@ def _process_student_day(logs):
     # Sort chronologically
     logs = sorted(logs, key=lambda x: x.get("swipe_time"))
 
-    # Resolve matching sessions (creates missing ones from Class Schedule automatically)
+    # Resolve matching sessions (creates missing ones from Time Table automatically)
     sessions = _get_or_create_sessions(student, log_date)
 
     if not sessions:
@@ -154,7 +154,7 @@ def _process_student_day(logs):
 def _get_or_create_sessions(student, date):
     """
     Return Attendance Sessions the student should attend on *date*.
-    If a Class Schedule exists but no Attendance Session has been created,
+    If a Time Table entry exists but no Attendance Session has been created,
     auto-create the session so RFID never silently fails.
     """
     sessions = []
@@ -173,9 +173,9 @@ def _get_or_create_sessions(student, date):
             s["type"] = "Office Hour" if s.get("session_type") == "Office Hour" else "Class"
             sessions.append(s)
 
-    # 2. Class Schedules that have NO Attendance Session yet → auto-create
+    # 2. Time Table entries that have NO Attendance Session yet → auto-create
     class_schedules = frappe.get_all(
-        "Class Schedule",
+        "Time Table",
         filters={
             "schedule_date": date,
             "status": ["!=", "Cancelled"],
@@ -220,7 +220,7 @@ def _get_or_create_sessions(student, date):
 
 
 def _auto_create_session_from_schedule(cs, date):
-    """Create an Attendance Session from a Class Schedule record."""
+    """Create an Attendance Session from a Time Table record."""
     try:
         from frappe.utils import time_diff_in_hours
         duration = flt(cs.get("duration_hours")) or (
@@ -231,7 +231,7 @@ def _auto_create_session_from_schedule(cs, date):
 
         doc = frappe.get_doc({
             "doctype":           "Attendance Session",
-            "based_on":          "Class Schedule",
+            "based_on":          "Time Table",
             "class_schedule":    cs.name,
             "course_offering":   cs.course_offering,
             "student_group":     cs.get("student_group"),
@@ -261,7 +261,7 @@ def _auto_create_session_from_schedule(cs, date):
 
     except Exception:
         frappe.log_error(
-            title=f"RFID Processor — failed to auto-create session for Class Schedule {cs.name}",
+            title=f"RFID Processor — failed to auto-create session for Time Table entry {cs.name}",
             message=frappe.get_traceback(),
         )
         return None
@@ -280,7 +280,7 @@ def _is_student_in_session(student, session):
     # Check via Student Group
     sg = session.get("student_group")
     if not sg and session.get("class_schedule"):
-        sg = frappe.db.get_value("Class Schedule", session.get("class_schedule"), "student_group")
+        sg = frappe.db.get_value("Time Table", session.get("class_schedule"), "student_group")
     if not sg and session.get("course_schedule"):
         sg = frappe.db.get_value("Course Schedule", session.get("course_schedule"), "student_group")
 

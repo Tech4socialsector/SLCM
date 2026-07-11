@@ -11,6 +11,8 @@
   "course_name",
   "program",
   "cohort",
+  "year",
+  "section",
   "academic_year",
   "term_name",
   "faculty",
@@ -84,6 +86,7 @@
   {
    "fieldname": "maximum_students",
    "fieldtype": "Int",
+   "hidden": 1,
    "label": "Maximum Students"
   },
   {
@@ -104,14 +107,26 @@
    "label": "Course",
    "options": "Course",
    "reqd": 1
+  },
+  {
+   "fieldname": "year",
+   "fieldtype": "Select",
+   "label": "Year",
+   "options": "\n1st\n2nd\n3rd\n4th\n5th"
+  },
+  {
+   "fieldname": "section",
+   "fieldtype": "Link",
+   "label": "Section",
+   "options": "Section"
   }
  ],
  "links": [],
- "modified": "2026-01-01 17:37:25.166865",
+ "modified": "2026-07-10 12:34:43.217212",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Course Offering",
- "naming_rule": "Expression",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
@@ -131,12 +146,12 @@
    "role": "slcm_Student"
   },
   {
-   "read": 1,
-   "role": "slcm_Faculty",
-   "report": 1,
+   "email": 1,
    "export": 1,
    "print": 1,
-   "email": 1
+   "read": 1,
+   "report": 1,
+   "role": "slcm_Faculty"
   },
   {
    "read": 1,
@@ -148,6 +163,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "title_field": "course_name",
- "custom": 0
+ "title_field": "course_name"
 }

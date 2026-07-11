@@ -113,7 +113,7 @@ def upload_timetable_csv(csv_data):
             
             # Create schedule
             doc = frappe.get_doc({
-                "doctype": "Class Schedule",
+                "doctype": "Time Table",
                 "class_configuration": class_id,
                 "course": class_config.course,
                 "instructor": class_config.faculty,

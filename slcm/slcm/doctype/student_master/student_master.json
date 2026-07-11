@@ -21,6 +21,9 @@
   "admission_type",
   "intake",
   "official_email_id",
+  "section",
+  "section_update_log_section",
+  "section_update_log",
   "tab_program_mapping",
   "program_mapping_section",
   "programme",
@@ -1355,10 +1358,29 @@
    "fieldtype": "Data",
    "label": "Level Of Study",
    "options": "\nUndergraduate\nPostgraduate\nResearch Course\nDiploma"
+  },
+  {
+   "fieldname": "section",
+   "fieldtype": "Link",
+   "label": "Section",
+   "options": "Section"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_update_log_section",
+   "fieldtype": "Section Break",
+   "label": "Section Update Log"
+  },
+  {
+   "fieldname": "section_update_log",
+   "fieldtype": "Table",
+   "label": "Section Update Log",
+   "options": "Student Section Update Log",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2026-07-08 23:53:34.864771",
+ "modified": "2026-07-10 12:43:31.594192",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",

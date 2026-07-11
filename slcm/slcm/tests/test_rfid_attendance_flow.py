@@ -77,7 +77,7 @@ def _cleanup(student, offering):
 
 
 def _make_class_schedule(offering, session_date, from_time, to_time):
-    """Create a minimal Class Schedule for the test."""
+    """Create a minimal Time Table entry for the test."""
     from frappe.utils import time_diff_in_hours
     duration = time_diff_in_hours(to_time, from_time)
 
@@ -90,7 +90,7 @@ def _make_class_schedule(offering, session_date, from_time, to_time):
     )
 
     doc = frappe.get_doc({
-        "doctype":       "Class Schedule",
+        "doctype":       "Time Table",
         "course_offering": offering,
         "course":        course,
         "schedule_date": session_date,
@@ -175,7 +175,7 @@ def test_02_rfid_swipe_creates_attendance(offering=None, student=None):
             swipe_in  = f"{session_date} 09:05:00"
             swipe_out = f"{session_date} 09:55:00"
 
-        # 2. Create Class Schedule for that date
+        # 2. Create Time Table entry for that date
         cs = _make_class_schedule(offering, session_date, from_time, to_time)
 
         # 3. Set RFID UID on student temporarily
@@ -270,7 +270,7 @@ def test_02_rfid_swipe_creates_attendance(offering=None, student=None):
                     pass
         if cs:
             try:
-                frappe.delete_doc("Class Schedule", cs.name, force=True, ignore_permissions=True)
+                frappe.delete_doc("Time Table", cs.name, force=True, ignore_permissions=True)
             except Exception:
                 pass
         frappe.db.commit()

@@ -86,6 +86,6 @@ function toggle_fields_based_on(frm) {
     const based_on = frm.doc.based_on;
 
     // student_group is always visible — it is populated directly or derived from schedule
-    frm.toggle_display("class_schedule", based_on === "Class Schedule");
+    frm.toggle_display("class_schedule", based_on === "Time Table");
     frm.toggle_display("course_schedule", based_on === "Course Schedule");
 }

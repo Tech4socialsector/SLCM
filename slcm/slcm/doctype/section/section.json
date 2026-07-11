@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "autoname": "format:{batch}-{section_name}",
  "creation": "2026-07-09 10:00:00",
  "doctype": "DocType",
@@ -33,8 +34,7 @@
    "fieldtype": "Int",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Capacity",
-   "reqd": 1
+   "label": "Capacity"
   },
   {
    "default": "Active",
@@ -48,11 +48,11 @@
   }
  ],
  "links": [],
- "modified": "2026-07-09 10:00:00.000000",
+ "modified": "2026-07-10 12:40:29.063473",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Section",
- "naming_rule": "Expression",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
@@ -69,15 +69,15 @@
   {
    "create": 1,
    "read": 1,
-   "role": "slcm_Registrar",
    "report": 1,
+   "role": "slcm_Registrar",
    "write": 1
   },
   {
    "create": 1,
    "read": 1,
-   "role": "slcm_Programme Chair",
    "report": 1,
+   "role": "slcm_Programme Chair",
    "write": 1
   },
   {
@@ -92,6 +92,5 @@
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": [],
- "custom": 0
+ "states": []
 }
