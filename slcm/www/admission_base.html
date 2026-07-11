@@ -1898,6 +1898,31 @@
             var content = document.getElementById('panel-content');
             if (!content) return;
 
+            function formatNotificationDate(dateStr) {
+                if (!dateStr) return '';
+                var mTime = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})(?:\s+|T)(\d{2}):(\d{2}):(\d{2})/);
+                if (mTime) {
+                    var year = mTime[1];
+                    var month = mTime[2];
+                    var day = mTime[3];
+                    var hours = parseInt(mTime[4], 10);
+                    var minutes = mTime[5];
+                    var ampm = hours >= 12 ? 'PM' : 'AM';
+                    hours = hours % 12;
+                    hours = hours ? hours : 12;
+                    var hourStr = String(hours).padStart(2, '0');
+                    return day + '.' + month + '.' + year + ' ' + hourStr + ':' + minutes + ' ' + ampm;
+                }
+                var mDate = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                if (mDate) {
+                    var year = mDate[1];
+                    var month = mDate[2];
+                    var day = mDate[3];
+                    return day + '.' + month + '.' + year;
+                }
+                return dateStr;
+            }
+
             var loading = document.getElementById('panel-loading');
             if (loading) loading.style.display = 'none';
 
@@ -1988,7 +2013,7 @@
                             escPanel(annType) + '</span>');
                     }
                     if (createdBy) parts.push(escPanel(createdBy));
-                    if (date) parts.push(escPanel(String(date).split(' ')[0]));
+                    if (date) parts.push(escPanel(formatNotificationDate(String(date))));
                     metaLine = '<div style="font-size:11px;color:var(--muted);margin-top:3px;' +
                         'display:flex;gap:6px;align-items:center;flex-wrap:wrap;">' + parts.join(' · ') + '</div>';
                 }
