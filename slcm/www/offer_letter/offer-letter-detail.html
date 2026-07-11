@@ -699,6 +699,16 @@ _pc.mission_text) or '' %}
 	        return code + ' ' + num;
 	    }
 
+	    function format_date_dd_mm_yyyy(date_str) {
+	        if (!date_str) return '';
+	        const clean_date = date_str.split(' ')[0];
+	        const parts = clean_date.split('-');
+	        if (parts.length === 3) {
+	            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+	        }
+	        return clean_date;
+	    }
+
 	    // Fallback for translation helper
 	    window._ = window._ || function (s) { return s; };
 
@@ -750,7 +760,7 @@ _pc.mission_text) or '' %}
 	            if (distance > 24 * 60 * 60 * 1000) {
 	                // More than 24 hours - show date only
 	                label_el.text({{ _("Offer expiry date") | tojson }});
-	                timer_el.text(deadline_str.split(' ')[0]);
+	                timer_el.text(format_date_dd_mm_yyyy(deadline_str));
 	                timer_el.next().hide(); // Hide the redundant deadline line
 	            } else {
 	                // 24 hours or less - show timer
@@ -828,7 +838,7 @@ _pc.mission_text) or '' %}
 	                                -- : -- : --
 	                            </div>
 	                            <div style="color: var(--text-3); font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
-	                                <span class="material-symbols-outlined" style="font-size: 16px;">calendar_today</span> {{ _("Deadline") }}: <span style="color: var(--text-1);">${offer.payment_deadline.split(' ')[0]}</span>
+	                                <span class="material-symbols-outlined" style="font-size: 16px;">calendar_today</span> {{ _("Deadline") }}: <span style="color: var(--text-1);">${format_date_dd_mm_yyyy(offer.payment_deadline)}</span>
 	                            </div>
 	                        </div>
 	                    ` : ''}
@@ -840,13 +850,14 @@ _pc.mission_text) or '' %}
 	                            if (sa.status === 'Submitted') {
 	                                return `
 	                                    <div class="scholarship-nudge-card applied">
-	                                        <div class="sn-header">
-	                                            <div class="sn-icon-wrap"><span class="material-symbols-outlined">hourglass_empty</span></div>
-	                                            <div>
-	                                                <div class="sn-title">{{ _("Scholarship Application Under Review") }}</div>
-	                                                <div class="sn-subtitle">${sa.scheme_name || 'Need-Based Scholarship'}<br><strong>Status: Under Review</strong></div>
-	                                            </div>
+	                                        <div class="sn-header" style="margin-bottom: 4px;">
+	                                            <div class="sn-icon-wrap"><span class="material-symbols-outlined">school</span></div>
+	                                            <div class="sn-title" style="margin: 0;">{{ _("Scholarship Application Under Review") }}</div>
 	                                        </div>
+	                                        <ul style="margin: 0 0 12px 36px; padding-left: 16px; color: var(--text-2); font-size: 12px; font-weight: 500; line-height: 1.6; list-style-type: disc !important;">
+	                                            <li style="display: list-item !important; list-style-type: disc !important;">${sa.scheme_name || 'Need-Based Scholarship'}</li>
+	                                            <li style="display: list-item !important; list-style-type: disc !important; font-weight: 600; color: var(--text-1); margin-top: 4px;">{{ _("Status: Under Review") }}</li>
+	                                        </ul>
 	                                        <a href="/merit-and-scholarship/scholarships" class="btn-sn-apply">
 	                                            {{ _("View Application") }}
 	                                        </a>
@@ -858,16 +869,14 @@ _pc.mission_text) or '' %}
 	                                const discount_percent = (benefit && original) ? Math.round((benefit / original) * 100) : 0;
 	                                return `
 	                                    <div class="scholarship-nudge-card approved">
-	                                        <div class="sn-header">
-	                                            <div class="sn-icon-wrap"><span class="material-symbols-outlined">check_circle</span></div>
-	                                            <div>
-	                                                <div class="sn-title">{{ _("Scholarship Approved") }}</div>
-	                                                <div class="sn-subtitle">
-	                                                    Discount: ${discount_percent}% (${format_currency(benefit, currency)})<br>
-	                                                    <strong>{{ _("Updated Fee") }}: ${format_currency(offer.payable_amount, currency)}</strong>
-	                                                </div>
-	                                            </div>
+	                                        <div class="sn-header" style="margin-bottom: 4px;">
+	                                            <div class="sn-icon-wrap"><span class="material-symbols-outlined">school</span></div>
+	                                            <div class="sn-title" style="margin: 0;">{{ _("Scholarship Approved") }}</div>
 	                                        </div>
+	                                        <ul style="margin: 0 0 12px 36px; padding-left: 16px; color: var(--text-2); font-size: 12px; font-weight: 500; line-height: 1.6; list-style-type: disc !important;">
+	                                            <li style="display: list-item !important; list-style-type: disc !important;">{{ _("Discount") }}: ${discount_percent}% (${format_currency(benefit, currency)})</li>
+	                                            <li style="display: list-item !important; list-style-type: disc !important; font-weight: 600; color: var(--text-1); margin-top: 4px;">{{ _("Updated Fee") }}: ${format_currency(offer.payable_amount, currency)}</li>
+	                                        </ul>
 	                                    </div>
 	                                `;
 	                            } else if (sa.status === 'Rejected') {
@@ -885,20 +894,18 @@ _pc.mission_text) or '' %}
 	                            }
 	                        } else if (data.available_scholarships_count > 0) {
 	                            const count_num = data.available_scholarships_count;
-	                            const num_words = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten"];
-	                            const count_word = num_words[count_num] || count_num.toString();
+	                            const num_words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+	                            const count_word_lower = num_words[count_num] || count_num.toString();
 	                            return `
 	                                <div class="scholarship-nudge-card">
-	                                    <div class="sn-header">
+	                                    <div class="sn-header" style="margin-bottom: 4px;">
 	                                        <div class="sn-icon-wrap"><span class="material-symbols-outlined">school</span></div>
-	                                        <div>
-	                                            <div class="sn-title">{{ _("Scholarship Opportunities") }}</div>
-	                                            <div class="sn-subtitle">
-	                                                {{ _("You are eligible to apply for") }} <strong>${count_word} (${count_num})</strong> {{ _("scholarship") }}${count_num > 1 ? 's' : ''}.<br>
-	                                                <span style="font-weight:600; color:var(--text-1);">{{ _("Apply now to reduce your course fee before payment.") }}</span>
-	                                            </div>
-	                                        </div>
+	                                        <div class="sn-title" style="margin: 0;">{{ _("Scholarship Opportunities") }}</div>
 	                                    </div>
+	                                    <ul style="margin: 0 0 12px 36px; padding-left: 16px; color: var(--text-2); font-size: 12px; font-weight: 500; line-height: 1.6; list-style-type: disc !important;">
+                                        <li style="display: list-item !important; list-style-type: disc !important;">{{ _("You are eligible to apply for") }} <strong>${count_word_lower}</strong> {{ _("scholarship") }}${count_num > 1 ? 's' : ''}.</li>
+                                        <li style="display: list-item !important; list-style-type: disc !important; font-weight:600; color:var(--text-1); margin-top: 4px;">{{ _("Apply now to reduce your course fee before payment.") }}</li>
+                                    </ul>
 	                                    <a href="/merit-and-scholarship/scholarships" class="btn-sn-apply">
 	                                        {{ _("Apply for Scholarship") }}
 	                                        <span class="material-symbols-outlined" style="font-size: 16px; margin-left: 4px;">arrow_forward</span>

@@ -1,5 +1,16 @@
 frappe.ui.form.on('Refund Request', {
 	refresh: function(frm) {
+		// Set alert container to top center
+		frappe.dom.set_style(`
+			#alert-container {
+				top: 30px !important;
+				left: 50% !important;
+				right: auto !important;
+				bottom: auto !important;
+				transform: translateX(-50%) !important;
+			}
+		`);
+
 		// ── Filter: only Admission Fee, submitted AFA for this applicant ──
 		frm.set_query('applicant_fee_assignment', function() {
 			const filters = {

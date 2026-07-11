@@ -1047,7 +1047,9 @@
                 apply_on: "{{ sch.apply_on or 'Total Fee' }}",
                 rejection_reason: "{{ (sch.rejection_reason or '') | replace('\n', '<br>') | replace('\r', '') | replace('\"', '\\\"') }}",
                     eligibility: "{{ (sch.eligibility_criteria or 'Not provided.') | replace('\n', '<br>') | replace('\r', '') | replace('\"', '\\\"') }}",
-                    rules: [{% for r in sch.coverage_rules or [] %} { component: "{{ r.fee_component }}", type: "{{ r.coverage_type }}", val: "{{ r.coverage_value }}" }, {% endfor %}]
+                    rules: [{% for r in sch.coverage_rules or [] %} { component: "{{ r.fee_component }}", type: "{{ r.coverage_type }}", val: "{{ r.coverage_value }}" }, {% endfor %}],
+                    income_certificate: "{{ sch.income_certificate or '' }}",
+                    supporting_documents: "{{ sch.supporting_documents or '' }}"
     },
   {% endfor %}
   };
@@ -1119,6 +1121,36 @@
           </h5>
           <div class="space-y-1.5">${rulesHtml}</div>
         </div>
+
+        ${(s.income_certificate || s.supporting_documents) ? `
+        <div>
+          <h5 class="text-sm font-black text-slate-900 mb-3 flex items-center gap-2">
+            <span class="material-symbols-outlined text-base text-primary">description</span>
+            Submitted Documents
+          </h5>
+          <div class="space-y-2">
+            ${s.income_certificate ? `
+            <div class="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-lg">
+              <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-base text-slate-400">upload_file</span>
+                Income Certificate
+              </span>
+              <a href="${s.income_certificate}" target="_blank" class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+                <span class="material-symbols-outlined text-base">download</span> View
+              </a>
+            </div>` : ''}
+            ${s.supporting_documents ? `
+            <div class="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-lg">
+              <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-base text-slate-400">folder_open</span>
+                Supporting Documents
+              </span>
+              <a href="${s.supporting_documents}" target="_blank" class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+                <span class="material-symbols-outlined text-base">download</span> View
+              </a>
+            </div>` : ''}
+          </div>
+        </div>` : ''}
 
         <div>
           <h5 class="text-sm font-black text-slate-900 mb-3 flex items-center gap-2">
