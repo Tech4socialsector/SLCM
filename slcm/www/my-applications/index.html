@@ -2560,16 +2560,25 @@
 
   .et-field {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
   }
 
   .et-label {
+    width: 125px;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
     font-size: 13px;
     font-weight: 400;
     color: rgb(76, 70, 70);
     text-transform: none;
     letter-spacing: normal;
+  }
+
+  .et-label::after {
+    content: ":";
   }
 
   .et-value {
@@ -3610,23 +3619,20 @@ or _app.current_stage)) or _status %}
         {% else %}
         <div class="et-grid">
           <div class="et-field">
-            <span class="et-label">Test Name</span>
-            <span class="et-value">{{ (et_doc.re_entrance_test_name or et_doc.re_entrance_test_list) if et_is_rescheduled else (et_doc.entrance_test_name or et_doc.entrance_test_list) }}</span>
-          </div>
-          <div class="et-field">
-            <span class="et-label">Entrance Test Date</span>
+            <span class="et-label">Test Date</span>
             <span class="et-value">{{ frappe.format_date(et_doc.re_allocation_date if et_is_rescheduled else et_doc.allocation_date) }}</span>
-          </div>
-          <div class="et-field">
-            <span class="et-label">Reporting Time / Test Time</span>
-            <span class="et-value">
-              <span class="material-symbols-outlined" style="font-size:16px;">schedule</span>
-              {{ et_reporting_time }} / {{ frappe.utils.get_datetime(et_doc.re_allocation_date if et_is_rescheduled else et_doc.allocation_date).strftime('%I:%M %p') }}
-            </span>
           </div>
           <div class="et-field">
             <span class="et-label">Test Centre</span>
             <span class="et-value">{{ et_doc.re_center_name if et_is_rescheduled else et_doc.center_name }}</span>
+          </div>
+          <div class="et-field">
+            <span class="et-label">Reporting Time</span>
+            <span class="et-value">{{ et_reporting_time }}</span>
+          </div>
+          <div class="et-field">
+            <span class="et-label">Test Time</span>
+            <span class="et-value">{{ frappe.utils.get_datetime(et_doc.re_allocation_date if et_is_rescheduled else et_doc.allocation_date).strftime('%I:%M %p') }}</span>
           </div>
           <div class="et-field">
             <span class="et-label">Building</span>
@@ -3649,6 +3655,12 @@ or _app.current_stage)) or _status %}
             <span class="et-value">
               {%- set raw_seat = et_doc.re_seat_number if et_is_rescheduled else et_doc.seat_number -%}
               {{ raw_seat.split('-')[-1] if raw_seat else '—' }}
+            </span>
+          </div>
+          <div class="et-field">
+            <span class="et-label">Status</span>
+            <span class="et-value">
+              {{ (et_doc.entrance_test_status or 'Scheduled')|capitalize }}
             </span>
           </div>
         </div>
