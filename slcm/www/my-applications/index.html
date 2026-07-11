@@ -5116,6 +5116,12 @@ LIST / DASHBOARD VIEW
         // Reset form
         document.getElementById('cancellationForm').reset();
         document.getElementById('modal_submit_btn').disabled = false;
+        
+        const policyDescDiv = document.getElementById('refundPolicyDescription');
+        if (policyDescDiv) {
+            policyDescDiv.style.display = 'none';
+            policyDescDiv.innerHTML = '';
+        }
 
         // Fetch and show refund policies
         try {
@@ -5137,7 +5143,6 @@ LIST / DASHBOARD VIEW
 
             if (policies && policies.length > 0) {
                 let rows = '';
-                let highlighted = false;
                 
                 // Sort policies by days just in case
                 policies.sort((a, b) => a.days_from_payment - b.days_from_payment);
@@ -5150,32 +5155,39 @@ LIST / DASHBOARD VIEW
                     }
                 };
 
-                policies.forEach(p => {
-                    let isCurrent = false;
-                    if (!highlighted && daysElapsed <= p.days_from_payment) {
-                        isCurrent = true;
-                        highlighted = true;
-                    }
-                    
-                    const rowBg = isCurrent ? 'background-color: #f0fdf4 !important;' : '';
-                    const rowBorder = isCurrent ? 'border-left: 4px solid #22c55e !important;' : 'border-bottom: 1px solid #f8fafc;';
-                    const badgeHtml = isCurrent ? `<span class="badge bg-success ms-2" style="font-size: 9px; vertical-align: middle;">Current</span>` : '';
-                    
-                    const descHtml = p.description ? `<div style="font-size: 11px; color: #64748b; margin-top: 4px;">${p.description}</div>` : '';
+                // Find the first policy where daysElapsed <= p.days_from_payment
+                let currentPolicy = policies.find(p => daysElapsed <= p.days_from_payment);
+                
+                // If not found, use the last policy as fallback
+                if (!currentPolicy && policies.length > 0) {
+                    currentPolicy = policies[policies.length - 1];
+                }
+
+                if (currentPolicy) {
+                    const p = currentPolicy;
                     const amountHtml = p.amount ? formatCurrency(p.amount, p.currency) : '-';
 
-                    rows += `
-                        <tr style="${rowBg} ${rowBorder}">
-                            <td class="px-3 py-2 text-dark">
-                                <div class="fw-600">${p.policy_name}${badgeHtml}</div>
-                                ${descHtml}
-                            </td>
+                    rows = `
+                        <tr style="background-color: #f0fdf4 !important; border-left: 4px solid #22c55e !important;">
                             <td class="px-3 py-2 text-center text-muted" style="vertical-align: middle;">${p.days_from_payment}</td>
                             <td class="px-3 py-2 text-end fw-bold text-primary" style="vertical-align: middle;">${p.refund_percentage}%</td>
                             <td class="px-3 py-2 text-end fw-bold text-success" style="vertical-align: middle;">${amountHtml}</td>
                         </tr>
                     `;
-                });
+
+                    if (policyDescDiv) {
+                        if (p.description) {
+                            policyDescDiv.innerHTML = `<div class="fw-bold mb-1">${p.policy_name}:</div><div>${p.description}</div>`;
+                            policyDescDiv.style.display = 'block';
+                        } else {
+                            policyDescDiv.style.display = 'none';
+                        }
+                    }
+                } else {
+                    if (policyDescDiv) {
+                        policyDescDiv.style.display = 'none';
+                    }
+                }
                 policyTableBody.innerHTML = rows;
                 if (policySection) policySection.style.display = 'block';
                 if (nonRefundableMsg) nonRefundableMsg.style.display = 'none';
@@ -5184,6 +5196,9 @@ LIST / DASHBOARD VIEW
                 if (policySection) policySection.style.display = 'none';
                 if (nonRefundableMsg) nonRefundableMsg.style.display = 'block';
                 if (policyContainer) policyContainer.style.display = 'block';
+                if (policyDescDiv) {
+                    policyDescDiv.style.display = 'none';
+                }
             }
         } catch (e) {
             console.error("Failed to fetch refund policies:", e);
@@ -5274,7 +5289,6 @@ LIST / DASHBOARD VIEW
                                 <table class="table table-sm table-borderless mb-0" style="font-size: 13px;">
                                     <thead style="background: #f8fafc; border-bottom: 1px solid #f1f5f9;">
                                         <tr>
-                                            <th class="px-3 py-3 text-muted fw-700">{{ _('Policy Phase') }}</th>
                                             <th class="px-3 py-3 text-muted fw-700 text-center">{{ _('Payment Days') }}</th>
                                             <th class="px-3 py-3 text-muted fw-700 text-end">{{ _('Refund %') }}</th>
                                             <th class="px-3 py-3 text-muted fw-700 text-end">{{ _('Refund Amount') }}</th>
@@ -5284,6 +5298,8 @@ LIST / DASHBOARD VIEW
                                         <!-- Policies injected here -->
                                     </tbody>
                                 </table>
+                            </div>
+                            <div id="refundPolicyDescription" class="mt-3 p-3" style="display: none; background: #f8fafc; border-radius: 12px; border: 1px solid #f1f5f9; font-size: 12px; color: #475569; line-height: 1.5;">
                             </div>
                         </div>
                         <div id="nonRefundableMsg" class="p-3 mb-2" style="display: none; background: #fff1f2; border-radius: 16px; border: 1px solid #ffe4e6; color: #e11d48; font-size: 13px; font-weight: 600;">
@@ -5312,7 +5328,7 @@ LIST / DASHBOARD VIEW
                                 {{ _('Reason for withdrawal') }} <span class="text-danger">*</span>
                             </label>
                             <select class="form-select border-0 bg-light" id="modal_reason_type" required style="border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500;">
-                                <option value="">{{ _('Choose a category...') }}</option>
+                                <option value="">{{ _('Choose a reason...') }}</option>
                                 <option value="Financial Issues">{{ _('Financial Issues') }}</option>
                                 <option value="Medical Reasons">{{ _('Medical Reasons') }}</option>
                                 <option value="Personal Reasons">{{ _('Personal Reasons') }}</option>

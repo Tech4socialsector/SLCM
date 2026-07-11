@@ -884,6 +884,9 @@ _pc.mission_text) or '' %}
 	                                `;
 	                            }
 	                        } else if (data.available_scholarships_count > 0) {
+	                            const count_num = data.available_scholarships_count;
+	                            const num_words = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten"];
+	                            const count_word = num_words[count_num] || count_num.toString();
 	                            return `
 	                                <div class="scholarship-nudge-card">
 	                                    <div class="sn-header">
@@ -891,8 +894,8 @@ _pc.mission_text) or '' %}
 	                                        <div>
 	                                            <div class="sn-title">{{ _("Scholarship Opportunities") }}</div>
 	                                            <div class="sn-subtitle">
-	                                                {{ _("You are eligible to apply for") }} <strong>${data.available_scholarships_count}</strong> {{ _("scholarship(s)") }}.<br>
-	                                                <span style="font-weight:600; color:var(--text-1);">We recommend submitting your application prior to fee payment.</span>
+	                                                {{ _("You are eligible to apply for") }} <strong>${count_word} (${count_num})</strong> {{ _("scholarship") }}${count_num > 1 ? 's' : ''}.<br>
+	                                                <span style="font-weight:600; color:var(--text-1);">{{ _("Apply now to reduce your course fee before payment.") }}</span>
 	                                            </div>
 	                                        </div>
 	                                    </div>

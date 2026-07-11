@@ -196,7 +196,8 @@ class ScholarshipApplication(Document):
 
 		check_scholarship_availability(
 			self.scholarship_scheme,
-			applicant_status
+			applicant_status,
+			self.applicant_id
 		)
 
 	def calculate_benefit(self):

@@ -28,11 +28,28 @@ def get_refund_policies(applicant=None, program=None, campus=None, offer=None, p
 	
 	policies = res.get("policies") or []
 	
+	# Resolve payment_request automatically if not provided
+	if not payment_request:
+		offer_name = offer or frappe.db.get_value(
+			"Offer Letter",
+			{"applicant": applicant, "status": ["not in", ["Rejected", "Withdrawn"]]},
+			"name",
+			order_by="creation desc"
+		)
+		if offer_name:
+			payment_request = frappe.db.get_value(
+				"Applicant Payment Receipt",
+				{"offer_letter": offer_name, "docstatus": ["<", 2]},
+				"name",
+				order_by="creation desc"
+			)
+
 	amount_paid = 0
 	currency = "INR"
 	if payment_request:
 		if frappe.db.exists("Applicant Payment Receipt", payment_request):
-			amount_paid = frappe.db.get_value("Applicant Payment Receipt", payment_request, "total_amount")
+			net_amt = frappe.db.get_value("Applicant Payment Receipt", payment_request, "net_amount")
+			amount_paid = flt(net_amt) if flt(net_amt) > 0 else frappe.db.get_value("Applicant Payment Receipt", payment_request, "total_amount")
 			currency = frappe.db.get_value("Applicant Payment Receipt", payment_request, "currency") or "INR"
 		elif frappe.db.exists("Fee Payment", payment_request):
 			amount_paid = frappe.db.get_value("Fee Payment", payment_request, "amount")
