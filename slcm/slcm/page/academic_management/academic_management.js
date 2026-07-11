@@ -24,7 +24,7 @@ class AcademicManagement {
 
     setup_tabs() {
         // Create tab navigation
-        this.page.add_inner_button('Class Schedule', () => {
+        this.page.add_inner_button('Time Table', () => {
             this.switch_tab('class_schedule');
         }, 'Tabs');
 
@@ -84,7 +84,7 @@ class AcademicManagement {
                     </div>
                 </div>
                 <div class="schedule-content" style="display: none;">
-                    <p>Class Schedule content will be displayed here</p>
+                    <p>Time Table content will be displayed here</p>
                 </div>
             </div>
         `);
@@ -123,7 +123,7 @@ class AcademicManagement {
             this.page.set_primary_action('Add Class', null, 'add');
             this.load_classes();
         } else if (tab === 'class_schedule') {
-            this.page.set_title('Academic Management - Class Schedule');
+            this.page.set_title('Academic Management - Time Table');
             this.page.main.find('.schedule-content').show();
         }
     }

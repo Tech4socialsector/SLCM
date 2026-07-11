@@ -593,8 +593,8 @@ permission_query_conditions = {
     # Student Master - role-based row-level filtering (faculty sees only their assigned students)
     "Student Master": "slcm.permissions.student_master_query_conditions",
 
-    # Class Schedule - faculty sees only their assigned groups' schedules
-    "Class Schedule":                  "slcm.permissions.class_schedule_query_conditions",
+    # Time Table - faculty sees only their assigned groups' schedules
+    "Time Table":                      "slcm.permissions.class_schedule_query_conditions",
 
     # Attendance - faculty sees only records for their assigned student groups
     "Attendance Session":              "slcm.permissions.attendance_session_query_conditions",

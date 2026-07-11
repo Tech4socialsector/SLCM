@@ -358,12 +358,12 @@ def get_context(context):
                 ignore_permissions=True,
             )
 
-            # ── Batch-fetch Class Schedule for from/to times ───────
+            # ── Batch-fetch Time Table for from/to times ───────
             _cs_ids = {str(_r.class_schedule) for _r in _cal_att if _r.class_schedule}
             _cs_map = {}
             if _cs_ids:
                 _cs_rows = frappe.get_all(
-                    "Class Schedule",
+                    "Time Table",
                     filters={"name": ["in", list(_cs_ids)]},
                     fields=["name", "from_time", "to_time", "venue"],
                     ignore_permissions=True,

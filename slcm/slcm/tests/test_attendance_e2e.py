@@ -110,7 +110,7 @@ def _make_class_schedule(offering, schedule_date, from_time="09:00:00", to_time=
     course = frappe.db.get_value("Course Offering", offering, "course_title")
     sg = frappe.db.get_value("Student Group", {"course": course, "docstatus": ["<", 2]}, "name")
     doc = frappe.get_doc({
-        "doctype":        "Class Schedule",
+        "doctype":        "Time Table",
         "course_offering": offering,
         "course":         course,
         "schedule_date":  schedule_date,
@@ -245,7 +245,7 @@ def s01_rfid_swipe(ctx):
             "course_offer": offering, "attendance_date": test_date,
         }, pluck="name"):
             _safe_delete("Student Attendance", name)
-        _safe_delete("Class Schedule", cs.name if cs else None)
+        _safe_delete("Time Table", cs.name if cs else None)
         frappe.db.commit()
 
 

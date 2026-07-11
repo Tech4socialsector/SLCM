@@ -58,8 +58,8 @@
    "icon": "school",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Class Schedule",
-   "link_to": "Class Schedule",
+   "label": "Time Table",
+   "link_to": "Time Table",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
