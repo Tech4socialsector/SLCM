@@ -5025,7 +5025,7 @@ footer_color=portal_config.footer_color, button_border_radius=portal_config.butt
 					</div>
 				</div>
 
-				<!-- Application fee payment receipt (uses Payment Receipt Template from Program Reservation Policy) -->
+				<!-- Application fee payment receipt (uses Payment Receipt Template from Programme Reservation Policy) -->
 				<div id="successReceiptBtnWrap" style="display: none; margin-top: 1.5rem">
 					<button
 						type="button"
@@ -8554,7 +8554,7 @@ footer_color=portal_config.footer_color, button_border_radius=portal_config.butt
 
 	/**
 	 * Download the application fee payment receipt from the success page.
-	 * Uses the same backend (Program Reservation Policy Payment Receipt Template).
+	 * Uses the same backend (Programme Reservation Policy Payment Receipt Template).
 	 */
 	async function downloadFeeReceiptFromSuccess() {
 	    const btn = document.getElementById('successDownloadReceiptBtn');
@@ -8568,7 +8568,7 @@ footer_color=portal_config.footer_color, button_border_radius=portal_config.butt
 
 	/**
 	 * Download the application fee payment receipt as a PDF.
-	 * Uses Payment Receipt Template from Program Reservation Policy (via backend).
+	 * Uses Payment Receipt Template from Programme Reservation Policy (via backend).
 	 */
 	async function downloadFeeReceipt() {
 	    const btn = document.getElementById('downloadReceiptBtn');
@@ -8593,7 +8593,7 @@ footer_color=portal_config.footer_color, button_border_radius=portal_config.butt
 	        console.log('[Receipt] API response:', msg);
 
 	        if (msg && msg.receipt_name) {
-	            // print_url from backend uses Program Reservation Policy Payment Receipt Template
+	            // print_url from backend uses Programme Reservation Policy Payment Receipt Template
 	            const printUrl = msg.print_url ||
 	                `/api/method/slcm.www.application_form.index.download_applicant_receipt?applicant_name=${encodeURIComponent(applicantName)}&receipt_name=${encodeURIComponent(msg.receipt_name)}`;
 	            console.log('[Receipt] Opening:', printUrl);

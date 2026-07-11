@@ -43,7 +43,7 @@ frappe.pages['slcm-data-map'].on_page_load = function (wrapper) {
 				{ name: 'Batch',              dt: 'Batch' },
 				{ name: 'Course Offering',     dt: 'Course Offering' },
 				{ name: 'Class Configuration', dt: 'Class Configuration' },
-				{ name: 'Class Schedule',      dt: 'Class Schedule' },
+				{ name: 'Time Table',      dt: 'Time Table' },
 			],
 		},
 		{

@@ -145,7 +145,8 @@
    "fieldname": "user",
    "fieldtype": "Link",
    "label": "User",
-   "options": "User"
+   "options": "User",
+   "reqd": 1
   },
   {
    "fieldname": "batch",
@@ -174,7 +175,7 @@
    "link_fieldname": "student"
   }
  ],
- "modified": "2026-07-09 12:27:52.562911",
+ "modified": "2026-07-10 13:16:24.785007",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Enrollment",

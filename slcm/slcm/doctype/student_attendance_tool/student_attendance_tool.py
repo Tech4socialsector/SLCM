@@ -36,9 +36,9 @@ def get_student_attendance_records(
 		if not course_schedule:
 			frappe.throw(_("Course Schedule is required"))
 
-	if based_on == "Class Schedule":
+	if based_on == "Time Table":
 		if not class_schedule:
-			frappe.throw(_("Class Schedule is required"))
+			frappe.throw(_("Time Table is required"))
 
 	if based_on == "Office Hours":
 		if not office_hours_group:
@@ -53,9 +53,9 @@ def get_student_attendance_records(
 			"student_group",
 		)
 
-	if based_on == "Class Schedule" and class_schedule:
+	if based_on == "Time Table" and class_schedule:
 		student_group = frappe.db.get_value(
-			"Class Schedule",
+			"Time Table",
 			class_schedule,
 			"student_group",
 		)
@@ -99,7 +99,7 @@ def get_student_attendance_records(
 	if based_on == "Course Schedule":
 		query = query.where(StudentAttendance.course_schedule == course_schedule)
 
-	if based_on == "Class Schedule":
+	if based_on == "Time Table":
 		query = query.where(StudentAttendance.class_schedule == class_schedule)
 
 	if date:

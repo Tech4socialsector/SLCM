@@ -54,7 +54,7 @@ def get_data(filters):
         relevant_cycles = frappe.get_all("Admission Cycle", 
             filters={"admission_year": filters.get("admission_year")}, pluck="name")
 
-    # 1. Fetch relevant Program Reservation Policies
+    # 1. Fetch relevant Programme Reservation Policies
     prp_filters = {"status": "Active"}
     if filters.get("admission_cycle"):
         prp_filters["admission_cycle"] = filters.get("admission_cycle")
@@ -67,7 +67,7 @@ def get_data(filters):
     if filters.get("campus"):
         prp_filters["campus"] = ["in", [filters.get("campus"), None, ""]]
 
-    raw_policies = frappe.get_all("Program Reservation Policy", 
+    raw_policies = frappe.get_all("Programme Reservation Policy", 
         filters=prp_filters, 
         fields=["name", "admission_cycle", "program", "total_seats", "campus", "modified"],
         order_by="modified desc"
@@ -113,7 +113,7 @@ def get_data(filters):
     final_data = []
     
     for p_summary in policies_list:
-        policy = frappe.get_doc("Program Reservation Policy", p_summary.name)
+        policy = frappe.get_doc("Programme Reservation Policy", p_summary.name)
         program = policy.program
         cycle = policy.admission_cycle
         

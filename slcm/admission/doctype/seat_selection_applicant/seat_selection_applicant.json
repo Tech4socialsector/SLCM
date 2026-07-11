@@ -46,16 +46,16 @@
   {
    "fieldname": "program",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Programme",
    "options": "Programme",
    "reqd": 1
   },
   {
    "fieldname": "total_score",
-   "fieldtype": "Int",
+   "fieldtype": "Float",
    "in_list_view": 1,
-   "label": "Total Score"
+   "label": "Total Score",
+   "precision": "2"
   },
   {
    "fieldname": "selection_status",
@@ -149,7 +149,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-05-06 15:52:21.461671",
+ "modified": "2026-07-11 15:57:21.013370",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Seat Selection Applicant",

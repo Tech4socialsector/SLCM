@@ -230,7 +230,7 @@ def get_context(context):
                         "test_time": test_time,
                         "center_name": et.get("center_name") or "",
                         "center_address": et.get("center_address") or "",
-                        "seat_number": et.get("seat_number") or "",
+                        "seat_number": (et.get("seat_number").split("-")[-1] if et.get("seat_number") else ""),
                         "admit_status": et.get("allocation_status") or "",
                         "admit_card_url": f"/api/method/slcm.admission.utils.web.download_admit_card?admit_card={et.get('name')}"
                     })

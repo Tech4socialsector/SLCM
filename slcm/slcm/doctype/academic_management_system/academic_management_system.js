@@ -502,7 +502,7 @@ frappe.ui.form.on("Academic Management System", {
 		// Simple placeholder for Timetable - better implemented with full calendar library later
 		let html = `
 			<div class="text-center">
-				<p>To view the Class Schedule, please check the <a href="/app/course-schedule">Course Schedule</a> list or Calendar view.</p>
+				<p>To view the Time Table, please check the <a href="/app/course-schedule">Course Schedule</a> list or Calendar view.</p>
 				<button class="btn btn-default btn-view-calendar">View Calendar</button>
 			</div>
 		`;

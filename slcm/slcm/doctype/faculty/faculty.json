@@ -38,7 +38,6 @@
   {
    "fieldname": "user_id",
    "fieldtype": "Link",
-   "in_list_view": 0,
    "label": "User Account",
    "options": "User"
   },
@@ -46,12 +45,13 @@
    "fieldname": "first_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "First Name",
+   "label": "Full name",
    "reqd": 1
   },
   {
    "fieldname": "last_name",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Last Name"
   },
   {
@@ -72,6 +72,7 @@
   {
    "fieldname": "department",
    "fieldtype": "Link",
+   "hidden": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Department",
@@ -84,13 +85,13 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Designation",
-   "options": "Designation",
-   "reqd": 1
+   "options": "Designation"
   },
   {
    "description": "HOD or Senior Faculty",
    "fieldname": "reporting_to",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Reporting To",
    "options": "Faculty"
   },
@@ -115,44 +116,51 @@
   {
    "fieldname": "qualification",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Highest Qualification"
   },
   {
    "fieldname": "joining_date",
    "fieldtype": "Date",
+   "hidden": 1,
    "label": "Joining Date"
   },
   {
    "fieldname": "photo",
    "fieldtype": "Attach Image",
+   "hidden": 1,
    "label": "Photo"
   },
   {
    "fieldname": "specialization",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Specialization"
   },
   {
    "fieldname": "experience_years",
    "fieldtype": "Int",
+   "hidden": 1,
    "label": "Years of Experience"
   },
   {
    "description": "separate and display values using a comma ( , )",
    "fieldname": "highlights",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Highlights"
   },
   {
    "fieldname": "institution",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Studied Institution"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-16 15:50:25.734213",
+ "modified": "2026-07-10 13:14:19.748321",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Faculty",

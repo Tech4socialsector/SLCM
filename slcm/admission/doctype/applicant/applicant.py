@@ -3539,7 +3539,7 @@ def _try_allocate_provider_seat_atomic(provider_name):
 
     new_reserved = reserved + 1
 
-    seat_number = f"{(room.get('room_name') or provider_name)}-{new_reserved:02d}"
+    seat_number = f"{new_reserved:02d}"
     frappe.db.set_value(
         "Provider Room",
         room["name"],

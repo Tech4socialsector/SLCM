@@ -1,18 +1,18 @@
 """
-Auto-assign HD Ticket team based on the raising student's Programme and Year.
+Prefill HD Ticket's custom_programme/custom_current_year from the raising
+student's Student Master record when the ticket arrives without them
+already set (i.e. tickets created via inbound email, which never go through
+the portal form script that normally fills these fields — see
+helpdesk.api.nls_student.get_student_context).
 
-Logic (runs in before_validate on HD Ticket):
-1. If ticket already has a team set (manually by agent), do nothing.
-2. Identify the Student Master linked to raised_by email.
-3. Read student's programme (→ Program link on Cohort) and current_year.
-4. Look up the ticket type's year_wise_assignment_rules child table for a
-   matching row: programme + current_year → team.
-   - A rule with programme blank matches any programme.
-   - A rule with current_year blank matches any year.
-   - More-specific rules (both filled) take priority over partial ones.
-5. If a match is found, set agent_group on the ticket.
-6. If the ticket was created via inbound email (not the customer portal)
-   and no rule matched, fall back to the default email team.
+Runs on before_insert, i.e. before the core controller's before_validate
+(hd_ticket.py: set_team_from_ticket_type), so that core's own
+type-of-issue -> PACE/programme-year -> flat-team cascade can resolve the
+correct HD Team using this data. This intentionally does NOT duplicate
+core's rule-matching logic to avoid the two engines disagreeing.
+
+If core still can't resolve a team (e.g. ticket_type left blank), the
+ticket falls back to DEFAULT_EMAIL_TEAM for non-portal (email) tickets.
 """
 
 import frappe
@@ -20,46 +20,29 @@ import frappe
 DEFAULT_EMAIL_TEAM = "PACE Team"
 
 
-def auto_assign_team_by_student(doc, method=None):
-    """Hook: HD Ticket before_validate."""
-    # Skip if team is already explicitly set
-    if doc.agent_group:
+def prefill_student_context_before_insert(doc, method=None):
+    """Hook: HD Ticket before_insert."""
+    if doc.via_customer_portal:
         return
 
-    if not doc.ticket_type:
-        _set_default_email_team(doc)
+    if doc.custom_programme and doc.custom_current_year:
         return
 
-    # Fetch year_wise_assignment_rules from HD Ticket Type (custom child table)
-    rules = frappe.get_all(
-        "HD Ticket Type Assignment Rule",
-        filters={"parent": doc.ticket_type, "parenttype": "HD Ticket Type"},
-        fields=["programme", "current_year", "team"],
-        order_by="idx asc",
-    )
-
-    if not rules:
-        _set_default_email_team(doc)
+    context = _get_student(doc.raised_by) or _get_pace_applicant(doc.raised_by)
+    if not context:
         return
 
-    student = _get_student(doc.raised_by)
-    if not student:
-        _set_default_email_team(doc)
-        return
-
-    student_programme = student.get("programme")   # Program name (via Cohort.program)
-    student_year = student.get("current_year") or ""
-
-    matched_team = _best_match(rules, student_programme, student_year)
-    if matched_team:
-        doc.agent_group = matched_team
-    else:
-        _set_default_email_team(doc)
+    if not doc.custom_programme:
+        doc.custom_programme = context.get("programme") or ""
+    if not doc.custom_current_year:
+        doc.custom_current_year = context.get("current_year") or ""
 
 
-def _set_default_email_team(doc):
-    """Tickets created via inbound email (not the customer portal) that
-    didn't match any assignment rule all land on the same HD Team."""
+def apply_default_email_team(doc, method=None):
+    """Hook: HD Ticket before_validate, registered AFTER the core controller's
+    own before_validate (see execution-order note in hooks.py). By this point
+    core's set_team_from_ticket_type has already had its chance to resolve
+    agent_group from the ticket type configuration."""
     if doc.agent_group or doc.via_customer_portal:
         return
     doc.agent_group = DEFAULT_EMAIL_TEAM
@@ -106,34 +89,22 @@ def _get_student(email):
     }
 
 
-def _best_match(rules, student_programme, student_year):
-    """
-    Return the HD Team name for the best matching rule.
+def _get_pace_applicant(email):
+    """Return dict with programme (a PACE Programme name) and current_year
+    (always blank, applicants have no year) for a PACE Application matching
+    this email, or None. Mirrors helpdesk.api.nls_student._get_pace_applicant_context."""
+    if not email:
+        return None
 
-    Priority (highest first):
-      1. programme + current_year both match
-      2. programme matches, current_year blank in rule
-      3. programme blank in rule, current_year matches
-      4. both blank in rule (catch-all)
-    Returns None if no rule matches at all.
-    """
-    best_team = None
-    best_score = -1
+    app = frappe.db.get_value(
+        "PACE Application", {"owner": email}, "programme", order_by="modified desc"
+    ) or frappe.db.get_value(
+        "PACE Application",
+        {"email_address": email},
+        "programme",
+        order_by="modified desc",
+    )
+    if not app:
+        return None
 
-    for rule in rules:
-        rule_prog = (rule.get("programme") or "").strip()
-        rule_year = (rule.get("current_year") or "").strip()
-
-        prog_match = (not rule_prog) or (rule_prog == (student_programme or ""))
-        year_match = (not rule_year) or (rule_year == (student_year or ""))
-
-        if not (prog_match and year_match):
-            continue
-
-        # Score: 2 pts for explicit programme match, 1 pt for explicit year match
-        score = (2 if rule_prog else 0) + (1 if rule_year else 0)
-        if score > best_score:
-            best_score = score
-            best_team = rule.get("team")
-
-    return best_team
+    return {"programme": app, "current_year": ""}

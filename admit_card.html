@@ -5,7 +5,8 @@
 {%- if is_rescheduled -%}
     {%- set f_date = doc.re_allocation_date -%}
     {%- set f_test = doc.re_entrance_test_name or doc.re_entrance_test_list -%}
-    {%- set f_seat = doc.re_seat_number -%}
+    {%- set f_seat_raw = doc.re_seat_number -%}
+    {%- set f_seat = f_seat_raw.split('-')[-1] if f_seat_raw else '' -%}
     {%- set f_room = doc.re_room_name -%}
     {%- set f_code = doc.re_room_code -%}
     {%- set f_building = doc.re_building -%}
@@ -16,7 +17,8 @@
 {%- else -%}
     {%- set f_date = doc.allocation_date -%}
     {%- set f_test = doc.entrance_test_name or doc.entrance_test_list -%}
-    {%- set f_seat = doc.seat_number -%}
+    {%- set f_seat_raw = doc.seat_number -%}
+    {%- set f_seat = f_seat_raw.split('-')[-1] if f_seat_raw else '' -%}
     {%- set f_room = doc.room_name -%}
     {%- set f_code = doc.room_code -%}
     {%- set f_building = doc.building -%}

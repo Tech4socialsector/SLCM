@@ -411,7 +411,7 @@ def mark_attendance(
 
 	group = frappe.get_doc("Student Group", student_group) if student_group else None
 	schedule = frappe.get_doc("Course Schedule", course_schedule) if course_schedule else None
-	class_sched = frappe.get_doc("Class Schedule", class_schedule) if class_schedule else None
+	class_sched = frappe.get_doc("Time Table", class_schedule) if class_schedule else None
 	office_group = frappe.get_doc("Office Hours Group", office_hours_group) if office_hours_group else None
 
 	program = None
@@ -441,7 +441,7 @@ def mark_attendance(
 	# Determine Course Offering
 	course_offering = None
 	
-	# Priority 0: Explicit link in Class Schedule
+	# Priority 0: Explicit link in Time Table
 	if class_sched and class_sched.course_offering:
 		course_offering = class_sched.course_offering
 	
@@ -509,7 +509,7 @@ def mark_attendance(
 		"docstatus": ("<", 2)
 	}
 
-	if based_on == "Class Schedule" and class_schedule:
+	if based_on == "Time Table" and class_schedule:
 		session_filters["class_schedule"] = class_schedule
 	elif based_on == "Course Schedule" and course_schedule:
 		session_filters["course_schedule"] = course_schedule
@@ -696,12 +696,12 @@ def mark_attendance(
 
 @frappe.whitelist()
 def get_students_from_class_schedule(class_schedule, attendance_date=None):
-	"""Return active students for a Class Schedule with their existing attendance status."""
+	"""Return active students for a Time Table entry with their existing attendance status."""
 	from slcm.slcm.doctype.student_attendance_tool.student_attendance_tool import (
 		get_student_attendance_records,
 	)
 	return get_student_attendance_records(
-		based_on="Class Schedule",
+		based_on="Time Table",
 		date=attendance_date,
 		class_schedule=class_schedule,
 	)

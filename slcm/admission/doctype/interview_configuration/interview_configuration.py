@@ -80,7 +80,7 @@ class InterviewConfiguration(Document):
         field_to_fetch = "international_seats" if applicant_type == "International Applicants" else "total_seats"
 
         for prog in program_names:
-            seats = frappe.db.get_value("Program Reservation Policy", {
+            seats = frappe.db.get_value("Programme Reservation Policy", {
                 "program": prog,
                 "admission_cycle": self.admission_cycle,
                 "campus": self.campus,
@@ -88,7 +88,7 @@ class InterviewConfiguration(Document):
             }, field_to_fetch)
             if not seats:
                 # Fallback to any status if no Active policy found
-                seats = frappe.db.get_value("Program Reservation Policy", {
+                seats = frappe.db.get_value("Programme Reservation Policy", {
                     "program": prog,
                     "admission_cycle": self.admission_cycle,
                     "campus": self.campus

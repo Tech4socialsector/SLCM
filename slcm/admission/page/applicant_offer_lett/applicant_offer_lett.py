@@ -135,7 +135,7 @@ def get_offer_details(offer_name=None):
     scholarship_data = None
     latest_sa = frappe.get_all("Scholarship Application",
         filters={"applicant_id": applicant_id, "admission_cycle": admission_cycle, "docstatus": ["!=", 2]},
-        fields=["name", "status", "scholarship_scheme", "calculated_benefit", "original_fee_amount", "final_fee_amount"],
+        fields=["name", "status", "scholarship_scheme", "calculated_benefit", "original_fee_amount", "final_fee_amount", "income_certificate", "supporting_documents"],
         order_by="creation desc",
         limit=1
     )
