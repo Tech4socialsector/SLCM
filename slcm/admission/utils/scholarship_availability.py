@@ -59,6 +59,14 @@ def check_scholarship_availability(scheme_name, applicant_status, applicant_id=N
     if scheme.status != "Active":
         frappe.throw(frappe._("Scholarship scheme {0} is not active").format(scheme_name))
 
+    # 1.5 Target applicant check (Domestic / International)
+    if applicant_id:
+        foriegn_national = frappe.db.get_value("Applicant", applicant_id, "foriegn_national")
+        applicant_type = "International" if foriegn_national == "Yes" else "Domestic"
+        target_for = scheme.get("scholarship_for") or "Domestic"
+        if target_for != applicant_type:
+            frappe.throw(frappe._("This scholarship scheme is only available for {0} applicants.").format(target_for))
+
     # 2. Stage check
     applicant_statuses = [applicant_status] if applicant_status else []
     
@@ -196,6 +204,9 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
     if not applicant_program_level and program:
         applicant_program_level = frappe.db.get_value("Programme", program, "level_of_study")
 
+    foriegn_national = frappe.db.get_value("Applicant", applicant_id, "foriegn_national") if applicant_id else None
+    applicant_type = "International" if foriegn_national == "Yes" else "Domestic"
+
     # 1. Get all Active schemes for this cycle + campus
     schemes = frappe.get_all(
         "Scholarship Scheme",
@@ -209,7 +220,8 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
             "coverage_value", "apply_on", "stage_availability", 
             "application_start", "application_end", "max_beneficiaries", 
             "current_beneficiaries", "total_budget", "utilized_budget", 
-            "max_amount", "eligibility_criteria", "program", "program_level", "category"
+            "max_amount", "eligibility_criteria", "program", "program_level", "category",
+            "scholarship_for"
         ]
     )
     
@@ -231,6 +243,11 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
     today = getdate()
 
     for scheme in schemes:
+        # Check target applicant type match (Domestic/International)
+        target_for = scheme.get("scholarship_for") or "Domestic"
+        if target_for != applicant_type:
+            continue
+
         # Check program match
         program_match = not scheme.program or scheme.program == program
         

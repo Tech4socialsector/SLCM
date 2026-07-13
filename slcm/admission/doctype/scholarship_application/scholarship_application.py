@@ -129,6 +129,13 @@ class ScholarshipApplication(Document):
 		if not (program_match and category_match):
 			frappe.throw(frappe._("Scholarship not applicable for selected program/category."))
 
+		# Check target applicant match (Domestic / International)
+		foriegn_national = frappe.db.get_value("Applicant", self.applicant_id, "foriegn_national")
+		applicant_type = "International" if foriegn_national == "Yes" else "Domestic"
+		target_for = scheme.get("scholarship_for") or "Domestic"
+		if target_for != applicant_type:
+			frappe.throw(frappe._("This scholarship scheme is only available for {0} applicants.").format(target_for))
+
 	def validate_requirements(self):
 		# Always mandatory as per user request
 		if self.family_income is None or self.family_income == "":
@@ -728,14 +735,22 @@ def get_eligible_scholarship_schemes(applicant_id, program, campus, admission_cy
 			"campus": campus,
 			"status": "Active"
 		},
-		fields=["name", "program", "category"]
+		fields=["name", "program", "category", "scholarship_for"]
 	)
 
 	applicant_categories = frappe.get_all("Applicant Category", filters={"parent": applicant_id}, fields=["category"])
 	applicant_category_names = [c.category for c in applicant_categories]
 
+	foriegn_national = frappe.db.get_value("Applicant", applicant_id, "foriegn_national")
+	applicant_type = "International" if foriegn_national == "Yes" else "Domestic"
+
 	eligible_schemes = []
 	for s in schemes:
+		# Check target applicant type match
+		target_for = s.get("scholarship_for") or "Domestic"
+		if target_for != applicant_type:
+			continue
+
 		# Check program match (scheme has specific program or is global)
 		program_match = not s.program or s.program == program
 
