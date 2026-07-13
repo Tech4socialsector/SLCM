@@ -227,7 +227,7 @@ class AdmissionCycle(Document):
         for row in (self.programs or []):
             if row.reservation_policy:
                 try:
-                    policy = frappe.get_doc("Program Reservation Policy", row.reservation_policy)
+                    policy = frappe.get_doc("Programme Reservation Policy", row.reservation_policy)
                     if int(policy.total_seats or 0) != int(row.seats or 0):
                         policy.total_seats = row.seats
                         # Recalculate child row seats proportionally

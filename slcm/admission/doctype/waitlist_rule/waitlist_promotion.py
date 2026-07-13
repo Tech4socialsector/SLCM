@@ -22,18 +22,18 @@ def _get_program_quotas(campus: str, admission_cycle: str, program: str) -> dict
     
     # 2. If no policy found via child table, try direct lookup by cycle and program
     if not policy_name:
-        policy_name = frappe.db.get_value("Program Reservation Policy", {
+        policy_name = frappe.db.get_value("Programme Reservation Policy", {
             "admission_cycle": admission_cycle,
             "program": program,
             "status": ["!=", "Locked"] # Fetch any active or draft policy if not locked
         }, "name")
 
     if not policy_name and not fallback_seats:
-        frappe.throw(f"No active Program Reservation Policy or Seats found in cycle '{admission_cycle}' for Campus '{campus}' and Program '{program}'")
+        frappe.throw(f"No active Programme Reservation Policy or Seats found in cycle '{admission_cycle}' for Campus '{campus}' and Program '{program}'")
 
     if policy_name:
-        # 2. Fetch quotas from Program Reservation Policy
-        policy = frappe.get_doc("Program Reservation Policy", policy_name)
+        # 2. Fetch quotas from Programme Reservation Policy
+        policy = frappe.get_doc("Programme Reservation Policy", policy_name)
         
         for q in (policy.categories or []):
             seats = int(q.seats or 0)

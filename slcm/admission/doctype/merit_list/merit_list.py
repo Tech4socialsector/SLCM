@@ -357,7 +357,7 @@ def download_merit_list(name, download_type, category=None):
     xlsx_data = {}
 
     if download_type == "Overall":
-        sheet_name = "Overall Master List"
+        sheet_name = "Overall Merit Rank List"
         rows = [columns]
         for cand in doc.merit_applicants:
             rows.append(get_row(cand))
@@ -365,14 +365,14 @@ def download_merit_list(name, download_type, category=None):
     
     elif download_type == "Category Wise":
         category_map = {
-            "General": ("General List", "general_list"),
-            "SC": ("SC List", "sc_list"),
-            "ST": ("ST List", "st_list"),
-            "OBC": ("OBC List", "obc_list"),
-            "EWS": ("EWS List", "ews_list"),
-            "Karnataka": ("Karnataka Students", "karnataka_list"),
-            "Women": ("Women Merit List", "women_list"),
-            "PWD": ("PWD Merit List", "pwd_list")
+            "General": ("Vertical Merit Rank List", "general_list"),
+            "SC": ("SC Merit Rank List", "sc_list"),
+            "ST": ("ST Merit Rank List", "st_list"),
+            "OBC": ("OBC Merit Rank List", "obc_list"),
+            "EWS": ("EWS Merit Rank List", "ews_list"),
+            "Karnataka": ("Karnataka Merit Rank List", "karnataka_list"),
+            "Women": ("Women Merit Rank List", "women_list"),
+            "PWD": ("PWD Merit Rank List", "pwd_list")
         }
         
         if category and category != "All":

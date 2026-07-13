@@ -958,7 +958,7 @@ def api_get_program_detail(program, cycle):
         # Categories & Fees from Reservation Policy
         if cp.reservation_policy:
             cats = frappe.get_all(
-                "Program Reservation Category",
+                "Programme Reservation Category",
                 filters={"parent": cp.reservation_policy},
                 fields=["category_name", "total_seats", "application_fee"],
                 order_by="total_seats desc"
@@ -1010,7 +1010,7 @@ def api_get_portal_stats():
         cycle_progs = frappe.get_all("Admission Cycle Program", filters={"parent": active_cycle_name, "is_active": 1}, fields=["seats", "reservation_policy"])
         for p in cycle_progs:
             if p.reservation_policy:
-                total_seats += frappe.db.get_value("Program Reservation Policy", p.reservation_policy, "total_seats") or 0
+                total_seats += frappe.db.get_value("Programme Reservation Policy", p.reservation_policy, "total_seats") or 0
             else:
                 total_seats += p.seats or 0
 

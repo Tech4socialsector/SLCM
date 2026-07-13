@@ -30,7 +30,7 @@ frappe.get_doc({
         <p style="margin: 0;"><strong>Test Center:</strong> {{ doc.center_name or "—" }}</p>
         <p style="margin: 0;"><strong>Center Address:</strong> {{ doc.center_address or "—" }}</p>
         <p style="margin: 0;"><strong>Room:</strong> {{ doc.room_name or "—" }}</p>
-        <p style="margin: 0;"><strong>Seat Number:</strong> {{ doc.seat_number or "—" }}</p>
+        <p style="margin: 0;"><strong>Seat Number:</strong> {{ doc.seat_number.split('-')[-1] if doc.seat_number else "—" }}</p>
         <p style="margin: 0;"><strong>Test Date:</strong>
             {% if doc.allocation_date %}
                 {{ frappe.utils.format_datetime(doc.allocation_date, "dd-MM-yyyy") }}

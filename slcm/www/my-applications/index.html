@@ -1873,17 +1873,18 @@
   }
 
   .info-tile-label {
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--text-4);
+    font-size: 12px;
+    font-weight: 400;
+    color: rgb(0, 0, 0);
     text-transform: none;
     letter-spacing: .07em;
     margin-bottom: 4px;
+
   }
 
   .info-tile-value {
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 800;
     color: var(--text-1);
   }
 
@@ -2559,23 +2560,35 @@
 
   .et-field {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
   }
 
   .et-label {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-4);
+    width: 125px;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 400;
+    color: rgb(76, 70, 70);
     text-transform: none;
     letter-spacing: normal;
   }
 
+  .et-label::after {
+    content: ":";
+  }
+
   .et-value {
     font-size: 14.5px;
-    font-weight: 600;
+    font-weight: 800;
     color: var(--text-1);
     line-height: 1.4;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
   }
 
   .et-value.accent {
@@ -3439,11 +3452,11 @@ or _app.current_stage)) or _status %}
           </div>
           <div class="info-tile">
             <div class="info-tile-label">Reporting</div>
-            <div class="info-tile-value red">{{ interview_current_slot.reporting_time }}</div>
+            <div class="info-tile-value">{{ interview_current_slot.reporting_time }}</div>
           </div>
           <div class="info-tile">
             <div class="info-tile-label">Slot time</div>
-            <div class="info-tile-value blue">{{ interview_current_slot.interview_time }}</div>
+            <div class="info-tile-value">{{ interview_current_slot.interview_time }}</div>
           </div>
         </div>
         {% if interview_current_slot.interview_address %}
@@ -3452,7 +3465,7 @@ or _app.current_stage)) or _status %}
           <span class="material-symbols-outlined"
             style="font-size:17px;color:var(--text-4);flex-shrink:0">location_on</span>
           <div style="flex:1">
-            <div style="font-size:11px;font-weight:600;color:var(--text-3);letter-spacing:.04em;margin-bottom:4px">Venue address</div>
+            <div style="font-size:12px;font-weight:400;color:var(--text-4);letter-spacing:.04em;margin-bottom:4px">Venue address</div>
             <span style="font-size:13px;color:var(--text-2);line-height:1.5;display:block;margin-bottom:4px">{{ interview_current_slot.interview_address }}</span>
             {% if interview_current_slot.interview_location %}
             <a href="#" onclick="openMap('{{ interview_current_slot.interview_location | escape }}'); return false;" 
@@ -3589,7 +3602,7 @@ or _app.current_stage)) or _status %}
           </div>
           <div class="et-field">
             <span class="et-label">Test Time</span>
-            <span class="et-value accent">
+            <span class="et-value">
               <span class="material-symbols-outlined" style="font-size:16px;">schedule</span>
               {{ frappe.utils.get_datetime(et_doc.re_allocation_date if et_is_rescheduled else et_doc.allocation_date).strftime('%I:%M %p') }}
             </span>
@@ -3606,35 +3619,20 @@ or _app.current_stage)) or _status %}
         {% else %}
         <div class="et-grid">
           <div class="et-field">
-            <span class="et-label">Test Name</span>
-            <span class="et-value">{{ (et_doc.re_entrance_test_name or et_doc.re_entrance_test_list) if et_is_rescheduled else (et_doc.entrance_test_name or et_doc.entrance_test_list) }}</span>
-          </div>
-          <div class="et-field">
-            <span class="et-label">Test centre</span>
-            <span class="et-value">{{ et_doc.re_center_name if et_is_rescheduled else et_doc.center_name }}</span>
-          </div>
-          <div class="et-field">
-            <span class="et-label">Entrance Test date</span>
+            <span class="et-label">Test Date</span>
             <span class="et-value">{{ frappe.format_date(et_doc.re_allocation_date if et_is_rescheduled else et_doc.allocation_date) }}</span>
           </div>
           <div class="et-field">
-            <span class="et-label">Reporting / Test time</span>
-            <span class="et-value accent">
-              <span class="material-symbols-outlined" style="font-size:16px;">schedule</span>
-              {{ et_reporting_time }} / {{ frappe.utils.get_datetime(et_doc.re_allocation_date if et_is_rescheduled else et_doc.allocation_date).strftime('%I:%M %p') }}
-            </span>
+            <span class="et-label">Test Centre</span>
+            <span class="et-value">{{ et_doc.re_center_name if et_is_rescheduled else et_doc.center_name }}</span>
           </div>
           <div class="et-field">
-            <span class="et-label">Seat number</span>
-            <span class="et-value highlight">{{ et_doc.re_seat_number if et_is_rescheduled else et_doc.seat_number }}</span>
+            <span class="et-label">Reporting Time</span>
+            <span class="et-value">{{ et_reporting_time }}</span>
           </div>
           <div class="et-field">
-            <span class="et-label">Room Code</span>
-            <span class="et-value">{{ et_doc.re_room_code if et_is_rescheduled else et_doc.room_code or '—' }}</span>
-          </div>
-          <div class="et-field">
-            <span class="et-label">Room Name</span>
-            <span class="et-value">{{ et_doc.re_room_name if et_is_rescheduled else et_doc.room_name or '—' }}</span>
+            <span class="et-label">Test Time</span>
+            <span class="et-value">{{ frappe.utils.get_datetime(et_doc.re_allocation_date if et_is_rescheduled else et_doc.allocation_date).strftime('%I:%M %p') }}</span>
           </div>
           <div class="et-field">
             <span class="et-label">Building</span>
@@ -3643,6 +3641,27 @@ or _app.current_stage)) or _status %}
           <div class="et-field">
             <span class="et-label">Floor</span>
             <span class="et-value">{{ et_doc.re_floor if et_is_rescheduled else et_doc.floor or '—' }}</span>
+          </div>
+          <div class="et-field">
+            <span class="et-label">Room Name</span>
+            <span class="et-value">{{ et_doc.re_room_name if et_is_rescheduled else et_doc.room_name or '—' }}</span>
+          </div>
+          <div class="et-field">
+            <span class="et-label">Room Code</span>
+            <span class="et-value">{{ et_doc.re_room_code if et_is_rescheduled else et_doc.room_code or '—' }}</span>
+          </div>
+          <div class="et-field">
+            <span class="et-label">Seat Number</span>
+            <span class="et-value">
+              {%- set raw_seat = et_doc.re_seat_number if et_is_rescheduled else et_doc.seat_number -%}
+              {{ raw_seat.split('-')[-1] if raw_seat else '—' }}
+            </span>
+          </div>
+          <div class="et-field">
+            <span class="et-label">Status</span>
+            <span class="et-value">
+              {{ (et_doc.entrance_test_status or 'Scheduled')|capitalize }}
+            </span>
           </div>
         </div>
         <div class="et-address-box">
@@ -3913,7 +3932,7 @@ or _app.current_stage)) or _status %}
             Document checklist
           </div>
           {% if _docs %}
-          <span style="font-size:12px;font-weight:500;color:var(--text-3)">
+          <span style="font-size:12px;font-weight:500;color:var(--text-1)">
             {{ _docs|length }} document{{ 's' if _docs|length != 1 }}
           </span>
           {% endif %}
@@ -5116,13 +5135,20 @@ LIST / DASHBOARD VIEW
         // Reset form
         document.getElementById('cancellationForm').reset();
         document.getElementById('modal_submit_btn').disabled = false;
+        
+        const policyDescDiv = document.getElementById('refundPolicyDescription');
+        if (policyDescDiv) {
+            policyDescDiv.style.display = 'none';
+            policyDescDiv.innerHTML = '';
+        }
 
         // Fetch and show refund policies
         try {
             const api_args = {
                 applicant: applicant,
                 program: program,
-                campus: campus
+                campus: campus,
+                payment_request: document.getElementById('modal_payment_request').value
             };
             const res = await apiFetch('slcm.admission_cancel_api.get_refund_policies', api_args) || {};
             
@@ -5136,30 +5162,51 @@ LIST / DASHBOARD VIEW
 
             if (policies && policies.length > 0) {
                 let rows = '';
-                let highlighted = false;
                 
                 // Sort policies by days just in case
                 policies.sort((a, b) => a.days_from_payment - b.days_from_payment);
 
-                policies.forEach(p => {
-                    let isCurrent = false;
-                    if (!highlighted && daysElapsed <= p.days_from_payment) {
-                        isCurrent = true;
-                        highlighted = true;
+                const formatCurrency = (amt, curr) => {
+                    try {
+                        return new Intl.NumberFormat('en-IN', { style: 'currency', currency: curr || 'INR', maximumFractionDigits: 0 }).format(amt);
+                    } catch (e) {
+                        return (curr || '₹') + amt;
                     }
-                    
-                    const rowBg = isCurrent ? 'background-color: #f0fdf4 !important;' : '';
-                    const rowBorder = isCurrent ? 'border-left: 4px solid #22c55e !important;' : 'border-bottom: 1px solid #f8fafc;';
-                    const badgeHtml = isCurrent ? `<span class="badge bg-success ms-2" style="font-size: 9px; vertical-align: middle;">Current</span>` : '';
+                };
 
-                    rows += `
-                        <tr style="${rowBg} ${rowBorder}">
-                            <td class="px-3 py-2 fw-600 text-dark">${p.policy_name}${badgeHtml}</td>
-                            <td class="px-3 py-2 text-center text-muted">${p.days_from_payment}</td>
-                            <td class="px-3 py-2 text-end fw-bold text-primary">${p.refund_percentage}%</td>
+                // Find the first policy where daysElapsed <= p.days_from_payment
+                let currentPolicy = policies.find(p => daysElapsed <= p.days_from_payment);
+                
+                // If not found, use the last policy as fallback
+                if (!currentPolicy && policies.length > 0) {
+                    currentPolicy = policies[policies.length - 1];
+                }
+
+                if (currentPolicy) {
+                    const p = currentPolicy;
+                    const amountHtml = p.amount ? formatCurrency(p.amount, p.currency) : '-';
+
+                    rows = `
+                        <tr style="background-color: #f0fdf4 !important; border-left: 4px solid #22c55e !important;">
+                            <td class="px-3 py-2 text-center text-muted" style="vertical-align: middle;">${p.days_from_payment}</td>
+                            <td class="px-3 py-2 text-end fw-bold text-primary" style="vertical-align: middle;">${p.refund_percentage}%</td>
+                            <td class="px-3 py-2 text-end fw-bold text-success" style="vertical-align: middle;">${amountHtml}</td>
                         </tr>
                     `;
-                });
+
+                    if (policyDescDiv) {
+                        if (p.description) {
+                            policyDescDiv.innerHTML = `<div class="fw-bold mb-1">${p.policy_name}:</div><div>${p.description}</div>`;
+                            policyDescDiv.style.display = 'block';
+                        } else {
+                            policyDescDiv.style.display = 'none';
+                        }
+                    }
+                } else {
+                    if (policyDescDiv) {
+                        policyDescDiv.style.display = 'none';
+                    }
+                }
                 policyTableBody.innerHTML = rows;
                 if (policySection) policySection.style.display = 'block';
                 if (nonRefundableMsg) nonRefundableMsg.style.display = 'none';
@@ -5168,6 +5215,9 @@ LIST / DASHBOARD VIEW
                 if (policySection) policySection.style.display = 'none';
                 if (nonRefundableMsg) nonRefundableMsg.style.display = 'block';
                 if (policyContainer) policyContainer.style.display = 'block';
+                if (policyDescDiv) {
+                    policyDescDiv.style.display = 'none';
+                }
             }
         } catch (e) {
             console.error("Failed to fetch refund policies:", e);
@@ -5258,15 +5308,17 @@ LIST / DASHBOARD VIEW
                                 <table class="table table-sm table-borderless mb-0" style="font-size: 13px;">
                                     <thead style="background: #f8fafc; border-bottom: 1px solid #f1f5f9;">
                                         <tr>
-                                            <th class="px-3 py-3 text-muted fw-700">{{ _('Policy Phase') }}</th>
                                             <th class="px-3 py-3 text-muted fw-700 text-center">{{ _('Payment Days') }}</th>
                                             <th class="px-3 py-3 text-muted fw-700 text-end">{{ _('Refund %') }}</th>
+                                            <th class="px-3 py-3 text-muted fw-700 text-end">{{ _('Refund Amount') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody id="refundPolicyTableBody">
                                         <!-- Policies injected here -->
                                     </tbody>
                                 </table>
+                            </div>
+                            <div id="refundPolicyDescription" class="mt-3 p-3" style="display: none; background: #f8fafc; border-radius: 12px; border: 1px solid #f1f5f9; font-size: 12px; color: #475569; line-height: 1.5;">
                             </div>
                         </div>
                         <div id="nonRefundableMsg" class="p-3 mb-2" style="display: none; background: #fff1f2; border-radius: 16px; border: 1px solid #ffe4e6; color: #e11d48; font-size: 13px; font-weight: 600;">
@@ -5295,7 +5347,7 @@ LIST / DASHBOARD VIEW
                                 {{ _('Reason for withdrawal') }} <span class="text-danger">*</span>
                             </label>
                             <select class="form-select border-0 bg-light" id="modal_reason_type" required style="border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 500;">
-                                <option value="">{{ _('Choose a category...') }}</option>
+                                <option value="">{{ _('Choose a reason...') }}</option>
                                 <option value="Financial Issues">{{ _('Financial Issues') }}</option>
                                 <option value="Medical Reasons">{{ _('Medical Reasons') }}</option>
                                 <option value="Personal Reasons">{{ _('Personal Reasons') }}</option>
@@ -5321,9 +5373,9 @@ LIST / DASHBOARD VIEW
                             </div>
                         </div>
 
-                        <div class="text-center">
-                            <button type="submit" class="btn w-100 py-3 fw-800 text-white" id="modal_submit_btn" 
-                                style="border-radius: 14px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border: none; box-shadow: 0 10px 15px -3px rgba(220, 38, 38, 0.3); font-size: 16px; transition: all 0.2s;">
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn fw-800 text-white px-4 py-2.5" id="modal_submit_btn" 
+                                style="border-radius: 10px; background: var(--primary); border: none; font-size: 14px; transition: all 0.2s;">
                                 {{ _('Confirm Withdrawal') }}
                             </button>
                         </div>
