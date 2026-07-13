@@ -34,6 +34,7 @@
   "career_items",
   "faculty_items",
   "stages_tab",
+  "domestic_applicant_stages_section",
   "submitted",
   "entrance_test",
   "intereview",
@@ -308,6 +309,11 @@
    "fieldname": "term_end_date",
    "fieldtype": "Date",
    "label": "Term end date"
+  },
+  {
+   "fieldname": "domestic_applicant_stages_section",
+   "fieldtype": "Section Break",
+   "label": "Domestic Applicant Stages"
   }
  ],
  "grid_page_length": 50,
@@ -336,7 +342,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-08 15:18:14.392841",
+ "modified": "2026-07-13 10:57:27.280412",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Programme",
