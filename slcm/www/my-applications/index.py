@@ -430,18 +430,28 @@ def get_context(context):
             if applicant.program:
                 program_doc = frappe.get_doc("Programme", applicant.program, ignore_permissions=True)
                 
-                # Potential stages mapping based on checkboxes in Program
-                # Using 'intereview' as per the doctype field name (note the typo)
-                POTENTIAL_STAGES = [
-                    {"field": "submitted",       "name": "Submitted", "stage_type": "Application"},
-                    {"field": "entrance_test",   "name": "Entrance Test",         "stage_type": "Entrance Test"},
-                    {"field": "intereview",      "name": "Interview",             "stage_type": "Interview"},
-                    {"field": "merit_list",      "name": "Merit",                 "stage_type": "Merit"},
-                    {"field": "seat_allocation", "name": "Seat Allocation",       "stage_type": "Seat Allocation"},
-                    {"field": "offer_letter",    "name": "Offer Letter",          "stage_type": "Offer Letter"},
-                    {"field": "admission_fee",   "name": "Admission Fee",         "stage_type": "Admission Fee"},
-                    {"field": "enrolled",        "name": "Enrollment",            "stage_type": "Enrollment"},
-                ]
+                # Check if the applicant is international (foriegn_national == "Yes")
+                if applicant.get("foriegn_national") == "Yes":
+                    POTENTIAL_STAGES = [
+                        {"field": "internationa_application_submitted", "name": "Submitted", "stage_type": "Application"},
+                        {"field": "international_entrance_test",       "name": "Entrance Test", "stage_type": "Entrance Test"},
+                        {"field": "international_interview",           "name": "Interview", "stage_type": "Interview"},
+                        {"field": "inrternation_admission_fee",        "name": "Admission Fee", "stage_type": "Admission Fee"},
+                        {"field": "international_enrolled",            "name": "Enrollment", "stage_type": "Enrollment"},
+                    ]
+                else:
+                    # Potential stages mapping based on checkboxes in Program
+                    # Using 'intereview' as per the doctype field name (note the typo)
+                    POTENTIAL_STAGES = [
+                        {"field": "submitted",       "name": "Submitted", "stage_type": "Application"},
+                        {"field": "entrance_test",   "name": "Entrance Test",         "stage_type": "Entrance Test"},
+                        {"field": "intereview",      "name": "Interview",             "stage_type": "Interview"},
+                        {"field": "merit_list",      "name": "Merit",                 "stage_type": "Merit"},
+                        {"field": "seat_allocation", "name": "Seat Allocation",       "stage_type": "Seat Allocation"},
+                        {"field": "offer_letter",    "name": "Offer Letter",          "stage_type": "Offer Letter"},
+                        {"field": "admission_fee",   "name": "Admission Fee",         "stage_type": "Admission Fee"},
+                        {"field": "enrolled",        "name": "Enrollment",            "stage_type": "Enrollment"},
+                    ]
                 
                 enabled_stages = [ps for ps in POTENTIAL_STAGES if program_doc.get(ps["field"])]
                 
