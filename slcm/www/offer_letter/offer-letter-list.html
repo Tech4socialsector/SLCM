@@ -381,6 +381,16 @@
         return code + ' ' + num;
     }
 
+    function format_date_dd_mm_yyyy(date_str) {
+        if (!date_str) return '';
+        const clean_date = date_str.split(' ')[0];
+        const parts = clean_date.split('-');
+        if (parts.length === 3) {
+            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+        return clean_date;
+    }
+
     // Fallback for translation helper
     window._ = window._ || function (s) { return s; };
 
@@ -479,7 +489,7 @@
                 <div class="valid-until">
                     <span class="valid-label">Valid Until</span>
                     <span class="valid-value offer-timer" data-deadline="${offer.payment_deadline}">
-                        ${offer.payment_deadline.split(' ')[0]}
+                        ${format_date_dd_mm_yyyy(offer.payment_deadline)}
                     </span>
                 </div>
             ` : ''}
@@ -634,7 +644,7 @@
                 if (distance > 24 * 60 * 60 * 1000) {
                     // More than 24 hours
                     $label.text("{{ _('Expiry Date') }}");
-                    $this.text(deadline_str.split(' ')[0]);
+                    $this.text(format_date_dd_mm_yyyy(deadline_str));
                 } else {
                     // 24 hours or less
                     $label.text("{{ _('Expiry Timer') }}");

@@ -3,19 +3,16 @@
 
 frappe.ui.form.on('Class Configuration', {
     refresh: function (frm) {
-        // Add custom buttons
-        if (!frm.is_new()) {
-            frm.add_custom_button(__('Add Students by Filter'), function () {
-                add_students_by_filter(frm);
-            }, __('Actions'));
-
-            frm.add_custom_button(__('Clear All Students'), function () {
-                clear_all_students(frm);
-            }, __('Actions'));
-        }
-
         // Set filters for links
         set_link_filters(frm);
+    },
+
+    add_students_by_filter: function (frm) {
+        add_students_by_filter(frm);
+    },
+
+    clear_all_students: function (frm) {
+        clear_all_students(frm);
     },
 
     programme: function (frm) {

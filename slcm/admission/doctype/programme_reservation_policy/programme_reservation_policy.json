@@ -140,7 +140,7 @@
    "fieldname": "categories",
    "fieldtype": "Table",
    "label": "Main Categories (Vertical)",
-   "options": "Program Reservation Category",
+   "options": "Programme Reservation Category",
    "reqd": 1
   },
   {
@@ -153,7 +153,7 @@
    "fieldname": "horizontal_reservations",
    "fieldtype": "Table",
    "label": "Horizontal Reservations",
-   "options": "Program Reservation Sub Quota"
+   "options": "Programme Reservation Sub Quota"
   },
   {
    "fieldname": "section_break_compartmental_reservations",
@@ -165,7 +165,7 @@
    "fieldname": "compartmental_reservations",
    "fieldtype": "Table",
    "label": "Compartmentalised Reservations",
-   "options": "Program Reservation Sub Quota"
+   "options": "Programme Reservation Sub Quota"
   },
   {
    "fieldname": "section_break_matrices",
@@ -225,10 +225,10 @@
   }
  ],
  "links": [],
- "modified": "2026-07-08 15:06:21.848256",
+ "modified": "2026-07-10 11:10:17.344101",
  "modified_by": "Administrator",
  "module": "Admission",
- "name": "Program Reservation Policy",
+ "name": "Programme Reservation Policy",
  "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [

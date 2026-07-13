@@ -21,6 +21,8 @@
   "faculty",
   "seat_limit",
   "section_break_students",
+  "add_students_by_filter",
+  "clear_all_students",
   "students"
  ],
  "fields": [
@@ -116,6 +118,18 @@
    "fieldname": "section_break_students",
    "fieldtype": "Section Break",
    "label": "Students"
+  },
+  {
+   "depends_on": "eval:!doc.__islocal",
+   "fieldname": "add_students_by_filter",
+   "fieldtype": "Button",
+   "label": "Add Students by Filter"
+  },
+  {
+   "depends_on": "eval:!doc.__islocal",
+   "fieldname": "clear_all_students",
+   "fieldtype": "Button",
+   "label": "Clear All Students"
   },
   {
    "fieldname": "students",

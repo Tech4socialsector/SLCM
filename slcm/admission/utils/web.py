@@ -841,7 +841,7 @@ def download_receipt(receipt_name):
     """
     Generates and downloads the Applicant Payment Receipt PDF for the owner.
 
-    Uses Program Reservation Policy.payment_receipt_template (if configured)
+    Uses Programme Reservation Policy.payment_receipt_template (if configured)
     as the print format, falling back to the default format.
     """
     user = frappe.session.user
@@ -858,7 +858,7 @@ def download_receipt(receipt_name):
         if "Admission Admin" not in frappe.get_roles() and "System Manager" not in frappe.get_roles():
             frappe.throw("Not permitted", frappe.PermissionError)
 
-    # Resolve print format from Program Reservation Policy if possible
+    # Resolve print format from Programme Reservation Policy if possible
     print_format = "Applicant Payment Receipt Format"  # Fallback
     try:
         if applicant_name:
@@ -889,7 +889,7 @@ def download_receipt(receipt_name):
                     )
                 if policy_name:
                     template = frappe.db.get_value(
-                        "Program Reservation Policy",
+                        "Programme Reservation Policy",
                         policy_name,
                         "payment_receipt_template",
                     )

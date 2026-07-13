@@ -65,7 +65,7 @@ def get_category_priority(admission_cycle, campus, program):
         policy_name = program_row.reservation_policy
 
     if not policy_name:
-        policy_name = frappe.db.get_value("Program Reservation Policy", {
+        policy_name = frappe.db.get_value("Programme Reservation Policy", {
             "admission_cycle": admission_cycle,
             "program": program,
             "status": ["!=", "Locked"]
@@ -73,7 +73,7 @@ def get_category_priority(admission_cycle, campus, program):
 
     priority_map = {}
     if policy_name:
-        policy = frappe.get_doc("Program Reservation Policy", policy_name)
+        policy = frappe.get_doc("Programme Reservation Policy", policy_name)
         for row in policy.categories:
             priority_map[row.category_name] = int(row.priority or 999)
 
@@ -137,7 +137,26 @@ class SeatAllocation(Document):
         # Always enforce ascending sort by overall rank before saving
         if self.selection_applicant:
             from frappe.utils import flt
-            self.selection_applicant.sort(key=lambda x: flt(x.overall_rank or 999999))
+            app_ids = [getattr(row, "applicant_id", None) or getattr(row, "applicant", None) for row in self.selection_applicant]
+            app_ids = [aid for aid in app_ids if aid]
+            dob_map = {}
+            if app_ids:
+                dob_map = {r.name: r.date_of_birth for r in frappe.db.get_all("Applicant", filters={"name": ["in", app_ids]}, fields=["name", "date_of_birth"])}
+
+            def get_save_sort_key(x):
+                overall_rnk = flt(getattr(x, "overall_rank", None) or x.get("overall_rank") or 999999)
+                part_b = flt(getattr(x, "nlsat_part_b_score", None) or x.get("nlsat_part_b_score") or 0)
+                app_id = getattr(x, "applicant_id", None) or getattr(x, "applicant", None) or getattr(x, "name", "")
+                dob_val = getattr(x, "date_of_birth", None) or x.get("date_of_birth") or dob_map.get(app_id)
+                dob = str(dob_val) if dob_val else "9999-12-31"
+                return (
+                    overall_rnk,
+                    -part_b,
+                    dob,
+                    app_id
+                )
+
+            self.selection_applicant.sort(key=get_save_sort_key)
             for i, row in enumerate(self.selection_applicant):
                 row.idx = i + 1
 
@@ -283,7 +302,7 @@ class SeatAllocation(Document):
 
     def sync_filled_seats(self, reset_only=False):
         """
-        Updates the linked Program Reservation Policy for each program in this allocation
+        Updates the linked Programme Reservation Policy for each program in this allocation
         to reflect Filled and Available seats across all tables.
         """
         # 1. Identify programs in this allocation
@@ -299,7 +318,7 @@ class SeatAllocation(Document):
             return
 
         # 2. Map programs to their specific policies (Campus-aware)
-        policies = frappe.get_all("Program Reservation Policy", filters={
+        policies = frappe.get_all("Programme Reservation Policy", filters={
             "admission_cycle": self.admission_cycle,
             "program": ["in", list(affected_programs)],
             "campus": ["in", [self.campus, None, ""]], # Match current campus or legacy policies
@@ -316,7 +335,7 @@ class SeatAllocation(Document):
 
         # 3. Process each policy found
         for prog, policy_name in policy_map.items():
-            policy = frappe.get_doc("Program Reservation Policy", policy_name)
+            policy = frappe.get_doc("Programme Reservation Policy", policy_name)
             
             # Reset counts in all tables
             for table in ["categories", "horizontal_reservations", "compartmental_reservations"]:
@@ -487,11 +506,30 @@ class SeatAllocation(Document):
 
         # Sort selection_applicant table
         status_priority = {"Selected": 1, "Waitlisted": 2, "Rejected": 3, "Draft": 4}
-        sorted_rows = sorted(self.selection_applicant, key=lambda x: (
-            status_priority.get(x.selection_status, 99),
-            -(x.total_score or 0),
-            (x.overall_rank or 999999)
-        ))
+        
+        app_ids = [getattr(row, "applicant_id", None) or getattr(row, "applicant", None) for row in self.selection_applicant]
+        app_ids = [aid for aid in app_ids if aid]
+        dob_map = {}
+        if app_ids:
+            dob_map = {r.name: r.date_of_birth for r in frappe.db.get_all("Applicant", filters={"name": ["in", app_ids]}, fields=["name", "date_of_birth"])}
+
+        def get_allocation_sort_key(x):
+            from frappe.utils import flt
+            status_pri = status_priority.get(x.selection_status, 99)
+            overall_rnk = flt(getattr(x, "overall_rank", None) or x.get("overall_rank") or 999999)
+            part_b = flt(getattr(x, "nlsat_part_b_score", None) or x.get("nlsat_part_b_score") or 0)
+            app_id = getattr(x, "applicant_id", None) or getattr(x, "applicant", None) or getattr(x, "name", "")
+            dob_val = getattr(x, "date_of_birth", None) or x.get("date_of_birth") or dob_map.get(app_id)
+            dob = str(dob_val) if dob_val else "9999-12-31"
+            return (
+                status_pri,
+                overall_rnk,
+                -part_b,
+                dob,
+                app_id
+            )
+
+        sorted_rows = sorted(self.selection_applicant, key=get_allocation_sort_key)
         
         self.set("selection_applicant", [])
         for i, row in enumerate(sorted_rows):

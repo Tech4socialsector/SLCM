@@ -35,7 +35,7 @@
   {
    "fieldname": "schedule_tab",
    "fieldtype": "Tab Break",
-   "label": "Class Schedule"
+   "label": "Time Table"
   },
   {
    "fieldname": "schedule_ui_container",

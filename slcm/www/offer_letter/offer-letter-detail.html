@@ -96,9 +96,9 @@ footer_color=portal_config.footer_color, button_border_radius=portal_config.butt
 	}
 
 	.ui-card-label {
-	    font-size: 0.7rem;
+	    font-size: 0.75rem;
 	    font-weight: 700;
-	    color: #94a3b8;
+	    color: var(--text-1);
 	    letter-spacing: 0.08em;
 	    text-transform: uppercase;
 	    margin-bottom: 16px;
@@ -142,13 +142,17 @@ footer_color=portal_config.footer_color, button_border_radius=portal_config.butt
 	    display: flex;
 	    align-items: center;
 	    justify-content: center;
-	    width: 36px;
-	    height: 36px;
+	    width: 48px;
+	    height: 48px;
 	    background: #ffffff;
-	    border-radius: 10px;
+	    border-radius: 12px;
 	    color: var(--primary);
-	    font-size: 18px;
+	    font-size: 24px;
 	    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+	}
+	
+	.summary-icon .material-symbols-outlined {
+	    font-size: 24px;
 	}
 
 	.summary-item .label {
@@ -402,15 +406,15 @@ footer_color=portal_config.footer_color, button_border_radius=portal_config.butt
 	/* ── Animations ─────────────────────────────────────── */
 	/* Scholarship Nudge Styling */
 	.scholarship-nudge-card {
-	    background: #fffcf0;
-	    border: 1.5px solid #fef08a;
+	    background: var(--card-bg);
+	    border: 1px solid var(--border);
 	    border-radius: 14px;
 	    padding: 16px;
 	    margin-bottom: 20px;
 	    display: flex;
 	    flex-direction: column;
 	    gap: 12px;
-	    box-shadow: 0 4px 12px rgba(254, 240, 138, 0.15);
+	    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 	}
 
 	.sn-header {
@@ -422,55 +426,57 @@ footer_color=portal_config.footer_color, button_border_radius=portal_config.butt
 	.sn-icon-wrap {
 	    width: 40px;
 	    height: 40px;
-	    background: #fef9c3;
+	    background: var(--primary-light);
+	    color: var(--primary);
 	    border-radius: 10px;
 	    display: flex;
 	    align-items: center;
 	    justify-content: center;
 	    font-size: 20px;
 	    flex-shrink: 0;
-	    border: 1px solid #fde047;
+	    border: 1px solid var(--border);
+	}
+
+	.sn-icon-wrap .material-symbols-outlined {
+	    font-size: 22px;
 	}
 
 	.sn-title {
 	    font-size: 13px;
 	    font-weight: 700;
-	    color: #854d0e;
+	    color: var(--text-1);
 	    margin-bottom: 2px;
 	}
 
 	.sn-subtitle {
-	    font-size: 11px;
-	    color: #a16207;
+	    font-size: 12px;
+	    color: var(--text-2);
 	    font-weight: 500;
 	    line-height: 1.4;
 	}
 
 	/* Scholarship State Variations */
 	.scholarship-nudge-card.applied {
-	    background: #eff6ff;
-	    border-color: #bfdbfe;
-	    box-shadow: 0 4px 12px rgba(191, 219, 254, 0.15);
+	    background: #f8fafc;
+	    border-color: var(--border);
 	}
-	.scholarship-nudge-card.applied .sn-icon-wrap { background: #dbeafe; border-color: #93c5fd; }
-	.scholarship-nudge-card.applied .sn-title { color: #1e40af; }
-	.scholarship-nudge-card.applied .sn-subtitle { color: #1d4ed8; }
+	.scholarship-nudge-card.applied .sn-icon-wrap { background: #e2e8f0; border-color: #cbd5e1; color: #475569; }
+	.scholarship-nudge-card.applied .sn-title { color: var(--text-1); }
+	.scholarship-nudge-card.applied .sn-subtitle { color: var(--text-2); }
 
 	.scholarship-nudge-card.approved {
 	    background: #f0fdf4;
 	    border-color: #bbf7d0;
-	    box-shadow: 0 4px 12px rgba(187, 247, 208, 0.15);
 	}
-	.scholarship-nudge-card.approved .sn-icon-wrap { background: #dcfce7; border-color: #86efac; }
+	.scholarship-nudge-card.approved .sn-icon-wrap { background: #dcfce7; border-color: #86efac; color: #16a34a; }
 	.scholarship-nudge-card.approved .sn-title { color: #166534; }
 	.scholarship-nudge-card.approved .sn-subtitle { color: #15803d; }
 
 	.scholarship-nudge-card.rejected {
 	    background: #fef2f2;
 	    border-color: #fecaca;
-	    box-shadow: 0 4px 12px rgba(254, 202, 202, 0.15);
 	}
-	.scholarship-nudge-card.rejected .sn-icon-wrap { background: #fee2e2; border-color: #fca5a5; }
+	.scholarship-nudge-card.rejected .sn-icon-wrap { background: #fee2e2; border-color: #fca5a5; color: #dc2626; }
 	.scholarship-nudge-card.rejected .sn-title { color: #991b1b; }
 	.scholarship-nudge-card.rejected .sn-subtitle { color: #b91c1c; }
 
@@ -493,21 +499,23 @@ footer_color=portal_config.footer_color, button_border_radius=portal_config.butt
 	    align-items: center;
 	    justify-content: center;
 	    gap: 6px;
-	    background: #a16207;
+	    background: var(--primary);
 	    color: white;
-	    padding: 8px 14px;
-	    border-radius: 8px;
-	    font-size: 12px;
+	    padding: 10px 14px;
+	    border-radius: 10px;
+	    font-size: 13px;
 	    font-weight: 700;
 	    text-decoration: none !important;
-	    transition: background 0.2s;
+	    transition: all 0.2s;
 	    border: none;
 	    width: 100%;
 	}
 
 	.btn-sn-apply:hover {
-	    background: #854d0e;
+	    background: var(--primary);
+	    opacity: 0.9;
 	    color: white;
+	    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 	}
 
 	@keyframes fadeInUp {
@@ -691,6 +699,16 @@ _pc.mission_text) or '' %}
 	        return code + ' ' + num;
 	    }
 
+	    function format_date_dd_mm_yyyy(date_str) {
+	        if (!date_str) return '';
+	        const clean_date = date_str.split(' ')[0];
+	        const parts = clean_date.split('-');
+	        if (parts.length === 3) {
+	            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+	        }
+	        return clean_date;
+	    }
+
 	    // Fallback for translation helper
 	    window._ = window._ || function (s) { return s; };
 
@@ -742,7 +760,7 @@ _pc.mission_text) or '' %}
 	            if (distance > 24 * 60 * 60 * 1000) {
 	                // More than 24 hours - show date only
 	                label_el.text({{ _("Offer expiry date") | tojson }});
-	                timer_el.text(deadline_str.split(' ')[0]);
+	                timer_el.text(format_date_dd_mm_yyyy(deadline_str));
 	                timer_el.next().hide(); // Hide the redundant deadline line
 	            } else {
 	                // 24 hours or less - show timer
@@ -810,17 +828,17 @@ _pc.mission_text) or '' %}
 	                    </div>
 
 	                    ${offer.payment_deadline && (offer.status === 'Issued' || offer.status === 'Accepted') ? `
-	                        <div class="ui-card" style="background: #1e293b; border: 1px solid #334155; position: relative; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
-	                            <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: #f59e0b;"></div>
-	                            <span class="ui-card-label" style="color: #94a3b8; border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem;">
-	                                {{ _("Offer Expiry Timer") }}
-	                                <span class="material-symbols-outlined" style="color: #f59e0b; font-size: 18px;">notification_important</span>
+	                        <div class="ui-card" style="background: var(--card-bg); border: 1px solid var(--border); position: relative; overflow: hidden;">
+	                            <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--secondary);"></div>
+	                            <span class="ui-card-label" style="display: flex; justify-content: space-between; align-items: center;">
+	                                {{ _("Offer Expiry") }}
+	                                <span class="material-symbols-outlined" style="color: var(--secondary); font-size: 18px;">event</span>
 	                            </span>
-	                            <div id="expiry-timer-display" style="color: #f8fafc; font-size: 1.75rem; font-weight: 800; letter-spacing: 0.05em; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-	                                <span class="material-symbols-outlined" style="color: #f59e0b; font-size: 28px;">timer</span> -- : -- : --
+	                            <div id="expiry-timer-display" style="color: var(--text-1); font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+	                                -- : -- : --
 	                            </div>
-	                            <div style="color: #cbd5e1; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-	                                <span class="material-symbols-outlined" style="font-size: 16px; color: #94a3b8;">event</span> {{ _("Deadline") }}: <span style="color: #f8fafc;">${offer.payment_deadline.split(' ')[0]}</span>
+	                            <div style="color: var(--text-3); font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
+	                                <span class="material-symbols-outlined" style="font-size: 16px;">calendar_today</span> {{ _("Deadline") }}: <span style="color: var(--text-1);">${format_date_dd_mm_yyyy(offer.payment_deadline)}</span>
 	                            </div>
 	                        </div>
 	                    ` : ''}
@@ -831,15 +849,16 @@ _pc.mission_text) or '' %}
 	                        if (sa) {
 	                            if (sa.status === 'Submitted') {
 	                                return `
-	                                    <div class="scholarship-nudge-card applied" style="margin-bottom: 24px;">
-	                                        <div class="sn-header">
-	                                            <div class="sn-icon-wrap">⏳</div>
-	                                            <div>
-	                                                <div class="sn-title">{{ _("Scholarship Applied") }}</div>
-	                                                <div class="sn-subtitle">${sa.scheme_name || 'Need-Based Scholarship'}<br><strong>Status: Under Review</strong> ⏳</div>
-	                                            </div>
+	                                    <div class="scholarship-nudge-card applied">
+	                                        <div class="sn-header" style="margin-bottom: 4px;">
+	                                            <div class="sn-icon-wrap"><span class="material-symbols-outlined">school</span></div>
+	                                            <div class="sn-title" style="margin: 0;">{{ _("Scholarship Application Under Review") }}</div>
 	                                        </div>
-	                                        <a href="/merit-and-scholarship/scholarships" class="btn-sn-apply" style="background: #1e40af;">
+	                                        <ul style="margin: 0 0 12px 36px; padding-left: 16px; color: var(--text-2); font-size: 12px; font-weight: 500; line-height: 1.6; list-style-type: disc !important;">
+	                                            <li style="display: list-item !important; list-style-type: disc !important;">${sa.scheme_name || 'Need-Based Scholarship'}</li>
+	                                            <li style="display: list-item !important; list-style-type: disc !important; font-weight: 600; color: var(--text-1); margin-top: 4px;">{{ _("Status: Under Review") }}</li>
+	                                        </ul>
+	                                        <a href="/merit-and-scholarship/scholarships" class="btn-sn-apply">
 	                                            {{ _("View Application") }}
 	                                        </a>
 	                                    </div>
@@ -849,48 +868,47 @@ _pc.mission_text) or '' %}
 	                                const original = parseFloat(sa.original_fee_amount || offer.payable_amount || 0);
 	                                const discount_percent = (benefit && original) ? Math.round((benefit / original) * 100) : 0;
 	                                return `
-	                                    <div class="scholarship-nudge-card approved" style="margin-bottom: 24px;">
-	                                        <div class="sn-header">
-	                                            <div class="sn-icon-wrap">🎉</div>
-	                                            <div>
-	                                                <div class="sn-title">{{ _("Scholarship Approved") }} 🎉</div>
-	                                                <div class="sn-subtitle">
-	                                                    Discount: ${discount_percent}% (${format_currency(benefit, currency)})<br>
-	                                                    <strong>{{ _("Updated Fee") }}: ${format_currency(offer.payable_amount, currency)}</strong>
-	                                                </div>
-	                                            </div>
+	                                    <div class="scholarship-nudge-card approved">
+	                                        <div class="sn-header" style="margin-bottom: 4px;">
+	                                            <div class="sn-icon-wrap"><span class="material-symbols-outlined">school</span></div>
+	                                            <div class="sn-title" style="margin: 0;">{{ _("Scholarship Approved") }}</div>
 	                                        </div>
+	                                        <ul style="margin: 0 0 12px 36px; padding-left: 16px; color: var(--text-2); font-size: 12px; font-weight: 500; line-height: 1.6; list-style-type: disc !important;">
+	                                            <li style="display: list-item !important; list-style-type: disc !important;">{{ _("Discount") }}: ${discount_percent}% (${format_currency(benefit, currency)})</li>
+	                                            <li style="display: list-item !important; list-style-type: disc !important; font-weight: 600; color: var(--text-1); margin-top: 4px;">{{ _("Updated Fee") }}: ${format_currency(offer.payable_amount, currency)}</li>
+	                                        </ul>
 	                                    </div>
 	                                `;
 	                            } else if (sa.status === 'Rejected') {
 	                                return `
-	                                    <div class="scholarship-nudge-card rejected" style="margin-bottom: 24px;">
+	                                    <div class="scholarship-nudge-card rejected">
 	                                        <div class="sn-header">
-	                                            <div class="sn-icon-wrap">❌</div>
+	                                            <div class="sn-icon-wrap"><span class="material-symbols-outlined">cancel</span></div>
 	                                            <div>
-	                                                <div class="sn-title">{{ _("Scholarship Rejected") }}</div>
-	                                                <div class="sn-subtitle">{{ _("Your application was not approved. You can proceed with fee payment.") }}</div>
+	                                                <div class="sn-title">{{ _("Scholarship Application Unsuccessful") }}</div>
+	                                                <div class="sn-subtitle">{{ _("Your application was not approved. You can proceed with the standard fee payment.") }}</div>
 	                                            </div>
 	                                        </div>
 	                                    </div>
 	                                `;
 	                            }
 	                        } else if (data.available_scholarships_count > 0) {
+	                            const count_num = data.available_scholarships_count;
+	                            const num_words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+	                            const count_word_lower = num_words[count_num] || count_num.toString();
 	                            return `
-	                                <div class="scholarship-nudge-card" style="margin-bottom: 24px;">
-	                                    <div class="sn-header">
-	                                        <div class="sn-icon-wrap">🎓</div>
-	                                        <div>
-	                                            <div class="sn-title">{{ _("Scholarships Available") }}</div>
-	                                            <div class="sn-subtitle">
-	                                                {{ _("You are eligible for") }} <strong>${data.available_scholarships_count}</strong> {{ _("scholarship") }}${data.available_scholarships_count > 1 ? 's' : ''}<br>
-	                                                <span style="font-weight:700; color:#854d0e;">💡 Apply before payment to reduce your fee</span>
-	                                            </div>
-	                                        </div>
+	                                <div class="scholarship-nudge-card">
+	                                    <div class="sn-header" style="margin-bottom: 4px;">
+	                                        <div class="sn-icon-wrap"><span class="material-symbols-outlined">school</span></div>
+	                                        <div class="sn-title" style="margin: 0;">{{ _("Scholarship Opportunities") }}</div>
 	                                    </div>
+	                                    <ul style="margin: 0 0 12px 36px; padding-left: 16px; color: var(--text-2); font-size: 12px; font-weight: 500; line-height: 1.6; list-style-type: disc !important;">
+                                        <li style="display: list-item !important; list-style-type: disc !important;">{{ _("You are eligible to apply for") }} <strong>${count_word_lower}</strong> {{ _("scholarship") }}${count_num > 1 ? 's' : ''}.</li>
+                                        <li style="display: list-item !important; list-style-type: disc !important; font-weight:600; color:var(--text-1); margin-top: 4px;">{{ _("Apply now to reduce your course fee before payment.") }}</li>
+                                    </ul>
 	                                    <a href="/merit-and-scholarship/scholarships" class="btn-sn-apply">
-	                                        {{ _("Apply Scholarship") }}
-	                                        <i class="fa fa-arrow-right ml-1"></i>
+	                                        {{ _("Apply for Scholarship") }}
+	                                        <span class="material-symbols-outlined" style="font-size: 16px; margin-left: 4px;">arrow_forward</span>
 	                                    </a>
 	                                </div>
 	                            `;
@@ -976,9 +994,6 @@ _pc.mission_text) or '' %}
 	                    <div class="ui-card" style="padding: 0;">
 	                        <div class="preview-header px-4 pt-4" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
 	                            <h5 style="margin: 0;"><span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 8px; color: var(--primary);">description</span>{{ _("Offer letter preview") }}</h5>
-	                            <a href="javascript:void(0)" class="btn btn-download-outline" style="width: auto; margin: 0; padding: 6px 16px; font-size: 0.9rem;" onclick="handle_download()">
-	                                <span class="material-symbols-outlined" style="font-size: 18px;">download</span> {{ _("Download PDF") }}
-	                            </a>
 	                        </div>
 
 	                        <div class="p-4" style="background: #f8fafc; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
