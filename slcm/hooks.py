@@ -43,6 +43,10 @@ doctype_js = {
     "Notification": "public/js/notification_override.js"
 }
 
+doctype_calendar_js = {
+    "Event": "public/js/event_calendar_override.js"
+}
+
 # include js, css files in header of web template
 # web_include_css = "/assets/slcm/css/slcm.css"
 web_include_js = ["/assets/slcm/js/fle_theme.js", "/assets/slcm/js/file_uploader_globals.js"]

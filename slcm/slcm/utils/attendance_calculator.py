@@ -28,7 +28,8 @@ def calculate_student_attendance(student, course_offering):
 	
 	# Get Settings
 	settings = frappe.get_single("Attendance Settings")
-	
+	exam_settings = frappe.get_single("Examination Settings")
+
 	# Calculate sessions
 	sessions_data = calculate_sessions(course_offering)
 	
@@ -110,7 +111,7 @@ def calculate_student_attendance(student, course_offering):
 		is_eligible = 1
 	
 	# Check FA/MFA status (Override)
-	if not is_eligible and settings.allow_fa_mfa:
+	if not is_eligible and exam_settings.allow_fa_mfa:
 		if check_fa_mfa_eligibility(student, course_offering):
 			is_eligible = 1
 			# Optionally log or mark separate field that it is via FA/MFA

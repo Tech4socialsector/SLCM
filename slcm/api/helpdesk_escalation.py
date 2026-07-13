@@ -184,8 +184,12 @@ def _get_next_agent(team_name, tried_users):
         )
 
     for user in pool:
-        if user and user not in tried_users:
-            return user
+        if not user or user in tried_users:
+            continue
+        if not frappe.db.get_value("User", user, "enabled"):
+            # Disabled account (e.g. agent offboarded) — skip, don't stall escalation on them
+            continue
+        return user
     return None
 
 
@@ -321,6 +325,30 @@ def _send_templated_email(template_name, recipient, context):
     if frappe.db.get_single_value("HD Settings", "skip_email_workflow"):
         return
 
+    user = frappe.db.get_value("User", recipient, ["enabled", "email"], as_dict=True)
+    if not user:
+        frappe.log_error(
+            title="HD Ticket SLA Escalation: recipient user not found",
+            message=(
+                f"'{recipient}' is not a valid User (check for a typo in the team's "
+                f"Users / Escalation Order list). Skipped notification for template "
+                f"'{template_name}'."
+            ),
+        )
+        return
+    if not user.enabled:
+        frappe.log_error(
+            title="HD Ticket SLA Escalation: recipient user disabled",
+            message=f"User '{recipient}' is disabled. Skipped notification for template '{template_name}'.",
+        )
+        return
+    if not user.email:
+        frappe.log_error(
+            title="HD Ticket SLA Escalation: recipient has no email",
+            message=f"User '{recipient}' has no email set. Skipped notification for template '{template_name}'.",
+        )
+        return
+
     if not frappe.db.exists("Email Template", template_name):
         frappe.log_error(
             title="HD Ticket SLA Escalation: template not found",
@@ -332,11 +360,20 @@ def _send_templated_email(template_name, recipient, context):
     subject = frappe.render_template(template.subject, context)
     message = frappe.render_template(template.response, context)
 
-    frappe.sendmail(
-        recipients=recipient,
-        subject=subject,
-        message=message,
-    )
+    try:
+        frappe.sendmail(
+            recipients=user.email,
+            subject=subject,
+            message=message,
+        )
+    except Exception:
+        frappe.log_error(
+            title="HD Ticket SLA Escalation: sendmail failed",
+            message=(
+                f"Failed to send template '{template_name}' to '{recipient}'.\n\n"
+                f"{frappe.get_traceback()}"
+            ),
+        )
 
 
 def _log_activity(ticket_name, action):

@@ -2,8 +2,15 @@
 # For license information, please see license.txt
 
 # import frappe
+import frappe
 from frappe.model.document import Document
 
 
 class CourseMaster(Document):
-	pass
+	def autoname(self):
+		if not (self.course_code and self.course_name):
+			frappe.throw(frappe._("Course Code and Course Name are required to name the Course."))
+
+		course_name = self.course_name.strip().replace("/", "-")
+
+		self.name = f"{self.course_code.strip()}-{course_name}"

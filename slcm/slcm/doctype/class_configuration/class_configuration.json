@@ -2,18 +2,21 @@
  "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
- "autoname": "field:class_name",
  "creation": "2026-01-27 10:40:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "class_name",
+  "class_configuration_type",
+  "column_break_identity",
+  "section",
+  "group",
+  "section_break_details",
+  "programme",
   "term",
   "column_break_1",
-  "programme",
   "batch",
   "year",
-  "section",
   "section_break_course",
   "course",
   "type",
@@ -22,6 +25,7 @@
   "seat_limit",
   "section_break_students",
   "add_students_by_filter",
+  "bulk_upload_students",
   "clear_all_students",
   "students"
  ],
@@ -32,8 +36,49 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Class Name",
-   "reqd": 1,
-   "unique": 1
+   "reqd": 1
+  },
+  {
+   "fieldname": "class_configuration_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Class configuration type",
+   "options": "\nSection\nGroup"
+  },
+  {
+   "fieldname": "column_break_identity",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.class_configuration_type==\"Section\"",
+   "fieldname": "section",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Section",
+   "options": "Section"
+  },
+  {
+   "depends_on": "eval:doc.class_configuration_type==\"Group\"",
+   "fieldname": "group",
+   "fieldtype": "Link",
+   "label": "Group",
+   "options": "Group"
+  },
+  {
+   "fieldname": "section_break_details",
+   "fieldtype": "Section Break",
+   "label": "Class Details"
+  },
+  {
+   "fieldname": "programme",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Programme",
+   "options": "Programme",
+   "reqd": 1
   },
   {
    "fieldname": "term",
@@ -49,15 +94,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "programme",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Programme",
-   "options": "Programme",
-   "reqd": 1
-  },
-  {
    "fieldname": "batch",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -66,12 +102,10 @@
    "options": "Batch"
   },
   {
-   "fieldname": "section",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Section",
-   "options": "Section"
+   "fieldname": "year",
+   "fieldtype": "Select",
+   "label": "Year",
+   "options": "\n1st\n2nd\n3rd\n4th\n5th"
   },
   {
    "fieldname": "section_break_course",
@@ -120,10 +154,16 @@
    "label": "Students"
   },
   {
-   "depends_on": "eval:!doc.__islocal",
+   "depends_on": "eval:!doc.__islocal && doc.class_configuration_type==\"Section\"",
    "fieldname": "add_students_by_filter",
    "fieldtype": "Button",
    "label": "Add Students by Filter"
+  },
+  {
+   "depends_on": "eval:!doc.__islocal",
+   "fieldname": "bulk_upload_students",
+   "fieldtype": "Button",
+   "label": "Bulk Upload Students"
   },
   {
    "depends_on": "eval:!doc.__islocal",
@@ -136,20 +176,14 @@
    "fieldtype": "Table",
    "label": "Students",
    "options": "Class Student"
-  },
-  {
-   "fieldname": "year",
-   "fieldtype": "Select",
-   "label": "Year",
-   "options": "\n1st\n2nd\n3rd\n4th\n5th"
   }
  ],
  "links": [],
- "modified": "2026-07-10 13:21:45.681809",
+ "modified": "2026-07-10 16:45:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Class Configuration",
- "naming_rule": "By fieldname",
+ "naming_rule": "By script",
  "owner": "Administrator",
  "permissions": [
   {
