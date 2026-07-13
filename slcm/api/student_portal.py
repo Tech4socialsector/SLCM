@@ -78,7 +78,7 @@ def submit_fa_mfa_application(
             frappe.throw(f"{label} is required.")
 
     # Check global setting
-    settings = frappe.get_single("Attendance Settings")
+    settings = frappe.get_single("Examination Settings")
     if not settings.allow_fa_mfa:
         frappe.throw("FA/MFA Applications are currently disabled by the administration.")
 
