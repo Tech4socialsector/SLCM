@@ -37,9 +37,6 @@ from frappe.utils import (
     flt,
 )
 from collections import defaultdict
-from slcm.slcm.doctype.rfid_device_room_mapping.rfid_device_room_mapping import (
-    get_active_rooms_for_device,
-)
 
 
 # ---------------------------------------------------------------------------
@@ -51,8 +48,6 @@ def process_pending_logs():
     try:
         if not frappe.db.get_single_value("Attendance Settings", "enable_rfid"):
             return
-
-        _tag_unmatched_unknown_cards()
 
         logs = _get_unprocessed_logs()
         if not logs:
@@ -90,23 +85,9 @@ def _get_unprocessed_logs():
     return frappe.get_all(
         "Attendance Log",
         filters={"processed": 0, "student": ["!=", ""]},
-        fields=["name", "student", "swipe_time", "device_id", "location", "rfid_uid", "match_status"],
+        fields=["name", "student", "swipe_time", "device_id", "location", "rfid_uid"],
         order_by="swipe_time asc",
     )
-
-
-def _tag_unmatched_unknown_cards():
-    """Logs with no student link (unregistered card, or ingested via a path
-    that doesn't resolve student e.g. RFID SQL Punch Log) can never be
-    auto-matched — surface them for manual sync instead of leaving them
-    silently pending forever."""
-    frappe.db.sql("""
-        UPDATE `tabAttendance Log`
-        SET match_status = 'Unmatched - Unknown Card'
-        WHERE processed = 0
-        AND (student IS NULL OR student = '')
-        AND match_status != 'Unmatched - Unknown Card'
-    """)
 
 
 def _group_by_student_date(logs):
@@ -136,25 +117,17 @@ def _process_student_day(logs):
     sessions = _get_or_create_sessions(student, log_date)
 
     if not sessions:
-        reason = _diagnose_unmatched_reason(logs, log_date)
         frappe.logger().info(
-            f"RFID Processor: no sessions for {student} on {log_date} — logs left unprocessed ({reason})"
+            f"RFID Processor: no sessions for {student} on {log_date} — logs left unprocessed"
         )
-        for log in logs:
-            if log.get("match_status") != reason:
-                frappe.db.set_value("Attendance Log", log.name, "match_status", reason)
         return
 
     processed_names = set()
-    matched_any_names = set()
 
     for session in sessions:
         matched = _match_swipes_to_session(logs, session)
         if not matched:
             continue
-
-        for log in matched:
-            matched_any_names.add(log.name)
 
         status = _determine_status(matched, session, rfid_mode)
         if not status:
@@ -171,29 +144,7 @@ def _process_student_day(logs):
 
     for log in logs:
         if log.name in processed_names:
-            frappe.db.set_value("Attendance Log", log.name, {
-                "processed": 1,
-                "match_status": "Matched",
-            })
-        elif log.name not in matched_any_names and log.get("match_status") != "Unmatched - No Session":
-            # A session exists that day, but none of its windows cover this swipe.
-            frappe.db.set_value("Attendance Log", log.name, "match_status", "Unmatched - No Session")
-
-
-def _diagnose_unmatched_reason(logs, log_date):
-    """Best-effort reason why no session could be resolved at all, so staff
-    reviewing the Attendance Sync UI know whether to fix a device mapping
-    or a missing Time Table entry."""
-    for log in logs:
-        device_id = log.get("device_id")
-        if not device_id:
-            continue
-        if not frappe.db.exists("RFID Device", device_id):
-            return "Unmatched - No Device Mapping"
-        rooms = get_active_rooms_for_device(device_id, on_date=log_date)
-        if not rooms:
-            return "Unmatched - No Device Mapping"
-    return "Unmatched - No Session"
+            frappe.db.set_value("Attendance Log", log.name, "processed", 1)
 
 
 # ---------------------------------------------------------------------------
@@ -505,131 +456,3 @@ def process_logs_manually():
     """Admin/testing manual trigger. Also callable from bench console."""
     process_pending_logs()
     return {"status": "success", "message": "Attendance logs processed successfully"}
-
-
-# ---------------------------------------------------------------------------
-# Manual reconciliation — Attendance Sync UI
-# ---------------------------------------------------------------------------
-
-@frappe.whitelist()
-def get_unmatched_logs(from_date=None, to_date=None, match_status=None):
-    """List Attendance Logs that need manual reconciliation, with enough
-    context (session activation state, resolved device/room) for staff to
-    decide how to sync each one."""
-    frappe.only_for(("System Manager", "slcm_Programme Chair"))
-
-    filters = [["Attendance Log", "processed", "=", 0]]
-    if match_status:
-        filters.append(["Attendance Log", "match_status", "=", match_status])
-    else:
-        filters.append(["Attendance Log", "match_status", "!=", "Pending"])
-    if from_date:
-        filters.append(["Attendance Log", "swipe_time", ">=", from_date])
-    if to_date:
-        filters.append(["Attendance Log", "swipe_time", "<=", to_date])
-
-    logs = frappe.get_all(
-        "Attendance Log",
-        filters=filters,
-        fields=["name", "rfid_uid", "student", "swipe_time", "device_id",
-                "terminal_alias", "location", "source", "match_status",
-                "processed", "synced_by", "synced_on", "creation", "modified"],
-        order_by="swipe_time desc",
-        limit=500,
-    )
-
-    for log in logs:
-        log["student_name"] = None
-        log["student_email"] = None
-        if log.get("student"):
-            student_info = frappe.db.get_value(
-                "Student Master", log["student"], ["first_name", "email"], as_dict=True
-            )
-            if student_info:
-                log["student_name"] = student_info.first_name
-                log["student_email"] = student_info.email
-
-        rooms = get_active_rooms_for_device(log.get("device_id"), on_date=getdate(log.get("swipe_time"))) \
-            if log.get("device_id") else []
-        log["resolved_rooms"] = rooms
-
-        candidate_sessions = []
-        if rooms:
-            candidate_sessions = frappe.get_all(
-                "Attendance Session",
-                filters={
-                    "room": ["in", rooms],
-                    "session_date": getdate(log.get("swipe_time")),
-                    "session_status": ["!=", "Cancelled"],
-                },
-                fields=["name", "course", "course_offering", "session_start_time", "session_end_time",
-                        "instructor", "rfid_activated_by", "rfid_activation_time", "duration_hours"],
-            )
-            for session in candidate_sessions:
-                session["course_code"] = frappe.db.get_value("Course", session.get("course"), "course_code") \
-                    if session.get("course") else None
-        log["candidate_sessions"] = candidate_sessions
-
-    return logs
-
-
-@frappe.whitelist()
-def sync_attendance_log(log_name, session_name, student=None):
-    """Manually reconcile one Attendance Log against a staff-selected
-    Attendance Session (used when auto-matching failed — missing device/room
-    mapping, faculty forgot to activate, unknown card now identified, etc.)."""
-    frappe.only_for(("System Manager", "slcm_Programme Chair"))
-
-    log_doc = frappe.get_doc("Attendance Log", log_name)
-    if log_doc.processed:
-        frappe.throw(_("This log has already been processed."))
-
-    if student:
-        log_doc.student = student
-    if not log_doc.student:
-        frappe.throw(_("Select a student before syncing this log — the card is not registered."))
-
-    session = frappe.get_doc("Attendance Session", session_name)
-
-    swipe_time = log_doc.swipe_time
-    hours = flt(session.duration_hours) or 1.0
-
-    existing = frappe.db.exists("Student Attendance", {
-        "student": log_doc.student,
-        "attendance_session": session.name,
-    })
-
-    if existing:
-        att = frappe.get_doc("Student Attendance", existing)
-        att.status = "Present"
-        att.source = "RFID"
-        att.in_time = swipe_time
-        att.attendance_log = log_doc.name
-        att.hours_counted = hours
-        att.save(ignore_permissions=True)
-    else:
-        att = frappe.get_doc({
-            "doctype": "Student Attendance",
-            "student": log_doc.student,
-            "attendance_session": session.name,
-            "course_offer": session.course_offering,
-            "course_schedule": session.course_schedule,
-            "attendance_date": getdate(swipe_time),
-            "date": getdate(swipe_time),
-            "status": "Present",
-            "source": "RFID",
-            "in_time": swipe_time,
-            "attendance_log": log_doc.name,
-            "session_type": session.session_type or "Lecture",
-            "hours_counted": hours,
-        })
-        att.insert(ignore_permissions=True)
-
-    log_doc.student_attendance = att.name
-    log_doc.processed = 1
-    log_doc.match_status = "Manually Synced"
-    log_doc.synced_by = frappe.session.user
-    log_doc.synced_on = now_datetime()
-    log_doc.save(ignore_permissions=True)
-
-    return {"status": "success", "student_attendance": att.name}

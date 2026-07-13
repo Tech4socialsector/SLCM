@@ -30,13 +30,76 @@ def create_attendance_log():
 			)
 
 	rfid_uid = data.get("rfid_uid").strip()
-	device_id = data.get("device_id")
-	swipe_time = data.get("swipe_time") or now_datetime()
-	source = data.get("source") or "RFID"
-	location = data.get("location")
 
 	# --------------------------------------------------
-	# 3. Duplicate protection (Anti-Flood)
+	# 3. Map RFID UID to Student
+	# --------------------------------------------------
+	student = frappe.db.get_value(
+		"Student Master",
+		{"rfid_uid": rfid_uid},
+		["name", "first_name", "last_name", "department", "programme"],
+		as_dict=True
+	)
+
+	if not student:
+		# Log the attempt even if student is not found
+		frappe.log_error(
+			title=f"Unregistered RFID UID: {rfid_uid}",
+			message=f"RFID UID {rfid_uid} attempted to swipe but is not registered to any student."
+		)
+		frappe.throw(
+			_(f"RFID UID {rfid_uid} is not registered. Please contact administration."),
+			frappe.ValidationError
+		)
+
+	# --------------------------------------------------
+	# 4. Device Validation (if device_id provided)
+	# --------------------------------------------------
+	device_id = data.get("device_id")
+
+	if device_id:
+		device = frappe.db.get_value(
+			"RFID Device",
+			device_id,
+			["name", "is_active", "location"],
+			as_dict=True
+		)
+
+		if not device:
+			frappe.log_error(
+				title=f"Unauthorized Device: {device_id}",
+				message=f"Device {device_id} attempted to submit attendance but is not registered."
+			)
+			frappe.throw(
+				_(f"Device {device_id} is not authorized. Please contact administration."),
+				frappe.PermissionError
+			)
+
+		if not device.get("is_active"):
+			frappe.throw(
+				_(f"Device {device_id} is inactive. Please contact administration."),
+				frappe.PermissionError
+			)
+
+		# Update last_seen timestamp for the device
+		frappe.db.set_value("RFID Device", device_id, "last_seen", now_datetime())
+
+		# Use device location if not provided in request
+		if not data.get("location") and device.get("location"):
+			location = device.get("location")
+		else:
+			location = data.get("location")
+	else:
+		location = data.get("location")
+
+	# --------------------------------------------------
+	# 5. Optional fields with defaults
+	# --------------------------------------------------
+	swipe_time = data.get("swipe_time") or now_datetime()
+	source = data.get("source") or "RFID"
+
+	# --------------------------------------------------
+	# 6. Duplicate protection (Anti-Flood)
 	#    Prevent same UID flooding within 10 seconds
 	# --------------------------------------------------
 	recent_log = frappe.db.exists(
@@ -51,62 +114,15 @@ def create_attendance_log():
 		return {
 			"status": "ignored",
 			"message": "Duplicate swipe ignored (within 10 seconds)",
-			"rfid_uid": rfid_uid
+			"student": student.get("name"),
+			"student_name": f"{student.get('first_name')} {student.get('last_name') or ''}".strip()
 		}
 
 	# --------------------------------------------------
-	# 4. Map RFID UID to Student.
-	#    Every tap is logged even when the card/device is unrecognised —
-	#    this keeps the tap visible in the Attendance Sync UI instead of
-	#    being silently dropped, so staff can reconcile it later.
+	# 7. Create Attendance Log with Student Link
 	# --------------------------------------------------
-	student = frappe.db.get_value(
-		"Student Master",
-		{"rfid_uid": rfid_uid},
-		["name", "first_name", "last_name", "department", "programme"],
-		as_dict=True
-	) or frappe._dict()
-
-	match_status = "Pending"
-	if not student.get("name"):
-		match_status = "Unmatched - Unknown Card"
-		frappe.log_error(
-			title=f"Unregistered RFID UID: {rfid_uid}",
-			message=f"RFID UID {rfid_uid} attempted to swipe but is not registered to any student."
-		)
-
 	# --------------------------------------------------
-	# 5. Device Validation (if device_id provided)
-	# --------------------------------------------------
-	if device_id:
-		device = frappe.db.get_value(
-			"RFID Device",
-			device_id,
-			["name", "is_active", "location"],
-			as_dict=True
-		)
-
-		if not device or not device.get("is_active"):
-			if match_status == "Pending":
-				match_status = "Unmatched - No Device Mapping"
-			if not device:
-				frappe.log_error(
-					title=f"Unauthorized Device: {device_id}",
-					message=f"Device {device_id} attempted to submit attendance but is not registered."
-				)
-			else:
-				frappe.log_error(
-					title=f"Inactive Device: {device_id}",
-					message=f"Device {device_id} attempted to submit attendance while inactive."
-				)
-		else:
-			# Update last_seen timestamp for the device
-			frappe.db.set_value("RFID Device", device_id, "last_seen", now_datetime())
-			if not location and device.get("location"):
-				location = device.get("location")
-
-	# --------------------------------------------------
-	# 6. Create Attendance Log — always, regardless of match outcome
+	# 7. Create Attendance Log with Student Link
 	# --------------------------------------------------
 	attendance_log = frappe.get_doc({
 		"doctype": "Attendance Log",
@@ -116,8 +132,7 @@ def create_attendance_log():
 		"device_id": device_id,
 		"location": location,
 		"source": source,
-		"processed": 0,
-		"match_status": match_status,
+		"processed": 0
 	})
 
 	attendance_log.insert(ignore_permissions=True)
@@ -153,7 +168,6 @@ def create_attendance_log():
 		"status": "success",
 		"message": "Attendance log received",
 		"attendance_log": attendance_log.name,
-		"match_status": attendance_log.match_status,
 		"student": student.get("name"),
 		"student_name": f"{student.get('first_name')} {student.get('last_name') or ''}".strip(),
 		"department": student.get("department"),

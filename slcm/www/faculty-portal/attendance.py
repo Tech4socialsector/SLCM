@@ -59,19 +59,14 @@ def get_context(context):
                 fields=["name", "course_offering", "session_date", "session_type",
                         "session_start_time", "session_end_time", "room",
                         "session_status", "total_students", "present_count",
-                        "absent_count", "attendance_percentage", "attendance_marked",
-                        "rfid_activated_by", "rfid_activation_time", "rfid_active_until"],
+                        "absent_count", "attendance_percentage", "attendance_marked"],
                 order_by="session_date desc",
                 limit=50,
                 ignore_permissions=True,
             )
-            now = frappe.utils.now_datetime()
             for s in raw_sessions:
                 co = co_map.get(s.course_offering, frappe._dict())
                 pct = round(float(s.attendance_percentage or 0), 1)
-                rfid_active = bool(
-                    s.rfid_activation_time and s.rfid_active_until and now <= s.rfid_active_until
-                )
                 sessions.append({
                     "name": s.name,
                     "course_name": co.get("course_name") or s.course_offering,
@@ -88,9 +83,6 @@ def get_context(context):
                     "absent": s.absent_count or 0,
                     "pct": pct,
                     "marked": bool(s.attendance_marked),
-                    "rfid_activated": bool(s.rfid_activation_time),
-                    "rfid_active": rfid_active,
-                    "rfid_active_until": str(s.rfid_active_until) if s.rfid_active_until else "",
                 })
         context.sessions = sessions
 
