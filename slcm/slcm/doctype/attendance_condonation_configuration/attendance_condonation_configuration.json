@@ -8,12 +8,14 @@
  "field_order": [
   "level_one_aad_authority_section",
   "l1_approval_email_template",
+  "l1_due_days",
   "column_break_dgug",
   "l1_rejected_email_template",
   "section_break_cjqz",
   "level_one_authority",
   "level_two_authority_section",
   "l2_approval_email_template",
+  "l2_due_days",
   "column_break_ugle",
   "l2_rejected_email_template",
   "section_break_hmrm",
@@ -81,13 +83,29 @@
    "fieldtype": "Table",
    "label": "Level Two Authority",
    "options": "Attendance Condonation Table"
+  },
+  {
+   "default": "3",
+   "fieldname": "l1_due_days",
+   "fieldtype": "Int",
+   "label": "Due Days",
+   "length": 1,
+   "non_negative": 1
+  },
+  {
+   "default": "3",
+   "fieldname": "l2_due_days",
+   "fieldtype": "Int",
+   "label": "Due Days",
+   "length": 1,
+   "non_negative": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-07-13 16:08:30.064879",
+ "modified": "2026-07-13 16:17:05.134981",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Attendance Condonation Configuration",
