@@ -149,7 +149,7 @@ class TimeTable(Document):
 
         # Check if session already exists
         exists = frappe.db.exists("Attendance Session", {
-            "time_table": self.name,
+            "class_schedule": self.name,
             "session_date": self.schedule_date,
             "session_start_time": self.from_time
         })
@@ -165,7 +165,7 @@ class TimeTable(Document):
         doc = frappe.get_doc({
             "doctype": "Attendance Session",
             "based_on": "Time Table",
-            "time_table": self.name,
+            "class_schedule": self.name,
             "student_group": self.student_group,
             "course_offering": self.course_offering,
             "course": self.course,
@@ -193,7 +193,7 @@ class TimeTable(Document):
 
         # Find the Attendance Session linked to this Time Table entry
         session_name = frappe.db.get_value("Attendance Session", {
-            "time_table": self.name
+            "class_schedule": self.name
         })
 
         if not session_name:
@@ -551,7 +551,7 @@ def get_events(start, end, filters=None):
 
 def get_institutional_calendar_events(start, end):
     """Render Institutional Calendar entries (holidays, exams, events, ...)
-    as background markers on the Time Table calendar view."""
+    as solid, labeled all-day banners on the Time Table calendar view."""
     entries = frappe.db.sql(
         """
         SELECT name, name1, entry_type, start_date, end_date
@@ -576,6 +576,7 @@ def get_institutional_calendar_events(start, end):
 
     events = []
     for entry in entries:
+        entry_color = entry_colors.get(entry.entry_type, "#95a5a6")
         events.append({
             "name": f"ic-{entry.name}",
             "id": f"ic-{entry.name}",
@@ -583,9 +584,11 @@ def get_institutional_calendar_events(start, end):
             "start": str(entry.start_date),
             "end": str(entry.end_date + timedelta(days=1)),
             "allDay": 1,
-            "display": "background",
             "editable": False,
-            "color": entry_colors.get(entry.entry_type, "#95a5a6"),
+            "color": entry_color,
+            "backgroundColor": entry_color,
+            "borderColor": entry_color,
+            "textColor": "#ffffff",
             "extendedProps": {
                 "institutional_calendar": entry.name,
                 "entry_type": entry.entry_type,
@@ -649,7 +652,7 @@ def update_attendance_session_realtime(time_table_name, from_time, to_time, sche
 	try:
 		# Find the Attendance Session linked to this Time Table entry
 		session_name = frappe.db.get_value("Attendance Session", {
-			"time_table": time_table_name
+			"class_schedule": time_table_name
 		})
 
 		if not session_name:
