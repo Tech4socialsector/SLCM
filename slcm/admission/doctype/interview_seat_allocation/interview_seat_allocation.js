@@ -19,7 +19,7 @@ frappe.ui.form.on("Interview Seat Allocation", {
         if (frm.doc.interview_result_status === "Pass" && !frappe.user_roles.includes("Applicant")) {
             frm.add_custom_button(__("Generate Offer Letter"), function () {
                 frappe.call({
-                    method: "slcm.api.service.offer_service.OfferService.bulk_generate_offers",
+                    method: "slcm.api.service.offer_service.bulk_generate_offers",
                     args: {
                         applicants: [frm.doc.applicant]
                     },

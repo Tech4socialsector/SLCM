@@ -9,6 +9,7 @@
   "scheme_code",
   "scheme_type",
   "category",
+  "scholarship_for",
   "eligibility_criteria",
   "column_basic_2",
   "admission_cycle",
@@ -107,6 +108,15 @@
    "fieldtype": "Link",
    "label": "Category",
    "options": "Admission Category"
+  },
+  {
+   "default": "Domestic",
+   "fieldname": "scholarship_for",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Scholarship For",
+   "options": "Domestic\nInternational",
+   "reqd": 1
   },
   {
    "fieldname": "scheme_type",

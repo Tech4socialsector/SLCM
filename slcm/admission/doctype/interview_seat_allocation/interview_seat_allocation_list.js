@@ -372,7 +372,7 @@ function open_generate_offer_dialog(listview) {
             }
 
             frappe.call({
-                method: 'slcm.api.service.offer_service.OfferService.bulk_generate_offers',
+                method: 'slcm.api.service.offer_service.bulk_generate_offers',
                 args: {
                     applicants: selected_applicants
                 },
