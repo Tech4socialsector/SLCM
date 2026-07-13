@@ -8,8 +8,10 @@
  "field_order": [
   "event_name",
   "venue_type",
-  "room",
+  "venue",
   "capacity",
+  "building",
+  "floor",
   "column_break_1",
   "start_datetime",
   "end_datetime",
@@ -31,7 +33,7 @@
   "admin_remarks",
   "section_break_swap",
   "swap_requested",
-  "swap_requested_room",
+  "swap_requested_venue",
   "swap_request_reason",
   "column_break_swap",
   "swap_status",
@@ -50,24 +52,15 @@
   },
   {
    "fieldname": "venue_type",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Venue Type",
-   "options": "Classroom\nMoot Court\nOpen Spaces\nMeeting Room\nMess\nQuad\nConference Hall\nProject\nGuest House\nStaff Quarters",
-   "reqd": 1
-  },
-  {
-   "fieldname": "room",
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Venue",
-   "options": "Room",
+   "label": "Venue Type",
+   "options": "Venue Type",
    "reqd": 1
   },
   {
-   "fetch_from": "room.seating_capacity",
+   "fetch_from": "venue.capacity",
    "fieldname": "capacity",
    "fieldtype": "Int",
    "label": "Capacity",
@@ -217,11 +210,11 @@
    "read_only": 1
   },
   {
-   "fieldname": "swap_requested_room",
+   "fieldname": "swap_requested_venue",
    "fieldtype": "Link",
    "hidden": 1,
-   "label": "Requested Room",
-   "options": "Room",
+   "label": "Requested Venue",
+   "options": "Venue Master",
    "read_only": 1
   },
   {
@@ -274,12 +267,37 @@
    "options": "Venue Booking",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "venue",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Venue",
+   "options": "Venue Master",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "venue.building",
+   "fieldname": "building",
+   "fieldtype": "Link",
+   "label": "Building",
+   "options": "Building",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "venue.floor",
+   "fieldname": "floor",
+   "fieldtype": "Link",
+   "label": "Floor",
+   "options": "Floor",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-09 11:28:53.462489",
+ "modified": "2026-07-13 12:16:20.504272",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Venue Booking",
