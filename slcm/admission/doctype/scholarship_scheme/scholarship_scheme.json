@@ -133,12 +133,12 @@
   {
    "fieldname": "min_income",
    "fieldtype": "Currency",
-   "label": "Minimum income"
+   "label": "Minimum income (Annual)"
   },
   {
    "fieldname": "max_income",
    "fieldtype": "Currency",
-   "label": "Maximum income"
+   "label": "Maximum income (Annual)"
   },
   {
    "fieldname": "section_coverage",
@@ -301,7 +301,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-06 16:41:21.897266",
+ "modified": "2026-07-11 16:17:23.233502",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Scholarship Scheme",

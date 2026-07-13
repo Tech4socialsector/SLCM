@@ -32,8 +32,8 @@ def create_class(data):
 
 	# Check duplicate
 	# Adapting to Class Configuration fields based on JS input
-	# JS input: department, program, academic_year, academic_term, course, class_type, faculty, max_strength, section, student_group_name
-	
+	# JS input: program, academic_year, academic_term, course, class_type, faculty, max_strength, section, student_group_name
+
 	exists = frappe.db.exists(
 		"Class Configuration",
 		{
@@ -46,7 +46,6 @@ def create_class(data):
 
 	doc = frappe.new_doc("Class Configuration")
 	doc.class_name = data.get("student_group_name")
-	doc.department = data.get("department")
 	doc.programme = data.get("program")
 	doc.academic_year = data.get("academic_year")
 	doc.term = data.get("academic_term")
@@ -61,14 +60,13 @@ def create_class(data):
 
 @frappe.whitelist()
 def create_classes_by_section(
-	department, program, academic_year, batch, academic_term, course, class_type, faculty
+	program, academic_year, batch, academic_term, course, class_type, faculty
 ):
 	# Enqueue this to run in background
 	frappe.enqueue(
 		"slcm.slcm.doctype.term_administration.term_administration.process_bulk_class_creation",
 		queue="long",
 		timeout=1500,
-		department=department,
 		program=program,
 		academic_year=academic_year,
 		batch=batch,
@@ -81,16 +79,11 @@ def create_classes_by_section(
 	return "Bulk creation started. You will be notified upon completion."
 
 def process_bulk_class_creation(
-	department, program, academic_year, batch, academic_term, course, class_type, faculty, user
+	program, academic_year, batch, academic_term, course, class_type, faculty, user
 ):
 	sections = frappe.get_all(
-		"Program Batch Section",
-		filters={
-			"department": department,
-			"program": program,
-			"academic_year": academic_year,
-			"batch": batch,
-		},
+		"Section",
+		filters={"batch": batch},
 		fields=["name", "section_name", "capacity"],
 	)
 
@@ -106,7 +99,6 @@ def process_bulk_class_creation(
 
 		doc = frappe.new_doc("Class Configuration")
 		doc.class_name = class_name
-		doc.department = department
 		doc.programme = program
 		doc.academic_year = academic_year
 		doc.term = academic_term

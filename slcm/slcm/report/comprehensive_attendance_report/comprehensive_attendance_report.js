@@ -21,7 +21,7 @@ frappe.query_reports["Comprehensive Attendance Report"] = {
             "fieldname": "section",
             "label": __("Section"),
             "fieldtype": "Link",
-            "options": "Program Batch Section",
+            "options": "Section",
             "reqd": 0
         },
         {

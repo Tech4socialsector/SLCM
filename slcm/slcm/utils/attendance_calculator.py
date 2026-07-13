@@ -48,7 +48,7 @@ def calculate_student_attendance(student, course_offering):
 	fa_mfa_data = calculate_fa_mfa_hours(student, course_offering)
 	
 	# -- Update summary fields --
-	# 0. Total Scheduled Class Hours (all planned sessions from Class Schedule)
+	# 0. Total Scheduled Class Hours (all planned sessions from Time Table)
 	summary.total_scheduled_class_hours = sessions_data['total_hours']
 
 	# 1. Total Sessions (Count — conducted only)
@@ -137,9 +137,9 @@ def calculate_student_attendance(student, course_offering):
 def calculate_sessions(course_offering):
 	"""
 	Calculate session statistics for a course offering.
-	Returns total hours from Class Schedule (all scheduled classes).
+	Returns total hours from Time Table (all scheduled classes).
 	"""
-	# Get total scheduled hours from Class Schedule.
+	# Get total scheduled hours from Time Table.
 	# Prefer the stored duration_hours; fall back to calculating from from_time/to_time
 	# in case duration_hours was never populated on older records.
 	scheduled_hours = frappe.db.sql("""
@@ -154,7 +154,7 @@ def calculate_sessions(course_offering):
 					ELSE 0
 				END
 			), 0) as total_hours
-		FROM `tabClass Schedule`
+		FROM `tabTime Table`
 		WHERE course_offering = %s
 		AND docstatus < 2
 	""", course_offering, as_dict=True)
@@ -183,8 +183,8 @@ def calculate_sessions(course_offering):
 		result['conducted_hours'] = conducted[0]['conducted_hours']
 		result['conducted_sessions'] = conducted[0]['conducted_sessions']
 
-	# Use Class Schedule hours as denominator when available.
-	# If no Class Schedule exists yet, fall back to conducted Attendance Session hours
+	# Use Time Table hours as denominator when available.
+	# If no Time Table entry exists yet, fall back to conducted Attendance Session hours
 	# so the percentage is not stuck at 0% for the whole term.
 	if sched_total and sched_total > 0:
 		result['total_hours'] = sched_total

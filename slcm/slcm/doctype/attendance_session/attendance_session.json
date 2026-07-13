@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "autoname": "AS-.YYYY.-.#####",
  "creation": "2026-02-03 02:24:00",
  "doctype": "DocType",
@@ -41,7 +42,7 @@
    "fieldname": "based_on",
    "fieldtype": "Select",
    "label": "Based On",
-   "options": "Student Group\nCourse Schedule\nClass Schedule\nOffice Hours"
+   "options": "Student Group\nCourse Schedule\nTime Table\nOffice Hours"
   },
   {
    "fieldname": "student_group",
@@ -54,21 +55,21 @@
    "fieldname": "section",
    "fieldtype": "Link",
    "label": "Section",
-   "options": "Program Batch Section",
+   "options": "Section",
    "read_only": 1
   },
   {
    "fieldname": "class_schedule",
    "fieldtype": "Link",
-   "label": "Class Schedule",
-   "options": "Class Schedule"
+   "label": "Time Table",
+   "options": "Time Table"
   },
   {
+   "depends_on": "eval:doc.based_on=='Office Hours'",
    "fieldname": "office_hours_group",
    "fieldtype": "Link",
    "label": "Office Hours Group",
-   "options": "Office Hours Group",
-   "depends_on": "eval:doc.based_on=='Office Hours'"
+   "options": "Office Hours Group"
   },
   {
    "fieldname": "course_schedule",
@@ -131,7 +132,7 @@
    "fetch_from": "course_schedule.instructor",
    "fieldname": "instructor",
    "fieldtype": "Link",
-   "label": "Instructor",
+   "label": "Faculty",
    "options": "Faculty"
   },
   {
@@ -228,7 +229,7 @@
   }
  ],
  "links": [],
- "modified": "2026-02-16 21:32:43.834344",
+ "modified": "2026-07-10 16:44:36.882418",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Attendance Session",
@@ -274,6 +275,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 1,
- "custom": 0
+ "track_changes": 1
 }

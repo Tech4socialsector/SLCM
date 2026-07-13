@@ -9,6 +9,7 @@
  "field_order": [
   "program",
   "program_shortcode",
+  "level_of_study",
   "academic_year",
   "academic_term",
   "start_date",
@@ -83,7 +84,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Section",
-   "options": "Program Batch Section"
+   "options": "Section"
   },
   {
    "description": "Term of the Current Year",
@@ -132,6 +133,12 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Total enrolled count"
+  },
+  {
+   "fetch_from": "program.level_of_study",
+   "fieldname": "level_of_study",
+   "fieldtype": "Data",
+   "label": "Level of study"
   }
  ],
  "links": [
@@ -146,7 +153,7 @@
    "link_fieldname": "cohort"
   }
  ],
- "modified": "2026-07-08 17:11:25.189673",
+ "modified": "2026-07-08 23:53:09.381213",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Batch",

@@ -3,19 +3,16 @@
 
 frappe.ui.form.on('Class Configuration', {
     refresh: function (frm) {
-        // Add custom buttons
-        if (!frm.is_new()) {
-            frm.add_custom_button(__('Add Students by Filter'), function () {
-                add_students_by_filter(frm);
-            }, __('Actions'));
-
-            frm.add_custom_button(__('Clear All Students'), function () {
-                clear_all_students(frm);
-            }, __('Actions'));
-        }
-
         // Set filters for links
         set_link_filters(frm);
+    },
+
+    add_students_by_filter: function (frm) {
+        add_students_by_filter(frm);
+    },
+
+    clear_all_students: function (frm) {
+        clear_all_students(frm);
     },
 
     programme: function (frm) {
@@ -76,17 +73,19 @@ frappe.ui.form.on('Class Student', {
 });
 
 function set_link_filters(frm) {
-    // Set filter for students based on programme, batch, section
-    if (frm.doc.programme || frm.doc.batch || frm.doc.section) {
+    // Only show students actually enrolled (via Student Enrollment) in this
+    // class's programme/batch/section - Student Master has no batch/section
+    // field of its own, so this goes through a custom server-side query.
+    if (frm.doc.batch) {
         frm.set_query('student', 'students', function () {
-            let filters = {};
-            if (frm.doc.programme) {
-                filters['programme'] = frm.doc.programme;
-            }
-            if (frm.doc.batch) {
-                filters['batch_year'] = frm.doc.batch;
-            }
-            return { filters: filters };
+            return {
+                query: 'slcm.slcm.doctype.class_configuration.class_configuration.student_query',
+                filters: {
+                    programme: frm.doc.programme,
+                    batch: frm.doc.batch,
+                    section: frm.doc.section,
+                },
+            };
         });
     }
 }
@@ -124,13 +123,15 @@ function add_students_by_filter(frm) {
             },
             {
                 fieldname: 'batch',
-                fieldtype: 'Data',
+                fieldtype: 'Link',
+                options: 'Batch',
                 label: __('Batch'),
                 default: frm.doc.batch
             },
             {
                 fieldname: 'section',
-                fieldtype: 'Data',
+                fieldtype: 'Link',
+                options: 'Section',
                 label: __('Section'),
                 default: frm.doc.section
             }

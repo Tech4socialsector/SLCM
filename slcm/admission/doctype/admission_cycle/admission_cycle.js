@@ -733,7 +733,7 @@ function open_reservation_policy(frm, row) {
     frappe.call({
         method: "frappe.client.get_value",
         args: {
-            doctype: "Program Reservation Policy",
+            doctype: "Programme Reservation Policy",
             filters: { admission_cycle: frm.doc.name, program: row.program, campus: row.campus },
             fieldname: "name"
         },
@@ -742,7 +742,7 @@ function open_reservation_policy(frm, row) {
                 frappe.call({
                     method: "frappe.client.get",
                     args: {
-                        doctype: "Program Reservation Policy",
+                        doctype: "Programme Reservation Policy",
                         name: r.message.name
                     },
                     callback: (res) => {

@@ -21,9 +21,9 @@ def save_categories(admission_cycle, program, total_seats, policy_document=None,
 
     # If existing_policy is provided, this is an UPDATE
     if existing_policy:
-        if not frappe.db.exists("Program Reservation Policy", existing_policy):
+        if not frappe.db.exists("Programme Reservation Policy", existing_policy):
             frappe.throw(_("Reservation Policy {0} not found.").format(existing_policy))
-        doc = frappe.get_doc("Program Reservation Policy", existing_policy)
+        doc = frappe.get_doc("Programme Reservation Policy", existing_policy)
     else:
         # NEW record — check for duplicates (Program + Cycle + Campus)
         filters = {
@@ -31,12 +31,12 @@ def save_categories(admission_cycle, program, total_seats, policy_document=None,
             "program": program,
             "campus": campus
         }
-        existing = frappe.db.get_value("Program Reservation Policy", filters, "name")
+        existing = frappe.db.get_value("Programme Reservation Policy", filters, "name")
         if existing:
             frappe.throw(
                 _("A reservation policy already exists for {0} at {1} in Cycle {2}.").format(program, campus, admission_cycle)
             )
-        doc = frappe.new_doc("Program Reservation Policy")
+        doc = frappe.new_doc("Programme Reservation Policy")
         doc.admission_cycle = admission_cycle
         doc.program = program
         doc.campus = campus
@@ -90,7 +90,7 @@ def save_categories(admission_cycle, program, total_seats, policy_document=None,
         doc.save(ignore_permissions=True)
 
     # Automatically generate the reservation matrix preview
-    from slcm.admission.doctype.program_reservation_policy.program_reservation_policy import generate_matrices
+    from slcm.admission.doctype.programme_reservation_policy.programme_reservation_policy import generate_matrices
     generate_matrices(doc.name)
 
     frappe.db.commit()

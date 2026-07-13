@@ -213,9 +213,17 @@ def run_generation_main(docname):
         frappe.db.commit()
 
         # Link the created process in the message
+        total_shortlisted = sp_doc.total_shortlisted or 0
+        total_candidates = sp_doc.total_candidates or 0
+        total_rejected = max(0, total_candidates - total_shortlisted)
+
         frappe.msgprint(
             f"Phase 1 Shortlisting Merit List generated. Results pushed to "
-            f"<a href='/app/shortlisting-merit-list/{sp_doc.name}'><b>{sp_doc.name}</b></a>."
+            f"<a href='/app/shortlisting-merit-list/{sp_doc.name}'><b>{sp_doc.name}</b></a>.<br><br>"
+            f"<b>Summary:</b><br>"
+            f"• Total Candidates: {total_candidates}<br>"
+            f"• Shortlisted: {total_shortlisted}<br>"
+            f"• Rejected: {total_rejected}"
         )
 
     except Exception as e:

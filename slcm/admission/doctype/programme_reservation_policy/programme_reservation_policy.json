@@ -1,0 +1,280 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2026-02-27 14:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "section_break_basic",
+  "admission_cycle",
+  "program",
+  "campus",
+  "payment_gateway",
+  "col_break_basic",
+  "payment_receipt_template",
+  "total_seats",
+  "status",
+  "international_seats",
+  "section_break_summary",
+  "total_allocated",
+  "total_filled",
+  "col_break_summary",
+  "policy_document",
+  "total_available",
+  "section_break_categories",
+  "categories",
+  "section_break_horizontal_reservations",
+  "horizontal_reservations",
+  "section_break_compartmental_reservations",
+  "compartmental_reservations",
+  "nlsat_config_section",
+  "shortlisting_multiplier",
+  "section_break_matrices",
+  "btn_generate_matrices",
+  "matrix_preview",
+  "matrix_html"
+ ],
+ "fields": [
+  {
+   "default": "PRP-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "PRP-.YYYY.-"
+  },
+  {
+   "fieldname": "section_break_basic",
+   "fieldtype": "Section Break",
+   "label": "Program and Cycle"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "admission_cycle",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Admission Cycle",
+   "options": "Admission Cycle",
+   "reqd": 1
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "program",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Programme",
+   "options": "Programme",
+   "reqd": 1
+  },
+  {
+   "fieldname": "campus",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Campus",
+   "options": "Campus",
+   "reqd": 1
+  },
+  {
+   "fieldname": "col_break_basic",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "total_seats",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Total Seats For Domestic",
+   "reqd": 1
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Draft\nActive\nLocked",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_summary",
+   "fieldtype": "Section Break",
+   "label": "Seat Summary"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "description": "Sum of all category seats",
+   "fieldname": "total_allocated",
+   "fieldtype": "Int",
+   "label": "Total Allocated",
+   "read_only": 1
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "total_filled",
+   "fieldtype": "Int",
+   "label": "Total Filled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "col_break_summary",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "total_available",
+   "fieldtype": "Int",
+   "label": "Total Available",
+   "read_only": 1
+  },
+  {
+   "description": "Add one row per category. Each row defines seats allocated and application fee for that category.",
+   "fieldname": "section_break_categories",
+   "fieldtype": "Section Break",
+   "label": "Main Categories"
+  },
+  {
+   "fieldname": "categories",
+   "fieldtype": "Table",
+   "label": "Main Categories (Vertical)",
+   "options": "Programme Reservation Category",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_horizontal_reservations",
+   "fieldtype": "Section Break",
+   "label": "Horizontal Reservations"
+  },
+  {
+   "description": "These are overall quota targets and may adjust during allocation.",
+   "fieldname": "horizontal_reservations",
+   "fieldtype": "Table",
+   "label": "Horizontal Reservations",
+   "options": "Programme Reservation Sub Quota"
+  },
+  {
+   "fieldname": "section_break_compartmental_reservations",
+   "fieldtype": "Section Break",
+   "label": "Compartmentalised Reservations"
+  },
+  {
+   "description": "These are fixed category-wise reserved seats.",
+   "fieldname": "compartmental_reservations",
+   "fieldtype": "Table",
+   "label": "Compartmentalised Reservations",
+   "options": "Programme Reservation Sub Quota"
+  },
+  {
+   "fieldname": "section_break_matrices",
+   "fieldtype": "Section Break",
+   "label": "Reservation Distribution Preview"
+  },
+  {
+   "fieldname": "btn_generate_matrices",
+   "fieldtype": "Button",
+   "label": "Generate Reservation Matrix"
+  },
+  {
+   "fieldname": "matrix_preview",
+   "fieldtype": "HTML",
+   "label": "Reservation Preview"
+  },
+  {
+   "fieldname": "matrix_html",
+   "fieldtype": "Text",
+   "hidden": 1
+  },
+  {
+   "fieldname": "policy_document",
+   "fieldtype": "Attach",
+   "label": "Policy Document"
+  },
+  {
+   "fieldname": "payment_gateway",
+   "fieldtype": "Link",
+   "label": "Payment Gateway",
+   "options": "Payment Gateway"
+  },
+  {
+   "default": "Applicant Payment Receipt",
+   "fieldname": "payment_receipt_template",
+   "fieldtype": "Link",
+   "label": "Payment Receipt Template",
+   "options": "Print Format",
+   "reqd": 1
+  },
+  {
+   "fieldname": "nlsat_config_section",
+   "fieldtype": "Section Break",
+   "label": "NLSAT Process Configuration"
+  },
+  {
+   "default": "5",
+   "description": "Shortlisting Merit List multiplier (e.g. 5 for 1:5 ratio)",
+   "fieldname": "shortlisting_multiplier",
+   "fieldtype": "Float",
+   "label": "Shortlisting Merit List Ratio"
+  },
+  {
+   "fieldname": "international_seats",
+   "fieldtype": "Int",
+   "label": "International Seats "
+  }
+ ],
+ "links": [],
+ "modified": "2026-07-10 11:10:17.344101",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Programme Reservation Policy",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Admission Admin",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Merit Admin",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "row_format": "Dynamic",
+ "sort_field": "admission_cycle",
+ "sort_order": "DESC",
+ "states": [
+  {
+   "color": "Gray",
+   "title": "Draft"
+  },
+  {
+   "color": "Green",
+   "title": "Active"
+  },
+  {
+   "color": "Red",
+   "title": "Locked"
+  }
+ ],
+ "title_field": "program",
+ "track_changes": 1
+}

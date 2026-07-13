@@ -174,7 +174,7 @@ def get_context(context):
         if enrolled_co_set:
             try:
                 todays_raw = frappe.get_all(
-                    "Class Schedule",
+                    "Time Table",
                     filters=[
                         ["course_offering", "in", list(enrolled_co_set)],
                         ["schedule_date", "=", today],

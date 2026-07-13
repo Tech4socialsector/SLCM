@@ -11,12 +11,11 @@
   "group_based_on",
   "student_group_name",
   "max_strength",
-  "department",
   "status",
   "column_break_hamn",
+  "batch",
   "academic_term",
   "program",
-  "batch",
   "course",
   "class_type",
   "section",
@@ -64,6 +63,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "fetch_from": "batch.academic_term",
    "fieldname": "academic_term",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -72,6 +72,7 @@
    "options": "Academic Term"
   },
   {
+   "fetch_from": "batch.program",
    "fieldname": "program",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -84,13 +85,7 @@
    "fieldname": "batch",
    "fieldtype": "Link",
    "label": "Batch",
-   "options": "Student Batch Name"
-  },
-  {
-   "fieldname": "department",
-   "fieldtype": "Link",
-   "label": "Department",
-   "options": "Department"
+   "options": "Batch"
   },
   {
    "fieldname": "class_type",
@@ -102,7 +97,7 @@
    "fieldname": "section",
    "fieldtype": "Link",
    "label": "Section",
-   "options": "Program Batch Section"
+   "options": "Section"
   },
   {
    "default": "Active",
@@ -167,7 +162,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-16 19:11:37.655784",
+ "modified": "2026-07-09 13:57:05.264232",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Group",

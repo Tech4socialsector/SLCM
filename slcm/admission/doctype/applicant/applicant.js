@@ -1,27 +1,9 @@
-/** Effective Country link — blank treated as India for legacy records. */
-function slcm_applicant_effective_country(country_field_value) {
-    const v = (country_field_value && String(country_field_value).trim()) || "";
-    return v || "India";
-}
-
 function slcm_applicant_setup_country_state_city_queries(frm) {
     frm.set_query("state", () => {
-        const eff = slcm_applicant_effective_country(frm.doc.country);
-        if (eff.toLowerCase() === "india") {
-            return { filters: { country: eff } };
+        if (frm.doc.country) {
+            return { filters: { country: frm.doc.country } };
         }
-        return { filters: { name: "Other" } };
-    });
-
-    frm.set_query("city", () => {
-        if (!frm.doc.state) {
-            return { filters: { name: "!__noop__" } };
-        }
-        return {
-            filters: {
-                state: frm.doc.state
-            }
-        };
+        return { filters: { name: "!__noop__" } };
     });
 }
 

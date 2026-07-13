@@ -120,7 +120,7 @@ frappe.ui.form.on("Student Attendance Tool", {
 
 	class_schedule(frm) {
 		if (frm.doc.class_schedule) {
-			frappe.db.get_value("Class Schedule", frm.doc.class_schedule, ["schedule_date", "repeat_frequency"], (r) => {
+			frappe.db.get_value("Time Table", frm.doc.class_schedule, ["schedule_date", "repeat_frequency"], (r) => {
 				if (r) {
 					// MASTER FIX: Only set date if user hasn't already picked one
 					if (!frm.doc.date) {

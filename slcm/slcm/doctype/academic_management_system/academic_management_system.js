@@ -177,13 +177,8 @@ frappe.ui.form.on("Academic Management System", {
 		// Build Filter UI
 		let filter_html = `
             <div class="row form-section">
-                <div class="col-sm-3">
-                    <div class="form-group">
-                        <label class="control-label">Department</label>
-                        <div data-fieldname="department"></div>
-                    </div>
-                </div>
-                <div class="col-sm-9 text-right">
+                <div class="col-sm-9"></div>
+                <div class="col-sm-3 text-right">
                     <div class="btn-group">
                         <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             ${frappe.utils.icon("add", "sm")} Add Class <span class="caret"></span>
@@ -236,13 +231,6 @@ frappe.ui.form.on("Academic Management System", {
 
 		// Bind Fields
 		make_filter(
-			"department",
-			"Link",
-			"Department",
-			"Select Department",
-			'[data-fieldname="department"]'
-		);
-		make_filter(
 			"student_group",
 			"Link",
 			"Student Group",
@@ -289,7 +277,6 @@ frappe.ui.form.on("Academic Management System", {
 		let filters = {};
 
 		if (frm.class_filters) {
-			filters.department = frm.class_filters.department.get_value();
 			filters.search_text = frm.class_filters.student_group.get_value(); // student_group link
 			filters.class_type = frm.class_filters.class_type.get_value();
 			if (filters.class_type === "All Types") filters.class_type = "";
@@ -349,13 +336,6 @@ frappe.ui.form.on("Academic Management System", {
 			title: "Add Single Class",
 			fields: [
 				{
-					label: "Department",
-					fieldname: "department",
-					fieldtype: "Link",
-					options: "Department",
-					reqd: 1,
-				},
-				{
 					label: "Programme",
 					fieldname: "program",
 					fieldtype: "Link",
@@ -403,7 +383,7 @@ frappe.ui.form.on("Academic Management System", {
 					label: "Section",
 					fieldname: "section",
 					fieldtype: "Link",
-					options: "Program Batch Section",
+					options: "Section",
 					description: "Optional: Link to a specific batch section",
 				},
 				{
@@ -444,13 +424,6 @@ frappe.ui.form.on("Academic Management System", {
 			title: "Add Class by Section (Bulk)",
 			fields: [
 				{
-					label: "Department",
-					fieldname: "department",
-					fieldtype: "Link",
-					options: "Department",
-					reqd: 1,
-				},
-				{
 					label: "Programme",
 					fieldname: "program",
 					fieldtype: "Link",
@@ -468,7 +441,7 @@ frappe.ui.form.on("Academic Management System", {
 					label: "Batch",
 					fieldname: "batch",
 					fieldtype: "Link",
-					options: "Student Batch Name",
+					options: "Batch",
 					reqd: 1,
 				},
 				{ fieldtype: "Section Break", label: "Configuration" },
@@ -529,7 +502,7 @@ frappe.ui.form.on("Academic Management System", {
 		// Simple placeholder for Timetable - better implemented with full calendar library later
 		let html = `
 			<div class="text-center">
-				<p>To view the Class Schedule, please check the <a href="/app/course-schedule">Course Schedule</a> list or Calendar view.</p>
+				<p>To view the Time Table, please check the <a href="/app/course-schedule">Course Schedule</a> list or Calendar view.</p>
 				<button class="btn btn-default btn-view-calendar">View Calendar</button>
 			</div>
 		`;

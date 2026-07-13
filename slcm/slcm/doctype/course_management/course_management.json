@@ -7,7 +7,6 @@
  "field_order": [
   "setup_curriculum_tab",
   "academic_year",
-  "department",
   "program",
   "batch",
   "section",
@@ -23,12 +22,6 @@
    "fieldname": "setup_curriculum_tab",
    "fieldtype": "Tab Break",
    "label": "Set-Up Course"
-  },
-  {
-   "fieldname": "department",
-   "fieldtype": "Link",
-   "label": "Department",
-   "options": "Department"
   },
   {
    "fieldname": "program",
@@ -81,13 +74,13 @@
    "fieldname": "batch",
    "fieldtype": "Link",
    "label": "Batch",
-   "options": "Student Batch Name"
+   "options": "Batch"
   },
   {
    "fieldname": "section",
    "fieldtype": "Link",
    "label": "Section",
-   "options": "Program Batch Section"
+   "options": "Section"
   }
  ],
  "issingle": 1,

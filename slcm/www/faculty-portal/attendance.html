@@ -817,9 +817,9 @@ function satBasedOnChange() {
     rc.innerHTML = '<label class="fp-label">Course Schedule <span style="color:var(--fp-danger);">*</span></label>'
       + _satTextInput('sat-course-schedule', 'Enter Course Schedule…');
 
-  } else if (val === 'Class Schedule') {
-    rc.innerHTML = '<label class="fp-label">Class Schedule <span style="color:var(--fp-danger);">*</span></label>'
-      + _satTextInput('sat-class-schedule', 'Enter Class Schedule…');
+  } else if (val === 'Time Table') {
+    rc.innerHTML = '<label class="fp-label">Time Table <span style="color:var(--fp-danger);">*</span></label>'
+      + _satTextInput('sat-class-schedule', 'Enter Time Table…');
 
   } else if (val === 'Office Hours') {
     rc.innerHTML = '<label class="fp-label">Office Hours Group <span style="color:var(--fp-danger);">*</span></label>'
@@ -972,9 +972,9 @@ function satGetStudents() {
     apiArgs   = { course_schedule: _sat.courseSchedule, attendance_date: _sat.date };
     labelText = _sat.courseSchedule + '  ·  ' + _sat.date;
 
-  } else if (basedOn === 'Class Schedule') {
+  } else if (basedOn === 'Time Table') {
     _sat.classSchedule = ((document.getElementById('sat-class-schedule') || {}).value || '').trim();
-    if (!_sat.classSchedule) { _showError('sat-form-error', 'Please enter a Class Schedule.'); return; }
+    if (!_sat.classSchedule) { _showError('sat-form-error', 'Please enter a Time Table entry.'); return; }
     apiMethod = 'slcm.api.bulk_attendance.get_students_from_class_schedule';
     apiArgs   = { class_schedule: _sat.classSchedule, attendance_date: _sat.date };
     labelText = _sat.classSchedule + '  ·  ' + _sat.date;
@@ -1601,7 +1601,7 @@ function _showError(id, msg) {
                   onfocus="this.style.borderColor='var(--fp-primary)'" onblur="this.style.borderColor='var(--fp-border)'">
             <option value="Student Group">Student Group</option>
             <option value="Course Schedule">Course Schedule</option>
-            <option value="Class Schedule">Class Schedule</option>
+            <option value="Time Table">Time Table</option>
             <option value="Office Hours">Office Hours</option>
           </select>
         </div>

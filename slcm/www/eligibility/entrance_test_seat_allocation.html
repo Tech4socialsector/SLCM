@@ -422,8 +422,10 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="data-label">Seat Number</div>
-                                    <div class="data-value text-primary">{{ doc.re_seat_number if is_rescheduled else
-                                        doc.seat_number }}</div>
+                                    <div class="data-value text-primary">
+                                        {%- set raw_seat = doc.re_seat_number if is_rescheduled else doc.seat_number -%}
+                                        {{ raw_seat.split('-')[-1] if raw_seat else '—' }}
+                                    </div>
                                 </div>
                             </div>
                             {% endif %}
@@ -649,7 +651,8 @@
 
         const f_date = is_rescheduled ? doc.re_allocation_date : doc.allocation_date;
         const f_test = is_rescheduled ? (doc.re_entrance_test_name || doc.re_entrance_test_list) : (doc.entrance_test_name || doc.entrance_test_list);
-        const f_seat = is_rescheduled ? doc.re_seat_number : doc.seat_number;
+        const f_seat_raw = is_rescheduled ? doc.re_seat_number : doc.seat_number;
+        const f_seat = f_seat_raw && f_seat_raw.includes('-') ? f_seat_raw.split('-').pop() : f_seat_raw;
         const f_room = is_rescheduled ? doc.re_room_name : doc.room_name;
         const f_code = is_rescheduled ? doc.re_room_code : doc.room_code;
         const f_building = is_rescheduled ? doc.re_building : doc.building;
