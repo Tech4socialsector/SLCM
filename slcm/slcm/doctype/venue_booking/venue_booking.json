@@ -8,7 +8,7 @@
  "field_order": [
   "event_name",
   "venue_type",
-  "room",
+  "venue",
   "capacity",
   "column_break_1",
   "start_datetime",
@@ -50,20 +50,11 @@
   },
   {
    "fieldname": "venue_type",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Venue Type",
-   "options": "Classroom\nMoot Court\nOpen Spaces\nMeeting Room\nMess\nQuad\nConference Hall\nProject\nGuest House\nStaff Quarters",
-   "reqd": 1
-  },
-  {
-   "fieldname": "room",
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Venue",
-   "options": "Room",
+   "label": "Venue Type",
+   "options": "Venue Type",
    "reqd": 1
   },
   {
@@ -274,12 +265,21 @@
    "options": "Venue Booking",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "venue",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Venue",
+   "options": "Venue Master",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-09 11:28:53.462489",
+ "modified": "2026-07-13 11:07:33.225462",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Venue Booking",

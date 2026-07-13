@@ -2,25 +2,103 @@
  "actions": [],
  "allow_bulk_edit": 1,
  "allow_rename": 1,
+ "autoname": "field:venue_name_or_number",
  "creation": "2026-07-10 16:47:47.197897",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "section_break_1vvg"
+  "venue_name_or_number",
+  "venue_code",
+  "venue_type",
+  "column_break_dp4c",
+  "is_active",
+  "building",
+  "floor",
+  "capacity",
+  "section_break_wxak",
+  "venue_amenity",
+  "allowed_roles"
  ],
  "fields": [
   {
-   "fieldname": "section_break_1vvg",
+   "description": "e.g. \"Moot Court Hall 1\"",
+   "fieldname": "venue_name_or_number",
+   "fieldtype": "Data",
+   "label": "Venue Name/Number",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "description": " e.g. \"MC-01\"",
+   "fieldname": "venue_code",
+   "fieldtype": "Data",
+   "label": "Venue Code",
+   "reqd": 1
+  },
+  {
+   "fieldname": "venue_type",
+   "fieldtype": "Link",
+   "label": "Venue Type",
+   "options": "Venue Type",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "building",
+   "fieldtype": "Link",
+   "label": "Building",
+   "options": "Building"
+  },
+  {
+   "fieldname": "floor",
+   "fieldtype": "Link",
+   "label": "Floor",
+   "options": "Floor"
+  },
+  {
+   "fieldname": "capacity",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Capacity",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "venue_amenity",
+   "fieldtype": "Table MultiSelect",
+   "label": "Venue Amenity",
+   "options": "Venue Master Amenities",
+   "reqd": 1
+  },
+  {
+   "fieldname": "allowed_roles",
+   "fieldtype": "Table",
+   "label": "Allowed Roles",
+   "options": "Venue Allowed Role",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_dp4c",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_wxak",
    "fieldtype": "Section Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-10 16:47:47.197897",
+ "modified": "2026-07-13 11:01:47.652091",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Venue Master",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {

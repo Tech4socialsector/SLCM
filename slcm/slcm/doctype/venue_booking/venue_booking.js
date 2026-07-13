@@ -123,6 +123,41 @@ frappe.listview_settings['Venue Booking'] = {
         }
     },
 
+    setup: function (frm) {
+        frappe.set_query("venue", () => {
+            let filters = {
+                is_active: 1
+            };
+            if (frm.doc.venue_type) {
+                filters.venue_type = frm.doc.venue_type;
+            }
+            if (!frappe.user.has_role(['System Manager', 'Administrator']) && frm.allowed_venues) {
+                if (frm.allowed_venues.length > 0) {
+                    filters.name = ['in', frm.allowed_venues];
+                } else {
+                    filters.name = ['in', ['No-Venue-Allowed-For-User']];
+                }
+            }
+            return { filters: filters };
+        });
+    },
+
+    venue_type: function (frm) {
+        // query is handled in setup, but if we need to clear venue on type change:
+        if (frm.doc.venue) {
+            frm.set_value('venue', '');
+        }
+    },
+
+    venue: function (frm) {
+        if (frm.doc.venue && !frappe.user.has_role(['System Manager', 'Administrator'])) {
+            if (frm.allowed_venues && !frm.allowed_venues.includes(frm.doc.venue)) {
+                frappe.msgprint(__("You don't have permission to book this room."));
+                frm.set_value('venue', '');
+            }
+        }
+    },
+
     get_indicator: function (doc) {
         const map = {
             'Approved':  ['Approved',  'green',  'status,=,Approved'],
@@ -138,6 +173,23 @@ frappe.ui.form.on('Venue Booking', {
     onload: function (frm) {
         if (frm.is_new()) {
             _auto_fill_requester(frm);
+        }
+
+        // Fetch allowed venues for the current user's roles
+        if (!frappe.user.has_role(['System Manager', 'Administrator'])) {
+            frappe.call({
+                method: 'frappe.client.get_list',
+                args: {
+                    doctype: 'Venue Allowed Role',
+                    filters: {
+                        role: ['in', frappe.user_roles || []]
+                    },
+                    fields: ['parent']
+                },
+                callback: function (r) {
+                    frm.allowed_venues = (r.message || []).map(m => m.parent);
+                }
+            });
         }
     },
 
@@ -173,7 +225,7 @@ frappe.ui.form.on('Venue Booking', {
                             freeze: true, freeze_message: __('Approving swap…'),
                             callback: function (r) {
                                 if (!r.exc) {
-                                    frappe.show_alert({ message: __('Swap Approved — room updated'), indicator: 'green' });
+                                    frappe.show_alert({ message: __('Swap Approved — venue updated'), indicator: 'green' });
                                     frm.reload_doc();
                                 }
                             }
@@ -302,7 +354,7 @@ frappe.ui.form.on('Venue Booking', {
                                 ['docstatus', '<', 2],
                                 ['status', '!=', 'Cancelled']
                             ],
-                            fields: ['name', 'event_name', 'room', 'start_datetime', 'end_datetime', 'status'],
+                            fields: ['name', 'event_name', 'venue', 'start_datetime', 'end_datetime', 'status'],
                             order_by: 'start_datetime asc',
                             limit: 200
                         },
@@ -323,7 +375,7 @@ frappe.ui.form.on('Venue Booking', {
                             const options = bookings.map(b => {
                                 const start = fmt_dt(b.start_datetime);
                                 const end   = fmt_dt(b.end_datetime);
-                                const label = `${b.name} | ${b.event_name || '—'} | ${b.room || '—'} | ${start} → ${end} [${b.status}]`;
+                                const label = `${b.name} | ${b.event_name || '—'} | ${b.venue || '—'} | ${start} → ${end} [${b.status}]`;
                                 return { value: b.name, label: label };
                             });
 
@@ -337,7 +389,7 @@ frappe.ui.form.on('Venue Booking', {
                                         options: `<div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:10px 14px;margin-bottom:4px;font-size:12px;">
                                             <strong>${frm.doc.name}</strong> — ${frm.doc.event_name || '—'}<br>
                                             <span style="color:#0369a1;">
-                                                📍 ${frm.doc.room || '—'} &nbsp;|&nbsp;
+                                                📍 ${frm.doc.venue || '—'} &nbsp;|&nbsp;
                                                 🕐 ${fmt_dt(frm.doc.start_datetime)} → ${fmt_dt(frm.doc.end_datetime)}
                                             </span>
                                         </div>`
@@ -348,7 +400,7 @@ frappe.ui.form.on('Venue Booking', {
                                         fieldtype: 'Select',
                                         options: [''].concat(options.map(o => o.value)),
                                         reqd: 1,
-                                        description: __('Showing: Booking ID | Event | Room | Start → End [Status]')
+                                        description: __('Showing: Booking ID | Event | Venue | Start → End [Status]')
                                     },
                                     {
                                         label: __('Selected Booking Details'),
@@ -399,7 +451,7 @@ frappe.ui.form.on('Venue Booking', {
                                     $el.html(`<div style="background:#fefce8;border:1px solid #fde047;border-radius:6px;padding:10px 14px;font-size:12px;margin-top:4px;">
                                         <strong>${bk.name}</strong> — ${bk.event_name || '—'}<br>
                                         <span style="color:#854d0e;">
-                                            📍 ${bk.room || '—'} &nbsp;|&nbsp;
+                                            📍 ${bk.venue || '—'} &nbsp;|&nbsp;
                                             🕐 ${fmt_dt(bk.start_datetime)} → ${fmt_dt(bk.end_datetime)} &nbsp;|&nbsp;
                                             Status: <b>${bk.status}</b>
                                         </span>
