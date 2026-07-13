@@ -1,0 +1,112 @@
+{
+ "actions": [],
+ "allow_bulk_edit": 1,
+ "allow_rename": 1,
+ "creation": "2026-07-13 16:00:23.291029",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "level_one_aad_authority_section",
+  "l1_approval_email_template",
+  "column_break_dgug",
+  "l1_rejected_email_template",
+  "section_break_cjqz",
+  "level_one_authority",
+  "level_two_authority_section",
+  "l2_approval_email_template",
+  "column_break_ugle",
+  "l2_rejected_email_template",
+  "section_break_hmrm",
+  "level_two_authority"
+ ],
+ "fields": [
+  {
+   "fieldname": "level_one_aad_authority_section",
+   "fieldtype": "Section Break",
+   "label": "Level One AAD Authority"
+  },
+  {
+   "fieldname": "l1_approval_email_template",
+   "fieldtype": "Link",
+   "label": "Approval Email Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "column_break_dgug",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "l1_rejected_email_template",
+   "fieldtype": "Link",
+   "label": "Rejected Email Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "section_break_cjqz",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "level_one_authority",
+   "fieldtype": "Table",
+   "label": "Level One Authority",
+   "options": "Attendance Condonation Table"
+  },
+  {
+   "fieldname": "level_two_authority_section",
+   "fieldtype": "Section Break",
+   "label": "Level Two Authority"
+  },
+  {
+   "fieldname": "l2_approval_email_template",
+   "fieldtype": "Link",
+   "label": "Approval Email Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "column_break_ugle",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "l2_rejected_email_template",
+   "fieldtype": "Link",
+   "label": "Rejected Email Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "section_break_hmrm",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "level_two_authority",
+   "fieldtype": "Table",
+   "label": "Level Two Authority",
+   "options": "Attendance Condonation Table"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-07-13 16:08:30.064879",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Attendance Condonation Configuration",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
