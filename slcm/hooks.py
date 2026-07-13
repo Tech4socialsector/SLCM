@@ -292,6 +292,9 @@ fixtures = [
         "doctype": "Print Format",
         "filters": [["name", "=", "Student Transcript"]]
     },
+    {
+        "doctype": "Venue Type",
+    },
 ]
 
 # Document Events

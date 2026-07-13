@@ -9,10 +9,10 @@ frappe.listview_settings['Venue Booking'] = {
         listview.__vb_bulk_setup = true;
 
         const STATUSES = [
-            { status: 'Pending',   color: '#f59e0b', indicator: 'orange' },
-            { status: 'Approved',  color: '#10b981', indicator: 'green'  },
-            { status: 'Rejected',  color: '#ef4444', indicator: 'red'    },
-            { status: 'Cancelled', color: '#6b7280', indicator: 'grey'   }
+            { status: 'Pending', color: '#f59e0b', indicator: 'orange' },
+            { status: 'Approved', color: '#10b981', indicator: 'green' },
+            { status: 'Rejected', color: '#ef4444', indicator: 'red' },
+            { status: 'Cancelled', color: '#6b7280', indicator: 'grey' }
         ];
 
         // ── 1. Page toolbar buttons (always visible in top bar) ────────────────
@@ -40,26 +40,26 @@ frappe.listview_settings['Venue Booking'] = {
             if ($bar.find('.vb-status-btn').length) return; // already there
 
             var $wrap = $('<span></span>').css({
-                'margin-left'   : '14px',
-                'display'       : 'inline-flex',
-                'gap'           : '5px',
-                'align-items'   : 'center',
-                'flex-wrap'     : 'wrap'
+                'margin-left': '14px',
+                'display': 'inline-flex',
+                'gap': '5px',
+                'align-items': 'center',
+                'flex-wrap': 'wrap'
             });
 
             STATUSES.forEach(function (cfg) {
                 $('<button class="btn btn-xs vb-status-btn"></button>')
                     .text(__(cfg.status))
                     .css({
-                        'background'   : cfg.color,
-                        'color'        : '#fff',
-                        'border'       : 'none',
+                        'background': cfg.color,
+                        'color': '#fff',
+                        'border': 'none',
                         'border-radius': '4px',
-                        'padding'      : '3px 10px',
-                        'font-size'    : '12px',
-                        'font-weight'  : '600',
-                        'cursor'       : 'pointer',
-                        'line-height'  : '1.4'
+                        'padding': '3px 10px',
+                        'font-size': '12px',
+                        'font-weight': '600',
+                        'cursor': 'pointer',
+                        'line-height': '1.4'
                     })
                     .on('click', function (e) {
                         e.stopPropagation();
@@ -93,16 +93,16 @@ frappe.listview_settings['Venue Booking'] = {
         status: function (value, df, doc) {
             // Booking approval status badge
             const approvalCfg = {
-                'Pending':   { bg: '#fef3c7', color: '#92400e', icon: '⏳', label: 'Pending'   },
-                'Approved':  { bg: '#d1fae5', color: '#065f46', icon: '✓',  label: 'Approved'  },
-                'Rejected':  { bg: '#fee2e2', color: '#991b1b', icon: '✗',  label: 'Rejected'  },
-                'Cancelled': { bg: '#f3f4f6', color: '#6b7280', icon: '⊘',  label: 'Cancelled' }
+                'Pending': { bg: '#fef3c7', color: '#92400e', icon: '⏳', label: 'Pending' },
+                'Approved': { bg: '#d1fae5', color: '#065f46', icon: '✓', label: 'Approved' },
+                'Rejected': { bg: '#fee2e2', color: '#991b1b', icon: '✗', label: 'Rejected' },
+                'Cancelled': { bg: '#f3f4f6', color: '#6b7280', icon: '⊘', label: 'Cancelled' }
             };
             const a = approvalCfg[value] || { bg: '#e0f2fe', color: '#0369a1', icon: '•', label: value || '—' };
 
             // Document submission status badge
             const docCfg = {
-                0: { bg: '#fef9c3', color: '#854d0e', label: 'Draft'     },
+                0: { bg: '#fef9c3', color: '#854d0e', label: 'Draft' },
                 1: { bg: '#dbeafe', color: '#1d4ed8', label: 'Submitted' },
                 2: { bg: '#fee2e2', color: '#991b1b', label: 'Cancelled' }
             };
@@ -123,47 +123,12 @@ frappe.listview_settings['Venue Booking'] = {
         }
     },
 
-    setup: function (frm) {
-        frappe.set_query("venue", () => {
-            let filters = {
-                is_active: 1
-            };
-            if (frm.doc.venue_type) {
-                filters.venue_type = frm.doc.venue_type;
-            }
-            if (!frappe.user.has_role(['System Manager', 'Administrator']) && frm.allowed_venues) {
-                if (frm.allowed_venues.length > 0) {
-                    filters.name = ['in', frm.allowed_venues];
-                } else {
-                    filters.name = ['in', ['No-Venue-Allowed-For-User']];
-                }
-            }
-            return { filters: filters };
-        });
-    },
-
-    venue_type: function (frm) {
-        // query is handled in setup, but if we need to clear venue on type change:
-        if (frm.doc.venue) {
-            frm.set_value('venue', '');
-        }
-    },
-
-    venue: function (frm) {
-        if (frm.doc.venue && !frappe.user.has_role(['System Manager', 'Administrator'])) {
-            if (frm.allowed_venues && !frm.allowed_venues.includes(frm.doc.venue)) {
-                frappe.msgprint(__("You don't have permission to book this room."));
-                frm.set_value('venue', '');
-            }
-        }
-    },
-
     get_indicator: function (doc) {
         const map = {
-            'Approved':  ['Approved',  'green',  'status,=,Approved'],
-            'Rejected':  ['Rejected',  'red',    'status,=,Rejected'],
-            'Cancelled': ['Cancelled', 'grey',   'status,=,Cancelled'],
-            'Pending':   ['Pending',   'orange', 'status,=,Pending'],
+            'Approved': ['Approved', 'green', 'status,=,Approved'],
+            'Rejected': ['Rejected', 'red', 'status,=,Rejected'],
+            'Cancelled': ['Cancelled', 'grey', 'status,=,Cancelled'],
+            'Pending': ['Pending', 'orange', 'status,=,Pending'],
         };
         return map[doc.status] || ['Pending', 'orange', 'status,=,Pending'];
     }
@@ -174,23 +139,17 @@ frappe.ui.form.on('Venue Booking', {
         if (frm.is_new()) {
             _auto_fill_requester(frm);
         }
+    },
 
-        // Fetch allowed venues for the current user's roles
-        if (!frappe.user.has_role(['System Manager', 'Administrator'])) {
-            frappe.call({
-                method: 'frappe.client.get_list',
-                args: {
-                    doctype: 'Venue Allowed Role',
-                    filters: {
-                        role: ['in', frappe.user_roles || []]
-                    },
-                    fields: ['parent']
-                },
-                callback: function (r) {
-                    frm.allowed_venues = (r.message || []).map(m => m.parent);
+    setup: function(frm) {
+        frm.set_query("venue", function() {
+            return {
+                query: "slcm.slcm.doctype.venue_booking.venue_booking.get_venue_query",
+                filters: {
+                    venue_type: frm.doc.venue_type
                 }
-            });
-        }
+            };
+        });
     },
 
     refresh: function (frm) {
@@ -374,7 +333,7 @@ frappe.ui.form.on('Venue Booking', {
 
                             const options = bookings.map(b => {
                                 const start = fmt_dt(b.start_datetime);
-                                const end   = fmt_dt(b.end_datetime);
+                                const end = fmt_dt(b.end_datetime);
                                 const label = `${b.name} | ${b.event_name || '—'} | ${b.venue || '—'} | ${start} → ${end} [${b.status}]`;
                                 return { value: b.name, label: label };
                             });
@@ -445,8 +404,8 @@ frappe.ui.form.on('Venue Booking', {
                                 // Show detail card on selection
                                 $sel.on('change', function () {
                                     const val = $(this).val();
-                                    const bk  = bookings.find(b => b.name === val);
-                                    const $el  = d.wrapper.find('#vb-swap-detail');
+                                    const bk = bookings.find(b => b.name === val);
+                                    const $el = d.wrapper.find('#vb-swap-detail');
                                     if (!bk) { $el.html(''); return; }
                                     $el.html(`<div style="background:#fefce8;border:1px solid #fde047;border-radius:6px;padding:10px 14px;font-size:12px;margin-top:4px;">
                                         <strong>${bk.name}</strong> — ${bk.event_name || '—'}<br>
@@ -466,6 +425,35 @@ frappe.ui.form.on('Venue Booking', {
 
         // ── Status colour banner ───────────────────────────────────────
         _set_status_banner(frm);
+    },
+
+    venue_type: function (frm) {
+        // query is handled in setup, but if we need to clear venue on type change:
+        if (frm.doc.venue) {
+            frm.set_value('venue', '');
+        }
+    },
+
+    venue: function (frm) {
+        if (frm.doc.venue && frm.doc.venue_type) {
+            frappe.call({
+                method: "slcm.slcm.doctype.venue_booking.venue_booking.get_venue_query",
+                args: {
+                    doctype: "Venue Master",
+                    txt: frm.doc.venue,
+                    searchfield: "name",
+                    start: 0,
+                    page_len: 1,
+                    filters: { venue_type: frm.doc.venue_type }
+                },
+                callback: function(r) {
+                    if (!r.message || r.message.length === 0 || r.message[0][0] !== frm.doc.venue) {
+                        frappe.msgprint(__("You don't have permission to book this room, or it's invalid."));
+                        frm.set_value('venue', '');
+                    }
+                }
+            });
+        }
     },
 
     requester_type: function (frm) {
@@ -500,9 +488,9 @@ function _auto_fill_requester(frm) {
     if (!frm.doc.requester_type) {
         const roles = frappe.user_roles || [];
         let rtype = 'Other';
-        if (roles.includes('slcm_Student'))       rtype = 'Student';
-        else if (roles.includes('slcm_Faculty'))  rtype = 'Faculty';
-        else if (roles.includes('slcm_Staff'))    rtype = 'Staff';
+        if (roles.includes('slcm_Student')) rtype = 'Student';
+        else if (roles.includes('slcm_Faculty')) rtype = 'Faculty';
+        else if (roles.includes('slcm_Staff')) rtype = 'Staff';
         frm.set_value('requester_type', rtype);
     }
 }
@@ -516,9 +504,9 @@ function _toggle_student_field(frm) {
 function _set_status_banner(frm) {
     if (frm.is_new()) return;
     const colors = {
-        'Pending':   'yellow',
-        'Approved':  'green',
-        'Rejected':  'red',
+        'Pending': 'yellow',
+        'Approved': 'green',
+        'Rejected': 'red',
         'Cancelled': 'grey'
     };
     const indicator = colors[frm.doc.status] || 'blue';
@@ -540,7 +528,7 @@ function vb_bulk_action(listview, cfg) {
     var d = new frappe.ui.Dialog({
         title: __('Mark {0} booking(s) as "{1}"', [names.length, cfg.status]),
         fields: [{
-            label:     __('Admin Remarks (optional)'),
+            label: __('Admin Remarks (optional)'),
             fieldname: 'admin_remarks',
             fieldtype: 'Small Text'
         }],
@@ -548,19 +536,19 @@ function vb_bulk_action(listview, cfg) {
         primary_action: function (vals) {
             d.hide();
             frappe.call({
-                method:         'slcm.api.student_portal.bulk_update_venue_booking_status',
+                method: 'slcm.api.student_portal.bulk_update_venue_booking_status',
                 args: {
                     booking_names: names,
-                    status:        cfg.status,
+                    status: cfg.status,
                     admin_remarks: vals.admin_remarks || ''
                 },
-                freeze:         true,
+                freeze: true,
                 freeze_message: __('Updating…'),
                 callback: function (r) {
                     if (r.exc) return;
                     var updated = (r.message || {}).updated || names.length;
                     frappe.show_alert({
-                        message:   __('{0} booking(s) marked as {1}', [updated, cfg.status]),
+                        message: __('{0} booking(s) marked as {1}', [updated, cfg.status]),
                         indicator: cfg.indicator
                     });
                     listview.refresh();
