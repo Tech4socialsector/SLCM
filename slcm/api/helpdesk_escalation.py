@@ -75,6 +75,7 @@ def run_sla_escalation():
 
 
 def _process_team(team):
+    """Resolve one team's config (grace period, hop limit, templates) and check all its open tickets."""
     grace_minutes = round(frappe.utils.flt(team.escalation_after_hours) * 60)
     if grace_minutes <= 0:
         grace_minutes = 60
@@ -106,6 +107,7 @@ def _process_team(team):
 
 
 def _maybe_escalate_ticket(ticket, team_name, grace_minutes, max_hops, templates):
+    """Check if one ticket is overdue for a hop, then either escalate it or flag the hop limit."""
     anchor = ticket.last_escalated_on or ticket.creation
     due_at = add_to_date(anchor, minutes=grace_minutes)
     if now_datetime() < due_at:
@@ -130,6 +132,7 @@ def _maybe_escalate_ticket(ticket, team_name, grace_minutes, max_hops, templates
 
 
 def _get_current_assignee(ticket_name):
+    """Return the ticket's oldest open ToDo assignee, i.e. who the ticket is with right now."""
     assignees = frappe.get_all(
         "ToDo",
         filters={
@@ -145,6 +148,7 @@ def _get_current_assignee(ticket_name):
 
 
 def _parse_tried_users(raw):
+    """Turn the ticket's stored 'escalated_from_agents' CSV back into a list of user emails."""
     if not raw:
         return []
     return [u.strip() for u in raw.split(",") if u.strip()]
@@ -167,14 +171,45 @@ def _format_grace_period(total_minutes):
 
 def _get_next_agent(team_name, tried_users):
     """Pick the next agent in the team's escalation pool who hasn't been tried yet."""
-    pool = frappe.get_all(
-        "HD Team Member",
-        filters={"parent": team_name, "parenttype": "HD Team", "parentfield": "escalation_users"},
-        fields=["user"],
-        order_by="idx asc",
-        pluck="user",
-    )
+    override_field_exists = frappe.get_meta("HD Team").has_field("escalation_users")
+    pool = []
+    if override_field_exists:
+        pool = frappe.get_all(
+            "HD Team Member",
+            filters={"parent": team_name, "parenttype": "HD Team", "parentfield": "escalation_users"},
+            fields=["user"],
+            order_by="idx asc",
+            pluck="user",
+        )
+
     if not pool:
+        if override_field_exists:
+            # The "escalation_users" field exists on the doctype but this team has no rows
+            # under it (empty override, or every override user was removed) — surface it
+            # loudly instead of silently escalating through the plain team list, which can
+            # pick the wrong "next" agent relative to the order the admin actually intended.
+            frappe.log_error(
+                title="HD Ticket SLA Escalation: escalation order override empty",
+                message=(
+                    f"Team '{team_name}' has the Escalation Order override field, but no rows "
+                    f"are configured under it. Falling back to the team's plain Users list."
+                ),
+            )
+        else:
+            # The field itself doesn't exist yet on this site (e.g. not yet added via
+            # Customize Form) — this is expected until an admin adds it, but still worth
+            # a one-time-per-cache-window note so it isn't mistaken for "working as configured".
+            cache_key = f"hd_team_escalation_users_field_missing_notified:{team_name}"
+            if not frappe.cache().get_value(cache_key):
+                frappe.cache().set_value(cache_key, 1, expires_in_sec=6 * 60 * 60)
+                frappe.log_error(
+                    title="HD Ticket SLA Escalation: escalation order field not configured",
+                    message=(
+                        f"Team '{team_name}' has no 'escalation_users' field on HD Team yet, so "
+                        f"the Escalation Order override is inactive and escalation is using the "
+                        f"plain Users list order instead."
+                    ),
+                )
         pool = frappe.get_all(
             "HD Team Member",
             filters={"parent": team_name, "parenttype": "HD Team", "parentfield": "users"},
@@ -194,6 +229,7 @@ def _get_next_agent(team_name, tried_users):
 
 
 def _reassign(ticket, team_name, old_agent, new_agent, tried_users, grace_minutes, templates):
+    """Perform one hop: close the old ToDo, assign the new agent, bump ticket state, notify both agents."""
     from frappe.desk.form.assign_to import add as assign_to_add
 
     # Silently close the old ToDo — avoid assign_to.remove()/clear(), which fire a
@@ -246,6 +282,7 @@ def _reassign(ticket, team_name, old_agent, new_agent, tried_users, grace_minute
 
 
 def _notify_hop_limit_reached(ticket, team_name, current_agent, max_hops, templates):
+    """Tell the team lead pool (+ current agent) that auto-escalation has stopped and needs a human."""
     # Throttle: only notify once per breach, not every scheduler tick.
     cache_key = f"hd_ticket_escalation_limit_notified:{ticket.name}"
     if frappe.cache().get_value(cache_key):
@@ -288,6 +325,7 @@ def _get_team_lead_recipients(team_name):
 
 
 def _send_escalation_emails(ticket, team_name, old_agent, new_agent, escalation_count, grace_label, templates):
+    """Email the new agent (always) and the previous agent (if any) about this hop."""
     ticket_url = frappe.utils.get_url(f"/helpdesk/tickets/{ticket.name}")
 
     _send_templated_email(
@@ -320,6 +358,7 @@ def _send_escalation_emails(ticket, team_name, old_agent, new_agent, escalation_
 
 
 def _send_templated_email(template_name, recipient, context):
+    """Render an Email Template for one recipient and send it, logging (not raising) on any failure."""
     if not recipient:
         return
     if frappe.db.get_single_value("HD Settings", "skip_email_workflow"):
@@ -377,6 +416,7 @@ def _send_templated_email(template_name, recipient, context):
 
 
 def _log_activity(ticket_name, action):
+    """Write a line to the ticket's Activity tab, reusing Helpdesk's own activity logger."""
     from helpdesk.helpdesk.doctype.hd_ticket_activity.hd_ticket_activity import log_ticket_activity
 
     log_ticket_activity(ticket_name, action)
