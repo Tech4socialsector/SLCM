@@ -2,12 +2,12 @@
  "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
- "autoname": "prompt",
  "creation": "2025-12-30 11:46:44.354545",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "course_code",
+  "course_name",
   "course_type",
   "course_credit"
  ],
@@ -15,28 +15,39 @@
   {
    "fieldname": "course_code",
    "fieldtype": "Data",
-   "label": "Course code"
+   "in_list_view": 1,
+   "label": "Course code",
+   "reqd": 1,
+   "unique": 1
   },
   {
    "fieldname": "course_type",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Course type",
-   "options": "\nCore\nElactive"
+   "options": "\nCore\nElactive",
+   "reqd": 1
   },
   {
    "fieldname": "course_credit",
    "fieldtype": "Data",
    "label": "Course credit"
+  },
+  {
+   "fieldname": "course_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Course Name",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-10 12:22:11.331698",
+ "modified": "2026-07-13 12:58:37.793065",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Course Master",
- "naming_rule": "Set by user",
  "owner": "Administrator",
  "permissions": [
   {
