@@ -1,0 +1,12 @@
+# Copyright (c) 2026, TFSS and contributors
+# For license information, please see license.txt
+
+import frappe
+from frappe import _
+from frappe.model.document import Document
+
+
+class InstitutionalCalendar(Document):
+	def validate(self):
+		if self.end_date < self.start_date:
+			frappe.throw(_("End Date cannot be before Start Date"))

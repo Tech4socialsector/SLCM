@@ -14,8 +14,33 @@ class TimeTable(Document):
         """Validate the Time Table entry"""
         self.validate_time()
         self.validate_repeat_settings()
+        self.check_holiday_conflict()
         self.check_conflicts()
         self.calculate_duration()
+
+    def check_holiday_conflict(self):
+        """Block scheduling a class on a date marked as a Holiday in the Institutional Calendar"""
+        if not self.schedule_date:
+            return
+
+        holidays = frappe.get_all(
+            "Institutional Calendar",
+            filters={
+                "entry_type": "Holiday",
+                "start_date": ["<=", self.schedule_date],
+                "end_date": [">=", self.schedule_date],
+                "status": ["!=", "Inactive"],
+                "docstatus": ["<", 2],
+            },
+            fields=["name1"],
+        )
+
+        if holidays:
+            frappe.throw(
+                f"Cannot schedule a class on {self.schedule_date} — it is marked as a holiday "
+                f"({holidays[0].name1}) in the Institutional Calendar.",
+                title="Holiday",
+            )
 
     def on_update(self):
         """Update the corresponding Attendance Session when the Time Table entry is updated"""
@@ -261,10 +286,27 @@ class TimeTable(Document):
             current_date += increment  # Skip the first date (already created)
             created_count = 0
             conflict_count = 0
+            holiday_skip_count = 0
             schedules_to_create = []
 
             # First, collect all schedules to create and check for conflicts
             while current_date <= end_date:
+                # Skip dates marked as a Holiday in the Institutional Calendar
+                if frappe.get_all(
+                    "Institutional Calendar",
+                    filters={
+                        "entry_type": "Holiday",
+                        "start_date": ["<=", current_date.strftime("%Y-%m-%d")],
+                        "end_date": [">=", current_date.strftime("%Y-%m-%d")],
+                        "status": ["!=", "Inactive"],
+                        "docstatus": ["<", 2],
+                    },
+                    limit=1,
+                ):
+                    holiday_skip_count += 1
+                    current_date += increment
+                    continue
+
                 # Check for conflicts on this date
                 has_conflict = False
                 if self.instructor:
@@ -310,16 +352,22 @@ class TimeTable(Document):
             # Provide feedback to user
             if created_count > 0:
                 message = f"Created {created_count} recurring class schedule(s)"
+                skip_notes = []
                 if conflict_count > 0:
-                    message += f" (Skipped {conflict_count} due to conflicts)"
+                    skip_notes.append(f"{conflict_count} due to conflicts")
+                if holiday_skip_count > 0:
+                    skip_notes.append(f"{holiday_skip_count} due to holidays")
+                if skip_notes:
+                    message += f" (Skipped {', '.join(skip_notes)})"
                 frappe.msgprint(
                     message,
                     indicator="green" if conflict_count == 0 else "orange",
                     alert=True,
                 )
-            elif conflict_count > 0:
+            elif conflict_count > 0 or holiday_skip_count > 0:
                 frappe.msgprint(
-                    f"Could not create recurring schedules. All {conflict_count} dates have conflicts.",
+                    f"Could not create recurring schedules. All dates were skipped "
+                    f"({conflict_count} conflicts, {holiday_skip_count} holidays).",
                     indicator="red",
                     alert=True,
                 )
@@ -473,7 +521,7 @@ def get_events(start, end, filters=None):
         # Construct ISO datetime strings for FullCalendar
         start_dt = f"{d.schedule_date} {d.from_time}"
         end_dt = f"{d.schedule_date} {d.to_time}"
-        
+
         title = d.title
         if not title:
             parts = [d.course, d.instructor]
@@ -495,8 +543,55 @@ def get_events(start, end, filters=None):
                 "student_group": d.student_group
             }
         })
-    
+
+    result.extend(get_institutional_calendar_events(start, end))
+
     return result
+
+
+def get_institutional_calendar_events(start, end):
+    """Render Institutional Calendar entries (holidays, exams, events, ...)
+    as background markers on the Time Table calendar view."""
+    entries = frappe.db.sql(
+        """
+        SELECT name, name1, entry_type, start_date, end_date
+        FROM `tabInstitutional Calendar`
+        WHERE start_date <= %(end)s AND end_date >= %(start)s
+        AND status != 'Inactive'
+        AND docstatus < 2
+        """,
+        {"start": start, "end": end},
+        as_dict=True,
+    )
+
+    entry_colors = {
+        "Holiday": "#e74c3c",
+        "Exam": "#9b59b6",
+        "Semester Start": "#2ecc71",
+        "Semester End": "#2ecc71",
+        "Event": "#f39c12",
+        "Orientation": "#1abc9c",
+        "Other": "#95a5a6",
+    }
+
+    events = []
+    for entry in entries:
+        events.append({
+            "name": f"ic-{entry.name}",
+            "id": f"ic-{entry.name}",
+            "title": f"{entry.entry_type}: {entry.name1}",
+            "start": str(entry.start_date),
+            "end": str(entry.end_date + timedelta(days=1)),
+            "allDay": 1,
+            "display": "background",
+            "editable": False,
+            "color": entry_colors.get(entry.entry_type, "#95a5a6"),
+            "extendedProps": {
+                "institutional_calendar": entry.name,
+                "entry_type": entry.entry_type,
+            },
+        })
+    return events
 
 
 @frappe.whitelist()
