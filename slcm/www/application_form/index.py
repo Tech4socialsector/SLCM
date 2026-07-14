@@ -1341,7 +1341,7 @@ def download_applicant_receipt(applicant_name, receipt_name):
                     {"parent": app.admission_cycle, "program": app.program, "is_active": 1},
                     "reservation_policy")
             if policy_name:
-                template = frappe.db.get_value("Program Reservation Policy", policy_name, "payment_receipt_template")
+                template = frappe.db.get_value("Programme Reservation Policy", policy_name, "payment_receipt_template")
                 if template: print_format = template
     except Exception:
         pass

@@ -9,6 +9,7 @@
   "scheme_code",
   "scheme_type",
   "category",
+  "scholarship_for",
   "eligibility_criteria",
   "column_basic_2",
   "admission_cycle",
@@ -109,6 +110,15 @@
    "options": "Admission Category"
   },
   {
+   "default": "Domestic",
+   "fieldname": "scholarship_for",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Scholarship For",
+   "options": "Domestic\nInternational",
+   "reqd": 1
+  },
+  {
    "fieldname": "scheme_type",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -133,12 +143,12 @@
   {
    "fieldname": "min_income",
    "fieldtype": "Currency",
-   "label": "Minimum income"
+   "label": "Minimum income (Annual)"
   },
   {
    "fieldname": "max_income",
    "fieldtype": "Currency",
-   "label": "Maximum income"
+   "label": "Maximum income (Annual)"
   },
   {
    "fieldname": "section_coverage",
@@ -301,7 +311,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-06 16:41:21.897266",
+ "modified": "2026-07-11 16:17:23.233502",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Scholarship Scheme",

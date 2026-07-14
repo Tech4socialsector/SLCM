@@ -8,24 +8,24 @@ from frappe.utils import cint, flt
 
 def get_application_fee_for_category(program, admission_cycle, category, is_foreign=False):
 	"""
-	Returns the application fee amount from Program Reservation Policy
+	Returns the application fee amount from Programme Reservation Policy
 	based on program, admission_cycle, and category (Admission Category name).
 
-	Look up Program Reservation Policy for the given program+cycle,
-	then find the Program Reservation Category row where category_name matches.
+	Look up Programme Reservation Policy for the given program+cycle,
+	then find the Programme Reservation Category row where category_name matches.
 	Returns application_fee or 0 if not found.
 	"""
 	if not program or not admission_cycle:
 		return 0
 
 	policy = frappe.db.get_value(
-		"Program Reservation Policy",
+		"Programme Reservation Policy",
 		{"program": program, "admission_cycle": admission_cycle, "status": "Active"},
 		"name"
 	)
 	if not policy:
 		policy = frappe.db.get_value(
-			"Program Reservation Policy",
+			"Programme Reservation Policy",
 			{"program": program, "admission_cycle": admission_cycle},
 			"name"
 		)
@@ -33,8 +33,8 @@ def get_application_fee_for_category(program, admission_cycle, category, is_fore
 		return 0
 
 	rows = frappe.get_all(
-		"Program Reservation Category",
-		filters={"parent": policy, "parenttype": "Program Reservation Policy"},
+		"Programme Reservation Category",
+		filters={"parent": policy, "parenttype": "Programme Reservation Policy"},
 		fields=["category_name", "application_fee_for_indian", "application_fee_for_foreign"]
 	)
 
@@ -55,19 +55,19 @@ def get_application_fee_for_category(program, admission_cycle, category, is_fore
 
 def get_payment_gateway_for_application_fee(program, admission_cycle):
 	"""
-	Returns the Payment Gateway from Program Reservation Policy for the given program and admission_cycle.
+	Returns the Payment Gateway from Programme Reservation Policy for the given program and admission_cycle.
 	Uses the same policy lookup as get_application_fee_for_category (Active first, then any).
 	"""
 	if not program or not admission_cycle:
 		return None
 	gateway = frappe.db.get_value(
-		"Program Reservation Policy",
+		"Programme Reservation Policy",
 		{"program": program, "admission_cycle": admission_cycle, "status": "Active"},
 		"payment_gateway"
 	)
 	if not gateway:
 		gateway = frappe.db.get_value(
-			"Program Reservation Policy",
+			"Programme Reservation Policy",
 			{"program": program, "admission_cycle": admission_cycle},
 			"payment_gateway"
 		)
@@ -76,18 +76,18 @@ def get_payment_gateway_for_application_fee(program, admission_cycle):
 
 def get_payment_receipt_template_for_policy(program, admission_cycle):
 	"""
-	Return Print Format name from Program Reservation Policy (same lookup as fee / gateway).
+	Return Print Format name from Programme Reservation Policy (same lookup as fee / gateway).
 	"""
 	if not program or not admission_cycle:
 		return None
 	template = frappe.db.get_value(
-		"Program Reservation Policy",
+		"Programme Reservation Policy",
 		{"program": program, "admission_cycle": admission_cycle, "status": "Active"},
 		"payment_receipt_template",
 	)
 	if not template:
 		template = frappe.db.get_value(
-			"Program Reservation Policy",
+			"Programme Reservation Policy",
 			{"program": program, "admission_cycle": admission_cycle},
 			"payment_receipt_template",
 		)

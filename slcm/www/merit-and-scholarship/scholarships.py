@@ -139,7 +139,7 @@ def get_context(context):
         all_apps = frappe.get_all(
             "Scholarship Application",
             filters={"applicant_id": applicant.name},
-            fields=["name", "scholarship_scheme", "status", "creation", "modified", "approval_date", "calculated_benefit", "final_fee_amount", "rejection_reason", "original_fee_amount"],
+            fields=["name", "scholarship_scheme", "status", "creation", "modified", "approval_date", "calculated_benefit", "final_fee_amount", "rejection_reason", "original_fee_amount", "income_certificate", "supporting_documents"],
             order_by="creation desc",
             ignore_permissions=True
         )

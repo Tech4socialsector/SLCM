@@ -1,7 +1,50 @@
 import frappe
 from frappe.utils import now_datetime, getdate
 
-def check_scholarship_availability(scheme_name, applicant_status):
+def check_selection_stage(applicant_statuses):
+    """
+    Returns True if the applicant is in a post-selection stage or later.
+    This includes merit selection, seat selection, offer, fee payment, and enrolment.
+    """
+    post_offer_statuses = {"Offer Issued", "Offer Accepted", "Fee Paid", "Enrolled"}
+    post_selection_statuses = {" Merit Selected", "Merit Selected", "Merit Published", "Seat Selected"} | post_offer_statuses
+    
+    for s in applicant_statuses:
+        if not s:
+            continue
+        if s in post_selection_statuses:
+            return True
+        s_lower = s.lower()
+        if "selected" in s_lower and "waitlisted" not in s_lower and "rejected" not in s_lower:
+            return True
+        if "published" in s_lower and "merit" in s_lower:
+            return True
+        if "offer" in s_lower and "declined" not in s_lower and "expired" not in s_lower:
+            return True
+        if "fee paid" in s_lower or "enrolled" in s_lower:
+            return True
+    return False
+
+def check_offer_stage(applicant_statuses):
+    """
+    Returns True if the applicant is in a post-offer stage or later.
+    """
+    post_offer_statuses = {"Offer Issued", "Offer Accepted", "Fee Paid", "Enrolled"}
+    
+    for s in applicant_statuses:
+        if not s:
+            continue
+        if s in post_offer_statuses:
+            return True
+        s_lower = s.lower()
+        if "offer" in s_lower and "declined" not in s_lower and "expired" not in s_lower:
+            return True
+        if "fee paid" in s_lower or "enrolled" in s_lower:
+            return True
+    return False
+
+
+def check_scholarship_availability(scheme_name, applicant_status, applicant_id=None):
     """
     Checks if a scholarship scheme is available for an applicant based on:
     1. Active status
@@ -16,14 +59,42 @@ def check_scholarship_availability(scheme_name, applicant_status):
     if scheme.status != "Active":
         frappe.throw(frappe._("Scholarship scheme {0} is not active").format(scheme_name))
 
-    # 2. Stage check
-    valid_offer_statuses = ["Offer Issued", "Offer Accepted", "Fee Paid"]
-    
-    if scheme.stage_availability == "Post-Selection" and applicant_status not in ["Selected"] + valid_offer_statuses:
-        frappe.throw(frappe._("Scholarship available only after selection"))
+    # 1.5 Target applicant check (Domestic / International)
+    if applicant_id:
+        foriegn_national = frappe.db.get_value("Applicant", applicant_id, "foriegn_national")
+        applicant_type = "International" if foriegn_national == "Yes" else "Domestic"
+        target_for = scheme.get("scholarship_for") or "Domestic"
+        if target_for != applicant_type:
+            frappe.throw(frappe._("This scholarship scheme is only available for {0} applicants.").format(target_for))
 
-    if scheme.stage_availability == "Post-Offer" and applicant_status not in valid_offer_statuses:
-        frappe.throw(frappe._("Scholarship available only after offer issuance"))
+    # 2. Stage check
+    applicant_statuses = [applicant_status] if applicant_status else []
+    
+    if applicant_id:
+        active_offer = frappe.db.get_value("Offer Letter", {
+            "applicant": applicant_id,
+            "status": ["not in", ["Rejected", "Expired", "Withdrawn"]]
+        }, ["status", "name"], as_dict=1)
+        
+        if active_offer:
+            mapped_status = None
+            if active_offer.status == "Issued":
+                mapped_status = "Offer Issued"
+            elif active_offer.status == "Accepted":
+                mapped_status = "Offer Accepted"
+            elif active_offer.status == "Payment Completed":
+                mapped_status = "Fee Paid"
+                
+            if mapped_status and mapped_status not in applicant_statuses:
+                applicant_statuses.append(mapped_status)
+
+    if scheme.stage_availability == "Post-Selection":
+        if not check_selection_stage(applicant_statuses):
+            frappe.throw(frappe._("Scholarship available only after selection"))
+
+    elif scheme.stage_availability == "Post-Offer":
+        if not check_offer_stage(applicant_statuses):
+            frappe.throw(frappe._("Scholarship available only after offer issuance"))
 
     # 3. Date window check
     today = getdate()
@@ -100,6 +171,30 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
     to apply for. 
     applicant_statuses should be a list of statuses (e.g. from their admission results/preferences).
     """
+    if applicant_statuses is None:
+        applicant_statuses = []
+    elif not isinstance(applicant_statuses, list):
+        applicant_statuses = list(applicant_statuses)
+
+    # Automatically supplement applicant_statuses using the active Offer Letter status
+    if applicant_id:
+        active_offer = frappe.db.get_value("Offer Letter", {
+            "applicant": applicant_id,
+            "status": ["not in", ["Rejected", "Expired", "Withdrawn"]]
+        }, ["status", "name"], as_dict=1)
+        
+        if active_offer:
+            mapped_status = None
+            if active_offer.status == "Issued":
+                mapped_status = "Offer Issued"
+            elif active_offer.status == "Accepted":
+                mapped_status = "Offer Accepted"
+            elif active_offer.status == "Payment Completed":
+                mapped_status = "Fee Paid"
+                
+            if mapped_status and mapped_status not in applicant_statuses:
+                applicant_statuses.append(mapped_status)
+
     # Get applicant categories for filtering
     from slcm.admission.doctype.seat_allocation.seat_allocation import get_applicant_categories
     applicant_categories = get_applicant_categories(applicant_id)
@@ -108,6 +203,9 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
     applicant_program_level = frappe.db.get_value("Applicant", applicant_id, "program_level")
     if not applicant_program_level and program:
         applicant_program_level = frappe.db.get_value("Programme", program, "level_of_study")
+
+    foriegn_national = frappe.db.get_value("Applicant", applicant_id, "foriegn_national") if applicant_id else None
+    applicant_type = "International" if foriegn_national == "Yes" else "Domestic"
 
     # 1. Get all Active schemes for this cycle + campus
     schemes = frappe.get_all(
@@ -122,7 +220,8 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
             "coverage_value", "apply_on", "stage_availability", 
             "application_start", "application_end", "max_beneficiaries", 
             "current_beneficiaries", "total_budget", "utilized_budget", 
-            "max_amount", "eligibility_criteria", "program", "program_level", "category"
+            "max_amount", "eligibility_criteria", "program", "program_level", "category",
+            "scholarship_for"
         ]
     )
     
@@ -144,6 +243,11 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
     today = getdate()
 
     for scheme in schemes:
+        # Check target applicant type match (Domestic/International)
+        target_for = scheme.get("scholarship_for") or "Domestic"
+        if target_for != applicant_type:
+            continue
+
         # Check program match
         program_match = not scheme.program or scheme.program == program
         
@@ -173,14 +277,12 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
             
         # Check stage availability
         is_eligible_stage = True
-        valid_post_offer = ["Offer Issued", "Offer Accepted", "Fee Paid"]
         
         if scheme.stage_availability == "Post-Selection":
-            is_selected = "Selected" in applicant_statuses or "Seat Selected" in applicant_statuses
-            if not is_selected and not any(s in applicant_statuses for s in valid_post_offer):
+            if not check_selection_stage(applicant_statuses):
                 is_eligible_stage = False
         elif scheme.stage_availability == "Post-Offer":
-            if not any(s in applicant_statuses for s in valid_post_offer):
+            if not check_offer_stage(applicant_statuses):
                 is_eligible_stage = False
                 
         if not is_eligible_stage:

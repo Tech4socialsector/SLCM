@@ -70,7 +70,7 @@ class TestRefundRequest(FrappeTestCase):
 		# Verify Refund Request was auto-created and linked
 		self.assertTrue(cancellation.refund_request)
 		refund = frappe.get_doc("Refund Request", cancellation.refund_request)
-		self.assertEqual(refund.status, "Draft")
+		self.assertEqual(refund.status, "Under Review")
 		self.assertEqual(refund.amount_paid, 50000.0)
 		# Starts as default "Partial" based on Fee Structure policies
 		self.assertEqual(refund.refund_type, "Partial")

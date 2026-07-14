@@ -172,6 +172,20 @@ frappe.ui.form.on("Seat Allocation", {
                             fieldtype: "Section Break",
                         },
                         {
+                            fieldtype: "HTML",
+                            fieldname: "selection_buttons",
+                            options: `
+                                <div style="margin-bottom: 12px; display: flex; gap: 8px;">
+                                    <button type="button" class="btn btn-xs btn-default btn-select-all" style="font-weight: 600; padding: 4px 10px; border-radius: 4px; border: 1px solid #d1d5db; background: #fff; cursor: pointer;">
+                                        Select All
+                                    </button>
+                                    <button type="button" class="btn btn-xs btn-default btn-unselect-all" style="font-weight: 600; padding: 4px 10px; border-radius: 4px; border: 1px solid #d1d5db; background: #fff; cursor: pointer;">
+                                        Unselect All
+                                    </button>
+                                </div>
+                            `
+                        },
+                        {
                             label: __("Selected Applicants"),
                             fieldname: "applicants_grid",
                             fieldtype: "Table",
@@ -373,6 +387,23 @@ frappe.ui.form.on("Seat Allocation", {
                         grid.data.forEach(row => row.__checked = 1);
                         grid.refresh();
                     }
+
+                    // Bind selection buttons
+                    d.$wrapper.find('.btn-select-all').on('click', (e) => {
+                        e.preventDefault();
+                        if (grid) {
+                            grid.data.forEach(row => row.__checked = 1);
+                            grid.refresh();
+                        }
+                    });
+
+                    d.$wrapper.find('.btn-unselect-all').on('click', (e) => {
+                        e.preventDefault();
+                        if (grid) {
+                            grid.data.forEach(row => row.__checked = 0);
+                            grid.refresh();
+                        }
+                    });
                 }, 300);
             });
         }

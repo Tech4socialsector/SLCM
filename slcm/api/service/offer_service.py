@@ -331,7 +331,7 @@ class OfferService:
             throw(_("Applicant is required"))
         applicant_other_offers = frappe.get_all("Offer Letter", filters={
             "applicant": applicant,
-            "status": ["not in", ["Rejected", "Expired", "Withdrawn", "Accepted"]],
+            "status": "Issued",
             "name": ["!=", frappe.flags.current_offer or ""]
         }, fields=["name"])
         for offer in applicant_other_offers:
@@ -378,8 +378,9 @@ class OfferService:
         """
         offer = frappe.get_doc("Offer Letter", offer_name)
         
-        if offer.status not in ["Issued", "Draft"]:
-            throw(_("Cannot reject offer in status: {0}").format(offer.status))
+        status = offer.status or "Draft"
+        if status not in ["Issued", "Draft"]:
+            throw(_("Cannot reject offer in status: {0}").format(status))
 
         offer.status = "Rejected"
         if reason:

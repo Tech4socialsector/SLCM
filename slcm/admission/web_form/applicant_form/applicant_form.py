@@ -330,7 +330,7 @@ def get_open_programmes():
 
 
 # ───────────────────────────────────────────────────────────────────
-#  FEE AMOUNT — lookup from Program Reservation Policy
+#  FEE AMOUNT — lookup from Programme Reservation Policy
 # ───────────────────────────────────────────────────────────────────
 
 @frappe.whitelist(allow_guest=False)
@@ -339,7 +339,7 @@ def get_application_fee_amount(program, admission_cycle=None, category=None):
     Return the application fee for the given program, admission cycle, and
     reservation category (whether_scstobc_ncl value: NA | SC | ST | OBC-NCL).
 
-    Looks up Program Reservation Policy → Program Reservation Category rows.
+    Looks up Programme Reservation Policy → Programme Reservation Category rows.
     Falls back to the active Admission Cycle when admission_cycle is blank.
     Returns 0 when no matching policy or category row is found.
     """
@@ -503,7 +503,7 @@ def save_applicant_draft(data, ignore_mandatory=True):
     doc.status = "Draft"
     doc.email              = email
 
-    # Recalculate application fee from Program Reservation Policy
+    # Recalculate application fee from Programme Reservation Policy
     if getattr(doc, "program", None) and getattr(doc, "admission_cycle", None):
         try:
             from slcm.api.service.application_fee_service import get_application_fee_for_category

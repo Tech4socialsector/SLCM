@@ -14,6 +14,35 @@ frappe.ui.form.on("Interview Seat Allocation", {
 
     refresh(frm) {
         calculate_final_cumulative(frm, true);
+
+        // Generate Offer Letter Button for Pass status
+        if (frm.doc.interview_result_status === "Pass" && !frappe.user_roles.includes("Applicant")) {
+            frm.add_custom_button(__("Generate Offer Letter"), function () {
+                frappe.call({
+                    method: "slcm.api.service.offer_service.bulk_generate_offers",
+                    args: {
+                        applicants: [frm.doc.applicant]
+                    },
+                    freeze: true,
+                    freeze_message: __("Generating Offer Letter..."),
+                    callback: function (r) {
+                        if (r.message && r.message.success && r.message.success.length > 0) {
+                            frappe.msgprint({
+                                message: __("Offer Letter generated successfully."),
+                                indicator: "green"
+                            });
+                        } else if (r.message && r.message.errors && r.message.errors.length > 0) {
+                            frappe.msgprint({
+                                title: __("Error generating Offer Letter"),
+                                message: r.message.errors[0].error,
+                                indicator: "red"
+                            });
+                        }
+                    }
+                });
+            }, __("Actions"));
+        }
+
         // Administrator can do everything — skip all restrictions
         if (frappe.user_roles.includes("Administrator")) {
             // Ensure all tabs/sections are visible and editable
