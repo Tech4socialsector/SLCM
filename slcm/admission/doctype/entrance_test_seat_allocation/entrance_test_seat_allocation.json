@@ -545,6 +545,7 @@
    "fieldname": "percentile",
    "fieldtype": "Float",
    "label": "Percentile",
+   "precision": "2",
    "read_only": 1
   },
   {
@@ -611,7 +612,7 @@
  "image_field": "profile",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-14 09:37:32.585770",
+ "modified": "2026-07-14 14:44:32.596902",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",

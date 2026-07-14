@@ -12,15 +12,15 @@ from frappe.utils import getdate, now
 class InterviewConfiguration(Document):
 
     def validate(self):
-        pattern = re.compile(r"^[1-9]\d*:[1-9]\d*$")
+        pattern = re.compile(r"^([1-9]\d*:[1-9]\d*|[1-9]\d*)$")
 
         if self.enter_domestic_ratio:
             if not pattern.match(str(self.enter_domestic_ratio)):
-                frappe.throw(_("Enter Domestic Ratio must be in the format 'X:Y' (e.g. '3:1') where both X and Y are positive integers."))
+                frappe.throw(_("Enter Domestic Ratio must be a positive integer (e.g. '3' for a 1:3 ratio) or in the format 'X:Y' (e.g. '1:3')."))
 
         if self.enter_international_ratio:
             if not pattern.match(str(self.enter_international_ratio)):
-                frappe.throw(_("Enter International Ratio must be in the format 'X:Y' (e.g. '3:1') where both X and Y are positive integers."))
+                frappe.throw(_("Enter International Ratio must be a positive integer (e.g. '3' for a 1:3 ratio) or in the format 'X:Y' (e.g. '1:3')."))
 
     def before_save(self):
         if not self.configuration_code:
@@ -277,10 +277,13 @@ class InterviewConfiguration(Document):
                 return applicants
 
             try:
-                parts = ratio_str.split(":")
-                num1 = float(parts[0])
-                num2 = float(parts[1])
-                multiplier = max(num1, num2) / min(num1, num2)
+                if ":" in ratio_str:
+                    parts = ratio_str.split(":")
+                    num1 = float(parts[0])
+                    num2 = float(parts[1])
+                    multiplier = max(num1, num2) / min(num1, num2)
+                else:
+                    multiplier = float(ratio_str)
             except Exception:
                 multiplier = 1.0
 

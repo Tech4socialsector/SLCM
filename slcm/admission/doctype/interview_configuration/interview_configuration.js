@@ -19,12 +19,12 @@ frappe.ui.form.on("Interview Configuration", {
     },
 
     before_save: function (frm) {
-        let pattern = /^[1-9]\d*:[1-9]\d*$/;
+        let pattern = /^([1-9]\d*:[1-9]\d*|[1-9]\d*)$/;
         if (frm.doc.enter_domestic_ratio && !pattern.test(frm.doc.enter_domestic_ratio)) {
-            frappe.throw(__("Domestic Ratio must be in the format 'X:Y' (e.g. '3:1') where both X and Y are positive integers."));
+            frappe.throw(__("Domestic Ratio must be a positive integer (e.g. '3' for a 1:3 ratio) or in the format 'X:Y' (e.g. '1:3')."));
         }
         if (frm.doc.enter_international_ratio && !pattern.test(frm.doc.enter_international_ratio)) {
-            frappe.throw(__("International Ratio must be in the format 'X:Y' (e.g. '3:1') where both X and Y are positive integers."));
+            frappe.throw(__("International Ratio must be a positive integer (e.g. '3' for a 1:3 ratio) or in the format 'X:Y' (e.g. '3:1')."));
         }
     },
 

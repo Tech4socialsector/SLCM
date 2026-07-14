@@ -455,6 +455,7 @@
    "fieldname": "et_part_a_total_marks_scored",
    "fieldtype": "Float",
    "label": "Total Mark Scored",
+   "precision": "2",
    "read_only": 1
   },
   {
@@ -476,6 +477,7 @@
    "fieldname": "et_part_b_total_marks_scored",
    "fieldtype": "Float",
    "label": "Total Marks Scored",
+   "precision": "2",
    "read_only": 1
   },
   {
@@ -561,7 +563,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-14 14:49:32.958048",
+ "modified": "2026-07-14 14:43:36.554824",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Seat Allocation",
