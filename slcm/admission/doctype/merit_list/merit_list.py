@@ -170,6 +170,8 @@ def publish_merit_list(merit_list_name):
     # docstatus check removed to allow publishing non-submittable records
 
     doc.status = "Published"
+    from frappe.utils import now_datetime
+    doc.published_on = now_datetime()
     doc.save()
 
     # Update Applicant status
@@ -312,6 +314,7 @@ def unpublish_merit_list(merit_list_name):
         frappe.throw("Merit List is not currently published.")
 
     doc.status = "Generated"
+    doc.published_on = None
     doc.save()
 
     # Revert Applicant status

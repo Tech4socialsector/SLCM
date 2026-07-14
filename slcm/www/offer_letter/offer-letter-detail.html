@@ -947,6 +947,13 @@ _pc.mission_text) or '' %}
 	                                <div class="value">${offer.campus}</div>
 	                            </div>
 	                        </div>
+	                        <div class="summary-item">
+	                            <div class="summary-icon"><span class="material-symbols-outlined">calendar_today</span></div>
+	                            <div>
+	                                <span class="label">{{ _("Issued On") }}</span>
+	                                <div class="value">${offer.issued_on ? new Date(offer.issued_on).toLocaleString('en-GB', {day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true}) : '—'}</div>
+	                            </div>
+	                        </div>
 	                    </div>
 	                </div>
 
@@ -973,7 +980,7 @@ _pc.mission_text) or '' %}
 	                        ` : ''}
 
 	                        ${offer.status === 'Payment Completed' || is_fee_paid || (applicant && applicant.status === 'Fee Paid') ? `
-	                            <button class="btn btn-pay" style="width: auto; margin: 0; padding: 10px 24px; background-color: #10b981;" onclick="handle_download_receipt()">
+	                            <button class="btn btn-pay" style="width: auto; margin: 0; padding: 10px 24px;" title="Download Receipt" onclick="handle_download_receipt()">
 	                                <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">receipt</span> {{ _("Download Receipt") }}
 	                            </button>
 	                        ` : ''}

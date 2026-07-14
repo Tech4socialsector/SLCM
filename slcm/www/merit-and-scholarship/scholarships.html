@@ -265,8 +265,7 @@
   .sch-meta-label {
     font-size: 10px !important;
     font-weight: 700 !important;
-    color: #94a3b8;
-    text-transform: uppercase;
+    color: var(--primary);
     letter-spacing: 0.05em;
     margin: 0 0 2px 0 !important;
   }
@@ -579,7 +578,7 @@
                     </div>
                     <div class="sch-meta-box flex flex-col justify-center">
                       {% if sch.max_amount and sch.max_amount > 0 %}
-                        <p class="sch-meta-label">Maximum amount</p>
+                        <p class="sch-meta-label">Maximum Amount</p>
                         <p class="sch-meta-value">₹{{ "{:,.0f}".format(sch.max_amount) }}</p>
                       {% else %}
                         <p class="sch-meta-label">Applies to</p>
@@ -670,7 +669,7 @@
                     </div>
                     <div class="sch-meta-box flex flex-col justify-center">
                       {% if app.max_amount and app.max_amount > 0 %}
-                        <p class="sch-meta-label">Maximum amount</p>
+                        <p class="sch-meta-label">Maximum Amount</p>
                         <p class="sch-meta-value">₹{{ "{:,.0f}".format(app.max_amount) }}</p>
                       {% else %}
                         <p class="sch-meta-label">Applies to</p>
@@ -748,7 +747,7 @@
                       <span class="material-symbols-outlined text-slate-400 text-base">monetization_on</span>
                       <p class="text-xs font-bold text-slate-600 m-0">
                         {% if app.max_amount and app.max_amount > 0 %}
-                          Maximum amount: ₹{{ "{:,.0f}".format(app.max_amount) }}
+                          Maximum Amount: ₹{{ "{:,.0f}".format(app.max_amount) }}
                         {% else %}
                           Applies to: {{ app.apply_on or "Total Fee" }}
                         {% endif %}
@@ -1091,7 +1090,7 @@
              <p class="text-sm font-bold text-slate-900">${s.type}</p>
           </div>
           <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
-             <p class="text-[12px] font-bold text-slate-400 mb-1">Maximum amount</p>
+             <p class="text-[12px] font-bold text-slate-400 mb-1">Maximum Amount</p>
              <p class="text-sm font-bold text-slate-900">₹${Number(s.max).toLocaleString()}</p>
           </div>
         </div>

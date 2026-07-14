@@ -3248,7 +3248,7 @@ or _app.current_stage)) or _status %}
             <span class="material-symbols-outlined">mail</span>
             Offer Letter
           </span>
-          <span class="qs-value qs-value--offer-actions">
+          <span class="qs-value qs-value--offer-actions" title="Click Here">
               {% set _display_status = status %}
               {% if status == 'Issued' %}{% set _display_status = 'Offer Issued' %}
               {% elif status == 'Accepted' %}{% set _display_status = 'Offer Accepted' %}
@@ -3348,7 +3348,7 @@ or _app.current_stage)) or _status %}
                   </div>
                 </div>
                 <div style="text-align: right;">
-                  <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Requested On</div>
+                  <div style="font-size: 10px; font-weight: 500; color: #64748b; text-transform: none; margin-bottom: 2px;">Requested On</div>
                   <div style="font-size: 11px; font-weight: 600; color: #475569;">{{ frappe.utils.get_datetime(cancellation_details.requested_on).strftime("%d-%m-%Y %I:%M:%S %p") if cancellation_details.requested_on else "—" }}</div>
                 </div>
               </div>
@@ -3395,7 +3395,7 @@ or _app.current_stage)) or _status %}
           </div>
           <div style="display: flex; align-items: center; gap: 6px;">
                  <span class="material-symbols-outlined" style="font-size: 16px;">contact_support</span>
-                 Need help? Contact Admissions Office
+                 Need help ? Contact Admissions Office
           </div>
         </div>
       </div>
@@ -3536,7 +3536,7 @@ or _app.current_stage)) or _status %}
             {{ (et_doc.entrance_test_status or 'Scheduled')|capitalize }}
           </span>
           {% if et_show_result and et_doc.entrance_test_result_card %}
-          <a href="{{ et_doc.entrance_test_result_card }}" target="_blank" class="btn-download-premium" style="background: #166534; color: #fff; text-decoration: none;">
+          <a href="{{ et_doc.entrance_test_result_card }}" target="_blank" title="Download Card" class="btn-download-premium" style="background: #166534; color: #fff; text-decoration: none;">
             <span class="material-symbols-outlined" style="font-size:18px;">download</span>
             Result Card
           </a>
@@ -5331,7 +5331,7 @@ LIST / DASHBOARD VIEW
 
                     <div class="p-3 mb-4" style="background: #fff7ed; border-radius: 16px; border: 1px solid #ffedd5; display: flex; gap: 12px;">
                         <div class="text-warning-emphasis fw-600" style="line-height: 1.5; color: #9a3412; font-size: 14px;">
-                            {{ _('⚠️ Please confirm your decision. Cancelling your admission will release your seat to other candidates. This step cannot be undone once completed.') }}
+                            {{ _('⚠️ Please confirm your decision to cancel your admission. Upon cancellation, your allocated seat will be released and offered to other eligible applicants. This action is final and cannot be reversed.') }}
                         </div>
                     </div>
 
@@ -5359,7 +5359,7 @@ LIST / DASHBOARD VIEW
 
                         <div class="mb-4">
                             <label class="form-label small fw-700 text-muted mb-2" style="letter-spacing: -0.01em;">
-                                {{ _('Detailed explanation') }} <span class="text-danger">*</span>
+                                {{ _('Detailed Explanation') }} <span class="text-danger">*</span>
                             </label>
                             <textarea class="form-control border-0 bg-light" id="modal_reason" rows="3" required style="border-radius: 12px; padding: 12px 16px; font-size: 14px;" placeholder="{{ _('Tell us why you are withdrawing...') }}"></textarea>
                         </div>
