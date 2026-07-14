@@ -230,4 +230,53 @@ class StudentAttendanceCondonation(Document):
 				send_condonation_email("l2_rejected_email_template", self, [student_email])
 				
 		self.save(ignore_permissions=True)
-		
+
+
+def get_permission_query_conditions(user):
+	if not user:
+		user = frappe.session.user
+
+	# Full-access roles bypass row-level restriction entirely
+	if "System Manager" in frappe.get_roles(user) or user == "Administrator":
+		return ""
+
+	roles = frappe.get_roles(user)
+	conditions = []
+
+	if "AAD" in roles:
+		conditions.append(f"`tabStudent Attendance Condonation`.aad_approver = {frappe.db.escape(user)}")
+
+	if "Programme Chair" in roles:
+		conditions.append(f"`tabStudent Attendance Condonation`.programme_chair_approver = {frappe.db.escape(user)}")
+
+	if "slcm_Student" in roles:
+		student_id = frappe.db.get_value("Student Master", {"user": user}, "name")
+		if student_id:
+			conditions.append(f"`tabStudent Attendance Condonation`.student = {frappe.db.escape(student_id)}")
+
+	if not conditions:
+		return "1=0"
+
+	return "(" + " or ".join(conditions) + ")"
+
+
+def has_permission(doc, user=None, permission_type=None):
+	if not user:
+		user = frappe.session.user
+
+	if "System Manager" in frappe.get_roles(user) or user == "Administrator":
+		return True
+
+	roles = frappe.get_roles(user)
+
+	if "AAD" in roles and doc.aad_approver == user:
+		return True
+	if "Programme Chair" in roles and doc.programme_chair_approver == user:
+		return True
+	
+	if "slcm_Student" in roles:
+		student_id = frappe.db.get_value("Student Master", {"user": user}, "name")
+		if student_id and doc.student == student_id:
+			return True
+
+	return False
