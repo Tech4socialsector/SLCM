@@ -6,36 +6,123 @@ frappe.ui.form.on("Student Attendance Tool", {
 		frm.students_area = $("<div>").appendTo(frm.fields_dict.students_html.wrapper);
 	},
 
-	onload(frm) {
-		if (!frm.doc.date) {
-			frm.set_value("date", frappe.datetime.get_today());
-		}
-	},
-
 	refresh(frm) {
-		if (frappe.route_options) {
-			frm.set_value("based_on", frappe.route_options.based_on);
-			frm.set_value("course_schedule", frappe.route_options.course_schedule);
-			frm.set_value("class_schedule", frappe.route_options.class_schedule);
-			if (frappe.route_options.date) {
-				frm.set_value("date", frappe.route_options.date);
-			}
-			frappe.route_options = null;
-		}
-
 		frm.disable_save();
+
+		// This doctype is a Single used purely as a transient UI tool — its
+		// stored/local-draft field values persist across completely unrelated
+		// visits (e.g. a leftover `course` or `date` from a previous session
+		// bleeding into a fresh one). Always start from a clean slate, then
+		// layer on whatever came in via frappe.route_options (if anything).
+		const opts = frappe.route_options || {};
+		frappe.route_options = null;
+
+		// Guard so the `based_on` handler below doesn't wipe the values
+		// we're about to set right after (it normally clears
+		// course_schedule/class_schedule/office_hours_group whenever
+		// based_on changes, which would otherwise race with this).
+		frm.__applying_route_options = true;
+		frm.set_value("based_on", opts.based_on || "Course Schedule").then(() => {
+			return frm.set_value({
+				course_schedule: opts.course_schedule || null,
+				class_schedule: opts.class_schedule || null,
+				office_hours_group: opts.office_hours_group || null,
+				course_offering: null,
+				course: null,
+				section: null,
+				academic_year: null,
+				academic_term: null,
+				batch: null,
+			});
+		}).then(() => {
+			frm.__applying_route_options = false;
+			// This doctype is a Single, so its stored field values persist
+			// across page loads — if the incoming value already equals
+			// what's stored, Frappe's own "value changed" field triggers
+			// won't fire. Don't rely on them: explicitly resolve
+			// course_offering and fetch the roster here instead.
+			return frm.set_value("date", opts.date || frappe.datetime.get_today());
+		}).then(() => {
+			frm.trigger("sync_context");
+		});
 	},
 
 	/* ---------------- Field Events ---------------- */
 
 	based_on(frm) {
+		if (frm.__applying_route_options) return;
 		frm.set_value("course_schedule", null);
 		frm.set_value("class_schedule", null);
 		frm.set_value("office_hours_group", null);
+		frm.set_value("course_offering", null);
 		frm.students_area.empty();
 	},
 
+	course_schedule(frm) {
+		if (frm.__applying_route_options) return;
+		frm.trigger("sync_context");
+	},
+
+	class_schedule(frm) {
+		if (frm.__applying_route_options) return;
+		frm.trigger("sync_context");
+	},
+
+	office_hours_group(frm) {
+		if (frm.__applying_route_options) return;
+		frm.trigger("sync_context");
+	},
+
+	date(frm) {
+		frm.trigger("fetch_students");
+	},
+
 	/* ---------------- Data Fetch ---------------- */
+
+	// Resolve course_offering (and section/date where relevant) from
+	// whichever link is currently selected, then fetch the roster. Always
+	// called explicitly rather than left to individual field "value changed"
+	// triggers, since those don't fire when the incoming value matches what
+	// this Single doctype already has stored.
+	sync_context(frm) {
+		if (frm.doc.course_schedule) {
+			frappe.db.get_value("Course Schedule", frm.doc.course_schedule,
+				["schedule_date", "course_offering"], (r) => {
+					if (r) {
+						if (r.course_offering) frm.set_value("course_offering", r.course_offering);
+						if (r.schedule_date && !frm.doc.date) frm.set_value("date", r.schedule_date);
+					}
+					frm.trigger("fetch_students");
+				});
+		} else if (frm.doc.class_schedule) {
+			frappe.db.get_value("Time Table", frm.doc.class_schedule,
+				["schedule_date", "repeat_frequency", "course_offering", "section"], (r) => {
+					if (r) {
+						if (r.course_offering) frm.set_value("course_offering", r.course_offering);
+						if (r.section) frm.set_value("section", r.section);
+
+						if (!frm.doc.date) {
+							// Non-recurring -> use its specific date; recurring -> default to today
+							if (!r.repeat_frequency || r.repeat_frequency === "Never") {
+								if (r.schedule_date) frm.set_value("date", r.schedule_date);
+							} else {
+								frm.set_value("date", frappe.datetime.get_today());
+							}
+						}
+					}
+					frm.trigger("fetch_students");
+				});
+		} else if (frm.doc.office_hours_group) {
+			frappe.db.get_value("Office Hours Group", frm.doc.office_hours_group,
+				"course_offering", (r) => {
+					if (r && r.course_offering) frm.set_value("course_offering", r.course_offering);
+					frm.trigger("fetch_students");
+				});
+		} else {
+			frm.set_value("course_offering", null);
+			frm.trigger("fetch_students");
+		}
+	},
 
 	fetch_students(frm) {
 		if (frm.doc.course_schedule || frm.doc.class_schedule || frm.doc.office_hours_group) {
@@ -63,55 +150,6 @@ frappe.ui.form.on("Student Attendance Tool", {
 		}
 	},
 
-	date(frm) {
-		if (frm.doc.date > frappe.datetime.get_today()) {
-			frappe.throw(__("Cannot mark attendance for future dates."));
-		}
-		frm.trigger("fetch_students");
-	},
-
-	course_schedule(frm) {
-		if (frm.doc.course_schedule) {
-			frappe.db.get_value("Course Schedule", frm.doc.course_schedule, "schedule_date", (r) => {
-				if (r && r.schedule_date) {
-					frm.set_value("date", r.schedule_date);
-				}
-				frm.trigger("fetch_students");
-			});
-		} else {
-			frm.trigger("fetch_students");
-		}
-	},
-
-	class_schedule(frm) {
-		if (frm.doc.class_schedule) {
-			frappe.db.get_value("Time Table", frm.doc.class_schedule, ["schedule_date", "repeat_frequency"], (r) => {
-				if (r) {
-					// MASTER FIX: Only set date if user hasn't already picked one
-					if (!frm.doc.date) {
-						// Case 1: Non-recurring (One-time) event -> Use its specific date
-						if (!r.repeat_frequency || r.repeat_frequency === "Never") {
-							if (r.schedule_date) {
-								frm.set_value("date", r.schedule_date);
-							}
-						}
-						// Case 2: Recurring event -> Default to Today (most common use case)
-						else {
-							frm.set_value("date", frappe.datetime.get_today());
-						}
-					}
-				}
-				frm.trigger("fetch_students");
-			});
-		} else {
-			frm.trigger("fetch_students");
-		}
-	},
-
-	office_hours_group(frm) {
-		frm.trigger("fetch_students");
-	},
-
 	get_students(frm, students) {
 		frm.students_editor = new StudentsEditor(frm, frm.students_area, students);
 	},
@@ -124,6 +162,7 @@ class StudentsEditor {
 		this.frm = frm;
 		this.wrapper = wrapper;
 		this.students = students || [];
+		this.is_future_date = !!(this.frm.doc.date && this.frm.doc.date > frappe.datetime.get_today());
 
 		$(this.wrapper).empty();
 
@@ -141,8 +180,11 @@ class StudentsEditor {
 			<div style="margin-bottom:15px">
 				<button class="btn btn-default btn-xs btn-check-all">${__("Check all")}</button>
 				<button class="btn btn-default btn-xs btn-uncheck-all">${__("Uncheck all")}</button>
-				<button class="btn btn-primary btn-xs btn-mark">${__("Mark Attendance")}</button>
+				<button class="btn btn-primary btn-xs btn-mark" ${this.is_future_date ? "disabled" : ""}>${__("Mark Attendance")}</button>
 				<span class="student-count" style="margin-left:15px;font-weight:bold"></span>
+				${this.is_future_date
+					? `<div class="text-danger" style="margin-top:8px;">${__("Cannot mark attendance for future dates.")}</div>`
+					: ""}
 			</div>
 		`).appendTo(this.wrapper);
 
@@ -156,7 +198,9 @@ class StudentsEditor {
 			me.update_count(toolbar);
 		});
 
-		toolbar.find(".btn-mark").on("click", () => me.mark_attendance(toolbar));
+		if (!this.is_future_date) {
+			toolbar.find(".btn-mark").on("click", () => me.mark_attendance(toolbar));
+		}
 
 		let html = '<div class="row student-attendance-checks">';
 		for (const s of this.students) {
@@ -194,6 +238,10 @@ class StudentsEditor {
 	}
 
 	mark_attendance(toolbar) {
+		if (this.is_future_date) {
+			return;
+		}
+
 		const students_present = [];
 		const students_absent = [];
 

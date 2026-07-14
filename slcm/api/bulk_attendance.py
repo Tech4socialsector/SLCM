@@ -66,6 +66,20 @@ def get_faculty_context():
 	}
 
 
+def _faculty_display_name(faculty_id):
+	"""Return a Faculty's display name, falling back to the raw ID if the
+	record has no name on file. Student Attendance's `instructor` field is
+	a plain Data field (not a Link), so it needs the resolved name stored
+	directly rather than the Faculty ID."""
+	if not faculty_id:
+		return None
+	name = frappe.db.get_value("Faculty", faculty_id, ["first_name", "last_name"], as_dict=True)
+	if not name:
+		return faculty_id
+	full_name = " ".join(filter(None, [name.first_name, name.last_name]))
+	return full_name or faculty_id
+
+
 def _find_course_offering(course, program, academic_year=None):
 	"""Look up the Course Offering for a given course/program, optionally filtered by year."""
 	if not course or not program:
@@ -226,7 +240,7 @@ def create_bulk_attendance_from_schedule(course_schedule, attendance_date, atten
 						"course": schedule.course,
 						"course_offer": course_offering,
 						"attendance_session": attendance_session,
-						"instructor": instructor or getattr(schedule, "instructor", None),
+						"instructor": _faculty_display_name(instructor or getattr(schedule, "instructor", None)),
 						"room": getattr(schedule, "room", None),
 						"source": "Manual",
 					}
@@ -299,9 +313,6 @@ def mark_attendance(
 	elif office_group:
 		program = office_group.program
 
-	if not program:
-		frappe.throw(_("Program could not be determined"))
-
 	# Determine Course
 	course = None
 	if schedule:
@@ -311,14 +322,32 @@ def mark_attendance(
 	elif office_group:
 		course = office_group.course
 
-	# Determine Course Offering
+	# Determine Course Offering — prefer the direct link already stored on
+	# whichever source doc this came from (Course Schedule / Time Table /
+	# Office Hours Group all carry their own course_offering field now), so
+	# we don't depend on program/course being resolved first.
 	course_offering = None
 
-	# Priority 0: Explicit link in Time Table
-	if class_sched and class_sched.course_offering:
+	if schedule and schedule.course_offering:
+		course_offering = schedule.course_offering
+	elif class_sched and class_sched.course_offering:
 		course_offering = class_sched.course_offering
+	elif office_group and office_group.course_offering:
+		course_offering = office_group.course_offering
 
-	# Priority 1: Strict match with Academic Year and Term (if available)
+	# Backfill program/course from the resolved Course Offering when the
+	# source doc's own fields were blank (e.g. a Time Table entry created
+	# without a Class Configuration has no `programme` value).
+	if course_offering and (not program or not course):
+		co_details = frappe.db.get_value(
+			"Course Offering", course_offering, ["program", "course_title"], as_dict=True
+		)
+		if co_details:
+			program = program or co_details.program
+			course = course or co_details.course_title
+
+	# Priority 1: Strict match with Academic Year and Term (if available) —
+	# only needed as a fallback when nothing above resolved a Course Offering.
 	if not course_offering and course and program:
 		filters = {"course_title": course, "program": program, "docstatus": ["<", 2]}
 
@@ -494,8 +523,14 @@ def mark_attendance(
 				"academic_year": office_group.academic_year if office_group else None,
 				"academic_term": office_group.academic_term if office_group else None,
 				"attendance_session": attendance_session,
-				"instructor": schedule.instructor if schedule else class_sched.instructor if class_sched else office_group.instructor if office_group else None,
-				"room": schedule.room if schedule else class_sched.room if class_sched else None, # Office Hours might not have room in doc
+				"instructor": _faculty_display_name(
+					schedule.instructor if schedule else class_sched.instructor if class_sched else office_group.instructor if office_group else None
+				),
+				# Time Table has no `room` field of its own — room lives on the linked Venue Booking.
+				"room": schedule.room if schedule else (
+					frappe.db.get_value("Venue Booking", class_sched.venue, "room")
+					if class_sched and class_sched.venue else None
+				),
 				"source": "Manual",
 				"session_type": "Office Hour" if based_on == "Office Hours" else "Lecture",
 			}

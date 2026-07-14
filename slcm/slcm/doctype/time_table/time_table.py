@@ -168,10 +168,11 @@ class TimeTable(Document):
             "session_type": "Office Hour" if based_on == "Office Hours" else "Lecture",
             "session_status": "Scheduled"
         })
-        # Prevent auto-creation of Student Attendance placeholders.
-        # Records are only created when the teacher explicitly fetches students
-        # or marks attendance via the Student Attendance Tool.
-        doc.flags.skip_auto_attendance = True
+        # NOTE: Student Attendance records are intentionally NOT created here.
+        # The session's roster is shown live (computed from Student Enrollment)
+        # by update_attendance_summary() — real Student Attendance documents
+        # only get created when attendance is actually taken (manual mark,
+        # bulk mark, or RFID swipe).
         doc.insert(ignore_permissions=True)
 
     def update_attendance_session(self):
@@ -491,10 +492,14 @@ def get_events(start, end, filters=None):
             schedule_date,
             from_time,
             to_time,
+            duration_hours,
             venue,
             color,
             title,
-            course_offering
+            course_offering,
+            based_on,
+            course_schedule,
+            office_hours_group
         FROM `tabTime Table`
         WHERE
             schedule_date BETWEEN %(start)s AND %(end)s
@@ -509,15 +514,44 @@ def get_events(start, end, filters=None):
     # Execute
     data = frappe.db.sql(query, condition_values, as_dict=True)
 
+    # Bulk-resolve display-friendly names for venue and instructor so the
+    # click popover doesn't show raw IDs.
+    venue_names = {d.venue for d in data if d.venue}
+    room_by_venue = {}
+    if venue_names:
+        room_by_venue = {
+            v.name: v.room
+            for v in frappe.get_all(
+                "Venue Booking", filters={"name": ["in", list(venue_names)]}, fields=["name", "room"]
+            )
+        }
+
+    instructor_names = {d.instructor for d in data if d.instructor}
+    faculty_name_by_id = {}
+    if instructor_names:
+        faculty_name_by_id = {
+            # Faculty uses numeric autonaming, so `name` comes back as an int here
+            # while Time Table's `instructor` Link field stores it as a str — cast
+            # to str so the lookup below actually matches instead of silently
+            # falling back to the raw ID.
+            str(f.name): " ".join(filter(None, [f.first_name, f.last_name]))
+            for f in frappe.get_all(
+                "Faculty", filters={"name": ["in", list(instructor_names)]}, fields=["name", "first_name", "last_name"]
+            )
+        }
+
     result = []
     for d in data:
         # Construct ISO datetime strings for FullCalendar
         start_dt = f"{d.schedule_date} {d.from_time}"
         end_dt = f"{d.schedule_date} {d.to_time}"
 
+        instructor_label = faculty_name_by_id.get(d.instructor) or d.instructor
+        room_label = room_by_venue.get(d.venue)
+
         title = d.title
         if not title:
-            parts = [d.course, d.instructor]
+            parts = [d.course, instructor_label]
             title = " - ".join([p for p in parts if p])
             if d.venue:
                 title += f" ({d.venue})"
@@ -531,9 +565,17 @@ def get_events(start, end, filters=None):
             "color": d.color or "#3498db",
             "allDay": 0,
             "extendedProps": {
+                "based_on": d.based_on,
+                "course": d.course,
+                "course_offering": d.course_offering,
+                "course_schedule": d.course_schedule,
+                "office_hours_group": d.office_hours_group,
+                "instructor": instructor_label,
                 "venue": d.venue,
-                "instructor": d.instructor,
-                "course_offering": d.course_offering
+                "room": room_label,
+                "from_time": str(d.from_time) if d.from_time else None,
+                "to_time": str(d.to_time) if d.to_time else None,
+                "duration_hours": d.duration_hours,
             }
         })
 

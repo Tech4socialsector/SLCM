@@ -252,10 +252,9 @@
    "options": "Attendance Log"
   },
   {
-   "fetch_from": "course_schedule.instructor",
    "fieldname": "instructor",
    "fieldtype": "Data",
-   "label": "Instructor",
+   "label": "Faculty",
    "read_only": 1
   },
   {

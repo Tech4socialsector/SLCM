@@ -44,6 +44,8 @@
    "default": "Course Schedule",
    "fieldname": "based_on",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Based On",
    "options": "Course Schedule\nTime Table\nOffice Hours"
   },
@@ -252,7 +254,7 @@
   }
  ],
  "links": [],
- "modified": "2026-07-10 16:44:36.882418",
+ "modified": "2026-07-14 16:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Attendance Session",
