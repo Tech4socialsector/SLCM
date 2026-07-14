@@ -708,14 +708,6 @@ function add_course_dialog(frm, semester, course_type, course_fields, enrollment
 				onchange() { load_courses(); },
 			},
 			{
-				fieldtype: "Link",
-				fieldname: "programme",
-				label: "Programme",
-				options: "Programme",
-				default: frm.doc.program,
-				onchange() { load_courses(); },
-			},
-			{
 				fieldtype: "Select",
 				fieldname: "enrollment_type",
 				label: "Enrollment Type",
@@ -803,7 +795,6 @@ function add_course_dialog(frm, semester, course_type, course_fields, enrollment
 			status: "Active",
 		};
 
-		if (values.programme) filters.programme = values.programme;
 		if (values.search) {
 			filters.course_name = ["like", `%${values.search}%`];
 		}
@@ -814,7 +805,6 @@ function add_course_dialog(frm, semester, course_type, course_fields, enrollment
 					"name",
 					"course_name",
 					"course_code",
-					"programme",
 					"credit_value",
 					"status",
 				],
@@ -829,7 +819,7 @@ function add_course_dialog(frm, semester, course_type, course_fields, enrollment
 	function render_table(rows) {
 		const wrapper = d.fields_dict.course_table.$wrapper;
 		wrapper.empty();
-		const table = $(`<table class="table table-bordered table-hover"><thead><tr><th style="width:40px; text-align: center;"><input type="checkbox" class="select-all"></th><th>Course Name</th><th>Course Code</th><th>Programme</th><th>Credits</th><th>Status</th></tr></thead><tbody></tbody></table>`);
+		const table = $(`<table class="table table-bordered table-hover"><thead><tr><th style="width:40px; text-align: center;"><input type="checkbox" class="select-all"></th><th>Course Name</th><th>Course Code</th><th>Credits</th><th>Status</th></tr></thead><tbody></tbody></table>`);
 		const tbody = table.find("tbody");
 		const selectAll = table.find(".select-all");
 
@@ -860,12 +850,12 @@ function add_course_dialog(frm, semester, course_type, course_fields, enrollment
 		});
 
 		if (rows.length === 0) {
-			tbody.append(`<tr><td colspan="6" class="text-center text-muted">No courses found</td></tr>`);
+			tbody.append(`<tr><td colspan="5" class="text-center text-muted">No courses found</td></tr>`);
 		} else {
 			rows.forEach(r => {
 				const isExisting = existingCourses.has(r.name);
 				const isSelected = selected.has(r.name); // Correct check for Map
-				const tr = $(`<tr class="${isExisting ? 'table-active text-muted' : ''}"><td class="text-center"><input type="checkbox" class="course-checkbox" data-name="${r.name}" ${isExisting ? 'disabled checked' : ''} ${isSelected ? 'checked' : ''}></td><td>${r.course_name} <br><small class="text-muted">${r.name}</small></td><td>${r.course_code}</td><td>${r.programme || ''}</td><td>${r.credit_value} Credit(s)</td><td>${r.status}</td></tr>`).appendTo(tbody);
+				const tr = $(`<tr class="${isExisting ? 'table-active text-muted' : ''}"><td class="text-center"><input type="checkbox" class="course-checkbox" data-name="${r.name}" ${isExisting ? 'disabled checked' : ''} ${isSelected ? 'checked' : ''}></td><td>${r.course_name} <br><small class="text-muted">${r.name}</small></td><td>${r.course_code}</td><td>${r.credit_value} Credit(s)</td><td>${r.status}</td></tr>`).appendTo(tbody);
 
 				if (!isExisting) {
 					// Handle Individual Click

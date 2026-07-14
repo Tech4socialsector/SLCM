@@ -15,9 +15,20 @@ def _get_or_create_access(exam_plan, course):
 	)
 	if existing:
 		return frappe.get_doc("Access Result Settings", existing)
+
+	course_offering = frappe.db.get_value(
+		"Course Schema Assignment", {"exam_plan": exam_plan, "course": course}, "course_offering"
+	)
+	if not course_offering:
+		frappe.throw(
+			f"No Course Offering found for course '{course}' in exam plan '{exam_plan}'. "
+			"Map a Course Schema Assignment for it first."
+		)
+
 	doc = frappe.new_doc("Access Result Settings")
-	doc.exam_plan    = exam_plan
-	doc.course       = course
+	doc.exam_plan       = exam_plan
+	doc.course          = course
+	doc.course_offering = course_offering
 	doc.status       = "UNLOCKED"
 	doc.view_access  = 1
 	doc.edit_access  = 1
@@ -58,7 +69,7 @@ def _evaluator_map(exam_plan):
 			rce.evaluator_type,
 			rce.evaluator_name,
 			rce.evaluator_email,
-			f.faculty_name
+			CONCAT_WS(' ', f.first_name, f.last_name) AS faculty_name
 		FROM `tabResult Course Evaluator` rce
 		INNER JOIN `tabAccess Result Settings` cra ON rce.parent = cra.name
 		LEFT JOIN `tabFaculty` f ON f.name = rce.evaluator_name
@@ -133,7 +144,7 @@ def get_courses_for_result(exam_plan, search=""):
 	if search:
 		courses = frappe.db.sql(
 			"""
-			SELECT name, course_name, course_code, programme
+			SELECT name, course_name, course_code
 			FROM `tabCourse`
 			WHERE course_name LIKE %(s)s OR course_code LIKE %(s)s
 			ORDER BY course_name ASC
@@ -145,10 +156,26 @@ def get_courses_for_result(exam_plan, search=""):
 	else:
 		courses = frappe.get_all(
 			"Course",
-			fields=["name", "course_name", "course_code", "programme"],
+			fields=["name", "course_name", "course_code"],
 			order_by="course_name asc",
 			page_length=page_length,
 		)
+
+	# Programme now lives on Course Offering. Derive it per-course from the
+	# Course Offering already tied to this exam plan's Course Schema Assignment.
+	programme_map = {
+		r.course: r.programme
+		for r in frappe.db.sql(
+			"""
+			SELECT csa.course AS course, co.program AS programme
+			FROM `tabCourse Schema Assignment` csa
+			JOIN `tabCourse Offering` co ON co.name = csa.course_offering
+			WHERE csa.exam_plan = %(exam_plan)s
+			""",
+			{"exam_plan": exam_plan},
+			as_dict=True,
+		)
+	}
 
 	amap = _access_map(exam_plan)
 	emap = _evaluator_map(exam_plan)
@@ -156,6 +183,7 @@ def get_courses_for_result(exam_plan, search=""):
 
 	for c in courses:
 		acc = amap.get(c["name"], {})
+		c["programme"] = programme_map.get(c["name"], "")
 		c["evaluators"]                 = emap.get(c["name"], [])
 		c["view_access"]                = int(acc.get("view_access", 1))
 		c["view_deadline"]              = str(acc.get("view_deadline") or "")
@@ -393,6 +421,76 @@ def get_exam_types(search=""):
 
 
 @frappe.whitelist()
+def course_link_query(doctype, txt, searchfield, start, page_len, filters):
+	"""Standard Link-field query for Course, scoped through Course Offering so
+	only courses actually offered under the selected Programme/Trimester show
+	up (Course itself no longer carries a Programme).
+	"""
+	filters = frappe.parse_json(filters) if isinstance(filters, str) else (filters or {})
+	programme = filters.get("programme")
+	trimester = filters.get("trimester")
+
+	conditions = ["(c.course_name LIKE %(txt)s OR c.course_code LIKE %(txt)s)"]
+	params = {"txt": f"%{txt}%", "start": int(start or 0), "page_len": int(page_len or 20)}
+	join = ""
+
+	if programme or trimester:
+		join = "JOIN `tabCourse Offering` co ON co.course_title = c.name"
+		if programme:
+			conditions.append("co.program = %(programme)s")
+			params["programme"] = programme
+		if trimester:
+			conditions.append("co.term_name = %(trimester)s")
+			params["trimester"] = trimester
+
+	return frappe.db.sql(
+		f"""
+		SELECT DISTINCT c.name, c.course_name
+		FROM `tabCourse` c
+		{join}
+		WHERE {" AND ".join(conditions)}
+		ORDER BY c.course_name ASC
+		LIMIT %(start)s, %(page_len)s
+		""",
+		params,
+	)
+
+
+@frappe.whitelist()
+def trimester_link_query(doctype, txt, searchfield, start, page_len, filters):
+	"""Standard Link-field query for Academic Term, scoped to terms that
+	actually have a Course Offering under the selected Programme.
+	"""
+	filters = frappe.parse_json(filters) if isinstance(filters, str) else (filters or {})
+	programme = filters.get("programme")
+	params = {"txt": f"%{txt}%", "start": int(start or 0), "page_len": int(page_len or 20)}
+
+	if programme:
+		params["programme"] = programme
+		return frappe.db.sql(
+			"""
+			SELECT DISTINCT at.name
+			FROM `tabAcademic Term` at
+			JOIN `tabCourse Offering` co ON co.term_name = at.name
+			WHERE co.program = %(programme)s AND at.name LIKE %(txt)s
+			ORDER BY at.name ASC
+			LIMIT %(start)s, %(page_len)s
+			""",
+			params,
+		)
+
+	return frappe.db.sql(
+		"""
+		SELECT name FROM `tabAcademic Term`
+		WHERE name LIKE %(txt)s
+		ORDER BY name ASC
+		LIMIT %(start)s, %(page_len)s
+		""",
+		params,
+	)
+
+
+@frappe.whitelist()
 def get_programmes(search="", exam_plan=None):
 	"""Return programmes for the Course Results page programme filter."""
 	if exam_plan:
@@ -401,8 +499,8 @@ def get_programmes(search="", exam_plan=None):
 			f"""
 			SELECT DISTINCT p.name
 			FROM `tabProgramme` p
-			JOIN `tabCourse` c ON c.programme = p.name
-			JOIN `tabCourse Schema Assignment` csa ON csa.course = c.name AND csa.exam_plan = %(exam_plan)s
+			JOIN `tabCourse Offering` co ON co.program = p.name
+			JOIN `tabCourse Schema Assignment` csa ON csa.course_offering = co.name AND csa.exam_plan = %(exam_plan)s
 			WHERE p.program_status = 'Active'
 			{search_clause}
 			ORDER BY p.name ASC
@@ -433,7 +531,8 @@ def get_courses_by_programme(programme, exam_plan=None, search=""):
 			SELECT DISTINCT c.name, c.course_name, c.course_code, c.credit_value
 			FROM `tabCourse` c
 			JOIN `tabCourse Schema Assignment` csa ON csa.course = c.name AND csa.exam_plan = %(exam_plan)s
-			WHERE c.programme = %(programme)s
+			JOIN `tabCourse Offering` co ON co.name = csa.course_offering
+			WHERE co.program = %(programme)s
 			{search_clause}
 			ORDER BY c.course_name ASC
 			LIMIT 200
@@ -441,7 +540,13 @@ def get_courses_by_programme(programme, exam_plan=None, search=""):
 			{"exam_plan": exam_plan, "programme": programme, "search": f"%{search}%"},
 			as_dict=True,
 		)
-	course_filters = {"programme": programme}
+
+	offering_courses = frappe.get_all(
+		"Course Offering", filters={"program": programme}, pluck="course_title"
+	)
+	if not offering_courses:
+		return []
+	course_filters = {"name": ["in", offering_courses]}
 	if search:
 		course_filters["course_name"] = ["like", f"%{search}%"]
 	return frappe.get_all(
@@ -511,7 +616,7 @@ def get_course_info(course, exam_plan=None):
 	"""Return full course info for the Course Results page."""
 	course_doc = frappe.db.get_value(
 		"Course", course,
-		["course_name", "course_code", "credit_value", "programme"],
+		["course_name", "course_code", "credit_value"],
 		as_dict=True,
 	) or {}
 
@@ -519,7 +624,7 @@ def get_course_info(course, exam_plan=None):
 	if exam_plan:
 		assignment = frappe.db.sql(
 			"""
-			SELECT csa.exam_plan, csa.evaluation_schema, csa.grade_schema,
+			SELECT csa.exam_plan, csa.evaluation_schema, csa.grade_schema, csa.course_offering,
 			       ep.exam_name, ep.status AS plan_status
 			FROM `tabCourse Schema Assignment` csa
 			JOIN `tabExam Plan` ep ON ep.name = csa.exam_plan
@@ -532,7 +637,7 @@ def get_course_info(course, exam_plan=None):
 	else:
 		assignment = frappe.db.sql(
 			"""
-			SELECT csa.exam_plan, csa.evaluation_schema, csa.grade_schema,
+			SELECT csa.exam_plan, csa.evaluation_schema, csa.grade_schema, csa.course_offering,
 			       ep.exam_name, ep.status AS plan_status
 			FROM `tabCourse Schema Assignment` csa
 			JOIN `tabExam Plan` ep ON ep.name = csa.exam_plan
@@ -544,6 +649,9 @@ def get_course_info(course, exam_plan=None):
 			as_dict=True,
 		)
 	assignment = assignment[0] if assignment else {}
+	programme = ""
+	if assignment.get("course_offering"):
+		programme = frappe.db.get_value("Course Offering", assignment["course_offering"], "program") or ""
 
 	access = frappe.db.get_value(
 		"Access Result Settings",
@@ -593,7 +701,7 @@ def get_course_info(course, exam_plan=None):
 		"course_name":     course_doc.get("course_name", ""),
 		"course_code":     course_doc.get("course_code", ""),
 		"credit_value":    course_doc.get("credit_value", 0),
-		"programme":       course_doc.get("programme", ""),
+		"programme":       programme,
 		"exam_plan":       assignment.get("exam_plan", ""),
 		"exam_name":       assignment.get("exam_name", ""),
 		"evaluation_schema": assignment.get("evaluation_schema", ""),
@@ -820,7 +928,7 @@ def sync_students_from_enrollment(course):
 	# Find students enrolled in this course via Student Enrollment Course
 	enrolled_students = frappe.db.sql(
 		"""
-		SELECT DISTINCT se.student
+		SELECT DISTINCT se.student, co.name AS course_offering
 		FROM `tabStudent Enrollment` se
 		INNER JOIN `tabStudent Enrollment Course` sec ON sec.parent = se.name
 		INNER JOIN `tabCourse Offering` co ON co.name = sec.course_offering
@@ -837,10 +945,15 @@ def sync_students_from_enrollment(course):
 	if not enrolled_students:
 		frappe.throw("No enrolled students found for this course in Student Enrollment.")
 
+	# A student should only have one qualifying offering here in practice;
+	# if more than one row exists for a student, keep the first deterministically.
+	offering_by_student = {}
+	for row in enrolled_students:
+		offering_by_student.setdefault(row["student"], row["course_offering"])
+
 	added = 0
 	skipped = 0
-	for row in enrolled_students:
-		student = row["student"]
+	for student, course_offering in offering_by_student.items():
 		exists = frappe.db.exists("Student Course Marks", {
 			"course":     course,
 			"exam_plan":  exam_plan,
@@ -851,6 +964,7 @@ def sync_students_from_enrollment(course):
 			continue
 		doc = frappe.new_doc("Student Course Marks")
 		doc.course             = course
+		doc.course_offering    = course_offering
 		doc.exam_plan          = exam_plan
 		doc.student            = student
 		doc.evaluation_schema  = evaluation_schema
@@ -867,9 +981,16 @@ def sync_students_from_enrollment(course):
 def sync_students_from_class_config(course, class_config, course_type):
 	"""Create Student Course Marks records for all students in the given Class Configuration."""
 	# Validate the class config belongs to this course
-	cc_course = frappe.db.get_value("Class Configuration", class_config, "course")
+	cc_course, cc_course_offering = frappe.db.get_value(
+		"Class Configuration", class_config, ["course", "course_offering"]
+	)
 	if cc_course != course:
 		frappe.throw("The selected Class does not belong to this course.")
+	if not cc_course_offering:
+		frappe.throw(
+			"The selected Class Configuration has no Course Offering set. "
+			"Please set it on the Class Configuration before syncing students."
+		)
 
 	# Get active exam plan and evaluation schema
 	assignment = frappe.db.sql(
@@ -920,6 +1041,7 @@ def sync_students_from_class_config(course, class_config, course_type):
 			continue
 		doc = frappe.new_doc("Student Course Marks")
 		doc.course            = course
+		doc.course_offering   = cc_course_offering
 		doc.exam_plan         = exam_plan
 		doc.student           = student
 		doc.evaluation_schema = evaluation_schema
@@ -1202,16 +1324,19 @@ def get_course_overview(exam_plan, course):
 	course_doc = frappe.db.get_value(
 		"Course",
 		course,
-		["course_name", "course_code", "credit_value", "programme"],
+		["course_name", "course_code", "credit_value"],
 		as_dict=True,
 	) or {}
 
 	schema = frappe.db.get_value(
 		"Course Schema Assignment",
 		{"exam_plan": exam_plan, "course": course},
-		["evaluation_schema", "grade_schema"],
+		["evaluation_schema", "grade_schema", "course_offering"],
 		as_dict=True,
 	) or {}
+	programme = ""
+	if schema.get("course_offering"):
+		programme = frappe.db.get_value("Course Offering", schema["course_offering"], "program") or ""
 
 	access = frappe.db.get_value(
 		"Access Result Settings",
@@ -1236,7 +1361,7 @@ def get_course_overview(exam_plan, course):
 		"course_name":              course_doc.get("course_name", ""),
 		"course_code":              course_doc.get("course_code", ""),
 		"credit_value":             course_doc.get("credit_value", 0),
-		"programme":                course_doc.get("programme", ""),
+		"programme":                programme,
 		"evaluation_schema":        schema.get("evaluation_schema", ""),
 		"grade_schema":             schema.get("grade_schema", ""),
 		"view_access":              int(access.get("view_access", 1)),
@@ -1623,17 +1748,24 @@ def _get_or_create_scm(course, exam_plan, student):
 		return scm_name
 
 	# Auto-create missing SCM record
-	eval_schema = frappe.db.get_value(
+	assignment = frappe.db.get_value(
 		"Course Schema Assignment",
 		{"course": course, "exam_plan": exam_plan},
-		"evaluation_schema",
-	) or ""
+		["evaluation_schema", "course_offering"],
+		as_dict=True,
+	) or {}
+	if not assignment.get("course_offering"):
+		frappe.throw(
+			f"No Course Offering found for course '{course}' in exam plan '{exam_plan}'. "
+			"Map a Course Schema Assignment for it first."
+		)
 
 	doc = frappe.new_doc("Student Course Marks")
 	doc.course            = course
+	doc.course_offering    = assignment["course_offering"]
 	doc.exam_plan         = exam_plan
 	doc.student           = student
-	doc.evaluation_schema = eval_schema
+	doc.evaluation_schema = assignment.get("evaluation_schema") or ""
 	doc.status            = "Draft"
 	doc.consider_for_sgpa = 1
 	doc.insert(ignore_permissions=True)
@@ -2896,6 +3028,17 @@ def setup_repeat_exam_marks(student, course, source_exam_plan, target_exam_plan)
 		as_dict=True,
 	) or {}
 
+	# Resolve the Course Offering for this course under the target plan's term
+	target_term = frappe.db.get_value("Exam Plan", target_exam_plan, "term")
+	target_offering = frappe.db.get_value(
+		"Course Offering", {"course_title": course, "term_name": target_term}, "name"
+	)
+	if not target_offering:
+		frappe.throw(
+			f"No Course Offering found for course '{course}' in term '{target_term}' "
+			f"(target exam plan '{target_exam_plan}'). Create it first."
+		)
+
 	# Ensure a Course Schema Assignment exists in the target plan
 	if src_assignment:
 		tgt_assignment = frappe.db.get_value(
@@ -2906,7 +3049,7 @@ def setup_repeat_exam_marks(student, course, source_exam_plan, target_exam_plan)
 		if not tgt_assignment:
 			new_csa = frappe.new_doc("Course Schema Assignment")
 			new_csa.exam_plan         = target_exam_plan
-			new_csa.course            = course
+			new_csa.course_offering    = target_offering
 			new_csa.evaluation_schema = src_assignment.get("evaluation_schema") or ""
 			new_csa.grade_schema      = src_assignment.get("grade_schema") or ""
 			new_csa.insert(ignore_permissions=True)
@@ -2914,6 +3057,7 @@ def setup_repeat_exam_marks(student, course, source_exam_plan, target_exam_plan)
 	doc = frappe.new_doc("Student Course Marks")
 	doc.student           = student
 	doc.course            = course
+	doc.course_offering    = target_offering
 	doc.exam_plan         = target_exam_plan
 	doc.evaluation_schema = src_assignment.get("evaluation_schema") or ""
 	doc.insert(ignore_permissions=True)
@@ -3101,14 +3245,19 @@ def add_students_to_course(course, exam_plan, students):
 	if not course or not exam_plan or not students:
 		frappe.throw("course, exam_plan and students are required.")
 
-	evaluation_schema = (
-		frappe.db.get_value(
-			"Course Schema Assignment",
-			{"course": course, "exam_plan": exam_plan},
-			"evaluation_schema",
+	assignment = frappe.db.get_value(
+		"Course Schema Assignment",
+		{"course": course, "exam_plan": exam_plan},
+		["evaluation_schema", "course_offering"],
+		as_dict=True,
+	) or {}
+	evaluation_schema = assignment.get("evaluation_schema") or ""
+	course_offering = assignment.get("course_offering")
+	if not course_offering:
+		frappe.throw(
+			f"No Course Offering found for course '{course}' in exam plan '{exam_plan}'. "
+			"Map a Course Schema Assignment for it first."
 		)
-		or ""
-	)
 
 	added   = 0
 	skipped = 0
@@ -3120,6 +3269,7 @@ def add_students_to_course(course, exam_plan, students):
 			continue
 		doc = frappe.new_doc("Student Course Marks")
 		doc.course             = course
+		doc.course_offering     = course_offering
 		doc.exam_plan          = exam_plan
 		doc.student            = student
 		doc.evaluation_schema  = evaluation_schema
@@ -3143,14 +3293,19 @@ def add_students_by_registration_ids(course, exam_plan, registration_ids):
 	if not course or not exam_plan or not registration_ids:
 		frappe.throw("course, exam_plan and registration_ids are required.")
 
-	evaluation_schema = (
-		frappe.db.get_value(
-			"Course Schema Assignment",
-			{"course": course, "exam_plan": exam_plan},
-			"evaluation_schema",
+	assignment = frappe.db.get_value(
+		"Course Schema Assignment",
+		{"course": course, "exam_plan": exam_plan},
+		["evaluation_schema", "course_offering"],
+		as_dict=True,
+	) or {}
+	evaluation_schema = assignment.get("evaluation_schema") or ""
+	course_offering = assignment.get("course_offering")
+	if not course_offering:
+		frappe.throw(
+			f"No Course Offering found for course '{course}' in exam plan '{exam_plan}'. "
+			"Map a Course Schema Assignment for it first."
 		)
-		or ""
-	)
 
 	results = {"added": 0, "skipped": 0, "not_found": []}
 	for reg_id in registration_ids:
@@ -3169,6 +3324,7 @@ def add_students_by_registration_ids(course, exam_plan, registration_ids):
 
 		doc = frappe.new_doc("Student Course Marks")
 		doc.course             = course
+		doc.course_offering     = course_offering
 		doc.exam_plan          = exam_plan
 		doc.student            = student
 		doc.evaluation_schema  = evaluation_schema

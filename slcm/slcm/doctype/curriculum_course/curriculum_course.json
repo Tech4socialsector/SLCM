@@ -2,12 +2,14 @@
  "actions": [],
  "allow_rename": 1,
  "creation": "2026-01-20 15:00:00.000000",
+ "custom": 0,
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "semester",
   "course_group_type",
+  "course_offering",
   "course",
   "course_type",
   "enrollment_type",
@@ -34,12 +36,21 @@
    "reqd": 1
   },
   {
+   "fieldname": "course_offering",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Course Offering",
+   "options": "Course Offering"
+  },
+  {
    "depends_on": "eval:doc.course_group_type=='Course'",
+   "fetch_from": "course_offering.course_title",
    "fieldname": "course",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Course",
-   "options": "Course"
+   "options": "Course",
+   "read_only": 1
   },
   {
    "fieldname": "course_type",
@@ -91,6 +102,5 @@
  "permissions": [],
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": [],
- "custom": 0
+ "states": []
 }

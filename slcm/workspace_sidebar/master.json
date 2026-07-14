@@ -21,10 +21,6 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "book-open",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Academic Structure",
    "icon": "settings",
    "indent": 0,
    "keep_closed": 0,
@@ -148,18 +144,6 @@
    "keep_closed": 0,
    "label": "Course",
    "link_to": "Course",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "icon": "bookmark",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Course Master",
-   "link_to": "Course Master",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"

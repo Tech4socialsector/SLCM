@@ -243,7 +243,7 @@ def generate_term_results(exam_plan, student_names, action):
 
 @frappe.whitelist()
 def download_consolidated_report(exam_plan="", search="", inst_programmes="", inst_batches="",
-		course="", academic_year="", programme="", trimester="", batch="", year=""):
+		course="", course_offering="", academic_year="", programme="", trimester="", batch="", year=""):
 
 	f_programmes = frappe.parse_json(inst_programmes) if inst_programmes else []
 	f_batches    = frappe.parse_json(inst_batches)    if inst_batches    else []
@@ -255,7 +255,12 @@ def download_consolidated_report(exam_plan="", search="", inst_programmes="", in
 		where_cond += " AND scm.exam_plan = %(exam_plan)s"
 		params["exam_plan"] = exam_plan
 
-	if course:
+	# course_offering is the modern, precise filter (Course now only lives on
+	# the offering); "course" is kept for backwards compatibility only.
+	if course_offering:
+		where_cond += " AND scm.course_offering = %(course_offering)s"
+		params["course_offering"] = course_offering
+	elif course:
 		where_cond += " AND scm.course = %(course)s"
 		params["course"] = course
 
@@ -268,7 +273,7 @@ def download_consolidated_report(exam_plan="", search="", inst_programmes="", in
 		params["trimester"] = trimester
 
 	if batch:
-		where_cond += " AND sm.batch_year = %(batch)s"
+		where_cond += " AND sm.programme = %(batch)s"
 		params["batch"] = batch
 
 	if year:

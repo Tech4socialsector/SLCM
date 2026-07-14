@@ -1,23 +1,32 @@
 {
+ "custom": 0,
  "doctype": "DocType",
- "name": "Course Prerequisite",
- "module": "SLCM",
- "istable": 1,
  "engine": "InnoDB",
  "field_order": [
+  "prerequisite_course_offering",
   "prerequisite_course"
  ],
  "fields": [
   {
-   "fieldname": "prerequisite_course",
-   "label": "Prerequisite Course",
+   "fieldname": "prerequisite_course_offering",
    "fieldtype": "Link",
-   "options": "Course",
+   "label": "Prerequisite Course Offering",
+   "options": "Course Offering",
    "reqd": 1
+  },
+  {
+   "fetch_from": "prerequisite_course_offering.course_title",
+   "fieldname": "prerequisite_course",
+   "fieldtype": "Link",
+   "label": "Prerequisite Course",
+   "options": "Course",
+   "read_only": 1
   }
  ],
+ "istable": 1,
+ "module": "SLCM",
+ "name": "Course Prerequisite",
  "row_format": "Dynamic",
  "sort_field": "idx",
- "sort_order": "ASC",
- "custom": 0
+ "sort_order": "ASC"
 }

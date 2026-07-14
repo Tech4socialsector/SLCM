@@ -118,7 +118,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Course",
-   "options": "Course",
+   "options": "Course Offering",
    "reqd": 1
   },
   {
@@ -179,7 +179,7 @@
   }
  ],
  "links": [],
- "modified": "2026-07-10 16:45:00.000000",
+ "modified": "2026-07-13 16:49:41.275041",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Class Configuration",
