@@ -28,10 +28,17 @@ State tracked on HD Ticket (see hd_ticket.json):
     escalated_from_agents      - comma separated users already tried, so the
                                   rotation never reassigns back to someone
                                   who already missed the SLA on this ticket
+
+Working-day awareness:
+    The grace period only counts working days — Saturdays, Sundays, and any
+    date covered by an Active "Holiday" entry in Institutional Calendar are
+    skipped entirely. If the anchor (or any part of the grace window) falls
+    on a non-working day, the clock pauses there and resumes counting from
+    the start of the next working day. See `_add_working_minutes()`.
 """
 
 import frappe
-from frappe.utils import add_to_date, now_datetime
+from frappe.utils import add_to_date, get_datetime, now_datetime
 
 DEFAULT_TEMPLATES = {
     "new_agent": "HD Ticket SLA Escalation - New Agent",
@@ -109,7 +116,7 @@ def _process_team(team):
 def _maybe_escalate_ticket(ticket, team_name, grace_minutes, max_hops, templates):
     """Check if one ticket is overdue for a hop, then either escalate it or flag the hop limit."""
     anchor = ticket.last_escalated_on or ticket.creation
-    due_at = add_to_date(anchor, minutes=grace_minutes)
+    due_at = _add_working_minutes(anchor, grace_minutes)
     if now_datetime() < due_at:
         return
 
@@ -167,6 +174,57 @@ def _format_grace_period(total_minutes):
     if minutes or not parts:
         parts.append(f"{minutes} min")
     return " ".join(parts)
+
+
+def _is_working_day(date):
+    """True if `date` is not a Saturday/Sunday and not covered by an Active
+    'Holiday' entry in Institutional Calendar (same query pattern as
+    Time Table.check_holiday_conflict)."""
+    if date.weekday() >= 5:  # Monday=0 ... Saturday=5, Sunday=6
+        return False
+
+    holidays = frappe.get_all(
+        "Institutional Calendar",
+        filters={
+            "entry_type": "Holiday",
+            "start_date": ["<=", date],
+            "end_date": [">=", date],
+            "status": ["!=", "Inactive"],
+            "docstatus": ["<", 2],
+        },
+        limit=1,
+    )
+    return not holidays
+
+
+def _add_working_minutes(anchor, grace_minutes):
+    """Return the datetime `grace_minutes` of working time after `anchor`,
+    skipping weekends and Institutional Calendar holidays entirely — the
+    clock pauses on a non-working day and resumes at midnight of the next
+    working day, so a breach that starts (or spans) a holiday/weekend is
+    only counted once real working time has elapsed."""
+    from datetime import timedelta
+
+    current = get_datetime(anchor)
+    remaining = grace_minutes
+
+    # Fast-forward past any non-working day the anchor itself falls on.
+    while not _is_working_day(current.date()):
+        current = get_datetime(current.date() + timedelta(days=1))
+
+    while remaining > 0:
+        end_of_day = get_datetime(current.date() + timedelta(days=1))
+        minutes_left_today = (end_of_day - current).total_seconds() / 60
+
+        if remaining <= minutes_left_today:
+            return add_to_date(current, minutes=remaining)
+
+        remaining -= minutes_left_today
+        current = end_of_day
+        while not _is_working_day(current.date()):
+            current = get_datetime(current.date() + timedelta(days=1))
+
+    return current
 
 
 def _get_next_agent(team_name, tried_users):
