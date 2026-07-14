@@ -918,13 +918,17 @@ class FeeService:
         for entry in afa_list:
             try:
                 doc = frappe.get_doc("Applicant Fee Assignment", entry.name)
-                # If assigned (submitted), we must use cancel()
-                if doc.docstatus == 1:
-                    # The on_cancel method in AFA handles validation (preventing cancel if paid)
-                    doc.cancel()
+                
+                if reason == "Withdrawn":
+                    doc.db_set("status", "Withdrawn")
                 else:
-                    # Draft or other
-                    doc.db_set("status", "Cancelled")
+                    # If assigned (submitted), we must use cancel()
+                    if doc.docstatus == 1:
+                        # The on_cancel method in AFA handles validation (preventing cancel if paid)
+                        doc.cancel()
+                    else:
+                        # Draft or other
+                        doc.db_set("status", "Cancelled")
                 
                 frappe.logger().info(f"Auto-cancelled linked Fee Assignment {entry.name} for Offer {offer_name}")
             except Exception as e:
