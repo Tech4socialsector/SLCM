@@ -12,6 +12,7 @@
   "course",
   "academic_year",
   "condonation_reason",
+  "programme",
   "column_break_1",
   "absence_from_date",
   "absence_to_date",
@@ -34,7 +35,8 @@
   "section_break_uuer",
   "programme_chair_remarks",
   "rejected_reason_section",
-  "rejected_reason",
+  "aad_rejected_reason",
+  "programme_chair_rejected_reason",
   "amended_from"
  ],
  "fields": [
@@ -187,16 +189,11 @@
    "label": "Rejected Reason"
   },
   {
-   "fieldname": "rejected_reason",
-   "fieldtype": "Small Text",
-   "label": "Rejected Reason",
-   "read_only": 1
-  },
-  {
    "fieldname": "column_break_nqod",
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "aad_approve_or_rejected_timestamp",
    "fieldtype": "Datetime",
    "label": "Approve/Rejected Date",
@@ -211,6 +208,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "programme_chair_approve_or_rejected_timestamp",
    "fieldtype": "Datetime",
    "label": "Approve/Rejected Date",
@@ -226,23 +224,44 @@
    "label": "Submitted Date"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "aad_due_date",
    "fieldtype": "Date",
    "label": "Due Date",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "programme_chair_due_date",
+   "fieldtype": "Date",
+   "label": "Due Date",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "student.master_programme",
+   "fieldname": "programme",
+   "fieldtype": "Link",
+   "label": "Programme",
+   "options": "Programme Master",
    "read_only": 1,
    "reqd": 1
   },
   {
-   "fieldname": "programme_chair_due_date",
-   "fieldtype": "Date",
-   "label": "Due Date",
-   "read_only": 1,
-   "reqd": 1
+   "fieldname": "aad_rejected_reason",
+   "fieldtype": "Small Text",
+   "label": "AAD Rejected Reason",
+   "read_only": 1
+  },
+  {
+   "fieldname": "programme_chair_rejected_reason",
+   "fieldtype": "Small Text",
+   "label": "Progamme Chair Rejected Reason",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-13 16:58:16.636033",
+ "modified": "2026-07-14 10:27:53.451454",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Attendance Condonation",

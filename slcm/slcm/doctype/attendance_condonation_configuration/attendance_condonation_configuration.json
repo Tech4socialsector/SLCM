@@ -7,17 +7,21 @@
  "engine": "InnoDB",
  "field_order": [
   "level_one_aad_authority_section",
+  "l1_assignment_email_template",
   "l1_approval_email_template",
   "l1_due_days",
   "column_break_dgug",
   "l1_rejected_email_template",
+  "l1_last_assigned_index",
   "section_break_cjqz",
   "level_one_authority",
   "level_two_authority_section",
+  "l2_assignment_email_template",
   "l2_approval_email_template",
   "l2_due_days",
   "column_break_ugle",
   "l2_rejected_email_template",
+  "l2_last_assigned_index",
   "section_break_hmrm",
   "level_two_authority"
  ],
@@ -26,6 +30,13 @@
    "fieldname": "level_one_aad_authority_section",
    "fieldtype": "Section Break",
    "label": "Level One AAD Authority"
+  },
+  {
+   "description": "Email sent to AAD upon new assignment",
+   "fieldname": "l1_assignment_email_template",
+   "fieldtype": "Link",
+   "label": "Assignment Email Template",
+   "options": "Email Template"
   },
   {
    "fieldname": "l1_approval_email_template",
@@ -44,6 +55,13 @@
    "options": "Email Template"
   },
   {
+   "default": "0",
+   "fieldname": "l1_last_assigned_index",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Last Assigned Index"
+  },
+  {
    "fieldname": "section_break_cjqz",
    "fieldtype": "Section Break"
   },
@@ -57,6 +75,13 @@
    "fieldname": "level_two_authority_section",
    "fieldtype": "Section Break",
    "label": "Level Two Authority"
+  },
+  {
+   "description": "Email sent to Programme Chair upon new assignment",
+   "fieldname": "l2_assignment_email_template",
+   "fieldtype": "Link",
+   "label": "Assignment Email Template",
+   "options": "Email Template"
   },
   {
    "fieldname": "l2_approval_email_template",
@@ -73,6 +98,13 @@
    "fieldtype": "Link",
    "label": "Rejected Email Template",
    "options": "Email Template"
+  },
+  {
+   "default": "0",
+   "fieldname": "l2_last_assigned_index",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Last Assigned Index"
   },
   {
    "fieldname": "section_break_hmrm",
