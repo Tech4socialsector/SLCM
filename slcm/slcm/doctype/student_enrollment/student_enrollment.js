@@ -8,6 +8,12 @@ frappe.ui.form.on("Student Enrollment", {
 			return { filters: { batch: frm.doc.batch } };
 		});
 
+		// Only students who have completed the registration workflow
+		// should be selectable for enrollment.
+		frm.set_query("student", function () {
+			return { filters: { registration_status: "Completed" } };
+		});
+
 		if (frm.is_new() || !frm.doc.student) return;
 
 		frappe.call({

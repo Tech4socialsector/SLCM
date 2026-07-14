@@ -9,7 +9,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": "align-start-vertical",
     "indent": 0,
@@ -26,7 +25,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": "album",
     "indent": 0,
@@ -43,7 +41,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": "briefcase-business",
     "indent": 0,
@@ -60,7 +57,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": "bolt",
     "indent": 0,
@@ -77,7 +73,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": "baggage-claim",
     "indent": 0,
@@ -94,7 +89,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": "biohazard",
     "indent": 0,
@@ -111,7 +105,6 @@
    {
     "child": 1,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": "dashboard-list",
     "indent": 0,
@@ -128,7 +121,6 @@
    {
     "child": 1,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": "captions-off",
     "indent": 0,
@@ -145,7 +137,6 @@
    {
     "child": 1,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": "message-square-quote",
     "indent": 0,
@@ -162,7 +153,6 @@
    {
     "child": 1,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": "folder-symlink",
     "indent": 0,
@@ -179,7 +169,6 @@
    {
     "child": 1,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": "backpack",
     "indent": 0,
@@ -196,6 +185,7 @@
   ],
   "modified": "2026-03-28 09:39:50.411990",
   "module": "SLCM",
+  "module_onboarding": null,
   "name": "Admission Fee",
   "standard": 1,
   "title": "Admission Fee"
@@ -210,7 +200,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -227,7 +216,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -244,7 +232,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -261,7 +248,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -278,7 +264,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -295,7 +280,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -312,7 +296,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -329,7 +312,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -346,7 +328,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -363,7 +344,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -380,7 +360,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -397,7 +376,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -414,7 +392,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -431,7 +408,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -448,7 +424,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -465,7 +440,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -482,7 +456,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -499,7 +472,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -516,7 +488,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -533,7 +504,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -550,7 +520,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -567,7 +536,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -584,7 +552,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -601,7 +568,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -618,7 +584,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -635,7 +600,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -652,7 +616,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -669,7 +632,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -686,7 +648,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": null,
     "indent": 0,
@@ -703,6 +664,7 @@
   ],
   "modified": "2026-05-23 11:38:33.704339",
   "module": "SLCM",
+  "module_onboarding": null,
   "name": "Fees Management",
   "standard": 0,
   "title": "Fees Management"
@@ -717,7 +679,6 @@
    {
     "child": 0,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "layout-dashboard",
     "indent": 0,
@@ -734,7 +695,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": "book-open",
     "indent": 0,
@@ -751,7 +711,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "book-open",
     "indent": 1,
@@ -768,7 +727,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "book",
     "indent": 1,
@@ -785,7 +743,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "calendar",
     "indent": 1,
@@ -802,7 +759,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "calendar-days",
     "indent": 1,
@@ -819,7 +775,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "users",
     "indent": 1,
@@ -836,7 +791,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "user-check",
     "indent": 1,
@@ -853,7 +807,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": "check-square",
     "indent": 0,
@@ -870,7 +823,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "users",
     "indent": 1,
@@ -887,7 +839,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "clock",
     "indent": 1,
@@ -904,7 +855,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "check-square",
     "indent": 1,
@@ -921,7 +871,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "list",
     "indent": 1,
@@ -938,7 +887,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "alert-triangle",
     "indent": 1,
@@ -955,7 +903,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "bar-chart-2",
     "indent": 1,
@@ -972,7 +919,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": "clipboard-list",
     "indent": 0,
@@ -989,7 +935,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "edit",
     "indent": 1,
@@ -1006,7 +951,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "clipboard-list",
     "indent": 1,
@@ -1023,7 +967,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "message-square",
     "indent": 1,
@@ -1040,7 +983,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": "user",
     "indent": 0,
@@ -1057,7 +999,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "user",
     "indent": 1,
@@ -1074,7 +1015,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "door-open",
     "indent": 1,
@@ -1091,7 +1031,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "clock",
     "indent": 1,
@@ -1108,7 +1047,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": "map-pin",
     "indent": 0,
@@ -1125,7 +1063,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "plus-circle",
     "indent": 1,
@@ -1142,7 +1079,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "map-pin",
     "indent": 1,
@@ -1159,7 +1095,6 @@
    {
     "child": 0,
     "collapsible": 1,
-    "display_depends_on": null,
     "filters": null,
     "icon": "bar-chart-2",
     "indent": 0,
@@ -1176,7 +1111,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "file-text",
     "indent": 1,
@@ -1193,7 +1127,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "file-text",
     "indent": 1,
@@ -1210,7 +1143,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "file-text",
     "indent": 1,
@@ -1227,7 +1159,6 @@
    {
     "child": 1,
     "collapsible": 0,
-    "display_depends_on": null,
     "filters": null,
     "icon": "file-text",
     "indent": 1,
@@ -1244,6 +1175,7 @@
   ],
   "modified": "2026-07-08 23:52:31.463223",
   "module": "SLCM",
+  "module_onboarding": null,
   "name": "Faculty Management",
   "standard": 1,
   "title": "Faculty Management"

@@ -4,7 +4,14 @@
  "creation": "2026-04-24 00:00:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
- "field_order": ["exam_plan", "course", "student", "is_allowed", "override_reason"],
+ "field_order": [
+  "exam_plan",
+  "course_offering",
+  "course",
+  "student",
+  "is_allowed",
+  "override_reason"
+ ],
  "fields": [
   {
    "fieldname": "exam_plan",
@@ -14,11 +21,19 @@
    "reqd": 1
   },
   {
+   "fieldname": "course_offering",
+   "fieldtype": "Link",
+   "label": "Course Offering",
+   "options": "Course Offering",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "course_offering.course_title",
    "fieldname": "course",
    "fieldtype": "Link",
    "label": "Course",
    "options": "Course",
-   "reqd": 1
+   "read_only": 1
   },
   {
    "fieldname": "student",
@@ -34,10 +49,10 @@
    "label": "Is Allowed"
   },
   {
+   "depends_on": "eval:!doc.is_allowed",
    "fieldname": "override_reason",
    "fieldtype": "Small Text",
-   "label": "Block Reason",
-   "depends_on": "eval:!doc.is_allowed"
+   "label": "Block Reason"
   }
  ],
  "links": [],
@@ -49,12 +64,18 @@
  "owner": "Administrator",
  "permissions": [
   {
-   "create": 1, "delete": 1, "read": 1, "write": 1,
-   "role": "System Manager"
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
   },
   {
-   "create": 1, "delete": 1, "read": 1, "write": 1,
-   "role": "Academics User"
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "Academics User",
+   "write": 1
   }
  ],
  "sort_field": "modified",

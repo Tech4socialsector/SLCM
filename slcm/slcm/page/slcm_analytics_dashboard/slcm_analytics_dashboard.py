@@ -2768,13 +2768,13 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 			rows = frappe.db.get_all(
 				"Course Offering", filters=filters,
 				fields=["name", "course_name", "program", "cohort", "faculty",
-						"academic_year", "status", "maximum_students"],
+						"academic_year", "status"],
 				limit_start=offset, limit_page_length=page_size, order_by="course_name asc",
 			)
 			total = frappe.db.count("Course Offering", filters=filters)
 			return {"rows": rows, "total": total,
 					"columns": ["course_name", "program", "cohort", "faculty",
-								"academic_year", "status", "maximum_students"]}
+								"academic_year", "status"]}
 
 		elif dimension == "offering_program":
 			prog_id = frappe.db.get_value("Programme", {"program_name": value}, "name") or value
@@ -2784,13 +2784,13 @@ def get_drilldown_data(module, dimension, value, academic_year=None, term=None, 
 			rows = frappe.db.get_all(
 				"Course Offering", filters=filters,
 				fields=["name", "course_name", "cohort", "faculty",
-						"academic_year", "status", "maximum_students"],
+						"academic_year", "status"],
 				limit_start=offset, limit_page_length=page_size, order_by="course_name asc",
 			)
 			total = frappe.db.count("Course Offering", filters=filters)
 			return {"rows": rows, "total": total,
 					"columns": ["course_name", "cohort", "faculty",
-								"academic_year", "status", "maximum_students"]}
+								"academic_year", "status"]}
 
 		elif dimension == "course_enroll_status":
 			filters = {}

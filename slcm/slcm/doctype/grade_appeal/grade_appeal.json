@@ -7,6 +7,7 @@
  "field_order": [
   "student",
   "exam_plan",
+  "course_offering",
   "course",
   "appeal_type",
   "col_break_1",
@@ -40,12 +41,21 @@
    "reqd": 1
   },
   {
+   "fieldname": "course_offering",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Course Offering",
+   "options": "Course Offering",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "course_offering.course_title",
    "fieldname": "course",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Course",
    "options": "Course",
-   "reqd": 1
+   "read_only": 1
   },
   {
    "fieldname": "appeal_type",

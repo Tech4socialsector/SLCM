@@ -62,7 +62,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Venue",
+   "label": "Room",
    "options": "Room",
    "reqd": 1
   },
@@ -279,7 +279,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-09 11:28:53.462489",
+ "modified": "2026-07-14 09:24:31.194524",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Venue Booking",
