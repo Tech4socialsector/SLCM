@@ -682,3 +682,22 @@ def _send_reschedule_notification(doc, email):
             }).insert(ignore_permissions=True)
         except Exception:
             frappe.log_error(message=frappe.get_traceback(), title=f"Interview Reschedule Notification Failed: {doc.name}")
+
+
+@frappe.whitelist()
+def bulk_publish_results(records):
+    if isinstance(records, str):
+        records = json.loads(records)
+    
+    count = 0
+    for name in records:
+        try:
+            doc = frappe.get_doc("Interview Seat Allocation", name)
+            if not doc.result_published:
+                doc.result_published = 1
+                doc.save(ignore_permissions=True)
+                count += 1
+        except Exception as e:
+            frappe.log_error(f"Failed to publish Interview Result for {name}: {str(e)}", "Bulk Publish Results Error")
+            
+    return {"success": True, "count": count}
