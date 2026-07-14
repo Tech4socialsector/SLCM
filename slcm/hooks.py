@@ -623,4 +623,5 @@ permission_query_conditions = {
 
 has_permission = {
     "PACE Document Verification": "slcm.pace.doctype.pace_document_verification.pace_document_verification.has_permission",
+    "Student Attendance Condonation": "slcm.slcm.doctype.student_attendance_condonation.student_attendance_condonation.has_permission",
 }
