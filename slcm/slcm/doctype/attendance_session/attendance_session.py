@@ -2,9 +2,19 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
-from frappe.utils import time_diff_in_hours
+from frappe.utils import time_diff_in_hours, now_datetime, add_to_date, get_datetime
 from slcm.slcm.utils.attendance_calculator import calculate_student_attendance
+
+DEFAULT_RFID_ACTIVE_WINDOW_MINUTES = 10
+
+
+def get_rfid_active_window_minutes():
+	"""RFID activation window is configurable via Attendance Settings; falls back to the default if unset."""
+	minutes = frappe.db.get_single_value("Attendance Settings", "rfid_active_window_minutes")
+	return minutes if minutes else DEFAULT_RFID_ACTIVE_WINDOW_MINUTES
+
 
 class AttendanceSession(Document):
 	"""Track conducted class sessions for attendance calculation"""
@@ -211,6 +221,36 @@ class AttendanceSession(Document):
 			
 	# Note: No separate save() call needed because this is called in before_save
 	# or can be called manually followed by save() 
+
+@frappe.whitelist()
+def activate_rfid(session_name):
+	"""Faculty presses 'Activate RFID' in the Faculty Portal.
+	Records who/when, and opens a 10-minute window (rfid_active_until).
+	Activation is advisory for the UI freeze/timer — RFID matching itself
+	does not require activation, so a missed activation never blocks
+	attendance capture; it only affects what faculty sees in the portal."""
+	session = frappe.get_doc("Attendance Session", session_name)
+
+	user = frappe.session.user
+	if session.instructor:
+		instructor_user = frappe.db.get_value("Faculty", session.instructor, "user_id")
+		if instructor_user and instructor_user != user and "System Manager" not in frappe.get_roles(user):
+			frappe.throw(_("Only the assigned instructor can activate RFID for this session."))
+
+	if session.rfid_activation_time:
+		frappe.throw(_("RFID has already been activated for this session."))
+
+	activation_time = now_datetime()
+	session.db_set("rfid_activated_by", user)
+	session.db_set("rfid_activation_time", activation_time)
+	session.db_set("rfid_active_until", add_to_date(activation_time, minutes=get_rfid_active_window_minutes()))
+
+	return {
+		"rfid_activated_by": user,
+		"rfid_activation_time": activation_time,
+		"rfid_active_until": session.rfid_active_until,
+	}
+
 
 @frappe.whitelist()
 def mark_session_conducted(session_name):

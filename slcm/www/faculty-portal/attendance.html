@@ -422,6 +422,7 @@
             <th>Present</th>
             <th>Att %</th>
             <th>Status</th>
+            <th style="text-align:center;">RFID</th>
             <th style="text-align:center;">Actions</th>
           </tr>
         </thead>
@@ -446,6 +447,27 @@
                 {% elif s.pct >= 60 %}<span class="fp-badge fp-badge-warning">{{ s.pct }}%</span>
                 {% else %}<span class="fp-badge fp-badge-danger">{{ s.pct }}%</span>{% endif %}
               {% else %}<span class="fp-badge fp-badge-neutral">—</span>{% endif %}
+            </td>
+            <td style="text-align:center;" onclick="event.stopPropagation()">
+              <span class="fp-rfid-cell"
+                    data-rfid-session="{{ s.name }}"
+                    data-rfid-active-until="{{ s.rfid_active_until }}">
+                {% if s.rfid_active %}
+                <button class="fp-btn fp-btn-warning fp-btn-sm fp-rfid-btn" disabled>
+                  <span class="fp-ms" style="font-size:14px;">wifi_tethering</span>
+                  <span class="fp-rfid-timer">Active</span>
+                </button>
+                {% elif s.rfid_activated %}
+                <span class="fp-badge fp-badge-neutral" title="RFID window closed">
+                  <span class="fp-ms" style="font-size:12px;">wifi_off</span>Closed
+                </span>
+                {% else %}
+                <button class="fp-btn fp-btn-secondary fp-btn-sm fp-rfid-btn"
+                        onclick="fpActivateRfid('{{ s.name }}', this)">
+                  <span class="fp-ms" style="font-size:14px;">wifi_tethering</span>Activate RFID
+                </button>
+                {% endif %}
+              </span>
             </td>
             <td>
               {% if s.marked %}<span class="fp-badge fp-badge-success"><span class="fp-ms" style="font-size:12px;">check</span>Marked</span>
@@ -1383,6 +1405,82 @@ function _showError(id, msg) {
   var div = el.querySelector('div');
   if (div) div.textContent = msg;
 }
+
+/* ══════════════════════════════════════════════════════════
+   RFID ACTIVATION — button + 10-minute freeze timer
+══════════════════════════════════════════════════════════ */
+function fpActivateRfid(sessionName, btn) {
+  btn.disabled = true;
+  var originalHtml = btn.innerHTML;
+  btn.innerHTML = '<span class="fp-ms" style="animation:fp-spin 0.8s linear infinite;">sync</span>Activating…';
+
+  fpCall('slcm.slcm.doctype.attendance_session.attendance_session.activate_rfid',
+    { session_name: sessionName },
+    function(res) {
+      var cell = document.querySelector('.fp-rfid-cell[data-rfid-session="' + sessionName + '"]');
+      if (cell && res && res.rfid_active_until) {
+        cell.setAttribute('data-rfid-active-until', res.rfid_active_until);
+        cell.innerHTML = '<button class="fp-btn fp-btn-warning fp-btn-sm fp-rfid-btn" disabled>'
+          + '<span class="fp-ms" style="font-size:14px;">wifi_tethering</span>'
+          + '<span class="fp-rfid-timer">Active</span></button>';
+      }
+      _fpStartRfidTimers();
+    },
+    function(msg) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+      alert(msg || 'Could not activate RFID for this session.');
+    }
+  );
+}
+
+function _fpParseServerDatetime(s) {
+  /* Frappe returns "YYYY-MM-DD HH:MM:SS" (naive, server-local time) */
+  if (!s) return null;
+  var iso = s.replace(' ', 'T');
+  var d = new Date(iso);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function _fpStartRfidTimers() {
+  if (window._fpRfidTimerHandle) return; /* already running */
+
+  window._fpRfidTimerHandle = setInterval(function() {
+    var cells = document.querySelectorAll('.fp-rfid-cell[data-rfid-active-until]');
+    var now = new Date();
+    var anyActive = false;
+
+    cells.forEach(function(cell) {
+      var until = _fpParseServerDatetime(cell.getAttribute('data-rfid-active-until'));
+      if (!until) return;
+
+      var remainingMs = until.getTime() - now.getTime();
+      var timerEl = cell.querySelector('.fp-rfid-timer');
+
+      if (remainingMs <= 0) {
+        /* Freeze / hide the button once the 10-minute window has lapsed */
+        cell.removeAttribute('data-rfid-active-until');
+        cell.innerHTML = '<span class="fp-badge fp-badge-neutral" title="RFID window closed">'
+          + '<span class="fp-ms" style="font-size:12px;">wifi_off</span>Closed</span>';
+        return;
+      }
+
+      anyActive = true;
+      if (timerEl) {
+        var mins = Math.floor(remainingMs / 60000);
+        var secs = Math.floor((remainingMs % 60000) / 1000);
+        timerEl.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+      }
+    });
+
+    if (!anyActive) {
+      clearInterval(window._fpRfidTimerHandle);
+      window._fpRfidTimerHandle = null;
+    }
+  }, 1000);
+}
+
+document.addEventListener('DOMContentLoaded', _fpStartRfidTimers);
 </script>
 
 {# ══════════════════════════════════════════════════════════

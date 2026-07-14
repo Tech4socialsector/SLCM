@@ -177,6 +177,8 @@ def _run_poll(cfg):
             doc.insert(ignore_permissions=True)
             imported += 1
 
+            _bridge_to_attendance_log(doc)
+
             if cfg.enable_remote_push:
                 _push_to_remote(cfg, doc)
         except Exception:
@@ -196,6 +198,42 @@ def _run_poll(cfg):
         frappe.logger("rfid_sql_agent").info(
             f"RFID SQL Agent: imported={imported}, skipped={skipped}, "
             f"max_id={max_id}, ran_at={now_datetime()}"
+        )
+
+
+def _bridge_to_attendance_log(punch_doc):
+    """Mirror this punch into Attendance Log so it flows through the same
+    reconciliation queue as live-device swipes (create_attendance_log) —
+    the Attendance Sync page and the scheduled RFID processor both only
+    look at Attendance Log, not RFID SQL Punch Log. Deduped via source_id
+    (this punch's source_log_id), so re-polling never creates duplicates.
+    RFID SQL Punch Log remains the raw, untouched audit trail of the SQL feed."""
+    if frappe.db.exists("Attendance Log", {"source_id": punch_doc.source_log_id, "source": "RFID"}):
+        return
+
+    match_status = "Pending"
+    if not punch_doc.student:
+        match_status = "Unmatched - Unknown Card"
+    elif punch_doc.terminal_id and not frappe.db.exists("RFID Device", punch_doc.terminal_id):
+        match_status = "Unmatched - No Device Mapping"
+
+    try:
+        frappe.get_doc({
+            "doctype": "Attendance Log",
+            "rfid_uid": punch_doc.emp_code,
+            "student": punch_doc.student,
+            "swipe_time": punch_doc.punch_time,
+            "device_id": punch_doc.terminal_id,
+            "terminal_alias": punch_doc.terminal_alias,
+            "source": "RFID",
+            "source_id": punch_doc.source_log_id,
+            "processed": 0,
+            "match_status": match_status,
+        }).insert(ignore_permissions=True)
+    except Exception:
+        frappe.log_error(
+            title=f"RFID SQL Agent — failed to bridge punch {punch_doc.name} to Attendance Log",
+            message=frappe.get_traceback()
         )
 
 
