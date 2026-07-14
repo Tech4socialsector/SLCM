@@ -187,7 +187,13 @@ fixtures = [
                 "HD Ticket SLA Escalation - Max Hops Reached",
                 "Venue Booking - New Request (Admin)",
                 "Venue Booking - Status Update (Requester)",
-                "Venue Booking - Swap Request Decision (Requester)"
+                "Venue Booking - Swap Request Decision (Requester)",
+                "AAD Assignment Email Template",
+                "AAD Approval Email Template",
+                "AAD Rejected Email Template",
+                "Programme Chair Assignment Email Template",
+                "Programme Chair Approval Email Template",
+                "Programme Chair Rejected Email Template"
             ]]
         ]
     },
