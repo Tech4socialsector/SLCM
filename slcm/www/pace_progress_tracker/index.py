@@ -93,9 +93,9 @@ def get_context(context):
     # Get active academic year if not already in app (fallback)
     active_year = app.academic_year
     if not active_year:
-        active_year_doc = frappe.get_all("Academic Year", filters={"is_active": 1}, fields=["name"], limit=1)
+        active_year_doc = frappe.get_all("Academic Year", filters={"status": "Active"}, fields=["name"], limit=1)
         if active_year_doc:
-            active_year = active_year_doc[0].name
+            active_year = active_year_doc[0].name 
     
     if active_year:
         admission = frappe.get_all("PACE Admission",

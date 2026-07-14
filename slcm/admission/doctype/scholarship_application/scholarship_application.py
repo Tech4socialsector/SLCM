@@ -129,6 +129,13 @@ class ScholarshipApplication(Document):
 		if not (program_match and category_match):
 			frappe.throw(frappe._("Scholarship not applicable for selected program/category."))
 
+		# Check target applicant match (Domestic / International)
+		foriegn_national = frappe.db.get_value("Applicant", self.applicant_id, "foriegn_national")
+		applicant_type = "International" if foriegn_national == "Yes" else "Domestic"
+		target_for = scheme.get("scholarship_for") or "Domestic"
+		if target_for != applicant_type:
+			frappe.throw(frappe._("This scholarship scheme is only available for {0} applicants.").format(target_for))
+
 	def validate_requirements(self):
 		# Always mandatory as per user request
 		if self.family_income is None or self.family_income == "":
@@ -196,7 +203,8 @@ class ScholarshipApplication(Document):
 
 		check_scholarship_availability(
 			self.scholarship_scheme,
-			applicant_status
+			applicant_status,
+			self.applicant_id
 		)
 
 	def calculate_benefit(self):
@@ -529,7 +537,6 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 	income_cert_url = None
 	if income_certificate_data and income_certificate_name:
 		try:
-			from frappe.utils.file_manager import save_file
 			import base64
 			import os
 
@@ -548,9 +555,14 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 			if len(file_content) > 5 * 1024 * 1024:
 				frappe.throw(frappe._("Income Certificate file size must not exceed 5MB."))
 
-			# Save file without attachment initially to avoid name mandatory error
-			saved_file = save_file(income_certificate_name, file_content, None, None, is_private=1)
-			income_cert_url = saved_file.file_url
+			_file = frappe.get_doc({
+				"doctype": "File",
+				"file_name": income_certificate_name,
+				"content": file_content,
+				"is_private": 1
+			})
+			_file.insert(ignore_permissions=True)
+			income_cert_url = _file.file_url
 		except Exception as e:
 			frappe.log_error(f"File upload error (Income): {e}", "Scholarship Application Debug")
 			frappe.throw(frappe._("Failed to upload Income Certificate: {0}").format(str(e)))
@@ -558,7 +570,6 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 	supporting_docs_url = None
 	if supporting_documents_data and supporting_documents_name:
 		try:
-			from frappe.utils.file_manager import save_file
 			import base64
 			import os
 
@@ -577,9 +588,14 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 			if len(file_content) > 5 * 1024 * 1024:
 				frappe.throw(frappe._("Supporting Documents file size must not exceed 5MB."))
 
-			# Save file without attachment initially to avoid name mandatory error
-			saved_file = save_file(supporting_documents_name, file_content, None, None, is_private=1)
-			supporting_docs_url = saved_file.file_url
+			_file = frappe.get_doc({
+				"doctype": "File",
+				"file_name": supporting_documents_name,
+				"content": file_content,
+				"is_private": 1
+			})
+			_file.insert(ignore_permissions=True)
+			supporting_docs_url = _file.file_url
 		except Exception as e:
 			frappe.log_error(f"File upload error (Supporting): {e}", "Scholarship Application Debug")
 			frappe.throw(frappe._("Failed to upload Supporting Documents: {0}").format(str(e)))
@@ -719,14 +735,22 @@ def get_eligible_scholarship_schemes(applicant_id, program, campus, admission_cy
 			"campus": campus,
 			"status": "Active"
 		},
-		fields=["name", "program", "category"]
+		fields=["name", "program", "category", "scholarship_for"]
 	)
 
 	applicant_categories = frappe.get_all("Applicant Category", filters={"parent": applicant_id}, fields=["category"])
 	applicant_category_names = [c.category for c in applicant_categories]
 
+	foriegn_national = frappe.db.get_value("Applicant", applicant_id, "foriegn_national")
+	applicant_type = "International" if foriegn_national == "Yes" else "Domestic"
+
 	eligible_schemes = []
 	for s in schemes:
+		# Check target applicant type match
+		target_for = s.get("scholarship_for") or "Domestic"
+		if target_for != applicant_type:
+			continue
+
 		# Check program match (scheme has specific program or is global)
 		program_match = not s.program or s.program == program
 

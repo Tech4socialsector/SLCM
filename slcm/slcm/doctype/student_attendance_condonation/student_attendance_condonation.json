@@ -7,20 +7,36 @@
  "field_order": [
   "student",
   "student_name",
+  "proof_document",
   "course_offering",
   "course",
   "academic_year",
+  "condonation_reason",
+  "programme",
+  "column_break_1",
   "absence_from_date",
   "absence_to_date",
   "number_of_sessions",
   "number_of_hours",
-  "condonation_reason",
-  "column_break_1",
-  "proof_document",
-  "faculty_recommendation",
   "final_status",
-  "approver",
-  "remarks",
+  "submitted_date",
+  "aad_section",
+  "aad_approver",
+  "column_break_nqod",
+  "aad_due_date",
+  "aad_approve_or_rejected_timestamp",
+  "section_break_ecte",
+  "aad_remarks",
+  "programme_chair_section",
+  "programme_chair_approver",
+  "column_break_ibef",
+  "programme_chair_due_date",
+  "programme_chair_approve_or_rejected_timestamp",
+  "section_break_uuer",
+  "programme_chair_remarks",
+  "rejected_reason_section",
+  "aad_rejected_reason",
+  "programme_chair_rejected_reason",
   "amended_from"
  ],
  "fields": [
@@ -104,49 +120,148 @@
    "label": "Proof Document"
   },
   {
+   "allow_on_submit": 1,
    "default": "Pending",
    "fieldname": "final_status",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Final Status",
-   "options": "Pending\nApproved\nRejected",
+   "options": "Pending\nMay Be Approved\nApproved\nRejected",
    "permlevel": 2,
-   "reqd": 1
-  },
-  {
-   "default": "Pending",
-   "fieldname": "faculty_recommendation",
-   "fieldtype": "Select",
-   "label": "Faculty Recommendation",
-   "options": "Pending\nRecommended\nNot Recommended",
-   "permlevel": 1
-  },
-  {
-   "fieldname": "approver",
-   "fieldtype": "Link",
-   "label": "Approver",
-   "options": "User",
-   "permlevel": 1
-  },
-  {
-   "fieldname": "remarks",
-   "fieldtype": "Small Text",
-   "label": "Remarks",
-   "permlevel": 1,
+   "read_only": 1,
    "reqd": 1
   },
   {
    "fieldname": "amended_from",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Amended From",
    "no_copy": 1,
    "options": "Student Attendance Condonation",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "aad_remarks",
+   "fieldtype": "Small Text",
+   "label": "AAD Remarks",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "aad_section",
+   "fieldtype": "Section Break",
+   "label": "AAD"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "aad_approver",
+   "fieldtype": "Link",
+   "label": "AAD Approver",
+   "options": "User",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "programme_chair_section",
+   "fieldtype": "Section Break",
+   "label": "Programme Chair"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "programme_chair_approver",
+   "fieldtype": "Link",
+   "label": "Programme Chair Approver",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "programme_chair_remarks",
+   "fieldtype": "Small Text",
+   "label": "Programme Chair Remarks",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval: doc.final_status == \"Rejected\"",
+   "fieldname": "rejected_reason_section",
+   "fieldtype": "Section Break",
+   "label": "Rejected Reason"
+  },
+  {
+   "fieldname": "column_break_nqod",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "aad_approve_or_rejected_timestamp",
+   "fieldtype": "Datetime",
+   "label": "Approve/Rejected Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_ecte",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_ibef",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "programme_chair_approve_or_rejected_timestamp",
+   "fieldtype": "Datetime",
+   "label": "Approve/Rejected Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_uuer",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "submitted_date",
+   "fieldtype": "Datetime",
+   "label": "Submitted Date"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "aad_due_date",
+   "fieldtype": "Date",
+   "label": "Due Date",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "programme_chair_due_date",
+   "fieldtype": "Date",
+   "label": "Due Date",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "student.master_programme",
+   "fieldname": "programme",
+   "fieldtype": "Link",
+   "label": "Programme",
+   "options": "Programme Master",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "aad_rejected_reason",
+   "fieldtype": "Small Text",
+   "label": "AAD Rejected Reason",
+   "read_only": 1
+  },
+  {
+   "fieldname": "programme_chair_rejected_reason",
+   "fieldtype": "Small Text",
+   "label": "Progamme Chair Rejected Reason",
    "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-10 15:15:04.181502",
+ "modified": "2026-07-14 10:27:53.451454",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Attendance Condonation",

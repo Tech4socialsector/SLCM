@@ -14,18 +14,18 @@ class IntegrationTestInterviewConfiguration(IntegrationTestCase):
         
         # Back up and temporarily remove any conflicting existing policies
         existing_policies = frappe.get_all(
-            "Program Reservation Policy",
+            "Programme Reservation Policy",
             filters={"program": "BA LLB (Hons)", "admission_cycle": "AD", "campus": "NLSIU"}
         )
         for ep in existing_policies:
-            doc = frappe.get_doc("Program Reservation Policy", ep.name)
+            doc = frappe.get_doc("Programme Reservation Policy", ep.name)
             self.restored_policies.append(doc.as_dict())
-            frappe.db.delete("Program Reservation Policy", {"name": ep.name})
+            frappe.db.delete("Programme Reservation Policy", {"name": ep.name})
         frappe.db.commit()
         
     def tearDown(self):
         for policy in self.policies_to_delete:
-            frappe.db.delete("Program Reservation Policy", {"name": policy})
+            frappe.db.delete("Programme Reservation Policy", {"name": policy})
         for config in self.configs_to_delete:
             frappe.db.delete("Interview Configuration", {"name": config})
         frappe.db.commit()
@@ -45,7 +45,7 @@ class IntegrationTestInterviewConfiguration(IntegrationTestCase):
     def test_ratio_multiplier_parsing(self):
         # Create a dummy program policy
         policy_doc = frappe.get_doc({
-            "doctype": "Program Reservation Policy",
+            "doctype": "Programme Reservation Policy",
             "program": "BA LLB (Hons)",
             "admission_cycle": "AD",
             "campus": "NLSIU",
@@ -84,7 +84,7 @@ class IntegrationTestInterviewConfiguration(IntegrationTestCase):
     def test_domestic_seats_from_policy(self):
         # Create a dummy program policy
         policy_doc = frappe.get_doc({
-            "doctype": "Program Reservation Policy",
+            "doctype": "Programme Reservation Policy",
             "program": "BA LLB (Hons)",
             "admission_cycle": "AD",
             "campus": "NLSIU",

@@ -15,7 +15,6 @@
    "label": "Merit & Seat Allocation",
    "link_to": "MSA",
    "link_type": "Workspace",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -25,10 +24,9 @@
    "icon": "land-plot",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Program Reservation Policy",
-   "link_to": "Program Reservation Policy",
+   "label": "Programme Reservation Policy",
+   "link_to": "Programme Reservation Policy",
    "link_type": "DocType",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -41,7 +39,6 @@
    "label": "Merit Generation",
    "link_to": "Merit Generation",
    "link_type": "DocType",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -54,7 +51,6 @@
    "label": "Shortlisting Merit List",
    "link_to": "Shortlisting Merit List",
    "link_type": "DocType",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -67,7 +63,6 @@
    "label": " Final Merit List",
    "link_to": "Merit List",
    "link_type": "DocType",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -80,7 +75,6 @@
    "label": "Seat Allocation",
    "link_to": "Seat Allocation",
    "link_type": "DocType",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -92,7 +86,6 @@
    "keep_closed": 0,
    "label": "Reports",
    "link_type": "DocType",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Section Break"
   },
@@ -105,7 +98,6 @@
    "label": "Over All Merit report",
    "link_to": "Overall Merit Report",
    "link_type": "Report",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -118,7 +110,6 @@
    "label": "Student Selection Report",
    "link_to": "Student Selection Report",
    "link_type": "Report",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -131,12 +122,11 @@
    "label": "Seat Availability Report",
    "link_to": "Seat Availability Report",
    "link_type": "Report",
-   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   }
  ],
- "modified": "2026-06-19 11:54:10.835940",
+ "modified": "2026-07-10 11:13:23.069149",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit",

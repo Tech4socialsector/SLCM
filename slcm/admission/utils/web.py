@@ -425,7 +425,7 @@ def get_stage_tracker_data(applicant_name: str) -> dict:
     """
     applicant = frappe.db.get_value(
         "Applicant", applicant_name,
-        ["owner", "email", "admission_cycle", "intake_type", "status"],
+        ["owner", "email", "admission_cycle", "intake_type", "status", "program", "foriegn_national"],
         as_dict=True
     )
     if not applicant:
@@ -463,6 +463,37 @@ def get_stage_tracker_data(applicant_name: str) -> dict:
         s for s in all_stages
         if s.applicable_workflow == "All" or s.applicable_workflow == intake
     ]
+
+    # Filter stages by Programme configuration (domestic vs international stages)
+    if applicant.get("program"):
+        try:
+            program_doc = frappe.get_doc("Programme", applicant.program, ignore_permissions=True)
+            if applicant.get("foriegn_national") == "Yes":
+                stage_fields = {
+                    "Application": "internationa_application_submitted",
+                    "Exam": "international_entrance_test",
+                    "Interview": "international_interview",
+                    "Fee": "inrternation_admission_fee",
+                    "Enrollment": "international_enrolled",
+                }
+            else:
+                stage_fields = {
+                    "Application": "submitted",
+                    "Exam": "entrance_test",
+                    "Interview": "intereview",
+                    "Merit": "merit_list",
+                    "Evaluation": "seat_allocation",
+                    "Offer": "offer_letter",
+                    "Fee": "admission_fee",
+                    "Enrollment": "enrolled",
+                }
+            
+            filtered_stages = [
+                s for s in filtered_stages
+                if s.get("stage_type") not in stage_fields or program_doc.get(stage_fields[s.get("stage_type")])
+            ]
+        except Exception:
+            pass
 
     if not filtered_stages:
         return {"stages": [], "progress_pct": 0, "current_status": applicant.status}
@@ -841,7 +872,7 @@ def download_receipt(receipt_name):
     """
     Generates and downloads the Applicant Payment Receipt PDF for the owner.
 
-    Uses Program Reservation Policy.payment_receipt_template (if configured)
+    Uses Programme Reservation Policy.payment_receipt_template (if configured)
     as the print format, falling back to the default format.
     """
     user = frappe.session.user
@@ -858,7 +889,7 @@ def download_receipt(receipt_name):
         if "Admission Admin" not in frappe.get_roles() and "System Manager" not in frappe.get_roles():
             frappe.throw("Not permitted", frappe.PermissionError)
 
-    # Resolve print format from Program Reservation Policy if possible
+    # Resolve print format from Programme Reservation Policy if possible
     print_format = "Applicant Payment Receipt Format"  # Fallback
     try:
         if applicant_name:
@@ -889,7 +920,7 @@ def download_receipt(receipt_name):
                     )
                 if policy_name:
                     template = frappe.db.get_value(
-                        "Program Reservation Policy",
+                        "Programme Reservation Policy",
                         policy_name,
                         "payment_receipt_template",
                     )

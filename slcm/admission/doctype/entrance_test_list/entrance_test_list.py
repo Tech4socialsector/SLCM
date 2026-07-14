@@ -466,7 +466,7 @@ def generate_and_store_admit_card(allocation, is_rescheduled=False, html_content
         "attached_to_name": allocation.name,
         "attached_to_field": field_to_update,
         "content": pdf_content,
-        "is_private": 0
+        "is_private": 1
     })
     _file.save(ignore_permissions=True)    
     values = {

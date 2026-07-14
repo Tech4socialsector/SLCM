@@ -116,20 +116,46 @@
   .info-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-    background: #f8fafc;
-    padding: 20px;
+    gap: 20px;
+    background: var(--card-bg, #f8fafc);
+    padding: 24px;
     border-radius: 16px;
-    border: 1px solid #f1f5f9;
+    border: 1px solid var(--border, #f1f5f9);
+  }
+
+  .info-grid .field-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-2, #64748b);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+
+  .info-grid .field-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-1, #1e293b);
+  }
+
+  .form-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--primary);
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin-bottom: 16px;
   }
 
   .form-control {
     width: 100%;
     border-radius: 12px;
-    border: 2px solid #e2e8f0;
+    border: 2px solid var(--border, #e2e8f0);
     padding: 12px 16px;
-    font-size: 14px;
+    font-size: 1rem;
     font-weight: 600;
+    color: var(--text-1, #1e293b);
     transition: all 0.2s ease;
   }
 
@@ -162,6 +188,20 @@
     border-style: solid;
     border-color: var(--primary);
     background: color-mix(in srgb, var(--primary), transparent 96%);
+  }
+
+  /* Override global span font-size: var(--font-size-body) !important */
+  .material-symbols-outlined.text-lg {
+    font-size: 1.125rem !important;
+  }
+  .material-symbols-outlined.text-5xl {
+    font-size: 3rem !important;
+  }
+  .material-symbols-outlined.text-6xl {
+    font-size: 3.75rem !important;
+  }
+  .file-upload-box .material-symbols-outlined {
+    font-size: 3.75rem !important;
   }
 
   .btn-submit {
@@ -247,72 +287,74 @@
 
                     <!-- Section 1: Applicant Details -->
                     <div class="space-y-4">
-                        <div class="flex items-center gap-2 text-primary font-bold text-[13px]" style="text-transform: none !important;">
-                            <span class="material-symbols-outlined text-lg">person</span>
+                        <div class="form-section-title">
+                            <span class="material-symbols-outlined">person</span>
                             Applicant Information
                         </div>
                         <div class="info-grid">
-                            <div class="space-y-1">
-                                <p class="text-[12px] font-bold text-slate-400">Applicant Name</p>
-                                <p class="text-sm font-bold text-slate-700">{{ applicant.candidate_name }}</p>
+                            <div>
+                                <div class="field-label">Applicant Name</div>
+                                <div class="field-value">{{ applicant.candidate_name }}</div>
                             </div>
-                            <div class="space-y-1">
-                                <p class="text-[12px] font-bold text-slate-400">Applicant ID</p>
-                                <p class="text-sm font-bold text-slate-700">{{ applicant.name }}</p>
+                            <div>
+                                <div class="field-label">Applicant ID</div>
+                                <div class="field-value">{{ applicant.name }}</div>
                             </div>
-                            <div class="space-y-1">
-                                <p class="text-[12px] font-bold text-slate-400">Programme</p>
-                                <p class="text-sm font-bold text-slate-700">{{ applicant.program }}</p>
+                            <div>
+                                <div class="field-label">Programme</div>
+                                <div class="field-value">{{ applicant.program }}</div>
                             </div>
-                            <div class="space-y-1">
-                                <p class="text-[12px] font-bold text-slate-400">Campus</p>
-                                <p class="text-sm font-bold text-slate-700">{{ applicant.campus }}</p>
+                            <div>
+                                <div class="field-label">Campus</div>
+                                <div class="field-value">{{ applicant.campus }}</div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Section 2: Financials -->
-                    <div class="space-y-3">
-                        <div class="flex items-center gap-2 text-primary font-bold text-[13px]" style="text-transform: none !important;">
-                            <span class="material-symbols-outlined text-lg">payments</span>
+                    <div class="space-y-4 mt-8">
+                        <div class="form-section-title">
+                            <span class="material-symbols-outlined">payments</span>
                             Financial Details
                         </div>
                         <div>
-                            <label class="text-xs font-bold text-slate-500 mb-1.5 block" for="family_income">
+                            <label class="field-label mb-2 block" for="family_income">
                                 Annual Family Income (₹) <span class="text-red-500">*</span>
                             </label>
                             <input type="number" id="family_income" class="form-control" placeholder="e.g. 450000" required>
-                            <p class="text-[11px] text-slate-400 italic mt-1.5">Combine the total annual income of all earning family members.</p>
+                            <p style="font-size: 0.8rem; color: var(--text-3, #94a3b8); margin-top: 6px;">Combine the total annual income of all earning family members.</p>
                         </div>
                     </div>
 
                     <!-- Section 3: Documents -->
-                    <div class="space-y-4">
-                        <div class="flex items-center gap-2 text-primary font-bold text-[13px]" style="text-transform: none !important;">
-                            <span class="material-symbols-outlined text-lg">description</span>
+                    <div class="space-y-4 mt-8">
+                        <div class="form-section-title">
+                            <span class="material-symbols-outlined">description</span>
                             Required Documents
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="space-y-2">
-                                <label class="text-xs font-bold text-slate-500">Income Certificate <span class="text-red-500">*</span></label>
+                                <label class="field-label">Income Certificate <span class="text-red-500">*</span></label>
                                 <div class="file-upload-box" id="box_income_cert" onclick="document.getElementById('income_certificate').click()">
                                     <input type="file" id="income_certificate" accept=".pdf,.jpg,.jpeg,.png" required style="display:none" onchange="handleFile(this, 'box_income_cert')">
-                                    <span class="material-symbols-outlined text-2xl text-slate-300 mb-2">upload_file</span>
-                                    <p class="text-[13px] font-bold text-slate-600">Upload Income Certificate</p>
-                                    <p class="text-[11px] text-slate-400 mt-0.5">PDF, JPG, PNG (Max 5MB)</p>
+                                    <span class="material-symbols-outlined text-6xl text-slate-300 mb-2">upload_file</span>
+                                    <div style="font-weight: 700; color: var(--text-2);">Upload Income Certificate</div>
+                                    <div style="font-size: 0.7rem !important; color: var(--text-3); margin-top: 4px;">PDF, JPG, PNG (Max 5MB)</div>
                                     <div class="selected-filename text-primary font-bold text-xs mt-2 hidden"></div>
+                                    <a href="#" target="_blank" class="preview-link text-xs font-semibold text-secondary hover:underline mt-1 hidden" onclick="event.stopPropagation();">View file</a>
                                 </div>
                             </div>
 
                             <div class="space-y-2">
-                                <label class="text-xs font-bold text-slate-500">Supporting Documents (Optional)</label>
+                                <label class="field-label">Supporting Documents (Optional)</label>
                                 <div class="file-upload-box" id="box_supp_docs" onclick="document.getElementById('supporting_documents').click()">
                                     <input type="file" id="supporting_documents" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleFile(this, 'box_supp_docs')">
-                                    <span class="material-symbols-outlined text-2xl text-slate-300 mb-2">folder_open</span>
-                                    <p class="text-[13px] font-bold text-slate-600">Upload additional documents</p>
-                                    <p class="text-[11px] text-slate-400 mt-0.5">Any relevant proof for eligibility.</p>
+                                    <span class="material-symbols-outlined text-6xl text-slate-300 mb-2">folder_open</span>
+                                    <div style="font-weight: 700; color: var(--text-2);">Upload additional documents</div>
+                                    <div style="font-size: 0.7rem !important; color: var(--text-3); margin-top: 4px;">PDF, JPG, PNG (Max 5MB)</div>
                                     <div class="selected-filename text-primary font-bold text-xs mt-2 hidden"></div>
+                                    <a href="#" target="_blank" class="preview-link text-xs font-semibold text-secondary hover:underline mt-1 hidden" onclick="event.stopPropagation();">View file</a>
                                 </div>
                             </div>
                         </div>
@@ -320,9 +362,9 @@
                 </form>
             </div>
 
-            <div class="bg-slate-50 p-6 flex flex-col-reverse sm:flex-row gap-4 border-t border-slate-100">
-                <button type="button" class="btn-cancel flex-1" onclick="window.location.href='/merit-and-scholarship/scholarships'">Cancel</button>
-                <button type="button" id="submitAppBtn" class="btn-submit flex-[2]">Submit Scholarship Application</button>
+            <div class="bg-slate-50 p-6 flex justify-end gap-4 border-t border-slate-100">
+                <button type="button" class="btn-cancel" onclick="window.location.href='/merit-and-scholarship/scholarships'">Cancel</button>
+                <button type="button" id="submitAppBtn" class="btn-submit">Submit</button>
             </div>
         </div>
         {% endif %}
@@ -340,6 +382,7 @@
         const box = document.getElementById(boxId);
         const fileNameEl = box.querySelector('.selected-filename');
         const iconEl = box.querySelector('.material-symbols-outlined');
+        const previewLink = box.querySelector('.preview-link');
 
         if (input.files && input.files[0]) {
             const file = input.files[0];
@@ -351,6 +394,10 @@
                 input.value = '';
                 box.classList.remove('has-file');
                 fileNameEl.classList.add('hidden');
+                if (previewLink) {
+                    previewLink.href = '#';
+                    previewLink.classList.add('hidden');
+                }
                 if (iconEl) iconEl.style.color = '#cbd5e1';
                 return;
             }
@@ -360,6 +407,10 @@
                 input.value = '';
                 box.classList.remove('has-file');
                 fileNameEl.classList.add('hidden');
+                if (previewLink) {
+                    previewLink.href = '#';
+                    previewLink.classList.add('hidden');
+                }
                 if (iconEl) iconEl.style.color = '#cbd5e1';
                 return;
             }
@@ -367,10 +418,18 @@
             box.classList.add('has-file');
             fileNameEl.innerText = '✓ ' + file.name;
             fileNameEl.classList.remove('hidden');
+            if (previewLink) {
+                previewLink.href = URL.createObjectURL(file);
+                previewLink.classList.remove('hidden');
+            }
             if (iconEl) iconEl.style.color = 'var(--primary)';
         } else {
             box.classList.remove('has-file');
             fileNameEl.classList.add('hidden');
+            if (previewLink) {
+                previewLink.href = '#';
+                previewLink.classList.add('hidden');
+            }
             if (iconEl) iconEl.style.color = '#cbd5e1';
         }
     }

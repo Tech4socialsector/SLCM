@@ -1,4 +1,4 @@
-frappe.ui.form.on("Program Reservation Policy", {
+frappe.ui.form.on("Programme Reservation Policy", {
     setup: function (frm) {
         frm.set_query("admission_cycle", function () {
             return { filters: { status: "Active" } };
@@ -58,7 +58,7 @@ frappe.ui.form.on("Program Reservation Policy", {
                             frappe.call({
                                 method: "frappe.client.set_value",
                                 args: {
-                                    doctype: "Program Reservation Policy",
+                                    doctype: "Programme Reservation Policy",
                                     name: frm.doc.name,
                                     fieldname: "status",
                                     value: "Active"
@@ -78,7 +78,7 @@ frappe.ui.form.on("Program Reservation Policy", {
                             frappe.call({
                                 method: "frappe.client.set_value",
                                 args: {
-                                    doctype: "Program Reservation Policy",
+                                    doctype: "Programme Reservation Policy",
                                     name: frm.doc.name,
                                     fieldname: "status",
                                     value: "Locked"
@@ -123,7 +123,7 @@ frappe.ui.form.on("Program Reservation Policy", {
             return;
         }
         frappe.call({
-            method: "slcm.admission.doctype.program_reservation_policy.program_reservation_policy.generate_matrices",
+            method: "slcm.admission.doctype.programme_reservation_policy.programme_reservation_policy.generate_matrices",
             args: { name: frm.doc.name },
             callback: function(r) {
                 if (!r.exc) {
@@ -142,7 +142,7 @@ frappe.ui.form.on("Program Reservation Policy", {
     }
 });
 
-frappe.ui.form.on("Program Reservation Category", {
+frappe.ui.form.on("Programme Reservation Category", {
     priority: function (frm, cdt, cdn) {
         const row = locals[cdt][cdn];
         if (row.priority) {
@@ -175,7 +175,7 @@ frappe.ui.form.on("Program Reservation Category", {
     }
 });
 
-frappe.ui.form.on("Program Reservation Sub Quota", {
+frappe.ui.form.on("Programme Reservation Sub Quota", {
     priority: function (frm, cdt, cdn) {
         const row = locals[cdt][cdn];
         if (row.priority) {

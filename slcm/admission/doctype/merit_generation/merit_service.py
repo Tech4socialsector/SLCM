@@ -146,22 +146,30 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
     # 1. Prepare Keys for Sorting and Ranking
     from frappe.utils import get_timestamp
     
+    app_ids = [getattr(row, "applicant_id", None) or getattr(row, "applicant", None) for row in applicant_rows]
+    app_ids = [aid for aid in app_ids if aid]
+    dob_map = {}
+    if app_ids:
+        dob_map = {r.name: r.date_of_birth for r in frappe.db.get_all("Applicant", filters={"name": ["in", app_ids]}, fields=["name", "date_of_birth"])}
+    
     def get_stable_key(x):
         """Used for actual list sorting (adds deterministic fallback)."""
         score = float(getattr(x, "total_score", None) or x.get("total_score") or getattr(x, "entrance_score", None) or x.get("entrance_score") or getattr(x, "nlsat_part_a_score", None) or x.get("nlsat_part_a_score") or 0)
         score = round(score, 3)
+        app_id = getattr(x, "applicant_id", None) or getattr(x, "applicant", None) or getattr(x, "name", "")
         
         if processing_stage == "Part A Ranking":
             return (
                 -score,
-                getattr(x, "name", "") or getattr(x, "applicant_id", "")
+                app_id
             )
         
         # Final Allotment tie-breakers:
         # 1. Total Score (Desc)
         # 2. Part B / Interview Score (Desc)
         # 3. Date of Birth (Asc) - earlier DOB / older candidate first
-        dob = getattr(x, "date_of_birth", None) or x.get("date_of_birth") or "9999-12-31"
+        dob_val = getattr(x, "date_of_birth", None) or x.get("date_of_birth") or dob_map.get(app_id)
+        dob = str(dob_val) if dob_val else "9999-12-31"
         part_b = float(
             getattr(x, "interview_score", None) or x.get("interview_score") or
             getattr(x, "et_part_b_total_marks_scored", None) or x.get("et_part_b_total_marks_scored") or
@@ -173,7 +181,7 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
             -score,
             -part_b,
             dob,
-            getattr(x, "name", "") or getattr(x, "applicant_id", "")
+            app_id
         )
 
     # Helper to check for same rank (ignores deterministic fallback)
@@ -201,8 +209,14 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
         part_b1 = round(part_b1, 3)
         part_b2 = round(part_b2, 3)
         
-        dob1 = getattr(app1, "date_of_birth", None) or app1.get("date_of_birth") or "9999-12-31"
-        dob2 = getattr(app2, "date_of_birth", None) or app2.get("date_of_birth") or "9999-12-31"
+        app_id1 = getattr(app1, "applicant_id", None) or getattr(app1, "applicant", None)
+        app_id2 = getattr(app2, "applicant_id", None) or getattr(app2, "applicant", None)
+        
+        dob1_val = getattr(app1, "date_of_birth", None) or app1.get("date_of_birth") or dob_map.get(app_id1)
+        dob2_val = getattr(app2, "date_of_birth", None) or app2.get("date_of_birth") or dob_map.get(app_id2)
+        
+        dob1 = str(dob1_val) if dob1_val else "9999-12-31"
+        dob2 = str(dob2_val) if dob2_val else "9999-12-31"
         
         return (score1 == score2) and (part_b1 == part_b2) and (dob1 == dob2)
 
@@ -468,9 +482,9 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
 
 def _apply_percentile_cutoffs(doc):
     """
-    Applies NLSAT minimum percentile eligibility from Program Reservation Policy.
+    Applies NLSAT minimum percentile eligibility from Programme Reservation Policy.
     """
-    policy_name = frappe.db.get_value("Program Reservation Policy", {
+    policy_name = frappe.db.get_value("Programme Reservation Policy", {
         "admission_cycle": doc.admission_cycle,
         "program": doc.program
     }, "name")
@@ -478,7 +492,7 @@ def _apply_percentile_cutoffs(doc):
     if not policy_name:
         return
         
-    policy = frappe.get_doc("Program Reservation Policy", policy_name)
+    policy = frappe.get_doc("Programme Reservation Policy", policy_name)
     
     vertical_targets = {}
     for v in policy.categories:
@@ -517,12 +531,12 @@ def _populate_category_lists(doc):
     policy = None
     multiplier = 1.0
     if getattr(doc, "program", None) and getattr(doc, "admission_cycle", None):
-        policy_name = frappe.db.get_value("Program Reservation Policy", {
+        policy_name = frappe.db.get_value("Programme Reservation Policy", {
             "admission_cycle": doc.admission_cycle,
             "program": doc.program
         }, "name")
         if policy_name:
-            policy = frappe.get_doc("Program Reservation Policy", policy_name)
+            policy = frappe.get_doc("Programme Reservation Policy", policy_name)
             multiplier = policy.get("shortlisting_multiplier") or 1.0
 
     comp_cat = "Karnataka"
@@ -604,12 +618,12 @@ def _populate_category_lists(doc):
         multiplier = 1.0
         is_shortlist = hasattr(doc, "shortlist_applicants")
         if getattr(doc, "program", None) and getattr(doc, "admission_cycle", None):
-            policy_name = frappe.db.get_value("Program Reservation Policy", {
+            policy_name = frappe.db.get_value("Programme Reservation Policy", {
                 "admission_cycle": doc.admission_cycle,
                 "program": doc.program
             }, "name")
             if policy_name:
-                policy = frappe.get_doc("Program Reservation Policy", policy_name)
+                policy = frappe.get_doc("Programme Reservation Policy", policy_name)
                 if is_shortlist:
                     multiplier = policy.get("shortlisting_multiplier") or 1.0
                 else:
@@ -772,13 +786,13 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
         _calculate_and_sync_percentiles(_prog_applicants, is_shortlist=is_shortlist_allocation)
 
     for program, applicants in grouped_by_program.items():
-        policy_name = frappe.db.get_value("Program Reservation Policy", {
+        policy_name = frappe.db.get_value("Programme Reservation Policy", {
             "admission_cycle": doc.admission_cycle,
             "program": program
         }, "name")
         
         if not policy_name: continue
-        policy = frappe.get_doc("Program Reservation Policy", policy_name)
+        policy = frappe.get_doc("Programme Reservation Policy", policy_name)
 
         multiplier = policy.get("shortlisting_multiplier") or 1.0
         is_shortlist_phase = is_shortlist_allocation or getattr(doc, "merit_processing_stage", "") == "Part A Ranking"
@@ -1099,7 +1113,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
 def _check_percentile_eligibility(app, vertical_targets, horizontal_targets=None):
     """
     Checks if an applicant meets the minimum percentile threshold for their ACTUAL category.
-    Targets are dynamically derived from the Program Reservation Policy.
+    Targets are dynamically derived from the Programme Reservation Policy.
     """
     v_traits, _, _ = _get_categorized_traits(app.applicant_id)
     primary_cat = v_traits[0] if v_traits else "General"
@@ -1312,16 +1326,16 @@ def execute_part_a_shortlisting(doc):
 
     applicants = getattr(doc, child_table)
 
-    # Fetch dynamic Program Reservation Policy targets
+    # Fetch dynamic Programme Reservation Policy targets
     policy = None
     multiplier = 1.0
     if getattr(doc, "program", None) and getattr(doc, "admission_cycle", None):
-        policy_name = frappe.db.get_value("Program Reservation Policy", {
+        policy_name = frappe.db.get_value("Programme Reservation Policy", {
             "admission_cycle": doc.admission_cycle,
             "program": doc.program
         }, "name")
         if policy_name:
-            policy = frappe.get_doc("Program Reservation Policy", policy_name)
+            policy = frappe.get_doc("Programme Reservation Policy", policy_name)
             multiplier = policy.get("shortlisting_multiplier") or 1.0
 
     # Determine dynamic compartmental category name
@@ -1389,8 +1403,13 @@ def execute_part_a_shortlisting(doc):
             
             eligible_applicants.append(row)
 
-    # 3. Sort overall candidates by Part A score desc
-    eligible_applicants.sort(key=lambda x: -x.nlsat_part_a_score)
+    # 3. Sort overall candidates by Part A score desc and applicant ID asc
+    def get_part_a_stable_key(x):
+        score = float(getattr(x, "nlsat_part_a_score", 0) or 0)
+        app_id = getattr(x, "applicant_id", None) or getattr(x, "applicant", None) or getattr(x, "name", "")
+        return (-score, app_id)
+
+    eligible_applicants.sort(key=get_part_a_stable_key)
 
     # 4. Assign overall rank using standard competition ranking
     current_rank = 1
@@ -1769,7 +1788,7 @@ def execute_part_a_shortlisting(doc):
         category_pools[row.actual_category].append(row)
         
     for cat, cat_list in category_pools.items():
-        cat_list.sort(key=lambda x: -x.nlsat_part_a_score)
+        cat_list.sort(key=get_part_a_stable_key)
         current_cat_rank = 1
         for i, row in enumerate(cat_list):
             if i > 0:

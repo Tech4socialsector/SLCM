@@ -368,7 +368,7 @@
    "default": "0",
    "fieldname": "offered_admission",
    "fieldtype": "Check",
-   "label": "Offered Admission"
+   "label": "Offer Admission"
   },
   {
    "fieldname": "interview_result_status",
@@ -541,7 +541,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-07 16:48:39.386477",
+ "modified": "2026-07-13 12:35:45.115450",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Seat Allocation",

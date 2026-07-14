@@ -1,5 +1,37 @@
 frappe.ui.form.on('Refund Request', {
 	refresh: function(frm) {
+		// Wrap frappe.show_alert to ensure container positioning when alerts are created/shown
+		if (!frappe.show_alert.is_centered_wrapped) {
+			const original_show_alert = frappe.show_alert;
+			frappe.show_alert = function(message, seconds, actions) {
+				const res = original_show_alert(message, seconds, actions);
+				const route = frappe.get_route();
+				if (route && route[1] === 'Refund Request') {
+					$("#alert-container").css({
+						"top": "30px",
+						"left": "50%",
+						"right": "auto",
+						"bottom": "auto",
+						"transform": "translateX(-50%)",
+						"position": "fixed",
+						"z-index": "2000"
+					});
+				} else {
+					$("#alert-container").css({
+						"top": "",
+						"left": "",
+						"right": "20px",
+						"bottom": "0px",
+						"transform": "",
+						"position": "fixed",
+						"z-index": "2000"
+					});
+				}
+				return res;
+			};
+			frappe.show_alert.is_centered_wrapped = true;
+		}
+
 		// ── Filter: only Admission Fee, submitted AFA for this applicant ──
 		frm.set_query('applicant_fee_assignment', function() {
 			const filters = {
