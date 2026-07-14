@@ -368,7 +368,7 @@
    "default": "0",
    "fieldname": "offered_admission",
    "fieldtype": "Check",
-   "label": "Offered Admission"
+   "label": "Offer Admission"
   },
   {
    "fieldname": "interview_result_status",

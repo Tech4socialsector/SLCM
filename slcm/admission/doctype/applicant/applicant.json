@@ -2,6 +2,7 @@
  "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
+ "autoname": "format:APP-{YYYY}-{#####}",
  "creation": "2026-01-07 12:15:38.115590",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -1274,11 +1275,11 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-13 11:09:59.512591",
+ "modified": "2026-07-13 16:50:59.498547",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
- "naming_rule": "By script",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {

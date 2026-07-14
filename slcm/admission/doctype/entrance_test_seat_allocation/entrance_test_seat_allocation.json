@@ -597,6 +597,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "150",
    "fieldname": "total_marks",
    "fieldtype": "Int",
    "label": "Total Marks",

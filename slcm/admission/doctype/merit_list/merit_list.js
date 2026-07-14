@@ -193,7 +193,7 @@ function open_allocation_dialog(frm) {
             {
                 fieldtype: "Select",
                 fieldname: "program_level",
-                label: __("Program Level"),
+                label: __("Programme Level"),
                 options: "Undergraduate\nPostgraduate\nResearch Course",
                 read_only: 1,
                 default: frm.doc.program_level
@@ -223,7 +223,7 @@ function open_allocation_dialog(frm) {
                                     <th>Rank</th>
                                     <th>Candidate Name</th>
                                     <th>Applicant ID</th>
-                                    <th>Program</th>
+                                    <th>Programme</th>
                                     <th>Total Score</th>
                                 </tr>
                             </thead>

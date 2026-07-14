@@ -734,9 +734,10 @@ def get_context(context):
                 if ml_rows:
                     ml = frappe.get_doc("Merit List", ml_rows[0].name, ignore_permissions=True)
                     # Store published date & total count
-                    context.merit_list_published_date = frappe.utils.format_date(
-                        ml_rows[0].get("modified"), "d MMMM yyyy"
-                    ) if ml_rows[0].get("modified") else ""
+                    _pub_date = ml.get("published_on") or ml_rows[0].get("modified")
+                    context.merit_list_published_date = frappe.utils.format_datetime(
+                        _pub_date, "d MMMM yyyy, hh:mm a"
+                    ) if _pub_date else ""
                     context.merit_total_applicants = len(ml.merit_applicants or [])
                     row = next((r for r in (ml.merit_applicants or []) if r.applicant_id == _app_name), None)
                     if row:
@@ -763,10 +764,11 @@ def get_context(context):
                         ignore_permissions=True,
                     )
                     if _ml_date_row:
-                        context.merit_list_published_date = frappe.utils.format_date(
-                            _ml_date_row[0].get("modified"), "d MMMM yyyy"
-                        ) if _ml_date_row[0].get("modified") else ""
                         _ml_doc_tmp = frappe.get_doc("Merit List", _ml_date_row[0].name, ignore_permissions=True)
+                        _pub_date = _ml_doc_tmp.get("published_on") or _ml_date_row[0].get("modified")
+                        context.merit_list_published_date = frappe.utils.format_datetime(
+                            _pub_date, "d MMMM yyyy, hh:mm a"
+                        ) if _pub_date else ""
                         context.merit_total_applicants = len(_ml_doc_tmp.merit_applicants or [])
                 except Exception:
                     pass

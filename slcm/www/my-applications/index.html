@@ -3175,7 +3175,7 @@ or _app.current_stage)) or _status %}
               <div class="stage-name-main">{{ s.display_name if s is mapping else _slabel }}</div>
               {% if s is mapping and s.status_label %}
               <div class="stage-status-sub{% if s.status_label == 'Paid' %} stage-status-paid{% endif %}" style="font-size: 8px; font-weight: 400; margin-top: 2px; opacity: 0.8;">
-                {{ s.status_label }}
+                ({{ s.status_label }})
               </div>
               {% endif %}
             </span>
@@ -3209,7 +3209,7 @@ or _app.current_stage)) or _status %}
         <div class="qs-item">
           <span class="qs-label">
             <span class="material-symbols-outlined">record_voice_over</span>
-            Interview date
+            Interview Date
           </span>
           {% if interview_status %}
           <span class="qs-value pending">{{ interview_date }}</span>
@@ -3222,7 +3222,7 @@ or _app.current_stage)) or _status %}
         <div class="qs-item">
           <span class="qs-label">
             <span class="material-symbols-outlined"></span>
-            Application fee
+            Application Fee
           </span>
           <div class="qs-fee-value-row">
             {% if fee_payment_status in ['Paid','Success','Completed','Fee Paid'] %}
@@ -3230,7 +3230,7 @@ or _app.current_stage)) or _status %}
             {% if fee_receipt_ready and app_name_param %}
             <a href="/api/method/slcm.admission.web_form.applicant_form.applicant_form.download_portal_application_fee_receipt?applicant_name={{ app_name_param | urlencode }}"
               target="_blank" rel="noopener noreferrer" class="btn-download"
-              title="Download Application Fee receipt."
+              title="Download Fee Receipt."
               style="padding:0;width:40px;height:30px;display:flex;align-items:center;justify-content:center;min-width:unset;">
               <span class="material-symbols-outlined" style="margin:0;">download</span>
             </a>
@@ -3248,7 +3248,7 @@ or _app.current_stage)) or _status %}
             <span class="material-symbols-outlined">mail</span>
             Offer Letter
           </span>
-          <span class="qs-value qs-value--offer-actions">
+          <span class="qs-value qs-value--offer-actions" title="Click Here">
               {% set _display_status = status %}
               {% if status == 'Issued' %}{% set _display_status = 'Offer Issued' %}
               {% elif status == 'Accepted' %}{% set _display_status = 'Offer Accepted' %}
@@ -3348,7 +3348,7 @@ or _app.current_stage)) or _status %}
                   </div>
                 </div>
                 <div style="text-align: right;">
-                  <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Requested On</div>
+                  <div style="font-size: 10px; font-weight: 500; color: #64748b; text-transform: none; margin-bottom: 2px;">Requested On</div>
                   <div style="font-size: 11px; font-weight: 600; color: #475569;">{{ frappe.utils.get_datetime(cancellation_details.requested_on).strftime("%d-%m-%Y %I:%M:%S %p") if cancellation_details.requested_on else "—" }}</div>
                 </div>
               </div>
@@ -3395,7 +3395,7 @@ or _app.current_stage)) or _status %}
           </div>
           <div style="display: flex; align-items: center; gap: 6px;">
                  <span class="material-symbols-outlined" style="font-size: 16px;">contact_support</span>
-                 Need help? Contact Admissions Office
+                 Need help ? Contact Admissions Office
           </div>
         </div>
       </div>
@@ -3536,7 +3536,7 @@ or _app.current_stage)) or _status %}
             {{ (et_doc.entrance_test_status or 'Scheduled')|capitalize }}
           </span>
           {% if et_show_result and et_doc.entrance_test_result_card %}
-          <a href="{{ et_doc.entrance_test_result_card }}" target="_blank" class="btn-download-premium" style="background: #166534; color: #fff; text-decoration: none;">
+          <a href="{{ et_doc.entrance_test_result_card }}" target="_blank" title="Download Card" class="btn-download-premium" style="background: #166534; color: #fff; text-decoration: none;">
             <span class="material-symbols-outlined" style="font-size:18px;">download</span>
             Result Card
           </a>
@@ -3554,21 +3554,21 @@ or _app.current_stage)) or _status %}
         {% if et_show_result %}
         <div class="result-banner">
           <div class="result-banner-head">
-            <span class="result-banner-title">Entrance test result</span>
+            <span class="result-banner-title">Entrance Test Result</span>
             <span class="result-banner-badge">Published</span>
           </div>
           <div class="result-score-grid" style="grid-template-columns: repeat(3, 1fr);">
             <div class="result-score-box">
               <div class="lbl">Part A</div>
-              <div class="val">{{ et_doc.part_a_total_marks_scored or 0 }}</div>
+              <div class="val">{{ "%.2f" | format(et_doc.part_a_total_marks_scored or 0) }}</div>
             </div>
             <div class="result-score-box">
               <div class="lbl">Part B</div>
-              <div class="val">{{ et_doc.part_b_total_marks_scored or 0 }}</div>
+              <div class="val">{{ "%.2f" | format(et_doc.part_b_total_marks_scored or 0) }}</div>
             </div>
             <div class="result-score-box">
               <div class="lbl">Cumulative Score</div>
-              <div class="val">{{ et_doc.total_marks_secured_in_part_a_b or 0 }} <small style="font-size:13px;color:var(--text-3)">/ {{ et_doc.total_marks or 0 }}</small></div>
+              <div class="val">{{ "%.2f" | format(et_doc.total_marks_secured_in_part_a_b or 0) }} <small style="font-size:13px;color:var(--text-3)">/ {{ et_doc.total_marks or 0 }}</small></div>
             </div>
             <div class="result-score-box">
               <div class="lbl">Percentage</div>
@@ -3576,7 +3576,7 @@ or _app.current_stage)) or _status %}
             </div>
             <div class="result-score-box">
               <div class="lbl">Percentile</div>
-              <div class="val">{{ et_doc.percentile or 0 }}%</div>
+              <div class="val">{{ "%.2f" | format(et_doc.percentile or 0) }}%</div>
             </div>
             <div class="result-score-box">
               <div class="lbl">Rank</div>
@@ -3847,7 +3847,7 @@ or _app.current_stage)) or _status %}
           <span class="ico" style="background: #dcfce7; color: #16a34a;"><span class="material-symbols-outlined">military_tech</span></span>
           Merit Result
         </div>
-        <span class="result-banner-badge" style="background:#dcfce7;color:#16a34a; font-weight: 700;">Published</span>
+        <span class="result-banner-badge">Published</span>
       </div>
 
       <div class="ma-card-body" style="padding: 24px;">
@@ -3859,13 +3859,13 @@ or _app.current_stage)) or _status %}
           </div>
           <div class="result-score-box" style="background: white; border: 1px solid #bbf7d0; border-radius: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); padding: 16px;">
             <div class="lbl" style="font-size: 10px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Merit Score</div>
-            <div class="val" style="font-size: 24px; font-weight: 800; color: #000000;">{{ (m.total_score | round(1)) if m.total_score else '—' }} <small style="font-size:14px;color:#000000;font-weight:500;">/ {{ eligibility_result.et_total_marks or 150 }}</small></div>
+            <div class="val" style="font-size: 24px; font-weight: 800; color: #000000;">{{ ("%.2f" | format(m.total_score)) if m.total_score else '—' }} <small style="font-size:14px;color:#000000;font-weight:500;">/ {{ eligibility_result.et_total_marks or 150 }}</small></div>
           </div>
         </div>
         {% if merit_list_published_date %}
         <div class="ms2-date" style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed #bbf7d0; display: flex; align-items: center; gap: 6px; font-size: 12px; color: #166534;">
           <span class="material-symbols-outlined" style="font-size:16px;">check_circle</span>
-          Published on <strong>{{ merit_list_published_date }}</strong>
+          Published On <strong>{{ merit_list_published_date }}</strong>
         </div>
         {% endif %}
       </div>
@@ -3885,7 +3885,7 @@ or _app.current_stage)) or _status %}
         </div>
         {% set r = all_results[0] %}
         {% if r.selection_status %}
-          <span class="result-banner-badge" style="font-weight: 700; border-radius: 20px; padding: 2px 10px; font-size: 11px; {% if r.selection_status == 'Rejected' %}background:#fee2e2;color:#991b1b;{% elif r.selection_status == 'Waitlisted' %}background:#fef9c3;color:#854d0e;{% else %}background:#dcfce7;color:#16a34a;{% endif %}">
+          <span class="result-banner-badge">
             {% if r.selection_status == 'Rejected' %}Rejected{% elif r.selection_status == 'Waitlisted' %}Waitlisted{% else %}Selected{% endif %}
           </span>
         {% endif %}
@@ -3929,7 +3929,7 @@ or _app.current_stage)) or _status %}
         <div class="ma-card-head">
           <div class="ma-card-title">
             <span class="ico"><span class="material-symbols-outlined">folder_open</span></span>
-            Document checklist
+            Document Checklist
           </div>
           {% if _docs %}
           <span style="font-size:12px;font-weight:500;color:var(--text-1)">
@@ -5331,7 +5331,7 @@ LIST / DASHBOARD VIEW
 
                     <div class="p-3 mb-4" style="background: #fff7ed; border-radius: 16px; border: 1px solid #ffedd5; display: flex; gap: 12px;">
                         <div class="text-warning-emphasis fw-600" style="line-height: 1.5; color: #9a3412; font-size: 14px;">
-                            {{ _('⚠️ Please confirm your decision. Cancelling your admission will release your seat to other candidates. This step cannot be undone once completed.') }}
+                            {{ _('⚠️ Please confirm your decision to cancel your admission. Upon cancellation, your allocated seat will be released and offered to other eligible applicants. This action is final and cannot be reversed.') }}
                         </div>
                     </div>
 
@@ -5359,7 +5359,7 @@ LIST / DASHBOARD VIEW
 
                         <div class="mb-4">
                             <label class="form-label small fw-700 text-muted mb-2" style="letter-spacing: -0.01em;">
-                                {{ _('Detailed explanation') }} <span class="text-danger">*</span>
+                                {{ _('Detailed Explanation') }} <span class="text-danger">*</span>
                             </label>
                             <textarea class="form-control border-0 bg-light" id="modal_reason" rows="3" required style="border-radius: 12px; padding: 12px 16px; font-size: 14px;" placeholder="{{ _('Tell us why you are withdrawing...') }}"></textarea>
                         </div>
