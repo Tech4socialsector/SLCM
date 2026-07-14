@@ -134,6 +134,49 @@ class SeatAllocation(Document):
             elif row.selection_status in rejection_statuses:
                 self.total_rejected += 1
 
+        self.summary_total_selected = self.total_selected
+        self.summary_total_waitlisted = self.total_waitlisted
+        self.summary_total_rejected = self.total_rejected
+
+        # Recalculate category summary counts dynamically if rows exist
+        if getattr(self, "category_summary", None):
+            db_cats_all = frappe.get_all("Admission Category", fields=["name", "reservation_type"])
+            comp_types = [c.name for c in db_cats_all if c.reservation_type == "Compartmentalised Horizontal"]
+            horiz_types = [c.name for c in db_cats_all if c.reservation_type == "Horizontal"]
+            
+            for row in self.category_summary:
+                cat = row.category
+                matching_apps = []
+                is_comp = False
+                for comp_name in comp_types:
+                    if cat.startswith(f"{comp_name} "):
+                        v_name = cat[len(comp_name)+1:]
+                        matching_apps = [
+                            x for x in self.selection_applicant
+                            if (getattr(x, "actual_category", "") == v_name or getattr(x, "vertical_category", "") == v_name)
+                            and comp_name in get_applicant_categories(x.applicant_id)
+                        ]
+                        is_comp = True
+                        break
+                
+                if not is_comp:
+                    if cat in horiz_types:
+                        matching_apps = [
+                            x for x in self.selection_applicant
+                            if cat in get_applicant_categories(x.applicant_id)
+                        ]
+                    else:
+                        matching_apps = [
+                            x for x in self.selection_applicant
+                            if getattr(x, "actual_category", "") == cat or getattr(x, "vertical_category", "") == cat
+                        ]
+                
+                row.actually_allocated = len([x for x in matching_apps if x.selection_status in selection_statuses])
+                row.allocated_seats = row.actually_allocated
+                row.actually_waitlisted = len([x for x in matching_apps if x.selection_status == "Waitlisted"])
+                row.actually_rejected = len([x for x in matching_apps if x.selection_status in rejection_statuses])
+                row.vacant_seats = max(0, (row.required or row.seats or 0) - row.actually_allocated)
+
         # Always enforce ascending sort by overall rank before saving
         if self.selection_applicant:
             from frappe.utils import flt
@@ -1042,5 +1085,53 @@ def download_allocation(name):
     prog = doc.program or "Programme"
     year = frappe.db.get_value("Admission Cycle", doc.admission_cycle, "academic_year") or "Year"
     frappe.response['filename'] = f"seat allocation report - {prog} - {year}.xlsx"
+    frappe.response['filecontent'] = output.getvalue()
+    frappe.response['type'] = 'binary'
+
+
+@frappe.whitelist()
+def download_summary(name):
+    doc = frappe.get_doc("Seat Allocation", name)
+    
+    columns = [
+        "Category", "Total Seats", "Seats", "Multiplier", 
+        "Required", "Actually Allocated", "Allocated Seats", "Vacant Seats",
+        "Waitlist Required", "Actually Waitlisted", "Actually Rejected"
+    ]
+    
+    def get_row(summary_row):
+        return [
+            summary_row.category,
+            summary_row.total_seats,
+            summary_row.seats,
+            summary_row.multiplier,
+            summary_row.required,
+            summary_row.actually_allocated,
+            summary_row.allocated_seats,
+            summary_row.vacant_seats,
+            summary_row.waitlist_required,
+            summary_row.actually_waitlisted,
+            summary_row.actually_rejected
+        ]
+
+    rows = [columns]
+    for row in doc.category_summary:
+        rows.append(get_row(row))
+
+    if len(rows) <= 1:
+        frappe.throw("No summary records found in this allocation.")
+
+    from frappe.utils.xlsxutils import make_xlsx
+    from io import BytesIO
+    import xlsxwriter
+
+    output = BytesIO()
+    workbook = xlsxwriter.Workbook(output, {"constant_memory": True})
+    make_xlsx(rows, "Allocation Summary", wb=workbook)
+    workbook.close()
+    
+    prog = doc.program or "Programme"
+    year = frappe.db.get_value("Admission Cycle", doc.admission_cycle, "academic_year") or "Year"
+    frappe.response['filename'] = f"seat allocation summary report - {prog} - {year}.xlsx"
     frappe.response['filecontent'] = output.getvalue()
     frappe.response['type'] = 'binary'

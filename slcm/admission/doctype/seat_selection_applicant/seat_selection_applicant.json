@@ -28,20 +28,24 @@
  ],
  "fields": [
   {
+   "columns": 3,
    "fetch_from": "applicant_id.candidate_name",
    "fieldname": "candidate_name",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Candidate Name",
-   "read_only": 1
+   "read_only": 1,
+   "sticky": 1
   },
   {
+   "columns": 3,
    "fieldname": "applicant_id",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Applicant ID",
    "options": "Applicant",
-   "reqd": 1
+   "reqd": 1,
+   "sticky": 1
   },
   {
    "fieldname": "program",
@@ -51,6 +55,7 @@
    "reqd": 1
   },
   {
+   "columns": 2,
    "fieldname": "total_score",
    "fieldtype": "Float",
    "in_list_view": 1,
@@ -58,6 +63,7 @@
    "precision": "2"
   },
   {
+   "columns": 2,
    "fieldname": "selection_status",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -65,6 +71,7 @@
    "options": "Draft\nSelected\nWaitlisted\nOffer Issued\nOffer Accepted\nAccepted\nWithdrawn\nRejected\nOffer Declined\nOffer Expired\nFee Paid"
   },
   {
+   "columns": 2,
    "fieldname": "allocation_type",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -72,6 +79,7 @@
    "options": "Open\nReserved\nNot Allocated"
   },
   {
+   "columns": 2,
    "fieldname": "overall_rank",
    "fieldtype": "Int",
    "in_list_view": 1,
@@ -80,13 +88,14 @@
   {
    "fieldname": "actual_category",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "label": "Candidate Category",
    "read_only": 1
   },
   {
+   "columns": 4,
    "fieldname": "allocated_category",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Allocated Category"
   },
   {
@@ -140,7 +149,6 @@
   {
    "fieldname": "remarks",
    "fieldtype": "Small Text",
-   "in_list_view": 1,
    "label": "Remarks",
    "read_only": 1
   }

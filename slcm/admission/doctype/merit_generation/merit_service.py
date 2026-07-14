@@ -1057,6 +1057,22 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
             doc.set("category_summary", [])
             summary_table = "category_summary"
             
+            db_cats_all = frappe.get_all("Admission Category", fields=["name", "reservation_type"])
+            comp_types = [c.name for c in db_cats_all if c.reservation_type == "Compartmentalised Horizontal"]
+            horiz_types = [c.name for c in db_cats_all if c.reservation_type == "Horizontal"]
+            rejection_statuses = ["Rejected", "Offer Declined", "Offer Expired", "Withdrawn"]
+
+            def get_rejected_count(cat):
+                is_comp = False
+                for comp_name in comp_types:
+                    if cat.startswith(f"{comp_name} "):
+                        v_name = cat[len(comp_name)+1:]
+                        return len([x for x in applicants_list if getattr(x, status_field, "") in rejection_statuses and (getattr(x, "actual_category", "") == v_name or getattr(x, "vertical_category", "") == v_name) and _has_trait(x.applicant_id, comp_name, is_shortlist_allocation)])
+                if cat in horiz_types:
+                    return len([x for x in applicants_list if getattr(x, status_field, "") in rejection_statuses and _has_trait(x.applicant_id, cat, is_shortlist_allocation)])
+                else:
+                    return len([x for x in applicants_list if getattr(x, status_field, "") in rejection_statuses and (getattr(x, "actual_category", "") == cat or getattr(x, "vertical_category", "") == cat)])
+
             def append_sum(cat, orig, req, filled, w_filled=0, w_req=0):
                 row = {
                     "category": cat,
@@ -1075,6 +1091,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                     row["vacant_seats"] = max(0, req - filled)
                     row["waitlist_required"] = w_req
                     row["actually_waitlisted"] = w_filled
+                    row["actually_rejected"] = get_rejected_count(cat)
                 doc.append(summary_table, row)
 
             # 1. Main Vertical Categories
