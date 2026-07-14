@@ -12,7 +12,7 @@
  "is_public": 1,
  "is_standard": 1,
  "label": "Merit List",
- "modified": "2026-02-27 17:34:23.270061",
+ "modified": "2026-07-14 10:58:31.785115",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit List",
@@ -20,7 +20,7 @@
  "parent_document_type": "",
  "report_function": "Sum",
  "show_full_number": 0,
- "show_percentage_stats": 1,
+ "show_percentage_stats": 0,
  "stats_time_interval": "Daily",
  "type": "Document Type"
 }
