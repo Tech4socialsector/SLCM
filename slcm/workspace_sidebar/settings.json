@@ -15,6 +15,7 @@
    "label": "Dashboard",
    "link_to": "Admission",
    "link_type": "Dashboard",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -28,6 +29,7 @@
    "link_to": "Institution Settings",
    "link_type": "DocType",
    "navigate_to_tab": "",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -40,6 +42,7 @@
    "label": "Campus",
    "link_to": "Campus",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -51,6 +54,7 @@
    "keep_closed": 1,
    "label": "Admission Settings",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Section Break"
   },
@@ -63,6 +67,7 @@
    "label": "Admission Year",
    "link_to": "Admission Year",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -75,6 +80,7 @@
    "label": "Academic Year",
    "link_to": "Academic Year",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -87,6 +93,7 @@
    "label": "Programme",
    "link_to": "Programme",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -99,6 +106,7 @@
    "label": "Reservation Policy",
    "link_to": "Programme Reservation Policy",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -111,6 +119,7 @@
    "label": "Admission Cycle",
    "link_to": "Admission Cycle",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -123,6 +132,7 @@
    "label": "Applicant Portal Settings",
    "link_to": "Applicant Portal Config",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -135,6 +145,7 @@
    "label": "Portal Announcement",
    "link_to": "Portal Announcement",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -147,6 +158,7 @@
    "label": "Portal Important Dates",
    "link_to": "Important Dates",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -158,6 +170,7 @@
    "keep_closed": 1,
    "label": "Report & Logs",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Section Break"
   },
@@ -169,6 +182,7 @@
    "label": "Merit Report",
    "link_to": "Overall Merit Report",
    "link_type": "Report",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -180,6 +194,7 @@
    "label": "Seat Availability Report",
    "link_to": "Seat Availability Report",
    "link_type": "Report",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -191,6 +206,7 @@
    "label": "Scholarship Utilization Report",
    "link_to": "Scholarship Utilization Report",
    "link_type": "Report",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -202,6 +218,7 @@
    "label": "Application Trends",
    "link_to": "Application Trends",
    "link_type": "Report",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -213,6 +230,7 @@
    "label": "Applicant Fee Payments",
    "link_to": "Applicant Fee Payment Status",
    "link_type": "Report",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -224,6 +242,7 @@
    "label": "Student Selection Report",
    "link_to": "Student Selection Report",
    "link_type": "Report",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -235,6 +254,7 @@
    "label": "Admission Log",
    "link_to": "Admission Audit Log",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   },
@@ -247,11 +267,12 @@
    "label": "Admission Cycle Log",
    "link_to": "Admission Cycle Audit Log",
    "link_type": "DocType",
+   "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
   }
  ],
- "modified": "2026-06-10 16:24:29.127341",
+ "modified": "2026-07-13 15:49:14.988402",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Settings",
