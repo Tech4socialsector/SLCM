@@ -11,9 +11,8 @@ frappe.ui.form.on('Time Table', {
         if (!frm.is_new()) {
             frm.add_custom_button(__('Mark Attendance'), function () {
                 frappe.route_options = {
-                    'based_on': 'Time Table',
+                    'based_on': frm.doc.based_on || 'Time Table',
                     'class_schedule': frm.doc.name,
-                    'student_group': frm.doc.student_group,
                     'date': frm.doc.schedule_date
                 };
                 frappe.set_route('Form', 'Student Attendance Tool');

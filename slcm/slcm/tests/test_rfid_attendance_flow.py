@@ -81,13 +81,7 @@ def _make_class_schedule(offering, session_date, from_time, to_time):
     from frappe.utils import time_diff_in_hours
     duration = time_diff_in_hours(to_time, from_time)
 
-    # Get course and student_group from offering
     course = frappe.db.get_value("Course Offering", offering, "course_title")
-    sg = frappe.db.get_value(
-        "Student Group",
-        {"course": course, "docstatus": ["<", 2]},
-        "name",
-    )
 
     doc = frappe.get_doc({
         "doctype":       "Time Table",
@@ -97,7 +91,6 @@ def _make_class_schedule(offering, session_date, from_time, to_time):
         "from_time":     from_time,
         "to_time":       to_time,
         "duration_hours": duration,
-        "student_group": sg,
         "status":        "Scheduled",
     })
     doc.insert(ignore_permissions=True)

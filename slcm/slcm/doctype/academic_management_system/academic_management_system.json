@@ -6,8 +6,6 @@
  "field_order": [
   "term_tab",
   "term_ui_container",
-  "class_tab",
-  "class_ui_container",
   "schedule_tab",
   "schedule_ui_container"
  ],
@@ -21,16 +19,6 @@
    "fieldname": "term_ui_container",
    "fieldtype": "HTML",
    "label": "Term UI Container"
-  },
-  {
-   "fieldname": "class_tab",
-   "fieldtype": "Tab Break",
-   "label": "Class"
-  },
-  {
-   "fieldname": "class_ui_container",
-   "fieldtype": "HTML",
-   "label": "Class UI Container"
   },
   {
    "fieldname": "schedule_tab",

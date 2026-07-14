@@ -13,7 +13,6 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "field_order": [
-  "student_group",
   "course",
   "program",
   "column_break_3",
@@ -35,13 +34,6 @@
   "reschedule"
  ],
  "fields": [
-  {
-   "fieldname": "student_group",
-   "label": "Student Group",
-   "fieldtype": "Link",
-   "options": "Student Group",
-   "reqd": 1
-  },
   {
    "fieldname": "course",
    "label": "Course",

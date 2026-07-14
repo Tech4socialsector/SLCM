@@ -9,6 +9,7 @@
   "naming_series",
   "student",
   "student_name",
+  "course_offering",
   "course",
   "course_name",
   "examination_date",
@@ -50,12 +51,21 @@
    "read_only": 1
   },
   {
+   "fieldname": "course_offering",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Course Offering",
+   "options": "Course Offering",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "course_offering.course_title",
    "fieldname": "course",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Course",
    "options": "Course",
-   "reqd": 1
+   "read_only": 1
   },
   {
    "fetch_from": "course.course_name",
@@ -165,6 +175,8 @@
  "owner": "Administrator",
  "permissions": [
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -175,8 +187,6 @@
    "role": "System Manager",
    "share": 1,
    "submit": 1,
-   "cancel": 1,
-   "amend": 1,
    "write": 1
   },
   {
@@ -186,10 +196,10 @@
    "write": 1
   },
   {
+   "cancel": 1,
    "read": 1,
    "role": "slcm_Programme Chair",
    "submit": 1,
-   "cancel": 1,
    "write": 1
   },
   {

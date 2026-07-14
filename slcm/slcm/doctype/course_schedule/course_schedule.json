@@ -7,13 +7,13 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "student_group",
+  "course_offering",
+  "course",
   "instructor",
   "instructor_name",
   "column_break_oqmp",
   "naming_series",
   "program",
-  "course",
   "color",
   "class_schedule_color",
   "section_break_lydr",
@@ -26,25 +26,26 @@
  ],
  "fields": [
   {
-   "fieldname": "student_group",
+   "fieldname": "course_offering",
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Student Group",
-   "options": "Student Group"
+   "label": "Course Offering",
+   "options": "Course Offering",
+   "reqd": 1
   },
   {
    "fieldname": "instructor",
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Instructor",
+   "label": "Faculty",
    "options": "Faculty"
   },
   {
    "fieldname": "instructor_name",
    "fieldtype": "Read Only",
-   "label": "Instructor Name"
+   "label": "Faculty Name"
   },
   {
    "fieldname": "column_break_oqmp",
@@ -63,12 +64,14 @@
    "options": "Programme"
   },
   {
+   "fetch_from": "course_offering.course_title",
    "fieldname": "course",
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Course",
-   "options": "Course"
+   "options": "Course",
+   "read_only": 1
   },
   {
    "fieldname": "color",
@@ -121,7 +124,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-01 16:06:55.712566",
+ "modified": "2026-07-14 14:27:17.091123",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Course Schedule",
@@ -160,6 +163,5 @@
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": [],
- "custom": 0
+ "states": []
 }

@@ -82,11 +82,11 @@ class StudentAttendanceTool {
 				.join("")
 				.toUpperCase()
 				.slice(0, 2);
-			let group_count = (ctx.assigned_groups || []).length;
+			let offering_count = (ctx.assigned_offerings || []).length;
 			let group_label =
-				group_count === 1
-					? "1 Student Group assigned"
-					: `${group_count} Student Groups assigned`;
+				offering_count === 1
+					? "1 Course Offering assigned"
+					: `${offering_count} Course Offerings assigned`;
 
 			html = `
 				<div class="faculty-banner">
@@ -108,7 +108,7 @@ class StudentAttendanceTool {
 					</div>
 					<div class="faculty-info">
 						<div class="faculty-name" style="color: #856404;">Admin / Programme Chair View</div>
-						<div class="faculty-sub" style="color: #555;">All student groups are visible</div>
+						<div class="faculty-sub" style="color: #555;">All course offerings are visible</div>
 					</div>
 					<span class="faculty-badge" style="background: #ffc107; color: #333;">Admin</span>
 				</div>
@@ -138,46 +138,14 @@ class StudentAttendanceTool {
 							<label>Based On <span class="text-danger">*</span></label>
 							<select class="form-control" id="based_on" required>
 								<option value="">Select...</option>
-								<option value="Student Group">Student Group</option>
 								<option value="Course Schedule">Course Schedule</option>
 							</select>
 						</div>
 					</div>
-					<div class="col-md-3" id="group_based_on_container" style="display: none;">
-						<div class="form-group">
-							<label>Group Based On</label>
-							<select class="form-control" id="group_based_on">
-								<option value="">Select...</option>
-								<option value="Batch">Batch</option>
-								<option value="Course">Course</option>
-								<option value="Activity">Activity</option>
-							</select>
-						</div>
-					</div>
-					<div class="col-md-3" id="student_group_container">
-						<div class="form-group">
-							<label>Student Group <span class="text-danger">*</span></label>
-							<div id="student_group_field"></div>
-						</div>
-					</div>
-					<div class="col-md-3" id="course_schedule_container" style="display: none;">
+					<div class="col-md-3" id="course_schedule_container">
 						<div class="form-group">
 							<label>Course Schedule <span class="text-danger">*</span></label>
 							<div id="course_schedule_field"></div>
-						</div>
-					</div>
-				</div>
-				<div class="row" id="course_offering_row" style="display: none; margin-top: 15px;">
-					<div class="col-md-4">
-						<div class="form-group">
-							<label>Course Offering <span class="text-danger">*</span></label>
-							<div id="course_offering_field"></div>
-						</div>
-					</div>
-					<div class="col-md-8" style="padding-top: 28px;">
-						<div class="alert alert-warning" style="margin-bottom: 0; padding: 6px 12px;">
-							<i class="fa fa-info-circle"></i>
-							Batch groups have no course — select the Course Offering so attendance counts in the Attendance Summary.
 						</div>
 					</div>
 				</div>
@@ -216,50 +184,16 @@ class StudentAttendanceTool {
 
 		$("#attendance_date").val(frappe.datetime.get_today());
 
-		// --- Student Group link field ---
-		// Build get_query: faculty sees only their assigned groups
-		let sg_get_query = () => {
-			let group_based_on = $("#group_based_on").val();
-			let filters = { disabled: 0 };
-			if (group_based_on) filters["group_based_on"] = group_based_on;
-
-			// Faculty restriction: limit to their assigned groups
-			if (ctx.is_faculty && ctx.assigned_groups && ctx.assigned_groups.length > 0) {
-				let names = ctx.assigned_groups.map((g) => g.name);
-				filters["name"] = ["in", names];
-			} else if (ctx.is_faculty && (!ctx.assigned_groups || ctx.assigned_groups.length === 0)) {
-				// Faculty with no groups assigned — show nothing
-				filters["name"] = ["=", "__no_groups__"];
-			}
-
-			return { filters };
-		};
-
-		this.student_group_field = frappe.ui.form.make_control({
-			parent: $("#student_group_field"),
-			df: {
-				fieldtype: "Link",
-				fieldname: "student_group",
-				options: "Student Group",
-				placeholder: "Select Student Group",
-				get_query: sg_get_query,
-				change: () => {
-					me.load_student_group_details();
-				},
-			},
-		});
-		this.student_group_field.refresh();
-
 		// --- Course Schedule link field ---
-		// Faculty can only pick schedules belonging to their assigned groups
+		// Faculty can only pick schedules belonging to their assigned course offerings
 		let cs_get_query = () => {
-			if (ctx.is_faculty && ctx.assigned_groups && ctx.assigned_groups.length > 0) {
-				let group_names = ctx.assigned_groups.map((g) => g.name);
+			if (ctx.is_faculty && ctx.assigned_offerings && ctx.assigned_offerings.length > 0) {
+				let offering_names = ctx.assigned_offerings.map((o) => o.name);
 				return {
-					filters: { student_group: ["in", group_names] },
+					filters: { course_offering: ["in", offering_names] },
 				};
-			} else if (ctx.is_faculty && (!ctx.assigned_groups || ctx.assigned_groups.length === 0)) {
-				return { filters: { name: ["=", "__no_groups__"] } };
+			} else if (ctx.is_faculty && (!ctx.assigned_offerings || ctx.assigned_offerings.length === 0)) {
+				return { filters: { name: ["=", "__no_offerings__"] } };
 			}
 			return {};
 		};
@@ -314,61 +248,12 @@ class StudentAttendanceTool {
 
 		// --- Event handlers ---
 		$("#based_on").on("change", function () {
-			let based_on = $(this).val();
-			if (based_on === "Student Group") {
-				$("#group_based_on_container").show();
-				$("#student_group_container").show();
-				$("#course_schedule_container").hide();
-				$("#course_offering_row").hide();
-				me.course_offering_field.set_value("");
-			} else if (based_on === "Course Schedule") {
-				$("#group_based_on_container").hide();
-				$("#student_group_container").hide();
-				$("#course_schedule_container").show();
-				$("#course_offering_row").hide();
-				me.course_offering_field.set_value("");
-			} else {
-				$("#group_based_on_container").hide();
-				$("#student_group_container").hide();
-				$("#course_schedule_container").hide();
-				$("#course_offering_row").hide();
-				me.course_offering_field.set_value("");
-			}
-			me.clear_students();
-		});
-
-		$("#group_based_on").on("change", function () {
-			if ($(this).val() === "Batch") {
-				$("#course_offering_row").show();
-			} else {
-				$("#course_offering_row").hide();
-				me.course_offering_field.set_value("");
-			}
-			// Re-trigger student_group field query with new group_based_on filter
-			me.student_group_field.set_value("");
+			me.course_offering_field.set_value("");
 			me.clear_students();
 		});
 
 		$("#get_students_btn").on("click", function () {
 			me.get_students();
-		});
-	}
-
-	load_student_group_details() {
-		let student_group = this.student_group_field.get_value();
-		if (!student_group) {
-			this.academic_year_field.set_value("");
-			this.academic_term_field.set_value("");
-			this.course_offering_field.set_value("");
-			return;
-		}
-
-		frappe.db.get_doc("Student Group", student_group).then((doc) => {
-			if (doc.academic_year) this.academic_year_field.set_value(doc.academic_year);
-			if (doc.academic_term) this.academic_term_field.set_value(doc.academic_term);
-			if (doc.group_based_on) {
-				$("#group_based_on").val(doc.group_based_on).trigger("change");
-			}
 		});
 	}
 
@@ -381,13 +266,12 @@ class StudentAttendanceTool {
 		}
 
 		frappe.db.get_doc("Course Schedule", course_schedule).then((doc) => {
-			if (doc.student_group) {
-				frappe.db.get_doc("Student Group", doc.student_group).then((group_doc) => {
-					if (group_doc.academic_year)
-						this.academic_year_field.set_value(group_doc.academic_year);
-					if (group_doc.academic_term)
-						this.academic_term_field.set_value(group_doc.academic_term);
-				});
+			if (doc.course_offering) {
+				frappe.db.get_value("Course Offering", doc.course_offering,
+					["academic_year", "term_name"], (r) => {
+						if (r && r.academic_year) this.academic_year_field.set_value(r.academic_year);
+						if (r && r.term_name) this.academic_term_field.set_value(r.term_name);
+					});
 			}
 		});
 	}
@@ -482,18 +366,7 @@ class StudentAttendanceTool {
 			return;
 		}
 
-		if (based_on === "Student Group") {
-			let student_group = this.student_group_field.get_value();
-			if (!student_group) {
-				frappe.msgprint(__("Please select Student Group"));
-				return;
-			}
-			if ($("#group_based_on").val() === "Batch" && !this.course_offering_field.get_value()) {
-				frappe.msgprint(__("Please select a Course Offering for Batch attendance"));
-				return;
-			}
-			this.get_students_from_group(student_group, attendance_date);
-		} else if (based_on === "Course Schedule") {
+		if (based_on === "Course Schedule") {
 			let course_schedule = this.course_schedule_field.get_value();
 			if (!course_schedule) {
 				frappe.msgprint(__("Please select Course Schedule"));
@@ -501,20 +374,6 @@ class StudentAttendanceTool {
 			}
 			this.get_students_from_schedule(course_schedule, attendance_date);
 		}
-	}
-
-	get_students_from_group(student_group, attendance_date) {
-		let me = this;
-		frappe.call({
-			method: "slcm.api.bulk_attendance.get_students_from_group",
-			args: { student_group, attendance_date },
-			callback(r) {
-				if (r.message) {
-					me.students = r.message;
-					me.render_student_list();
-				}
-			},
-		});
 	}
 
 	get_students_from_schedule(course_schedule, attendance_date) {
@@ -638,12 +497,6 @@ class StudentAttendanceTool {
 			frappe.msgprint(__("No students to mark attendance for"));
 			return;
 		}
-		if (based_on === "Student Group" && $("#group_based_on").val() === "Batch") {
-			if (!this.course_offering_field.get_value()) {
-				frappe.msgprint(__("Please select a Course Offering for Batch attendance"));
-				return;
-			}
-		}
 
 		let attendance_data = {};
 		let present_count = 0;
@@ -673,16 +526,7 @@ class StudentAttendanceTool {
 					'<span class="text-info"><i class="fa fa-spinner fa-spin"></i> Processing...</span>'
 				);
 
-				if (based_on === "Student Group") {
-					let student_group = me.student_group_field.get_value();
-					let course_offering = me.course_offering_field.get_value() || null;
-					me.create_bulk_attendance_from_group(
-						student_group,
-						attendance_date,
-						attendance_data,
-						course_offering
-					);
-				} else if (based_on === "Course Schedule") {
+				if (based_on === "Course Schedule") {
 					let course_schedule = me.course_schedule_field.get_value();
 					me.create_bulk_attendance_from_schedule(
 						course_schedule,
@@ -693,37 +537,6 @@ class StudentAttendanceTool {
 			},
 			function () {}
 		);
-	}
-
-	create_bulk_attendance_from_group(student_group, attendance_date, attendance_data, course_offering) {
-		frappe.call({
-			method: "slcm.api.bulk_attendance.create_bulk_attendance_from_group",
-			args: {
-				student_group,
-				attendance_date,
-				attendance_data,
-				course_offering: course_offering || null,
-				instructor: (this.faculty_context || {}).faculty_name || null,
-			},
-			freeze: true,
-			freeze_message: __("Marking attendance for all students..."),
-			callback(r) {
-				if (r.message) {
-					let msg = r.message.message || "Attendance marked successfully";
-					let details = "";
-					if (r.message.total_processed) {
-						details = `<br><strong>Total Processed:</strong> ${r.message.total_processed} students`;
-						if (r.message.created > 0) details += ` | <strong>Created:</strong> ${r.message.created}`;
-						if (r.message.updated > 0) details += ` | <strong>Updated:</strong> ${r.message.updated}`;
-					}
-					frappe.show_alert({ message: msg + details, indicator: "green" }, 8);
-					$("#attendance_status").html(
-						`<span class="text-success"><i class="fa fa-check-circle"></i> ${msg}</span>`
-					);
-					setTimeout(() => $("#attendance_status").html(""), 8000);
-				}
-			},
-		});
 	}
 
 	create_bulk_attendance_from_schedule(course_schedule, attendance_date, attendance_data) {

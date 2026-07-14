@@ -165,7 +165,7 @@ def _get_or_create_sessions(student, date):
         filters={"session_date": date, "session_status": ["!=", "Cancelled"], "docstatus": ["<", 2]},
         fields=["name", "session_date", "session_start_time", "session_end_time",
                 "course_schedule", "class_schedule", "course_offering",
-                "session_type", "duration_hours", "student_group"],
+                "session_type", "duration_hours"],
     )
 
     for s in existing:
@@ -182,7 +182,7 @@ def _get_or_create_sessions(student, date):
             "docstatus": ["<", 2],
         },
         fields=["name", "course", "course_offering", "from_time", "to_time",
-                "duration_hours", "instructor", "venue", "student_group"],
+                "duration_hours", "instructor", "venue"],
     )
 
     existing_from_schedule = {s.get("class_schedule") for s in existing if s.get("class_schedule")}
@@ -234,7 +234,6 @@ def _auto_create_session_from_schedule(cs, date):
             "based_on":          "Time Table",
             "class_schedule":    cs.name,
             "course_offering":   cs.course_offering,
-            "student_group":     cs.get("student_group"),
             "session_date":      date,
             "session_type":      "Lecture",
             "session_start_time": cs.get("from_time"),
@@ -256,7 +255,6 @@ def _auto_create_session_from_schedule(cs, date):
             "course_offering":    cs.course_offering,
             "session_type":       "Lecture",
             "duration_hours":     duration,
-            "student_group":      cs.get("student_group"),
         })
 
     except Exception:
@@ -277,17 +275,7 @@ def _is_student_in_session(student, session):
     if frappe.db.exists("Student Attendance", {"student": student, "attendance_session": session.get("name")}):
         return True
 
-    # Check via Student Group
-    sg = session.get("student_group")
-    if not sg and session.get("class_schedule"):
-        sg = frappe.db.get_value("Time Table", session.get("class_schedule"), "student_group")
-    if not sg and session.get("course_schedule"):
-        sg = frappe.db.get_value("Course Schedule", session.get("course_schedule"), "student_group")
-
-    if sg and frappe.db.exists("Student Group Student", {"parent": sg, "student": student}):
-        return True
-
-    # Fallback: Cohort enrollment
+    # Cohort enrollment
     return _is_student_in_course_offering(student, session.get("course_offering"))
 
 
@@ -401,7 +389,6 @@ def _upsert_class_attendance(student, session, status, logs):
             "attendance_log":     first_log.get("name"),
             "session_type":       session.get("session_type") or "Lecture",
             "hours_counted":      hours,
-            "student_group":      session.get("student_group"),
         })
         doc.insert(ignore_permissions=True)
 

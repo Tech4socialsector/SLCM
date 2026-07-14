@@ -696,18 +696,15 @@ function _openSessionPickerModal(bodyHtml, count) {
 /* Called when user picks a session from the picker */
 /* ══════════════════════════════════════════════════════════
    STUDENT ATTENDANCE TOOL — form-based, mirrors desk tool
-   Uses bulk_attendance API: get_students_from_group +
-   create_bulk_attendance_from_group
+   Uses bulk_attendance API: get_students_from_schedule,
+   get_students_from_class_schedule, get_students_from_office_hours
 ══════════════════════════════════════════════════════════ */
 var _sat = {
-  studentGroup    : '',
   courseSchedule  : '',
   classSchedule   : '',
   officeHoursGroup: '',
   date            : '',
-  groupMeta       : {},
   students        : [],
-  assignedGroups  : [],
 };
 
 /* ── Open the SAT modal (fresh form state) ── */
@@ -715,7 +712,6 @@ function fpOpenMarkModal(sessionName, courseName) {
   /* Always open the form — session-based quick-open no longer used */
   _satResetForm();
   _openModal('att-mark-modal');
-  _satLoadGroups();
 }
 
 /* Called from session picker card click (legacy path kept for compatibility) */
@@ -724,25 +720,18 @@ function fpOpenMarkModalDirect(sessionName, course, date, time, venue, total) {
 }
 
 function _satResetForm() {
-  _sat.studentGroup     = '';
   _sat.courseSchedule   = '';
   _sat.classSchedule    = '';
   _sat.officeHoursGroup = '';
   _sat.date             = '';
-  _sat.groupMeta        = {};
   _sat.students         = [];
 
   /* Reset selects */
   var bo = document.getElementById('sat-based-on');
-  if (bo) bo.value = 'Student Group';
-  var gbo = document.getElementById('sat-group-based-on-sel');
-  if (gbo) gbo.value = '';
+  if (bo) bo.value = 'Course Schedule';
   var dt = document.getElementById('sat-date');
   if (dt) dt.value = _todayIso();
 
-  _satSetReadOnly('sat-academic-year', '—');
-  _satSetReadOnly('sat-academic-term', '—');
-  _satSetReadOnly('sat-course-field',  '—');
   var cn = document.getElementById('sat-course-name');
   if (cn) cn.textContent = 'Not Saved';
 
@@ -758,7 +747,7 @@ function _satResetForm() {
   el = document.getElementById('sat-error');      if (el) el.style.display = 'none';
   _satUpdateCounters(0, 0, 0);
 
-  /* Rebuild right column for Student Group mode */
+  /* Rebuild right column for the current Based On mode */
   satBasedOnChange();
 }
 
@@ -771,49 +760,22 @@ function _satSetReadOnly(id, val) {
   if (el) el.textContent = val || '—';
 }
 
-/* _satLoadGroups kept for compatibility — delegates to _satPopulateGroups */
-function _satLoadGroups() { _satPopulateGroups(); }
-
 /* ── Field event handlers ── */
 
 /* Called when Based On changes — rewrites the right column & shows/hides rows */
 function satBasedOnChange() {
-  var val = (document.getElementById('sat-based-on') || {}).value || 'Student Group';
+  var val = (document.getElementById('sat-based-on') || {}).value || 'Course Schedule';
   var rc  = document.getElementById('sat-right-col');
-  var gboWrap   = document.getElementById('sat-gbo-wrap');
-  var ayWrap    = document.getElementById('sat-ay-wrap');
-  var atWrap    = document.getElementById('sat-at-wrap');
-  var courseWrap= document.getElementById('sat-course-wrap');
 
   /* Clear all derived fields */
-  _sat.studentGroup = '';
   _sat.courseSchedule = '';
   _sat.classSchedule = '';
   _sat.officeHoursGroup = '';
-  _satSetReadOnly('sat-academic-year', '—');
-  _satSetReadOnly('sat-academic-term', '—');
-  _satSetReadOnly('sat-course-field',  '—');
-
-  /* Show/hide rows depending on mode */
-  var showGroup = (val === 'Student Group');
-  if (gboWrap)    gboWrap.style.display    = showGroup ? '' : 'none';
-  if (ayWrap)     ayWrap.style.display     = showGroup ? '' : 'none';
-  if (atWrap)     atWrap.style.display     = showGroup ? '' : 'none';
-  if (courseWrap) courseWrap.style.display = showGroup ? '' : 'none';
 
   /* Rebuild the right column content */
   if (!rc) return;
 
-  if (val === 'Student Group') {
-    rc.innerHTML = '<label class="fp-label">Student Group <span style="color:var(--fp-danger);">*</span></label>'
-      + '<select id="sat-student-group" onchange="satGroupChange()"'
-      + ' style="width:100%;padding:9px 12px;border:1.5px solid var(--fp-border);border-radius:var(--fp-radius-sm);font-size:13px;font-family:inherit;color:var(--fp-text-1);background:var(--fp-card);outline:none;cursor:pointer;"'
-      + ' onfocus="this.style.borderColor=\'var(--fp-primary)\'" onblur="this.style.borderColor=\'var(--fp-border)\'">'
-      + '<option value="">Loading…</option></select>';
-    /* Re-populate groups (may already be cached) */
-    _satPopulateGroups();
-
-  } else if (val === 'Course Schedule') {
+  if (val === 'Course Schedule') {
     rc.innerHTML = '<label class="fp-label">Course Schedule <span style="color:var(--fp-danger);">*</span></label>'
       + _satTextInput('sat-course-schedule', 'Enter Course Schedule…');
 
@@ -825,10 +787,6 @@ function satBasedOnChange() {
     rc.innerHTML = '<label class="fp-label">Office Hours Group <span style="color:var(--fp-danger);">*</span></label>'
       + _satTextInput('sat-office-hours-group', 'Enter Office Hours Group…');
   }
-
-  /* Reset group-based-on filter when switching mode */
-  var gbos = document.getElementById('sat-group-based-on-sel');
-  if (gbos) gbos.value = '';
 }
 
 function _satTextInput(id, placeholder) {
@@ -836,101 +794,6 @@ function _satTextInput(id, placeholder) {
     + ' style="width:100%;padding:9px 12px;border:1.5px solid var(--fp-border);border-radius:var(--fp-radius-sm);font-size:13px;font-family:inherit;color:var(--fp-text-1);background:var(--fp-card);outline:none;"'
     + ' onfocus="this.style.borderColor=\'var(--fp-primary)\';this.style.boxShadow=\'0 0 0 3px var(--fp-primary-light)\';"'
     + ' onblur="this.style.borderColor=\'var(--fp-border)\';this.style.boxShadow=\'\';">';
-}
-
-/* Called when Group Based On filter changes — re-filter the student group list */
-function satGroupBasedOnChange() {
-  _satPopulateGroups();
-}
-
-/* Populate or re-filter the student group dropdown */
-function _satPopulateGroups() {
-  var sel = document.getElementById('sat-student-group');
-  if (!sel) return;
-  var gboFilter = (document.getElementById('sat-group-based-on-sel') || {}).value || '';
-
-  if (!_sat.assignedGroups.length) {
-    sel.innerHTML = '<option value="">Loading…</option>';
-    sel.disabled  = true;
-    fpCall('slcm.api.bulk_attendance.get_faculty_context', {},
-      function(data) {
-        _sat.assignedGroups = (data && data.assigned_groups) ? data.assigned_groups : [];
-        sel.disabled = false;
-        _satFillGroupSelect(sel, gboFilter);
-      },
-      function(msg) {
-        sel.innerHTML = '<option value="">— Could not load groups —</option>';
-        sel.disabled  = false;
-        _showError('sat-form-error', 'Could not load student groups: ' + (msg || 'Unknown error'));
-      }
-    );
-  } else {
-    _satFillGroupSelect(sel, gboFilter);
-  }
-}
-
-function _satFillGroupSelect(sel, gboFilter) {
-  var groups = _sat.assignedGroups;
-  if (gboFilter) {
-    groups = groups.filter(function(g) { return g.group_based_on === gboFilter; });
-  }
-  sel.innerHTML = '<option value="">— Select Student Group —</option>';
-  groups.forEach(function(g) {
-    var opt = document.createElement('option');
-    opt.value = g.name;
-    var parts = [g.name];
-    var meta = [];
-    if (g.academic_year) meta.push(g.academic_year);
-    if (g.academic_term) meta.push(g.academic_term);
-    if (g.group_based_on) meta.push(g.group_based_on);
-    if (meta.length) parts.push('(' + meta.join(' · ') + ')');
-    opt.textContent = parts.join('  ');
-    sel.appendChild(opt);
-  });
-  /* Auto-select if only one */
-  if (groups.length === 1) { sel.value = groups[0].name; satGroupChange(); }
-}
-
-function satGroupChange() {
-  var sel = document.getElementById('sat-student-group');
-  _sat.studentGroup = sel ? sel.value : '';
-  if (!_sat.studentGroup) {
-    _satSetReadOnly('sat-academic-year', '—');
-    _satSetReadOnly('sat-academic-term', '—');
-    _satSetReadOnly('sat-course-field',  '—');
-    return;
-  }
-  /* Show spinner in read-only fields */
-  _satSetReadOnly('sat-academic-year', '…');
-  _satSetReadOnly('sat-academic-term', '…');
-  _satSetReadOnly('sat-course-field',  '…');
-
-  fpCall('slcm.api.bulk_attendance.get_student_group_details', { student_group: _sat.studentGroup },
-    function(doc) {
-      _sat.groupMeta = doc || {};
-      /* Group Based On — update the select to reflect what the group uses */
-      var gbos = document.getElementById('sat-group-based-on-sel');
-      if (gbos && doc.group_based_on) gbos.value = doc.group_based_on;
-
-      _satSetReadOnly('sat-academic-year', doc.academic_year  || '—');
-      _satSetReadOnly('sat-academic-term', doc.academic_term  || '—');
-      /* Show Course or Batch depending on group type */
-      var courseLbl = document.getElementById('sat-course-lbl');
-      if (doc.group_based_on === 'Batch') {
-        if (courseLbl) courseLbl.textContent = 'Batch';
-        _satSetReadOnly('sat-course-field', doc.batch || '—');
-      } else {
-        if (courseLbl) courseLbl.textContent = 'Course';
-        _satSetReadOnly('sat-course-field', doc.course || '—');
-      }
-      document.getElementById('sat-course-name').textContent = _sat.studentGroup;
-    },
-    function() {
-      _satSetReadOnly('sat-academic-year', '—');
-      _satSetReadOnly('sat-academic-term', '—');
-      _satSetReadOnly('sat-course-field',  '—');
-    }
-  );
 }
 
 function satDateChange() {
@@ -948,7 +811,7 @@ function satDateChange() {
 
 /* ── Get Students button — handles all 4 Based On modes ── */
 function satGetStudents() {
-  var basedOn = (document.getElementById('sat-based-on') || {}).value || 'Student Group';
+  var basedOn = (document.getElementById('sat-based-on') || {}).value || 'Course Schedule';
   _sat.date   = (document.getElementById('sat-date') || {}).value || _todayIso();
   var fe = document.getElementById('sat-form-error');
   if (fe) fe.style.display = 'none';
@@ -958,14 +821,7 @@ function satGetStudents() {
 
   var apiMethod, apiArgs, labelText;
 
-  if (basedOn === 'Student Group') {
-    _sat.studentGroup = (document.getElementById('sat-student-group') || {}).value || '';
-    if (!_sat.studentGroup) { _showError('sat-form-error', 'Please select a Student Group.'); return; }
-    apiMethod = 'slcm.api.bulk_attendance.get_students_from_group';
-    apiArgs   = { student_group: _sat.studentGroup, attendance_date: _sat.date };
-    labelText = _sat.studentGroup + '  ·  ' + _sat.date;
-
-  } else if (basedOn === 'Course Schedule') {
+  if (basedOn === 'Course Schedule') {
     _sat.courseSchedule = ((document.getElementById('sat-course-schedule') || {}).value || '').trim();
     if (!_sat.courseSchedule) { _showError('sat-form-error', 'Please enter a Course Schedule.'); return; }
     apiMethod = 'slcm.api.bulk_attendance.get_students_from_schedule';
@@ -1090,7 +946,7 @@ function fpSaveAttendance() {
   if (!Object.keys(map).length) { alert('No students to save.'); return; }
   if (!_sat.date) { alert('Date is missing.'); return; }
 
-  var basedOn        = (document.getElementById('sat-based-on') || {}).value || 'Student Group';
+  var basedOn        = (document.getElementById('sat-based-on') || {}).value || 'Course Schedule';
   var studentsPresent = [];
   var studentsAbsent  = [];
   Object.keys(map).forEach(function(sid) {
@@ -1109,7 +965,6 @@ function fpSaveAttendance() {
     {
       students_present  : JSON.stringify(studentsPresent),
       students_absent   : JSON.stringify(studentsAbsent),
-      student_group     : _sat.studentGroup     || null,
       course_schedule   : _sat.courseSchedule   || null,
       class_schedule    : _sat.classSchedule    || null,
       office_hours_group: _sat.officeHoursGroup || null,
@@ -1136,7 +991,6 @@ function fpSaveAttendance() {
 
 function fpCloseMarkModal() {
   _closeModal('att-mark-modal');
-  _sat.studentGroup = '';
   _sat.students = [];
 }
 
@@ -1599,7 +1453,6 @@ function _showError(id, msg) {
           <select id="sat-based-on" onchange="satBasedOnChange()"
                   style="width:100%;padding:9px 12px;border:1.5px solid var(--fp-border);border-radius:var(--fp-radius-sm);font-size:13px;font-family:inherit;color:var(--fp-text-1);background:var(--fp-card);outline:none;cursor:pointer;"
                   onfocus="this.style.borderColor='var(--fp-primary)'" onblur="this.style.borderColor='var(--fp-border)'">
-            <option value="Student Group">Student Group</option>
             <option value="Course Schedule">Course Schedule</option>
             <option value="Time Table">Time Table</option>
             <option value="Office Hours">Office Hours</option>
@@ -1611,41 +1464,7 @@ function _showError(id, msg) {
           {# filled by satBasedOnChange() #}
         </div>
 
-        {# Row 2 Left: Group Based On (only for Student Group) #}
-        <div id="sat-gbo-wrap" style="padding:18px 22px 16px;border-right:1px solid var(--fp-border);border-bottom:1px solid var(--fp-border);">
-          <label class="fp-label">Group Based On</label>
-          <select id="sat-group-based-on-sel" onchange="satGroupBasedOnChange()"
-                  style="width:100%;padding:9px 12px;border:1.5px solid var(--fp-border);border-radius:var(--fp-radius-sm);font-size:13px;font-family:inherit;color:var(--fp-text-1);background:var(--fp-card);outline:none;cursor:pointer;"
-                  onfocus="this.style.borderColor='var(--fp-primary)'" onblur="this.style.borderColor='var(--fp-border)'">
-            <option value="">— All —</option>
-            <option value="Batch">Batch</option>
-            <option value="Course">Course</option>
-            <option value="Activity">Activity</option>
-          </select>
-        </div>
-
-        {# Row 2 Right: Academic Year #}
-        <div id="sat-ay-wrap" style="padding:18px 22px 16px;border-bottom:1px solid var(--fp-border);">
-          <label class="fp-label">Academic Year</label>
-          <div id="sat-academic-year"
-               style="padding:9px 12px;border:1.5px solid var(--fp-border);border-radius:var(--fp-radius-sm);font-size:13px;color:var(--fp-text-3);background:var(--fp-bg);min-height:38px;">—</div>
-        </div>
-
-        {# Row 3 Left: Academic Term #}
-        <div id="sat-at-wrap" style="padding:18px 22px 16px;border-right:1px solid var(--fp-border);border-bottom:1px solid var(--fp-border);">
-          <label class="fp-label">Academic Term</label>
-          <div id="sat-academic-term"
-               style="padding:9px 12px;border:1.5px solid var(--fp-border);border-radius:var(--fp-radius-sm);font-size:13px;color:var(--fp-text-3);background:var(--fp-bg);min-height:38px;">—</div>
-        </div>
-
-        {# Row 3 Right: Course / Batch (context-based) #}
-        <div id="sat-course-wrap" style="padding:18px 22px 16px;border-bottom:1px solid var(--fp-border);">
-          <label class="fp-label" id="sat-course-lbl">Course</label>
-          <div id="sat-course-field"
-               style="padding:9px 12px;border:1.5px solid var(--fp-border);border-radius:var(--fp-radius-sm);font-size:13px;color:var(--fp-text-3);background:var(--fp-bg);min-height:38px;">—</div>
-        </div>
-
-        {# Row 4 Left: Date #}
+        {# Row 2 Left: Date #}
         <div style="padding:18px 22px 16px;border-right:1px solid var(--fp-border);">
           <label class="fp-label">Date <span style="color:var(--fp-danger);">*</span></label>
           <input type="date" id="sat-date" onchange="satDateChange()"
@@ -1654,7 +1473,7 @@ function _showError(id, msg) {
                  onblur="this.style.borderColor='var(--fp-border)';this.style.boxShadow='';">
         </div>
 
-        {# Row 4 Right: Get Students #}
+        {# Row 2 Right: Get Students #}
         <div style="padding:18px 22px 16px;display:flex;align-items:flex-end;">
           <button id="sat-get-students-btn" onclick="satGetStudents()"
                   style="width:100%;padding:10px 16px;border:none;border-radius:var(--fp-radius-sm);background:var(--fp-primary);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.15s;box-shadow:0 2px 8px var(--fp-primary-glow);"

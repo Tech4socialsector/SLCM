@@ -7,7 +7,6 @@
  "engine": "InnoDB",
  "field_order": [
   "based_on",
-  "student_group",
   "section",
   "class_schedule",
   "office_hours_group",
@@ -38,20 +37,14 @@
  ],
  "fields": [
   {
-   "default": "Student Group",
+   "default": "Course Schedule",
    "fieldname": "based_on",
    "fieldtype": "Select",
    "label": "Based On",
-   "options": "Student Group\nCourse Schedule\nTime Table\nOffice Hours"
+   "options": "Course Schedule\nTime Table\nOffice Hours"
   },
   {
-   "fieldname": "student_group",
-   "fieldtype": "Link",
-   "label": "Student Group",
-   "options": "Student Group"
-  },
-  {
-   "fetch_from": "student_group.section",
+   "fetch_from": "course_offering.section",
    "fieldname": "section",
    "fieldtype": "Link",
    "label": "Section",
