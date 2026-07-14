@@ -1,23 +1,26 @@
 """
-Prefill HD Ticket's custom_programme/custom_current_year from the raising
-student's Student Master record when the ticket arrives without them
-already set (i.e. tickets created via inbound email, which never go through
-the portal form script that normally fills these fields — see
-helpdesk.api.nls_student.get_student_context).
+Prefill HD Ticket's ticket_type/custom_programme/custom_current_year from the
+raising user's Student Master or PACE Application record when the ticket
+arrives without them already set (i.e. tickets created via inbound email,
+which never go through the portal form script that normally fills these
+fields — see helpdesk.api.nls_student.get_student_context).
 
 Runs on before_insert, i.e. before the core controller's before_validate
-(hd_ticket.py: set_team_from_ticket_type), so that core's own
-type-of-issue -> PACE/programme-year -> flat-team cascade can resolve the
-correct HD Team using this data. This intentionally does NOT duplicate
+(hd_ticket.py: set_ticket_type, set_team_from_ticket_type), so that core's
+own type-of-issue -> PACE/programme-year -> flat-team cascade has a real
+ticket_type and programme to match against instead of always falling back
+to HD Settings.default_ticket_type. This intentionally does NOT duplicate
 core's rule-matching logic to avoid the two engines disagreeing.
 
-If core still can't resolve a team (e.g. ticket_type left blank), the
-ticket falls back to DEFAULT_EMAIL_TEAM for non-portal (email) tickets.
+If core still can't resolve a team (e.g. sender matches neither Student
+Master nor PACE Application), the ticket falls back to DEFAULT_EMAIL_TEAM
+for non-portal (email) tickets.
 """
 
 import frappe
 
 DEFAULT_EMAIL_TEAM = "PACE Team"
+PACE_TICKET_TYPE = "PACE"
 
 
 def prefill_student_context_before_insert(doc, method=None):
@@ -25,17 +28,29 @@ def prefill_student_context_before_insert(doc, method=None):
     if doc.via_customer_portal:
         return
 
-    if doc.custom_programme and doc.custom_current_year:
+    student = _get_student(doc.raised_by)
+    if student:
+        if not doc.custom_programme:
+            doc.custom_programme = student.get("programme") or ""
+        if not doc.custom_current_year:
+            doc.custom_current_year = student.get("current_year") or ""
         return
 
-    context = _get_student(doc.raised_by) or _get_pace_applicant(doc.raised_by)
-    if not context:
+    applicant = _get_pace_applicant(doc.raised_by)
+    if not applicant:
         return
 
+    # An email arriving from a known PACE applicant should be routed through
+    # the "PACE" ticket type's Programme/Year-wise rules, not whatever the
+    # site-wide default ticket type happens to be — otherwise the programme
+    # match in set_team_from_ticket_type() never runs and the ticket silently
+    # falls back to the ticket type's flat team.
+    if not doc.ticket_type:
+        doc.ticket_type = PACE_TICKET_TYPE
     if not doc.custom_programme:
-        doc.custom_programme = context.get("programme") or ""
+        doc.custom_programme = applicant.get("programme") or ""
     if not doc.custom_current_year:
-        doc.custom_current_year = context.get("current_year") or ""
+        doc.custom_current_year = applicant.get("current_year") or ""
 
 
 def apply_default_email_team(doc, method=None):

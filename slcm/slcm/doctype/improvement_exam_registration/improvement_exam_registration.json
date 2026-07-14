@@ -6,6 +6,7 @@
  "field_order": [
   "student",
   "exam_plan",
+  "course_offering",
   "course",
   "improvement_fee",
   "col_break_1",
@@ -34,13 +35,23 @@
    "reqd": 1
   },
   {
+   "fieldname": "course_offering",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Course Offering",
+   "options": "Course Offering",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "course_offering.course_title",
    "fieldname": "course",
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Course",
    "options": "Course",
-   "reqd": 1
+   "read_only": 1
   },
   {
    "fieldname": "improvement_fee",
@@ -87,7 +98,6 @@
  "name": "Improvement Exam Registration",
  "naming_rule": "Expression (old style)",
  "owner": "Administrator",
- "track_changes": 1,
  "permissions": [
   {
    "create": 1,
@@ -122,5 +132,6 @@
   }
  ],
  "sort_field": "creation",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "track_changes": 1
 }

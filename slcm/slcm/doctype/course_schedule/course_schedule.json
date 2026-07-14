@@ -4,6 +4,7 @@
  "allow_rename": 1,
  "autoname": "naming_series:",
  "creation": "2025-12-19 11:24:56.752755",
+ "custom": 0,
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -13,6 +14,7 @@
   "column_break_oqmp",
   "naming_series",
   "program",
+  "course_offering",
   "course",
   "color",
   "class_schedule_color",
@@ -63,12 +65,22 @@
    "options": "Programme"
   },
   {
+   "fieldname": "course_offering",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Course Offering",
+   "options": "Course Offering"
+  },
+  {
+   "fetch_from": "course_offering.course_title",
    "fieldname": "course",
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Course",
-   "options": "Course"
+   "options": "Course",
+   "read_only": 1
   },
   {
    "fieldname": "color",
@@ -160,6 +172,5 @@
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": [],
- "custom": 0
+ "states": []
 }

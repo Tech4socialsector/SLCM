@@ -215,8 +215,17 @@ def save_access_setting(exam_plan, course, status, view_access, view_deadline,
 	      else frappe.new_doc("Access Result Settings")
 
 	if not name:
-		doc.exam_plan = exam_plan
-		doc.course    = course
+		course_offering = frappe.db.get_value(
+			"Course Schema Assignment", {"exam_plan": exam_plan, "course": course}, "course_offering"
+		)
+		if not course_offering:
+			frappe.throw(
+				f"No Course Offering found for course '{course}' in exam plan '{exam_plan}'. "
+				"Map a Course Schema Assignment for it first."
+			)
+		doc.exam_plan       = exam_plan
+		doc.course          = course
+		doc.course_offering = course_offering
 
 	doc.status                   = status or "UNLOCKED"
 	doc.view_access              = _to_int(view_access)

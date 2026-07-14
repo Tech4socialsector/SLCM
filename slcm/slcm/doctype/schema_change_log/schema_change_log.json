@@ -6,6 +6,7 @@
  "engine": "InnoDB",
  "field_order": [
   "exam_plan",
+  "course_offering",
   "course",
   "column_break_1",
   "changed_on",
@@ -28,11 +29,20 @@
    "options": "Exam Plan"
   },
   {
+   "fieldname": "course_offering",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Course Offering",
+   "options": "Course Offering"
+  },
+  {
+   "fetch_from": "course_offering.course_title",
    "fieldname": "course",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Course",
-   "options": "Course"
+   "options": "Course",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_1",
@@ -103,16 +113,16 @@
  "owner": "Administrator",
  "permissions": [
   {
+   "create": 1,
+   "delete": 1,
    "read": 1,
    "role": "System Manager",
-   "write": 0,
-   "create": 1,
-   "delete": 1
+   "write": 0
   },
   {
+   "create": 1,
    "read": 1,
-   "role": "Academics User",
-   "create": 1
+   "role": "Academics User"
   }
  ],
  "row_format": "Dynamic",

@@ -142,11 +142,12 @@
    "options": "Student Enrollment Course"
   },
   {
+   "fetch_from": "student.user",
    "fieldname": "user",
    "fieldtype": "Link",
    "label": "User",
    "options": "User",
-   "reqd": 1
+   "read_only": 1
   },
   {
    "fieldname": "batch",
@@ -175,7 +176,7 @@
    "link_fieldname": "student"
   }
  ],
- "modified": "2026-07-10 13:16:24.785007",
+ "modified": "2026-07-14 09:20:23.933500",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Enrollment",

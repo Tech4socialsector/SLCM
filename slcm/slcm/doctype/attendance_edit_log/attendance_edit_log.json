@@ -2,11 +2,13 @@
  "actions": [],
  "autoname": "LOG-.YYYY.-.#####",
  "creation": "2026-02-03 02:23:00.000000",
+ "custom": 0,
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "attendance_record",
   "student",
+  "course_offering",
   "course",
   "attendance_date",
   "column_break_basic",
@@ -43,7 +45,14 @@
    "read_only": 1
   },
   {
-   "fetch_from": "attendance_record.course",
+   "fieldname": "course_offering",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Course Offering",
+   "options": "Course Offering"
+  },
+  {
+   "fetch_from": "course_offering.course_title",
    "fieldname": "course",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -140,14 +149,14 @@
  "owner": "Administrator",
  "permissions": [
   {
+   "delete": 1,
    "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "System Manager",
-   "share": 1,
-   "delete": 1
+   "share": 1
   },
   {
    "email": 1,
@@ -159,17 +168,16 @@
    "share": 1
   },
   {
-   "read": 1,
-   "report": 1,
+   "email": 1,
    "export": 1,
    "print": 1,
-   "email": 1,
+   "read": 1,
+   "report": 1,
    "role": "slcm_Faculty"
   }
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 1,
- "custom": 0
+ "track_changes": 1
 }

@@ -8,17 +8,18 @@
  "engine": "InnoDB",
  "field_order": [
   "office_hours_group_name",
+  "batch",
   "program",
   "academic_year",
+  "academic_term",
+  "section",
+  "column_break_1",
+  "course_offering",
+  "course",
+  "instructor",
   "date",
   "from_time",
   "to_time",
-  "column_break_1",
-  "course",
-  "academic_term",
-  "batch",
-  "section",
-  "instructor",
   "office_hours_session",
   "students_section",
   "get_students",
@@ -34,16 +35,18 @@
    "unique": 1
   },
   {
+   "fetch_from": "batch.program",
    "fieldname": "program",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Programme",
    "options": "Programme",
    "reqd": 1
   },
   {
+   "fetch_from": "batch.academic_year",
    "fieldname": "academic_year",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Academic Year",
    "options": "Academic Year"
   },
@@ -52,16 +55,26 @@
    "fieldtype": "Column Break"
   },
   {
+   "fieldname": "course_offering",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Course Offering",
+   "options": "Course Offering",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "course_offering.course_title",
    "fieldname": "course",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Course",
    "options": "Course",
-   "reqd": 1
+   "read_only": 1
   },
   {
+   "fetch_from": "batch.academic_term",
    "fieldname": "academic_term",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Academic Term",
    "options": "Academic Term"
   },
@@ -69,27 +82,28 @@
    "fieldname": "batch",
    "fieldtype": "Link",
    "label": "Batch",
-   "options": "Student Batch Name"
+   "options": "Batch"
   },
   {
+   "fetch_from": "batch.section",
    "fieldname": "section",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Section",
    "options": "Section"
   },
   {
    "fieldname": "instructor",
    "fieldtype": "Link",
-   "label": "Instructor",
+   "label": "Faculty",
    "options": "Faculty"
   },
   {
+   "description": "Auto-created/synced so this office hours slot shows up on the Student Portal.",
    "fieldname": "office_hours_session",
    "fieldtype": "Link",
    "label": "Office Hours Session",
    "options": "Office Hours Session",
-   "read_only": 1,
-   "description": "Auto-created/synced so this office hours slot shows up on the Student Portal."
+   "read_only": 1
   },
   {
    "fieldname": "students_section",
@@ -124,7 +138,7 @@
   }
  ],
  "links": [],
- "modified": "2026-02-17 12:14:46.432272",
+ "modified": "2026-07-14 09:54:21.102136",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Office Hours Group",
@@ -141,18 +155,17 @@
   {
    "create": 1,
    "delete": 1,
-   "read": 1,
-   "role": "slcm_Faculty",
-   "write": 1,
-   "report": 1,
+   "email": 1,
    "export": 1,
    "print": 1,
-   "email": 1
+   "read": 1,
+   "report": 1,
+   "role": "slcm_Faculty",
+   "write": 1
   }
  ],
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": [],
- "custom": 0
+ "states": []
 }

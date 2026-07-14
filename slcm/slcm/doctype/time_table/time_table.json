@@ -14,8 +14,8 @@
   "section_break_details",
   "term",
   "programme",
-  "course",
   "course_offering",
+  "course",
   "column_break_2",
   "student_group",
   "section",
@@ -69,6 +69,7 @@
    "label": "Course Details"
   },
   {
+   "fetch_from": "class_configuration.term",
    "fieldname": "term",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -77,6 +78,7 @@
    "options": "Term Configuration"
   },
   {
+   "fetch_from": "class_configuration.programme",
    "fieldname": "programme",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -84,14 +86,16 @@
    "options": "Programme"
   },
   {
+   "fetch_from": "course_offering.course_title",
    "fieldname": "course",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Course",
    "options": "Course"
   },
   {
+   "fetch_from": "class_configuration.course_offering",
    "fieldname": "course_offering",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -225,7 +229,7 @@
   }
  ],
  "links": [],
- "modified": "2026-07-10 16:28:11.520352",
+ "modified": "2026-07-14 10:39:21.463179",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Time Table",

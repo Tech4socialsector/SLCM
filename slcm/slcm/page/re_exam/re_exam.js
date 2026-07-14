@@ -635,14 +635,47 @@ frappe.pages['re-exam'].on_page_load = function (wrapper) {
 		var d = new frappe.ui.Dialog({
 			title: 'Download Consolidated Report',
 			fields: [
-				{ label: 'Exam Plan', fieldname: 'exam_plan', fieldtype: 'Link', options: 'Exam Plan', reqd: 1, default: S.exam_plan || '' },
-				{ label: 'Report Type', fieldname: 'report_type', fieldtype: 'Select', options: 'Bulk\nCourse Based', reqd: 1, default: 'Bulk' },
-				{ label: 'Course', fieldname: 'course', fieldtype: 'Link', options: 'Course', depends_on: 'eval:doc.report_type=="Course Based"' }
+				{ label: 'Exam Plan',     fieldname: 'exam_plan',     fieldtype: 'Link',   options: 'Exam Plan',     default: S.exam_plan || '' },
+				{ fieldtype: 'Column Break' },
+				{ label: 'Academic Year', fieldname: 'academic_year', fieldtype: 'Link',   options: 'Academic Year' },
+				{ fieldtype: 'Section Break' },
+				{ label: 'Programme',     fieldname: 'programme',     fieldtype: 'Link',   options: 'Programme',
+					onchange() { d.set_value('trimester', ''); d.set_value('course', ''); } },
+				{ fieldtype: 'Column Break' },
+				{ label: 'Trimester',     fieldname: 'trimester',     fieldtype: 'Link',   options: 'Academic Term',
+					get_query() {
+						return {
+							query: 'slcm.slcm.page.examination_result.examination_result.trimester_link_query',
+							filters: { programme: d.get_value('programme') },
+						};
+					},
+					onchange() { d.set_value('course', ''); } },
+				{ fieldtype: 'Section Break' },
+				{ label: 'Batch',         fieldname: 'batch',         fieldtype: 'Link', options: 'Batch' },
+				{ fieldtype: 'Section Break' },
+				{ label: 'Report Type',   fieldname: 'report_type',   fieldtype: 'Select', options: 'Bulk\nCourse Based', default: 'Bulk' },
+				{ fieldtype: 'Column Break' },
+				{ label: 'Course',        fieldname: 'course',        fieldtype: 'Link',   options: 'Course Offering', depends_on: 'eval:doc.report_type=="Course Based"',
+					get_query() {
+						var filters = {};
+						if (d.get_value('programme')) filters.program = d.get_value('programme');
+						if (d.get_value('trimester'))  filters.term_name = d.get_value('trimester');
+						return { filters: filters };
+					} }
 			],
-			primary_action_label: 'Download CSV',
+			primary_action_label: 'Download Excel',
 			primary_action: function (v) {
-				var args = { exam_plan: v.exam_plan };
-				if (v.report_type === 'Course Based' && v.course) args.course = v.course;
+				var args = {};
+				if (v.exam_plan)     args.exam_plan     = v.exam_plan;
+				if (v.academic_year) args.academic_year = v.academic_year;
+				if (v.programme)     args.programme     = v.programme;
+				if (v.trimester)     args.trimester      = v.trimester;
+				if (v.batch)         args.batch          = v.batch;
+				if (v.report_type === 'Course Based' && v.course) args.course_offering = v.course;
+				if (!Object.keys(args).length) {
+					frappe.msgprint('Please select at least one filter.');
+					return;
+				}
 				var url = '/api/method/slcm.slcm.page.term_result.term_result.download_consolidated_report?' + $.param(args);
 				window.open(url, '_blank');
 				d.hide();

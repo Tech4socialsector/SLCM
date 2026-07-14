@@ -10,6 +10,7 @@
   "student",
   "cb_top",
   "exam_plan",
+  "course_offering",
   "course",
   "section_payment",
   "razorpay_payment_id",
@@ -69,7 +70,13 @@
    "read_only": 1
   },
   {
-   "fetch_from": "improvement_exam_registration.course",
+   "fieldname": "course_offering",
+   "fieldtype": "Link",
+   "label": "Course Offering",
+   "options": "Course Offering"
+  },
+  {
+   "fetch_from": "course_offering.course_title",
    "fieldname": "course",
    "fieldtype": "Link",
    "label": "Course",

@@ -2,6 +2,20 @@ import frappe
 import json as _json
 
 
+def _get_course_offering(exam_plan, course):
+	"""Resolve the Course Offering for a course under this exam plan via its
+	Course Schema Assignment. Throws if none exists yet."""
+	course_offering = frappe.db.get_value(
+		"Course Schema Assignment", {"exam_plan": exam_plan, "course": course}, "course_offering"
+	)
+	if not course_offering:
+		frappe.throw(
+			f"No Course Offering found for course '{course}' in exam plan '{exam_plan}'. "
+			"Map a Course Schema Assignment for it first."
+		)
+	return course_offering
+
+
 @frappe.whitelist()
 def get_exam_plans(search=None):
     filters = {}
@@ -90,6 +104,7 @@ def save_improvement_setting(exam_plan, course, improvement_fee=None, registrati
         doc = frappe.new_doc("Improvement Exam Course Setting")
         doc.exam_plan = exam_plan
         doc.course = course
+        doc.course_offering = _get_course_offering(exam_plan, course)
 
     doc.improvement_fee = improvement_fee or None
     doc.registration_limit = int(registration_limit) if registration_limit else None
@@ -130,6 +145,7 @@ def bulk_save_improvement_setting(exam_plan, improvement_fee=None, registration_
             doc = frappe.new_doc("Improvement Exam Course Setting")
             doc.exam_plan = exam_plan
             doc.course = course
+            doc.course_offering = _get_course_offering(exam_plan, course)
         doc.improvement_fee = improvement_fee or None
         doc.registration_limit = int(registration_limit) if registration_limit else None
         doc.deadline_from = deadline_from or None

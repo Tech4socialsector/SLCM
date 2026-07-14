@@ -8,6 +8,7 @@
   "exam_plan__course_section",
   "exam_plan",
   "column_break_wooe",
+  "course_offering",
   "course",
   "course_code",
   "section_evaluators",
@@ -40,12 +41,21 @@
    "reqd": 1
   },
   {
+   "fieldname": "course_offering",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Course Offering",
+   "options": "Course Offering",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "course_offering.course_title",
    "fieldname": "course",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Course",
    "options": "Course",
-   "reqd": 1
+   "read_only": 1
   },
   {
    "fetch_from": "course.course_code",
