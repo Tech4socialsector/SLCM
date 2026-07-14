@@ -13,7 +13,10 @@
   "required",
   "actually_allocated",
   "allocated_seats",
-  "vacant_seats"
+  "vacant_seats",
+  "waitlist_required",
+  "actually_waitlisted",
+  "actually_rejected"
  ],
  "fields": [
   {
@@ -68,6 +71,27 @@
    "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Vacant Seats",
+   "read_only": 1
+  },
+  {
+   "fieldname": "waitlist_required",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Waitlist Required",
+   "read_only": 1
+  },
+  {
+   "fieldname": "actually_waitlisted",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Actually Waitlisted",
+   "read_only": 1
+  },
+  {
+   "fieldname": "actually_rejected",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Actually Rejected",
    "read_only": 1
   }
  ],

@@ -160,7 +160,7 @@ function open_allocation_dialog(frm) {
             <td><b>${row.candidate_name || "-"}</b></td>
             <td>${row.applicant_id || "-"}</td>
             <td>${row.program || "-"}</td>
-            <td>${(row.total_score !== undefined && row.total_score !== null) ? parseFloat(row.total_score).toFixed(3) : "-"}</td>
+            <td>${(row.total_score !== undefined && row.total_score !== null) ? parseFloat(row.total_score).toFixed(2) : "-"}</td>
         </tr>
     `).join("");
 
