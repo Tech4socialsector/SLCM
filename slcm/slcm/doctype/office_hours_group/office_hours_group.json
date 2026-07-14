@@ -3,24 +3,23 @@
  "allow_copy": 1,
  "autoname": "field:office_hours_group_name",
  "creation": "2025-02-11 16:11:53",
- "custom": 0,
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "office_hours_group_name",
+  "batch",
   "program",
   "academic_year",
-  "date",
-  "from_time",
-  "to_time",
+  "academic_term",
+  "section",
   "column_break_1",
   "course_offering",
   "course",
-  "academic_term",
-  "batch",
-  "section",
   "instructor",
+  "date",
+  "from_time",
+  "to_time",
   "office_hours_session",
   "students_section",
   "get_students",
@@ -36,16 +35,18 @@
    "unique": 1
   },
   {
+   "fetch_from": "batch.program",
    "fieldname": "program",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Programme",
    "options": "Programme",
    "reqd": 1
   },
   {
+   "fetch_from": "batch.academic_year",
    "fieldname": "academic_year",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Academic Year",
    "options": "Academic Year"
   },
@@ -71,8 +72,9 @@
    "read_only": 1
   },
   {
+   "fetch_from": "batch.academic_term",
    "fieldname": "academic_term",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Academic Term",
    "options": "Academic Term"
   },
@@ -80,18 +82,19 @@
    "fieldname": "batch",
    "fieldtype": "Link",
    "label": "Batch",
-   "options": "Student Batch Name"
+   "options": "Batch"
   },
   {
+   "fetch_from": "batch.section",
    "fieldname": "section",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Section",
    "options": "Section"
   },
   {
    "fieldname": "instructor",
    "fieldtype": "Link",
-   "label": "Instructor",
+   "label": "Faculty",
    "options": "Faculty"
   },
   {
@@ -135,7 +138,7 @@
   }
  ],
  "links": [],
- "modified": "2026-02-17 12:14:46.432272",
+ "modified": "2026-07-14 09:54:21.102136",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Office Hours Group",
