@@ -4,7 +4,7 @@
  "creation": "2026-02-18 13:52:52.093682",
  "doctype": "DocType",
  "engine": "InnoDB",
-  "field_order": [
+ "field_order": [
   "admission_cycle",
   "campus",
   "program_level",
@@ -20,6 +20,13 @@
   "section_break_ganj",
   "selection_applicant",
   "tab_summary",
+  "summary_section_break",
+  "summary_total_selected",
+  "column_break_sum1",
+  "summary_total_waitlisted",
+  "column_break_sum2",
+  "summary_total_rejected",
+  "category_summary_section",
   "category_summary"
  ],
  "fields": [
@@ -117,6 +124,42 @@
    "fieldname": "tab_summary",
    "fieldtype": "Tab Break",
    "label": "Allocation Summary"
+  },
+  {
+   "fieldname": "summary_section_break",
+   "fieldtype": "Section Break",
+   "label": "Summary Totals"
+  },
+  {
+   "fieldname": "summary_total_selected",
+   "fieldtype": "Int",
+   "label": "Total Selected",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_sum1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "summary_total_waitlisted",
+   "fieldtype": "Int",
+   "label": "Total Waitlisted",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_sum2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "summary_total_rejected",
+   "fieldtype": "Int",
+   "label": "Total Rejected",
+   "read_only": 1
+  },
+  {
+   "fieldname": "category_summary_section",
+   "fieldtype": "Section Break",
+   "label": "Category-wise Summary"
   },
   {
    "fieldname": "category_summary",

@@ -23,12 +23,27 @@
   },
   {
    "card": "Expired Offers"
+  },
+  {
+   "card": "Approved Refund Requests"
+  },
+  {
+   "card": "Failed Refund Requests"
+  },
+  {
+   "card": "Pending Refund Review"
+  },
+  {
+   "card": "Processed Refund Requests"
+  },
+  {
+   "card": "Total Refund Requests"
+  },
+  {
+   "card": "Total Refunded Amount"
   }
  ],
  "charts": [
-  {
-   "width": "Half"
-  },
   {
    "chart": "Applicant Fee Payment",
    "width": "Full"
@@ -52,8 +67,8 @@
  "doctype": "Dashboard",
  "idx": 0,
  "is_default": 0,
- "is_standard": 0,
- "modified": "2026-06-05 10:57:19.977790",
+ "is_standard": 1,
+ "modified": "2026-07-14 15:16:32.929790",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission",

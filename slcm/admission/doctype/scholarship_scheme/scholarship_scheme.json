@@ -208,7 +208,8 @@
   {
    "fieldname": "total_budget",
    "fieldtype": "Currency",
-   "label": "Total Budget"
+   "label": "Total Budget",
+   "precision": "2"
   },
   {
    "default": "0",
@@ -299,7 +300,8 @@
   {
    "fieldname": "min_merit_score",
    "fieldtype": "Float",
-   "label": "Minimum merit score"
+   "label": "Minimum merit score",
+   "precision": "2"
   },
   {
    "default": "0",
@@ -311,7 +313,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-11 16:17:23.233502",
+ "modified": "2026-07-14 14:46:40.780346",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Scholarship Scheme",
