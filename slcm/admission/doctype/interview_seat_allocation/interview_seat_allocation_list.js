@@ -99,6 +99,19 @@ frappe.listview_settings['Interview Seat Allocation'] = {
                 rbtn.addClass('btn-reschedule');
             }
 
+            // Bulk Publish Results button
+            if (!listview.page.wrapper.find('.btn-bulk-publish').length) {
+                const pbbtn = listview.page.add_inner_button(__('Bulk Publish Results'), function () {
+                    try {
+                        open_bulk_publish_dialog(listview);
+                    } catch (e) {
+                        console.error('Bulk Publish dialog error', e);
+                        frappe.msgprint({ title: __('Error'), message: __('Unable to open Bulk Publish dialog.'), indicator: 'red' });
+                    }
+                });
+                pbbtn.addClass('btn-bulk-publish');
+            }
+
             // Generate Offer Letters button (only once)
             if (!listview.page.wrapper.find('.btn-generate-offers').length) {
                 const obtn = listview.page.add_button(__('Generate Offer Letters'), function () {
@@ -322,7 +335,7 @@ function open_generate_offer_dialog(listview) {
         fields: [
             { fieldtype: 'Section Break', label: __('Filters') },
             {
-                label: __('Program Level'),
+                label: __('Programme Level'),
                 fieldname: 'program_level',
                 fieldtype: 'Select',
                 options: 'Undergraduate\nPostgraduate\nResearch Course',
@@ -459,7 +472,7 @@ function open_generate_offer_dialog(listview) {
 }
 
 function fetch_pass_applicants(d) {
-    const filters = { interview_result_status: 'Pass' };
+    const filters = { status: 'Selected' };
 
     if (d.get_value('program_level')) filters.program_level = d.get_value('program_level');
     if (d.get_value('academic_year')) filters.academic_year = d.get_value('academic_year');
@@ -491,7 +504,7 @@ function fetch_pass_applicants(d) {
                                 <th style="width:40px;"></th>
                                 <th>Candidate Name</th>
                                 <th>Applicant ID</th>
-                                <th>Program</th>
+                                <th>Programme</th>
                                 <th>Result</th>
                             </tr>
                         </thead>
@@ -536,4 +549,172 @@ function update_offer_selected_count(d, total) {
     const t = total !== undefined ? total : d.$wrapper.find('.applicant-checkbox').length;
     d.$wrapper.find('#selected-offer-count').text(`${n} of ${t} selected`);
     d.$wrapper.find('#select-all-offer-applicants').prop('checked', t > 0 && n === t);
+}
+
+function open_bulk_publish_dialog(listview) {
+    let d = new frappe.ui.Dialog({
+        title: __('Bulk Publish Results'),
+        size: 'extra-large',
+        fields: [
+            { fieldtype: 'Section Break', label: __('Filters') },
+            {
+                label: __('Programme Level'),
+                fieldname: 'program_level',
+                fieldtype: 'Select',
+                options: 'Undergraduate\nPostgraduate\nResearch Course',
+                on_change: () => fetch_unpublished_applicants(d)
+            },
+            { fieldtype: 'Column Break' },
+            {
+                label: __('Academic Year'),
+                fieldname: 'academic_year',
+                fieldtype: 'Link',
+                options: 'Academic Year',
+                on_change: () => fetch_unpublished_applicants(d)
+            },
+            { fieldtype: 'Column Break' },
+            {
+                label: __('Campus'),
+                fieldname: 'campus',
+                fieldtype: 'Link',
+                options: 'Campus',
+                on_change: () => fetch_unpublished_applicants(d)
+            },
+            { fieldtype: 'Column Break' },
+            {
+                label: __('Admission Cycle'),
+                fieldname: 'admission_cycle',
+                fieldtype: 'Link',
+                options: 'Admission Cycle',
+                on_change: () => fetch_unpublished_applicants(d)
+            },
+
+            { fieldtype: 'Section Break', label: __('Select Unpublished Results') },
+            {
+                fieldtype: 'HTML',
+                fieldname: 'applicants_html'
+            }
+        ],
+        primary_action_label: __('Publish Results'),
+        primary_action(values) {
+            const selected_records = [];
+            d.$wrapper.find('.applicant-checkbox:checked').each(function () {
+                selected_records.push($(this).data('name'));
+            });
+
+            if (!selected_records.length) {
+                frappe.msgprint({ message: __('Please select at least one record to publish.'), indicator: 'orange' });
+                return;
+            }
+
+            frappe.call({
+                method: 'slcm.admission.doctype.interview_seat_allocation.interview_seat_allocation.bulk_publish_results',
+                args: {
+                    records: selected_records
+                },
+                freeze: true,
+                freeze_message: __('Publishing Results...'),
+                callback: function (r) {
+                    if (r.message && r.message.success) {
+                        frappe.msgprint({
+                            message: __("{0} result(s) successfully published.", [r.message.count]),
+                            indicator: 'green'
+                        });
+                        d.hide();
+                        listview.refresh();
+                    }
+                }
+            });
+        }
+    });
+
+    d.show();
+    d.set_query("admission_cycle", function () {
+        return {
+            filters: {
+                "status": "Active"
+            }
+        };
+    });
+    fetch_unpublished_applicants(d);
+}
+
+function fetch_unpublished_applicants(d) {
+    const filters = { result_published: 0 };
+
+    if (d.get_value('program_level')) filters.program_level = d.get_value('program_level');
+    if (d.get_value('academic_year')) filters.academic_year = d.get_value('academic_year');
+    if (d.get_value('campus')) filters.campus = d.get_value('campus');
+    if (d.get_value('admission_cycle')) filters.admission_cycle = d.get_value('admission_cycle');
+
+    frappe.call({
+        method: 'frappe.client.get_list',
+        args: {
+            doctype: 'Interview Seat Allocation',
+            filters: filters,
+            fields: ['name', 'candidate_name', 'applicant', 'program', 'interview_result_status'],
+            limit_page_length: 100
+        },
+        callback: function (r) {
+            const applicants = r.message || [];
+            let html = `
+                <div style="margin-bottom:10px; display:flex; gap:12px; align-items:center;">
+                    <label style="font-weight:600; cursor:pointer; margin:0; display:flex; align-items:center;">
+                        <input type="checkbox" id="select-all-publish-applicants">
+                        <span style="margin-left:8px;">Select All</span>
+                    </label>
+                    <span id="selected-publish-count" style="color:#6c757d; font-size:12px;">0 of ${applicants.length} selected</span>
+                </div>
+                <div style="max-height:250px; overflow-y:auto; border:1px solid #d1d8dd; border-radius:4px;">
+                    <table class="table table-bordered table-hover" style="margin:0; font-size:13px;">
+                        <thead style="position:sticky; top:0; background:#f4f5f6; z-index:1;">
+                            <tr>
+                                <th style="width:40px;"></th>
+                                <th>Candidate Name</th>
+                                <th>Applicant ID</th>
+                                <th>Programme</th>
+                                <th>Result</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+            if (applicants.length) {
+                applicants.forEach(app => {
+                    html += `
+                        <tr>
+                            <td><input type="checkbox" class="applicant-checkbox" data-applicant="${app.applicant}" data-name="${app.name}"></td>
+                            <td>${app.candidate_name || ''}</td>
+                            <td>${app.applicant || ''}</td>
+                            <td>${app.program || ''}</td>
+                            <td><span class="badge badge-success">${app.interview_result_status || ''}</span></td>
+                        </tr>`;
+                });
+            } else {
+                html += `<tr><td colspan="5" class="text-muted">No unpublished results found.</td></tr>`;
+            }
+
+            html += '</tbody></table></div>';
+            d.get_field('applicants_html').$wrapper.html(html);
+
+            // Select All
+            d.$wrapper.find('#select-all-publish-applicants').on('change', function () {
+                d.$wrapper.find('.applicant-checkbox').prop('checked', $(this).is(':checked'));
+                update_publish_selected_count(d, applicants.length);
+            });
+
+            // Individual
+            d.$wrapper.on('change', '.applicant-checkbox', function () {
+                update_publish_selected_count(d, applicants.length);
+            });
+
+            update_publish_selected_count(d, applicants.length);
+        }
+    });
+}
+
+function update_publish_selected_count(d, total) {
+    const n = d.$wrapper.find('.applicant-checkbox:checked').length;
+    const t = total !== undefined ? total : d.$wrapper.find('.applicant-checkbox').length;
+    d.$wrapper.find('#selected-publish-count').text(`${n} of ${t} selected`);
+    d.$wrapper.find('#select-all-publish-applicants').prop('checked', t > 0 && n === t);
 }

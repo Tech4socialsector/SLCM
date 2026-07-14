@@ -436,6 +436,7 @@ def get_context(context):
                         {"field": "internationa_application_submitted", "name": "Submitted", "stage_type": "Application"},
                         {"field": "international_entrance_test",       "name": "Entrance Test", "stage_type": "Entrance Test"},
                         {"field": "international_interview",           "name": "Interview", "stage_type": "Interview"},
+                        {"field": "international_offer_letter",        "name": "Offer Letter", "stage_type": "Offer Letter"},
                         {"field": "inrternation_admission_fee",        "name": "Admission Fee", "stage_type": "Admission Fee"},
                         {"field": "international_enrolled",            "name": "Enrollment", "stage_type": "Enrollment"},
                     ]

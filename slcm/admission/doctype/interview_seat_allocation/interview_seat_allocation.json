@@ -10,9 +10,12 @@
   "tab_reference",
   "interview_list",
   "academic_year",
+  "program_level",
+  "column_break_nxyr",
   "admission_cycle",
   "campus",
-  "program_level",
+  "status",
+  "section_break_ijkj",
   "category",
   "tab_applicant_info",
   "applicant",
@@ -53,12 +56,13 @@
   "interview_status",
   "attendance_marked_on",
   "interview_score",
+  "rank",
+  "column_break_hbsv",
+  "interview_result_status",
   "final_cumulative_score",
   "final_percentage",
-  "offered_admission",
-  "interview_result_status",
-  "rank",
   "result_published",
+  "section_break_zvsn",
   "feedback",
   "tab_entrance_test_result",
   "et_source",
@@ -365,12 +369,6 @@
    "read_only": 1
   },
   {
-   "default": "0",
-   "fieldname": "offered_admission",
-   "fieldtype": "Check",
-   "label": "Offer Admission"
-  },
-  {
    "fieldname": "interview_result_status",
    "fieldtype": "Select",
    "label": "Result Status",
@@ -536,12 +534,34 @@
    "fieldtype": "Check",
    "label": "ET Result Published",
    "read_only": 1
+  },
+  {
+   "fieldname": "column_break_nxyr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_ijkj",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nSelected\nWaitlisted\nRejected\nOffer Issued"
+  },
+  {
+   "fieldname": "column_break_hbsv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_zvsn",
+   "fieldtype": "Section Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-13 12:35:45.115450",
+ "modified": "2026-07-14 14:49:32.958048",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Seat Allocation",
@@ -616,5 +636,22 @@
  "rows_threshold_for_grid_search": 20,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [
+  {
+   "color": "Green",
+   "title": "Selected"
+  },
+  {
+   "color": "Yellow",
+   "title": "Waitlisted"
+  },
+  {
+   "color": "Red",
+   "title": "Rejected"
+  },
+  {
+   "color": "Purple",
+   "title": "Offer Issued"
+  }
+ ]
 }

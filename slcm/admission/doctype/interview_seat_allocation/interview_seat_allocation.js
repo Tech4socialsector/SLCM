@@ -15,32 +15,63 @@ frappe.ui.form.on("Interview Seat Allocation", {
     refresh(frm) {
         calculate_final_cumulative(frm, true);
 
-        // Generate Offer Letter Button for Pass status
-        if (frm.doc.interview_result_status === "Pass" && !frappe.user_roles.includes("Applicant")) {
+        // Action buttons when interview_result_status is Pass
+        const is_internal = !frappe.user_roles.includes("Applicant") || frappe.user_roles.includes("System Manager") || frappe.user_roles.includes("Administrator") || frappe.user_roles.includes("Interview Admin");
+        if (frm.doc.interview_result_status === "Pass" && is_internal) {
+            const hide_all_statuses = ["Selected", "Rejected", "Offer Issued"];
+            
+            if (!hide_all_statuses.includes(frm.doc.status)) {
+                frm.add_custom_button(__("Select"), function () {
+                    frappe.confirm(__("Are you sure you want to mark this applicant as Selected?"), () => {
+                        frappe.db.set_value(frm.doc.doctype, frm.doc.name, "status", "Selected").then(() => frm.reload_doc());
+                    });
+                }).removeClass("btn-default").addClass("btn-success").css({"color": "white"});
+                
+                if (frm.doc.status !== "Waitlisted") {
+                    frm.add_custom_button(__("Waitlist"), function () {
+                        frappe.confirm(__("Are you sure you want to Waitlist this applicant?"), () => {
+                            frappe.db.set_value(frm.doc.doctype, frm.doc.name, "status", "Waitlisted").then(() => frm.reload_doc());
+                        });
+                    }).removeClass("btn-default").addClass("btn-warning").css({"color": "white"});
+                }
+                
+                frm.add_custom_button(__("Reject Application"), function () {
+                    frappe.confirm(__("Are you sure you want to Reject this applicant?"), () => {
+                        frappe.db.set_value(frm.doc.doctype, frm.doc.name, "status", "Rejected").then(() => frm.reload_doc());
+                    });
+                }).removeClass("btn-default").addClass("btn-danger").css({"color": "white"});
+            }
+        }
+
+        // Generate Offer Letter Button for Selected status
+        if (frm.doc.status === "Selected" && is_internal) {
             frm.add_custom_button(__("Generate Offer Letter"), function () {
-                frappe.call({
-                    method: "slcm.api.service.offer_service.bulk_generate_offers",
-                    args: {
-                        applicants: [frm.doc.applicant]
-                    },
-                    freeze: true,
-                    freeze_message: __("Generating Offer Letter..."),
-                    callback: function (r) {
-                        if (r.message && r.message.success && r.message.success.length > 0) {
-                            frappe.msgprint({
-                                message: __("Offer Letter generated successfully."),
-                                indicator: "green"
-                            });
-                        } else if (r.message && r.message.errors && r.message.errors.length > 0) {
-                            frappe.msgprint({
-                                title: __("Error generating Offer Letter"),
-                                message: r.message.errors[0].error,
-                                indicator: "red"
-                            });
+                frappe.confirm(__("Are you sure you want to generate the Offer Letter for this applicant?"), function() {
+                    frappe.call({
+                        method: "slcm.api.service.offer_service.bulk_generate_offers",
+                        args: {
+                            applicants: [frm.doc.applicant]
+                        },
+                        freeze: true,
+                        freeze_message: __("Generating Offer Letter..."),
+                        callback: function (r) {
+                            if (r.message && r.message.success && r.message.success.length > 0) {
+                                frappe.msgprint({
+                                    message: __("Offer Letter generated successfully."),
+                                    indicator: "green"
+                                });
+                                frm.reload_doc();
+                            } else if (r.message && r.message.errors && r.message.errors.length > 0) {
+                                frappe.msgprint({
+                                    title: __("Error generating Offer Letter"),
+                                    message: r.message.errors[0].error,
+                                    indicator: "red"
+                                });
+                            }
                         }
-                    }
+                    });
                 });
-            }, __("Actions"));
+            });
         }
 
         // Administrator can do everything — skip all restrictions

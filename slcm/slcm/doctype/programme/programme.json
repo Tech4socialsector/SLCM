@@ -47,10 +47,11 @@
   "international_applicant_stages_section",
   "internationa_application_submitted",
   "international_entrance_test",
-  "international_enrolled",
-  "column_break_vpmn",
-  "inrternation_admission_fee",
   "international_interview",
+  "column_break_vpmn",
+  "international_offer_letter",
+  "inrternation_admission_fee",
+  "international_enrolled",
   "connections_tab_tab"
  ],
  "fields": [
@@ -341,6 +342,13 @@
   {
    "fieldname": "column_break_vpmn",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "international_offer_letter",
+   "fieldtype": "Check",
+   "label": "Offer Letter",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
@@ -369,7 +377,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-13 11:04:35.719528",
+ "modified": "2026-07-14 16:04:37.301612",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Programme",

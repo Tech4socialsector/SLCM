@@ -145,27 +145,45 @@ class OfferService:
 
 
         # Status verification: Only 'Selected' applicants in published Seat Allocations can receive offers
-        sa_filters = {
-            "applicant_id": applicant,
-            "program": program,
-            "selection_status": "Selected",
-            "parenttype": "Seat Allocation"
-        }
-        status_check = frappe.db.get_value("Seat Selection Applicant", sa_filters, ["parent"], as_dict=1)
+        is_foreign = frappe.db.get_value("Applicant", applicant, "foriegn_national") == "Yes"
 
-        if not status_check:
-             # Check if an offer was ALREADY issued (in which case they would be 'Offer Issued')
-             already_issued = frappe.db.exists("Offer Letter", {
+        if is_foreign:
+            isa = frappe.db.get_value("Interview Seat Allocation", {
                 "applicant": applicant,
-                "program": program,
-                "status": ["not in", ["Rejected", "Expired", "Withdrawn"]]
-             })
-             if not already_issued:
-                throw(_("Applicant {0} is not in 'Selected' status for Program {1} in any Seat Allocation. Offer letter cannot be generated.").format(applicant, program))
+                "program": program
+            }, ["name", "status", "result_published"], as_dict=True)
+            
+            if not isa:
+                already_issued = frappe.db.exists("Offer Letter", {"applicant": applicant, "program": program, "status": ["not in", ["Rejected", "Expired", "Withdrawn"]]})
+                if not already_issued:
+                    throw(_("Applicant {0} is not in any Interview Seat Allocation for Program {1}.").format(applicant, program))
+            else:
+                if isa.status != "Selected":
+                    already_issued = frappe.db.exists("Offer Letter", {"applicant": applicant, "program": program, "status": ["not in", ["Rejected", "Expired", "Withdrawn"]]})
+                    if not already_issued:
+                        throw(_("Applicant {0} is not in 'Selected' status in Interview Seat Allocation for Program {1}. Current status: {2}").format(applicant, program, isa.status))
         else:
-            # Check if parent Seat Allocation is Published
-            if frappe.db.get_value("Seat Allocation", status_check.parent, "status") != "Published":
-                 throw(_("Seat Allocation for Applicant {0} is not yet 'Published'. Please publish the allocation first.").format(applicant))
+            sa_filters = {
+                "applicant_id": applicant,
+                "program": program,
+                "selection_status": "Selected",
+                "parenttype": "Seat Allocation"
+            }
+            status_check = frappe.db.get_value("Seat Selection Applicant", sa_filters, ["parent"], as_dict=1)
+
+            if not status_check:
+                 # Check if an offer was ALREADY issued (in which case they would be 'Offer Issued')
+                 already_issued = frappe.db.exists("Offer Letter", {
+                    "applicant": applicant,
+                    "program": program,
+                    "status": ["not in", ["Rejected", "Expired", "Withdrawn"]]
+                 })
+                 if not already_issued:
+                    throw(_("Applicant {0} is not in 'Selected' status for Program {1} in any Seat Allocation. Offer letter cannot be generated.").format(applicant, program))
+            else:
+                # Check if parent Seat Allocation is Published
+                if frappe.db.get_value("Seat Allocation", status_check.parent, "status") != "Published":
+                     throw(_("Seat Allocation for Applicant {0} is not yet 'Published'. Please publish the allocation first.").format(applicant))
 
         # Idempotency: Prevent duplicate offers for same campus, cycle, program and admission_year
         existing = frappe.db.exists("Offer Letter", {
@@ -246,6 +264,10 @@ class OfferService:
             # Ensure Fetch From doesn't overwrite our resolved campus and cycle 
             # if they differ from the applicant's default preferences
             offer.insert(ignore_permissions=True)
+            
+            if is_foreign and isa:
+                frappe.db.set_value("Interview Seat Allocation", isa.name, "status", "Offer Issued")
+
             if campus:
                 offer.campus = campus
                 offer.db_set('campus', campus)
