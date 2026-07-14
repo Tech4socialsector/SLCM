@@ -72,37 +72,25 @@ class TimeTable(Document):
         if not self.schedule_date or not self.from_time or not self.to_time:
             return
 
-        # 1. Check for Duplicate Time Table entry (Same Student Group, Same Date, Overlapping Time)
-        if self.student_group:
+        # 1. Check for Duplicate Time Table entry (Same Course Offering, Same Date, Overlapping Time)
+        if self.course_offering:
             filters = {
                 "name": ["!=", self.name],
-                "student_group": self.student_group,
+                "course_offering": self.course_offering,
                 "schedule_date": self.schedule_date,
                 "docstatus": ["<", 2] # Exclude cancelled
             }
-            
-            # Optional: restrict to same course if 'same class' means exact same course
-            # But usually 'same class' means the students are busy. 
-            # User said "save the same time same class same day it should not duplicate"
-            # implying exact duplicate of the schedule.
-            # Let's check for Student Group overlap broadly implies they are busy.
-            # But the user specifically said "duplicate... same time same class".
-            # "Class" context usually means Course in this system (from previous files).
-            # Let's stick to Student Group + Course overlap to be safe against "Duplicate", 
-            # OR just Student Group overlap to prevent double booking the students.
-            # Given "validations", double booking students is generally bad.
-            # I will check for Student Group overlap.
-            
+
             conflicts = frappe.get_all(
                 "Time Table",
                 filters=filters,
-                fields=["name", "from_time", "to_time", "course", "student_group"],
+                fields=["name", "from_time", "to_time", "course", "course_offering"],
             )
 
             for conflict in conflicts:
                 if self.times_overlap(self.from_time, self.to_time, conflict.from_time, conflict.to_time):
                     frappe.throw(
-                        f"Already scheduled same time class {conflict.course} for {self.student_group} ({conflict.from_time} - {conflict.to_time})",
+                        f"Already scheduled same time class {conflict.course} for this Course Offering ({conflict.from_time} - {conflict.to_time})",
                         title="Duplicate Schedule"
                     )
 
@@ -162,11 +150,14 @@ class TimeTable(Document):
         if self.venue:
             room_name = frappe.db.get_value("Venue Booking", self.venue, "room")
 
+        based_on = self.based_on or "Time Table"
+
         doc = frappe.get_doc({
             "doctype": "Attendance Session",
-            "based_on": "Time Table",
+            "based_on": based_on,
             "class_schedule": self.name,
-            "student_group": self.student_group,
+            "course_schedule": self.course_schedule if based_on == "Course Schedule" else None,
+            "office_hours_group": self.office_hours_group if based_on == "Office Hours" else None,
             "course_offering": self.course_offering,
             "course": self.course,
             "instructor": self.instructor,
@@ -174,7 +165,7 @@ class TimeTable(Document):
             "session_date": self.schedule_date,
             "session_start_time": self.from_time,
             "session_end_time": self.to_time,
-            "session_type": "Lecture",
+            "session_type": "Office Hour" if based_on == "Office Hours" else "Lecture",
             "session_status": "Scheduled"
         })
         # Prevent auto-creation of Student Attendance placeholders.
@@ -237,6 +228,8 @@ class TimeTable(Document):
 
         frappe.logger().info(f"Updating session {session_name}: from {self.from_time} to {self.to_time}, duration={duration_hours}")
 
+        based_on = self.based_on or "Time Table"
+
         # Update the session fields
         session.session_date = self.schedule_date
         session.session_start_time = self.from_time
@@ -246,7 +239,9 @@ class TimeTable(Document):
         session.room = room_name
         session.course = self.course
         session.course_offering = self.course_offering
-        session.student_group = self.student_group
+        session.based_on = based_on
+        session.course_schedule = self.course_schedule if based_on == "Course Schedule" else None
+        session.office_hours_group = self.office_hours_group if based_on == "Office Hours" else None
 
         # Save the session
         session.save(ignore_permissions=True)
@@ -402,7 +397,6 @@ def get_timetable_data(term=None, course=None, start_date=None, end_date=None):
             "venue",
             "color",
             "class_configuration",
-            "student_group",
         ],
         order_by="schedule_date, from_time",
     )
@@ -434,7 +428,6 @@ def get_timetable_data(term=None, course=None, start_date=None, end_date=None):
                 "room": room_by_venue.get(schedule.venue),
                 "venue": schedule.venue,
                 "class_configuration": schedule.class_configuration,
-                "student_group": schedule.student_group,
             }
         })
 
@@ -463,7 +456,7 @@ def create_time_table(data):
         "repeats_till": data.get("repeats_till"),
         "term": data.get("term"),
         "programme": data.get("programme"),
-        "student_group": data.get("student_group"),
+        "course_offering": data.get("course_offering"),
     })
     
     doc.insert(ignore_permissions=True)
@@ -501,7 +494,7 @@ def get_events(start, end, filters=None):
             venue,
             color,
             title,
-            student_group
+            course_offering
         FROM `tabTime Table`
         WHERE
             schedule_date BETWEEN %(start)s AND %(end)s
@@ -540,7 +533,7 @@ def get_events(start, end, filters=None):
             "extendedProps": {
                 "venue": d.venue,
                 "instructor": d.instructor,
-                "student_group": d.student_group
+                "course_offering": d.course_offering
             }
         })
 

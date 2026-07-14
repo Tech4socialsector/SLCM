@@ -39,7 +39,7 @@ def calculate_student_attendance(student, course_offering):
 	# Calculate office hours
 	office_hours_data = calculate_office_hours(student, course_offering)
 	
-	# Update Student Group Student (Office Hours)
+	# Update Office Hours Group Student (Office Hours)
 	update_office_hours_in_group(student, course_offering, office_hours_data['total_hours'])
 	
 	# Get condonation
@@ -122,11 +122,8 @@ def calculate_student_attendance(student, course_offering):
 	# Populate Application Lists (Condonation & FA/MFA)
 	populate_application_lists(summary, student, course_offering)
 	
-	# Populate Student Group (Section)
-	student_group = get_student_group(student, course_offering)
-	summary.student_group = student_group
-	if student_group:
-		summary.section = frappe.db.get_value("Student Group", student_group, "section")
+	# Populate Section
+	summary.section = get_student_section(student, course_offering)
 
 	# Save
 	summary.last_updated = frappe.utils.now()
@@ -538,58 +535,23 @@ def populate_application_lists(summary, student, course_offering):
 		frappe.log_error(message=f"Error fetching FA/MFA list: {str(e)}", title="FA/MFA List Fetch Error")
 
 
-def get_student_group(student, course_offering):
-	"""
-	Get the primary Student Group (Section) for a student in this course offering.
-	Fetches from the most recent Student Attendance record.
-	"""
-	# Try fetching from latest attendance record for this course offering
-	# Using SQL to ensure latest record is fetched correctly
-	groups = frappe.db.sql("""
-		SELECT student_group FROM `tabStudent Attendance`
-		WHERE student = %s AND course_offer = %s AND docstatus < 2
-		AND student_group IS NOT NULL AND student_group != ''
-		ORDER BY attendance_date DESC LIMIT 1
+def get_student_section(student, course_offering):
+	"""Resolve the student's Section for this Course Offering via Student Enrollment."""
+	section = frappe.db.sql("""
+		SELECT se.section
+		FROM `tabStudent Enrollment` se
+		JOIN `tabStudent Enrollment Course` sec ON sec.parent = se.name
+		WHERE se.student = %s AND sec.course_offering = %s
+		AND sec.status = 'Enrolled' AND se.status = 'Enrolled'
+		LIMIT 1
 	""", (student, course_offering))
-	
-	if groups and groups[0][0]:
-		return groups[0][0]
-		
-	# Fallback: Try connection via Course Offering if no attendance yet
-	try:
-		offering_details = frappe.db.get_value("Course Offering", course_offering, ["course_title", "term_name", "academic_year"], as_dict=True)
-		if offering_details:
-			groups = frappe.db.sql("""
-				SELECT parent
-				FROM `tabStudent Group Student`
-				WHERE student = %s
-				AND parent IN (
-					SELECT name FROM `tabStudent Group`
-					WHERE course = %s
-					AND academic_term = %s
-					AND academic_year = %s
-					AND docstatus < 2
-				)
-				LIMIT 1
-			""", (
-				student, 
-				offering_details.course_title, 
-				offering_details.term_name, 
-				offering_details.academic_year
-			))
-			
-			if groups:
-				return groups[0][0]
-	except Exception:
-		pass
 
-
-	return None
+	return section[0][0] if section else None
 
 
 def update_office_hours_in_group(student, course_offering, total_hours):
 	"""
-	Update total_office_hours in Student Group Student doc for Office Hours Groups
+	Update total_office_hours in Office Hours Group Student doc for Office Hours Groups
 	"""
 	try:
 		# Get Course Context
@@ -611,7 +573,7 @@ def update_office_hours_in_group(student, course_offering, total_hours):
 			return
 
 		# Update the child table rows
-		rows = frappe.get_all("Student Group Student",
+		rows = frappe.get_all("Office Hours Group Student",
 			filters={
 				"parent": ["in", office_groups],
 				"parenttype": "Office Hours Group",
@@ -619,9 +581,9 @@ def update_office_hours_in_group(student, course_offering, total_hours):
 			},
 			fields=["name"]
 		)
-		
+
 		for row in rows:
-			frappe.db.set_value("Student Group Student", row.name, "total_office_hours", total_hours)
+			frappe.db.set_value("Office Hours Group Student", row.name, "total_office_hours", total_hours)
 			
 	except Exception as e:
 		frappe.log_error(message=f"Failed to update office hours group for {student}: {str(e)}", title="Office Hours Update Error")

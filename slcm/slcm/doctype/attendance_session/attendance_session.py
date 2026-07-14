@@ -99,7 +99,6 @@ class AttendanceSession(Document):
 					"session_type": self.session_type,
 					"status": "Absent",
 					"source": "Auto",
-					"student_group": self.student_group,
 					"hours_counted": self.duration_hours or 1.0,
 				})
 				doc.insert(ignore_permissions=True)
@@ -107,16 +106,7 @@ class AttendanceSession(Document):
 		self.update_attendance_summary()
 
 	def get_enrolled_students(self):
-		"""Find students based on Student Group or Class Enrollment"""
-		if self.student_group:
-			# Fetch from Student Group
-			students = frappe.get_all("Student Group Student", 
-				filters={"parent": self.student_group, "active": 1},
-				fields=["student"]
-			)
-			return [s.student for s in students]
-
-		# Fallback: Find Student Enrollments linked to this Course Offering
+		"""Find students enrolled in this Course Offering"""
 		if not self.course_offering:
 			return []
 

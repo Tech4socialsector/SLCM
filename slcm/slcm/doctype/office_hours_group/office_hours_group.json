@@ -119,7 +119,7 @@
    "fieldname": "students",
    "fieldtype": "Table",
    "label": "Students",
-   "options": "Student Group Student"
+   "options": "Office Hours Group Student"
   },
   {
    "fieldname": "date",

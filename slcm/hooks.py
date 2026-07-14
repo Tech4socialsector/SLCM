@@ -223,7 +223,7 @@ fixtures = [
             "Total Attendance Records", "Present Count", "Absent Count", "OD Count",
             "Total Sessions", "Active Sessions", "Pending Condonations", "Pending FA / MFA",
             # Faculty
-            "Faculty My Course Offerings", "Faculty My Student Groups",
+            "Faculty My Course Offerings",
             "Faculty Active Attendance Sessions", "Faculty Pending Condonation Requests",
             "Faculty Open Course Offerings", "Faculty Office Hours Groups",
             # Fees Management
@@ -600,7 +600,7 @@ permission_query_conditions = {
     # Time Table - faculty sees only their assigned groups' schedules
     "Time Table":                      "slcm.permissions.class_schedule_query_conditions",
 
-    # Attendance - faculty sees only records for their assigned student groups
+    # Attendance - faculty sees only records for their assigned Course Offerings
     "Attendance Session":              "slcm.permissions.attendance_session_query_conditions",
     "Student Attendance":              "slcm.permissions.student_attendance_query_conditions",
     "Attendance Log":                  "slcm.permissions.attendance_log_query_conditions",

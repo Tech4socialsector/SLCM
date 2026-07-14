@@ -7,8 +7,6 @@ frappe.ui.form.on("Student Attendance Tool", {
 	},
 
 	onload(frm) {
-		frm.trigger("set_student_group_query");
-
 		if (!frm.doc.date) {
 			frm.set_value("date", frappe.datetime.get_today());
 		}
@@ -17,7 +15,6 @@ frappe.ui.form.on("Student Attendance Tool", {
 	refresh(frm) {
 		if (frappe.route_options) {
 			frm.set_value("based_on", frappe.route_options.based_on);
-			frm.set_value("student_group", frappe.route_options.student_group);
 			frm.set_value("course_schedule", frappe.route_options.course_schedule);
 			frm.set_value("class_schedule", frappe.route_options.class_schedule);
 			if (frappe.route_options.date) {
@@ -32,47 +29,16 @@ frappe.ui.form.on("Student Attendance Tool", {
 	/* ---------------- Field Events ---------------- */
 
 	based_on(frm) {
-		frm.set_value("student_group", null);
-		frm.set_value("group_based_on", null);
 		frm.set_value("course_schedule", null);
 		frm.set_value("class_schedule", null);
 		frm.set_value("office_hours_group", null);
 		frm.students_area.empty();
-		frm.trigger("set_student_group_query");
-	},
-
-	group_based_on(frm) {
-		frm.set_value("student_group", null);
-		frm.students_area.empty();
-		frm.trigger("set_student_group_query");
-	},
-
-	/* ---------------- Link Query (FIXED) ---------------- */
-
-	set_student_group_query(frm) {
-		frm.set_query("student_group", () => {
-			if (!frm.doc.group_based_on) {
-				// Prevent empty dropdown confusion
-				return {
-					filters: {
-						name: ["=", "__invalid__"],
-					},
-				};
-			}
-
-			return {
-				filters: {
-					group_based_on: frm.doc.group_based_on,
-					disabled: 0,
-				},
-			};
-		});
 	},
 
 	/* ---------------- Data Fetch ---------------- */
 
-	student_group(frm) {
-		if ((frm.doc.student_group && frm.doc.date) || frm.doc.course_schedule || frm.doc.class_schedule || frm.doc.office_hours_group) {
+	fetch_students(frm) {
+		if (frm.doc.course_schedule || frm.doc.class_schedule || frm.doc.office_hours_group) {
 			frm.students_area.html(
 				"<div style='padding:2rem;text-align:center'>" +
 				"<i class='fa fa-spinner fa-spin'></i> Fetching students..." +
@@ -83,7 +49,6 @@ frappe.ui.form.on("Student Attendance Tool", {
 				method: "slcm.slcm.doctype.student_attendance_tool.student_attendance_tool.get_student_attendance_records",
 				args: {
 					based_on: frm.doc.based_on,
-					student_group: frm.doc.student_group,
 					date: frm.doc.date,
 					course_schedule: frm.doc.course_schedule,
 					class_schedule: frm.doc.class_schedule,
@@ -102,7 +67,7 @@ frappe.ui.form.on("Student Attendance Tool", {
 		if (frm.doc.date > frappe.datetime.get_today()) {
 			frappe.throw(__("Cannot mark attendance for future dates."));
 		}
-		frm.trigger("student_group");
+		frm.trigger("fetch_students");
 	},
 
 	course_schedule(frm) {
@@ -111,10 +76,10 @@ frappe.ui.form.on("Student Attendance Tool", {
 				if (r && r.schedule_date) {
 					frm.set_value("date", r.schedule_date);
 				}
-				frm.trigger("student_group");
+				frm.trigger("fetch_students");
 			});
 		} else {
-			frm.trigger("student_group");
+			frm.trigger("fetch_students");
 		}
 	},
 
@@ -136,19 +101,15 @@ frappe.ui.form.on("Student Attendance Tool", {
 						}
 					}
 				}
-				frm.trigger("student_group");
+				frm.trigger("fetch_students");
 			});
 		} else {
-			frm.trigger("student_group");
+			frm.trigger("fetch_students");
 		}
 	},
 
 	office_hours_group(frm) {
-		if (frm.doc.office_hours_group) {
-			frm.trigger("student_group");
-		} else {
-			frm.trigger("student_group");
-		}
+		frm.trigger("fetch_students");
 	},
 
 	get_students(frm, students) {
@@ -256,20 +217,18 @@ class StudentsEditor {
 					args: {
 						students_present,
 						students_absent,
-						student_group: this.frm.doc.student_group,
 						course_schedule: this.frm.doc.course_schedule,
 						class_schedule: this.frm.doc.class_schedule,
 						office_hours_group: this.frm.doc.office_hours_group,
 						date: this.frm.doc.date,
 						based_on: this.frm.doc.based_on,
-						group_based_on: this.frm.doc.group_based_on,
 					},
 					callback: () => {
 						frappe.show_alert({
 							message: __("Attendance marked"),
 							indicator: "green",
 						});
-						this.frm.trigger("student_group");
+						this.frm.trigger("fetch_students");
 					},
 				});
 			}

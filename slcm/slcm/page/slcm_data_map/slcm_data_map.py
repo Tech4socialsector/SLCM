@@ -17,7 +17,7 @@ def get_doctype_counts():
 		"Grading Schema", "Evaluation Schema", "Exam Assessment Type",
 		"Exam Component", "CGPA Percentage Scale",
 		"Course Schema Assignment", "Access Result Settings", "Publish Result Setting",
-		"Student Master", "Student Parent", "Student Group", "Student Group Student",
+		"Student Master", "Student Parent",
 		"Program Enrollment", "Student Enrollment", "Student Enrollment Course",
 		"Attendance Session", "Attendance Session Student", "Student Attendance",
 		"FA MFA Application", "Student Attendance Condonation",
