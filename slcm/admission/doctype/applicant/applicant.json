@@ -868,7 +868,7 @@
    "fieldname": "annual_house_hold_income",
    "fieldtype": "Select",
    "label": "Annual House Hold Income (in INR)",
-   "options": "\n0 - 3,00,000\n3,00,001 - 8,00,000\n8,00,001 - 15,00,000\n15,00,001 - 25,00,000\n25,00,001 - 50,00,000\nMore than 50,00,000",
+   "options": "\n\u20b9 0 - \u20b9 3,00,000\n\u20b9 3,00,001 - \u20b9 8,00,000\n\u20b9 8,00,001 - \u20b9 15,00,000\n\u20b9 15,00,001 - \u20b9 25,00,000\n\u20b9 25,00,001 - \u20b9 50,00,000\nMore than \u20b9 50,00,000",
    "precision": "2",
    "reqd": 1
   },
@@ -1295,7 +1295,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-14 15:38:03.065534",
+ "modified": "2026-07-15 09:27:25.160423",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
