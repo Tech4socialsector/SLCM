@@ -365,10 +365,12 @@ def get_monthly_matrix(academic_year=None, term=None, programme=None, course=Non
 
 	months = sorted(all_months)
 
+	min_pct = frappe.db.get_single_value("Attendance Settings", "minimum_attendance_percentage") or 0
+
 	rows = []
 	for student in students:
 		own_offerings = student_offerings.get(student, set())
-		month_pct = {}
+		month_data = {}
 		for ym in months:
 			conducted_hours = sum(
 				conducted_by_offering_month.get((off, ym), 0) for off in own_offerings
@@ -376,19 +378,26 @@ def get_monthly_matrix(academic_year=None, term=None, programme=None, course=Non
 			attended_hours = sum(
 				attended_by_offering_student_month.get((off, student, ym), 0) for off in own_offerings
 			)
-			month_pct[ym] = round((attended_hours / conducted_hours * 100), 2) if conducted_hours else None
+			pct = round((attended_hours / conducted_hours * 100), 2) if conducted_hours else None
+			# Hours are included alongside the percentage so the UI can show
+			# "9/9 hrs" context on hover instead of a bare, unexplained number.
+			month_data[ym] = None if pct is None else {
+				"percentage": pct,
+				"conducted_hours": round(conducted_hours, 2),
+				"attended_hours": round(attended_hours, 2),
+			}
 
 		rows.append({
 			"student": student,
 			"student_id": student_id_by_id.get(student, student),
 			"student_name": student_name_by_id.get(student, student),
-			"months": month_pct,
+			"months": month_data,
 		})
 
 	rows.sort(key=lambda r: r["student_name"] or "")
 
 	month_labels = [{"key": ym, "label": _format_month_label(ym)} for ym in months]
-	return {"months": month_labels, "rows": rows}
+	return {"months": month_labels, "rows": rows, "min_pct": min_pct}
 
 
 MAX_DAILY_RANGE = 62  # ~2 months, keeps the register table a reasonable width

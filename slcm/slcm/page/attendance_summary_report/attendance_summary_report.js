@@ -360,11 +360,17 @@ class AttendanceSummaryReport {
 	_render_table(columns, data, footer_text) {
 		this.$table.html(`<div class="asr-datatable-wrap"></div><div class="asr-footer"></div>`);
 		this.$table.find(".asr-footer").text(footer_text);
-		columns.forEach(c => { if (c.editable === undefined) c.editable = false; });
+		columns.forEach(c => {
+			if (c.editable === undefined) c.editable = false;
+			// "fixed" layout keeps every column at a readable minimum width and
+			// lets the wrapper scroll horizontally instead of squeezing headers
+			// into truncated garbage once condonation columns are added in.
+			if (c.width === undefined) c.width = 140;
+		});
 		this._datatable = new frappe.DataTable(this.$table.find(".asr-datatable-wrap").get(0), {
 			columns,
 			data,
-			layout: "fluid",
+			layout: "fixed",
 			serialNoColumn: true,
 			checkboxColumn: false,
 			cellHeight: 42,
@@ -417,17 +423,17 @@ class AttendanceSummaryReport {
 
 		if (include_condonation) {
 			columns.push(
-				{ id: "condonation_applied", name: __("Condonation Applied"), format: (v, row, col, d) => esc(d.condonation_applied || "No") },
-				{ id: "condonation_hours", name: __("Condonation Hrs"), align: "right", format: (v, row, col, d) => d.condonation_hours ?? "—" },
-				{ id: "percentage_before_condonation", name: __("Attendance % (Before Condonation)"), align: "right", format: (v, row, col, d) => (d.percentage_before_condonation ?? "—") + "%" },
-				{ id: "percentage_after_condonation", name: __("Attendance % (After Condonation)"), align: "right", format: (v, row, col, d) => (d.percentage_after_condonation ?? "—") + "%" },
-				{ id: "condonation_reason", name: __("Reason"), format: (v, row, col, d) => esc(d.condonation_reason || "—") },
+				{ id: "condonation_applied", name: __("Condonation Applied"), width: 160, format: (v, row, col, d) => esc(d.condonation_applied || "No") },
+				{ id: "condonation_hours", name: __("Condonation Hrs"), width: 140, align: "right", format: (v, row, col, d) => d.condonation_hours ?? "—" },
+				{ id: "percentage_before_condonation", name: __("Attendance % (Before Condonation)"), width: 220, align: "right", format: (v, row, col, d) => (d.percentage_before_condonation ?? "—") + "%" },
+				{ id: "percentage_after_condonation", name: __("Attendance % (After Condonation)"), width: 220, align: "right", format: (v, row, col, d) => (d.percentage_after_condonation ?? "—") + "%" },
+				{ id: "condonation_reason", name: __("Reason"), width: 160, format: (v, row, col, d) => esc(d.condonation_reason || "—") },
 				{
-					id: "condonation_proof", name: __("Proof"),
+					id: "condonation_proof", name: __("Proof"), width: 100,
 					format: (v, row, col, d) => d.condonation_proof ? `<a href="${esc(d.condonation_proof)}" target="_blank">${__("View")}</a>` : "—",
 				},
-				{ id: "condonation_aad_status", name: __("Approver 1 (AAD)"), format: (v, row, col, d) => d.condonation_aad_status ? esc(d.condonation_aad_status) : "—" },
-				{ id: "condonation_pc_status", name: __("Approver 2 (Programme Chair)"), format: (v, row, col, d) => d.condonation_pc_status ? esc(d.condonation_pc_status) : "—" },
+				{ id: "condonation_aad_status", name: __("Approver 1 (AAD)"), width: 170, format: (v, row, col, d) => d.condonation_aad_status ? esc(d.condonation_aad_status) : "—" },
+				{ id: "condonation_pc_status", name: __("Approver 2 (Programme Chair)"), width: 220, format: (v, row, col, d) => d.condonation_pc_status ? esc(d.condonation_pc_status) : "—" },
 			);
 		}
 
@@ -454,55 +460,63 @@ class AttendanceSummaryReport {
 
 	/* ---------- render: Monthly tab (classic spreadsheet look) ---------- */
 
-	_render_monthly({ months, rows }) {
+	_render_monthly({ months, rows, min_pct }) {
 		this.$summary.empty();
 
 		if (!rows.length || !months.length) {
 			this._render_empty(__("No attendance records found"), __("Try adjusting the filters, or check that sessions have been conducted for this period."));
 			return;
 		}
+		min_pct = min_pct || 0;
 
-		frappe.db.get_single_value("Attendance Settings", "minimum_attendance_percentage").then(min_pct => {
-			min_pct = min_pct || 0;
+		this._render_legend(min_pct);
 
-			const flat_rows = rows.map(r => {
-				const flat = { student: r.student, student_id: r.student_id, student_name: r.student_name };
-				months.forEach(m => { flat[m.key] = r.months[m.key]; });
-				return flat;
-			});
-
-			const columns = [
-				{
-					id: "student_name", name: __("Student Name"),
-					format: (v, row, col, d) => {
-						const values = months.map(m => d[m.key]).filter(x => x !== null && x !== undefined);
-						const row_low = values.length && (values.reduce((a, b) => a + b, 0) / values.length) < min_pct;
-						return `<div class="${row_low ? "asr-pivot-name-low" : ""}">${esc(d.student_name)}<div class="asr-pivot-subid">${esc(d.student_id)}</div></div>`;
-					},
-				},
-				...months.map(m => ({
-					id: m.key, name: esc(m.label), align: "center",
-					format: (v, row, col, d) => {
-						const pct = d[m.key];
-						if (pct === null || pct === undefined) return `<div class="asr-cell-muted">—</div>`;
-						const low = pct < min_pct;
-						return `<div class="asr-pivot-cell ${low ? "asr-pivot-low" : "asr-pivot-ok"}">${pct}%</div>`;
-					},
-				})),
-			];
-
-			this._render_table(columns, flat_rows, __("Showing {0} student(s) across {1} month(s)", [rows.length, months.length]));
-
-			this._export = {
-				headers: ["Student Name", "Student ID", ...months.map(m => m.label)],
-				rows: rows.map(r => [r.student_name, r.student_id, ...months.map(m => {
-					const v = r.months[m.key];
-					return v === null || v === undefined ? "" : `${v}%`;
-				})]),
-				filename: "attendance_monthly",
-			};
-			this.$export_btn.prop("disabled", false);
+		const flat_rows = rows.map(r => {
+			const flat = { student: r.student, student_id: r.student_id, student_name: r.student_name };
+			months.forEach(m => { flat[m.key] = r.months[m.key]; });
+			return flat;
 		});
+
+		const columns = [
+			{
+				id: "student_name", name: __("Student Name"),
+				format: (v, row, col, d) => {
+					const values = months.map(m => d[m.key]).filter(Boolean).map(c => c.percentage);
+					const row_low = values.length && (values.reduce((a, b) => a + b, 0) / values.length) < min_pct;
+					return `<div class="${row_low ? "asr-pivot-name-low" : ""}">${esc(d.student_name)}<div class="asr-pivot-subid">${esc(d.student_id)}</div></div>`;
+				},
+			},
+			...months.map(m => ({
+				id: m.key, name: esc(m.label), align: "center",
+				format: (v, row, col, d) => {
+					const cell = d[m.key];
+					if (!cell) return `<div class="asr-cell-muted">—</div>`;
+					const low = cell.percentage < min_pct;
+					const title = __("{0} of {1} hrs attended", [cell.attended_hours, cell.conducted_hours]);
+					return `<div class="asr-pivot-cell ${low ? "asr-pivot-low" : "asr-pivot-ok"}" title="${esc(title)}">${cell.percentage}%</div>`;
+				},
+			})),
+		];
+
+		this._render_table(columns, flat_rows, __("Showing {0} student(s) across {1} month(s)", [rows.length, months.length]));
+
+		this._export = {
+			headers: ["Student Name", "Student ID", ...months.map(m => m.label)],
+			rows: rows.map(r => [r.student_name, r.student_id, ...months.map(m => {
+				const c = r.months[m.key];
+				return c ? `${c.percentage}% (${c.attended_hours}/${c.conducted_hours} hrs)` : "";
+			})]),
+			filename: "attendance_monthly",
+		};
+		this.$export_btn.prop("disabled", false);
+	}
+
+	_render_legend(min_pct) {
+		$(`<div class="asr-legend">
+			<span class="asr-legend-item"><span class="asr-legend-dot asr-legend-ok"></span>${__("≥ {0}% (meets minimum)", [min_pct])}</span>
+			<span class="asr-legend-item"><span class="asr-legend-dot asr-legend-low"></span>${__("< {0}% (below minimum)", [min_pct])}</span>
+			<span class="asr-legend-item">${__("Hover a cell for the hours behind it")}</span>
+		</div>`).appendTo(this.$summary);
 	}
 
 	/* ---------- render: Daily tab (classic spreadsheet look) ---------- */
@@ -819,6 +833,19 @@ function asr_inject_styles() {
 		@media (max-width: 500px) {
 			.asr-kpi-row { grid-template-columns: 1fr; }
 		}
+		.asr-legend {
+			grid-column: 1 / -1;
+			display: flex;
+			flex-wrap: wrap;
+			gap: 18px;
+			font-size: 12px;
+			color: #64748b;
+			padding: 10px 4px 0;
+		}
+		.asr-legend-item { display: flex; align-items: center; gap: 6px; }
+		.asr-legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+		.asr-legend-ok { background: #15803d; }
+		.asr-legend-low { background: #dc2626; }
 		.asr-kpi-card {
 			background: #fff;
 			border: 1px solid #e5e9f0;
