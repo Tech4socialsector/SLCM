@@ -470,119 +470,158 @@
   }
   .pd-tab-content img { max-width: 100%; height: auto; }
   .pd-tab-content table { max-width: 100%; overflow-x: auto; display: block; }
-  .pd-tabs-container, .pd-action-bar, .pd-hero-banner, #pd-sidebar { overflow: hidden; }
+  .pd-tabs-container, .pd-hero-banner, #pd-sidebar { overflow: hidden; }
 
-  /* ── MOBILE RESPONSIVE ────────────────────────────────────── */
-  @media (max-width: 768px) {
-    /* Hero banner */
-    .pd-hero-banner { border-radius: 14px !important; min-height: 280px !important; }
-    .pd-hero-inner { min-height: 280px !important; padding: 28px 24px !important; }
-    .pd-hero-inner h1 { font-size: 26px !important; }
-    .pd-main-container { padding: 0 14px !important; }
-  }
-
-  @media (max-width: 640px) {
-    /* Hero banner */
-    .pd-hero-banner { border-radius: 12px !important; min-height: 260px !important; }
-    .pd-hero-inner { min-height: 260px !important; padding: 24px 20px !important; }
-    .pd-hero-inner h1 { font-size: 24px !important; }
-
-    /* Action bar */
-    .pd-action-bar {
-      padding: 14px 16px !important; border-radius: 12px !important;
-      flex-direction: column !important; align-items: stretch !important;
-    }
-    .pd-action-bar .pd-action-chips {
-      gap: 8px !important; justify-content: flex-start !important; flex-wrap: wrap !important;
-    }
-    .pd-action-bar .pd-action-chips > div { flex: 0 0 auto; font-size: 12px; }
-    .pd-action-bar .pd-action-chips > div span { font-size: 12px !important; }
-    .pd-action-bar .pd-action-btns { width: 100%; }
-    .pd-action-bar .pd-action-btns a { width: 100%; justify-content: center; }
-
-    /* Tab nav */
-    #pd-tab-nav { gap: 0; -webkit-overflow-scrolling: touch; scrollbar-width: none; overflow-x: auto; display: flex; }
-    #pd-tab-nav::-webkit-scrollbar { display: none; }
-    #pd-tab-nav button { padding: 12px 14px !important; font-size: 12px !important; flex-shrink: 0; }
-    .pd-tab-content { padding: 20px 16px !important; }
-    .pd-tab-content h3 { font-size: 18px !important; }
-
-    #pd-sidebar > div { border-radius: 12px !important; }
-    .pd-sidebar-card { padding: 20px 16px !important; }
-    .pd-questions-card { padding: 24px 16px !important; border-radius: 12px !important; }
-    .pd-career-grid { grid-template-columns: 1fr !important; }
-    .pd-faculty-grid { grid-template-columns: repeat(2, 1fr) !important; }
-
-    .pd-breadcrumb { padding: 12px 0 0 !important; }
-    .pd-main-container { padding: 0 12px !important; }
-    #pd-grid { gap: 16px !important; }
-    .pd-tabs-container { border-radius: 12px !important; }
-    .pd-adm-row { display: flex; align-items: flex-start; gap: 12px; }
-
-    .pd-tab-content div[style*="line-height"] { overflow-wrap: break-word; word-break: break-word; }
-
-    .pd-gmodal-sidebar { display: none; }
-    .pd-gmodal-box { width: 100vw; height: 100vh; border-radius: 0; }
-  }
-
-  @media (max-width: 480px) {
-    .pd-hero-banner { min-height: 220px !important; border-radius: 10px !important; }
-    .pd-hero-inner { min-height: 220px !important; padding: 20px 16px !important; }
-    .pd-hero-inner h1 { font-size: 20px !important; line-height: 1.25 !important; }
-    .pd-action-bar { padding: 12px 14px !important; margin-top: 12px !important; }
-    .pd-action-bar .pd-action-chips > div { padding: 6px 10px !important; }
-    .pd-faculty-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
-    .pd-faculty-card { padding: 14px 10px !important; }
-    #pd-tab-nav button { padding: 10px 12px !important; font-size: 11px !important; }
-    .pd-tab-content { padding: 16px 14px !important; }
-    .pd-sidebar-card { padding: 16px 14px !important; }
-    .pd-questions-card { padding: 20px 14px !important; }
-  }
-
-  /* PD Responsive grid */
+  /* ── PD Responsive grid ───────────────────────────────────── */
   #pd-grid {
     display: grid;
     grid-template-columns: 1fr 340px;
     gap: 24px;
     align-items: start;
   }
-
   @media (max-width: 1023px) {
-    #pd-grid {
-      grid-template-columns: 1fr;
-    }
-
-    #pd-sidebar {
-      position: relative !important;
-      top: auto !important;
-    }
+    #pd-grid { grid-template-columns: 1fr; }
+    #pd-sidebar { position: relative !important; top: auto !important; }
   }
 
-  /* Responsive Grid */
+  /* ── Programs grid ───────────────────────────────────────── */
   .programs-grid {
     display: grid;
-    gap: 2rem;
+    gap: 1.5rem;
+  }
+  @media (min-width: 1200px) { .programs-grid { grid-template-columns: repeat(4, 1fr); } }
+  @media (min-width: 768px) and (max-width: 1199px) { .programs-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (min-width: 480px) and (max-width: 767px) { .programs-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 479px) { .programs-grid { grid-template-columns: 1fr; gap: 1rem; } }
+
+  /* Program card — no fixed width, fill the column */
+  .prog-card { width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box; }
+
+  /* ── Listing hero (fluid height) ────────────────────────── */
+  .adm-hero-wrap {
+    height: clamp(320px, 55vw, 600px);
+    overflow: hidden;
+  }
+  @media (max-width: 768px) {
+    .adm-hero-wrap { height: clamp(280px, 70vw, 420px); }
+  }
+  @media (max-width: 480px) {
+    .adm-hero-wrap { height: clamp(220px, 80vw, 320px); }
+  }
+
+  /* ── Announcement banner card ────────────────────────────── */
+  .ann-banner-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 28px;
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 8px 32px -8px rgba(0,0,0,0.12);
+    border: 1px solid rgba(26,60,110,0.15);
+  }
+  .ann-banner-btn {
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+    padding: 12px 28px;
+    border-radius: 2px;
+    font-weight: 700;
+    font-size: 14px;
+    color: white;
+    text-decoration: none;
+    background: var(--primary);
+    white-space: nowrap;
+  }
+  @media (max-width: 640px) {
+    .ann-banner-card { padding: 16px 16px; }
+    .ann-banner-btn { width: 100%; justify-content: center; }
   }
 
-  @media (min-width: 1024px) {
-    .programs-grid {
-      grid-template-columns: repeat(4, 1fr);
-    }
+  /* ── Detail view hero ────────────────────────────────────── */
+  .det-hero-wrap {
+    border-radius: 20px;
+    overflow: hidden;
+    min-height: clamp(220px, 35vw, 420px);
+    position: relative;
+  }
+  .det-hero-inner {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: clamp(220px, 35vw, 420px);
+    padding: clamp(20px, 4vw, 36px) clamp(16px, 4vw, 40px);
+  }
+  @media (max-width: 640px) {
+    .det-hero-wrap { border-radius: 12px !important; }
+  }
+  @media (max-width: 480px) {
+    .det-hero-wrap { border-radius: 10px !important; }
   }
 
-  @media (min-width: 640px) and (max-width: 1023px) {
-    .programs-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
+  /* ── Detail view action bar ──────────────────────────────── */
+  .det-action-bar {
+    background: white;
+    border-radius: 14px;
+    padding: 18px 28px;
+    margin-top: 16px;
+    border: 1.5px solid #e2e8f0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+  }
+  .det-action-chips { display: flex; flex-wrap: wrap; gap: 24px; flex: 1; }
+  .det-action-btns  { display: flex; gap: 10px; flex-shrink: 0; flex-wrap: wrap; }
+  @media (max-width: 640px) {
+    .det-action-bar { padding: 16px; flex-direction: column; align-items: stretch; }
+    .det-action-chips { gap: 14px; }
+    .det-action-btns { width: 100%; flex-direction: column; }
+    .det-action-btns a { width: 100% !important; justify-content: center !important; box-sizing: border-box; }
+  }
+  @media (max-width: 480px) {
+    .det-action-bar { padding: 14px; margin-top: 12px; }
   }
 
-  @media (max-width: 639px) {
-    .programs-grid {
-      grid-template-columns: repeat(1, 1fr);
-    }
+  /* ── Announcements & Events section ─────────────────────── */
+  .ann-evt-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+  }
+  @media (max-width: 1023px) {
+    .ann-evt-grid { grid-template-columns: 1fr; gap: 36px; }
+  }
+  @media (max-width: 640px) {
+    .ann-evt-grid { gap: 24px; }
   }
 
+  /* ── MOBILE RESPONSIVE (detail view tabs/sidebar) ────────── */
+  @media (max-width: 640px) {
+    #pd-tab-nav { gap: 0; -webkit-overflow-scrolling: touch; scrollbar-width: none; overflow-x: auto; display: flex; }
+    #pd-tab-nav::-webkit-scrollbar { display: none; }
+    #pd-tab-nav button { padding: 12px 14px !important; font-size: 12px !important; flex-shrink: 0; }
+    .pd-tab-content { padding: 20px 16px !important; }
+    .pd-tab-content h3 { font-size: 18px !important; }
+    #pd-sidebar > div { border-radius: 12px !important; }
+    #pd-grid { gap: 16px !important; }
+    .pd-tabs-container { border-radius: 12px !important; }
+    .pd-tab-content div[style*="line-height"] { overflow-wrap: break-word; word-break: break-word; }
+    .pd-gmodal-sidebar { display: none; }
+    .pd-gmodal-box { width: 100vw; height: 100vh; border-radius: 0; }
+  }
+  @media (max-width: 480px) {
+    #pd-tab-nav button { padding: 10px 12px !important; font-size: 11px !important; }
+    .pd-tab-content { padding: 16px 12px !important; }
+  }
+
+  /* line-clamp utility */
   .line-clamp-4 {
     display: -webkit-box;
     -webkit-line-clamp: 4;
@@ -591,20 +630,10 @@
   }
 
   @keyframes pdFadeUp {
-    from {
-      opacity: 0;
-      transform: translateY(14px);
-    }
-
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
-
-  .pd-fade {
-    animation: pdFadeUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
+  .pd-fade { animation: pdFadeUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
 </style>
 <!-- Fonts loaded in <head>
 {{ get_typography_style_block(
@@ -832,16 +861,9 @@
     <!-- HERO BANNER -->
     {% set _hero_bg = _pimage or _hero or "" %}
     <div class="pd-fade" style="margin-top:16px;animation-delay:0s;">
-      <div style="border-radius:20px;overflow:hidden;min-height:420px;
-                position:relative;
-                {% if _hero_bg %}
-                  background: linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.75) 70%, rgba(0,0,0,0.95) 100%),
-                              url('{{ _hero_bg }}') center/cover no-repeat;
-                {% else %}
-                  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-                {% endif %}">
-        <div style="position:relative;z-index:2;display:flex;flex-direction:column;
-                  justify-content:flex-end;min-height:420px;padding:36px 40px;">
+      <div class="det-hero-wrap"
+            style="{% if _hero_bg %}background: linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.75) 70%, rgba(0,0,0,0.95) 100%), url('{{ _hero_bg }}') center/cover no-repeat;{% else %}background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);{% endif %}">
+        <div class="det-hero-inner">
           {% if _level %}
           <span style="display:inline-block;padding:4px 12px;
                      background:var(--primary);color:white;
@@ -851,7 +873,7 @@
             {{ _level }}
           </span>
           {% endif %}
-          <h1 style="font-size:clamp(22px,3.5vw,36px);font-weight:800;
+          <h1 style="font-size:clamp(20px,3.5vw,36px);font-weight:800;
                    color:white;line-height:1.15;margin:0 0 12px;max-width:720px;">
             {{ _name }}
           </h1>
@@ -865,11 +887,8 @@
     </div>
 
     <!-- ACTION BAR -->
-    <div class="pd-fade" style="background:white;border-radius:14px;padding:20px 32px;
-              margin-top:16px;border:1.5px solid #e2e8f0;
-              display:flex;flex-wrap:wrap;align-items:center;
-              justify-content:space-between;gap:16px;animation-delay:0.06s;">
-      <div style="display:flex;flex-wrap:wrap;gap:32px;">
+    <div class="pd-fade det-action-bar" style="animation-delay:0.06s;">
+      <div class="det-action-chips">
         {% if _dur %}
         <div>
           <p style="font-size:10px;font-weight:700;text-transform:uppercase;
@@ -898,7 +917,7 @@
         </div>
         {% endif %}
       </div>
-      <div style="display:flex;gap:10px;flex-shrink:0;">
+      <div class="det-action-btns">
         {% if _brochure %}
         <a href="{{ _brochure }}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;
                 padding:10px 20px;border-radius:10px;
@@ -1140,7 +1159,7 @@
         </div>{% endif %}
       </div>
       <div id="pd-sidebar" style="position:sticky;top:80px;">
-        <div style="background:white;border-radius:16px;padding:28px;border:1.5px solid #e2e8f0;margin-bottom:16px;">
+        <div style="background:white;border-radius:4px;padding:28px;border:1.5px solid #e2e8f0;margin-bottom:16px;">
           <h4 style="font-size:16px;font-weight:700;color:#0f172a;margin:0 0 20px;">Admission Details</h4>
           <div style="display:flex;flex-direction:column;gap:16px;">
             {% if _intake %}<div>
@@ -1279,7 +1298,7 @@
 {% set _total_slides = (_slides|length) + (1 if _hero_img else 0) %}
 
 <!-- ══ HERO ══════════════════════════════════════════════════════════ -->
-<div class="full-bleed" style="height:600px;overflow:hidden;">
+<div class="full-bleed adm-hero-wrap" style="position:relative;">
 
   <!-- Slide: hero_image (if set) -->
   {% if _hero_img %}
@@ -1290,13 +1309,13 @@
     <div class="slide-content relative z-10 flex h-full flex-col items-center justify-center px-6 text-center mx-auto"
       style="max-width:1200px">
       {% if _since %}<span
-        class="mb-4 inline-block rounded-full border border-white/30 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-widest text-white backdrop-blur-sm">Est.
+        class="mb-4 inline-block rounded-sm border border-white/30 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-widest text-white backdrop-blur-sm">Est.
         {{ _since }} • Excellence in Education</span>{% endif %}
       <h1 class="max-w-4xl font-black leading-tight text-white">{{ _title }}</h1>
       {% if _tagline %}<h2 class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _tagline }}</h2>{% endif %}
       <div class="mt-10 flex flex-wrap justify-center gap-4">
         <a href="#programs"
-          class="rounded-xl px-6 py-3 text-lg font-bold text-white hover:scale-105 transition-transform"
+          class="rounded-sm px-6 py-3 text-lg font-bold text-white hover:scale-105 transition-transform"
           style="background:var(--primary)">{{ _cta1 }}</a>
         <!-- <button class="rounded-xl border border-white/20 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-md hover:bg-white/20 transition-all">{{ _cta2 }}</button> -->
       </div>
@@ -1323,7 +1342,7 @@
       {% if _ssub %}<h2 class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _ssub }}</h2>{% endif %}
       <div class="mt-10 flex flex-wrap justify-center gap-4">
         <a href="#programs"
-          class="rounded-xl px-6 py-3 text-lg font-bold text-white hover:scale-105 transition-transform"
+          class="rounded-sm px-6 py-3 text-lg font-bold text-white hover:scale-105 transition-transform"
           style="background:var(--primary)">{{ _cta1 }}</a>
         <!-- <button class="rounded-xl border border-white/20 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-md hover:bg-white/20 transition-all">{{ _cta2 }}</button> -->
       </div>
@@ -1342,12 +1361,12 @@
     <div class="slide-content relative z-10 flex h-full flex-col items-center justify-center px-6 text-center mx-auto"
       style="max-width:1200px">
       {% if _since %}<span
-        class="mb-4 inline-block rounded-full border border-white/30 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-widest text-white">Est.
+        class="mb-4 inline-block rounded-sm border border-white/30 bg-white/10 px-4 py-1 text-xs font-bold uppercase tracking-widest text-white">Est.
         {{ _since }} • Excellence in Education</span>{% endif %}
       <h1 class="font-headline font-black leading-tight text-white">{{ _title }}</h1>
       {% if _tagline %}<h2 class="mt-6 max-w-2xl text-lg text-slate-200 md:text-xl">{{ _tagline }}</h2>{% endif %}
       <div class="mt-8 flex flex-wrap justify-center gap-4">
-        <a href="#programs" class="rounded-xl bg-white px-4 py-2 hover:scale-105 transition-transform"
+        <a href="#programs" class="rounded-sm bg-white px-4 py-2 hover:scale-105 transition-transform"
           style="color:var(--primary); font-size: 14px !important; font-weight: 400 !important;">{{ _cta1 }}</a>
         <!-- <button class="rounded-xl border border-white/20 bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-md hover:bg-white/20 transition-all">{{ _cta2 }}</button> -->
       </div>
@@ -1360,29 +1379,25 @@
 <!-- ══ ANNOUNCEMENT BANNER ══════════════════════════════════════════ -->
 <div class="full-bleed" style="position:relative;z-index:20;margin-top:-48px;">
   <div style="max-width:960px;margin:0 auto;padding:0 16px;">
-    <div class="flex flex-col items-center justify-between gap-6 rounded-2xl bg-white p-6 shadow-xl md:flex-row md:p-8"
-      style="border:1px solid rgba(26,60,110,0.15);">
-      <div class="flex items-center gap-4">
-        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full"
-          style="background:rgba(26,60,110,0.08);color:var(--primary)">
-          <span class="material-symbols-outlined" style="font-size: 32px !important;">campaign</span>
+    <div class="ann-banner-card">
+      <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
+        <div style="flex-shrink:0;display:flex;width:44px;height:44px;align-items:center;justify-content:center;border-radius:50%;background:rgba(26,60,110,0.08);color:var(--primary)">
+          <span class="material-symbols-outlined" style="font-size:28px;">campaign</span>
         </div>
-        <div>
-          <h2 class="font-headline font-black text-slate-900" style="font-size:clamp(22px,3.5vw,36px);">
-            {% if _show_ann and _ann_text %}{{ _ann_text | safe }}
-            {% elif active_cycle %}Admissions {{ active_cycle.name }} Now Open!
-            {% else %}Admissions are currently closed.{% endif %}
-          </h2>
-        </div>
+        <h2 class="font-headline font-black text-slate-900" style="font-size:clamp(16px,3vw,28px);margin:0;word-break:break-word;">
+          {% if _show_ann and _ann_text %}{{ _ann_text | safe }}
+          {% elif active_cycle %}Admissions {{ active_cycle.name }} Now Open!
+          {% else %}Admissions are currently closed.{% endif %}
+        </h2>
       </div>
       {% if active_cycle %}
       <a href="{{ '#programs' if _is_cycle_active else 'javascript:void(0)' }}"
-        class="w-full whitespace-nowrap rounded-xl px-8 py-3 font-bold text-white md:w-auto text-center {{ 'opacity-60 cursor-not-allowed' if not _is_cycle_active else 'hover:opacity-90' }}"
-        style="background:var(--primary); {{ 'pointer-events: none;' if not _is_cycle_active else '' }}">
-        {{ 'Apply Today' if _is_cycle_active else ('Yet to Open' if _is_yet_to_open else 'Application Closed') }}
+        class="ann-banner-btn {{ 'opacity-60 cursor-not-allowed' if not _is_cycle_active else '' }}"
+        style="{{ 'pointer-events:none;background:#94a3b8;' if not _is_cycle_active else '' }}">
+        {{ 'Apply Now' if _is_cycle_active else ('Yet to Open' if _is_yet_to_open else 'Application Closed') }}
       </a>
       {% else %}
-      <div class="rounded-xl px-8 py-3 font-bold text-slate-400 bg-slate-100">
+      <div class="ann-banner-btn" style="background:#94a3b8;cursor:default;">
         Stay Tuned
       </div>
       {% endif %}
@@ -1468,8 +1483,8 @@
     '') %}
     {% set _pid = p.get('program') or p.get('name') if p.get else (p.program or p.name or '') %}
 
-    <article class="prog-card fade-card flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm"
-      style="width:320px;height:100%;min-height:480px;border:1.5px solid rgba(26,60,110,0.06);cursor:pointer;margin:0 auto;box-sizing:border-box;" onclick="window.location='/admission/{{ _slug }}'"
+    <article class="prog-card fade-card flex flex-col overflow-hidden rounded-sm bg-white shadow-2xl"
+      style="height:100%;min-height:420px;border:1.5px solid rgba(26,60,110,0.06);cursor:pointer;box-sizing:border-box;" onclick="window.location='/admission/{{ _slug }}'"
       tabindex="0" role="button" aria-label="View {{ _name }}">
 
       <!-- Image -->
@@ -1558,7 +1573,7 @@
           {% else %}
           {% set _is_full = p.get('seats_full') if p.get else p.seats_full %}
           <a href="{{ (p.application_form_link or build_login_redirect_to_applicant_form_new(_slug, p.admission_cycle or (active_cycle.name if active_cycle else ''), campus=(p.campus or ''), intake_type=(p.intake_type or ''), admission_year=(active_cycle.admission_year if active_cycle else ''), academic_year=(active_cycle.academic_year if active_cycle else ''), program_level=(p.program_level or ''))) if (_is_cycle_active and not _is_full) else 'javascript:void(0)' }}" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;
-                      padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;
+                      padding:8px 18px;border-radius:2px;font-size:12px;font-weight:700;
                       text-decoration:none;color:#fff;
                       background:var(--primary,#CB2929);transition:opacity .2s;
                       {{ 'opacity: 0.6; cursor: not-allowed; pointer-events: none;' if (not _is_cycle_active or _is_full) else '' }}"
@@ -1569,7 +1584,7 @@
           </a>
           {% endif %}
           <a href="/admission/{{ _slug }}"
-            class="flex-1 rounded-lg py-2.5 text-center text-sm font-bold text-slate-700 hover:bg-slate-200 transition-colors"
+            class="flex-1 rounded-sm py-2.5 text-center text-sm font-bold text-slate-700 hover:bg-slate-200 transition-colors"
             style="background:rgba(26,60,110,0.08);color:var(--primary)" onclick="event.stopPropagation()">
             Details
           </a>
@@ -1609,7 +1624,7 @@
 {% if announcements or events %}
 <div class="full-bleed py-20" style="background:#f0f4f8;">
   <div style="max-width:1200px;margin:0 auto;padding:0 24px;">
-    <div class="grid grid-cols-1 gap-16 lg:grid-cols-2">
+    <div class="ann-evt-grid">
 
       <!-- ── Announcements ── -->
       {% if announcements %}
@@ -1711,7 +1726,7 @@
               <span class="material-symbols-outlined" style="font-size:14px">location_on</span>
               <span>{{ _evenue }}</span>
             </div>
-            {% endif %}
+            {% endif %}Apply Today
           </div>
           {% endfor %}
 
@@ -1748,7 +1763,9 @@ function renderAnnPg(rows) {
   var total = rows.length, pages = Math.ceil(total / _ANN_PER);
   var start = _annPg * _ANN_PER;
   rows.forEach(function(el, i) {
-    el.style.display = (i >= start && i < start + _ANN_PER) ? 'flex' : 'none';
+    var show = (i >= start && i < start + _ANN_PER);
+    el.style.display = show ? 'flex' : 'none';
+    if (show) el.classList.add('visible');
   });
   var info = document.getElementById('ann-pg-info');
   if (info) info.textContent = pages > 1 ? 'Page ' + (_annPg + 1) + ' / ' + pages : total + ' item' + (total > 1 ? 's' : '');
@@ -1776,7 +1793,9 @@ function renderEvtPg(cards) {
   var total = cards.length, pages = Math.ceil(total / _EVT_PER);
   var start = _evtPg * _EVT_PER;
   cards.forEach(function(el, i) {
-    el.style.display = (i >= start && i < start + _EVT_PER) ? '' : 'none';
+    var show = (i >= start && i < start + _EVT_PER);
+    el.style.display = show ? '' : 'none';
+    if (show) el.classList.add('visible');
   });
   // Calendar card is always visible — no change needed
   var info = document.getElementById('evt-pg-info');

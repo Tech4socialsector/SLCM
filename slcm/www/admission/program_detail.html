@@ -445,7 +445,7 @@
   <p style="font-size:14px;color:#64748b;margin-bottom:24px;line-height:1.6;">
     This programme page does not exist or may have been removed.
   </p>
-  <a href="/admission" style="display:inline-block;padding:10px 28px;border-radius:10px;
+  <a href="/admission" style="display:inline-block;padding:10px 28px;border-radius:2px;
             background:var(--primary);color:white;font-weight:700;
             font-size:13px;text-decoration:none;">
     ← Back to Programmes
@@ -471,7 +471,7 @@
     <!-- HERO BANNER -->
     {% set _hero_bg = _pimage or _hero or "" %}
     <div class="pd-fade" style="margin-top:16px;animation-delay:0s;">
-      <div class="pd-hero-banner" style="border-radius:20px;overflow:hidden;min-height:420px;
+      <div class="pd-hero-banner" style="border-radius:4px;overflow:hidden;min-height:420px;
                 position:relative;
                 {% if _hero_bg %}
                   background: linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.75) 70%, rgba(0,0,0,0.95) 100%),
@@ -504,7 +504,7 @@
     </div>
 
     <!-- ACTION BAR -->
-    <div class="pd-fade pd-action-bar" style="background:white;border-radius:14px;padding:20px 32px;
+    <div class="pd-fade pd-action-bar" style="background:white;border-radius:4px;padding:20px 32px;
               margin-top:16px;border:1.5px solid #e2e8f0;
               display:flex;flex-wrap:wrap;align-items:center;
               justify-content:space-between;gap:16px;animation-delay:0.06s;">
@@ -547,7 +547,7 @@
         {% if frappe.session.user and frappe.session.user != "Guest" %}
         {% if user_app_name %}
         <a href="/my-applications?app={{ user_app_name }}" style="display:inline-flex;align-items:center;gap:8px;
-                      padding:11px 24px;border-radius:8px;font-size:13px;font-weight:700;
+                      padding:11px 24px;border-radius:2px;font-size:13px;font-weight:700;
                       text-decoration:none;color:#fff;
                       background:#10b981;transition:opacity .2s;" onmouseover="this.style.opacity='.85'"
           onmouseout="this.style.opacity='1'">
@@ -556,7 +556,7 @@
         </a>
         {% elif has_any_application and not (allow_multiple_applications|default(false)) %}
         <a href="javascript:void(0)" style="display:inline-flex;align-items:center;gap:8px;
-                      padding:11px 24px;border-radius:8px;font-size:13px;font-weight:700;
+                      padding:11px 24px;border-radius:2px;font-size:13px;font-weight:700;
                       text-decoration:none;color:#fff;
                       background:#94a3b8;cursor:not-allowed;opacity:0.6;">
           <span class="material-symbols-outlined" style="font-size:18px;">block</span>
@@ -565,7 +565,7 @@
         {% else %}
         <a href="{{ apply_web_form_url if (_is_cycle_active and not prog_seats_full) else 'javascript:void(0)' }}"
           style="display:inline-flex;align-items:center;gap:8px;
-                      padding:11px 24px;border-radius:8px;font-size:13px;font-weight:700;
+                      padding:11px 24px;border-radius:2px;font-size:13px;font-weight:700;
                       text-decoration:none;color:#fff;
                       background:var(--primary,#CB2929);transition:opacity .2s;
                       {{ 'opacity:0.6;cursor:not-allowed;pointer-events:none;' if (not _is_cycle_active or prog_seats_full) else '' }}"
@@ -576,7 +576,7 @@
         {% endif %}
         {% else %}
         <a href="{{ apply_web_form_login_url if (_is_cycle_active and not prog_seats_full) else 'javascript:void(0)' }}" style="display:inline-flex;align-items:center;gap:8px;
-                    padding:11px 24px;border-radius:8px;font-size:13px;font-weight:700;
+                    padding:11px 24px;border-radius:2px;font-size:13px;font-weight:700;
                     text-decoration:none;color:#fff;
                     background:var(--primary,#CB2929);transition:opacity .2s;
                     {{ 'opacity:0.6;cursor:not-allowed;pointer-events:none;' if (not _is_cycle_active or prog_seats_full) else '' }}"
@@ -589,18 +589,18 @@
     </div>
     {% if active_cycle and not _is_cycle_active %}
     <div class="pd-fade"
-      style="margin-top:12px;padding:12px 14px;border-radius:10px;border:1px solid #fecaca;background:#fef2f2;color:#991b1b;font-size:13px;font-weight:700;">
+      style="margin-top:12px;padding:12px 14px;border-radius:2px;border:1px solid #fecaca;background:#fef2f2;color:#991b1b;font-size:13px;font-weight:700;">
       Application closed for this cycle.
     </div>
     {% elif prog_seats_full %}
     <div class="pd-fade"
-      style="margin-top:12px;padding:12px 14px;border-radius:10px;border:1px solid #ffedd5;background:#fff7ed;color:#9a3412;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;">
+      style="margin-top:12px;padding:12px 14px;border-radius:2px;border:1px solid #ffedd5;background:#fff7ed;color:#9a3412;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;">
       <span class="material-symbols-outlined" style="font-size:18px;">error</span>
       Maximum application limit reached for this programme.
     </div>
     {% elif prog_seats_almost_full %}
     <div class="pd-fade"
-      style="margin-top:12px;padding:12px 14px;border-radius:10px;border:1px solid #ffedd5;background:#fff7ed;color:#9a3412;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;">
+      style="margin-top:12px;padding:12px 14px;border-radius:2px;border:1px solid #ffedd5;background:#fff7ed;color:#9a3412;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;">
       <span class="material-symbols-outlined" style="font-size:18px;">warning</span>
       Almost Full! Only a few seats remaining.
     </div>
@@ -616,7 +616,7 @@
         {% set _isv = item.media_type == "Video" %}
         {% set _url = item.display_url or item.media_url or '' %}
         <div onclick="pdGOpen({{ loop.index0 }})"
-          style="flex:0 0 auto;width:150px;height:100px;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;border:2px solid transparent;transition:all .2s; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);"
+          style="flex:0 0 auto;width:150px;height:100px;border-radius:2px;overflow:hidden;cursor:pointer;position:relative;border:2px solid transparent;transition:all .2s; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);"
           class="pd-fs-thumb" data-idx="{{ loop.index0 }}">
           {% if _isv %}
           <div
@@ -675,7 +675,7 @@
 
           <!-- viewer area -->
           <div id="pd-gviewer"
-            style="max-width:900px;width:100%;max-height:calc(100vh - 120px);aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#000;position:relative;">
+            style="max-width:900px;width:100%;max-height:calc(100vh - 120px);aspect-ratio:16/9;border-radius:2px;overflow:hidden;background:#000;position:relative;">
             <!-- content injected by JS -->
           </div>
 
@@ -798,7 +798,7 @@
       <div>
 
         <!-- TABS CONTAINER -->
-        <div class="pd-tabs-container" style="background:white;border-radius:16px;
+        <div class="pd-tabs-container" style="background:white;border-radius:2px;
                   border:1.5px solid #e2e8f0;overflow:hidden;">
 
           <!-- Tab nav -->
@@ -1097,7 +1097,7 @@
       <div id="pd-sidebar" style="position:sticky;top:80px;">
 
         <!-- ADMISSION DETAILS -->
-        <div class="pd-sidebar-card" style="background:white;border-radius:16px;padding:28px;
+        <div class="pd-sidebar-card" style="background:white;border-radius:2px;padding:28px;
                   border:1.5px solid #e2e8f0;margin-bottom:16px;">
           <h4 style="font-size:18px;font-weight:700;color:var(--primary);margin:0 0 20px;
                     padding-bottom:14px;border-bottom:2px solid var(--primary);">
@@ -1159,7 +1159,7 @@
             <div style="padding-top:16px;border-top:1px solid #f1f5f9;display:flex;flex-direction:column;gap:10px;width:100%;">
               {% if _brochure %}
               <a href="{{ _brochure }}" target="_blank" style="display:block;width:100%;padding:13px;text-align:center;
-                        border-radius:10px;background:#f1f5f9;color:#475569;font-size:14px;
+                        border-radius:2px;background:#f1f5f9;color:#475569;font-size:14px;
                         font-weight:700;text-decoration:none;border:1.5px solid #e2e8f0;"
                 onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
                 <span class="material-symbols-outlined"
@@ -1171,7 +1171,7 @@
               {% if frappe.session.user and frappe.session.user != "Guest" %}
               {% if user_app_name %}
               <a href="/my-applications?app={{ user_app_name }}" style="display:block;width:100%;padding:13px;text-align:center;
-                            border-radius:10px;background:#10b981;color:white;
+                            border-radius:2px;background:#10b981;color:white;
                             font-weight:700;font-size:14px;text-decoration:none;
                             box-shadow:0 4px 14px -4px rgba(16,185,129,0.4);" onmouseover="this.style.opacity='0.88'"
                 onmouseout="this.style.opacity='1'">
@@ -1179,7 +1179,7 @@
               </a>
               {% elif has_any_application and not (allow_multiple_applications|default(false)) %}
               <a href="javascript:void(0)" style="display:block;width:100%;padding:13px;text-align:center;
-                            border-radius:10px;background:#94a3b8;color:white;
+                            border-radius:2px;background:#94a3b8;color:white;
                             font-weight:700;font-size:14px;text-decoration:none;
                             cursor:not-allowed;opacity:0.6;">
                 Apply now
@@ -1187,7 +1187,7 @@
               {% else %}
               <a href="{{ apply_web_form_url if (_is_cycle_active and not prog_seats_full) else 'javascript:void(0)' }}"
                 style="display:block;width:100%;padding:13px;text-align:center;
-                            border-radius:10px;background:var(--primary);color:white;
+                            border-radius:2px;background:var(--primary);color:white;
                             font-weight:700;font-size:14px;text-decoration:none;
                             box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);
                             {{ 'opacity:0.6;cursor:not-allowed;pointer-events:none;' if (not _is_cycle_active or prog_seats_full) else '' }}"
@@ -1197,7 +1197,7 @@
               {% endif %}
               {% else %}
               <a href="{{ apply_web_form_login_url if (_is_cycle_active and not prog_seats_full) else 'javascript:void(0)' }}" style="display:block;width:100%;padding:13px;text-align:center;
-                          border-radius:10px;background:var(--primary);color:white;
+                          border-radius:2px;background:var(--primary);color:white;
                           font-weight:700;font-size:14px;text-decoration:none;
                           box-shadow:0 4px 14px -4px rgba(26,60,110,0.4);
                           {{ 'opacity:0.6;cursor:not-allowed;pointer-events:none;' if (not _is_cycle_active or prog_seats_full) else '' }}"

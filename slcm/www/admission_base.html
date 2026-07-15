@@ -812,16 +812,18 @@
     {% set _footer = portal_config.get('footer_text') or '' %}
     {% set _cemail = portal_config.get('contact_email') or '' %}
     {% set _active = portal_config.get('portal_active') %}
+    {% set _show_adm_page = portal_config.get('show_admission_page') %}
     {% set _mmsg = portal_config.get('maintenance_message') or '' %}
     {% elif portal_config %}
     {% set _pc_title = portal_config.portal_title or '' %}
     {% set _footer = portal_config.footer_text or '' %}
     {% set _cemail = portal_config.contact_email or '' %}
     {% set _active = portal_config.portal_active %}
+    {% set _show_adm_page = portal_config.show_admission_page %}
     {% set _mmsg = portal_config.maintenance_message or '' %}
     {% else %}
     {% set _pc_title = '' %} {% set _footer = '' %} {% set _cemail = '' %}
-    {% set _active = 1 %} {% set _mmsg = '' %}
+    {% set _active = 1 %} {% set _mmsg = '' %} {% set _show_adm_page = 1 %}
     {% endif %}
 
     {# PACE Admission (Always enabled per requirement) #}
@@ -838,7 +840,7 @@
             {% set _has_applicant = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "Applicant"}, "role") else False %}
             {% set _has_pace_applicant = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "PACE Applicant"}, "role") else False %}
 
-            {% set _show_admission = not (_has_pace_applicant and not _has_applicant) %}
+            {% set _show_admission = _show_adm_page and not (_has_pace_applicant and not _has_applicant) %}
             {% set _show_pace = not (_has_applicant and not _has_pace_applicant) %}
 
             {% if _show_admission %}
@@ -879,7 +881,7 @@
             {% set _is_pace_login = ("pace" in _login_url) %}
             <a href="javascript:void(0)" onclick="window.location.href = '{{ _login_url }}' + '?redirect-to=' + encodeURIComponent(window.location.pathname + window.location.search) + '{{ "#register" if _is_pace_login else "" }}';" class="adm-nav-login-btn" style="display:inline-flex;align-items:center;gap:6px;
                           background:var(--primary,#1a3c6e);color:white;
-                          padding:8px 20px;border-radius:8px;font-weight:700;
+                          padding:8px 20px;border-radius:2px;font-weight:700;
                           font-size:14px;text-decoration:none;
                           box-shadow:0 2px 8px rgba(0,0,0,0.15);
                           transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'"
@@ -1052,7 +1054,7 @@
         {% set _has_applicant = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "Applicant"}, "role") else False %}
         {% set _has_pace_applicant = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "PACE Applicant"}, "role") else False %}
 
-        {% set _show_admission = not (_has_pace_applicant and not _has_applicant) %}
+        {% set _show_admission = _show_adm_page and not (_has_pace_applicant and not _has_applicant) %}
         {% set _show_pace = not (_has_applicant and not _has_pace_applicant) %}
 
         {% if _show_admission %}
@@ -1247,6 +1249,16 @@
             }
         }
 
+        .footer-links-wrapper {
+            margin: 0 40px;
+        }
+
+        @media (max-width: 1024px) {
+            .footer-links-wrapper {
+                margin: 0;
+            }
+        }
+
         .footer-links {
             list-style: none;
             padding: 0;
@@ -1302,6 +1314,7 @@
         @media (min-width: 768px) {
             .footer-bottom {
                 flex-direction: row;
+            }
         }
 
         /* ── Footer isolation — fixed size and weight, immune to global rules ── */
@@ -1377,7 +1390,7 @@
                 {% set _footer_cols = _pace_footer if show_pace_only else _admission_footer %}
 
                 {% if _footer_cols and _footer_cols|length > 0 %}
-                <div class="adm-wf-footer-links" style="grid-column: span 8;flex-grow:1;margin: 0 40px;">
+                <div class="adm-wf-footer-links footer-links-wrapper" style="flex-grow:1;">
                     <div style="display: flex; flex-wrap: wrap; gap: 30px; justify-content: flex-start; width: 100%;">
                     {% for col in _footer_cols %}
                     <div style="min-width: 150px;">

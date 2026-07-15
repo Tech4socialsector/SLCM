@@ -1247,7 +1247,7 @@
   {
    "fieldname": "foriegn_national",
    "fieldtype": "Select",
-   "label": "Are you a Foriegn National with a valid passport of a country other that India?",
+   "label": "Are you a foreign national with a valid passport of a country other that India?",
    "options": "\nYes\nNo",
    "reqd": 1
   },
@@ -1306,7 +1306,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-15 10:34:52.657585",
+ "modified": "2026-07-15 15:03:00.852113",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
