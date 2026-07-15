@@ -32,7 +32,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Present\nAbsent\nOn Leave\nLate",
+   "options": "Not Marked\nPresent\nAbsent\nOn Leave\nLate",
    "read_only": 1
   },
   {

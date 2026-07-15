@@ -41,6 +41,7 @@
   "parent_alert_from_time": null,
   "parent_alert_to_time": null,
   "rfid_absence_threshold_hours": 12,
-  "rfid_swipe_mode": "In and Out"
+  "rfid_swipe_mode": "In and Out",
+  "rfid_active_window_minutes": 10
  }
 ]

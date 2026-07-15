@@ -108,7 +108,6 @@ def _free_date(student, offering, start_offset=-3, max_search=20):
 def _make_class_schedule(offering, schedule_date, from_time="09:00:00", to_time="10:00:00"):
     from frappe.utils import time_diff_in_hours
     course = frappe.db.get_value("Course Offering", offering, "course_title")
-    sg = frappe.db.get_value("Student Group", {"course": course, "docstatus": ["<", 2]}, "name")
     doc = frappe.get_doc({
         "doctype":        "Time Table",
         "course_offering": offering,
@@ -117,7 +116,6 @@ def _make_class_schedule(offering, schedule_date, from_time="09:00:00", to_time=
         "from_time":      from_time,
         "to_time":        to_time,
         "duration_hours": time_diff_in_hours(to_time, from_time),
-        "student_group":  sg,
         "status":         "Scheduled",
     })
     doc.insert(ignore_permissions=True)

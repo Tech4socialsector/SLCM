@@ -14,7 +14,6 @@
   "programme",
   "column_break_czfv",
   "term_name",
-  "student_group",
   "section",
   "course_offering",
   "course",
@@ -61,7 +60,7 @@
    "read_only": 1
   },
   {
-   "fetch_from": "student_group.department",
+   "fetch_from": "programme.department",
    "fieldname": "department",
    "fieldtype": "Link",
    "label": "Department",
@@ -69,7 +68,7 @@
    "read_only": 1
   },
   {
-   "fetch_from": "student_group.program",
+   "fetch_from": "course_offering.program",
    "fieldname": "programme",
    "fieldtype": "Link",
    "label": "Programme",
@@ -77,15 +76,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "student_group",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Student Group",
-   "options": "Student Group",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "student_group.section",
    "fieldname": "section",
    "fieldtype": "Link",
    "in_list_view": 1,

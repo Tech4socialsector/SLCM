@@ -1,9 +1,9 @@
-# Copyright (c) 2025, Nishanth and contributors
+# Copyright (c) 2026, Nishanth and contributors
 # For license information, please see license.txt
 
 # import frappe
 from frappe.model.document import Document
 
 
-class StudentGroupInstructor(Document):
+class OfficeHoursGroupStudent(Document):
 	pass

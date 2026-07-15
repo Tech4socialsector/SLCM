@@ -231,8 +231,6 @@ frappe.pages['slcm-module-flow'].on_page_load = function (wrapper) {
 	        <span class="smf-arrow">→</span>
 	        <a class="smf-dt c-yellow" onclick="smfNav('course-offering')">📋 Course Offering</a>
 	        <span class="smf-arrow">→</span>
-	        <a class="smf-dt c-yellow" onclick="smfNav('student-group')">🏫 Student Group</a>
-	        <span class="smf-arrow">→</span>
 	        <a class="smf-dt c-orange" onclick="smfNav('course-schedule')">🗓️ Course Schedule</a>
 	      </div>
 	    </div>

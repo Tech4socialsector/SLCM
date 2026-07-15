@@ -42,8 +42,6 @@ class StudentAttendance(Document):
 			filters["attendance_date"] = self.attendance_date
 			if self.course_schedule:
 				filters["course_schedule"] = self.course_schedule
-			elif self.student_group:
-				filters["student_group"] = self.student_group
 			elif self.course_offer:
 				filters["course_offer"] = self.course_offer
 			
@@ -70,31 +68,16 @@ class StudentAttendance(Document):
 				self.course = schedule.course
 			if not self.program:
 				self.program = schedule.program
-			if not self.instructor:
-				self.instructor = schedule.instructor
+			if not self.instructor and schedule.instructor:
+				faculty_name = frappe.db.get_value(
+					"Faculty", schedule.instructor, ["first_name", "last_name"], as_dict=True
+				)
+				self.instructor = (
+					" ".join(filter(None, [faculty_name.first_name, faculty_name.last_name]))
+					if faculty_name else schedule.instructor
+				) or schedule.instructor
 			if not self.room:
 				self.room = schedule.room
-			if schedule.student_group and not self.student_group:
-				self.student_group = schedule.student_group
-
-		elif self.based_on == "Student Group" and self.student_group:
-			group = frappe.get_doc("Student Group", self.student_group)
-			if not self.academic_year:
-				self.academic_year = group.academic_year
-			if not self.academic_term:
-				self.academic_term = group.academic_term
-			if not self.program:
-				self.program = group.program
-			# Resolve course_offer from Student Group's course field when not already set.
-			# The Student Group's `course` is a course_title; find the matching Course Offering.
-			if not self.course_offer and group.course and self.academic_year:
-				co_match = frappe.db.sql("""
-					SELECT name FROM `tabCourse Offering`
-					WHERE course_title = %s AND academic_year = %s
-					LIMIT 1
-				""", (group.course, self.academic_year), as_dict=True)
-				if co_match:
-					self.course_offer = co_match[0].name
 
 		# Pull course_offer from the linked Attendance Session when not set directly.
 		# This fixes Manual records created without selecting a Course Offering.

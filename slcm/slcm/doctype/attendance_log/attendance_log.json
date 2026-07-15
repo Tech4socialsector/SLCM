@@ -16,7 +16,12 @@
   "source",
   "source_id",
   "processed",
-  "student_attendance"
+  "match_status",
+  "student_attendance",
+  "sync_section",
+  "synced_by",
+  "synced_on",
+  "sync_remarks"
  ],
  "fields": [
   {
@@ -84,14 +89,47 @@
    "label": "Processed"
   },
   {
+   "default": "Pending",
+   "description": "Why this log has (not) been converted into Student Attendance. Set by the RFID processor / manual sync.",
+   "fieldname": "match_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Match Status",
+   "options": "Pending\nMatched\nEarly Tap - Awaiting Activation\nUnmatched - No Session\nUnmatched - No Device Mapping\nUnmatched - Unknown Card\nManually Synced"
+  },
+  {
    "fieldname": "student_attendance",
    "fieldtype": "Link",
    "label": "Student Attendance",
    "options": "Student Attendance"
+  },
+  {
+   "fieldname": "sync_section",
+   "fieldtype": "Section Break",
+   "label": "Manual Sync"
+  },
+  {
+   "fieldname": "synced_by",
+   "fieldtype": "Link",
+   "label": "Synced By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "synced_on",
+   "fieldtype": "Datetime",
+   "label": "Synced On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sync_remarks",
+   "fieldtype": "Small Text",
+   "label": "Sync Remarks"
   }
  ],
  "links": [],
- "modified": "2026-01-01 17:39:02.948617",
+ "modified": "2026-07-14 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Attendance Log",
