@@ -499,6 +499,15 @@ def save_applicant_draft(data, ignore_mandatory=True):
                 if not doc.academic_year or doc.academic_year == "":
                     doc.academic_year = cycle_data.academic_year
 
+    if getattr(doc, "program", None) and getattr(doc, "admission_cycle", None):
+        deriv = _portal_program_row(doc.program, doc.admission_cycle)
+        if deriv.get("program_level") and not doc.program_level:
+            doc.program_level = deriv["program_level"]
+        if deriv.get("intake_type") and not doc.intake_type:
+            doc.intake_type = deriv["intake_type"]
+        if deriv.get("campus"):
+            doc.campus = deriv["campus"]
+
     # Enforce safe values
     doc.status = "Draft"
     doc.email              = email

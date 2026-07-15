@@ -45,6 +45,15 @@ _APPLICATION_CLOSED_PORTAL_MESSAGES = {
 
 _NEXT_STEPS_DEADLINE_PLACEHOLDER = "Complete all steps before your cycle deadline"
 
+
+def _clean_status_label(label):
+    if not label:
+        return ""
+    parts = str(label).strip().split(" ", 1)
+    if len(parts) > 1:
+        return parts[1]
+    return label
+
 NEXT_STEPS_IDLE_HINT = (
     "Complete the requirements for your current stage to move forward in the admission process. "
     "Please check this page for updates — our team will share the next steps with you soon."
@@ -502,7 +511,7 @@ def get_context(context):
                 stage_name = s["name"]
                 status_label = ""
                 if state in ["active", "closed"]:
-                    status_label = applicant.status
+                    status_label = _clean_status_label(applicant.status)
 
                 if s["stage_type"] == "Admission Fee" and admission_fee_paid and state in (
                     "completed",
@@ -544,8 +553,8 @@ def get_context(context):
                         state = "completed"
 
                 status_label = ""
-                if state in ["active", "closed"]:
-                    status_label = current
+                if  state in ["active", "closed"]:
+                    status_label = _clean_status_label(current)
 
                 stages_with_state.append({
                     "name": st["name"],
