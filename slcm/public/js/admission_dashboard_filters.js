@@ -156,7 +156,7 @@
 					$reference.before(`
 						<div class="admission-fee-details-section mt-4 mb-2" style="grid-column: 1 / -1; width: 100%;">
 							<h5 style="font-weight: 700; font-size:20px; color: #1a3c6e; margin: 0; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0;">
-								Fee details
+								Fee Details
 							</h5>
 						</div>
 					`);
