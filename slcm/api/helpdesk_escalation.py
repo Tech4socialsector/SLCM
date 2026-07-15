@@ -72,6 +72,7 @@ def run_sla_escalation():
             "escalation_email_template_new_agent",
             "escalation_email_template_previous_agent",
             "escalation_email_template_max_hops",
+            "notify_on_max_hops",
         ],
     )
     if not teams:
@@ -91,6 +92,7 @@ def _process_team(team):
         "new_agent": team.escalation_email_template_new_agent or DEFAULT_TEMPLATES["new_agent"],
         "previous_agent": team.escalation_email_template_previous_agent or DEFAULT_TEMPLATES["previous_agent"],
         "max_hops": team.escalation_email_template_max_hops or DEFAULT_TEMPLATES["max_hops"],
+        "notify_on_max_hops": frappe.utils.cint(team.notify_on_max_hops),
     }
 
     tickets = frappe.get_all(
@@ -139,7 +141,10 @@ def _maybe_escalate_ticket(ticket, team_name, grace_minutes, max_hops, templates
 
 
 def _get_current_assignee(ticket_name):
-    """Return the ticket's oldest open ToDo assignee, i.e. who the ticket is with right now."""
+    """Return the ticket's most-recently-assigned agent, i.e. who escalation should
+    treat as the current owner. Past agents are no longer un-assigned on a hop (see
+    _reassign), so several ToDos can be Open at once — the newest one is authoritative
+    for deciding who missed the SLA and who's next in line."""
     assignees = frappe.get_all(
         "ToDo",
         filters={
@@ -148,10 +153,27 @@ def _get_current_assignee(ticket_name):
             "status": "Open",
         },
         fields=["allocated_to"],
-        order_by="creation asc",
+        order_by="creation desc",
         limit=1,
     )
     return assignees[0].allocated_to if assignees else None
+
+
+def _get_all_assignees(ticket_name):
+    """Return every agent currently assigned to the ticket (all Open ToDos), oldest
+    first. Used to notify everyone who has ever owned the ticket, since escalation
+    no longer un-assigns past agents (see _reassign)."""
+    return frappe.get_all(
+        "ToDo",
+        filters={
+            "reference_type": "HD Ticket",
+            "reference_name": ticket_name,
+            "status": "Open",
+        },
+        fields=["allocated_to"],
+        order_by="creation asc",
+        pluck="allocated_to",
+    )
 
 
 def _parse_tried_users(raw):
@@ -287,28 +309,18 @@ def _get_next_agent(team_name, tried_users):
 
 
 def _reassign(ticket, team_name, old_agent, new_agent, tried_users, grace_minutes, templates):
-    """Perform one hop: close the old ToDo, assign the new agent, bump ticket state, notify both agents."""
+    """Perform one hop: ADD the new agent as an assignee, bump ticket state, notify both
+    agents. Previously assigned agents are intentionally left assigned (not un-assigned)
+    so anyone who has ever owned the ticket can still act on or close it — see
+    _get_current_assignee for how "current owner" is determined once several agents
+    are assigned at once."""
     from frappe.desk.form.assign_to import add as assign_to_add
-
-    # Silently close the old ToDo — avoid assign_to.remove()/clear(), which fire a
-    # noisy "assignment removed" notification to the outgoing agent.
-    if old_agent:
-        frappe.db.set_value(
-            "ToDo",
-            {
-                "reference_type": "HD Ticket",
-                "reference_name": ticket.name,
-                "allocated_to": old_agent,
-                "status": "Open",
-            },
-            "status",
-            "Cancelled",
-        )
 
     grace_label = _format_grace_period(grace_minutes)
 
     # assign_to.add() creates the ToDo and fires Frappe's standard in-app
-    # assignment notification to the new agent.
+    # assignment notification to the new agent. Existing assignees (old_agent
+    # included) are left untouched.
     assign_to_add(
         {
             "doctype": "HD Ticket",
@@ -340,50 +352,45 @@ def _reassign(ticket, team_name, old_agent, new_agent, tried_users, grace_minute
 
 
 def _notify_hop_limit_reached(ticket, team_name, current_agent, max_hops, templates):
-    """Tell the team lead pool (+ current agent) that auto-escalation has stopped and needs a human."""
+    """Log that auto-escalation has stopped and needs a human. Emailing the ticket's
+    assignees about it is opt-in per team (HD Team.notify_on_max_hops) — off by
+    default, so this always logs to the Activity tab but only sends email when a
+    team has explicitly turned that on."""
     # Throttle: only notify once per breach, not every scheduler tick.
     cache_key = f"hd_ticket_escalation_limit_notified:{ticket.name}"
     if frappe.cache().get_value(cache_key):
         return
     frappe.cache().set_value(cache_key, 1, expires_in_sec=6 * 60 * 60)
 
-    recipients = _get_team_lead_recipients(team_name)
-    if current_agent:
-        recipients.append(current_agent)
-    recipients = list(dict.fromkeys(r for r in recipients if r))
-    if not recipients:
-        return
+    if templates.get("notify_on_max_hops"):
+        recipients = _get_all_assignees(ticket.name)
+        if current_agent:
+            recipients.append(current_agent)
+        recipients = list(dict.fromkeys(r for r in recipients if r))
 
-    ticket_url = frappe.utils.get_url(f"/helpdesk/tickets/{ticket.name}")
-    for recipient in recipients:
-        _send_templated_email(
-            templates["max_hops"],
-            recipient,
-            {
-                "recipient_name": frappe.utils.get_fullname(recipient),
-                "ticket_name": ticket.name,
-                "ticket_subject": ticket.subject,
-                "team_name": team_name,
-                "escalation_count": ticket.escalation_count,
-                "escalation_max_hops": max_hops,
-                "ticket_url": ticket_url,
-            },
-        )
+        ticket_url = frappe.utils.get_url(f"/helpdesk/tickets/{ticket.name}")
+        for recipient in recipients:
+            _send_templated_email(
+                templates["max_hops"],
+                recipient,
+                {
+                    "recipient_name": frappe.utils.get_fullname(recipient),
+                    "ticket_name": ticket.name,
+                    "ticket_subject": ticket.subject,
+                    "team_name": team_name,
+                    "escalation_count": ticket.escalation_count,
+                    "escalation_max_hops": max_hops,
+                    "ticket_url": ticket_url,
+                },
+            )
 
-    _log_activity(ticket.name, f"SLA escalation limit ({max_hops}) reached — notified team for manual action")
-
-
-def _get_team_lead_recipients(team_name):
-    """Users with System Manager/Agent Manager style oversight — fall back to the full team pool."""
-    return frappe.get_all(
-        "HD Team Member",
-        filters={"parent": team_name, "parenttype": "HD Team", "parentfield": "users"},
-        pluck="user",
-    )
+    _log_activity(ticket.name, f"SLA escalation limit ({max_hops}) reached — needs manual action")
 
 
 def _send_escalation_emails(ticket, team_name, old_agent, new_agent, escalation_count, grace_label, templates):
-    """Email the new agent (always) and the previous agent (if any) about this hop."""
+    """Email the new agent (always) and every other agent still assigned to the
+    ticket about this hop — not just the single most-recent one, since past
+    agents are no longer un-assigned (see _reassign)."""
     ticket_url = frappe.utils.get_url(f"/helpdesk/tickets/{ticket.name}")
 
     _send_templated_email(
@@ -400,12 +407,13 @@ def _send_escalation_emails(ticket, team_name, old_agent, new_agent, escalation_
         },
     )
 
-    if old_agent:
+    previous_agents = [a for a in _get_all_assignees(ticket.name) if a and a != new_agent]
+    for previous_agent in previous_agents:
         _send_templated_email(
             templates["previous_agent"],
-            old_agent,
+            previous_agent,
             {
-                "previous_agent_name": frappe.utils.get_fullname(old_agent),
+                "previous_agent_name": frappe.utils.get_fullname(previous_agent),
                 "ticket_name": ticket.name,
                 "ticket_subject": ticket.subject,
                 "new_agent_name": frappe.utils.get_fullname(new_agent),
