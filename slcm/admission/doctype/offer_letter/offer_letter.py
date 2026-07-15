@@ -29,8 +29,7 @@ class OfferLetter(Document):
         print("VALIDATE TRIGGERED")
         if self.status == "Draft" and self.fee_structure:
             from slcm.api.service.fee_service import FeeService
-            applicant_nationality = frappe.db.get_value("Applicant", self.applicant, "nationality") or "Indian"
-            is_foreign = applicant_nationality.strip().lower() != "indian"
+            is_foreign = frappe.db.get_value("Applicant", self.applicant, "foriegn_national") == "Yes"
             fee_data = FeeService._calculate_and_freeze_fees(self.fee_structure, is_foreign=is_foreign)
             self.payable_amount = fee_data.get("total_payable")
 
@@ -101,7 +100,7 @@ class OfferLetter(Document):
 
         # 1. Automatic Fee Cancellation for termination statuses
         if self.status in ["Rejected", "Expired", "Withdrawn"]:
-            FeeService.cancel_linked_fee_assignment(self.name)
+            FeeService.cancel_linked_fee_assignment(self.name, reason=self.status)
 
         # 2. Synchronize Status to Seat Allocation
         OfferService.sync_seat_allocation_status(self, sa_status)
@@ -130,8 +129,7 @@ class OfferLetter(Document):
         if not self.fee_structure:
             frappe.throw(_("Fee Structure is not set."))
 
-        applicant_nationality = frappe.db.get_value("Applicant", self.applicant, "nationality") or "Indian"
-        is_foreign = applicant_nationality.strip().lower() != "indian"
+        is_foreign = frappe.db.get_value("Applicant", self.applicant, "foriegn_national") == "Yes"
         
         fee_data = FeeService._calculate_and_freeze_fees(self.fee_structure, is_foreign=is_foreign)
         new_payable_amount = fee_data.get("total_payable")
