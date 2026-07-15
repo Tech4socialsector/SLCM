@@ -151,18 +151,6 @@
   {
    "child": 1,
    "collapsible": 1,
-   "icon": "bookmark",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Course Master",
-   "link_to": "Course Master",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
    "icon": "list",
    "indent": 0,
    "keep_closed": 0,

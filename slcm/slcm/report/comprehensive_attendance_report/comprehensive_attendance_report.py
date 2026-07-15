@@ -181,9 +181,9 @@ def get_data(filters):
 	conditions = ""
 	values = {}
 
-	if filters.get("department"):
-		conditions += " AND s.department = %(department)s"
-		values["department"] = filters["department"]
+	if filters.get("programme_of_study"):
+		conditions += " AND s.programme_of_study = %(programme_of_study)s"
+		values["programme_of_study"] = filters["programme_of_study"]
 	if filters.get("program"):
 		conditions += " AND s.programme = %(program)s"
 		values["program"] = filters["program"]

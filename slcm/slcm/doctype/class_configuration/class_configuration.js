@@ -11,8 +11,24 @@ frappe.ui.form.on('Class Configuration', {
         add_students_by_filter(frm);
     },
 
+    bulk_upload_students: function (frm) {
+        bulk_upload_students(frm);
+    },
+
     clear_all_students: function (frm) {
         clear_all_students(frm);
+    },
+
+    class_configuration_type: function (frm) {
+        // Clear whichever of section/group no longer applies
+        if (frm.doc.class_configuration_type === 'Section') {
+            frm.set_value('group', '');
+        } else if (frm.doc.class_configuration_type === 'Group') {
+            frm.set_value('section', '');
+        } else {
+            frm.set_value('section', '');
+            frm.set_value('group', '');
+        }
     },
 
     programme: function (frm) {
@@ -25,6 +41,9 @@ frappe.ui.form.on('Class Configuration', {
 
     section: function (frm) {
         set_link_filters(frm);
+        if (frm.doc.class_configuration_type === 'Section' && frm.doc.section) {
+            fetch_students_for_section(frm);
+        }
     },
 
     term: function (frm) {
@@ -68,6 +87,20 @@ frappe.ui.form.on('Class Student', {
                         frappe.model.set_value(cdt, cdn, 'email', r.email);
                     }
                 });
+
+            // Fetch the student's actual enrolled section for this batch
+            // (Student Master has no section of its own - Student Enrollment is)
+            if (frm.doc.batch) {
+                frappe.db.get_value('Student Enrollment', { student: row.student, batch: frm.doc.batch },
+                    'section', (r) => {
+                        if (r && r.section) {
+                            // Show the human-readable Section Name, not the Section docname
+                            frappe.db.get_value('Section', r.section, 'section_name', (s) => {
+                                frappe.model.set_value(cdt, cdn, 'section', (s && s.section_name) || r.section);
+                            });
+                        }
+                    });
+            }
         }
     }
 });
@@ -110,6 +143,44 @@ function generate_class_name(frm) {
     }
 }
 
+function add_matched_students(frm, students) {
+    let added = 0;
+    students.forEach(function (student) {
+        let exists = frm.doc.students.find(row => row.student === student.name);
+        if (!exists) {
+            let row = frm.add_child('students');
+            row.student = student.name;
+            row.student_name = [student.first_name, student.middle_name, student.last_name].filter(Boolean).join(" ");
+            row.registration_id = student.registration_id;
+            row.email = student.email;
+            row.section = student.section || '';
+            added++;
+        }
+    });
+    frm.refresh_field('students');
+    return added;
+}
+
+function fetch_students_for_section(frm) {
+    frappe.call({
+        method: 'slcm.slcm.doctype.class_configuration.class_configuration.get_students_by_filter',
+        args: {
+            programme: frm.doc.programme,
+            batch: frm.doc.batch,
+            section: frm.doc.section
+        },
+        callback: function (r) {
+            if (r.message && r.message.length > 0) {
+                let added = add_matched_students(frm, r.message);
+                frappe.show_alert({
+                    message: __(`${added} student(s) added from Section ${frm.doc.section}`),
+                    indicator: 'green'
+                });
+            }
+        }
+    });
+}
+
 function add_students_by_filter(frm) {
     let d = new frappe.ui.Dialog({
         title: __('Add Students by Filter'),
@@ -147,22 +218,8 @@ function add_students_by_filter(frm) {
                 },
                 callback: function (r) {
                     if (r.message && r.message.length > 0) {
-                        r.message.forEach(function (student) {
-                            // Check if student already exists
-                            let exists = frm.doc.students.find(
-                                row => row.student === student.name
-                            );
-
-                            if (!exists) {
-                                let row = frm.add_child('students');
-                                row.student = student.name;
-                                row.student_name = [student.first_name, student.middle_name, student.last_name].filter(Boolean).join(" ");
-                                row.registration_id = student.registration_id;
-                                row.email = student.email;
-                            }
-                        });
-                        frm.refresh_field('students');
-                        frappe.msgprint(__(`${r.message.length} students added successfully`));
+                        let added = add_matched_students(frm, r.message);
+                        frappe.msgprint(__(`${added} students added successfully`));
                     } else {
                         frappe.msgprint(__('No students found with the given filters'));
                     }
@@ -171,6 +228,82 @@ function add_students_by_filter(frm) {
             d.hide();
         }
     });
+    d.show();
+}
+
+function download_sample_students_csv() {
+    let csv_content = "Student ID,Student Name,Section\n"
+        + "B20262027001,Jane Doe,B2627-A\n"
+        + "B20262027002,John Smith,B2627-A\n";
+    let blob = new Blob([csv_content], { type: 'text/csv' });
+    let link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.download = 'sample_students.csv';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+}
+
+function bulk_upload_students(frm) {
+    let d = new frappe.ui.Dialog({
+        title: __('Bulk Upload Students'),
+        fields: [
+            {
+                fieldname: 'sample_html',
+                fieldtype: 'HTML',
+                options: `<a href="#" id="download-sample-students-csv">${__('Download Sample CSV')}</a>`
+            },
+            {
+                fieldname: 'file',
+                fieldtype: 'Attach',
+                label: __('Student List (CSV)'),
+                reqd: 1,
+                description: __('CSV must have a "Student ID" column. "Student Name" and "Section" columns are optional and only for your reference - matching is always done by Student ID.')
+            }
+        ],
+        primary_action_label: __('Upload'),
+        primary_action: function (values) {
+            frappe.call({
+                method: 'slcm.slcm.doctype.class_configuration.class_configuration.bulk_add_students_from_file',
+                args: {
+                    file_url: values.file
+                },
+                freeze: true,
+                freeze_message: __('Processing student list...'),
+                callback: function (r) {
+                    let result = r.message || {};
+                    if (!result.success) {
+                        frappe.msgprint({
+                            title: __('Upload Failed'),
+                            indicator: 'red',
+                            message: result.error || __('Could not process the uploaded file')
+                        });
+                        return;
+                    }
+
+                    let added = add_matched_students(frm, result.matched || []);
+                    let unmatched = result.unmatched_rows || [];
+
+                    let message = __(`${added} student(s) added successfully.`);
+                    if (unmatched.length > 0) {
+                        message += `<br>${__('Not found (Student ID):')} ${unmatched.join(', ')}`;
+                    }
+                    frappe.msgprint({
+                        title: __('Bulk Upload Complete'),
+                        indicator: unmatched.length > 0 ? 'orange' : 'green',
+                        message: message
+                    });
+                    d.hide();
+                }
+            });
+        }
+    });
+
+    d.get_field('sample_html').$wrapper.find('#download-sample-students-csv').on('click', function (e) {
+        e.preventDefault();
+        download_sample_students_csv();
+    });
+
     d.show();
 }
 

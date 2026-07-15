@@ -4,10 +4,10 @@
 frappe.query_reports["Comprehensive Attendance Report"] = {
     "filters": [
         {
-            "fieldname": "department",
-            "label": __("Department"),
+            "fieldname": "programme_of_study",
+            "label": __("Programme"),
             "fieldtype": "Link",
-            "options": "Department",
+            "options": "Programme",
             "reqd": 0
         },
         {

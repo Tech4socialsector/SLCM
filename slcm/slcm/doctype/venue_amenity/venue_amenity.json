@@ -1,42 +1,32 @@
 {
  "actions": [],
- "allow_import": 1,
+ "allow_bulk_edit": 1,
  "allow_rename": 1,
- "autoname": "prompt",
- "creation": "2025-12-30 11:46:44.354545",
+ "autoname": "field:amenity_name",
+ "creation": "2026-07-13 10:44:44.357320",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "course_code",
-  "course_type",
-  "course_credit"
+  "amenity_name"
  ],
  "fields": [
   {
-   "fieldname": "course_code",
+   "fieldname": "amenity_name",
    "fieldtype": "Data",
-   "label": "Course code"
-  },
-  {
-   "fieldname": "course_type",
-   "fieldtype": "Select",
-   "label": "Course type",
-   "options": "\nCore\nElactive"
-  },
-  {
-   "fieldname": "course_credit",
-   "fieldtype": "Data",
-   "label": "Course credit"
+   "in_list_view": 1,
+   "label": "Amenity Name",
+   "reqd": 1,
+   "unique": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-10 12:22:11.331698",
+ "modified": "2026-07-13 10:45:18.121857",
  "modified_by": "Administrator",
  "module": "SLCM",
- "name": "Course Master",
- "naming_rule": "Set by user",
+ "name": "Venue Amenity",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
@@ -50,15 +40,11 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
-  },
-  {
-   "read": 1,
-   "role": "slcm_Student"
   }
  ],
  "row_format": "Dynamic",
  "rows_threshold_for_grid_search": 20,
- "sort_field": "modified",
+ "sort_field": "creation",
  "sort_order": "DESC",
  "states": []
 }

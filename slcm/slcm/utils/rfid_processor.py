@@ -1,5 +1,8 @@
 import frappe
 from frappe.utils import get_datetime, add_to_date
+from slcm.slcm.doctype.rfid_device_room_mapping.rfid_device_room_mapping import (
+	get_active_rooms_for_device,
+)
 
 
 def process_log_entry(log_doc):
@@ -45,39 +48,37 @@ def process_log_entry(log_doc):
 		log_doc.db_update()
 		return
 
-	device_location = frappe.db.get_value(
-		"RFID Device", {"device_id": log_doc.device_id}, "location"
-	)
-	if not device_location:
+	candidate_rooms = get_active_rooms_for_device(log_doc.device_id, on_date=swipe_time.date())
+	if not candidate_rooms:
 		frappe.log_error(
-			message=f"RFID device '{log_doc.device_id}' has no location configured.",
+			message=f"RFID device '{log_doc.device_id}' has no active Room mapping configured.",
 			title="RFID Processor - Device Not Configured"
 		)
 		log_doc.processed = 1
 		log_doc.db_update()
 		return
 
-	# 4. Find a matching Attendance Session (same room, same date, swipe within session window)
+	# 4. Find a matching Attendance Session (any mapped room, same date, swipe within session window)
 	log_date = swipe_time.date()
 	log_time_str = swipe_time.strftime('%H:%M:%S')
 
 	sessions = frappe.db.sql("""
 		SELECT name, course_schedule, course_offering, session_type, duration_hours
 		FROM `tabAttendance Session`
-		WHERE room = %s
+		WHERE room IN %s
 		AND session_date = %s
 		AND session_start_time <= %s
 		AND session_end_time >= %s
 		AND session_status != 'Cancelled'
 		LIMIT 1
-	""", (device_location, log_date, log_time_str, log_time_str), as_dict=True)
+	""", (candidate_rooms, log_date, log_time_str, log_time_str), as_dict=True)
 
 	if not sessions:
 		# No active session at this time — mark processed so it isn't retried forever
 		frappe.log_error(
 			message=(
 				f"No active session found for student {student}, "
-				f"device {log_doc.device_id}, room {device_location}, "
+				f"device {log_doc.device_id}, rooms {candidate_rooms}, "
 				f"date {log_date}, time {log_time_str}"
 			),
 			title="RFID Processor - No Session Found"

@@ -366,10 +366,7 @@ frappe.pages['result-settings'].on_page_load = function (wrapper) {
 			<div id="rs-content" style="display:none;">
 				<div class="rs-subtab-bar">
 					<div class="rs-subtab active" data-tab="access_results">Access Results</div>
-					<div class="rs-subtab" data-tab="gradebook_access">Gradebook Access</div>
-					<div class="rs-subtab" data-tab="term_sheet">Term Sheet</div>
 					<div class="rs-subtab" data-tab="publish">Publish</div>
-					<div class="rs-subtab" data-tab="result_settings">Result Settings</div>
 				</div>
 				<div id="rs-tab-panel"></div>
 			</div>
@@ -430,7 +427,6 @@ frappe.pages['result-settings'].on_page_load = function (wrapper) {
 	function loadForCurrentTab() {
 		if      (S.active_subtab === 'access_results') loadAccessSettings();
 		else if (S.active_subtab === 'publish')        loadPublishSetting();
-		else                                           renderComingSoon(S.active_subtab);
 	}
 
 	// ── Consolidated Report Dialog ───────────────────────────────────────────
@@ -438,14 +434,49 @@ frappe.pages['result-settings'].on_page_load = function (wrapper) {
 		var d = new frappe.ui.Dialog({
 			title: 'Download Consolidated Report',
 			fields: [
-				{ label: 'Exam Plan', fieldname: 'exam_plan', fieldtype: 'Link', options: 'Exam Plan', reqd: 1, default: S.exam_plan || '' },
-				{ label: 'Report Type', fieldname: 'report_type', fieldtype: 'Select', options: 'Bulk\nCourse Based', reqd: 1, default: 'Bulk' },
-				{ label: 'Course', fieldname: 'course', fieldtype: 'Link', options: 'Course', depends_on: 'eval:doc.report_type=="Course Based"' }
+				{ label: 'Exam Plan',     fieldname: 'exam_plan',     fieldtype: 'Link',   options: 'Exam Plan',     default: S.exam_plan || '' },
+				{ fieldtype: 'Column Break' },
+				{ label: 'Academic Year', fieldname: 'academic_year', fieldtype: 'Link',   options: 'Academic Year' },
+				{ fieldtype: 'Section Break' },
+				{ label: 'Programme',     fieldname: 'programme',     fieldtype: 'Link',   options: 'Programme',
+					onchange() { d.set_value('trimester', ''); d.set_value('course', ''); } },
+				{ fieldtype: 'Column Break' },
+				{ label: 'Trimester',     fieldname: 'trimester',     fieldtype: 'Link',   options: 'Academic Term',
+					get_query() {
+						return {
+							query: 'slcm.slcm.page.examination_result.examination_result.trimester_link_query',
+							filters: { programme: d.get_value('programme') },
+						};
+					},
+					onchange() { d.set_value('course', ''); } },
+				{ fieldtype: 'Section Break' },
+				{ label: 'Batch',         fieldname: 'batch',         fieldtype: 'Link', options: 'Batch' },
+				{ fieldtype: 'Section Break' },
+				{ label: 'Report Type',   fieldname: 'report_type',   fieldtype: 'Select', options: 'Bulk\nCourse Based', default: 'Bulk' },
+				{ fieldtype: 'Column Break' },
+				{ label: 'Course',        fieldname: 'course',        fieldtype: 'Link',   options: 'Course Offering', depends_on: 'eval:doc.report_type=="Course Based"',
+					get_query() {
+						var filters = {};
+						if (d.get_value('programme')) filters.program = d.get_value('programme');
+						if (d.get_value('trimester'))  filters.term_name = d.get_value('trimester');
+						return { filters: filters };
+					} }
 			],
-			primary_action_label: 'Download CSV',
+			primary_action_label: 'Download Excel',
 			primary_action: function(v) {
-				var args = { exam_plan: v.exam_plan };
-				if (v.report_type === 'Course Based' && v.course) args.course = v.course;
+				var args = {};
+				if (v.exam_plan)     args.exam_plan     = v.exam_plan;
+				if (v.academic_year) args.academic_year = v.academic_year;
+				if (v.programme)     args.programme     = v.programme;
+				if (v.trimester)     args.trimester      = v.trimester;
+				if (v.batch)         args.batch          = v.batch;
+				if (v.report_type === 'Course Based' && v.course) args.course_offering = v.course;
+				if (!Object.keys(args).length) {
+					frappe.msgprint('Please select at least one filter.');
+					return;
+				}
+				// The endpoint streams the Excel file directly as an attachment
+				// response, so it must be hit via a plain GET, not frappe.call.
 				var url = '/api/method/slcm.slcm.page.term_result.term_result.download_consolidated_report?' + $.param(args);
 				window.open(url, '_blank');
 				d.hide();
@@ -1217,36 +1248,6 @@ frappe.pages['result-settings'].on_page_load = function (wrapper) {
 		if (type === 'Re Exam') return '#ef4444';
 		if (type === 'Makeup')  return '#f97316';
 		return '#059669';
-	}
-
-	// ══════════════════════════════════════════════════════════════════════════
-	//  COMING SOON (other tabs)
-	// ══════════════════════════════════════════════════════════════════════════
-
-	var SUBTAB_LABELS = {
-		gradebook_access: 'Gradebook Access',
-		term_sheet:       'Term Sheet',
-		result_settings:  'Result Settings',
-	};
-
-	function renderComingSoon(tab) {
-		var label = SUBTAB_LABELS[tab] || tab;
-		$tabPanel.html(`
-			<div class="rs-coming-card">
-				<div class="rs-coming-icon" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);">
-					<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.8">
-						<circle cx="12" cy="12" r="3"/>
-						<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-					</svg>
-				</div>
-				<div class="rs-coming-title">${frappe.utils.escape_html(label)}</div>
-				<div class="rs-coming-desc">This settings section is under development and will be available soon.</div>
-				<div class="rs-coming-badge">
-					<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-					Coming Soon
-				</div>
-			</div>
-		`);
 	}
 
 	// ── Shared helpers ────────────────────────────────────────────────────────

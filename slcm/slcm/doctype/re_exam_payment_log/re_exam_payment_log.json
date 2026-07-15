@@ -10,6 +10,7 @@
   "student",
   "cb_top",
   "exam_plan",
+  "course_offering",
   "course",
   "section_payment",
   "razorpay_payment_id",
@@ -69,7 +70,13 @@
    "read_only": 1
   },
   {
-   "fetch_from": "re_exam_registration.course",
+   "fieldname": "course_offering",
+   "fieldtype": "Link",
+   "label": "Course Offering",
+   "options": "Course Offering"
+  },
+  {
+   "fetch_from": "course_offering.course_title",
    "fieldname": "course",
    "fieldtype": "Link",
    "label": "Course",
@@ -215,11 +222,11 @@
    "fieldtype": "Column Break"
   },
   {
+   "description": "Total amount collected from student before gateway deductions",
    "fieldname": "settlement_amount",
    "fieldtype": "Currency",
    "label": "Gross Settlement Amount (INR)",
-   "read_only": 1,
-   "description": "Total amount collected from student before gateway deductions"
+   "read_only": 1
   }
  ],
  "links": [],

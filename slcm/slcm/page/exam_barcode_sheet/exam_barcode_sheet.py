@@ -86,14 +86,30 @@ def generate_barcodes(exam_plan, courses=None):
 		)
 		courses = list({s.course for s in schedules})
 
-	# Build exam_date lookup per course
+	# Build exam_date and course_offering lookups per course
 	date_lookup = {}
+	offering_lookup = {}
 	for s in frappe.db.get_all(
 		"Exam Course Schedule",
 		filters={"parent": exam_plan, "parenttype": "Exam Plan", "course": ["in", courses]},
-		fields=["course", "exam_date"],
+		fields=["course", "course_offering", "exam_date"],
 	):
 		date_lookup[s.course] = s.exam_date
+		if s.course_offering:
+			offering_lookup[s.course] = s.course_offering
+
+	# Courses whose schedule row has no Course Offering set yet can't get a
+	# valid Exam Barcode (course_offering is mandatory there too) - skip them
+	# with a clear message instead of failing the whole batch.
+	missing_offering = [c for c in courses if c not in offering_lookup]
+	if missing_offering:
+		frappe.msgprint(
+			"Skipped (no Course Offering set on the Course Schedule row): "
+			+ ", ".join(missing_offering),
+			title="Some Courses Skipped",
+			indicator="orange",
+		)
+	courses = [c for c in courses if c in offering_lookup]
 
 	# Collect all barcodes already issued under this plan (for uniqueness)
 	used_barcodes = set(
@@ -133,7 +149,7 @@ def generate_barcodes(exam_plan, courses=None):
 			doc = frappe.get_doc({
 				"doctype": "Exam Barcode",
 				"exam_plan": exam_plan,
-				"course": course,
+				"course_offering": offering_lookup.get(course),
 				"exam_date": date_lookup.get(course),
 				"student": st["student"],
 				"student_name": st["student_name"],

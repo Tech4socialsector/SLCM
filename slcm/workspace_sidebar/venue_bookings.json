@@ -33,6 +33,7 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "book-lock",
    "indent": 0,
    "keep_closed": 0,
    "label": "Configuration & Scheduling",
@@ -43,11 +44,59 @@
   {
    "child": 0,
    "collapsible": 1,
+   "icon": "app-window-mac",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Venue Type",
+   "link_to": "Venue Type",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "building-2",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Building",
+   "link_to": "Building",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "building",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Floor",
+   "link_to": "Floor",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "list-check",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Amenities",
+   "link_to": "Venue Amenity",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
    "icon": "birdhouse",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Room",
-   "link_to": "Room",
+   "label": "Venue",
+   "link_to": "Venue Master",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"
@@ -133,7 +182,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-07-09 10:41:38.155180",
+ "modified": "2026-07-13 13:30:02.440397",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Venue Bookings",

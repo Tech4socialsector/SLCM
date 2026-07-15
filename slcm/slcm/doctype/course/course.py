@@ -12,4 +12,6 @@ class Course(Document):
 			frappe.throw(frappe._("Course Code and Course Name are required to name the Course."))
 
 		course_name = self.course_name.strip().replace("/", "-")
+		
 		self.name = f"{self.course_code.strip()}-{course_name}"
+

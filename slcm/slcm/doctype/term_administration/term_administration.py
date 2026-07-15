@@ -93,7 +93,13 @@ def process_bulk_class_creation(
 	for section in sections:
 		class_name = f"{course}-{section.section_name}-{class_type}"
 		
-		if frappe.db.exists("Class Configuration", {"class_name": class_name}):
+		if frappe.db.exists("Class Configuration", {
+			"class_name": class_name,
+			"programme": program,
+			"term": academic_term,
+			"batch": batch,
+			"class_configuration_type": "Section",
+		}):
 			skipped_count += 1
 			continue
 

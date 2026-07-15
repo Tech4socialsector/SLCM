@@ -1,9 +1,9 @@
-# Copyright (c) 2025, Nishanth and Contributors
+# Copyright (c) 2026, TFSS and Contributors
 # See license.txt
 
 # import frappe
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestCourseMaster(FrappeTestCase):
+class TestGroup(FrappeTestCase):
 	pass

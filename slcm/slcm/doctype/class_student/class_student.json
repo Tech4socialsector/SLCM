@@ -5,16 +5,16 @@
  "engine": "InnoDB",
  "field_order": [
   "student",
+  "registration_id",
   "student_name",
   "column_break_1",
-  "registration_id",
+  "section",
   "email"
  ],
  "fields": [
   {
    "fieldname": "student",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Student",
    "options": "Student Master",
    "reqd": 1
@@ -34,7 +34,14 @@
    "fieldname": "registration_id",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Registration ID",
+   "label": "Student ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Section",
    "read_only": 1
   },
   {
