@@ -218,12 +218,19 @@ def run_generation_main(docname):
         total_rejected = max(0, total_candidates - total_shortlisted)
 
         frappe.msgprint(
-            f"Phase 1 Shortlisting Merit List generated. Results pushed to "
-            f"<a href='/app/shortlisting-merit-list/{sp_doc.name}'><b>{sp_doc.name}</b></a>.<br><br>"
-            f"<b>Summary:</b><br>"
-            f"• Total Candidates: {total_candidates}<br>"
-            f"• Shortlisted: {total_shortlisted}<br>"
-            f"• Rejected: {total_rejected}"
+            msg=(
+                f"Phase 1 Shortlisting Merit List generated. Results pushed to <b>{sp_doc.name}</b>.<br><br>"
+                f"<b>Summary:</b><br>"
+                f"• Total Candidates: {total_candidates}<br>"
+                f"• Shortlisted: {total_shortlisted}<br>"
+                f"• Rejected: {total_rejected}"
+            ),
+            title="Merit List Generated",
+            indicator="green",
+            primary_action={
+                "label": "View Merit List",
+                "action": f"frappe.set_route('Form', 'Shortlisting Merit List', '{sp_doc.name}')"
+            }
         )
 
     except Exception as e:

@@ -564,7 +564,6 @@ class Applicant(Document):
 
         if self.status in APPLICATION_SUBMITTED_STATUSES:
             address_parts = [
-                self.correspondence_address,
                 self.city,
                 self.state,
                 self.country

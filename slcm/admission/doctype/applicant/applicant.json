@@ -2,6 +2,7 @@
  "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
+ "autoname": "format:APP-{YYYY}-{#####}",
  "creation": "2026-01-07 12:15:38.115590",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -134,6 +135,8 @@
   "ka_capf_child",
   "ka_capf_child_certificate",
   "preference_of_test_center_tab",
+  "undergraduate_degree_india",
+  "section_break_zsrj",
   "first_preference",
   "column_break_qnun",
   "second_preference",
@@ -483,6 +486,7 @@
    "options": "\n1 to 2 years\n2 to 5 years\n5 years above"
   },
   {
+   "depends_on": "eval:doc.foriegn_national == \"No\"",
    "fieldname": "eligibility_for_reservation_tab",
    "fieldtype": "Tab Break",
    "label": "Reservations"
@@ -512,11 +516,12 @@
    "mandatory_depends_on": "eval:doc.whether_scstobc_ncl && doc.whether_scstobc_ncl !== \"NA\""
   },
   {
+   "depends_on": "eval:doc.foriegn_national == \"No\"",
    "fieldname": "pwd",
    "fieldtype": "Select",
    "label": "Whether person with disability (PWD)",
-   "options": "\nYes\nNo",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.foriegn_national == \"No\"",
+   "options": "\nYes\nNo"
   },
   {
    "depends_on": "eval:doc.pwd === \"Yes\"",
@@ -543,102 +548,115 @@
    "mandatory_depends_on": "eval:doc.pwd === \"Yes\""
   },
   {
+   "depends_on": "eval:doc.foriegn_national == \"No\"",
    "fieldname": "karnataka_category",
    "fieldtype": "Select",
    "label": "Whether Karnataka",
-   "options": "\nYes\nNo",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.foriegn_national == \"No\"",
+   "options": "\nYes\nNo"
   },
   {
    "default": "0",
+   "depends_on": "eval:doc.karnataka_category === \"Yes\"",
    "fieldname": "ka_study_7yrs",
    "fieldtype": "Check",
    "label": "Studied for not less than 7 years in a recognized educational institution in Karnataka"
   },
   {
    "depends_on": "eval:doc.ka_study_7yrs",
+   "description": "Max 5MB - Supported formats png, jpeg, jpg",
    "fieldname": "ka_study_7yrs_certificate",
-   "fieldtype": "Attach Image",
+   "fieldtype": "Attach",
    "label": "Certificate",
    "mandatory_depends_on": "eval:doc.ka_study_7yrs"
   },
   {
    "default": "0",
+   "depends_on": "eval:doc.karnataka_category === \"Yes\"",
    "fieldname": "ka_defence_child",
    "fieldtype": "Check",
    "label": "Child of Defence / Ex-Serviceman (Karnataka domicile)"
   },
   {
    "depends_on": "eval:doc.ka_defence_child",
+   "description": "Max 5MB - Supported formats png, jpeg, jpg",
    "fieldname": "ka_defence_child_certificate",
-   "fieldtype": "Attach Image",
+   "fieldtype": "Attach",
    "label": "Certificate",
    "mandatory_depends_on": "eval:doc.ka_defence_child"
   },
   {
    "default": "0",
+   "depends_on": "eval:doc.karnataka_category === \"Yes\"",
    "fieldname": "ka_govt_child",
    "fieldtype": "Check",
    "label": "Child of Karnataka cadre AIS employee (IAS/IFS/IPS)"
   },
   {
    "depends_on": "eval:doc.ka_govt_child",
+   "description": "Max 5MB - Supported formats png, jpeg, jpg",
    "fieldname": "ka_govt_child_certificate",
-   "fieldtype": "Attach Image",
+   "fieldtype": "Attach",
    "label": "Certificate",
    "mandatory_depends_on": "eval:doc.ka_govt_child"
   },
   {
    "default": "0",
+   "depends_on": "eval:doc.karnataka_category === \"Yes\"",
    "fieldname": "ka_ais_child",
    "fieldtype": "Check",
    "label": "Child of CAPF employee with Karnataka domicile"
   },
   {
    "depends_on": "eval:doc.ka_ais_child",
+   "description": "Max 5MB - Supported formats png, jpeg, jpg",
    "fieldname": "ka_ais_child_certificate",
-   "fieldtype": "Attach Image",
+   "fieldtype": "Attach",
    "label": "Certificate",
    "mandatory_depends_on": "eval:doc.ka_ais_child"
   },
   {
    "default": "0",
+   "depends_on": "eval:doc.karnataka_category === \"Yes\"",
    "fieldname": "ka_capf_child",
    "fieldtype": "Check",
    "label": "Child of Central Armed Police Force employee (Karnataka domicile)"
   },
   {
    "depends_on": "eval:doc.ka_capf_child",
+   "description": "Max 5MB - Supported formats png, jpeg, jpg",
    "fieldname": "ka_capf_child_certificate",
-   "fieldtype": "Attach Image",
+   "fieldtype": "Attach",
    "label": "Certificate",
    "mandatory_depends_on": "eval:doc.ka_capf_child"
   },
   {
-   "depends_on": "eval:doc.foriegn_national == \"No\"",
    "fieldname": "preference_of_test_center_tab",
    "fieldtype": "Tab Break",
    "label": "Preference Of Test Centre"
   },
   {
+   "depends_on": "eval:doc.foriegn_national == \"No\" || doc.undergraduate_degree_india == \"Yes\"",
    "fieldname": "first_preference",
    "fieldtype": "Link",
    "label": "First Preference",
-   "mandatory_depends_on": "eval:doc.foriegn_national == \"No\"",
+   "mandatory_depends_on": "eval:doc.foriegn_national == \"No\" || doc.undergraduate_degree_india == \"Yes\"",
    "options": "Entrance Test Provider"
   },
   {
+   "depends_on": "eval:doc.foriegn_national == \"No\" || doc.undergraduate_degree_india == \"Yes\"",
    "fieldname": "second_preference",
    "fieldtype": "Link",
    "label": "Second Preference",
-   "mandatory_depends_on": "eval:doc.foriegn_national == \"No\"",
+   "mandatory_depends_on": "eval:doc.foriegn_national == \"No\" || doc.undergraduate_degree_india == \"Yes\"",
    "options": "Entrance Test Provider"
   },
   {
+   "depends_on": "eval:doc.foriegn_national == \"No\" || doc.undergraduate_degree_india == \"Yes\"",
    "fieldname": "third_preference",
    "fieldtype": "Link",
    "label": "Third Preference",
-   "mandatory_depends_on": "eval:doc.foriegn_national == \"No\"",
+   "mandatory_depends_on": "eval:doc.foriegn_national == \"No\" || doc.undergraduate_degree_india == \"Yes\"",
    "not_nullable": 1,
    "options": "Entrance Test Provider"
   },
@@ -727,10 +745,11 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval: doc.program_level == \"Postgraduate\" || doc.program_level == \"Research Course\"",
    "fieldname": "ug_final_year_note",
    "fieldtype": "HTML",
    "label": "Undergraduate final year note",
-   "options": "<div style=\"background:#f8f9fa;padding:12px;border-left:4px solid #dc3545\">\n<b>Note:</b> Applicants who are in the final year of their undergraduate programme can also apply.\nThey must upload:\n<ol>\n  <li>Bonafide Certificate from the University/College/Department</li>\n  <li>Transcripts of previous years</li>\n</ol>\nProof of completion must be submitted no later than <b>December 31, 2026</b>.\n</div>\n"
+   "options": "<div style=\"background:#f8f9fa;padding:12px;border-left:4px solid #dc3545\">\n<b>Note:</b> Applicants who are in the final year of their undergraduate programme can also apply.\nThey must upload:\n<ol>\n  <li>Bonafide Certificate from the University/College/Department</li>\n  <li>Transcripts of previous years</li>\n</ol>\n</div>\n"
   },
   {
    "fieldname": "class_x_details_section",
@@ -860,7 +879,7 @@
    "fieldname": "annual_house_hold_income",
    "fieldtype": "Select",
    "label": "Annual House Hold Income (in INR)",
-   "options": "\n0 - 3,00,000\n3,00,001 - 8,00,000\n8,00,001 - 15,00,000\n15,00,001 - 25,00,000\n25,00,001 - 50,00,000\nMore than 50,00,000",
+   "options": "\n\u20b9 0 - \u20b9 3,00,000\n\u20b9 3,00,001 - \u20b9 8,00,000\n\u20b9 8,00,001 - \u20b9 15,00,000\n\u20b9 15,00,001 - \u20b9 25,00,000\n\u20b9 25,00,001 - \u20b9 50,00,000\nMore than \u20b9 50,00,000",
    "precision": "2",
    "reqd": 1
   },
@@ -1072,7 +1091,7 @@
    "fieldname": "proposed_phd_topic",
    "fieldtype": "Small Text",
    "label": "Proposed PHD Topic ",
-   "mandatory_depends_on": "eval:doc.program_level == \"PHD\""
+   "mandatory_depends_on": "eval:doc.program_level == \"Research Course\""
   },
   {
    "fieldname": "phd_proposal",
@@ -1125,12 +1144,13 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:doc.foriegn_national == \"No\"",
    "fieldname": "whether_scstobc_ncl",
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Whether SC/ST/OBC-NCL",
-   "options": "NA\nOBC-NCL\nST\nSC",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.foriegn_national == \"No\"",
+   "options": "NA\nOBC-NCL\nST\nSC"
   },
   {
    "fieldname": "column_break_mxmh",
@@ -1239,6 +1259,18 @@
    "label": "Copy of Passport",
    "mandatory_depends_on": "eval:doc.foriegn_national == \"Yes\"",
    "options": "png,jpeg,jpg,pdf"
+  },
+  {
+   "depends_on": "eval:doc.foriegn_national == \"Yes\"",
+   "fieldname": "undergraduate_degree_india",
+   "fieldtype": "Select",
+   "label": "Is the university that has awarded you or will award you an undergraduate degree located in India?",
+   "mandatory_depends_on": "eval:doc.foriegn_national == \"Yes\"",
+   "options": "Yes\nNo"
+  },
+  {
+   "fieldname": "section_break_zsrj",
+   "fieldtype": "Section Break"
   }
  ],
  "grid_page_length": 50,
@@ -1274,11 +1306,11 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-13 11:09:59.512591",
+ "modified": "2026-07-15 10:34:52.657585",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
- "naming_rule": "By script",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {

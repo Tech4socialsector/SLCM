@@ -32,6 +32,7 @@
    "label": "Level One AAD Authority"
   },
   {
+   "default": "AAD Assignment Email Template",
    "description": "Email sent to AAD upon new assignment",
    "fieldname": "l1_assignment_email_template",
    "fieldtype": "Link",
@@ -39,6 +40,7 @@
    "options": "Email Template"
   },
   {
+   "default": "AAD Approval Email Template",
    "fieldname": "l1_approval_email_template",
    "fieldtype": "Link",
    "label": "Approval Email Template",
@@ -49,6 +51,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "AAD Rejected Email Template",
    "fieldname": "l1_rejected_email_template",
    "fieldtype": "Link",
    "label": "Rejected Email Template",
@@ -77,6 +80,7 @@
    "label": "Level Two Authority"
   },
   {
+   "default": "Programme Chair Assignment Email Template",
    "description": "Email sent to Programme Chair upon new assignment",
    "fieldname": "l2_assignment_email_template",
    "fieldtype": "Link",
@@ -84,6 +88,7 @@
    "options": "Email Template"
   },
   {
+   "default": "Programme Chair Approval Email Template",
    "fieldname": "l2_approval_email_template",
    "fieldtype": "Link",
    "label": "Approval Email Template",
@@ -94,6 +99,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "Programme Chair Rejected Email Template",
    "fieldname": "l2_rejected_email_template",
    "fieldtype": "Link",
    "label": "Rejected Email Template",
@@ -137,7 +143,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-07-13 16:17:05.134981",
+ "modified": "2026-07-14 11:35:00.594319",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Attendance Condonation Configuration",
@@ -152,6 +158,14 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "read": 1,
+   "role": "AAD"
+  },
+  {
+   "read": 1,
+   "role": "Programme Chair"
   }
  ],
  "row_format": "Dynamic",

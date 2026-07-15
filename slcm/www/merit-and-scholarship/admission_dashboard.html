@@ -41,7 +41,7 @@ else 'Admissions Open') %}
   _app_id=_pd.get('name','') %} {% set _pfirst=(_pname[0]|upper) if _pname else (_first or 'U' ) %} {% set
   _pmobile=_pd.get('mobile_number','') %} {% set _pdob=_pd.get('date_of_birth','') %} {% set
   _pgender=_pd.get('gender','') %} {% set
-  _paddr=_pd.get('correspondence_address','') %} {# Profile completion: fields stored on standard User #} {% set
+  _paddr=_pd.get('correspondence_address','') %} {# Profile Completion: fields stored on standard User #} {% set
   _completion_fields=[_pmobile, _pdob, _pgender, _paddr] %} {% set
   _filled_count=namespace(v=0) %} {% for f in _completion_fields %}{% if f %}{% set _filled_count.v=_filled_count.v + 1
   %}{% endif %}{% endfor %} {% set _completion_pct=((_filled_count.v / 4) * 100) | round | int %} {# Documents #} {% set
@@ -746,7 +746,7 @@ else 'Admissions Open') %}
                     style="padding:10px 0px; margin-top:8px; border-radius:0; background:transparent; {% if _completion_pct == 100 %}color:var(--success);{% endif %}">
                     <span class="completion-label"
                       style="font-size:12px; {% if _completion_pct == 100 %}color:var(--success);{% endif %}">Profile
-                      completion:</span>
+                      Completion:</span>
                     <div class="progress-bar-track" style="height:6px; max-width:200px;">
                       <div class="progress-bar-fill" id="progress-fill"
                         style="width:0%; {% if _completion_pct == 100 %}background-color:var(--success);{% endif %}">
@@ -765,7 +765,7 @@ else 'Admissions Open') %}
                 <button onclick="openProfileEditModal()" class="btn btn-primary"
                   style="position:absolute; top:20px; right:24px; padding:6px 14px; font-size:13px;">
                   <span class="ms-icon" style="font-size:16px;color:white;">edit</span>
-                  Edit profile
+                  Edit Profile
                 </button>
               </div>
 
@@ -775,30 +775,30 @@ else 'Admissions Open') %}
                 <div class="profile-fields-grid">
 
                   <div>
-                    <p class="field-label">Full name</p>
+                    <p class="field-label">Full Name</p>
                     <p class="field-value {{ '' if _pname else 'not-set' }}">{{ _pname or 'Not set' }}</p>
                   </div>
                   <div>
                     <p class="field-label">Email</p>
-                    <p class="field-value {{ '' if _pemail else 'not-set' }}">{{ _pemail or 'Not set' }}</p>
+                    <p class="field-value {{ '' if _pemail else 'not-set' }}">{{ _pemail or 'Not Set' }}</p>
                   </div>
                   <div>
                     <p class="field-label">Mobile</p>
-                    <p class="field-value {{ '' if _pmobile else 'not-provided' }}">{{ _pmobile or 'Not provided' }}</p>
+                    <p class="field-value {{ '' if _pmobile else 'not-Provided' }}">{{ _pmobile or 'Not Provided' }}</p>
                   </div>
                   <div>
-                    <p class="field-label">Date of birth</p>
-                    <p class="field-value {{ '' if _pdob else 'not-set' }}">
-                      {{ frappe.utils.formatdate(_pdob, "dd/MM/yyyy") if _pdob else 'Not set' }}
+                    <p class="field-label">Date of Birth</p>
+                    <p class="field-value {{ '' if _pdob else 'not-Set' }}">
+                      {{ frappe.utils.formatdate(_pdob, "dd/MM/yyyy") if _pdob else 'Not Set' }}
                     </p>
                   </div>
                   <div>
                     <p class="field-label">Gender</p>
-                    <p class="field-value {{ '' if _pgender else 'not-set' }}">{{ _pgender or 'Not specified' }}</p>
+                    <p class="field-value {{ '' if _pgender else 'not-Set' }}">{{ _pgender or 'Not Specified' }}</p>
                   </div>
                   <div>
                     <p class="field-label">Location</p>
-                    <p class="field-value {{ '' if _paddr else 'not-set' }}">{{ _paddr or 'Not set' }}</p>
+                    <p class="field-value {{ '' if _paddr else 'not-Set' }}">{{ _paddr or 'Not Set' }}</p>
                   </div>
 
                 </div>

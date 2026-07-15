@@ -1,6 +1,6 @@
 app_name = "slcm"
 app_title = "SLCM"
-page_js = {"dashboard-view": ["public/js/pace_dashboard_filters.js", "public/js/document_verifier_filters.js"]}
+page_js = {"dashboard-view": ["public/js/pace_dashboard_filters.js", "public/js/document_verifier_filters.js", "public/js/admission_dashboard_filters.js"]}
 
 
 required_apps = ["payments"]
@@ -187,7 +187,13 @@ fixtures = [
                 "HD Ticket SLA Escalation - Max Hops Reached",
                 "Venue Booking - New Request (Admin)",
                 "Venue Booking - Status Update (Requester)",
-                "Venue Booking - Swap Request Decision (Requester)"
+                "Venue Booking - Swap Request Decision (Requester)",
+                "AAD Assignment Email Template",
+                "AAD Approval Email Template",
+                "AAD Rejected Email Template",
+                "Programme Chair Assignment Email Template",
+                "Programme Chair Approval Email Template",
+                "Programme Chair Rejected Email Template"
             ]]
         ]
     },
@@ -623,4 +629,5 @@ permission_query_conditions = {
 
 has_permission = {
     "PACE Document Verification": "slcm.pace.doctype.pace_document_verification.pace_document_verification.has_permission",
+    "Student Attendance Condonation": "slcm.slcm.doctype.student_attendance_condonation.student_attendance_condonation.has_permission",
 }

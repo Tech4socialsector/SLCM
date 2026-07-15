@@ -311,26 +311,33 @@ def attendance_condonation_query_conditions(user):
     if roles & _FULL_ACCESS_ROLES or "slcm_Programme Chair" in roles:
         return ""
 
+    conditions = []
+
     if "slcm_Faculty" in roles:
         faculty_name = _get_faculty_name(user)
-        if not faculty_name:
-            return "1=0"
-
-        students = _get_faculty_assigned_students(faculty_name)
-        if not students:
-            return "1=0"
-
-        safe_students = _escape_list(students)
-        return f"`tabStudent Attendance Condonation`.student IN ({safe_students})"
+        if faculty_name:
+            students = _get_faculty_assigned_students(faculty_name)
+            if students:
+                safe_students = _escape_list(students)
+                conditions.append(f"`tabStudent Attendance Condonation`.student IN ({safe_students})")
 
     if "slcm_Student" in roles:
         safe_user = frappe.db.escape(user)
-        return (
+        conditions.append(
             f"`tabStudent Attendance Condonation`.student IN ("
             f"SELECT name FROM `tabStudent Master` WHERE email = {safe_user})"
         )
+        
+    if "AAD" in roles:
+        conditions.append(f"`tabStudent Attendance Condonation`.aad_approver = {frappe.db.escape(user)}")
+        
+    if "Programme Chair" in roles:
+        conditions.append(f"`tabStudent Attendance Condonation`.programme_chair_approver = {frappe.db.escape(user)}")
 
-    return "1=0"
+    if not conditions:
+        return "1=0"
+
+    return "(" + " OR ".join(conditions) + ")"
 
 
 # ==========================================================
