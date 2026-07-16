@@ -229,6 +229,7 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
     student.class_xii_marksheet           = applicant.get("class_xii_marksheet") or None
     student.pwd_certificate               = applicant.get("pwd_certificate") or None
     student.entrance_exam_score_marksheet = applicant.get("national_test_certificate") or None
+    student.passport                      = applicant.get("copy_of_passport") or None
 
     #User
     student.user = applicant.get("email") or None

@@ -56,6 +56,26 @@ def after_migrate():
 	seed_email_templates()
 
 	_ensure_day_of_week()
+	clear_grid_customizations()
+
+
+def clear_grid_customizations():
+	"""Clears outdated user settings/customizations to force reload defaults from JSON schema"""
+	try:
+		doctypes = ["Seat Allocation", "Merit List", "Shortlisting Merit List"]
+		for dt in doctypes:
+			frappe.db.sql("DELETE FROM `__UserSettings` WHERE `doctype` = %s", dt)
+			
+			# Clear Redis cache for these user settings
+			keys = frappe.cache.hkeys("_user_settings")
+			for key in keys:
+				key_str = frappe.safe_decode(key)
+				if key_str.startswith(f"{dt}::"):
+					frappe.cache.hdel("_user_settings", key)
+					
+		frappe.db.commit()
+	except Exception:
+		pass
 
 
 def _ensure_day_of_week():

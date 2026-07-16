@@ -12,6 +12,7 @@
   "column_break_owgn",
   "status",
   "generated_on",
+  "published_on",
   "total_applicants",
   "section_break_rbff",
   "merit_applicants",
@@ -175,10 +176,16 @@
    "fieldtype": "Table",
    "label": "PWD Merit List",
    "options": "Merit List Applicant"
+  },
+  {
+   "fieldname": "published_on",
+   "fieldtype": "Datetime",
+   "label": "Published On",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2026-05-15 14:19:32.324814",
+ "modified": "2026-07-14 10:06:47.433648",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit List",

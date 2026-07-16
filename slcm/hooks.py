@@ -1,6 +1,6 @@
 app_name = "slcm"
 app_title = "SLCM"
-page_js = {"dashboard-view": ["public/js/pace_dashboard_filters.js", "public/js/document_verifier_filters.js"]}
+page_js = {"dashboard-view": ["public/js/pace_dashboard_filters.js", "public/js/document_verifier_filters.js", "public/js/admission_dashboard_filters.js"]}
 
 
 required_apps = ["payments"]

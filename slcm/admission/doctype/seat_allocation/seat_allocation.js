@@ -280,7 +280,7 @@ frappe.ui.form.on("Seat Allocation", {
                                 frappe.show_progress(__("Generating Offer Letters"), total, total, __("Completed."));
                                 setTimeout(() => {
                                     frappe.hide_progress();
-                                    
+
                                     let message = `
                                         <div style="padding: 10px;">
                                             <div style="display: flex; gap: 15px; margin-bottom: 20px;">
@@ -458,14 +458,14 @@ frappe.ui.form.on("Seat Allocation", {
                                                 </thead>
                                                 <tbody id="promotions-body">
                                                     ${data.promotions.map((p, i) => {
-                                                        const options_html = (p.eligible_candidates || []).map(cand => {
-                                                            const selected = cand.applicant_id === p.applicant_id ? 'selected' : '';
-                                                            return `<option value="${cand.applicant_id}" ${selected} data-name="${cand.candidate_name}" data-score="${cand.total_score}" data-rank="${cand.overall_rank}">
+                                        const options_html = (p.eligible_candidates || []).map(cand => {
+                                            const selected = cand.applicant_id === p.applicant_id ? 'selected' : '';
+                                            return `<option value="${cand.applicant_id}" ${selected} data-name="${cand.candidate_name}" data-score="${cand.total_score}" data-rank="${cand.overall_rank}">
                                                                 ${cand.candidate_name} (${cand.applicant_id}) - Score: ${cand.total_score || 0}, Rank: ${cand.overall_rank || 0}
                                                             </option>`;
-                                                        }).join('');
+                                        }).join('');
 
-                                                        return `
+                                        return `
                                                         <tr class="promotion-row" data-idx="${i}">
                                                             <td style="text-align: center; vertical-align: middle;">
                                                                 <input type="checkbox" class="promotion-check" checked>
@@ -482,18 +482,18 @@ frappe.ui.form.on("Seat Allocation", {
                                                             </td>
                                                             <td style="vertical-align: middle;">
                                                                 <div style="color: #475569; font-size: 13px;">
-                                                                    ${p.vacant_seat_info.includes('(') ? 
-                                                                        `<div style="display: flex; align-items: center; gap: 6px;">
+                                                                    ${p.vacant_seat_info.includes('(') ?
+                                                `<div style="display: flex; align-items: center; gap: 6px;">
                                                                             <span style="background: #fef2f2; color: #ef4444; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase;">Replaces</span> 
                                                                             <span style="font-weight: 500;">${p.vacant_seat_info.split('(')[0].trim()}</span> 
                                                                             <span style="color: #94a3b8; font-size: 11px;">(${p.vacant_seat_info.split('(')[1]}</span>
-                                                                         </div>` : 
-                                                                        `<span style="color: #10b981; font-weight: 500;">${p.vacant_seat_info}</span>`}
+                                                                         </div>` :
+                                                `<span style="color: #10b981; font-weight: 500;">${p.vacant_seat_info}</span>`}
                                                                 </div>
                                                             </td>
                                                         </tr>
                                                         `;
-                                                    }).join('')}
+                                    }).join('')}
                                                 </tbody>
                                             </table>
                                         </div>
@@ -503,7 +503,7 @@ frappe.ui.form.on("Seat Allocation", {
                             primary_action_label: __("Promote Selected"),
                             primary_action(values) {
                                 const selected = [];
-                                $(d.wrapper).find('.promotion-row').each(function() {
+                                $(d.wrapper).find('.promotion-row').each(function () {
                                     const row = $(this);
                                     const is_checked = row.find('.promotion-check').is(':checked');
                                     if (is_checked) {
@@ -512,7 +512,7 @@ frappe.ui.form.on("Seat Allocation", {
                                         const select_el = row.find('.candidate-select');
                                         const applicant_id = select_el.val();
                                         const option_el = select_el.find('option:selected');
-                                        
+
                                         selected.push({
                                             applicant_id: applicant_id,
                                             candidate_name: option_el.data('name'),
@@ -523,7 +523,7 @@ frappe.ui.form.on("Seat Allocation", {
                                         });
                                     }
                                 });
-                                
+
                                 if (selected.length === 0) {
                                     frappe.msgprint(__('Please select at least one candidate to promote.'));
                                     return;
@@ -565,12 +565,12 @@ frappe.ui.form.on("Seat Allocation", {
                                 "max-width": "1300px",
                                 "width": "1300px"
                             });
-                            $(d.wrapper).find('#check-all-promotions').on('change', function() {
+                            $(d.wrapper).find('#check-all-promotions').on('change', function () {
                                 const is_checked = $(this).is(':checked');
                                 $(d.wrapper).find('.promotion-check').prop('checked', is_checked);
                             });
 
-                            $(d.wrapper).find('.promotion-check').on('change', function() {
+                            $(d.wrapper).find('.promotion-check').on('change', function () {
                                 const total = $(d.wrapper).find('.promotion-check').length;
                                 const checked = $(d.wrapper).find('.promotion-check:checked').length;
                                 $(d.wrapper).find('#check-all-promotions').prop('checked', total === checked);
@@ -608,6 +608,14 @@ frappe.ui.form.on("Seat Allocation", {
             frm.add_custom_button(__("Download Allocation"), function () {
                 let url = frappe.urllib.get_full_url(
                     "/api/method/slcm.admission.doctype.seat_allocation.seat_allocation.download_allocation?" +
+                    "name=" + encodeURIComponent(frm.doc.name)
+                );
+                window.open(url, '_blank');
+            }, __("Actions"));
+
+            frm.add_custom_button(__("Download Summary"), function () {
+                let url = frappe.urllib.get_full_url(
+                    "/api/method/slcm.admission.doctype.seat_allocation.seat_allocation.download_summary?" +
                     "name=" + encodeURIComponent(frm.doc.name)
                 );
                 window.open(url, '_blank');

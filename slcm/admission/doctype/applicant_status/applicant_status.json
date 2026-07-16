@@ -36,14 +36,14 @@
   },
   {
    "fieldname": "next_step_note",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Next Step Note"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-06-29 16:27:52.089531",
+ "modified": "2026-07-14 12:20:40.582548",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Status",
