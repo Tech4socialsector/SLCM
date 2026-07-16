@@ -12,16 +12,35 @@
   "naming_series",
   "rfid_uid",
   "admission_sequence",
-  "quota",
   "academic_status",
+  "id_card_issued",
   "user",
   "column_break_ahmu",
   "registration_id",
   "application_number",
+  "admit_card_number",
   "admission_type",
-  "intake",
+  "id_validity",
   "official_email_id",
   "section",
+  "section_break_ulsd",
+  "scribe_required",
+  "7_years_recognized_education",
+  "column_break_tupx",
+  "arrange_scribe",
+  "recognized_certificate",
+  "which_of_the_following_applies_to_you_section",
+  "karnataka_category",
+  "ka_study_7yrs",
+  "ka_study_7yrs_certificate",
+  "ka_defence_child",
+  "ka_defence_child_certificate",
+  "ka_govt_child",
+  "ka_govt_child_certificate",
+  "ka_ais_child",
+  "ka_ais_child_certificate",
+  "ka_capf_child",
+  "ka_capf_child_certificate",
   "section_update_log_section",
   "section_update_log",
   "tab_program_mapping",
@@ -46,12 +65,14 @@
   "gender",
   "religion",
   "marital_status",
+  "quota",
   "pre_existing_conditions",
   "state_of_domicile",
   "city",
   "country",
   "passport_available",
   "date_of_registration",
+  "are_you_a_resident_of_bengaluru",
   "column_break_yeox",
   "middle_name",
   "aadhaar_number",
@@ -66,6 +87,7 @@
   "pincode",
   "passport_expiry_date",
   "passport_number",
+  "are_you_interested_in_off_campus_accommodation",
   "tab_contact",
   "contact_details_section",
   "email",
@@ -99,6 +121,9 @@
   "allocation_end_date",
   "vacated_date",
   "tab_finance",
+  "income_details_section",
+  "annual_income_candidate",
+  "annual_income",
   "finance_section",
   "applying_scholarship",
   "scholarship_amount",
@@ -162,18 +187,24 @@
   "phd_proposal",
   "phd_programme",
   "proposed_phd_topic",
+  "employement_details",
   "tab_documents",
   "personal_documents_section",
+  "id_proof_govt_issued_photo_id",
   "aadhaar_card",
   "aadhaar_verified",
   "passport",
   "passport_verified",
   "pwd_certificate",
   "pwd_verified",
+  "curriculum_vitae",
   "column_break_cqwk",
+  "passport_size_photo",
   "pan_card",
   "pan_verified",
-  "passport_size_photo",
+  "caste_certificate",
+  "whether_ews",
+  "ews_certificate",
   "educational_documents_section",
   "std_x_marksheet",
   "transfer_certificate",
@@ -197,7 +228,6 @@
   "student_status",
   "account_status",
   "status_remark",
-  "id_card_issued",
   "laptop_issued",
   "laptop_details_section",
   "laptop_brand",
@@ -212,7 +242,10 @@
   "registration_status",
   "tab_academic_progress",
   "academic_progress_html",
-  "year_of_study"
+  "year_of_study",
+  "admission_tab",
+  "total_marks_obtained",
+  "exam_attended"
  ],
  "fields": [
   {
@@ -269,15 +302,9 @@
   {
    "fieldname": "quota",
    "fieldtype": "Select",
-   "label": "Quota / Category",
+   "label": "Whether SC/ST/OBC-NCL",
    "options": "General\nSC\nST\nOBC\nEWS\nNRI",
    "permlevel": 1
-  },
-  {
-   "fieldname": "intake",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Intake"
   },
   {
    "fieldname": "academic_status",
@@ -940,10 +967,10 @@
    "label": "Status Remark"
   },
   {
-   "default": "0",
    "fieldname": "id_card_issued",
-   "fieldtype": "Check",
-   "label": "ID Card Issued"
+   "fieldtype": "Select",
+   "label": "ID Card Issued",
+   "options": "\nYes\nNo"
   },
   {
    "fieldname": "laptop_issued",
@@ -1030,8 +1057,7 @@
   {
    "fieldname": "aadhaar_card",
    "fieldtype": "Attach",
-   "label": "Aadhaar Card",
-   "reqd": 1
+   "label": "Aadhaar Card"
   },
   {
    "default": "0",
@@ -1312,7 +1338,8 @@
   },
   {
    "fieldname": "section_break_lgks",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "UG Degree Deatils"
   },
   {
    "fieldname": "column_break_cqwk",
@@ -1386,10 +1413,206 @@
    "hidden": 1,
    "label": "Programme",
    "options": "Programme Master"
+  },
+  {
+   "fieldname": "admit_card_number",
+   "fieldtype": "Data",
+   "label": "Admit Card Number"
+  },
+  {
+   "fieldname": "id_validity",
+   "fieldtype": "Date",
+   "label": "ID Validity"
+  },
+  {
+   "fieldname": "income_details_section",
+   "fieldtype": "Section Break",
+   "label": "Income Details"
+  },
+  {
+   "fieldname": "id_proof_govt_issued_photo_id",
+   "fieldtype": "Attach",
+   "label": "ID Proof (Govt. issued photo ID"
+  },
+  {
+   "fieldname": "annual_income_candidate",
+   "fieldtype": "Data",
+   "label": "Current Annual Income of Candidate (if employed)/ else current annual household income"
+  },
+  {
+   "fieldname": "annual_income",
+   "fieldtype": "Data",
+   "label": "Current Annual Household Income (in INR)"
+  },
+  {
+   "fieldname": "employement_details",
+   "fieldtype": "Table",
+   "label": "Employement Details",
+   "options": "Employment"
+  },
+  {
+   "fieldname": "caste_certificate",
+   "fieldtype": "Attach",
+   "label": "Caste Certificate"
+  },
+  {
+   "fieldname": "whether_ews",
+   "fieldtype": "Select",
+   "label": "Whether EWS?",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "ews_certificate",
+   "fieldtype": "Attach",
+   "label": "EWS Certificate"
+  },
+  {
+   "fieldname": "scribe_required",
+   "fieldtype": "Select",
+   "label": "Whether scribe required for the test?",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "arrange_scribe",
+   "fieldtype": "Data",
+   "label": "Will you arrange for a scribe yourself or would you require the NLSIU to arrange a scribe for you?"
+  },
+  {
+   "fieldname": "section_break_ulsd",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "7_years_recognized_education",
+   "fieldtype": "Select",
+   "label": "Studied for not less than 7 years in a recognized educational institution in Karnataka",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "column_break_tupx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "recognized_certificate",
+   "fieldtype": "Attach",
+   "label": "Recognized Certificate"
+  },
+  {
+   "fieldname": "curriculum_vitae",
+   "fieldtype": "Attach",
+   "label": "Curriculum Vitae"
+  },
+  {
+   "fieldname": "which_of_the_following_applies_to_you_section",
+   "fieldtype": "Section Break",
+   "label": "Which of the following applies to you"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.karnataka_category === \"Yes\"",
+   "fieldname": "ka_study_7yrs",
+   "fieldtype": "Check",
+   "label": "Studied for not less than 7 years in a recognized educational institution in Karnataka"
+  },
+  {
+   "depends_on": "eval:doc.ka_study_7yrs",
+   "fieldname": "ka_study_7yrs_certificate",
+   "fieldtype": "Attach",
+   "label": "Certificate",
+   "mandatory_depends_on": "eval:doc.ka_study_7yrs"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.karnataka_category === \"Yes\"",
+   "fieldname": "ka_defence_child",
+   "fieldtype": "Check",
+   "label": "Child of Defence / Ex-Serviceman (Karnataka domicile)"
+  },
+  {
+   "depends_on": "eval:doc.ka_defence_child",
+   "fieldname": "ka_defence_child_certificate",
+   "fieldtype": "Attach",
+   "label": "Certificate",
+   "mandatory_depends_on": "eval:doc.ka_defence_child"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.karnataka_category === \"Yes\"",
+   "fieldname": "ka_govt_child",
+   "fieldtype": "Check",
+   "label": "Child of Karnataka cadre AIS employee (IAS/IFS/IPS)"
+  },
+  {
+   "depends_on": "eval:doc.ka_govt_child",
+   "fieldname": "ka_govt_child_certificate",
+   "fieldtype": "Attach",
+   "label": "Certificate",
+   "mandatory_depends_on": "eval:doc.ka_govt_child"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.karnataka_category === \"Yes\"",
+   "fieldname": "ka_ais_child",
+   "fieldtype": "Check",
+   "label": "Child of CAPF employee with Karnataka domicile"
+  },
+  {
+   "depends_on": "eval:doc.ka_ais_child",
+   "fieldname": "ka_ais_child_certificate",
+   "fieldtype": "Attach",
+   "label": "Certificate",
+   "mandatory_depends_on": "eval:doc.ka_ais_child"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.karnataka_category === \"Yes\"",
+   "fieldname": "ka_capf_child",
+   "fieldtype": "Check",
+   "label": "Child of Central Armed Police Force employee (Karnataka domicile)"
+  },
+  {
+   "depends_on": "eval:doc.ka_capf_child",
+   "fieldname": "ka_capf_child_certificate",
+   "fieldtype": "Attach",
+   "label": "Certificate",
+   "mandatory_depends_on": "eval:doc.ka_capf_child"
+  },
+  {
+   "fieldname": "karnataka_category",
+   "fieldtype": "Select",
+   "label": "Whether Karnataka category",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "admission_tab",
+   "fieldtype": "Tab Break",
+   "label": "Admission"
+  },
+  {
+   "fieldname": "total_marks_obtained",
+   "fieldtype": "Data",
+   "label": "Total Marks Obtained"
+  },
+  {
+   "fieldname": "are_you_interested_in_off_campus_accommodation",
+   "fieldtype": "Select",
+   "label": "Are you interested in off campus accommodation?",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "are_you_a_resident_of_bengaluru",
+   "fieldtype": "Select",
+   "label": "Are you a resident of Bengaluru?",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "exam_attended",
+   "fieldtype": "Select",
+   "label": "Exam Attended",
+   "options": "\nAttended\nNot Attended"
   }
  ],
  "links": [],
- "modified": "2026-07-14 09:16:44.127739",
+ "modified": "2026-07-16 16:08:43.602976",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",
@@ -1398,6 +1621,7 @@
  "permissions": [
   {
    "create": 1,
+   "delete": 1,
    "email": 1,
    "export": 1,
    "print": 1,
@@ -1405,8 +1629,7 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
-   "write": 1,
-   "delete": 1
+   "write": 1
   },
   {
    "create": 1,
