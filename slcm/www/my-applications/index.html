@@ -3059,7 +3059,6 @@ or _app.current_stage)) or _status %}
               </button>
               {% endif %}
 
-              {% if not (cancellation_details and cancellation_details.status == 'Completed') %}
               {% if selected_app.status == 'Submitted' and selected_app.application_fee_status != 'Paid' and selected_app.application_fee_status != 'Waived' %}
               <a href="{{ applicant_portal_open_url or '#' }}" class="btn-edit-application"
                 title="Pay Application Fee" style="background: var(--primary);">
@@ -3072,7 +3071,6 @@ or _app.current_stage)) or _status %}
                 <span class="material-symbols-outlined">{{ 'visibility' if not is_editable else 'edit' }}</span>
                 {{ 'View Application' if not is_editable else 'Edit Application' }}
               </a>
-              {% endif %}
               {% endif %}
               
               {% if app_name_param %}

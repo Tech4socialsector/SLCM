@@ -25,6 +25,10 @@
   "column_break_details",
   "session_status",
   "cancellation_reason",
+  "rfid_section",
+  "rfid_activated_by",
+  "rfid_activation_time",
+  "rfid_active_until",
   "attendance_section",
   "students",
   "attendance_marked",
@@ -40,6 +44,8 @@
    "default": "Course Schedule",
    "fieldname": "based_on",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Based On",
    "options": "Course Schedule\nTime Table\nOffice Hours"
   },
@@ -155,6 +161,32 @@
    "label": "Cancellation Reason"
   },
   {
+   "fieldname": "rfid_section",
+   "fieldtype": "Section Break",
+   "label": "RFID Activation"
+  },
+  {
+   "description": "Faculty/User who pressed 'Activate RFID' for this session.",
+   "fieldname": "rfid_activated_by",
+   "fieldtype": "Link",
+   "label": "RFID Activated By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "rfid_activation_time",
+   "fieldtype": "Datetime",
+   "label": "RFID Activation Time",
+   "read_only": 1
+  },
+  {
+   "description": "Activation window auto-closes 10 minutes after activation time.",
+   "fieldname": "rfid_active_until",
+   "fieldtype": "Datetime",
+   "label": "RFID Active Until",
+   "read_only": 1
+  },
+  {
    "fieldname": "attendance_section",
    "fieldtype": "Section Break",
    "label": "Attendance Summary"
@@ -222,7 +254,7 @@
   }
  ],
  "links": [],
- "modified": "2026-07-10 16:44:36.882418",
+ "modified": "2026-07-14 16:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Attendance Session",

@@ -2,9 +2,19 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
-from frappe.utils import time_diff_in_hours
+from frappe.utils import time_diff_in_hours, now_datetime, add_to_date, get_datetime
 from slcm.slcm.utils.attendance_calculator import calculate_student_attendance
+
+DEFAULT_RFID_ACTIVE_WINDOW_MINUTES = 10
+
+
+def get_rfid_active_window_minutes():
+	"""RFID activation window is configurable via Attendance Settings; falls back to the default if unset."""
+	minutes = frappe.db.get_single_value("Attendance Settings", "rfid_active_window_minutes")
+	return minutes if minutes else DEFAULT_RFID_ACTIVE_WINDOW_MINUTES
+
 
 class AttendanceSession(Document):
 	"""Track conducted class sessions for attendance calculation"""
@@ -146,10 +156,16 @@ class AttendanceSession(Document):
 		self.update_attendance_summary()
 	
 	def update_attendance_summary(self):
-		"""Update attendance counts and student list"""
+		"""Update attendance counts and student list.
+
+		The student list is the session's expected roster (from Student
+		Enrollment), shown live — it does NOT require any Student Attendance
+		documents to exist. Real Student Attendance records are only created
+		when attendance is actually taken (manual mark, bulk mark, or RFID),
+		at which point that student's real status replaces "Not Marked" here.
+		"""
 		attendance_data = frappe.db.sql("""
 			SELECT
-				COUNT(*) as total,
 				SUM(CASE WHEN sa.status IN ('Present', 'Late') THEN 1 ELSE 0 END) as present,
 				SUM(CASE WHEN sa.status = 'Absent'             THEN 1 ELSE 0 END) as absent,
 				SUM(CASE WHEN sa.status IN ('Present', 'Late')
@@ -164,9 +180,10 @@ class AttendanceSession(Document):
 			AND sa.docstatus < 2
 		""", self.name, as_dict=True)
 
+		manually_marked = 0
+		rfid_marked = 0
 		if attendance_data:
 			data = attendance_data[0]
-			self.total_students = data.get('total', 0) or 0
 			manually_marked = data.get('manually_marked', 0) or 0
 			rfid_marked = data.get('rfid_marked', 0) or 0
 			self.present_count = data.get('present', 0) or 0
@@ -174,43 +191,87 @@ class AttendanceSession(Document):
 			self.total_boys = data.get('boys', 0) or 0
 			self.total_girls = data.get('girls', 0) or 0
 
-			if self.total_students > 0:
-				self.attendance_percentage = (self.present_count / self.total_students) * 100
-			else:
-				self.attendance_percentage = 0
-
 			# attendance_marked = 1 only when a teacher has manually marked attendance.
 			# RFID-only marking does NOT set this flag — teacher must confirm.
-			# Auto placeholder records (source='Auto') never count.
 			self.attendance_marked = 1 if manually_marked > 0 else 0
 
 			# session_status flips to "Conducted" when either Manual or RFID attendance exists
 			if (manually_marked > 0 or rfid_marked > 0) and self.session_status == "Scheduled":
 				self.session_status = "Conducted"
 
-		# Populate Child Table
-		# Clear existing rows to avoid duplication/stale data
-		self.set("students", [])
-		
-		# Fetch details for child table
-		student_records = frappe.db.sql("""
-			SELECT sa.student, s.first_name, sa.status, s.gender
+		# Roster: enrolled students for this Course Offering, plus any student
+		# who already has a real Student Attendance record for this session
+		# (covers manually-added students outside the official enrollment list).
+		roster = set(self.get_enrolled_students())
+
+		existing = frappe.db.sql("""
+			SELECT sa.student, sa.status
 			FROM `tabStudent Attendance` sa
-			JOIN `tabStudent Master` s ON sa.student = s.name
 			WHERE sa.attendance_session = %s
-			ORDER BY s.first_name asc
+			AND sa.docstatus < 2
 		""", self.name, as_dict=True)
-		
-		for record in student_records:
-			self.append("students", {
-				"student": record.student,
-				"student_name": record.first_name,
-				"status": record.status,
-				"gender": record.gender
-			})
+		status_by_student = {r.student: r.status for r in existing}
+
+		all_students = roster | set(status_by_student.keys())
+		self.total_students = len(all_students)
+
+		if self.total_students > 0:
+			self.attendance_percentage = (self.present_count / self.total_students) * 100
+		else:
+			self.attendance_percentage = 0
+
+		# Populate Child Table — clear existing rows to avoid stale data
+		self.set("students", [])
+
+		if all_students:
+			details = frappe.get_all(
+				"Student Master",
+				filters={"name": ["in", list(all_students)]},
+				fields=["name", "first_name", "gender"],
+			)
+			details_by_id = {d.name: d for d in details}
+
+			for student_id in sorted(all_students, key=lambda s: (details_by_id.get(s, {}).get("first_name") or "")):
+				info = details_by_id.get(student_id, {})
+				self.append("students", {
+					"student": student_id,
+					"student_name": info.get("first_name"),
+					"status": status_by_student.get(student_id, "Not Marked"),
+					"gender": info.get("gender"),
+				})
 			
 	# Note: No separate save() call needed because this is called in before_save
 	# or can be called manually followed by save() 
+
+@frappe.whitelist()
+def activate_rfid(session_name):
+	"""Faculty presses 'Activate RFID' in the Faculty Portal.
+	Records who/when, and opens a 10-minute window (rfid_active_until).
+	Activation is advisory for the UI freeze/timer — RFID matching itself
+	does not require activation, so a missed activation never blocks
+	attendance capture; it only affects what faculty sees in the portal."""
+	session = frappe.get_doc("Attendance Session", session_name)
+
+	user = frappe.session.user
+	if session.instructor:
+		instructor_user = frappe.db.get_value("Faculty", session.instructor, "user_id")
+		if instructor_user and instructor_user != user and "System Manager" not in frappe.get_roles(user):
+			frappe.throw(_("Only the assigned instructor can activate RFID for this session."))
+
+	if session.rfid_activation_time:
+		frappe.throw(_("RFID has already been activated for this session."))
+
+	activation_time = now_datetime()
+	session.db_set("rfid_activated_by", user)
+	session.db_set("rfid_activation_time", activation_time)
+	session.db_set("rfid_active_until", add_to_date(activation_time, minutes=get_rfid_active_window_minutes()))
+
+	return {
+		"rfid_activated_by": user,
+		"rfid_activation_time": activation_time,
+		"rfid_active_until": session.rfid_active_until,
+	}
+
 
 @frappe.whitelist()
 def mark_session_conducted(session_name):

@@ -68,8 +68,14 @@ class StudentAttendance(Document):
 				self.course = schedule.course
 			if not self.program:
 				self.program = schedule.program
-			if not self.instructor:
-				self.instructor = schedule.instructor
+			if not self.instructor and schedule.instructor:
+				faculty_name = frappe.db.get_value(
+					"Faculty", schedule.instructor, ["first_name", "last_name"], as_dict=True
+				)
+				self.instructor = (
+					" ".join(filter(None, [faculty_name.first_name, faculty_name.last_name]))
+					if faculty_name else schedule.instructor
+				) or schedule.instructor
 			if not self.room:
 				self.room = schedule.room
 

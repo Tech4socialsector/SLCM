@@ -36,7 +36,8 @@
   "tab_rfid",
   "rfid_general_note",
   "enable_rfid",
-  "rfid_swipe_mode"
+  "rfid_swipe_mode",
+  "rfid_active_window_minutes"
  ],
  "fields": [
   {
@@ -270,6 +271,16 @@
    "fieldtype": "Select",
    "label": "RFID Swipe Mode",
    "options": "In Only\nIn and Out"
+  },
+  {
+   "default": "10",
+   "depends_on": "eval:doc.enable_rfid==1",
+   "description": "How long the 'Activate RFID' window stays open in the Faculty Portal after a faculty member activates it for a session",
+   "fieldname": "rfid_active_window_minutes",
+   "fieldtype": "Int",
+   "label": "RFID Active Window (Minutes)",
+   "non_negative": 1,
+   "reqd": 1
   }
  ],
  "issingle": 1,

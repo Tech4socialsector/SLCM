@@ -291,10 +291,16 @@ fixtures = [
     # reinsert sequence for fixture import doesn't always clear the meta cache before
     # validate() runs. Fix: exclude "HD Ticket Type" fields from here; they are owned
     # by the helpdesk app and exported via helpdesk/fixtures/custom_field.json instead.
+    # Also exclude "Web Form-amount_field": it's created at runtime by the "payments"
+    # app (payments/utils/utils.py: create_custom_fields) whenever a Web Form has
+    # "Accept Payment" enabled — it's not owned by slcm and shouldn't be a fixture.
     "Web Form",
     {
         "doctype": "Custom Field",
-        "filters": [["dt", "not in", ["HD Ticket Type"]]]
+        "filters": [
+            ["dt", "not in", ["HD Ticket Type"]],
+            ["name", "!=", "Web Form-amount_field"],
+        ]
     },
     "Property Setter",
     # --- Transcript Print Format ---

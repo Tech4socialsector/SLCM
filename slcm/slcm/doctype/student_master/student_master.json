@@ -3,7 +3,7 @@
  "allow_import": 1,
  "allow_rename": 1,
  "autoname": "naming_series:naming_series",
- "creation": "2026-01-07 14:46:29.467983",
+ "creation": "2026-07-16 16:30:23.890993",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -12,16 +12,35 @@
   "naming_series",
   "rfid_uid",
   "admission_sequence",
-  "quota",
   "academic_status",
+  "id_card_issued",
   "user",
   "column_break_ahmu",
   "registration_id",
   "application_number",
+  "admit_card_number",
   "admission_type",
-  "intake",
+  "id_validity",
   "official_email_id",
   "section",
+  "section_break_ulsd",
+  "scribe_required",
+  "7_years_recognized_education",
+  "column_break_tupx",
+  "arrange_scribe",
+  "recognized_certificate",
+  "which_of_the_following_applies_to_you_section",
+  "karnataka_category",
+  "ka_study_7yrs",
+  "ka_study_7yrs_certificate",
+  "ka_defence_child",
+  "ka_defence_child_certificate",
+  "ka_govt_child",
+  "ka_govt_child_certificate",
+  "ka_ais_child",
+  "ka_ais_child_certificate",
+  "ka_capf_child",
+  "ka_capf_child_certificate",
   "section_update_log_section",
   "section_update_log",
   "tab_program_mapping",
@@ -46,12 +65,14 @@
   "gender",
   "religion",
   "marital_status",
+  "quota",
   "pre_existing_conditions",
   "state_of_domicile",
   "city",
   "country",
   "passport_available",
   "date_of_registration",
+  "are_you_a_resident_of_bengaluru",
   "column_break_yeox",
   "middle_name",
   "aadhaar_number",
@@ -66,6 +87,7 @@
   "pincode",
   "passport_expiry_date",
   "passport_number",
+  "are_you_interested_in_off_campus_accommodation",
   "tab_contact",
   "contact_details_section",
   "email",
@@ -99,6 +121,12 @@
   "allocation_end_date",
   "vacated_date",
   "tab_finance",
+  "income_details_section",
+  "annual_income_candidate",
+  "annual_income",
+  "column_break_wtnh",
+  "fin_certificate_h",
+  "fin_certificate_wh",
   "finance_section",
   "applying_scholarship",
   "scholarship_amount",
@@ -157,23 +185,32 @@
   "section_break_lgks",
   "ug_degree_details",
   "pg_degree_details_section",
+  "do_you_have_any_post_degree_work_experince",
   "pg_degree_details",
   "phd_details_section",
   "phd_proposal",
   "phd_programme",
   "proposed_phd_topic",
+  "employment_details_section",
+  "how_many_years_of_work_experince_do_you_have",
+  "employement_details",
   "tab_documents",
   "personal_documents_section",
+  "id_proof_govt_issued_photo_id",
   "aadhaar_card",
   "aadhaar_verified",
   "passport",
   "passport_verified",
   "pwd_certificate",
   "pwd_verified",
+  "curriculum_vitae",
   "column_break_cqwk",
+  "passport_size_photo",
   "pan_card",
   "pan_verified",
-  "passport_size_photo",
+  "caste_certificate",
+  "whether_ews",
+  "ews_certificate",
   "educational_documents_section",
   "std_x_marksheet",
   "transfer_certificate",
@@ -197,7 +234,6 @@
   "student_status",
   "account_status",
   "status_remark",
-  "id_card_issued",
   "laptop_issued",
   "laptop_details_section",
   "laptop_brand",
@@ -212,7 +248,20 @@
   "registration_status",
   "tab_academic_progress",
   "academic_progress_html",
-  "year_of_study"
+  "year_of_study",
+  "admission_tab",
+  "total_marks_obtained",
+  "exam_attended",
+  "final_percentile",
+  "final_vertical",
+  "allotment_round",
+  "rank_category",
+  "column_break_dycn",
+  "final_rank",
+  "final_category_rank",
+  "final_rank_category",
+  "final_horizontal",
+  "where_did_you_hear_about_the_programme"
  ],
  "fields": [
   {
@@ -231,13 +280,15 @@
    "fieldtype": "Select",
    "hidden": 1,
    "label": "Naming Series",
+   "length": 20,
    "no_copy": 1,
    "options": "STUD-.YYYY.-"
   },
   {
    "fieldname": "registration_id",
    "fieldtype": "Data",
-   "label": "Student ID"
+   "label": "Student ID",
+   "length": 20
   },
   {
    "fieldname": "rfid_uid",
@@ -245,6 +296,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "RFID UID",
+   "length": 32,
    "unique": 1
   },
   {
@@ -253,6 +305,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Application Number",
+   "length": 20,
    "reqd": 1
   },
   {
@@ -264,25 +317,22 @@
    "fieldname": "admission_type",
    "fieldtype": "Select",
    "label": "Admission Type",
+   "length": 15,
    "options": "\nCLAT\nNLSAT\nPACE\nRegular"
   },
   {
    "fieldname": "quota",
    "fieldtype": "Select",
-   "label": "Quota / Category",
+   "label": "Whether SC/ST/OBC-NCL",
+   "length": 15,
    "options": "General\nSC\nST\nOBC\nEWS\nNRI",
    "permlevel": 1
-  },
-  {
-   "fieldname": "intake",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Intake"
   },
   {
    "fieldname": "academic_status",
    "fieldtype": "Select",
    "label": "Academic Status",
+   "length": 15,
    "options": "Active\nInactive\nGraduated\nDropped\nDormant"
   },
   {
@@ -299,6 +349,7 @@
    "fieldname": "applying_scholarship",
    "fieldtype": "Select",
    "label": "Applying for Scholarship",
+   "length": 5,
    "options": "Yes\nNo"
   },
   {
@@ -306,6 +357,7 @@
    "fieldname": "scholarship_type",
    "fieldtype": "Select",
    "label": "Scholarship Type",
+   "length": 20,
    "options": "\nCultural\nMerit\nNeed-Based\nOther\nSports"
   },
   {
@@ -374,6 +426,7 @@
    "fieldname": "fee_payment_status",
    "fieldtype": "Select",
    "label": "Fee Payment Status",
+   "length": 20,
    "options": "\nUnpaid\nPayment Initiated\nAuthorized\nPartially Paid\nPaid\nPayment Failed\nRefunded\nCancelled"
   },
   {
@@ -422,29 +475,34 @@
   {
    "fieldname": "bank_name",
    "fieldtype": "Data",
-   "label": "Bank Name"
+   "label": "Bank Name",
+   "length": 100
   },
   {
    "fieldname": "bank_account_number",
    "fieldtype": "Data",
    "label": "Bank Account Number",
+   "length": 20,
    "mask": 1
   },
   {
    "fieldname": "ifsc_code",
    "fieldtype": "Data",
    "label": "IFSC Code",
+   "length": 11,
    "mask": 1
   },
   {
    "fieldname": "branch_name",
    "fieldtype": "Data",
-   "label": "Branch Name"
+   "label": "Branch Name",
+   "length": 100
   },
   {
    "fieldname": "account_holder_name",
    "fieldtype": "Data",
-   "label": "Account Holder Name"
+   "label": "Account Holder Name",
+   "length": 100
   },
   {
    "fieldname": "tab_program_mapping",
@@ -465,12 +523,14 @@
   {
    "fieldname": "specialisation",
    "fieldtype": "Data",
-   "label": "Specialisation"
+   "label": "Specialisation",
+   "length": 100
   },
   {
    "fieldname": "current_year",
    "fieldtype": "Data",
-   "label": "Current Year"
+   "label": "Current Year",
+   "length": 10
   },
   {
    "fieldname": "cumulative_percentage",
@@ -481,7 +541,8 @@
   {
    "fieldname": "attendance_status",
    "fieldtype": "Data",
-   "label": "Attendance Status"
+   "label": "Attendance Status",
+   "length": 20
   },
   {
    "fieldname": "tab_academic_progress",
@@ -492,7 +553,8 @@
    "bold": 1,
    "fieldname": "year_of_study",
    "fieldtype": "Data",
-   "label": "Year of Study"
+   "label": "Year of Study",
+   "length": 10
   },
   {
    "fieldname": "academic_progress_html",
@@ -515,17 +577,20 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "First Name",
+   "length": 100,
    "reqd": 1
   },
   {
    "fieldname": "middle_name",
    "fieldtype": "Data",
-   "label": "Middle Name"
+   "label": "Middle Name",
+   "length": 100
   },
   {
    "fieldname": "last_name",
    "fieldtype": "Data",
-   "label": "Last Name"
+   "label": "Last Name",
+   "length": 100
   },
   {
    "fieldname": "dob",
@@ -544,17 +609,20 @@
   {
    "fieldname": "nationality",
    "fieldtype": "Data",
-   "label": "Nationality"
+   "label": "Nationality",
+   "length": 50
   },
   {
    "fieldname": "religion",
    "fieldtype": "Data",
-   "label": "Religion"
+   "label": "Religion",
+   "length": 50
   },
   {
    "fieldname": "blood_group",
    "fieldtype": "Select",
    "label": "Blood Group",
+   "length": 5,
    "options": "A+\nA-\nB+\nB-\nO+\nO-\nAB+\nAB-"
   },
   {
@@ -579,12 +647,14 @@
   {
    "fieldname": "dietary_restrictions",
    "fieldtype": "Data",
-   "label": "Dietary Restrictions"
+   "label": "Dietary Restrictions",
+   "length": 100
   },
   {
    "fieldname": "state_of_domicile",
    "fieldtype": "Data",
-   "label": "State of Domicile"
+   "label": "State of Domicile",
+   "length": 50
   },
   {
    "fieldname": "state",
@@ -608,19 +678,22 @@
   {
    "fieldname": "pan_number",
    "fieldtype": "Data",
-   "label": "PAN Number"
+   "label": "PAN Number",
+   "length": 10
   },
   {
    "fieldname": "passport_available",
    "fieldtype": "Select",
    "label": "Passport Available",
+   "length": 5,
    "options": "Yes\nNo"
   },
   {
    "depends_on": "eval:doc.passport_available==\"Yes\"",
    "fieldname": "passport_number",
    "fieldtype": "Data",
-   "label": "Passport Number"
+   "label": "Passport Number",
+   "length": 20
   },
   {
    "depends_on": "eval:doc.passport_available==\"Yes\"",
@@ -642,6 +715,7 @@
    "fieldname": "email",
    "fieldtype": "Data",
    "label": "Email",
+   "length": 100,
    "options": "Email",
    "reqd": 1
   },
@@ -649,27 +723,32 @@
    "fieldname": "phone",
    "fieldtype": "Phone",
    "label": "Phone",
+   "length": 20,
    "reqd": 1
   },
   {
    "fieldname": "alternate_phone",
    "fieldtype": "Phone",
-   "label": "Alternate Phone"
+   "label": "Alternate Phone",
+   "length": 20
   },
   {
    "fieldname": "emergency_contact",
    "fieldtype": "Phone",
-   "label": "Emergency Contact"
+   "label": "Emergency Contact",
+   "length": 20
   },
   {
    "fieldname": "mentor_name_code",
    "fieldtype": "Data",
-   "label": "Mentor Name & Code"
+   "label": "Mentor Name & Code",
+   "length": 100
   },
   {
    "fieldname": "counsellor_name_code",
    "fieldtype": "Data",
-   "label": "Counsellor Name & Code"
+   "label": "Counsellor Name & Code",
+   "length": 100
   },
   {
    "fieldname": "tab_parent",
@@ -714,7 +793,8 @@
   {
    "fieldname": "hostel_block",
    "fieldtype": "Data",
-   "label": "Block / Building"
+   "label": "Block / Building",
+   "length": 50
   },
   {
    "fieldname": "hostel_room",
@@ -741,7 +821,8 @@
   {
    "fieldname": "hostel_status",
    "fieldtype": "Data",
-   "label": "Hostel Status"
+   "label": "Hostel Status",
+   "length": 30
   },
   {
    "fieldname": "hostel_remarks",
@@ -753,6 +834,7 @@
    "fieldname": "meal_plan",
    "fieldtype": "Select",
    "label": "Meal Plan",
+   "length": 10,
    "options": "Plan A\nPlan B\nPlan C"
   },
   {
@@ -789,6 +871,7 @@
    "fieldname": "class_x_completion_year",
    "fieldtype": "Data",
    "label": "Year of Completion (Class X)",
+   "length": 10,
    "reqd": 1
   },
   {
@@ -801,12 +884,14 @@
    "fieldname": "class_x_school",
    "fieldtype": "Data",
    "label": "School/College/University (Class X)",
+   "length": 140,
    "reqd": 1
   },
   {
    "fieldname": "class_x_board",
    "fieldtype": "Data",
    "label": "Board (Class X)",
+   "length": 100,
    "reqd": 1
   },
   {
@@ -827,24 +912,28 @@
    "fieldname": "class_xii_exam_name",
    "fieldtype": "Data",
    "label": "Name of Examination (Class XII/Equivalent - as per marksheet)",
+   "length": 140,
    "reqd": 1
   },
   {
    "fieldname": "class_xii_completion_year",
    "fieldtype": "Data",
    "label": "Year of Completion (Class XII/Equivalent)",
+   "length": 10,
    "reqd": 1
   },
   {
    "fieldname": "class_xii_school",
    "fieldtype": "Data",
    "label": "School/College/University (Class XII/Equivalent)",
+   "length": 140,
    "reqd": 1
   },
   {
    "fieldname": "class_xii_board",
    "fieldtype": "Data",
    "label": "Board (Class XII/Equivalent)",
+   "length": 100,
    "reqd": 1
   },
   {
@@ -867,6 +956,7 @@
    "fieldname": "ug_degree_completed",
    "fieldtype": "Select",
    "label": "Have you completed your UG degree",
+   "length": 30,
    "options": "\nYes\nNo\nFinal Year of UG Degree\nUG Degree completed",
    "reqd": 1
   },
@@ -875,6 +965,7 @@
    "fieldname": "ug_degree_name",
    "fieldtype": "Data",
    "label": "Name of Degree (UG)",
+   "length": 100,
    "mandatory_depends_on": "eval:doc.ug_degree_completed=='Yes'"
   },
   {
@@ -882,6 +973,7 @@
    "fieldname": "ug_completion_year",
    "fieldtype": "Data",
    "label": "Year of Completion (UG Degree)",
+   "length": 10,
    "mandatory_depends_on": "eval:doc.ug_degree_completed=='Yes'"
   },
   {
@@ -889,6 +981,7 @@
    "fieldname": "ug_college",
    "fieldtype": "Data",
    "label": "College/University (UG Degree)",
+   "length": 140,
    "mandatory_depends_on": "eval:doc.ug_degree_completed=='Yes'"
   },
   {
@@ -925,6 +1018,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Student Status",
+   "length": 15,
    "options": "Active\nInactive\nGraduated\nDropped\nAlumni\nDormant\nWithdrawn\nDeferral"
   },
   {
@@ -932,6 +1026,7 @@
    "fieldtype": "Select",
    "hidden": 1,
    "label": "Account Status",
+   "length": 15,
    "options": "Active\nBlocked"
   },
   {
@@ -940,15 +1035,17 @@
    "label": "Status Remark"
   },
   {
-   "default": "0",
    "fieldname": "id_card_issued",
-   "fieldtype": "Check",
-   "label": "ID Card Issued"
+   "fieldtype": "Select",
+   "label": "ID Card Issued",
+   "length": 5,
+   "options": "\nYes\nNo"
   },
   {
    "fieldname": "laptop_issued",
    "fieldtype": "Select",
    "label": "Laptop Issued",
+   "length": 5,
    "options": "\nYes\nNo"
   },
   {
@@ -961,13 +1058,15 @@
    "depends_on": "eval:doc.laptop_issued=='Yes'",
    "fieldname": "laptop_brand",
    "fieldtype": "Data",
-   "label": "Laptop Brand"
+   "label": "Laptop Brand",
+   "length": 50
   },
   {
    "depends_on": "eval:doc.laptop_issued=='Yes'",
    "fieldname": "laptop_model",
    "fieldtype": "Data",
-   "label": "Laptop Model"
+   "label": "Laptop Model",
+   "length": 50
   },
   {
    "fieldname": "column_break_laptop",
@@ -977,7 +1076,8 @@
    "depends_on": "eval:doc.laptop_issued=='Yes'",
    "fieldname": "laptop_serial_number",
    "fieldtype": "Data",
-   "label": "Serial Number"
+   "label": "Serial Number",
+   "length": 40
   },
   {
    "depends_on": "eval:doc.laptop_issued=='Yes'",
@@ -1030,8 +1130,7 @@
   {
    "fieldname": "aadhaar_card",
    "fieldtype": "Attach",
-   "label": "Aadhaar Card",
-   "reqd": 1
+   "label": "Aadhaar Card"
   },
   {
    "default": "0",
@@ -1174,7 +1273,8 @@
   {
    "fieldname": "official_email_id",
    "fieldtype": "Data",
-   "label": "Official Email ID"
+   "label": "Official Email ID",
+   "length": 100
   },
   {
    "fieldname": "present_address",
@@ -1195,18 +1295,21 @@
    "fieldname": "personal_email",
    "fieldtype": "Data",
    "label": "Personal Email",
+   "length": 100,
    "options": "Email",
    "reqd": 1
   },
   {
    "fieldname": "key_number",
    "fieldtype": "Data",
-   "label": "Key Number"
+   "label": "Key Number",
+   "length": 20
   },
   {
    "fieldname": "marital_status",
    "fieldtype": "Select",
    "label": "Marital status",
+   "length": 15,
    "options": "\nMarried\nUnmarried\nWidowed\nDivorced\nSeparated",
    "reqd": 1
   },
@@ -1214,18 +1317,21 @@
    "depends_on": "eval:doc.state",
    "fieldname": "city",
    "fieldtype": "Data",
-   "label": "City"
+   "label": "City",
+   "length": 50
   },
   {
    "depends_on": "eval:doc.state",
    "fieldname": "pincode",
    "fieldtype": "Data",
-   "label": "Pincode"
+   "label": "Pincode",
+   "length": 10
   },
   {
    "fieldname": "country",
    "fieldtype": "Data",
-   "label": "Country"
+   "label": "Country",
+   "length": 50
   },
   {
    "fieldname": "passport_expiry_date",
@@ -1263,6 +1369,7 @@
    "fieldname": "phd_programme",
    "fieldtype": "Select",
    "label": "PhD programme",
+   "length": 20,
    "options": "\nLaw\nInterdisciplinary"
   },
   {
@@ -1312,7 +1419,8 @@
   },
   {
    "fieldname": "section_break_lgks",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "UG Degree Deatils"
   },
   {
    "fieldname": "column_break_cqwk",
@@ -1330,13 +1438,15 @@
    "fetch_from": "programme.academic_year",
    "fieldname": "academic_year",
    "fieldtype": "Data",
-   "label": "Academic year"
+   "label": "Academic year",
+   "length": 15
   },
   {
    "fetch_from": "programme.academic_term",
    "fieldname": "academic_term",
    "fieldtype": "Data",
-   "label": "Academic Term"
+   "label": "Academic Term",
+   "length": 20
   },
   {
    "depends_on": "eval:doc.admission_type != 'PACE'",
@@ -1358,6 +1468,7 @@
    "fieldname": "level_of_study",
    "fieldtype": "Data",
    "label": "Level Of Study",
+   "length": 20,
    "options": "\nUndergraduate\nPostgraduate\nResearch Course\nDiploma"
   },
   {
@@ -1386,10 +1497,295 @@
    "hidden": 1,
    "label": "Programme",
    "options": "Programme Master"
+  },
+  {
+   "fieldname": "admit_card_number",
+   "fieldtype": "Data",
+   "label": "Admit Card Number",
+   "length": 20
+  },
+  {
+   "fieldname": "id_validity",
+   "fieldtype": "Date",
+   "label": "ID Validity"
+  },
+  {
+   "fieldname": "income_details_section",
+   "fieldtype": "Section Break",
+   "label": "Income Details"
+  },
+  {
+   "fieldname": "id_proof_govt_issued_photo_id",
+   "fieldtype": "Attach",
+   "label": "ID Proof (Govt. issued photo ID"
+  },
+  {
+   "fieldname": "annual_income_candidate",
+   "fieldtype": "Data",
+   "label": "Current Annual Income of Candidate (if employed)/ else current annual household income",
+   "length": 20
+  },
+  {
+   "fieldname": "annual_income",
+   "fieldtype": "Data",
+   "label": "Current Annual Household Income (in INR)",
+   "length": 20
+  },
+  {
+   "fieldname": "employement_details",
+   "fieldtype": "Table",
+   "label": "Employement Details",
+   "options": "Employment"
+  },
+  {
+   "fieldname": "caste_certificate",
+   "fieldtype": "Attach",
+   "label": "Caste Certificate"
+  },
+  {
+   "fieldname": "whether_ews",
+   "fieldtype": "Select",
+   "label": "Whether EWS?",
+   "length": 5,
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "ews_certificate",
+   "fieldtype": "Attach",
+   "label": "EWS Certificate"
+  },
+  {
+   "fieldname": "scribe_required",
+   "fieldtype": "Select",
+   "label": "Whether scribe required for the test?",
+   "length": 5,
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "arrange_scribe",
+   "fieldtype": "Small Text",
+   "label": "Will you arrange for a scribe yourself or would you require the NLSIU to arrange a scribe for you?"
+  },
+  {
+   "fieldname": "section_break_ulsd",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "7_years_recognized_education",
+   "fieldtype": "Select",
+   "label": "Studied for not less than 7 years in a recognized educational institution in Karnataka",
+   "length": 5,
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "column_break_tupx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "recognized_certificate",
+   "fieldtype": "Attach",
+   "label": "Recognized Certificate"
+  },
+  {
+   "fieldname": "curriculum_vitae",
+   "fieldtype": "Attach",
+   "label": "Curriculum Vitae"
+  },
+  {
+   "fieldname": "which_of_the_following_applies_to_you_section",
+   "fieldtype": "Section Break",
+   "label": "Which of the following applies to you"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.karnataka_category === \"Yes\"",
+   "fieldname": "ka_study_7yrs",
+   "fieldtype": "Check",
+   "label": "Studied for not less than 7 years in a recognized educational institution in Karnataka"
+  },
+  {
+   "depends_on": "eval:doc.ka_study_7yrs",
+   "fieldname": "ka_study_7yrs_certificate",
+   "fieldtype": "Attach",
+   "label": "Certificate",
+   "mandatory_depends_on": "eval:doc.ka_study_7yrs"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.karnataka_category === \"Yes\"",
+   "fieldname": "ka_defence_child",
+   "fieldtype": "Check",
+   "label": "Child of Defence / Ex-Serviceman (Karnataka domicile)"
+  },
+  {
+   "depends_on": "eval:doc.ka_defence_child",
+   "fieldname": "ka_defence_child_certificate",
+   "fieldtype": "Attach",
+   "label": "Certificate",
+   "mandatory_depends_on": "eval:doc.ka_defence_child"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.karnataka_category === \"Yes\"",
+   "fieldname": "ka_govt_child",
+   "fieldtype": "Check",
+   "label": "Child of Karnataka cadre AIS employee (IAS/IFS/IPS)"
+  },
+  {
+   "depends_on": "eval:doc.ka_govt_child",
+   "fieldname": "ka_govt_child_certificate",
+   "fieldtype": "Attach",
+   "label": "Certificate",
+   "mandatory_depends_on": "eval:doc.ka_govt_child"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.karnataka_category === \"Yes\"",
+   "fieldname": "ka_ais_child",
+   "fieldtype": "Check",
+   "label": "Child of CAPF employee with Karnataka domicile"
+  },
+  {
+   "depends_on": "eval:doc.ka_ais_child",
+   "fieldname": "ka_ais_child_certificate",
+   "fieldtype": "Attach",
+   "label": "Certificate",
+   "mandatory_depends_on": "eval:doc.ka_ais_child"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.karnataka_category === \"Yes\"",
+   "fieldname": "ka_capf_child",
+   "fieldtype": "Check",
+   "label": "Child of Central Armed Police Force employee (Karnataka domicile)"
+  },
+  {
+   "depends_on": "eval:doc.ka_capf_child",
+   "fieldname": "ka_capf_child_certificate",
+   "fieldtype": "Attach",
+   "label": "Certificate",
+   "mandatory_depends_on": "eval:doc.ka_capf_child"
+  },
+  {
+   "fieldname": "karnataka_category",
+   "fieldtype": "Select",
+   "label": "Whether Karnataka category",
+   "length": 5,
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "admission_tab",
+   "fieldtype": "Tab Break",
+   "label": "Admission"
+  },
+  {
+   "fieldname": "total_marks_obtained",
+   "fieldtype": "Data",
+   "label": "Total Marks Obtained",
+   "length": 15
+  },
+  {
+   "fieldname": "are_you_interested_in_off_campus_accommodation",
+   "fieldtype": "Select",
+   "label": "Are you interested in off campus accommodation?",
+   "length": 5,
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "are_you_a_resident_of_bengaluru",
+   "fieldtype": "Select",
+   "label": "Are you a resident of Bengaluru?",
+   "length": 5,
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "exam_attended",
+   "fieldtype": "Select",
+   "label": "Exam Attended",
+   "length": 15,
+   "options": "\nAttended\nNot Attended"
+  },
+  {
+   "fieldname": "column_break_dycn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "final_rank",
+   "fieldtype": "Data",
+   "label": "Final Rank"
+  },
+  {
+   "fieldname": "final_percentile",
+   "fieldtype": "Data",
+   "label": "Final Percentile"
+  },
+  {
+   "fieldname": "final_vertical",
+   "fieldtype": "Data",
+   "label": "Final Vertical"
+  },
+  {
+   "fieldname": "allotment_round",
+   "fieldtype": "Data",
+   "label": "Allotment Round"
+  },
+  {
+   "fieldname": "final_category_rank",
+   "fieldtype": "Data",
+   "label": "Final Category Rank"
+  },
+  {
+   "fieldname": "final_rank_category",
+   "fieldtype": "Data",
+   "label": "Final Rank Category"
+  },
+  {
+   "fieldname": "final_horizontal",
+   "fieldtype": "Data",
+   "label": "Final Horizontal"
+  },
+  {
+   "fieldname": "column_break_wtnh",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "fin_certificate_h",
+   "fieldtype": "Attach",
+   "label": "Fin. Certificate (H)"
+  },
+  {
+   "fieldname": "fin_certificate_wh",
+   "fieldtype": "Attach",
+   "label": "Fin. Certificate (WH)"
+  },
+  {
+   "fieldname": "where_did_you_hear_about_the_programme",
+   "fieldtype": "Data",
+   "label": "Where Did You Hear About the Programme?"
+  },
+  {
+   "fieldname": "rank_category",
+   "fieldtype": "Data",
+   "label": "Rank Category"
+  },
+  {
+   "fieldname": "do_you_have_any_post_degree_work_experince",
+   "fieldtype": "Data",
+   "label": "Do you have any Post Degree work experince?"
+  },
+  {
+   "fieldname": "employment_details_section",
+   "fieldtype": "Section Break",
+   "label": "Employment Details"
+  },
+  {
+   "fieldname": "how_many_years_of_work_experince_do_you_have",
+   "fieldtype": "Data",
+   "label": "How many years of work experince do you have?"
   }
  ],
  "links": [],
- "modified": "2026-07-14 09:16:44.127739",
+ "modified": "2026-07-16 16:39:07.388078",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",
