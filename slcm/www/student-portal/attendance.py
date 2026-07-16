@@ -29,15 +29,20 @@ def get_context(context):
         # ── Attendance Settings ────────────────────────────────────
         try:
             settings = frappe.get_single("Attendance Settings")
-            context.allow_fa_mfa = bool(settings.allow_fa_mfa)
             context.allow_condonation = bool(settings.allow_condonation)
             context.min_condonation_pct = float(
                 getattr(settings, "condonation_min_percentage", 66) or 66
             )
         except Exception:
-            context.allow_fa_mfa = True
             context.allow_condonation = True
             context.min_condonation_pct = 66.0
+
+        # ── Examination Settings ───────────────────────────────────
+        try:
+            exam_settings = frappe.get_single("Examination Settings")
+            context.allow_fa_mfa = bool(exam_settings.allow_fa_mfa)
+        except Exception:
+            context.allow_fa_mfa = True
 
         # ── Portal colour thresholds (from Student Portal Settings) ─
         try:

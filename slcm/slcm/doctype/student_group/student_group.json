@@ -16,6 +16,7 @@
   "batch",
   "academic_term",
   "program",
+  "course_offering",
   "course",
   "class_type",
   "section",
@@ -114,14 +115,25 @@
    "options": "Faculty"
   },
   {
+   "fieldname": "course_offering",
+   "fieldtype": "Link",
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Course Offering",
+   "options": "Course Offering"
+  },
+  {
    "depends_on": "eval:doc.group_based_on==\"Course\"",
+   "fetch_from": "course_offering.course_title",
    "fieldname": "course",
    "fieldtype": "Link",
    "in_global_search": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Course",
-   "options": "Course"
+   "options": "Course",
+   "read_only": 1
   },
   {
    "default": "0",

@@ -43,6 +43,10 @@ doctype_js = {
     "Notification": "public/js/notification_override.js"
 }
 
+doctype_calendar_js = {
+    "Event": "public/js/event_calendar_override.js"
+}
+
 # include js, css files in header of web template
 # web_include_css = "/assets/slcm/css/slcm.css"
 web_include_js = ["/assets/slcm/js/fle_theme.js", "/assets/slcm/js/file_uploader_globals.js"]
@@ -183,7 +187,13 @@ fixtures = [
                 "HD Ticket SLA Escalation - Max Hops Reached",
                 "Venue Booking - New Request (Admin)",
                 "Venue Booking - Status Update (Requester)",
-                "Venue Booking - Swap Request Decision (Requester)"
+                "Venue Booking - Swap Request Decision (Requester)",
+                "AAD Assignment Email Template",
+                "AAD Approval Email Template",
+                "AAD Rejected Email Template",
+                "Programme Chair Assignment Email Template",
+                "Programme Chair Approval Email Template",
+                "Programme Chair Rejected Email Template"
             ]]
         ]
     },
@@ -291,6 +301,9 @@ fixtures = [
     {
         "doctype": "Print Format",
         "filters": [["name", "=", "Student Transcript"]]
+    },
+    {
+        "doctype": "Venue Type",
     },
 ]
 
@@ -610,4 +623,5 @@ permission_query_conditions = {
 
 has_permission = {
     "PACE Document Verification": "slcm.pace.doctype.pace_document_verification.pace_document_verification.has_permission",
+    "Student Attendance Condonation": "slcm.slcm.doctype.student_attendance_condonation.student_attendance_condonation.has_permission",
 }

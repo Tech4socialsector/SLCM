@@ -506,6 +506,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Link",
    "in_standard_filter": 1,

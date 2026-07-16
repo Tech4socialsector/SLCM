@@ -4,9 +4,88 @@
 frappe.ui.form.on("Student Attendance Condonation", {
 	refresh(frm) {
 		fix_private_file_link(frm, "proof_document");
+
+		if (frm.doc.final_status === "Pending" && frappe.session.user === frm.doc.aad_approver) {
+			frm.add_custom_button("May Be Approve", () => {
+				frappe.prompt(
+					[{ fieldname: "remarks", fieldtype: "Small Text", label: "Remarks" }],
+					(values) => {
+						frm.call({
+							method: "aad_decision",
+							doc: frm.doc,
+							args: { action: "approve", remarks: values.remarks, rejected_reason: null },
+							callback: () => frm.reload_doc()
+						});
+					},
+					"Approve Condonation",
+					"Submit"
+				);
+			}, "AAD Decision");
+
+			frm.add_custom_button("Reject", () => {
+				frappe.prompt(
+					[{ fieldname: "rejected_reason", fieldtype: "Small Text", label: "Rejected Reason", reqd: 1 }],
+					(values) => {
+						frm.call({
+							method: "aad_decision",
+							doc: frm.doc,
+							args: { action: "reject", remarks: null, rejected_reason: values.rejected_reason },
+							callback: () => frm.reload_doc()
+						});
+					},
+					"Reject Condonation",
+					"Submit"
+				);
+			}, "AAD Decision");
+		}
+
+		if (frm.doc.final_status === "May Be Approved" && frappe.session.user === frm.doc.programme_chair_approver) {
+			frm.add_custom_button("Approve", () => {
+				frappe.prompt(
+					[{ fieldname: "remarks", fieldtype: "Small Text", label: "Remarks" }],
+					(values) => {
+						frm.call({
+							method: "programme_chair_decision",
+							doc: frm.doc,
+							args: { action: "approve", remarks: values.remarks, rejected_reason: null },
+							callback: () => frm.reload_doc()
+						});
+					},
+					"Approve Condonation",
+					"Submit"
+				);
+			}, "Programme Chair Decision");
+
+			frm.add_custom_button("Reject", () => {
+				frappe.prompt(
+					[{ fieldname: "rejected_reason", fieldtype: "Small Text", label: "Rejected Reason", reqd: 1 }],
+					(values) => {
+						frm.call({
+							method: "programme_chair_decision",
+							doc: frm.doc,
+							args: { action: "reject", remarks: null, rejected_reason: values.rejected_reason },
+							callback: () => frm.reload_doc()
+						});
+					},
+					"Reject Condonation",
+					"Submit"
+				);
+			}, "Programme Chair Decision");
+		}
 	},
 	proof_document(frm) {
 		fix_private_file_link(frm, "proof_document");
+	},
+	student(frm) {
+		if (frm.doc.student) {
+			frappe.db.get_value("Student Master", frm.doc.student, "master_programme", (r) => {
+				if (r && r.master_programme) {
+					frm.set_value("programme", r.master_programme);
+				}
+			});
+		} else {
+			frm.set_value("programme", null);
+		}
 	}
 });
 

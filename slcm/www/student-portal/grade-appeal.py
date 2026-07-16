@@ -102,15 +102,19 @@ def submit_appeal(exam_plan, course, appeal_type, reason, supporting_remarks="")
 	marks_doc = frappe.db.get_value(
 		"Student Course Marks",
 		{"student": student_name, "exam_plan": exam_plan, "course": course},
-		["grade", "updated_grade", "total_marks", "updated_final_marks"],
+		["grade", "updated_grade", "total_marks", "updated_final_marks", "course_offering"],
 		as_dict=True,
 	) or frappe._dict()
+
+	if not marks_doc.get("course_offering"):
+		frappe.throw("No Course Offering found on your result record. Contact administration.")
 
 	doc = frappe.get_doc({
 		"doctype": "Grade Appeal",
 		"student": student_name,
 		"exam_plan": exam_plan,
 		"course": course,
+		"course_offering": marks_doc.course_offering,
 		"appeal_type": appeal_type,
 		"reason": reason,
 		"supporting_remarks": supporting_remarks,

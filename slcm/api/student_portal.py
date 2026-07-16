@@ -78,7 +78,7 @@ def submit_fa_mfa_application(
             frappe.throw(f"{label} is required.")
 
     # Check global setting
-    settings = frappe.get_single("Attendance Settings")
+    settings = frappe.get_single("Examination Settings")
     if not settings.allow_fa_mfa:
         frappe.throw("FA/MFA Applications are currently disabled by the administration.")
 
@@ -1722,10 +1722,17 @@ def initiate_re_exam_registration(exam_plan, course):
     if existing:
         return {"name": existing, "message": "You are already registered for this re-examination."}
 
+    course_offering = frappe.db.get_value(
+        "Course Schema Assignment", {"exam_plan": exam_plan, "course": course}, "course_offering"
+    )
+    if not course_offering:
+        frappe.throw("No Course Offering found for this course/exam plan. Contact administration.")
+
     doc = frappe.new_doc("Re Exam Registration")
     doc.student    = student_name
     doc.exam_plan  = exam_plan
     doc.course     = course
+    doc.course_offering = course_offering
     doc.re_exam_fee = setting.get("re_exam_fee") or 0
     doc.status         = "Registered"
     doc.payment_status = "Pending"
@@ -1781,10 +1788,17 @@ def initiate_improvement_exam_registration(exam_plan, course):
         if current_count >= int(setting["registration_limit"]):
             frappe.throw("Registration limit has been reached for this improvement exam.")
 
+    course_offering = frappe.db.get_value(
+        "Course Schema Assignment", {"exam_plan": exam_plan, "course": course}, "course_offering"
+    )
+    if not course_offering:
+        frappe.throw("No Course Offering found for this course/exam plan. Contact administration.")
+
     doc = frappe.new_doc("Improvement Exam Registration")
     doc.student         = student_name
     doc.exam_plan       = exam_plan
     doc.course          = course
+    doc.course_offering = course_offering
     doc.improvement_fee = setting.get("improvement_fee") or 0
     doc.status          = "Registered"
     doc.payment_status  = "Pending"

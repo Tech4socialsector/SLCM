@@ -43,16 +43,16 @@ class VenueBooking(Document):
 			frappe.throw(_("End Date & Time must be after Start Date & Time"))
 
 	def check_availability(self):
-		if not self.room:
+		if not self.venue:
 			return
 
-		is_allowed = frappe.db.get_value("Room", self.room, "is_booking_allowed")
-		if not is_allowed:
-			frappe.throw(_("Booking is not allowed for this Room: {0}").format(self.room))
+		is_active = frappe.db.get_value("Venue Master", self.venue, "is_active")
+		if not is_active:
+			frappe.throw(_("Booking is not allowed for this Venue: {0} (Not Active)").format(self.venue))
 
 		overlap = frappe.db.sql("""
 			SELECT name FROM `tabVenue Booking`
-			WHERE room = %s
+			WHERE venue = %s
 			AND docstatus < 2
 			AND name != %s
 			AND status NOT IN ('Cancelled', 'Rejected')
@@ -61,14 +61,14 @@ class VenueBooking(Document):
 				(end_datetime > %s AND end_datetime < %s) OR
 				(start_datetime <= %s AND end_datetime >= %s)
 			)
-		""", (self.room, self.name or "New Venue Booking",
+		""", (self.venue, self.name or "New Venue Booking",
 			self.start_datetime, self.end_datetime,
 			self.start_datetime, self.end_datetime,
 			self.start_datetime, self.end_datetime))
 
 		if overlap:
-			frappe.throw(_("Room {0} is already booked during this period (Ref: {1})").format(
-				self.room, overlap[0][0]))
+			frappe.throw(_("Venue {0} is already booked during this period (Ref: {1})").format(
+				self.venue, overlap[0][0]))
 
 	def _set_requester_info(self):
 		"""Auto-fill requester_name and requester_type from the logged-in user."""
@@ -96,11 +96,11 @@ class VenueBooking(Document):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Room query helper
+#  Venue query helper
 # ─────────────────────────────────────────────────────────────────────────────
 
 @frappe.whitelist()
-def get_room_query(doctype, txt, searchfield, start, page_len, filters):
+def get_venue_query_old(doctype, txt, searchfield, start, page_len, filters):
 	filters_dict = {}
 	if hasattr(filters, 'get'):
 		filters_dict = filters
@@ -132,6 +132,51 @@ def get_room_query(doctype, txt, searchfield, start, page_len, filters):
 # ─────────────────────────────────────────────────────────────────────────────
 #  Admin actions (approve / reject / cancel / swap)
 # ─────────────────────────────────────────────────────────────────────────────
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def get_venue_query(doctype, txt, searchfield, start, page_len, filters):
+	filters_dict = {}
+	if hasattr(filters, 'get'):
+		filters_dict = filters
+	elif isinstance(filters, str):
+		filters_dict = json.loads(filters)
+
+	venue_type = filters_dict.get("venue_type")
+	
+	conditions = ["`tabVenue Master`.is_active = 1"]
+	values = []
+
+	if venue_type:
+		conditions.append("`tabVenue Master`.venue_type = %s")
+		values.append(venue_type)
+
+	if txt:
+		conditions.append("`tabVenue Master`.name LIKE %s")
+		values.append(f"%{txt}%")
+
+	user_roles = frappe.get_roles(frappe.session.user)
+	if "System Manager" not in user_roles and "Administrator" not in user_roles:
+		if user_roles:
+			format_strings = ','.join(['%s'] * len(user_roles))
+			conditions.append(f"`tabVenue Master`.name IN (SELECT parent FROM `tabVenue Allowed Role` WHERE role IN ({format_strings}) AND parenttype='Venue Master')")
+			values.extend(user_roles)
+		else:
+			conditions.append("1=0")
+
+	where_clause = " AND ".join(conditions)
+
+	query = f"""
+		SELECT `tabVenue Master`.name
+		FROM `tabVenue Master`
+		WHERE {where_clause}
+		ORDER BY `tabVenue Master`.name
+		LIMIT %s, %s
+	"""
+	
+	values.extend([start, page_len])
+	return frappe.db.sql(query, tuple(values))
+
 
 @frappe.whitelist()
 def approve_booking(booking_name, admin_remarks=None):
@@ -180,7 +225,7 @@ def cancel_booking(booking_name, admin_remarks=None):
 
 @frappe.whitelist()
 def approve_venue_swap(booking_name, admin_remarks=None):
-    """Admin approves a student's swap request — moves the booking to the requested room."""
+    """Admin approves a student's swap request — moves the booking to the requested venue."""
     _require_admin()
 
     booking = frappe.get_doc("Venue Booking", booking_name, ignore_permissions=True)
@@ -188,24 +233,24 @@ def approve_venue_swap(booking_name, admin_remarks=None):
     if not booking.swap_requested or booking.swap_status != "Pending":
         frappe.throw(_("No pending swap request found for this booking."))
 
-    new_room = booking.swap_requested_room
-    if not new_room:
-        frappe.throw(_("Swap request has no target room specified."))
+    new_venue = booking.swap_requested_venue
+    if not new_venue:
+        frappe.throw(_("Swap request has no target venue specified."))
 
-    # Conflict check: can the booking move to the new room?
+    # Conflict check: can the booking move to the new venue?
     try:
-        check_conflict(booking, new_room)
+        check_conflict(booking, new_venue)
     except Exception as e:
         frappe.throw(_("Cannot approve swap — {0}").format(str(e)))
 
-    old_room = booking.room
+    old_venue = booking.venue
     decided_by = frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user
 
     frappe.db.set_value("Venue Booking", booking_name, {
-        "room":                new_room,
-        "swap_requested":      0,
         "swap_status":         "Approved",
         "swap_admin_remarks":  admin_remarks or "",
+        "venue":               new_venue,
+        "swap_requested":      0
     }, update_modified=False)
 
     frappe.db.sql("""
@@ -223,13 +268,13 @@ def approve_venue_swap(booking_name, admin_remarks=None):
           "by": decided_by, "remarks": admin_remarks or ""})
     frappe.db.commit()
 
-    _notify_requester_swap(booking_name, "Approved", old_room, new_room, admin_remarks)
-    return {"status": "swap_approved", "new_room": new_room}
+    _notify_requester_swap(booking_name, "Approved", old_venue, new_venue, admin_remarks)
+    return {"status": "swap_approved", "new_venue": new_venue}
 
 
 @frappe.whitelist()
 def reject_venue_swap(booking_name, admin_remarks=None):
-    """Admin rejects a student's swap request — booking stays in the current room."""
+    """Admin rejects a student's swap request — booking stays in the current venue."""
     _require_admin()
 
     booking = frappe.get_doc("Venue Booking", booking_name, ignore_permissions=True)
@@ -260,8 +305,9 @@ def reject_venue_swap(booking_name, admin_remarks=None):
           "by": decided_by, "remarks": admin_remarks or ""})
     frappe.db.commit()
 
-    _notify_requester_swap(booking_name, "Rejected",
-                           booking.room, booking.swap_requested_room, admin_remarks)
+    _notify_requester_swap(booking_name, "Rejected", 
+                           booking.venue, booking.swap_requested_venue, admin_remarks)
+
     return {"status": "swap_rejected"}
 
 
@@ -314,43 +360,40 @@ def _notify_requester_swap(booking_name, decision, old_room, new_room, admin_rem
 
 
 @frappe.whitelist()
-def swap_venue(booking_a, booking_b):
-	if not booking_a or not booking_b:
-		frappe.throw(_("Both bookings are required for swapping."))
+def swap_venues(doc_a_name, doc_b_name):
+	"""Swap the venues of two bookings."""
+	_require_admin()
+	doc_a = frappe.get_doc("Venue Booking", doc_a_name)
+	doc_b = frappe.get_doc("Venue Booking", doc_b_name)
 
-	doc_a = frappe.get_doc("Venue Booking", booking_a)
-	doc_b = frappe.get_doc("Venue Booking", booking_b)
+	venue_a = doc_a.venue
+	venue_b = doc_b.venue
 
-	if doc_a.docstatus == 2 or doc_b.docstatus == 2:
-		frappe.throw(_("Cannot swap cancelled bookings."))
+	if venue_a == venue_b:
+		frappe.throw(_("Both bookings are already for the same venue."))
 
-	room_a = doc_a.room
-	room_b = doc_b.room
-
-	if room_a == room_b:
-		frappe.throw(_("Both bookings are already for the same room."))
-
+	# Conflict check excluding each other
 	try:
-		check_conflict(doc_a, room_b, exclude_booking=doc_b.name)
-		check_conflict(doc_b, room_a, exclude_booking=doc_a.name)
+		check_conflict(doc_a, venue_b, exclude_booking=doc_b.name)
+		check_conflict(doc_b, venue_a, exclude_booking=doc_a.name)
 
-		frappe.db.set_value("Venue Booking", doc_a.name, "room", room_b)
-		frappe.db.set_value("Venue Booking", doc_b.name, "room", room_a)
+		frappe.db.set_value("Venue Booking", doc_a.name, "venue", venue_b)
+		frappe.db.set_value("Venue Booking", doc_b.name, "venue", venue_a)
 
-		doc_a.reload()
-		doc_b.reload()
+		doc_a.add_comment("Comment", _("Venue swapped with {0}").format(doc_b.name))
+		doc_b.add_comment("Comment", _("Venue swapped with {0}").format(doc_a.name))
 
-		frappe.msgprint(_("Venues swapped successfully: {0} ↔ {1}").format(room_a, room_b))
+		frappe.msgprint(_("Venues swapped successfully: {0} ↔ {1}").format(venue_a, venue_b))
 
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), "Venue Swap Error")
 		frappe.throw(_("Could not swap venues: {0}").format(str(e)))
 
 
-def check_conflict(booking_doc, new_room, exclude_booking=None):
+def check_conflict(booking_doc, new_venue, exclude_booking=None):
 	existing = frappe.db.sql("""
 		SELECT name FROM `tabVenue Booking`
-		WHERE room = %s
+		WHERE venue = %s
 		AND docstatus < 2
 		AND name != %s
 		AND name != %s
@@ -360,14 +403,14 @@ def check_conflict(booking_doc, new_room, exclude_booking=None):
 			(end_datetime > %s AND end_datetime < %s) OR
 			(start_datetime <= %s AND end_datetime >= %s)
 		)
-	""", (new_room, booking_doc.name, exclude_booking or "",
+	""", (new_venue, booking_doc.name, exclude_booking or "",
 		booking_doc.start_datetime, booking_doc.end_datetime,
 		booking_doc.start_datetime, booking_doc.end_datetime,
 		booking_doc.start_datetime, booking_doc.end_datetime))
 
 	if existing:
-		frappe.throw(_("Booking {0} cannot move to Room {1} — conflicts with {2}").format(
-			booking_doc.name, new_room, existing[0][0]))
+		frappe.throw(_("Booking {0} conflicts with existing booking {1} in {2}").format(
+			booking_doc.name, existing[0][0], new_venue))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -375,11 +418,11 @@ def check_conflict(booking_doc, new_room, exclude_booking=None):
 # ─────────────────────────────────────────────────────────────────────────────
 
 @frappe.whitelist()
-def get_room_bookings(room=None, from_date=None, to_date=None):
-	"""Return bookings for calendar display. Optionally filter by room and date range."""
+def get_venue_bookings(venue=None, from_date=None, to_date=None):
+	"""Return bookings for calendar display. Optionally filter by venue and date range."""
 	filters = [["status", "not in", ["Cancelled", "Rejected"]], ["docstatus", "<", 2]]
-	if room:
-		filters.append(["room", "=", room])
+	if venue:
+		filters.append(["venue", "=", venue])
 	if from_date:
 		filters.append(["start_datetime", ">=", from_date])
 	if to_date:
@@ -389,7 +432,7 @@ def get_room_bookings(room=None, from_date=None, to_date=None):
 		"Venue Booking",
 		filters=filters,
 		fields=[
-			"name", "event_name", "room", "venue_type",
+			"name", "event_name", "venue", "venue_type",
 			"start_datetime", "end_datetime", "status",
 			"requester_name", "requester_type"
 		],
@@ -454,7 +497,7 @@ def _notify_admin_new_booking(doc):
 			"programme": getattr(doc, "programme", None) or "",
 			"batch": getattr(doc, "batch", None) or "",
 			"academic_year": getattr(doc, "academic_year", None) or "",
-			"room": doc.room,
+			"venue": doc.venue,
 			"venue_type": doc.venue_type,
 			"start_datetime": doc.start_datetime,
 			"end_datetime": doc.end_datetime,
@@ -477,7 +520,7 @@ def _notify_requester(booking_name, new_status, admin_remarks=None):
 	try:
 		doc = frappe.db.get_value(
 			"Venue Booking", booking_name,
-			["owner", "event_name", "room", "venue_type", "start_datetime", "end_datetime", "requester_name"],
+			["owner", "event_name", "venue", "venue_type", "start_datetime", "end_datetime", "requester_name"],
 			as_dict=True,
 		)
 		if not doc:
@@ -509,7 +552,7 @@ def _notify_requester(booking_name, new_status, admin_remarks=None):
 			"booking_name": booking_name,
 			"event_name": doc.event_name,
 			"requester_name": doc.requester_name or "there",
-			"room": doc.room,
+			"venue": doc.venue,
 			"venue_type": doc.venue_type,
 			"start_datetime": doc.start_datetime,
 			"end_datetime": doc.end_datetime,

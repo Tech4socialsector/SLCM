@@ -37,6 +37,7 @@
   "specialisation",
   "current_year",
   "cumulative_percentage",
+  "master_programme",
   "tab_personal",
   "personal_details_section",
   "first_name",
@@ -448,7 +449,7 @@
   {
    "fieldname": "tab_program_mapping",
    "fieldtype": "Tab Break",
-   "label": "Program Mapping"
+   "label": "Programme Mapping"
   },
   {
    "fieldname": "program_mapping_section",
@@ -1377,10 +1378,18 @@
    "label": "Section Update Log",
    "options": "Student Section Update Log",
    "read_only": 1
+  },
+  {
+   "fetch_from": "programme_of_study.program_name",
+   "fieldname": "master_programme",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Programme",
+   "options": "Programme Master"
   }
  ],
  "links": [],
- "modified": "2026-07-10 12:43:31.594192",
+ "modified": "2026-07-14 09:16:44.127739",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",

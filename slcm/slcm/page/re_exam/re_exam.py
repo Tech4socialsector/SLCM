@@ -5,6 +5,20 @@ import frappe
 import json
 
 
+def _get_course_offering(exam_plan, course):
+	"""Resolve the Course Offering for a course under this exam plan via its
+	Course Schema Assignment. Throws if none exists yet."""
+	course_offering = frappe.db.get_value(
+		"Course Schema Assignment", {"exam_plan": exam_plan, "course": course}, "course_offering"
+	)
+	if not course_offering:
+		frappe.throw(
+			f"No Course Offering found for course '{course}' in exam plan '{exam_plan}'. "
+			"Map a Course Schema Assignment for it first."
+		)
+	return course_offering
+
+
 @frappe.whitelist()
 def get_exam_plans(search=None):
 	filters = {}
@@ -93,6 +107,7 @@ def save_re_exam_setting(exam_plan, course, re_exam_fee=None, deadline_from=None
 		doc = frappe.new_doc("Re Exam Course Setting")
 		doc.exam_plan = exam_plan
 		doc.course    = course
+		doc.course_offering = _get_course_offering(exam_plan, course)
 
 	doc.re_exam_fee   = re_exam_fee   or None
 	doc.deadline_from = deadline_from or None
@@ -366,6 +381,7 @@ def set_student_re_exam_allowed(exam_plan, course, student, is_allowed, override
 		doc = frappe.new_doc("Re Exam Student Override")
 		doc.exam_plan        = exam_plan
 		doc.course           = course
+		doc.course_offering  = _get_course_offering(exam_plan, course)
 		doc.student          = student
 		doc.is_allowed       = is_allowed
 		doc.override_reason  = override_reason or ""
@@ -465,6 +481,7 @@ def bulk_save_re_exam_setting(exam_plan, re_exam_fee=None, deadline_from=None, d
 			doc = frappe.new_doc("Re Exam Course Setting")
 			doc.exam_plan = exam_plan
 			doc.course    = course
+			doc.course_offering = _get_course_offering(exam_plan, course)
 		doc.re_exam_fee   = re_exam_fee   or None
 		doc.deadline_from = deadline_from or None
 		doc.deadline_to   = deadline_to   or None

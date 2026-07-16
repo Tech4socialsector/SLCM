@@ -37,7 +37,7 @@ def get_context(context):
             "Course Offering",
             filters={"faculty": faculty_name},
             fields=["name", "course_name", "term_name", "academic_year",
-                    "credit_value", "maximum_students", "status"],
+                    "credit_value", "status"],
             order_by="academic_year desc, term_name asc, course_name asc",
             ignore_permissions=True,
         )

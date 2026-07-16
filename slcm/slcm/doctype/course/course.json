@@ -8,45 +8,21 @@
  "field_order": [
   "course_code",
   "course_name",
-  "credit_value",
   "course_type",
-  "programme",
+  "credit_value",
   "status",
-  "column_break_hzli",
-  "department",
-  "department_name",
   "section_break_efuf",
   "topics"
  ],
  "fields": [
   {
    "fieldname": "course_name",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Course Name",
    "options": "Course Master",
    "reqd": 1
-  },
-  {
-   "fieldname": "department",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "in_standard_filter": 1,
-   "label": "Department",
-   "options": "Department"
-  },
-  {
-   "fetch_from": "department.department_name",
-   "fieldname": "department_name",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Department Name",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_hzli",
-   "fieldtype": "Column Break"
   },
   {
    "fieldname": "section_break_efuf",
@@ -91,19 +67,12 @@
    "label": "Status",
    "options": "\nActive\nInactive",
    "reqd": 1
-  },
-  {
-   "fieldname": "programme",
-   "fieldtype": "Link",
-   "label": "Programme",
-   "options": "Programme",
-   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-08 15:07:36.885240",
+ "modified": "2026-07-13 15:54:47.168473",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Course",
@@ -140,9 +109,7 @@
  ],
  "row_format": "Dynamic",
  "rows_threshold_for_grid_search": 20,
- "search_fields": "department",
  "show_name_in_global_search": 1,
- "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

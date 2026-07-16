@@ -58,6 +58,79 @@ class FAMFAApplication(Document):
 		self.validate_dates()
 		self.validate_approval_status()
 
+	def after_insert(self):
+		try:
+			self.notify_stakeholders()
+		except Exception:
+			# Notification failures (e.g. no outgoing Email Account configured) must
+			# never block the student's application from being created.
+			frappe.log_error(
+				title="FA/MFA Application: notify_stakeholders failed",
+				message=frappe.get_traceback(),
+			)
+
+	def notify_stakeholders(self):
+		"""
+		Email the Programme Chair(s) and AAD Team on record in Examination Settings
+		whenever a student raises an FA/MFA application, using the configured Email
+		Template. Each recipient gets their own individual email (not a shared
+		To/Cc list). AAD Team is notified for visibility only — approval is still
+		restricted to the Programme Chair role via the doctype's own permissions.
+		"""
+		settings = frappe.get_single("Examination Settings")
+
+		programme_chairs = {row.user for row in settings.programme_chair_users if row.user}
+		aad_team = {row.user for row in settings.aad_team_users if row.user} - programme_chairs
+
+		if not programme_chairs and not aad_team:
+			return
+
+		template_name = settings.fa_mfa_email_template or "FA MFA Application Raised"
+		try:
+			template_doc = frappe.get_doc("Email Template", template_name)
+		except frappe.DoesNotExistError:
+			frappe.log_error(
+				title="FA/MFA Application: notification template missing",
+				message=f"Email Template '{template_name}' not found. Set it in Examination Settings → FA/MFA Notification Email Template.",
+			)
+			return
+
+		application_url = frappe.utils.get_url_to_form(self.doctype, self.name)
+		base_context = {
+			"student_name": self.student_name,
+			"course_name": self.course_name or self.course,
+			"application_type": self.application_type,
+			"reason": self.reason,
+			"examination_date": self.examination_date,
+			"application_name": self.name,
+			"application_url": application_url,
+		}
+
+		def _send_to(user, role_note):
+			recipient_name = frappe.db.get_value("User", user, "full_name") or user
+			context = {**base_context, "recipient_name": recipient_name, "role_note": role_note}
+			formatted = template_doc.get_formatted_email(context)
+			try:
+				frappe.sendmail(
+					recipients=[user],
+					subject=formatted["subject"],
+					message=formatted["message"],
+					reference_doctype=self.doctype,
+					reference_name=self.name,
+					now=True,
+				)
+			except Exception:
+				frappe.log_error(
+					title=f"FA/MFA Application: email failed ({user})",
+					message=frappe.get_traceback(),
+				)
+
+		for user in programme_chairs:
+			_send_to(user, "You can approve or reject this application.")
+
+		for user in aad_team:
+			_send_to(user, "This is for your information only — the Programme Chair holds approval rights.")
+
 	def validate_approval_status(self):
 		if self.status == "Approved":
 			if not self.approver:
@@ -73,9 +146,9 @@ class FAMFAApplication(Document):
 		if not self.examination_date:
 			return
 
-		settings = frappe.get_single("Attendance Settings")
+		settings = frappe.get_single("Examination Settings")
 		if not settings.allow_fa_mfa:
-			frappe.throw("FA/MFA Applications are currently disabled in Attendance Settings.")
+			frappe.throw("FA/MFA Applications are currently disabled in Examination Settings.")
 
 		exam_date = getdate(self.examination_date)
 		today = getdate()

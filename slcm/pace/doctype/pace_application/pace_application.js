@@ -80,6 +80,28 @@ frappe.ui.form.on("PACE Application", {
 
         pace_setup_address_link_queries(frm);
 
+        if (frm.doc.status === "Draft" || frm.doc.__islocal) {
+            frm.add_custom_button(__("Save as Draft"), function () {
+                frm.set_value("status", "Draft");
+                
+                frappe.call({
+                    method: "frappe.desk.form.save.savedocs",
+                    args: {
+                        doc: JSON.stringify(frm.doc),
+                        action: "Save"
+                    },
+                    freeze: true,
+                    freeze_message: __("Saving Draft..."),
+                    callback: function(r) {
+                        if (!r.exc) {
+                            frappe.show_alert({message: __("Saved as Draft"), indicator: "green"});
+                            frm.reload_doc();
+                        }
+                    }
+                });
+            });
+        }
+
         if (!frm.is_new()) {
             frm.add_custom_button(__("Application Fee Invoice"), function() {
                 frappe.call({

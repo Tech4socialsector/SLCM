@@ -60,17 +60,66 @@ def _check_lock(settings):
 		)
 
 
+def _resolve_course_offerings(term_name, course_names):
+	"""Map each course title to a Course Offering name for the given term.
+
+	A course can have more than one offering in the same term (different
+	cohorts/programmes) - the first (by name) is used and the ambiguity is
+	logged rather than guessed at silently.
+	"""
+	course_names = [c for c in (course_names or []) if c]
+	if not term_name or not course_names:
+		return {}
+
+	rows = frappe.db.sql(
+		"""
+		SELECT name, course_title
+		FROM `tabCourse Offering`
+		WHERE term_name = %(term_name)s AND course_title IN %(courses)s
+		ORDER BY course_title, name
+		""",
+		{"term_name": term_name, "courses": tuple(course_names)},
+		as_dict=True,
+	)
+
+	offering_map = {}
+	ambiguous = set()
+	for row in rows:
+		if row.course_title in offering_map:
+			ambiguous.add(row.course_title)
+			continue
+		offering_map[row.course_title] = row.name
+
+	if ambiguous:
+		frappe.log_error(
+			f"Multiple Course Offerings found for: {', '.join(sorted(ambiguous))} "
+			f"in term {term_name}. Used the first match for each.",
+			"exam_plan_api: ambiguous course offering",
+		)
+
+	return offering_map
+
+
 def _sync_course_schedules(exam_plan, courses):
 	"""Add courses to Exam Plan course_schedules if not already listed."""
 	if not courses:
 		return
 	try:
 		plan_doc = frappe.get_doc("Exam Plan", exam_plan)
+		offering_map = _resolve_course_offerings(plan_doc.term, courses)
 		existing = {row.course for row in plan_doc.course_schedules}
 		changed = False
 		for course in courses:
 			if course not in existing:
-				plan_doc.append("course_schedules", {"course": course})
+				offering = offering_map.get(course)
+				if not offering:
+					frappe.log_error(
+						f"No Course Offering found for course '{course}' in term "
+						f"'{plan_doc.term}'. Skipped adding it to Course Schedules.",
+						"exam_plan_api: course schedule sync skipped",
+					)
+					continue
+				plan_doc.append("course_schedules", {"course_offering": offering})
 				existing.add(course)
 				changed = True
 		if changed:
@@ -370,7 +419,7 @@ def get_courses_for_plan(exam_plan, search=""):
 	if search:
 		courses = frappe.db.sql(
 			"""
-			SELECT name, course_name, course_code, programme, credit_value
+			SELECT name, course_name, course_code, credit_value
 			FROM `tabCourse`
 			WHERE course_name LIKE %(s)s OR course_code LIKE %(s)s
 			ORDER BY course_name ASC
@@ -382,10 +431,31 @@ def get_courses_for_plan(exam_plan, search=""):
 	else:
 		courses = frappe.get_all(
 			"Course",
-			fields=["name", "course_name", "course_code", "programme", "credit_value"],
+			fields=["name", "course_name", "course_code", "credit_value"],
 			order_by="course_name asc",
 			page_length=page_length,
 		)
+
+	# Programme now lives on Course Offering, not Course. Derive it per-course
+	# from the offerings scoped to this exam plan's term (a course can have
+	# multiple offerings/programmes in the same term across cohorts).
+	programme_map = {}
+	try:
+		term_name = frappe.db.get_value("Exam Plan", exam_plan, "term")
+		if term_name:
+			rows = frappe.db.sql(
+				"""
+				SELECT co.course_title AS course, GROUP_CONCAT(DISTINCT co.program SEPARATOR ', ') AS programmes
+				FROM `tabCourse Offering` co
+				WHERE co.term_name = %(term_name)s
+				GROUP BY co.course_title
+				""",
+				{"term_name": term_name},
+				as_dict=True,
+			)
+			programme_map = {row["course"]: row["programmes"] for row in rows}
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "get_courses_for_plan: programme fetch failed")
 
 	# Fetch existing assignments
 	asgn_map = {}
@@ -427,6 +497,7 @@ def get_courses_for_plan(exam_plan, search=""):
 
 	for c in courses:
 		asgn = asgn_map.get(c["name"], {})
+		c["programme"] = programme_map.get(c["name"], "")
 		c["evaluation_schema"] = asgn.get("evaluation_schema") or ""
 		c["grade_schema"] = asgn.get("grade_schema") or ""
 		c["assignment_name"] = asgn.get("name", "")
@@ -464,6 +535,11 @@ def save_course_schema(exam_plan, assignments, reason=None):
 
 	changed_courses = []
 	mapped_courses = []
+
+	term_name = frappe.db.get_value("Exam Plan", exam_plan, "term")
+	offering_map = _resolve_course_offerings(
+		term_name, [asgn.get("course") for asgn in assignments]
+	)
 
 	for asgn in assignments:
 		course = asgn.get("course")
@@ -540,9 +616,16 @@ def save_course_schema(exam_plan, assignments, reason=None):
 				)
 
 			if ev or gr:
+				offering = offering_map.get(course)
+				if not offering:
+					frappe.throw(
+						f"No Course Offering found for course '{course}' in term "
+						f"'{term_name}'. Create the Course Offering before mapping a schema.",
+						title="Course Offering Required"
+					)
 				doc = frappe.new_doc("Course Schema Assignment")
 				doc.exam_plan         = exam_plan
-				doc.course            = course
+				doc.course_offering    = offering
 				doc.evaluation_schema = ev
 				doc.grade_schema      = gr
 				doc.insert(ignore_permissions=True)
