@@ -26,6 +26,13 @@ const STATUS_COLORS = {
 	"Manually Synced": "blue",
 };
 
+// sync_method — how a log was resolved into Student Attendance (Status column/filter)
+const SYNC_METHOD_COLORS = {
+	"Biometric": "green",
+	"Class Attendance": "blue",
+	"Bulk Sync": "#6f42c1",
+};
+
 frappe.pages["attendance-sync"].on_page_load = function (wrapper) {
 	const page = frappe.ui.make_app_page({
 		parent: wrapper,
@@ -38,6 +45,16 @@ frappe.pages["attendance-sync"].on_page_load = function (wrapper) {
 
 	page.add_field({
 		fieldtype: "Select",
+		fieldname: "sync_status_filter",
+		label: "Status",
+		options: ["", "Biometric", "Class Attendance", "Bulk Sync"].join("\n"),
+		change() {
+			load(wrapper);
+		},
+	});
+
+	page.add_field({
+		fieldtype: "Select",
 		fieldname: "status_filter",
 		label: "Reason",
 		options: [
@@ -47,6 +64,109 @@ frappe.pages["attendance-sync"].on_page_load = function (wrapper) {
 			"Unmatched - No Device Mapping",
 			"Unmatched - Unknown Card",
 		].join("\n"),
+		change() {
+			load(wrapper);
+		},
+	});
+
+	page.add_field({
+		fieldtype: "Datetime",
+		fieldname: "swipe_from_filter",
+		label: "Swipe Time From",
+		change() {
+			load(wrapper);
+		},
+	});
+
+	page.add_field({
+		fieldtype: "Datetime",
+		fieldname: "swipe_to_filter",
+		label: "Swipe Time To",
+		change() {
+			load(wrapper);
+		},
+	});
+
+	page.add_field({
+		fieldtype: "Link",
+		fieldname: "programme_filter",
+		label: "Programme",
+		options: "Programme",
+		change() {
+			page.fields_dict.academic_year_filter.set_value("");
+			page.fields_dict.academic_term_filter.set_value("");
+			page.fields_dict.batch_filter.set_value("");
+			page.fields_dict.section_filter.set_value("");
+			load(wrapper);
+		},
+	});
+
+	page.add_field({
+		fieldtype: "Link",
+		fieldname: "academic_year_filter",
+		label: "Academic Year",
+		options: "Academic Year",
+		get_query() {
+			return {
+				query: "slcm.slcm.doctype.attendance_log.process_attendance_logs.academic_year_link_query",
+				filters: { programme: page.fields_dict.programme_filter.get_value() },
+			};
+		},
+		change() {
+			page.fields_dict.academic_term_filter.set_value("");
+			page.fields_dict.batch_filter.set_value("");
+			page.fields_dict.section_filter.set_value("");
+			load(wrapper);
+		},
+	});
+
+	page.add_field({
+		fieldtype: "Link",
+		fieldname: "academic_term_filter",
+		label: "Academic Term",
+		options: "Academic Term",
+		get_query() {
+			return {
+				query: "slcm.slcm.doctype.attendance_log.process_attendance_logs.academic_term_link_query",
+				filters: {
+					programme: page.fields_dict.programme_filter.get_value(),
+					academic_year: page.fields_dict.academic_year_filter.get_value(),
+				},
+			};
+		},
+		change() {
+			load(wrapper);
+		},
+	});
+
+	page.add_field({
+		fieldtype: "Link",
+		fieldname: "batch_filter",
+		label: "Batch",
+		options: "Batch",
+		get_query() {
+			const filters = {};
+			const programme = page.fields_dict.programme_filter.get_value();
+			const academic_year = page.fields_dict.academic_year_filter.get_value();
+			if (programme) filters.program = programme;
+			if (academic_year) filters.academic_year = academic_year;
+			return { filters };
+		},
+		change() {
+			page.fields_dict.section_filter.set_value("");
+			load(wrapper);
+		},
+	});
+
+	page.add_field({
+		fieldtype: "Link",
+		fieldname: "section_filter",
+		label: "Section",
+		options: "Section",
+		get_query() {
+			const batch = page.fields_dict.batch_filter.get_value();
+			return batch ? { filters: { batch } } : {};
+		},
 		change() {
 			load(wrapper);
 		},
@@ -109,7 +229,7 @@ function build_html() {
 	return `
 		<div class="attendance-sync-page">
 			<div class="row" style="margin: 0 0 20px;">
-				<div class="col-sm-2"><div class="stat-card"><div class="stat-value" id="as-total">-</div><div class="stat-label">Needs Review</div></div></div>
+				<div class="col-sm-2"><div class="stat-card"><div class="stat-value" id="as-total">-</div><div class="stat-label" id="as-total-label">Needs Review</div></div></div>
 				<div class="col-sm-2"><div class="stat-card"><div class="stat-value" id="as-awaiting-activation">-</div><div class="stat-label">Awaiting Activation</div></div></div>
 				<div class="col-sm-2"><div class="stat-card"><div class="stat-value" id="as-no-session">-</div><div class="stat-label">No Session Found</div></div></div>
 				<div class="col-sm-3"><div class="stat-card"><div class="stat-value" id="as-no-device">-</div><div class="stat-label">Device Not Mapped</div></div></div>
@@ -130,10 +250,20 @@ function build_html() {
 }
 
 function load(wrapper) {
-	const status_filter = wrapper._page.fields_dict.status_filter.get_value();
+	const fields = wrapper._page.fields_dict;
 	frappe.call({
 		method: "slcm.slcm.doctype.attendance_log.process_attendance_logs.get_unmatched_logs",
-		args: { match_status: status_filter || null },
+		args: {
+			match_status: fields.status_filter.get_value() || null,
+			status_filter: fields.sync_status_filter.get_value() || null,
+			from_date: fields.swipe_from_filter.get_value() || null,
+			to_date: fields.swipe_to_filter.get_value() || null,
+			programme: fields.programme_filter.get_value() || null,
+			academic_year: fields.academic_year_filter.get_value() || null,
+			academic_term: fields.academic_term_filter.get_value() || null,
+			batch: fields.batch_filter.get_value() || null,
+			section: fields.section_filter.get_value() || null,
+		},
 		callback(r) {
 			if (!r.message) return;
 			render(wrapper, r.message);
@@ -143,6 +273,7 @@ function load(wrapper) {
 
 function render(wrapper, logs) {
 	const $w = $(wrapper);
+	const sync_status = wrapper._page.fields_dict.sync_status_filter.get_value();
 
 	const counts = {
 		"Early Tap - Awaiting Activation": 0,
@@ -155,11 +286,14 @@ function render(wrapper, logs) {
 	});
 
 	$w.find("#as-total").text(logs.length);
+	$w.find("#as-total-label").text(sync_status ? `${sync_status} Synced` : "Needs Review");
 	$w.find("#as-awaiting-activation").text(counts["Early Tap - Awaiting Activation"]);
 	$w.find("#as-no-session").text(counts["Unmatched - No Session"]);
 	$w.find("#as-no-device").text(counts["Unmatched - No Device Mapping"]);
 	$w.find("#as-unknown").text(counts["Unmatched - Unknown Card"]);
-	$w.find("#as-shown-count").text(logs.length ? `Showing ${logs.length} unresolved tap(s)` : "");
+	$w.find("#as-shown-count").text(
+		logs.length ? `Showing ${logs.length} ${sync_status ? sync_status + " synced" : "unresolved"} tap(s)` : ""
+	);
 
 	wrapper._logs = logs;
 	build_table(wrapper, logs);
@@ -173,7 +307,7 @@ function build_table(wrapper, logs) {
 		$container.html(
 			'<div class="text-muted text-center" style="padding:40px;">' +
 				'<i class="fa fa-check-circle" style="font-size:28px;color:#28a745;"></i>' +
-				"<p style='margin-top:10px;'>No unresolved taps. Everything is reconciled.</p></div>"
+				"<p style='margin-top:10px;'>No taps match the current filters.</p></div>"
 		);
 		return;
 	}
@@ -184,6 +318,8 @@ function build_table(wrapper, logs) {
 			"<th>Student</th><th>Card/RFID UID</th><th>Punch Time</th>" +
 			"<th>Device / Reader</th><th>Class / Course</th><th>Lesson Time</th>" +
 			"<th>RFID Activated By</th><th>Activation Time</th>" +
+			"<th>Programme / Batch / Section</th>" +
+			"<th>Status</th>" +
 			"<th>Reason</th><th>Action</th>" +
 			"</tr></thead><tbody></tbody></table>"
 	);
@@ -222,14 +358,30 @@ function build_table(wrapper, logs) {
 		$row.append(`<td>${lesson_time}</td>`);
 		$row.append(`<td>${frappe.utils.escape_html(activated_by)}</td>`);
 		$row.append(`<td>${activation_time}</td>`);
+		const enrollment_label = [log.programme, log.batch, log.section].filter(Boolean).join(" / ") || "-";
+		$row.append(`<td>${frappe.utils.escape_html(enrollment_label)}</td>`);
+
+		const sync_color = SYNC_METHOD_COLORS[log.sync_method] || "grey";
+		const sync_status_html = log.processed && log.sync_method
+			? `<span class="as-badge" style="background:${sync_color};">${frappe.utils.escape_html(log.sync_method)}</span>` +
+			  (log.synced_by
+					? `<div class="text-muted" style="font-size:.75rem;margin-top:2px;">by ${frappe.utils.escape_html(log.synced_by)}` +
+					  (log.synced_on ? ` on ${frappe.datetime.str_to_user(log.synced_on)}` : "") + "</div>"
+					: "")
+			: '<span class="as-badge" style="background:grey;">Needs Review</span>';
+		$row.append(`<td>${sync_status_html}</td>`);
+
 		$row.append(`<td><span class="as-badge" style="background:${color};">${label}</span></td>`);
 
 		const $actionTd = $('<td></td>').on("click", (e) => e.stopPropagation());
 		const $viewBtn = $('<button class="btn btn-xs btn-default" style="margin-right:4px;">View</button>');
 		$viewBtn.on("click", () => open_log_detail_dialog(log));
-		const $syncBtn = $('<button class="btn btn-xs btn-primary">Sync</button>');
-		$syncBtn.on("click", () => open_sync_dialog(wrapper, log));
-		$actionTd.append($viewBtn).append($syncBtn);
+		$actionTd.append($viewBtn);
+		if (!log.processed) {
+			const $syncBtn = $('<button class="btn btn-xs btn-primary">Sync</button>');
+			$syncBtn.on("click", () => open_sync_dialog(wrapper, log));
+			$actionTd.append($syncBtn);
+		}
 		$row.append($actionTd);
 
 		$tbody.append($row);
@@ -344,12 +496,90 @@ function open_bulk_sync_dialog(wrapper) {
 				reqd: 1,
 				default: frappe.datetime.get_today(),
 			},
+			{ fieldtype: "Column Break" },
+			{
+				fieldtype: "Link",
+				fieldname: "programme",
+				label: "Programme",
+				options: "Programme",
+				onchange() {
+					d.set_value("academic_year", "");
+					d.set_value("academic_term", "");
+					d.set_value("batch", "");
+					d.set_value("section", "");
+				},
+			},
+			{
+				fieldtype: "Link",
+				fieldname: "academic_year",
+				label: "Academic Year",
+				options: "Academic Year",
+				get_query() {
+					return {
+						query: "slcm.slcm.doctype.attendance_log.process_attendance_logs.academic_year_link_query",
+						filters: { programme: d.get_value("programme") },
+					};
+				},
+				onchange() {
+					d.set_value("academic_term", "");
+					d.set_value("batch", "");
+					d.set_value("section", "");
+				},
+			},
+			{
+				fieldtype: "Link",
+				fieldname: "academic_term",
+				label: "Academic Term",
+				options: "Academic Term",
+				get_query() {
+					return {
+						query: "slcm.slcm.doctype.attendance_log.process_attendance_logs.academic_term_link_query",
+						filters: {
+							programme: d.get_value("programme"),
+							academic_year: d.get_value("academic_year"),
+						},
+					};
+				},
+			},
+			{
+				fieldtype: "Link",
+				fieldname: "batch",
+				label: "Batch",
+				options: "Batch",
+				get_query() {
+					const filters = {};
+					if (d.get_value("programme")) filters.program = d.get_value("programme");
+					if (d.get_value("academic_year")) filters.academic_year = d.get_value("academic_year");
+					return { filters };
+				},
+				onchange() {
+					d.set_value("section", "");
+				},
+			},
+			{
+				fieldtype: "Link",
+				fieldname: "section",
+				label: "Section",
+				options: "Section",
+				get_query() {
+					const batch = d.get_value("batch");
+					return batch ? { filters: { batch } } : {};
+				},
+			},
 		],
 		primary_action_label: "Run Bulk Sync",
 		primary_action(values) {
 			frappe.call({
 				method: "slcm.slcm.doctype.attendance_log.process_attendance_logs.bulk_sync_attendance_logs",
-				args: { from_date: values.from_date, to_date: values.to_date },
+				args: {
+					from_date: values.from_date,
+					to_date: values.to_date,
+					programme: values.programme || null,
+					academic_year: values.academic_year || null,
+					academic_term: values.academic_term || null,
+					batch: values.batch || null,
+					section: values.section || null,
+				},
 				freeze: true,
 				freeze_message: __("Running Bulk Sync..."),
 				callback(r) {

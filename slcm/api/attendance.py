@@ -1,6 +1,7 @@
 import frappe
 from frappe import _
 from frappe.utils import now_datetime, getdate, get_datetime, time_diff_in_hours
+from slcm.slcm.doctype.attendance_log.process_attendance_logs import get_student_enrollment_context
 
 # test the git ruleset
 
@@ -108,6 +109,8 @@ def create_attendance_log():
 	# --------------------------------------------------
 	# 6. Create Attendance Log — always, regardless of match outcome
 	# --------------------------------------------------
+	enrollment_context = get_student_enrollment_context(student.get("name"))
+
 	attendance_log = frappe.get_doc({
 		"doctype": "Attendance Log",
 		"rfid_uid": rfid_uid,
@@ -118,6 +121,7 @@ def create_attendance_log():
 		"source": source,
 		"processed": 0,
 		"match_status": match_status,
+		**enrollment_context,
 	})
 
 	attendance_log.insert(ignore_permissions=True)
