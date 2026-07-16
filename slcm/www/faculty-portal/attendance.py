@@ -51,7 +51,7 @@ def get_context(context):
         if selected_co and selected_co in co_names:
             session_filters = [["course_offering", "=", selected_co]]
 
-        sessions = []
+        all_sessions = []
         if co_names:
             raw_sessions = frappe.get_all(
                 "Attendance Session",
@@ -62,7 +62,6 @@ def get_context(context):
                         "absent_count", "attendance_percentage", "attendance_marked",
                         "rfid_activated_by", "rfid_activation_time", "rfid_active_until"],
                 order_by="session_date desc",
-                limit=50,
                 ignore_permissions=True,
             )
             now = frappe.utils.now_datetime()
@@ -72,7 +71,9 @@ def get_context(context):
                 rfid_active = bool(
                     s.rfid_activation_time and s.rfid_active_until and now <= s.rfid_active_until
                 )
-                sessions.append({
+                term_name = co.get("term_name") or "—"
+                academic_year = co.get("academic_year") or "—"
+                all_sessions.append({
                     "name": s.name,
                     "course_name": co.get("course_name") or s.course_offering,
                     "course_offering": s.course_offering,
@@ -91,8 +92,62 @@ def get_context(context):
                     "rfid_activated": bool(s.rfid_activation_time),
                     "rfid_active": rfid_active,
                     "rfid_active_until": str(s.rfid_active_until) if s.rfid_active_until else "",
+                    "term_name": term_name,
+                    "academic_year": academic_year,
+                    "term_key": f"{term_name}|{academic_year}",
                 })
+
+        # ── Distinct terms present, most recent first ────────────────
+        # "Most recent" = the term containing the latest session_date, since
+        # Term/Academic Year have no reliable start/end dates to sort by.
+        term_latest_date = {}
+        term_labels = {}
+        for s in all_sessions:
+            key = s["term_key"]
+            term_labels[key] = f"{s['term_name']} · {s['academic_year']}"
+            if key not in term_latest_date or s["session_date"] > term_latest_date[key]:
+                term_latest_date[key] = s["session_date"]
+
+        terms = sorted(
+            term_latest_date.keys(),
+            key=lambda k: term_latest_date[k],
+            reverse=True,
+        )
+        context.terms = [{"key": k, "label": term_labels[k]} for k in terms]
+
+        # ── Selected term (defaults to the most recent) ──────────────
+        selected_term = frappe.request.args.get("term", "") if frappe.request else ""
+        if not selected_term or selected_term not in terms:
+            selected_term = terms[0] if terms else ""
+        context.selected_term = selected_term
+
+        sessions = [s for s in all_sessions if not selected_term or s["term_key"] == selected_term]
         context.sessions = sessions
+
+        # ── Today's sessions (for the quick-view cards) ──────────────
+        # Grouped by course offering so a course with multiple time slots
+        # today (e.g. two lecture sections) renders as one card with a
+        # slot picker, instead of one card per slot.
+        todays_sessions = [s for s in sessions if s["session_date"] == str(today)]
+        todays_by_course = {}
+        todays_order = []
+        for s in todays_sessions:
+            key = s["course_offering"]
+            if key not in todays_by_course:
+                todays_by_course[key] = []
+                todays_order.append(key)
+            todays_by_course[key].append(s)
+
+        todays_courses = []
+        for key in todays_order:
+            slots = sorted(todays_by_course[key], key=lambda s: s["from_time"])
+            todays_courses.append({
+                "course_offering": key,
+                "course_name": slots[0]["course_name"],
+                "slots": slots,
+            })
+        context.todays_sessions = todays_sessions
+        context.todays_courses = todays_courses
 
         # ── Stats ───────────────────────────────────────────────────
         context.total_sessions = len(sessions)
@@ -171,6 +226,10 @@ def _set_defaults(context):
     context.course_offerings = []
     context.selected_co = ""
     context.sessions = []
+    context.todays_sessions = []
+    context.todays_courses = []
+    context.terms = []
+    context.selected_term = ""
     context.total_sessions = 0
     context.marked_sessions = 0
     context.pending_sessions = 0
