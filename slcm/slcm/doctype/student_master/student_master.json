@@ -1711,37 +1711,37 @@
   },
   {
    "fieldname": "final_rank",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Final Rank"
   },
   {
    "fieldname": "final_percentile",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Final Percentile"
   },
   {
    "fieldname": "final_vertical",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Final Vertical"
   },
   {
    "fieldname": "allotment_round",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Allotment Round"
   },
   {
    "fieldname": "final_category_rank",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Final Category Rank"
   },
   {
    "fieldname": "final_rank_category",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Final Rank Category"
   },
   {
    "fieldname": "final_horizontal",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Final Horizontal"
   },
   {
@@ -1760,17 +1760,17 @@
   },
   {
    "fieldname": "where_did_you_hear_about_the_programme",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Where Did You Hear About the Programme?"
   },
   {
    "fieldname": "rank_category",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Rank Category"
   },
   {
    "fieldname": "do_you_have_any_post_degree_work_experince",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Do you have any Post Degree work experince?"
   },
   {
@@ -1780,7 +1780,7 @@
   },
   {
    "fieldname": "how_many_years_of_work_experince_do_you_have",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "How many years of work experince do you have?"
   }
  ],
