@@ -34,17 +34,17 @@ class PACEApplication(Document):
  
     def validate_geography_hierarchy(self):
         def _validate_hierarchy(country, state, district):
-            if state and state != "Others" and country:
+            if state and str(state).lower() not in ["other", "others"] and country and str(country).lower() not in ["other", "others"]:
                 state_country = frappe.db.get_value("State", state, "country")
                 if state_country and state_country != country:
                     frappe.throw(_("State '{0}' does not belong to country '{1}'.").format(state, country))
 
-            if district and district != "Others" and state:
+            if district and str(district).lower() not in ["other", "others"] and state and str(state).lower() not in ["other", "others"]:
                 city_data = frappe.db.get_value("City", district, ["state", "country"], as_dict=True)
                 if city_data:
                     if city_data.get("state") and city_data.get("state") != state:
                         frappe.throw(_("District '{0}' does not belong to state '{1}'.").format(district, state))
-                    if country and city_data.get("country") and city_data.get("country") != country:
+                    if country and str(country).lower() not in ["other", "others"] and city_data.get("country") and city_data.get("country") != country:
                         frappe.throw(_("District '{0}' does not belong to country '{1}'.").format(district, country))
 
         _validate_hierarchy(self.country, self.state, self.district)

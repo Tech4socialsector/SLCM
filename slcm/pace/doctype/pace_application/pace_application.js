@@ -1,10 +1,6 @@
 // Copyright (c) 2026, TFSS and contributors
 // For license information, please see license.txt
 
-/** Country link equals India → all states for that country; otherwise only State named "Other". */
-function pace_country_link_is_india(country_link_name) {
-    return ((country_link_name || "") + "").trim().toLowerCase() === "india";
-}
 
 function pace_setup_address_link_queries(frm) {
     const blocks = [
@@ -14,12 +10,10 @@ function pace_setup_address_link_queries(frm) {
 
     blocks.forEach(({ country, state, district }) => {
         frm.set_query(state, () => {
-            const raw = frm.doc[country];
-            const effective_country = ((raw || "") + "").trim() || "India";
-            if (pace_country_link_is_india(effective_country)) {
-                return { filters: { country: effective_country } };
+            if (frm.doc[country]) {
+                return { filters: { country: frm.doc[country] } };
             }
-            return { filters: { name: "Other" } };
+            return { filters: { name: "!__noop__" } };
         });
 
         frm.set_query(district, () => {
