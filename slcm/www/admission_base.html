@@ -128,6 +128,7 @@
 
         .adm-nav-brand {
             display: flex;
+            font-family: var(--text-2);
             align-items: center;
             gap: 12px;
             text-decoration: none;
@@ -149,7 +150,7 @@
 
         @media (max-width: 768px) {
             .adm-nav-brand {
-                font-size: 18px !important;
+                font-size: 12px !important;
                 max-width: calc(100% - 95px) !important;
                 white-space: normal !important;
                 line-height: 1.2 !important;
@@ -832,10 +833,10 @@
     {% set _inst_logo = portal_config.institution_logo if portal_config and portal_config.institution_logo else (frappe.db.get_single_value("Institution Settings", "logo") or "") %}
 
     <nav class="adm-nav">
-        <h1 class="adm-nav-brand">
+        <h4 class="adm-nav-brand">
             {% if _inst_logo %}<img src="{{ _inst_logo }}" alt="Logo">{% endif %}
             {{ _pc_title or ws_title or "Admissions" }}
-        </h1>
+        </h4>
         <div class="adm-nav-links">
             {% set _has_applicant = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "Applicant"}, "role") else False %}
             {% set _has_pace_applicant = True if frappe.db.get_value("Has Role", {"parent": frappe.session.user, "role": "PACE Applicant"}, "role") else False %}
@@ -881,7 +882,7 @@
             {% set _is_pace_login = ("pace" in _login_url) %}
             <a href="javascript:void(0)" onclick="window.location.href = '{{ _login_url }}' + '?redirect-to=' + encodeURIComponent(window.location.pathname + window.location.search) + '{{ "#register" if _is_pace_login else "" }}';" class="adm-nav-login-btn" style="display:inline-flex;align-items:center;gap:6px;
                           background:var(--primary,#1a3c6e);color:white;
-                          padding:8px 20px;border-radius:2px;font-weight:700;
+                          padding:4px 10px;border-radius:2px;font-weight:700;
                           font-size:14px;text-decoration:none;
                           box-shadow:0 2px 8px rgba(0,0,0,0.15);
                           transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'"

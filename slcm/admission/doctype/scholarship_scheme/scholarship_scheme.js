@@ -44,7 +44,8 @@ frappe.ui.form.on("Scholarship Scheme", {
         frm.set_query("admission_cycle", function() {
             return {
                 filters: {
-                    status: "Active"
+                    status: "Active",
+                    enable_scholarship: 1
                 }
             };
         });
