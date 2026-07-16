@@ -396,11 +396,16 @@ class Applicant(Document):
 
             # ── Rich confirmation email with PDF attachment ──────────────
             try:
-                self.send_submission_confirmation()
+                frappe.enqueue(
+                    "slcm.admission.doctype.applicant.applicant.send_submission_confirmation_background",
+                    applicant_name=self.name,
+                    queue="long",
+                    enqueue_after_commit=True
+                )
             except Exception:
                 frappe.log_error(
                     frappe.get_traceback(),
-                    f"Submission confirmation email failed — {self.applicant_id}"
+                    f"Submission confirmation email queuing failed — {self.applicant_id}"
                 )
             # ─────────────────────────────────────────────────────────────
 
@@ -500,11 +505,16 @@ class Applicant(Document):
             if not frappe.db.get_value("Applicant", self.name, "application_form"):
                 self.flags.in_application_form_cache_job = True
                 try:
-                    ensure_application_form_pdf_for_applicant(self.name)
+                    frappe.enqueue(
+                        "slcm.admission.doctype.applicant.applicant.ensure_application_form_pdf_for_applicant",
+                        applicant_name=self.name,
+                        queue="long",
+                        enqueue_after_commit=True
+                    )
                 except Exception:
                     frappe.log_error(
                         frappe.get_traceback(),
-                        f"ensure_application_form_pdf_for_applicant failed for {self.name}",
+                        f"ensure_application_form_pdf_for_applicant queuing failed for {self.name}",
                     )
                 finally:
                     self.flags.in_application_form_cache_job = False
@@ -3349,40 +3359,53 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
     # (Manual allocation already does this inside Entrance Test List flow.)
     try:
         if not getattr(allocation, "admit_card_download", None):
-            from slcm.admission.doctype.entrance_test_list.entrance_test_list import (
-                generate_and_store_admit_card,
+            frappe.enqueue(
+                "slcm.admission.doctype.entrance_test_list.entrance_test_list.generate_and_store_admit_card",
+                allocation=allocation.name,
+                is_rescheduled=False,
+                queue="long",
+                enqueue_after_commit=True
             )
-
-            generate_and_store_admit_card(allocation.name, is_rescheduled=False)
     except Exception:
         frappe.log_error(
             frappe.get_traceback(),
-            f"Auto admit card generation failed for auto allocation {allocation.name}",
+            f"Auto admit card generation queuing failed for auto allocation {allocation.name}",
         )
 
     # Keep Entrance Test List child table in sync for operational visibility.
     try:
-        etl = frappe.get_doc("Entrance Test List", entrance_test_list_name)
-        exists_row = any(
-            (row.applicant_id or "").strip() == applicant_doc.name
-            for row in (etl.entrance_test_applicant or [])
+        exists_row = frappe.db.exists(
+            "Entrance Test Applicant",
+            {
+                "parent": entrance_test_list_name,
+                "applicant_id": applicant_doc.name
+            }
         )
         if not exists_row:
-            etl.append(
-                "entrance_test_applicant",
-                {
-                    "applicant_id": applicant_doc.name,
-                    "candidate_name": applicant_doc.candidate_name,
-                    "program": applicant_doc.program,
-                    "program_level": applicant_doc.program_level,
-                    "email": applicant_doc.email,
-                    "gender": applicant_doc.gender,
-                    "exempts_entrance_test": cint(getattr(applicant_doc, "exempts_entrance_test", 0)),
-                    "exempts_interview": cint(getattr(applicant_doc, "exempts_interview", 0)),
-                    "allocation_status": "Allocated",
-                },
-            )
-            etl.save(ignore_permissions=True)
+            max_idx = frappe.db.get_value(
+                "Entrance Test Applicant",
+                {"parent": entrance_test_list_name},
+                fieldname="idx",
+                order_by="idx desc"
+            ) or 0
+            
+            child = frappe.get_doc({
+                "doctype": "Entrance Test Applicant",
+                "parent": entrance_test_list_name,
+                "parenttype": "Entrance Test List",
+                "parentfield": "entrance_test_applicant",
+                "idx": max_idx + 1,
+                "applicant_id": applicant_doc.name,
+                "candidate_name": applicant_doc.candidate_name,
+                "program": applicant_doc.program,
+                "program_level": applicant_doc.program_level,
+                "email": applicant_doc.email,
+                "gender": applicant_doc.gender,
+                "exempts_entrance_test": cint(getattr(applicant_doc, "exempts_entrance_test", 0)),
+                "exempts_interview": cint(getattr(applicant_doc, "exempts_interview", 0)),
+                "allocation_status": "Allocated",
+            })
+            child.insert(ignore_permissions=True)
     except Exception:
         frappe.log_error(
             frappe.get_traceback(),
@@ -3956,3 +3979,8 @@ def _send_international_entrance_test_email(allocation, email):
             message=traceback.format_exc(),
             title=f"International Entrance Test Email Failed: {allocation.name if allocation else 'unknown'}",
         )
+
+
+def send_submission_confirmation_background(applicant_name):
+    doc = frappe.get_doc("Applicant", applicant_name)
+    doc.send_submission_confirmation()
