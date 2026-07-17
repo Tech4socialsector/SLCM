@@ -1084,7 +1084,7 @@ def drilldown_student_groups():
 
     co_names = _get_faculty_co_names(faculty_name)
     if not co_names:
-        return {"title": "Student Groups", "columns": [], "rows": [], "count": 0}
+        return {"title": "Course Offerings", "columns": [], "rows": [], "count": 0}
 
     offerings = frappe.get_all(
         "Course Offering",
@@ -1131,7 +1131,7 @@ def drilldown_student_groups():
     rows.sort(key=lambda x: x["student_count"], reverse=True)
 
     return {
-        "title": "Student Groups",
+        "title": "Course Offerings",
         "columns": [
             {"key": "course_name",    "label": "Course",           "type": "text"},
             {"key": "term",           "label": "Term",             "type": "text"},

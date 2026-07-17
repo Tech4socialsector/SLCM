@@ -330,12 +330,24 @@
     {% endif %}
 
     {% if not (_has_pace and not _has_applicant) and not _is_pace_staff %}
+    
+    {% set _active_cycle = frappe.db.get_value("Admission Cycle", {"status": "Active"}, "name") %}
+    {% set _enable_scholarship = frappe.db.get_value("Admission Cycle", _active_cycle, "enable_scholarship") if _active_cycle else 0 %}
+    {% set _applicants = frappe.get_all("Applicant", {"email": frappe.session.user}, "name") %}
+    {% set _applicant_names = [] %}
+    {% for app in _applicants %}
+      {% set _ = _applicant_names.append(app.name) %}
+    {% endfor %}
+    {% set _has_scholarship_app = frappe.db.count("Scholarship Application", {"applicant_id": ("in", _applicant_names)}) if _applicant_names else 0 %}
+
+    {% if _enable_scholarship or _has_scholarship_app %}
     <a href="/merit-and-scholarship/scholarships"
        class="adm-menu-item {{ 'active' if active == 'scholarships' else '' }}"
        title="Scholarships">
       <span class="ms-icon">school</span>
       Scholarships
     </a>
+    {% endif %}
 
     <a href="/offer_letter/offer-letter-list"
        class="adm-menu-item {{ 'active' if active == 'offer_letter' else '' }}"

@@ -13,7 +13,7 @@ def create_available_seats_doctype():
         "is_submittable": 0,
         "fields": [
             {"fieldname": "entrance_test_provider", "label": "Entrance Test Provider", "fieldtype": "Link", "options": "Entrance Test Provider", "in_list_view": 1, "reqd": 1},
-            {"fieldname": "center_name", "label": "Center Name", "fieldtype": "Data", "read_only": 1},
+            {"fieldname": "center_name", "label": "Centre Name", "fieldtype": "Data", "read_only": 1},
             {"fieldname": "room_code", "label": "Room Code", "fieldtype": "Data", "read_only": 1},
             {"fieldname": "room_name", "label": "Room Name", "fieldtype": "Data", "read_only": 1},
             {"fieldname": "building", "label": "Building", "fieldtype": "Data", "read_only": 1},

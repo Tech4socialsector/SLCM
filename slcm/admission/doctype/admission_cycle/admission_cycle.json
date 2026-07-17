@@ -13,6 +13,7 @@
   "approval_reference",
   "allow_multiple_applications",
   "application_form_type",
+  "enable_scholarship",
   "col_break_basic",
   "status",
   "max_schemes_per_applicant",
@@ -257,11 +258,19 @@
   {
    "fieldname": "section_break_fzif",
    "fieldtype": "Section Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "description": "Enable if scholarship available for admission",
+   "fieldname": "enable_scholarship",
+   "fieldtype": "Check",
+   "label": "Enable Scholarship"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-09 15:13:12.050231",
+ "modified": "2026-07-16 10:01:17.615858",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",

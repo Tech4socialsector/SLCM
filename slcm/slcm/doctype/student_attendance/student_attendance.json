@@ -10,12 +10,9 @@
   "section_based_on",
   "based_on",
   "attendance_based_on",
-  "group_based_on",
   "column_break_1",
-  "student_group",
   "office_hours_group",
   "section",
-  "class",
   "course_schedule",
   "class_schedule",
   "attendance_session",
@@ -52,42 +49,24 @@
    "label": "Attendance Based On"
   },
   {
-   "default": "Student Group",
+   "default": "Course Schedule",
    "fieldname": "based_on",
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Based On",
-   "options": "Student Group\nCourse Schedule\nClass\nTime Table\nOffice Hours",
+   "options": "Course Schedule\nTime Table\nOffice Hours",
    "reqd": 1
   },
   {
    "fieldname": "attendance_based_on",
    "fieldtype": "Select",
    "label": "Attendance Based On",
-   "options": "RFID\nManual\nQR\nStudent Group\nCourse Schedule\nClass\nTime Table\nOffice Hours"
-  },
-  {
-   "depends_on": "eval:doc.based_on==\"Student Group\"",
-   "fieldname": "group_based_on",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Group Based On",
-   "options": "\nBatch\nCourse\nActivity"
+   "options": "RFID\nManual\nQR\nCourse Schedule\nTime Table\nOffice Hours"
   },
   {
    "fieldname": "column_break_1",
    "fieldtype": "Column Break"
-  },
-  {
-   "depends_on": "eval:doc.based_on==\"Student Group\"",
-   "fieldname": "student_group",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Student Group",
-   "options": "Student Group"
   },
   {
    "depends_on": "eval:doc.based_on==\"Office Hours\"",
@@ -99,23 +78,12 @@
    "options": "Office Hours Group"
   },
   {
-   "fetch_from": "student_group.section",
    "fieldname": "section",
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Section",
-   "options": "Section",
-   "read_only": 1
-  },
-  {
-   "depends_on": "eval:doc.based_on==\"Class\"",
-   "fieldname": "class",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Class",
-   "options": "Student Group"
+   "options": "Section"
   },
   {
    "depends_on": "eval:doc.based_on==\"Course Schedule\"",
@@ -284,10 +252,9 @@
    "options": "Attendance Log"
   },
   {
-   "fetch_from": "course_schedule.instructor",
    "fieldname": "instructor",
    "fieldtype": "Data",
-   "label": "Instructor",
+   "label": "Faculty",
    "read_only": 1
   },
   {

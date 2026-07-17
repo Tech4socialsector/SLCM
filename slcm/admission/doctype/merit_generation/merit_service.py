@@ -791,7 +791,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
             "program": program
         }, "name")
         
-        if not policy_name: continue
+        if not policy_name:
+            continue
         policy = frappe.get_doc("Programme Reservation Policy", policy_name)
 
         multiplier = policy.get("shortlisting_multiplier") or 1.0
@@ -923,7 +924,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                             # Sort by lowest merit rank for displacement (highest rank number)
                             eligible_out.sort(key=lambda x: -(x.overall_rank or 999999))
                             out_cand = eligible_out[0]
-                            
+                            comp_candidates = [a for a in unallocated if _has_trait(a.applicant_id, comp_cat) and _check_percentile_eligibility(a, vertical_targets, horizontal_targets)]
+                            print(f"DEBUG: comp_candidates for {comp_cat} in {v_cat}: {len(comp_candidates)}")
                             # Recursive Displacement: Save out_cand in their reserved category if possible
                             _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies)
                             _assign_seat_to_applicant(in_cand, v_cat, "Open" if v_cat == "General" else "Reserved", allocated_list, unallocated, v_info, status_field)
@@ -1776,6 +1778,26 @@ def execute_part_a_shortlisting(doc):
             
         display_field = "allocated_category" if hasattr(candidate_row, "allocated_category") else "shortlist_category"
         setattr(candidate_row, display_field, " + ".join(parts))
+
+    # --- 7c.5 Add Tie Candidates (Option A) ---
+    for cat_name in list(shortlists.keys()):
+        s_list = shortlists[cat_name]
+        if not s_list:
+            continue
+        lowest_score = min(float(getattr(x, "nlsat_part_a_score", 0) or 0) for x in s_list)
+        current_selected_ids = {x.applicant_id for x in get_all_selected()}
+        
+        tie_candidates = []
+        for cand in eligible_applicants:
+            if cand.applicant_id in current_selected_ids:
+                continue
+            cand_score = float(getattr(cand, "nlsat_part_a_score", 0) or 0)
+            if abs(cand_score - lowest_score) < 0.0001:
+                if cat_name == "General" or cand.actual_category == cat_name:
+                    tie_candidates.append(cand)
+                    
+        for tie_cand in tie_candidates:
+            s_list.append(tie_cand)
 
     # --- 7d. Assignment & Sanitization Pass ---
     all_final_selected = get_all_selected()

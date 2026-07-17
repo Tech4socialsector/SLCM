@@ -10,11 +10,25 @@ class StudentAttendanceTool(Document):
 	pass
 
 
+def _get_enrolled_students(course_offering):
+	"""Roster for a Course Offering, via Student Enrollment / Student Enrollment Course."""
+	if not course_offering:
+		return []
+
+	return frappe.db.sql("""
+		SELECT DISTINCT se.student, se.student_name
+		FROM `tabStudent Enrollment` se
+		JOIN `tabStudent Enrollment Course` sec ON sec.parent = se.name
+		WHERE sec.course_offering = %s
+		AND sec.status = 'Enrolled' AND se.status = 'Enrolled' AND se.docstatus = 0
+		ORDER BY se.student_name
+	""", (course_offering,), as_dict=True)
+
+
 @frappe.whitelist()
 def get_student_attendance_records(
 	based_on=None,
 	date=None,
-	student_group=None,
 	course_schedule=None,
 	class_schedule=None,
 	office_hours_group=None,
@@ -28,10 +42,6 @@ def get_student_attendance_records(
 	if not based_on:
 		frappe.throw(_("Based On is required"))
 
-	if based_on == "Student Group":
-		if not student_group or not date:
-			frappe.throw(_("Student Group and Date are required"))
-
 	if based_on == "Course Schedule":
 		if not course_schedule:
 			frappe.throw(_("Course Schedule is required"))
@@ -44,41 +54,23 @@ def get_student_attendance_records(
 		if not office_hours_group:
 			frappe.throw(_("Office Hours Group is required"))
 
-	# -------------------- RESOLVE STUDENT GROUP --------------------
-
-	if based_on == "Course Schedule" and course_schedule:
-		student_group = frappe.db.get_value(
-			"Course Schedule",
-			course_schedule,
-			"student_group",
-		)
-
-	if based_on == "Time Table" and class_schedule:
-		student_group = frappe.db.get_value(
-			"Time Table",
-			class_schedule,
-			"student_group",
-		)
-
-	if not student_group and not office_hours_group:
-		return []
-
 	# -------------------- FETCH STUDENTS --------------------
 
-	group_name = student_group or office_hours_group
-	student_list = frappe.get_all(
-		"Student Group Student",
-		fields=[
-			"student",
-			"student_name",
-			"group_roll_number",
-		],
-		filters={
-			"parent": group_name,
-			"active": 1,
-		},
-		order_by="group_roll_number",
-	)
+	if based_on == "Office Hours":
+		student_list = frappe.get_all(
+			"Office Hours Group Student",
+			fields=["student", "student_name", "group_roll_number"],
+			filters={"parent": office_hours_group, "active": 1},
+			order_by="group_roll_number",
+		)
+	else:
+		course_offering = None
+		if based_on == "Course Schedule" and course_schedule:
+			course_offering = frappe.db.get_value("Course Schedule", course_schedule, "course_offering")
+		elif based_on == "Time Table" and class_schedule:
+			course_offering = frappe.db.get_value("Time Table", class_schedule, "course_offering")
+
+		student_list = _get_enrolled_students(course_offering)
 
 	if not student_list:
 		return []
@@ -107,12 +99,6 @@ def get_student_attendance_records(
 
 	if based_on == "Office Hours":
 		query = query.where(StudentAttendance.office_hours_group == office_hours_group)
-
-	if based_on == "Student Group":
-		query = query.where(StudentAttendance.student_group == student_group)
-		query = query.where(
-			(StudentAttendance.course_schedule == "") | StudentAttendance.course_schedule.isnull()
-		)
 
 	attendance_rows = query.run(as_dict=True)
 

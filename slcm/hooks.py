@@ -229,7 +229,7 @@ fixtures = [
             "Total Attendance Records", "Present Count", "Absent Count", "OD Count",
             "Total Sessions", "Active Sessions", "Pending Condonations", "Pending FA / MFA",
             # Faculty
-            "Faculty My Course Offerings", "Faculty My Student Groups",
+            "Faculty My Course Offerings",
             "Faculty Active Attendance Sessions", "Faculty Pending Condonation Requests",
             "Faculty Open Course Offerings", "Faculty Office Hours Groups",
             # Fees Management
@@ -291,10 +291,16 @@ fixtures = [
     # reinsert sequence for fixture import doesn't always clear the meta cache before
     # validate() runs. Fix: exclude "HD Ticket Type" fields from here; they are owned
     # by the helpdesk app and exported via helpdesk/fixtures/custom_field.json instead.
+    # Also exclude "Web Form-amount_field": it's created at runtime by the "payments"
+    # app (payments/utils/utils.py: create_custom_fields) whenever a Web Form has
+    # "Accept Payment" enabled — it's not owned by slcm and shouldn't be a fixture.
     "Web Form",
     {
         "doctype": "Custom Field",
-        "filters": [["dt", "not in", ["HD Ticket Type"]]]
+        "filters": [
+            ["dt", "not in", ["HD Ticket Type"]],
+            ["name", "!=", "Web Form-amount_field"],
+        ]
     },
     "Property Setter",
     # --- Transcript Print Format ---
@@ -609,7 +615,7 @@ permission_query_conditions = {
     # Time Table - faculty sees only their assigned groups' schedules
     "Time Table":                      "slcm.permissions.class_schedule_query_conditions",
 
-    # Attendance - faculty sees only records for their assigned student groups
+    # Attendance - faculty sees only records for their assigned Course Offerings
     "Attendance Session":              "slcm.permissions.attendance_session_query_conditions",
     "Student Attendance":              "slcm.permissions.student_attendance_query_conditions",
     "Attendance Log":                  "slcm.permissions.attendance_log_query_conditions",

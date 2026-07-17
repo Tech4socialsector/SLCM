@@ -6,6 +6,10 @@ from frappe.model.document import Document
 
 
 class CourseSchedule(Document):
+	def validate(self):
+		if not self.course_offering:
+			self.course_offering = self.get_course_offering()
+
 	def after_insert(self):
 		self.create_attendance_session()
 
@@ -22,9 +26,8 @@ class CourseSchedule(Document):
 
 		if exists:
 			return
-		
-		# Find Course Offering
-		course_offering = self.get_course_offering()
+
+		course_offering = self.course_offering or self.get_course_offering()
 		if not course_offering:
 			frappe.log_error(f"Could not find Course Offering for Course Schedule {self.name}")
 			return
@@ -33,7 +36,6 @@ class CourseSchedule(Document):
 			"doctype": "Attendance Session",
 			"based_on": "Course Schedule",
 			"course_schedule": self.name,
-			"student_group": self.student_group,
 			"course_offering": course_offering,
 			"course": self.course,
 			"instructor": self.instructor, # Note: Course Schedule has instructor link
@@ -88,7 +90,7 @@ def get_events(start, end, filters=None):
 		"Course Schedule",
 		fields=[
 			"name",
-			"student_group",
+			"course_offering",
 			"course",
 			"instructor_name",
 			"room",
@@ -105,8 +107,6 @@ def get_events(start, end, filters=None):
 	for e in events:
 		# Construct title
 		title = e.course
-		if e.student_group:
-			title += f" - {e.student_group}"
 		if e.room:
 			title += f" ({e.room})"
 

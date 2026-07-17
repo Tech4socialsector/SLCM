@@ -10,7 +10,7 @@ from frappe.utils import time_diff_in_hours, get_datetime
 
 @frappe.whitelist()
 def get_faculty_context():
-	"""Return the logged-in faculty's name and their assigned student groups."""
+	"""Return the logged-in faculty's name and their assigned Course Offerings."""
 	user = frappe.session.user
 	roles = set(frappe.get_roles(user))
 
@@ -21,46 +21,63 @@ def get_faculty_context():
 
 	faculty_name = None
 	faculty_full_name = None
-	assigned_groups = []
+	assigned_offerings = []
 
 	if is_faculty:
 		faculty_name = frappe.db.get_value("Faculty", {"user_id": user}, "name")
 		if faculty_name:
 			fn = frappe.db.get_value("Faculty", faculty_name, ["first_name", "last_name"], as_dict=True) or {}
 			faculty_full_name = " ".join(filter(None, [fn.get("first_name"), fn.get("last_name")]))
-			# Primary faculty groups
+
 			primary = frappe.get_all(
-				"Student Group",
-				filters={"faculty": faculty_name, "disabled": 0},
-				fields=["name", "group_based_on", "academic_year", "academic_term", "program"],
+				"Course Offering",
+				filters={"faculty": faculty_name},
+				fields=["name", "course_title", "academic_year", "term_name", "program"],
 			)
-			# Instructor child-table groups
-			instructor_parents = frappe.get_all(
-				"Student Group Instructor",
-				filters={"instructor": faculty_name, "parenttype": "Student Group"},
-				pluck="parent",
+			seen = {o["name"] for o in primary}
+
+			via_schedule = frappe.get_all(
+				"Course Schedule",
+				filters={"instructor": faculty_name, "docstatus": ["<", 2]},
+				pluck="course_offering",
 			)
-			if instructor_parents:
+			via_timetable = frappe.get_all(
+				"Time Table",
+				filters={"instructor": faculty_name, "docstatus": ["<", 2]},
+				pluck="course_offering",
+			)
+			extra_names = {n for n in (via_schedule + via_timetable) if n and n not in seen}
+			if extra_names:
 				extra = frappe.get_all(
-					"Student Group",
-					filters={"name": ["in", instructor_parents], "disabled": 0},
-					fields=["name", "group_based_on", "academic_year", "academic_term", "program"],
+					"Course Offering",
+					filters={"name": ["in", list(extra_names)]},
+					fields=["name", "course_title", "academic_year", "term_name", "program"],
 				)
-				# Merge, deduplicate by name
-				seen = {g["name"] for g in primary}
-				for g in extra:
-					if g["name"] not in seen:
-						primary.append(g)
-						seen.add(g["name"])
-			assigned_groups = primary
+				primary.extend(extra)
+
+			assigned_offerings = primary
 
 	return {
 		"is_faculty": is_faculty,
 		"is_admin": is_admin,
 		"faculty_name": faculty_name,
 		"faculty_full_name": faculty_full_name,
-		"assigned_groups": assigned_groups,
+		"assigned_offerings": assigned_offerings,
 	}
+
+
+def _faculty_display_name(faculty_id):
+	"""Return a Faculty's display name, falling back to the raw ID if the
+	record has no name on file. Student Attendance's `instructor` field is
+	a plain Data field (not a Link), so it needs the resolved name stored
+	directly rather than the Faculty ID."""
+	if not faculty_id:
+		return None
+	name = frappe.db.get_value("Faculty", faculty_id, ["first_name", "last_name"], as_dict=True)
+	if not name:
+		return faculty_id
+	full_name = " ".join(filter(None, [name.first_name, name.last_name]))
+	return full_name or faculty_id
 
 
 def _find_course_offering(course, program, academic_year=None):
@@ -82,7 +99,7 @@ def _find_course_offering(course, program, academic_year=None):
 	return offering
 
 
-def _get_or_create_attendance_session(attendance_date, course_offering, student_group, based_on):
+def _get_or_create_attendance_session(attendance_date, course_offering, based_on):
 	"""
 	Find or create an Attendance Session for this date/course, so that the
 	calculator has a denominator (conducted class hours) for the percentage.
@@ -97,8 +114,6 @@ def _get_or_create_attendance_session(attendance_date, course_offering, student_
 		"session_type": "Lecture",
 		"docstatus": ("<", 2),
 	}
-	if student_group:
-		filters["student_group"] = student_group
 
 	existing = frappe.db.exists("Attendance Session", filters)
 	if existing:
@@ -109,7 +124,6 @@ def _get_or_create_attendance_session(attendance_date, course_offering, student_
 			"doctype": "Attendance Session",
 			"session_date": attendance_date,
 			"based_on": based_on,
-			"student_group": student_group,
 			"course_offering": course_offering,
 			"session_start_time": "09:00:00",
 			"session_end_time": "10:00:00",
@@ -132,20 +146,6 @@ def _get_or_create_attendance_session(attendance_date, course_offering, student_
 # ------------------------------------------------------------
 # STUDENT FETCH HELPERS (called by the Attendance Tool page)
 # ------------------------------------------------------------
-
-@frappe.whitelist()
-def get_students_from_group(student_group, attendance_date):
-	"""Return active students in a Student Group with their existing attendance status."""
-	from slcm.slcm.doctype.student_attendance_tool.student_attendance_tool import (
-		get_student_attendance_records,
-	)
-
-	return get_student_attendance_records(
-		based_on="Student Group",
-		date=attendance_date,
-		student_group=student_group,
-	)
-
 
 @frappe.whitelist()
 def get_students_from_schedule(course_schedule, attendance_date=None):
@@ -177,11 +177,17 @@ def create_bulk_attendance_from_schedule(course_schedule, attendance_date, atten
 
 	schedule = frappe.get_doc("Course Schedule", course_schedule)
 
-	if not schedule.student_group:
-		frappe.throw(_("Student Group is required in Course Schedule"))
+	course_offering = schedule.course_offering
+	if not course_offering:
+		frappe.throw(_("Course Offering is required on the Course Schedule"))
 
-	group = frappe.get_doc("Student Group", schedule.student_group)
-	students = [row.student for row in group.students if row.active]
+	students = frappe.db.sql("""
+		SELECT DISTINCT se.student
+		FROM `tabStudent Enrollment` se
+		JOIN `tabStudent Enrollment Course` sec ON sec.parent = se.name
+		WHERE sec.course_offering = %s
+		AND sec.status = 'Enrolled' AND se.status = 'Enrolled' AND se.docstatus = 0
+	""", (course_offering,), pluck=True)
 
 	if not students:
 		frappe.throw(_("No active students found"))
@@ -189,13 +195,9 @@ def create_bulk_attendance_from_schedule(course_schedule, attendance_date, atten
 	if isinstance(attendance_data, str):
 		attendance_data = json.loads(attendance_data)
 
-	# Resolve Course Offering so Attendance Summary can be calculated
-	course_offering = _find_course_offering(schedule.course, schedule.program,
-		getattr(group, "academic_year", None))
-
 	# Ensure an Attendance Session exists so the calculator has a denominator
 	attendance_session = _get_or_create_attendance_session(
-		attendance_date, course_offering, schedule.student_group, "Course Schedule"
+		attendance_date, course_offering, "Course Schedule"
 	)
 
 	created, updated, errors = 0, 0, []
@@ -234,12 +236,11 @@ def create_bulk_attendance_from_schedule(course_schedule, attendance_date, atten
 						"status": status,
 						"based_on": "Course Schedule",
 						"course_schedule": course_schedule,
-						"student_group": schedule.student_group,
 						"program": schedule.program,
 						"course": schedule.course,
 						"course_offer": course_offering,
 						"attendance_session": attendance_session,
-						"instructor": instructor or getattr(schedule, "instructor", None),
+						"instructor": _faculty_display_name(instructor or getattr(schedule, "instructor", None)),
 						"room": getattr(schedule, "room", None),
 						"source": "Manual",
 					}
@@ -271,121 +272,12 @@ def create_bulk_attendance_from_schedule(course_schedule, attendance_date, atten
 
 
 # ------------------------------------------------------------
-# BULK ATTENDANCE FROM STUDENT GROUP
-# ------------------------------------------------------------
-@frappe.whitelist()
-def create_bulk_attendance_from_group(student_group, attendance_date, attendance_data, course_offering=None, instructor=None):
-	if not student_group:
-		frappe.throw(_("Student Group is required"))
-
-	if not attendance_date:
-		frappe.throw(_("Attendance Date is required"))
-
-	if get_datetime(attendance_date) > get_datetime():
-		frappe.throw(_("Cannot mark attendance for future dates"))
-
-	group = frappe.get_doc("Student Group", student_group)
-	students = [row.student for row in group.students if row.active]
-
-	if not students:
-		frappe.throw(_("No active students found"))
-
-	if isinstance(attendance_data, str):
-		attendance_data = json.loads(attendance_data)
-
-	# course_offering can be passed explicitly (Batch groups) or auto-resolved (Course groups)
-	if not course_offering:
-		course_offering = _find_course_offering(
-			getattr(group, "course", None),
-			group.program,
-			getattr(group, "academic_year", None),
-		)
-
-	# Ensure an Attendance Session exists so the calculator has a denominator
-	attendance_session = _get_or_create_attendance_session(
-		attendance_date, course_offering, student_group, "Student Group"
-	)
-
-	created, updated, errors = 0, 0, []
-
-	for student in students:
-		status = attendance_data.get(student, "Absent")
-
-		existing = frappe.db.exists(
-			"Student Attendance",
-			{
-				"student": student,
-				"attendance_date": attendance_date,
-				"student_group": student_group,
-				"based_on": "Student Group",
-				"docstatus": ("<", 2),
-			},
-		)
-
-		try:
-			if existing:
-				doc = frappe.get_doc("Student Attendance", existing)
-				doc.status = status
-				if course_offering and not doc.course_offer:
-					doc.course_offer = course_offering
-				if attendance_session and not doc.attendance_session:
-					doc.attendance_session = attendance_session
-				doc.save()
-				updated += 1
-			else:
-				frappe.get_doc(
-					{
-						"doctype": "Student Attendance",
-						"student": student,
-						"attendance_date": attendance_date,
-						"date": attendance_date,
-						"status": status,
-						"based_on": "Student Group",
-						"student_group": student_group,
-						"group_based_on": group.group_based_on,
-						"program": group.program,
-						"academic_year": group.academic_year,
-						"academic_term": group.academic_term,
-						"course_offer": course_offering,
-						"attendance_session": attendance_session,
-						"instructor": instructor or None,
-						"source": "Manual",
-					}
-				).insert()
-				created += 1
-		except Exception as e:
-			errors.append(f"{student}: {e!s}")
-
-	# Trigger Attendance Summary calculation for each affected student
-	if course_offering:
-		from slcm.slcm.utils.attendance_calculator import calculate_student_attendance
-		for student in students:
-			try:
-				calculate_student_attendance(student, course_offering)
-			except Exception as e:
-				frappe.log_error(
-					message=f"Failed to calculate attendance for {student}: {e!s}",
-					title="Attendance Calculation Error",
-				)
-
-	return {
-		"status": "success",
-		"created": created,
-		"updated": updated,
-		"errors": errors,
-		"message": f"Attendance marked. {'Attendance Summary updated.' if course_offering else 'Batch-type group — no Course Offering linked, Attendance Summary not updated.'}",
-		"total_processed": len(students),
-	}
-
-
-# ------------------------------------------------------------
 # MAIN STUDENT ATTENDANCE TOOL API
 # ------------------------------------------------------------
 @frappe.whitelist()
 def mark_attendance(
 	students_present=None,
 	students_absent=None,
-	student_group=None,
 	course_schedule=None,
 	class_schedule=None,
 	date=None,
@@ -409,7 +301,6 @@ def mark_attendance(
 	students_present = students_present or []
 	students_absent = students_absent or []
 
-	group = frappe.get_doc("Student Group", student_group) if student_group else None
 	schedule = frappe.get_doc("Course Schedule", course_schedule) if course_schedule else None
 	class_sched = frappe.get_doc("Time Table", class_schedule) if class_schedule else None
 	office_group = frappe.get_doc("Office Hours Group", office_hours_group) if office_hours_group else None
@@ -419,13 +310,8 @@ def mark_attendance(
 		program = schedule.program
 	elif class_sched:
 		program = class_sched.programme
-	elif group:
-		program = group.program
 	elif office_group:
 		program = office_group.program
-
-	if not program:
-		frappe.throw(_("Program could not be determined"))
 
 	# Determine Course
 	course = None
@@ -433,25 +319,37 @@ def mark_attendance(
 		course = schedule.course
 	elif class_sched:
 		course = class_sched.course
-	elif group:
-		course = group.course
 	elif office_group:
 		course = office_group.course
 
-	# Determine Course Offering
+	# Determine Course Offering — prefer the direct link already stored on
+	# whichever source doc this came from (Course Schedule / Time Table /
+	# Office Hours Group all carry their own course_offering field now), so
+	# we don't depend on program/course being resolved first.
 	course_offering = None
-	
-	# Priority 0: Explicit link in Time Table
-	if class_sched and class_sched.course_offering:
+
+	if schedule and schedule.course_offering:
+		course_offering = schedule.course_offering
+	elif class_sched and class_sched.course_offering:
 		course_offering = class_sched.course_offering
-	
-	# Priority 1: Strict match with Academic Year and Term (if available)
+	elif office_group and office_group.course_offering:
+		course_offering = office_group.course_offering
+
+	# Backfill program/course from the resolved Course Offering when the
+	# source doc's own fields were blank (e.g. a Time Table entry created
+	# without a Class Configuration has no `programme` value).
+	if course_offering and (not program or not course):
+		co_details = frappe.db.get_value(
+			"Course Offering", course_offering, ["program", "course_title"], as_dict=True
+		)
+		if co_details:
+			program = program or co_details.program
+			course = course or co_details.course_title
+
+	# Priority 1: Strict match with Academic Year and Term (if available) —
+	# only needed as a fallback when nothing above resolved a Course Offering.
 	if not course_offering and course and program:
 		filters = {"course_title": course, "program": program, "docstatus": ["<", 2]}
-		
-		# Add Academic Year if available in Student Group
-		if group and group.academic_year:
-			filters["academic_year"] = group.academic_year
 
 		# Add Academic Year/Term from Office Hours Group
 		if office_group:
@@ -460,7 +358,6 @@ def mark_attendance(
 			if office_group.academic_term:
 				filters["term_name"] = office_group.academic_term
 			
-		# Add Academic Term if available in Student Group (check against term_name or similar)
 		# Note: Course Offering has 'term_name' data field, might be risky to filter strictly if naming differs.
 		# We'll stick to Year for strictness first.
 		
@@ -562,7 +459,6 @@ def mark_attendance(
 				"doctype": "Attendance Session",
 				"session_date": date,
 				"based_on": based_on,
-				"student_group": student_group,
 				"class_schedule": class_schedule,
 				"course_schedule": course_schedule if based_on == "Course Schedule" else None,
 				"office_hours_group": office_hours_group if based_on == "Office Hours" else None,
@@ -595,7 +491,6 @@ def mark_attendance(
 					"student": student_id,
 					"attendance_date": date,
 					"based_on": based_on,
-					"student_group": student_group,
 					"course_schedule": course_schedule,
 					"class_schedule": class_schedule,
 					"office_hours_group": office_hours_group,
@@ -619,18 +514,23 @@ def mark_attendance(
 				"status": status,
 				"based_on": based_on,
 				"attendance_based_on": based_on,
-				"student_group": student_group,
 				"course_schedule": course_schedule,
 				"class_schedule": class_schedule,
 				"office_hours_group": office_hours_group,
 				"program": program,
 				"course": course,
 				"course_offer": course_offering,
-				"academic_year": group.academic_year if group else office_group.academic_year if office_group else None,
-				"academic_term": group.academic_term if group else office_group.academic_term if office_group else None,
+				"academic_year": office_group.academic_year if office_group else None,
+				"academic_term": office_group.academic_term if office_group else None,
 				"attendance_session": attendance_session,
-				"instructor": schedule.instructor if schedule else class_sched.instructor if class_sched else office_group.instructor if office_group else None,
-				"room": schedule.room if schedule else class_sched.room if class_sched else None, # Office Hours might not have room in doc
+				"instructor": _faculty_display_name(
+					schedule.instructor if schedule else class_sched.instructor if class_sched else office_group.instructor if office_group else None
+				),
+				# Time Table has no `room` field of its own — room lives on the linked Venue Booking.
+				"room": schedule.room if schedule else (
+					frappe.db.get_value("Venue Booking", class_sched.venue, "room")
+					if class_sched and class_sched.venue else None
+				),
 				"source": "Manual",
 				"session_type": "Office Hour" if based_on == "Office Hours" else "Lecture",
 			}
@@ -718,19 +618,3 @@ def get_students_from_office_hours(office_hours_group, attendance_date=None):
 		date=attendance_date,
 		office_hours_group=office_hours_group,
 	)
-
-
-@frappe.whitelist()
-def get_student_group_details(student_group):
-	"""Return read-only fields for a Student Group (academic_year, term, course, group_based_on).
-	Used by the Faculty Portal attendance tool so the student user doesn't need
-	direct frappe.client.get access."""
-	if not student_group:
-		return {}
-	doc = frappe.db.get_value(
-		"Student Group",
-		student_group,
-		["group_based_on", "academic_year", "academic_term", "course", "program", "batch"],
-		as_dict=True,
-	) or {}
-	return doc
