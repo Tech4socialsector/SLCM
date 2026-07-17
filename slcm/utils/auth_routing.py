@@ -193,6 +193,95 @@ def intercept_login():
 
         raise AuthRedirect(location)
 
+def enforce_student_google_login(login_manager=None):
+    """Runs on every successful login (on_session_creation hook).
+
+    Only acts on logins that came in through Google OAuth — normal
+    username/password logins are left untouched. For Google logins it:
+      1. Rejects the session if Google login is disabled in settings.
+      2. Rejects if the account's email domain isn't the allowed domain
+         (e.g. only @nls.ac.in accounts, once NLSIU confirms their domain).
+      3. Rejects if no Student Master record has this email as its
+         `official_email_id`. NLSIU issues this institutional Gmail AFTER
+         admission, separately from the personal email a student applied
+         with (Student Master.user still holds that original application
+         email at this point) — so matching must key off official_email_id,
+         not `user`.
+      4. On first successful Google login for a student, re-points
+         Student Master.user to the official email (this Google-created
+         User account) so all later permission checks / portal data use
+         the real login identity. The original application-email User
+         record is left untouched.
+      5. Grants the slcm_Student role (if missing) and lets the session
+         through, so downstream pages see a properly-permissioned student
+         account instead of a bare, unlinked Google User.
+
+    Rejection = log the Google-created session out immediately and bounce
+    back to the student login page with a human-readable ?error= message.
+    """
+    user = getattr(login_manager, "user", None) or frappe.session.user
+    if not user or user == "Guest" or user == "Administrator":
+        return
+
+    request_path = getattr(frappe.local.request, "path", "") or ""
+    is_google_oauth = "frappe.integrations.oauth2_logins.login_via_google" in request_path
+    if not is_google_oauth:
+        return
+
+    settings = frappe.get_single("Student Portal Settings")
+    if not settings.get("enable_google_login"):
+        _reject_google_login(login_manager, "Google login is not enabled for the student portal.")
+        return
+
+    allowed_domain = (settings.get("google_login_allowed_domain") or "").strip().lower()
+    email_domain = user.split("@")[-1].lower() if "@" in user else ""
+
+    if allowed_domain and email_domain != allowed_domain:
+        _reject_google_login(
+            login_manager,
+            f"Only @{allowed_domain} accounts can log in to the student portal."
+        )
+        return
+
+    student = frappe.db.get_value("Student Master", {"official_email_id": user}, "name")
+    if not student:
+        _reject_google_login(
+            login_manager,
+            "No student record found for this email. Please contact administration."
+        )
+        return
+
+    # Point the Student Master at this Google-created User so future
+    # logins/permissions/portal data resolve against the real login email.
+    if frappe.db.get_value("Student Master", student, "user") != user:
+        frappe.db.set_value("Student Master", student, "user", user)
+
+    if not frappe.db.exists("Has Role", {"parent": user, "role": "slcm_Student"}):
+        user_doc = frappe.get_doc("User", user)
+        user_doc.append("roles", {"role": "slcm_Student"})
+        user_doc.save(ignore_permissions=True)
+
+
+def _reject_google_login(login_manager, message):
+    """Tears down a just-created Google login session and bounces the
+    browser back to /student/login with an error message.
+
+    Must use AuthRedirect (a Werkzeug HTTPException), NOT frappe.Redirect —
+    this runs deep inside Frappe's login internals (on_session_creation),
+    which nothing catches frappe.Redirect from. AuthRedirect propagates as
+    a normal HTTP 302 response regardless of which hook raises it.
+    """
+    user = getattr(login_manager, "user", None) or frappe.session.user
+    frappe.local.login_manager.logout()
+    frappe.set_user("Guest")
+    frappe.db.commit()
+    frappe.log_error(
+        f"Rejected Google login for {user}: {message}",
+        "Student Google login rejected"
+    )
+    raise AuthRedirect(f"/student/login?error={urllib.parse.quote(message)}")
+
+
 def handle_logout(login_manager=None):
     user = getattr(login_manager, "user", None) or frappe.session.user
     if not user or user == "Guest":

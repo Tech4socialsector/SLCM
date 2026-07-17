@@ -12,17 +12,8 @@
   "course",
   "attendance_date",
   "column_break_basic",
-  "field_changed",
-  "old_value",
-  "new_value",
   "edit_section",
-  "edit_reason",
-  "edited_by",
-  "edit_timestamp",
-  "approval_section",
-  "approval_status",
-  "approved_by",
-  "approval_date"
+  "edit_entries"
  ],
  "fields": [
   {
@@ -32,7 +23,8 @@
    "in_standard_filter": 1,
    "label": "Attendance Record",
    "options": "Student Attendance",
-   "reqd": 1
+   "reqd": 1,
+   "unique": 1
   },
   {
    "fetch_from": "attendance_record.student",
@@ -73,71 +65,15 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "field_changed",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Field Changed"
-  },
-  {
-   "fieldname": "old_value",
-   "fieldtype": "Data",
-   "label": "Old Value"
-  },
-  {
-   "fieldname": "new_value",
-   "fieldtype": "Data",
-   "label": "New Value"
-  },
-  {
    "fieldname": "edit_section",
    "fieldtype": "Section Break",
    "label": "Edit Details"
   },
   {
-   "fieldname": "edit_reason",
-   "fieldtype": "Text",
-   "in_list_view": 1,
-   "label": "Edit Reason",
-   "reqd": 1
-  },
-  {
-   "default": "user",
-   "fieldname": "edited_by",
-   "fieldtype": "Link",
-   "label": "Edited By",
-   "options": "User",
-   "read_only": 1
-  },
-  {
-   "default": "now",
-   "fieldname": "edit_timestamp",
-   "fieldtype": "Datetime",
-   "label": "Edit Timestamp",
-   "read_only": 1
-  },
-  {
-   "fieldname": "approval_section",
-   "fieldtype": "Section Break",
-   "label": "Approval"
-  },
-  {
-   "default": "Pending",
-   "fieldname": "approval_status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Approval Status",
-   "options": "Pending\nApproved\nRejected"
-  },
-  {
-   "fieldname": "approved_by",
-   "fieldtype": "Link",
-   "label": "Approved By",
-   "options": "User"
-  },
-  {
-   "fieldname": "approval_date",
-   "fieldtype": "Date",
-   "label": "Approval Date"
+   "fieldname": "edit_entries",
+   "fieldtype": "Table",
+   "label": "Edit Entries",
+   "options": "Attendance Edit Entry"
   }
  ],
  "links": [],
