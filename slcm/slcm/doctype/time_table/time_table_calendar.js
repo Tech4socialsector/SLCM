@@ -17,9 +17,7 @@ frappe.views.calendar["Time Table"] = {
             if (info.event.extendedProps && info.event.extendedProps.institutional_calendar) {
                 return;
             }
-            if (frappe.model.can_read("Time Table")) {
-                frappe.set_route("Form", "Time Table", info.event.id);
-            }
+            show_time_table_event_details(info.event);
         },
         select: function (startDate, endDate, jsEvent, view) {
             // Prevent single day click in month view
@@ -46,3 +44,50 @@ frappe.views.calendar["Time Table"] = {
         }
     },
 };
+
+function show_time_table_event_details(event) {
+    const props = event.extendedProps || {};
+
+    const format_time = (t) => (t ? moment(t, "HH:mm:ss").format("hh:mm A") : "-");
+
+    const rows = [
+        ["Based On", props.based_on],
+        ["Time", `${format_time(props.from_time)} - ${format_time(props.to_time)}`],
+        ["Duration", props.duration_hours ? `${props.duration_hours} hr` : "-"],
+        ["Course", props.course],
+        ["Course Offering", props.course_offering],
+        ["Faculty", props.instructor],
+        ["Venue", props.room || props.venue],
+    ];
+
+    if (props.based_on === "Course Schedule" && props.course_schedule) {
+        rows.push(["Course Schedule", props.course_schedule]);
+    }
+    if (props.based_on === "Office Hours" && props.office_hours_group) {
+        rows.push(["Office Hours Group", props.office_hours_group]);
+    }
+
+    const html = rows
+        .filter(([, value]) => value)
+        .map(
+            ([label, value]) =>
+                `<div style="display:flex;padding:6px 0;border-bottom:1px solid var(--border-color);">
+                    <div style="width:150px;color:var(--text-muted);font-weight:600;">${__(label)}</div>
+                    <div>${frappe.utils.escape_html(String(value))}</div>
+                </div>`
+        )
+        .join("");
+
+    const dialog = new frappe.ui.Dialog({
+        title: event.title,
+        fields: [{ fieldtype: "HTML", options: html }],
+        primary_action_label: __("Open"),
+        primary_action: function () {
+            dialog.hide();
+            if (frappe.model.can_read("Time Table")) {
+                frappe.set_route("Form", "Time Table", event.id);
+            }
+        },
+    });
+    dialog.show();
+}

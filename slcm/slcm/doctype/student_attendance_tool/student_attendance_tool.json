@@ -7,16 +7,13 @@
  "engine": "InnoDB",
  "field_order": [
   "based_on",
-  "group_based_on",
   "column_break_2",
-  "student_group",
   "office_hours_group",
   "academic_year",
   "academic_term",
   "batch",
   "course_offering",
   "course",
-  "section",
   "section",
   "course_schedule",
   "class_schedule",
@@ -26,32 +23,15 @@
  ],
  "fields": [
   {
-   "default": "Student Group",
+   "default": "Course Schedule",
    "fieldname": "based_on",
    "fieldtype": "Select",
    "label": "Based On",
-   "options": "Student Group\nCourse Schedule\nTime Table\nOffice Hours"
-  },
-  {
-   "default": "Batch",
-   "depends_on": "eval:doc.based_on == \"Student Group\"",
-   "fieldname": "group_based_on",
-   "fieldtype": "Select",
-   "label": "Group Based On",
-   "options": "Batch\nCourse\nActivity"
+   "options": "Course Schedule\nTime Table\nOffice Hours"
   },
   {
    "fieldname": "column_break_2",
    "fieldtype": "Column Break"
-  },
-  {
-   "depends_on": "eval:doc.based_on ==\"Student Group\"",
-   "fieldname": "student_group",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Student Group",
-   "options": "Student Group",
-   "reqd": 1
   },
   {
    "depends_on": "eval:doc.based_on ==\"Office Hours\"",
@@ -88,7 +68,7 @@
    "reqd": 1
   },
   {
-   "depends_on": "eval: (doc.course_schedule || doc.class_schedule || doc.office_hours_group\n|| (doc.student_group && doc.date))",
+   "depends_on": "eval: (doc.course_schedule || doc.class_schedule || doc.office_hours_group)",
    "fieldname": "attendance",
    "fieldtype": "Section Break",
    "label": "Attendance"
@@ -99,7 +79,6 @@
    "label": "Students HTML"
   },
   {
-   "fetch_from": "student_group.academic_year",
    "fieldname": "academic_year",
    "fieldtype": "Link",
    "label": "Academic Year",
@@ -107,7 +86,6 @@
    "read_only": 1
   },
   {
-   "fetch_from": "student_group.academic_term",
    "fieldname": "academic_term",
    "fieldtype": "Link",
    "label": "Academic Term",
@@ -115,7 +93,6 @@
    "read_only": 1
   },
   {
-   "fetch_from": "student_group.batch",
    "fieldname": "batch",
    "fieldtype": "Link",
    "label": "Batch",
@@ -137,15 +114,6 @@
    "read_only": 1
   },
   {
-   "fetch_from": "student_group.section",
-   "fieldname": "section",
-   "fieldtype": "Link",
-   "label": "Section",
-   "options": "Section",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "student_group.section",
    "fieldname": "section",
    "fieldtype": "Link",
    "label": "Section",
@@ -156,7 +124,7 @@
  "hide_toolbar": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-07-10 16:44:37.019629",
+ "modified": "2026-07-14 15:55:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Attendance Tool",

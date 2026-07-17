@@ -310,6 +310,11 @@
 .att-drill-table tr:last-child td { border-bottom: none; }
 .att-drill-table tr:hover td { background: var(--fp-bg); }
 .att-drill-table tr.clickable-row { cursor: pointer; }
+
+/* Sortable columns on the main sessions table */
+.fp-sortable-th { cursor: pointer; user-select: none; white-space: nowrap; }
+.fp-sortable-th:hover { color: var(--fp-primary); }
+.fp-sort-arrow { color: var(--fp-primary); font-size: 10px; }
 .att-drill-table tr.clickable-row:hover td { background: var(--fp-primary-light); }
 </style>
 {% endblock %}
@@ -335,6 +340,79 @@
   <div>Some data could not be loaded. Please refresh.</div>
 </div>
 {% endif %}
+
+{# ── Today's Classes ──────────────────────────────────────────── #}
+{# One card per course. A course with multiple time slots today (e.g. two
+   lecture sections) gets a slot picker inside the card instead of a
+   separate card per slot. #}
+<div class="fp-card fade-in" style="margin-bottom:24px;">
+  <div class="fp-card-header">
+    <div class="fp-card-title">
+      <span class="fp-ms">today</span>
+      Today's Classes
+    </div>
+    <span class="fp-badge fp-badge-neutral">{{ todays_courses | length }} course{{ 's' if todays_courses | length != 1 else '' }}</span>
+  </div>
+  <div class="fp-card-body" style="padding:0;">
+    {% if not todays_courses %}
+    <div class="fp-empty">
+      <div class="fp-empty-icon"><span class="fp-ms">event_busy</span></div>
+      <p class="fp-empty-title">No classes today</p>
+      <p class="fp-empty-sub">Your schedule is clear. Enjoy your day!</p>
+    </div>
+    {% else %}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0;">
+      {% for c in todays_courses %}
+      <div class="fp-today-course-card" data-course-offering="{{ c.course_offering }}"
+           onclick="fpTodayCardClick(this, event)" style="cursor:pointer;display:flex;flex-direction:column;gap:10px;padding:14px 18px;border-bottom:1px solid var(--fp-border-light);border-right:1px solid var(--fp-border-light);">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <div style="font-size:14px;font-weight:700;color:var(--fp-text-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ c.course_name }}">{{ c.course_name }}</div>
+          {% if c.slots | length > 1 %}
+          {# Informational only — choosing a slot happens inside the modal,
+             not on this card. Clicking the card (or its Mark/View button)
+             opens the modal, which has its own slot picker. #}
+          <span class="fp-badge fp-badge-neutral" style="flex-shrink:0;">{{ c.slots | length }} slots</span>
+          {% endif %}
+        </div>
+
+        {% for s in c.slots %}
+        <div class="fp-today-slot" data-slot-index="{{ loop.index0 }}" style="flex-direction:column;gap:8px;{% if loop.first %}display:flex;{% else %}display:none;{% endif %}"
+             data-session="{{ s.name }}" data-course-name="{{ s.course_name | replace('"','&quot;') }}" data-marked="{{ '1' if s.marked else '0' }}"
+             data-from-time="{{ s.from_time }}" data-to-time="{{ s.to_time }}">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <div style="font-size:13px;font-weight:700;color:var(--fp-primary);background:var(--fp-primary-light);border-radius:var(--fp-radius-sm);padding:3px 9px;">
+              {{ s.from_time }}{% if s.to_time %} – {{ s.to_time }}{% endif %}
+            </div>
+            {% if s.marked %}
+            <span class="fp-badge fp-badge-success"><span class="fp-ms" style="font-size:12px;">check</span>Marked</span>
+            {% else %}
+            <span class="fp-badge fp-badge-warning"><span class="fp-ms" style="font-size:12px;">pending</span>Pending</span>
+            {% endif %}
+          </div>
+          <div style="font-size:12px;color:var(--fp-text-4);display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+            <span class="fp-ms" style="font-size:14px;">location_on</span>{{ s.venue }}
+            &nbsp;·&nbsp;
+            <span class="fp-ms" style="font-size:14px;">groups</span>{{ s.total }} students
+          </div>
+          <div>
+            {% if not s.marked %}
+            <button class="fp-btn fp-btn-success fp-btn-sm" onclick="event.stopPropagation();fpOpenMarkModalFromToday(this)">
+              <span class="fp-ms">how_to_reg</span>Mark
+            </button>
+            {% else %}
+            <button class="fp-btn fp-btn-secondary fp-btn-sm" onclick="event.stopPropagation();fpViewSession('{{ s.name }}')">
+              <span class="fp-ms">visibility</span>View
+            </button>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
 
 {# ── Stat Cards (all drillable) ───────────────────────────────── #}
 <div class="fp-stat-grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr));">
@@ -381,8 +459,23 @@
     <div class="fp-card-title">
       <span class="fp-ms">event_available</span>
       Attendance Sessions
+      {% if selected_term %}<span class="fp-badge fp-badge-neutral" style="margin-left:6px;font-weight:600;">{{ terms | selectattr('key','equalto',selected_term) | map(attribute='label') | first }}</span>{% endif %}
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <div class="sat-search-wrap">
+        <span class="fp-ms">search</span>
+        <input type="text" class="sat-search" id="fp-sessions-search" placeholder="Search sessions…"
+               oninput="fpFilterSessions()" style="width:180px;">
+      </div>
+      {% if terms | length > 1 %}
+      <select class="fp-select" id="fp-term-filter" onchange="fpChangeTerm(this.value)"
+              title="Switch trimester / term"
+              style="width:auto;min-width:170px;padding:7px 10px;font-size:13px;font-weight:600;">
+        {% for t in terms %}
+        <option value="{{ t.key }}" {% if selected_term == t.key %}selected{% endif %}>{{ t.label }}</option>
+        {% endfor %}
+      </select>
+      {% endif %}
       <select class="fp-select" id="fp-co-filter" onchange="fpFilterSessions()"
               style="width:auto;min-width:180px;padding:7px 10px;font-size:13px;">
         <option value="">All Courses</option>
@@ -396,7 +489,7 @@
         <option value="marked">Marked</option>
         <option value="pending">Pending</option>
       </select>
-      <button class="fp-btn fp-btn-primary fp-btn-sm" onclick="fpOpenMarkModal(null,null)" id="fp-mark-btn">
+      <button class="fp-btn fp-btn-primary fp-btn-sm" onclick="fpOpenSessionPicker()" id="fp-mark-btn">
         <span class="fp-ms">how_to_reg</span>Mark Attendance
       </button>
     </div>
@@ -413,14 +506,14 @@
       <table class="fp-table" id="fp-sessions-table">
         <thead>
           <tr>
-            <th>Course</th>
-            <th>Date</th>
+            <th class="fp-sortable-th" data-sort-key="course" onclick="fpSortSessions('course')">Course<span class="fp-sort-arrow"></span></th>
+            <th class="fp-sortable-th" data-sort-key="date" onclick="fpSortSessions('date')">Date<span class="fp-sort-arrow"></span></th>
             <th>Time</th>
             <th>Type</th>
             <th>Venue</th>
-            <th>Students</th>
-            <th>Present</th>
-            <th>Att %</th>
+            <th class="fp-sortable-th" data-sort-key="students" onclick="fpSortSessions('students')">Students<span class="fp-sort-arrow"></span></th>
+            <th class="fp-sortable-th" data-sort-key="present" onclick="fpSortSessions('present')">Present<span class="fp-sort-arrow"></span></th>
+            <th class="fp-sortable-th" data-sort-key="pct" onclick="fpSortSessions('pct')">Att %<span class="fp-sort-arrow"></span></th>
             <th>Status</th>
             <th style="text-align:center;">Actions</th>
           </tr>
@@ -431,6 +524,12 @@
               data-co="{{ s.course_offering }}"
               data-marked="{{ 'marked' if s.marked else 'pending' }}"
               data-session="{{ s.name }}"
+              data-session-date="{{ s.session_date }}"
+              data-total="{{ s.total }}"
+              data-present="{{ s.present if s.marked else '' }}"
+              data-pct="{{ s.pct if s.marked else '' }}"
+              data-rfid-active-until="{{ s.rfid_active_until }}"
+              data-rfid-activated="{{ '1' if s.rfid_activated else '0' }}"
               style="cursor:pointer;"
               onclick="attRowClick(this, '{{ s.name }}', '{{ s.course_name | replace("'","\\x27") }}', {{ 'true' if s.marked else 'false' }})">
             <td style="font-weight:600;color:var(--fp-text-1);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ s.course_name }}">{{ s.course_name }}</td>
@@ -476,6 +575,7 @@
       <p class="fp-empty-title">No matching sessions</p>
       <p class="fp-empty-sub">Try changing your filters.</p>
     </div>
+    <div id="fp-sessions-pagination"></div>
     {% endif %}
   </div>
 </div>
@@ -572,25 +672,144 @@ document.addEventListener('keydown', function(e) {
   });
 });
 
+/* ── Today's Classes: compact slot picker (pill + floating popover) ──
+   Switches which time slot's details/actions are shown inside a course's
+   card, no reload needed. */
+function fpToggleSlotPicker(btn) {
+  var picker = btn.closest('.fp-slot-picker');
+  var menu = picker ? picker.querySelector('.fp-slot-picker-menu') : null;
+  if (!menu) return;
+  var isOpen = menu.style.display === 'block';
+  _fpCloseAllSlotPickers();
+  menu.style.display = isOpen ? 'none' : 'block';
+}
+
+function _fpCloseAllSlotPickers() {
+  document.querySelectorAll('.fp-slot-picker-menu').forEach(function(m) { m.style.display = 'none'; });
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.fp-slot-picker')) _fpCloseAllSlotPickers();
+
+  /* Delegated: the modal's slot picker options are injected via innerHTML
+     (see _satRenderModalSlotPicker), so they need a delegated listener
+     rather than an inline onclick. */
+  var opt = e.target.closest('#sat-slot-picker .fp-slot-picker-opt');
+  if (opt) fpChooseModalSlot(opt.getAttribute('data-session'));
+});
+
+/* ── Term switch — full page reload with ?term=, since it changes which
+   sessions are server-rendered at all (not just a client-side toggle) ── */
+function fpChangeTerm(termKey) {
+  var p = new URLSearchParams(window.location.search);
+  p.set('term', termKey);
+  window.location.search = p.toString();
+}
+
 /* ══════════════════════════════════════════════════════════
-   FILTER
+   FILTER + SEARCH + SORT + PAGINATION (sessions table)
 ══════════════════════════════════════════════════════════ */
+var FP_SESSIONS_PAGE_SIZE = 10;
+var _fpSessionsPage = 1;
+var _fpSortKey = null;
+var _fpSortDir = 1;
+
 function fpFilterSessions() {
+  _fpSessionsPage = 1;
+  _fpApplySessionsView();
+}
+
+function _fpApplySessionsView() {
   var co     = document.getElementById('fp-co-filter').value;
   var status = document.getElementById('fp-status-filter').value;
-  var rows   = document.querySelectorAll('.fp-session-row');
-  var visible = 0;
-  rows.forEach(function(row) {
-    var show = (!co || row.getAttribute('data-co') === co)
-            && (!status || row.getAttribute('data-marked') === status);
-    row.style.display = show ? '' : 'none';
-    if (show) visible++;
+  var searchEl = document.getElementById('fp-sessions-search');
+  var q = searchEl ? searchEl.value.toLowerCase().trim() : '';
+  var allRows = Array.prototype.slice.call(document.querySelectorAll('.fp-session-row'));
+
+  var matched = allRows.filter(function(row) {
+    var matchesFilters = (!co || row.getAttribute('data-co') === co)
+      && (!status || row.getAttribute('data-marked') === status);
+    var matchesSearch = !q || row.textContent.toLowerCase().includes(q);
+    return matchesFilters && matchesSearch;
   });
+
+  /* Hide everything that doesn't match, first */
+  allRows.forEach(function(row) { row.style.display = 'none'; });
+
+  /* Paginate the matched set */
+  var totalPages = Math.max(1, Math.ceil(matched.length / FP_SESSIONS_PAGE_SIZE));
+  if (_fpSessionsPage > totalPages) _fpSessionsPage = totalPages;
+  var start = (_fpSessionsPage - 1) * FP_SESSIONS_PAGE_SIZE;
+  var pageRows = matched.slice(start, start + FP_SESSIONS_PAGE_SIZE);
+  pageRows.forEach(function(row) { row.style.display = ''; });
+
   var empty = document.getElementById('fp-sessions-empty');
-  if (empty) empty.style.display = (visible === 0 && rows.length > 0) ? 'block' : 'none';
+  if (empty) empty.style.display = (matched.length === 0 && allRows.length > 0) ? 'block' : 'none';
+
+  _fpRenderPagination(matched.length, totalPages);
 }
-/* Auto-apply course_offering from URL */
+
+function _fpRenderPagination(totalMatched, totalPages) {
+  var el = document.getElementById('fp-sessions-pagination');
+  if (!el) return;
+  if (totalMatched <= FP_SESSIONS_PAGE_SIZE) { el.innerHTML = ''; return; }
+
+  var start = (_fpSessionsPage - 1) * FP_SESSIONS_PAGE_SIZE + 1;
+  var end   = Math.min(_fpSessionsPage * FP_SESSIONS_PAGE_SIZE, totalMatched);
+
+  var html = '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--fp-border);">'
+    + '<span style="font-size:12px;color:var(--fp-text-4);">Showing ' + start + '–' + end + ' of ' + totalMatched + '</span>'
+    + '<div style="display:flex;gap:6px;">'
+    + '<button class="fp-btn fp-btn-secondary fp-btn-sm" onclick="fpGotoPage(' + (_fpSessionsPage - 1) + ')" ' + (_fpSessionsPage <= 1 ? 'disabled' : '') + '>'
+    + '<span class="fp-ms">chevron_left</span></button>'
+    + '<span style="font-size:12px;color:var(--fp-text-3);padding:6px 4px;">Page ' + _fpSessionsPage + ' of ' + totalPages + '</span>'
+    + '<button class="fp-btn fp-btn-secondary fp-btn-sm" onclick="fpGotoPage(' + (_fpSessionsPage + 1) + ')" ' + (_fpSessionsPage >= totalPages ? 'disabled' : '') + '>'
+    + '<span class="fp-ms">chevron_right</span></button>'
+    + '</div></div>';
+  el.innerHTML = html;
+}
+
+function fpGotoPage(page) {
+  _fpSessionsPage = page;
+  _fpApplySessionsView();
+}
+
+/* ── Column sort — reorders the actual <tr> nodes in the DOM ── */
+var FP_SORT_ACCESSORS = {
+  course:   function(row) { return row.querySelector('td').textContent.trim().toLowerCase(); },
+  date:     function(row) { return row.getAttribute('data-session-date') || ''; },
+  students: function(row) { return parseFloat(row.getAttribute('data-total')) || 0; },
+  present:  function(row) { return parseFloat(row.getAttribute('data-present')) || -1; },
+  pct:      function(row) { return parseFloat(row.getAttribute('data-pct')) || -1; },
+};
+
+function fpSortSessions(key) {
+  if (_fpSortKey === key) { _fpSortDir = -_fpSortDir; } else { _fpSortKey = key; _fpSortDir = 1; }
+
+  var tbody = document.querySelector('#fp-sessions-table tbody');
+  var rows  = Array.prototype.slice.call(tbody.querySelectorAll('.fp-session-row'));
+  var accessor = FP_SORT_ACCESSORS[key];
+
+  rows.sort(function(a, b) {
+    var va = accessor(a), vb = accessor(b);
+    if (typeof va === 'number') return _fpSortDir * (va - vb);
+    return _fpSortDir * String(va).localeCompare(String(vb));
+  });
+  rows.forEach(function(row) { tbody.appendChild(row); });
+
+  document.querySelectorAll('#fp-sessions-table .fp-sortable-th').forEach(function(th) {
+    var arrow = th.querySelector('.fp-sort-arrow');
+    if (!arrow) return;
+    arrow.textContent = th.getAttribute('data-sort-key') === key ? (_fpSortDir === 1 ? ' ▲' : ' ▼') : '';
+  });
+
+  _fpSessionsPage = 1;
+  _fpApplySessionsView();
+}
+/* Initial paginate/render pass, then auto-apply course_offering/session from URL */
 (function() {
+  _fpApplySessionsView();
+
   var p = new URLSearchParams(window.location.search);
   var co = p.get('course_offering') || p.get('session');
   if (co) {
@@ -601,9 +820,11 @@ function fpFilterSessions() {
       var opt = sel.querySelector('option[value="' + co + '"]');
       if (opt) { sel.value = co; fpFilterSessions(); }
     }
-    /* Also highlight the specific session row */
+    /* Also highlight the specific session row — force it visible even if
+       pagination would otherwise put it on a different page. */
     var row = document.querySelector('.fp-session-row[data-session="' + co + '"]');
     if (row) {
+      row.style.display = '';
       row.scrollIntoView({ behavior: 'smooth', block: 'center' });
       row.style.background = 'var(--fp-primary-light)';
       setTimeout(function() { row.style.background = ''; }, 2000);
@@ -696,53 +917,215 @@ function _openSessionPickerModal(bodyHtml, count) {
 /* Called when user picks a session from the picker */
 /* ══════════════════════════════════════════════════════════
    STUDENT ATTENDANCE TOOL — form-based, mirrors desk tool
-   Uses bulk_attendance API: get_students_from_group +
-   create_bulk_attendance_from_group
+   Uses bulk_attendance API: get_students_from_schedule,
+   get_students_from_class_schedule, get_students_from_office_hours
 ══════════════════════════════════════════════════════════ */
 var _sat = {
-  studentGroup    : '',
+  sessionName     : '',
   courseSchedule  : '',
   classSchedule   : '',
   officeHoursGroup: '',
   date            : '',
-  groupMeta       : {},
   students        : [],
-  assignedGroups  : [],
+  modalSlots      : null,
 };
 
-/* ── Open the SAT modal (fresh form state) ── */
-function fpOpenMarkModal(sessionName, courseName) {
-  /* Always open the form — session-based quick-open no longer used */
+/* ── Open the SAT modal ──
+   When a specific session is known (row "Mark" click), skip the Based-On
+   form entirely and load that session's roster directly — the faculty
+   already picked the course + date + time slot by clicking the row. */
+function fpOpenMarkModal(sessionName, courseName, slots) {
   _satResetForm();
+  _renderRfidControl('sat-rfid', sessionName);
+  _sat.sessionName = sessionName || '';
+  _sat.modalSlots  = slots || null;
+
+  _satRenderModalSlotPicker(slots || null, sessionName);
+
+  if (sessionName) {
+    _satLoadSessionRoster(sessionName, courseName);
+  }
   _openModal('att-mark-modal');
-  _satLoadGroups();
+}
+
+/* ── Collect a Today's Classes course card's sibling time slots from its
+   own DOM, so the modal can show the same slots and let faculty switch
+   between them without leaving the modal. ── */
+function _fpCollectTodaySlots(card) {
+  return Array.prototype.slice.call(card.querySelectorAll('.fp-today-slot')).map(function(el) {
+    return {
+      session: el.getAttribute('data-session'),
+      courseName: el.getAttribute('data-course-name'),
+      fromTime: el.getAttribute('data-from-time'),
+      toTime: el.getAttribute('data-to-time'),
+      marked: el.getAttribute('data-marked') === '1',
+    };
+  });
+}
+
+function fpOpenMarkModalFromToday(btn) {
+  var slotDiv = btn.closest('.fp-today-slot');
+  var card    = btn.closest('.fp-today-course-card');
+  if (!slotDiv || !card) return;
+  var slots = _fpCollectTodaySlots(card);
+  fpOpenMarkModal(slotDiv.getAttribute('data-session'), slotDiv.getAttribute('data-course-name'), slots);
+}
+
+/* ── Clicking anywhere on a Today's Classes card (outside its Mark/View
+   buttons, which stop propagation) opens the modal for the currently
+   visible slot — Mark if pending, View if already marked. ── */
+function fpTodayCardClick(card, evt) {
+  var slots = card.querySelectorAll('.fp-today-slot');
+  var visibleSlot = null;
+  for (var i = 0; i < slots.length; i++) {
+    if (slots[i].style.display !== 'none') { visibleSlot = slots[i]; break; }
+  }
+  if (!visibleSlot) visibleSlot = slots[0];
+  if (!visibleSlot) return;
+
+  var sessionName = visibleSlot.getAttribute('data-session');
+  var courseName  = visibleSlot.getAttribute('data-course-name');
+  var isMarked    = visibleSlot.getAttribute('data-marked') === '1';
+
+  if (isMarked) {
+    fpViewSession(sessionName);
+  } else {
+    var slots = _fpCollectTodaySlots(card);
+    fpOpenMarkModal(sessionName, courseName, slots);
+  }
+}
+
+/* ── Render the compact slot picker inside the Mark Attendance modal
+   header (only shown when opened with 2+ sibling slots). ── */
+function _satRenderModalSlotPicker(slots, activeSessionName) {
+  var el = document.getElementById('sat-slot-picker');
+  if (!el) return;
+  if (!slots || slots.length < 2) { el.innerHTML = ''; return; }
+
+  var active = slots.filter(function(s) { return s.session === activeSessionName; })[0] || slots[0];
+  var label = active.fromTime + (active.toTime ? ' – ' + active.toTime : '');
+
+  var optsHtml = slots.map(function(s) {
+    var slotLabel = s.fromTime + (s.toTime ? ' – ' + s.toTime : '');
+    /* data-session + a delegated click listener, not an inline onclick —
+       building onclick="...(\"" + session + "\")" breaks when the session
+       name itself needs quoting inside an already double-quoted attribute. */
+    return '<div class="fp-slot-picker-opt" data-session="' + escHtml(s.session) + '" '
+      + 'style="padding:9px 12px;font-size:12px;font-weight:600;color:var(--fp-text-2);cursor:pointer;'
+      + 'border-bottom:1px solid var(--fp-border-light);display:flex;align-items:center;justify-content:space-between;gap:8px;">'
+      + '<span>' + escHtml(slotLabel) + '</span>'
+      + (s.marked ? '<span class="fp-ms" style="font-size:14px;color:var(--fp-success);">check_circle</span>' : '')
+      + '</div>';
+  }).join('');
+
+  el.innerHTML = '<div class="fp-slot-picker" style="position:relative;">'
+    + '<button type="button" class="fp-slot-picker-trigger" onclick="fpToggleSlotPicker(this)" '
+    + 'style="display:flex;align-items:center;gap:4px;padding:5px 10px;border:1.5px solid var(--fp-border);border-radius:var(--fp-radius-sm);'
+    + 'background:var(--fp-card);font-size:12px;font-weight:700;color:var(--fp-primary);cursor:pointer;font-family:inherit;white-space:nowrap;">'
+    + '<span class="fp-slot-picker-label">' + escHtml(label) + '</span>'
+    + '<span class="fp-ms" style="font-size:16px;">expand_more</span>'
+    + '</button>'
+    + '<div class="fp-slot-picker-menu" style="display:none;position:absolute;top:calc(100% + 4px);left:0;min-width:190px;'
+    + 'background:var(--fp-card);border:1px solid var(--fp-border);border-radius:var(--fp-radius-sm);box-shadow:var(--fp-shadow-md);z-index:5;overflow:hidden;">'
+    + optsHtml
+    + '</div></div>';
+}
+
+/* Switch the modal to a different sibling slot's roster, in place —
+   no form reset, no re-open, just swap the active session. */
+function fpChooseModalSlot(sessionName) {
+  _fpCloseAllSlotPickers();
+  if (sessionName === _sat.sessionName) return;
+
+  var slots = _sat.modalSlots || [];
+  var chosen = slots.filter(function(s) { return s.session === sessionName; })[0];
+
+  _sat.sessionName = sessionName;
+  _renderRfidControl('sat-rfid', sessionName);
+  _satRenderModalSlotPicker(slots, sessionName);
+  _satLoadSessionRoster(sessionName, chosen ? chosen.courseName : null);
+}
+
+/* ── Load a known session's roster straight into step 2 ── */
+function _satLoadSessionRoster(sessionName, courseName) {
+  var step1 = document.getElementById('sat-step-form');
+  var step2 = document.getElementById('sat-step-att');
+  if (step1) step1.style.display = 'none';
+  if (step2) {
+    step2.style.display = 'flex'; step2.style.flexDirection = 'column';
+    step2.style.flex = '1'; step2.style.overflow = 'hidden';
+  }
+  var cn = document.getElementById('sat-course-name');
+  if (cn) cn.textContent = courseName || 'Loading…';
+  document.getElementById('sat-list').innerHTML =
+    '<div style="padding:40px;text-align:center;color:var(--fp-text-4);">'
+    + '<span class="fp-ms" style="font-size:32px;display:block;margin-bottom:10px;animation:fp-spin 0.8s linear infinite;">sync</span>'
+    + 'Loading students…</div>';
+
+  fpCall('slcm.api.faculty_portal.get_session_students', { session_name: sessionName },
+    function(data) {
+      _sat.students = (data && data.students) ? data.students.map(function(s) {
+        return { student: s.student, student_name: s.student_name, group_roll_number: s.reg_id,
+                 status: s.status === 'Absent' ? 'Absent' : 'Present' };
+      }) : [];
+      _satRenderList(_sat.students);
+      _satRefreshCounters();
+    },
+    function(msg) {
+      _showError('sat-error', msg || 'Could not load students for this session.');
+    }
+  );
 }
 
 /* Called from session picker card click (legacy path kept for compatibility) */
 function fpOpenMarkModalDirect(sessionName, course, date, time, venue, total) {
-  fpOpenMarkModal(null, null);
+  fpOpenMarkModal(sessionName, course);
+}
+
+/* ── Render the RFID control into a modal header (view modal or mark modal) ──
+   Reads current RFID state from the session row's data attributes, since the
+   RFID control itself is no longer shown in the list view. */
+function _renderRfidControl(elId, sessionName) {
+  var el = document.getElementById(elId);
+  if (!el) return;
+  el.innerHTML = '';
+  el.removeAttribute('data-rfid-active-until');
+  if (!sessionName) return;
+
+  var row = document.querySelector('.fp-session-row[data-session="' + sessionName + '"]');
+  var activeUntil = row ? row.getAttribute('data-rfid-active-until') : '';
+  var activated   = row ? row.getAttribute('data-rfid-activated') === '1' : false;
+
+  el.setAttribute('data-rfid-session', sessionName);
+  if (activeUntil) {
+    el.setAttribute('data-rfid-active-until', activeUntil);
+    el.innerHTML = '<button class="fp-btn fp-btn-warning fp-btn-sm fp-rfid-btn" disabled>'
+      + '<span class="fp-ms" style="font-size:14px;">wifi_tethering</span>'
+      + '<span class="fp-rfid-timer">Active</span></button>';
+  } else if (activated) {
+    el.innerHTML = '<span class="fp-badge fp-badge-neutral" title="RFID window closed">'
+      + '<span class="fp-ms" style="font-size:12px;">wifi_off</span>Closed</span>';
+  } else {
+    el.innerHTML = '<button class="fp-btn fp-btn-secondary fp-btn-sm fp-rfid-btn" onclick="fpActivateRfid(\'' + sessionName + '\', this)">'
+      + '<span class="fp-ms" style="font-size:14px;">wifi_tethering</span>Activate RFID</button>';
+  }
 }
 
 function _satResetForm() {
-  _sat.studentGroup     = '';
+  _sat.sessionName      = '';
+  _sat.modalSlots       = null;
   _sat.courseSchedule   = '';
   _sat.classSchedule    = '';
   _sat.officeHoursGroup = '';
   _sat.date             = '';
-  _sat.groupMeta        = {};
   _sat.students         = [];
 
   /* Reset selects */
   var bo = document.getElementById('sat-based-on');
-  if (bo) bo.value = 'Student Group';
-  var gbo = document.getElementById('sat-group-based-on-sel');
-  if (gbo) gbo.value = '';
+  if (bo) bo.value = 'Course Schedule';
   var dt = document.getElementById('sat-date');
   if (dt) dt.value = _todayIso();
 
-  _satSetReadOnly('sat-academic-year', '—');
-  _satSetReadOnly('sat-academic-term', '—');
-  _satSetReadOnly('sat-course-field',  '—');
   var cn = document.getElementById('sat-course-name');
   if (cn) cn.textContent = 'Not Saved';
 
@@ -758,7 +1141,7 @@ function _satResetForm() {
   el = document.getElementById('sat-error');      if (el) el.style.display = 'none';
   _satUpdateCounters(0, 0, 0);
 
-  /* Rebuild right column for Student Group mode */
+  /* Rebuild right column for the current Based On mode */
   satBasedOnChange();
 }
 
@@ -771,49 +1154,22 @@ function _satSetReadOnly(id, val) {
   if (el) el.textContent = val || '—';
 }
 
-/* _satLoadGroups kept for compatibility — delegates to _satPopulateGroups */
-function _satLoadGroups() { _satPopulateGroups(); }
-
 /* ── Field event handlers ── */
 
 /* Called when Based On changes — rewrites the right column & shows/hides rows */
 function satBasedOnChange() {
-  var val = (document.getElementById('sat-based-on') || {}).value || 'Student Group';
+  var val = (document.getElementById('sat-based-on') || {}).value || 'Course Schedule';
   var rc  = document.getElementById('sat-right-col');
-  var gboWrap   = document.getElementById('sat-gbo-wrap');
-  var ayWrap    = document.getElementById('sat-ay-wrap');
-  var atWrap    = document.getElementById('sat-at-wrap');
-  var courseWrap= document.getElementById('sat-course-wrap');
 
   /* Clear all derived fields */
-  _sat.studentGroup = '';
   _sat.courseSchedule = '';
   _sat.classSchedule = '';
   _sat.officeHoursGroup = '';
-  _satSetReadOnly('sat-academic-year', '—');
-  _satSetReadOnly('sat-academic-term', '—');
-  _satSetReadOnly('sat-course-field',  '—');
-
-  /* Show/hide rows depending on mode */
-  var showGroup = (val === 'Student Group');
-  if (gboWrap)    gboWrap.style.display    = showGroup ? '' : 'none';
-  if (ayWrap)     ayWrap.style.display     = showGroup ? '' : 'none';
-  if (atWrap)     atWrap.style.display     = showGroup ? '' : 'none';
-  if (courseWrap) courseWrap.style.display = showGroup ? '' : 'none';
 
   /* Rebuild the right column content */
   if (!rc) return;
 
-  if (val === 'Student Group') {
-    rc.innerHTML = '<label class="fp-label">Student Group <span style="color:var(--fp-danger);">*</span></label>'
-      + '<select id="sat-student-group" onchange="satGroupChange()"'
-      + ' style="width:100%;padding:9px 12px;border:1.5px solid var(--fp-border);border-radius:var(--fp-radius-sm);font-size:13px;font-family:inherit;color:var(--fp-text-1);background:var(--fp-card);outline:none;cursor:pointer;"'
-      + ' onfocus="this.style.borderColor=\'var(--fp-primary)\'" onblur="this.style.borderColor=\'var(--fp-border)\'">'
-      + '<option value="">Loading…</option></select>';
-    /* Re-populate groups (may already be cached) */
-    _satPopulateGroups();
-
-  } else if (val === 'Course Schedule') {
+  if (val === 'Course Schedule') {
     rc.innerHTML = '<label class="fp-label">Course Schedule <span style="color:var(--fp-danger);">*</span></label>'
       + _satTextInput('sat-course-schedule', 'Enter Course Schedule…');
 
@@ -825,10 +1181,6 @@ function satBasedOnChange() {
     rc.innerHTML = '<label class="fp-label">Office Hours Group <span style="color:var(--fp-danger);">*</span></label>'
       + _satTextInput('sat-office-hours-group', 'Enter Office Hours Group…');
   }
-
-  /* Reset group-based-on filter when switching mode */
-  var gbos = document.getElementById('sat-group-based-on-sel');
-  if (gbos) gbos.value = '';
 }
 
 function _satTextInput(id, placeholder) {
@@ -836,101 +1188,6 @@ function _satTextInput(id, placeholder) {
     + ' style="width:100%;padding:9px 12px;border:1.5px solid var(--fp-border);border-radius:var(--fp-radius-sm);font-size:13px;font-family:inherit;color:var(--fp-text-1);background:var(--fp-card);outline:none;"'
     + ' onfocus="this.style.borderColor=\'var(--fp-primary)\';this.style.boxShadow=\'0 0 0 3px var(--fp-primary-light)\';"'
     + ' onblur="this.style.borderColor=\'var(--fp-border)\';this.style.boxShadow=\'\';">';
-}
-
-/* Called when Group Based On filter changes — re-filter the student group list */
-function satGroupBasedOnChange() {
-  _satPopulateGroups();
-}
-
-/* Populate or re-filter the student group dropdown */
-function _satPopulateGroups() {
-  var sel = document.getElementById('sat-student-group');
-  if (!sel) return;
-  var gboFilter = (document.getElementById('sat-group-based-on-sel') || {}).value || '';
-
-  if (!_sat.assignedGroups.length) {
-    sel.innerHTML = '<option value="">Loading…</option>';
-    sel.disabled  = true;
-    fpCall('slcm.api.bulk_attendance.get_faculty_context', {},
-      function(data) {
-        _sat.assignedGroups = (data && data.assigned_groups) ? data.assigned_groups : [];
-        sel.disabled = false;
-        _satFillGroupSelect(sel, gboFilter);
-      },
-      function(msg) {
-        sel.innerHTML = '<option value="">— Could not load groups —</option>';
-        sel.disabled  = false;
-        _showError('sat-form-error', 'Could not load student groups: ' + (msg || 'Unknown error'));
-      }
-    );
-  } else {
-    _satFillGroupSelect(sel, gboFilter);
-  }
-}
-
-function _satFillGroupSelect(sel, gboFilter) {
-  var groups = _sat.assignedGroups;
-  if (gboFilter) {
-    groups = groups.filter(function(g) { return g.group_based_on === gboFilter; });
-  }
-  sel.innerHTML = '<option value="">— Select Student Group —</option>';
-  groups.forEach(function(g) {
-    var opt = document.createElement('option');
-    opt.value = g.name;
-    var parts = [g.name];
-    var meta = [];
-    if (g.academic_year) meta.push(g.academic_year);
-    if (g.academic_term) meta.push(g.academic_term);
-    if (g.group_based_on) meta.push(g.group_based_on);
-    if (meta.length) parts.push('(' + meta.join(' · ') + ')');
-    opt.textContent = parts.join('  ');
-    sel.appendChild(opt);
-  });
-  /* Auto-select if only one */
-  if (groups.length === 1) { sel.value = groups[0].name; satGroupChange(); }
-}
-
-function satGroupChange() {
-  var sel = document.getElementById('sat-student-group');
-  _sat.studentGroup = sel ? sel.value : '';
-  if (!_sat.studentGroup) {
-    _satSetReadOnly('sat-academic-year', '—');
-    _satSetReadOnly('sat-academic-term', '—');
-    _satSetReadOnly('sat-course-field',  '—');
-    return;
-  }
-  /* Show spinner in read-only fields */
-  _satSetReadOnly('sat-academic-year', '…');
-  _satSetReadOnly('sat-academic-term', '…');
-  _satSetReadOnly('sat-course-field',  '…');
-
-  fpCall('slcm.api.bulk_attendance.get_student_group_details', { student_group: _sat.studentGroup },
-    function(doc) {
-      _sat.groupMeta = doc || {};
-      /* Group Based On — update the select to reflect what the group uses */
-      var gbos = document.getElementById('sat-group-based-on-sel');
-      if (gbos && doc.group_based_on) gbos.value = doc.group_based_on;
-
-      _satSetReadOnly('sat-academic-year', doc.academic_year  || '—');
-      _satSetReadOnly('sat-academic-term', doc.academic_term  || '—');
-      /* Show Course or Batch depending on group type */
-      var courseLbl = document.getElementById('sat-course-lbl');
-      if (doc.group_based_on === 'Batch') {
-        if (courseLbl) courseLbl.textContent = 'Batch';
-        _satSetReadOnly('sat-course-field', doc.batch || '—');
-      } else {
-        if (courseLbl) courseLbl.textContent = 'Course';
-        _satSetReadOnly('sat-course-field', doc.course || '—');
-      }
-      document.getElementById('sat-course-name').textContent = _sat.studentGroup;
-    },
-    function() {
-      _satSetReadOnly('sat-academic-year', '—');
-      _satSetReadOnly('sat-academic-term', '—');
-      _satSetReadOnly('sat-course-field',  '—');
-    }
-  );
 }
 
 function satDateChange() {
@@ -948,7 +1205,7 @@ function satDateChange() {
 
 /* ── Get Students button — handles all 4 Based On modes ── */
 function satGetStudents() {
-  var basedOn = (document.getElementById('sat-based-on') || {}).value || 'Student Group';
+  var basedOn = (document.getElementById('sat-based-on') || {}).value || 'Course Schedule';
   _sat.date   = (document.getElementById('sat-date') || {}).value || _todayIso();
   var fe = document.getElementById('sat-form-error');
   if (fe) fe.style.display = 'none';
@@ -958,14 +1215,7 @@ function satGetStudents() {
 
   var apiMethod, apiArgs, labelText;
 
-  if (basedOn === 'Student Group') {
-    _sat.studentGroup = (document.getElementById('sat-student-group') || {}).value || '';
-    if (!_sat.studentGroup) { _showError('sat-form-error', 'Please select a Student Group.'); return; }
-    apiMethod = 'slcm.api.bulk_attendance.get_students_from_group';
-    apiArgs   = { student_group: _sat.studentGroup, attendance_date: _sat.date };
-    labelText = _sat.studentGroup + '  ·  ' + _sat.date;
-
-  } else if (basedOn === 'Course Schedule') {
+  if (basedOn === 'Course Schedule') {
     _sat.courseSchedule = ((document.getElementById('sat-course-schedule') || {}).value || '').trim();
     if (!_sat.courseSchedule) { _showError('sat-form-error', 'Please enter a Course Schedule.'); return; }
     apiMethod = 'slcm.api.bulk_attendance.get_students_from_schedule';
@@ -1084,19 +1334,13 @@ function attCollectData() {
   return map;
 }
 
-/* ── Save / Mark Attendance — handles all 4 Based On modes ── */
+/* ── Save / Mark Attendance ──
+   If a specific session was pre-selected (row click), save straight against
+   that session via the faculty-portal API. Otherwise fall back to the
+   Based-On form flow (bulk_attendance API). */
 function fpSaveAttendance() {
   var map = attCollectData();
   if (!Object.keys(map).length) { alert('No students to save.'); return; }
-  if (!_sat.date) { alert('Date is missing.'); return; }
-
-  var basedOn        = (document.getElementById('sat-based-on') || {}).value || 'Student Group';
-  var studentsPresent = [];
-  var studentsAbsent  = [];
-  Object.keys(map).forEach(function(sid) {
-    if (map[sid] === 'Present') studentsPresent.push(sid);
-    else studentsAbsent.push(sid);
-  });
 
   var btn = document.getElementById('att-save-btn');
   btn.disabled = true;
@@ -1104,39 +1348,56 @@ function fpSaveAttendance() {
   var se = document.getElementById('sat-error');
   if (se) se.style.display = 'none';
 
+  function onSaved() {
+    btn.disabled = false;
+    btn.innerHTML = '<span class="fp-ms">check_circle</span>Saved!';
+    btn.style.background = '#16a34a';
+    setTimeout(function() {
+      _closeModal('att-mark-modal');
+      location.reload();
+    }, 800);
+  }
+  function onFailed(msg) {
+    btn.disabled = false;
+    btn.style.background = '';
+    btn.innerHTML = '<span class="fp-ms" style="font-size:16px;">how_to_reg</span>Mark Attendance';
+    _showError('sat-error', msg || 'Could not save attendance. Please try again.');
+  }
+
+  if (_sat.sessionName) {
+    var attendance = Object.keys(map).map(function(sid) { return { student: sid, status: map[sid] }; });
+    fpCall('slcm.api.faculty_portal.save_attendance',
+      { session_name: _sat.sessionName, attendance: JSON.stringify(attendance) },
+      onSaved, onFailed);
+    return;
+  }
+
+  if (!_sat.date) { onFailed('Date is missing.'); return; }
+  var basedOn        = (document.getElementById('sat-based-on') || {}).value || 'Course Schedule';
+  var studentsPresent = [];
+  var studentsAbsent  = [];
+  Object.keys(map).forEach(function(sid) {
+    if (map[sid] === 'Present') studentsPresent.push(sid);
+    else studentsAbsent.push(sid);
+  });
+
   /* Use the unified mark_attendance API that handles all modes */
   fpCall('slcm.api.bulk_attendance.mark_attendance',
     {
       students_present  : JSON.stringify(studentsPresent),
       students_absent   : JSON.stringify(studentsAbsent),
-      student_group     : _sat.studentGroup     || null,
       course_schedule   : _sat.courseSchedule   || null,
       class_schedule    : _sat.classSchedule    || null,
       office_hours_group: _sat.officeHoursGroup || null,
       date              : _sat.date,
       based_on          : basedOn,
     },
-    function(res) {
-      btn.disabled = false;
-      btn.innerHTML = '<span class="fp-ms">check_circle</span>Saved!';
-      btn.style.background = '#16a34a';
-      setTimeout(function() {
-        _closeModal('att-mark-modal');
-        location.reload();
-      }, 800);
-    },
-    function(msg) {
-      btn.disabled = false;
-      btn.style.background = '';
-      btn.innerHTML = '<span class="fp-ms" style="font-size:16px;">how_to_reg</span>Mark Attendance';
-      _showError('sat-error', msg || 'Could not save attendance. Please try again.');
-    }
+    onSaved, onFailed
   );
 }
 
 function fpCloseMarkModal() {
   _closeModal('att-mark-modal');
-  _sat.studentGroup = '';
   _sat.students = [];
 }
 
@@ -1166,6 +1427,9 @@ function fpViewSession(sessionName) {
   document.getElementById('att-view-course').textContent = meta.course;
   document.getElementById('att-view-meta').textContent =
     [meta.date, meta.time, meta.venue].filter(function(v){ return v && v !== '—'; }).join('  ·  ');
+
+  /* Render RFID control into modal header (moved from list view) */
+  _renderRfidControl('att-view-rfid', sessionName);
 
   /* Show spinner */
   document.getElementById('att-view-body').innerHTML =
@@ -1529,6 +1793,105 @@ function _showError(id, msg) {
   var div = el.querySelector('div');
   if (div) div.textContent = msg;
 }
+
+/* ══════════════════════════════════════════════════════════
+   RFID ACTIVATION — button + 10-minute freeze timer
+══════════════════════════════════════════════════════════ */
+function fpActivateRfid(sessionName, btn) {
+  btn.disabled = true;
+  var originalHtml = btn.innerHTML;
+  btn.innerHTML = '<span class="fp-ms" style="animation:fp-spin 0.8s linear infinite;">sync</span>Activating…';
+
+  fpCall('slcm.slcm.doctype.attendance_session.attendance_session.activate_rfid',
+    { session_name: sessionName },
+    function(res) {
+      /* Keep the (hidden) row data attributes in sync so re-opening a modal
+         for this session later reflects the correct RFID state. */
+      var row = document.querySelector('.fp-session-row[data-session="' + sessionName + '"]');
+      if (row && res && res.rfid_active_until) {
+        row.setAttribute('data-rfid-active-until', res.rfid_active_until);
+        row.setAttribute('data-rfid-activated', '1');
+      }
+      /* Update whichever modal header control triggered this (view modal or mark modal) */
+      [document.getElementById('att-view-rfid'), document.getElementById('sat-rfid')].forEach(function(modalCell) {
+        if (modalCell && res && res.rfid_active_until) {
+          modalCell.setAttribute('data-rfid-active-until', res.rfid_active_until);
+          modalCell.innerHTML = '<button class="fp-btn fp-btn-warning fp-btn-sm fp-rfid-btn" disabled>'
+            + '<span class="fp-ms" style="font-size:14px;">wifi_tethering</span>'
+            + '<span class="fp-rfid-timer">Active</span></button>';
+        }
+      });
+      _fpStartRfidTimers();
+    },
+    function(msg) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+      alert(msg || 'Could not activate RFID for this session.');
+    }
+  );
+}
+
+function _fpParseServerDatetime(s) {
+  /* Frappe returns "YYYY-MM-DD HH:MM:SS" (naive, server-local time) */
+  if (!s) return null;
+  var iso = s.replace(' ', 'T');
+  var d = new Date(iso);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function _fpStartRfidTimers() {
+  if (window._fpRfidTimerHandle) return; /* already running */
+
+  window._fpRfidTimerHandle = setInterval(function() {
+    /* Only the modal RFID controls render markup — session rows just hold
+       data-rfid-* as a state store and must never have innerHTML injected. */
+    var cells = document.querySelectorAll('#att-view-rfid[data-rfid-active-until], #sat-rfid[data-rfid-active-until]');
+    var rows  = document.querySelectorAll('.fp-session-row[data-rfid-active-until]');
+    var now = new Date();
+    var anyActive = false;
+
+    cells.forEach(function(cell) {
+      var until = _fpParseServerDatetime(cell.getAttribute('data-rfid-active-until'));
+      if (!until) return;
+
+      var remainingMs = until.getTime() - now.getTime();
+      var timerEl = cell.querySelector('.fp-rfid-timer');
+
+      if (remainingMs <= 0) {
+        /* Freeze the button once the 10-minute window has lapsed */
+        cell.removeAttribute('data-rfid-active-until');
+        cell.innerHTML = '<span class="fp-badge fp-badge-neutral" title="RFID window closed">'
+          + '<span class="fp-ms" style="font-size:12px;">wifi_off</span>Closed</span>';
+        return;
+      }
+
+      anyActive = true;
+      if (timerEl) {
+        var mins = Math.floor(remainingMs / 60000);
+        var secs = Math.floor((remainingMs % 60000) / 1000);
+        timerEl.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+      }
+    });
+
+    /* Keep the row data store's expiry in sync (no markup change) */
+    rows.forEach(function(row) {
+      var until = _fpParseServerDatetime(row.getAttribute('data-rfid-active-until'));
+      if (!until) return;
+      if (until.getTime() - now.getTime() <= 0) {
+        row.removeAttribute('data-rfid-active-until');
+      } else {
+        anyActive = true;
+      }
+    });
+
+    if (!anyActive) {
+      clearInterval(window._fpRfidTimerHandle);
+      window._fpRfidTimerHandle = null;
+    }
+  }, 1000);
+}
+
+document.addEventListener('DOMContentLoaded', _fpStartRfidTimers);
 </script>
 
 {# ══════════════════════════════════════════════════════════
@@ -1561,6 +1924,12 @@ function _showError(id, msg) {
       </div>
     </div>
     <div style="padding:16px 18px;overflow-y:auto;max-height:68vh;" id="sp-body"></div>
+    <div style="padding:10px 18px 16px;border-top:1px solid var(--fp-border);text-align:center;">
+      <a href="javascript:void(0)" onclick="_closeModal('att-session-picker');fpOpenMarkModal(null,null)"
+         style="font-size:12px;color:var(--fp-text-4);text-decoration:underline;">
+        Not seeing your session? Enter details manually
+      </a>
+    </div>
   </div>
 </div>
 
@@ -1583,10 +1952,14 @@ function _showError(id, msg) {
           <div style="font-size:11px;color:var(--fp-text-4);margin-top:1px;" id="sat-course-name">Not Saved</div>
         </div>
       </div>
-      <button onclick="fpCloseMarkModal()" style="width:32px;height:32px;background:var(--fp-bg);border:1px solid var(--fp-border);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.15s;" aria-label="Close"
-              onmouseover="this.style.background='var(--fp-danger-bg)'" onmouseout="this.style.background='var(--fp-bg)'">
-        <span class="fp-ms" style="font-size:18px;color:var(--fp-text-3);">close</span>
-      </button>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div id="sat-slot-picker" style="display:flex;align-items:center;"></div>
+        <div id="sat-rfid" style="display:flex;align-items:center;"></div>
+        <button onclick="fpCloseMarkModal()" style="width:32px;height:32px;background:var(--fp-bg);border:1px solid var(--fp-border);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.15s;" aria-label="Close"
+                onmouseover="this.style.background='var(--fp-danger-bg)'" onmouseout="this.style.background='var(--fp-bg)'">
+          <span class="fp-ms" style="font-size:18px;color:var(--fp-text-3);">close</span>
+        </button>
+      </div>
     </div>
 
     {# ── Step 1: Configuration form — matches desk Student Attendance Tool ── #}
@@ -1599,7 +1972,6 @@ function _showError(id, msg) {
           <select id="sat-based-on" onchange="satBasedOnChange()"
                   style="width:100%;padding:9px 12px;border:1.5px solid var(--fp-border);border-radius:var(--fp-radius-sm);font-size:13px;font-family:inherit;color:var(--fp-text-1);background:var(--fp-card);outline:none;cursor:pointer;"
                   onfocus="this.style.borderColor='var(--fp-primary)'" onblur="this.style.borderColor='var(--fp-border)'">
-            <option value="Student Group">Student Group</option>
             <option value="Course Schedule">Course Schedule</option>
             <option value="Time Table">Time Table</option>
             <option value="Office Hours">Office Hours</option>
@@ -1611,41 +1983,7 @@ function _showError(id, msg) {
           {# filled by satBasedOnChange() #}
         </div>
 
-        {# Row 2 Left: Group Based On (only for Student Group) #}
-        <div id="sat-gbo-wrap" style="padding:18px 22px 16px;border-right:1px solid var(--fp-border);border-bottom:1px solid var(--fp-border);">
-          <label class="fp-label">Group Based On</label>
-          <select id="sat-group-based-on-sel" onchange="satGroupBasedOnChange()"
-                  style="width:100%;padding:9px 12px;border:1.5px solid var(--fp-border);border-radius:var(--fp-radius-sm);font-size:13px;font-family:inherit;color:var(--fp-text-1);background:var(--fp-card);outline:none;cursor:pointer;"
-                  onfocus="this.style.borderColor='var(--fp-primary)'" onblur="this.style.borderColor='var(--fp-border)'">
-            <option value="">— All —</option>
-            <option value="Batch">Batch</option>
-            <option value="Course">Course</option>
-            <option value="Activity">Activity</option>
-          </select>
-        </div>
-
-        {# Row 2 Right: Academic Year #}
-        <div id="sat-ay-wrap" style="padding:18px 22px 16px;border-bottom:1px solid var(--fp-border);">
-          <label class="fp-label">Academic Year</label>
-          <div id="sat-academic-year"
-               style="padding:9px 12px;border:1.5px solid var(--fp-border);border-radius:var(--fp-radius-sm);font-size:13px;color:var(--fp-text-3);background:var(--fp-bg);min-height:38px;">—</div>
-        </div>
-
-        {# Row 3 Left: Academic Term #}
-        <div id="sat-at-wrap" style="padding:18px 22px 16px;border-right:1px solid var(--fp-border);border-bottom:1px solid var(--fp-border);">
-          <label class="fp-label">Academic Term</label>
-          <div id="sat-academic-term"
-               style="padding:9px 12px;border:1.5px solid var(--fp-border);border-radius:var(--fp-radius-sm);font-size:13px;color:var(--fp-text-3);background:var(--fp-bg);min-height:38px;">—</div>
-        </div>
-
-        {# Row 3 Right: Course / Batch (context-based) #}
-        <div id="sat-course-wrap" style="padding:18px 22px 16px;border-bottom:1px solid var(--fp-border);">
-          <label class="fp-label" id="sat-course-lbl">Course</label>
-          <div id="sat-course-field"
-               style="padding:9px 12px;border:1.5px solid var(--fp-border);border-radius:var(--fp-radius-sm);font-size:13px;color:var(--fp-text-3);background:var(--fp-bg);min-height:38px;">—</div>
-        </div>
-
-        {# Row 4 Left: Date #}
+        {# Row 2 Left: Date #}
         <div style="padding:18px 22px 16px;border-right:1px solid var(--fp-border);">
           <label class="fp-label">Date <span style="color:var(--fp-danger);">*</span></label>
           <input type="date" id="sat-date" onchange="satDateChange()"
@@ -1654,7 +1992,7 @@ function _showError(id, msg) {
                  onblur="this.style.borderColor='var(--fp-border)';this.style.boxShadow='';">
         </div>
 
-        {# Row 4 Right: Get Students #}
+        {# Row 2 Right: Get Students #}
         <div style="padding:18px 22px 16px;display:flex;align-items:flex-end;">
           <button id="sat-get-students-btn" onclick="satGetStudents()"
                   style="width:100%;padding:10px 16px;border:none;border-radius:var(--fp-radius-sm);background:var(--fp-primary);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.15s;box-shadow:0 2px 8px var(--fp-primary-glow);"
@@ -1777,6 +2115,7 @@ function _showError(id, msg) {
           </div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
+          <div id="att-view-rfid" style="display:flex;align-items:center;margin-right:8px;"></div>
           <button onclick="fpEditFromView()"
                   style="display:flex;align-items:center;gap:6px;padding:7px 14px;
                          background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);

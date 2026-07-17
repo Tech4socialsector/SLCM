@@ -37,6 +37,119 @@ from frappe.utils import (
     flt,
 )
 from collections import defaultdict
+from slcm.slcm.doctype.rfid_device_room_mapping.rfid_device_room_mapping import (
+    get_active_rooms_for_device,
+)
+
+
+# ---------------------------------------------------------------------------
+# Student Enrollment context — denormalized onto Attendance Log so the
+# Attendance Sync UI can filter by Programme/AY/Term/Batch/Section without a
+# join at query time.
+# ---------------------------------------------------------------------------
+
+def get_student_enrollment_context(student):
+    """Return {programme, academic_year, academic_term, batch, section} from
+    the student's active Student Enrollment, or {} if none / no student."""
+    if not student:
+        return {}
+
+    enrollment = frappe.get_all(
+        "Student Enrollment",
+        filters={"student": student, "status": "Enrolled"},
+        fields=["program", "academic_year", "batch", "section", "term_name"],
+        order_by="enrollment_date desc",
+        limit=1,
+    )
+    if not enrollment:
+        return {}
+
+    e = enrollment[0]
+    return {
+        "programme": e.get("program"),
+        "academic_year": e.get("academic_year"),
+        "batch": e.get("batch"),
+        "section": e.get("section"),
+        "academic_term": _resolve_academic_term(e.get("academic_year"), e.get("term_name")),
+    }
+
+
+@frappe.whitelist()
+def academic_year_link_query(doctype, txt, searchfield, start, page_len, filters):
+    """Link-field query for Academic Year, scoped (when a Programme is
+    selected) to years that actually have a Course Offering under it —
+    mirrors examination_result.trimester_link_query's use of Course Offering
+    as the Programme <-> Academic Year/Term bridge table."""
+    filters = frappe.parse_json(filters) if isinstance(filters, str) else (filters or {})
+    programme = filters.get("programme")
+    params = {"txt": f"%{txt}%", "start": int(start or 0), "page_len": int(page_len or 20)}
+
+    if programme:
+        params["programme"] = programme
+        return frappe.db.sql(
+            """
+            SELECT DISTINCT ay.name
+            FROM `tabAcademic Year` ay
+            JOIN `tabCourse Offering` co ON co.academic_year = ay.name
+            WHERE co.program = %(programme)s AND ay.name LIKE %(txt)s
+            ORDER BY ay.name ASC
+            LIMIT %(start)s, %(page_len)s
+            """,
+            params,
+        )
+
+    return frappe.db.sql(
+        """
+        SELECT name FROM `tabAcademic Year`
+        WHERE name LIKE %(txt)s
+        ORDER BY name ASC
+        LIMIT %(start)s, %(page_len)s
+        """,
+        params,
+    )
+
+
+@frappe.whitelist()
+def academic_term_link_query(doctype, txt, searchfield, start, page_len, filters):
+    """Link-field query for Academic Term, scoped by the selected Programme
+    and/or Academic Year via Course Offering (co.term_name == Academic Term.name)."""
+    filters = frappe.parse_json(filters) if isinstance(filters, str) else (filters or {})
+    programme = filters.get("programme")
+    academic_year = filters.get("academic_year")
+    params = {"txt": f"%{txt}%", "start": int(start or 0), "page_len": int(page_len or 20)}
+
+    conditions = ["at.name LIKE %(txt)s"]
+    join = ""
+    if programme or academic_year:
+        join = "JOIN `tabCourse Offering` co ON co.term_name = at.name"
+        if programme:
+            params["programme"] = programme
+            conditions.append("co.program = %(programme)s")
+        if academic_year:
+            params["academic_year"] = academic_year
+            conditions.append("co.academic_year = %(academic_year)s")
+
+    return frappe.db.sql(
+        f"""
+        SELECT DISTINCT at.name
+        FROM `tabAcademic Term` at
+        {join}
+        WHERE {" AND ".join(conditions)}
+        ORDER BY at.name ASC
+        LIMIT %(start)s, %(page_len)s
+        """,
+        params,
+    )
+
+
+def _resolve_academic_term(academic_year, term_name):
+    """Academic Term has no free-text field — match it by academic_year +
+    term_name (Term Master name) against the enrollment's own term_name."""
+    if not academic_year or not term_name:
+        return None
+    return frappe.db.get_value(
+        "Academic Term", {"academic_year": academic_year, "term_name": term_name}
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -48,6 +161,8 @@ def process_pending_logs():
     try:
         if not frappe.db.get_single_value("Attendance Settings", "enable_rfid"):
             return
+
+        _tag_unmatched_unknown_cards()
 
         logs = _get_unprocessed_logs()
         if not logs:
@@ -85,9 +200,23 @@ def _get_unprocessed_logs():
     return frappe.get_all(
         "Attendance Log",
         filters={"processed": 0, "student": ["!=", ""]},
-        fields=["name", "student", "swipe_time", "device_id", "location", "rfid_uid"],
+        fields=["name", "student", "swipe_time", "device_id", "location", "rfid_uid", "match_status"],
         order_by="swipe_time asc",
     )
+
+
+def _tag_unmatched_unknown_cards():
+    """Logs with no student link (unregistered card, or ingested via a path
+    that doesn't resolve student e.g. RFID SQL Punch Log) can never be
+    auto-matched — surface them for manual sync instead of leaving them
+    silently pending forever."""
+    frappe.db.sql("""
+        UPDATE `tabAttendance Log`
+        SET match_status = 'Unmatched - Unknown Card'
+        WHERE processed = 0
+        AND (student IS NULL OR student = '')
+        AND match_status != 'Unmatched - Unknown Card'
+    """)
 
 
 def _group_by_student_date(logs):
@@ -117,17 +246,25 @@ def _process_student_day(logs):
     sessions = _get_or_create_sessions(student, log_date)
 
     if not sessions:
+        reason = _diagnose_unmatched_reason(logs, log_date)
         frappe.logger().info(
-            f"RFID Processor: no sessions for {student} on {log_date} — logs left unprocessed"
+            f"RFID Processor: no sessions for {student} on {log_date} — logs left unprocessed ({reason})"
         )
+        for log in logs:
+            if log.get("match_status") != reason:
+                frappe.db.set_value("Attendance Log", log.name, "match_status", reason)
         return
 
     processed_names = set()
+    matched_any_names = set()
 
     for session in sessions:
         matched = _match_swipes_to_session(logs, session)
         if not matched:
             continue
+
+        for log in matched:
+            matched_any_names.add(log.name)
 
         status = _determine_status(matched, session, rfid_mode)
         if not status:
@@ -144,7 +281,51 @@ def _process_student_day(logs):
 
     for log in logs:
         if log.name in processed_names:
-            frappe.db.set_value("Attendance Log", log.name, "processed", 1)
+            frappe.db.set_value("Attendance Log", log.name, {
+                "processed": 1,
+                "match_status": "Matched",
+                "sync_method": "Biometric",
+            })
+        elif log.name not in matched_any_names:
+            reason = "Unmatched - No Session"
+            if _is_awaiting_activation(log, sessions):
+                reason = "Early Tap - Awaiting Activation"
+            if log.get("match_status") != reason:
+                frappe.db.set_value("Attendance Log", log.name, "match_status", reason)
+
+
+def _is_awaiting_activation(log, sessions):
+    """True if this swipe falls inside a Class session's raw time window
+    (±20 min) but that session hasn't been RFID-activated by faculty yet —
+    i.e. the swipe is legitimate, just waiting on the Faculty Portal button."""
+    swipe_time = get_datetime(log.get("swipe_time"))
+    for session in sessions:
+        if session.get("type") == "Office Hour":
+            continue
+        if session.get("rfid_activation_time") and session.get("rfid_active_until"):
+            continue  # already activated — handled by the normal match path
+        session_date = session.get("session_date") or getdate()
+        start = add_to_date(get_datetime(f"{session_date} {session['session_start_time']}"), minutes=-20)
+        end = add_to_date(get_datetime(f"{session_date} {session['session_end_time']}"), minutes=20)
+        if start <= swipe_time <= end:
+            return True
+    return False
+
+
+def _diagnose_unmatched_reason(logs, log_date):
+    """Best-effort reason why no session could be resolved at all, so staff
+    reviewing the Attendance Sync UI know whether to fix a device mapping
+    or a missing Time Table entry."""
+    for log in logs:
+        device_id = log.get("device_id")
+        if not device_id:
+            continue
+        if not frappe.db.exists("RFID Device", device_id):
+            return "Unmatched - No Device Mapping"
+        rooms = get_active_rooms_for_device(device_id, on_date=log_date)
+        if not rooms:
+            return "Unmatched - No Device Mapping"
+    return "Unmatched - No Session"
 
 
 # ---------------------------------------------------------------------------
@@ -165,7 +346,8 @@ def _get_or_create_sessions(student, date):
         filters={"session_date": date, "session_status": ["!=", "Cancelled"], "docstatus": ["<", 2]},
         fields=["name", "session_date", "session_start_time", "session_end_time",
                 "course_schedule", "class_schedule", "course_offering",
-                "session_type", "duration_hours", "student_group"],
+                "session_type", "duration_hours",
+                "rfid_activated_by", "rfid_activation_time", "rfid_active_until"],
     )
 
     for s in existing:
@@ -182,7 +364,7 @@ def _get_or_create_sessions(student, date):
             "docstatus": ["<", 2],
         },
         fields=["name", "course", "course_offering", "from_time", "to_time",
-                "duration_hours", "instructor", "venue", "student_group"],
+                "duration_hours", "instructor", "venue"],
     )
 
     existing_from_schedule = {s.get("class_schedule") for s in existing if s.get("class_schedule")}
@@ -234,7 +416,6 @@ def _auto_create_session_from_schedule(cs, date):
             "based_on":          "Time Table",
             "class_schedule":    cs.name,
             "course_offering":   cs.course_offering,
-            "student_group":     cs.get("student_group"),
             "session_date":      date,
             "session_type":      "Lecture",
             "session_start_time": cs.get("from_time"),
@@ -256,7 +437,6 @@ def _auto_create_session_from_schedule(cs, date):
             "course_offering":    cs.course_offering,
             "session_type":       "Lecture",
             "duration_hours":     duration,
-            "student_group":      cs.get("student_group"),
         })
 
     except Exception:
@@ -277,17 +457,7 @@ def _is_student_in_session(student, session):
     if frappe.db.exists("Student Attendance", {"student": student, "attendance_session": session.get("name")}):
         return True
 
-    # Check via Student Group
-    sg = session.get("student_group")
-    if not sg and session.get("class_schedule"):
-        sg = frappe.db.get_value("Time Table", session.get("class_schedule"), "student_group")
-    if not sg and session.get("course_schedule"):
-        sg = frappe.db.get_value("Course Schedule", session.get("course_schedule"), "student_group")
-
-    if sg and frappe.db.exists("Student Group Student", {"parent": sg, "student": student}):
-        return True
-
-    # Fallback: Cohort enrollment
+    # Cohort enrollment
     return _is_student_in_course_offering(student, session.get("course_offering"))
 
 
@@ -310,7 +480,26 @@ def _is_student_in_course_offering(student, course_offering):
 # ---------------------------------------------------------------------------
 
 def _match_swipes_to_session(logs, session):
-    """Return logs whose swipe_time falls within the session window ±20 min."""
+    """Return logs whose swipe_time falls within the session's matchable window.
+
+    Office Hours have no activation concept — keep the ±20 min session-time buffer.
+
+    Class sessions require the faculty to have pressed 'Activate RFID' in the
+    Faculty Portal: only swipes inside [rfid_activation_time, rfid_active_until]
+    auto-match. Activation is no longer advisory — it is the gate. Swipes that
+    arrive before activation (or after a Faculty never activates) are left
+    pending as "Early Tap - Awaiting Activation" so the System Manager can
+    review/bulk-sync them later, rather than being auto-marked Present.
+    """
+    if session.get("type") != "Office Hour" and session.get("rfid_activation_time") and session.get("rfid_active_until"):
+        win_start = get_datetime(session["rfid_activation_time"])
+        win_end = get_datetime(session["rfid_active_until"])
+        return [lg for lg in logs if win_start <= get_datetime(lg.get("swipe_time")) <= win_end]
+
+    if session.get("type") != "Office Hour":
+        # Not yet activated by faculty — nothing auto-matches against this session.
+        return []
+
     session_date = session.get("session_date") or getdate()
     start = get_datetime(f"{session_date} {session['session_start_time']}")
     end   = get_datetime(f"{session_date} {session['session_end_time']}")
@@ -401,7 +590,6 @@ def _upsert_class_attendance(student, session, status, logs):
             "attendance_log":     first_log.get("name"),
             "session_type":       session.get("session_type") or "Lecture",
             "hours_counted":      hours,
-            "student_group":      session.get("student_group"),
         })
         doc.insert(ignore_permissions=True)
 
@@ -456,3 +644,301 @@ def process_logs_manually():
     """Admin/testing manual trigger. Also callable from bench console."""
     process_pending_logs()
     return {"status": "success", "message": "Attendance logs processed successfully"}
+
+
+# ---------------------------------------------------------------------------
+# Manual reconciliation — Attendance Sync UI
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist()
+def get_unmatched_logs(from_date=None, to_date=None, match_status=None, status_filter=None,
+                        programme=None, academic_year=None, academic_term=None,
+                        batch=None, section=None):
+    """List Attendance Logs for the Attendance Sync UI.
+
+    status_filter selects which slice of logs to show:
+      - None/"" (default) — unresolved taps still needing review (processed=0).
+      - "Biometric" / "Class Attendance" / "Bulk Sync" — already-resolved logs,
+        filtered by how they were synced (Attendance Log.sync_method), so staff
+        can audit past reconciliations, not just review pending ones.
+    match_status ("Reason") only applies to the default unresolved view.
+    """
+    frappe.only_for(("System Manager", "slcm_Programme Chair"))
+
+    if status_filter:
+        filters = [
+            ["Attendance Log", "processed", "=", 1],
+            ["Attendance Log", "sync_method", "=", status_filter],
+        ]
+    else:
+        filters = [["Attendance Log", "processed", "=", 0]]
+        if match_status:
+            filters.append(["Attendance Log", "match_status", "=", match_status])
+        else:
+            filters.append(["Attendance Log", "match_status", "!=", "Pending"])
+
+    if from_date:
+        filters.append(["Attendance Log", "swipe_time", ">=", from_date])
+    if to_date:
+        filters.append(["Attendance Log", "swipe_time", "<=", to_date])
+    if programme:
+        filters.append(["Attendance Log", "programme", "=", programme])
+    if academic_year:
+        filters.append(["Attendance Log", "academic_year", "=", academic_year])
+    if academic_term:
+        filters.append(["Attendance Log", "academic_term", "=", academic_term])
+    if batch:
+        filters.append(["Attendance Log", "batch", "=", batch])
+    if section:
+        filters.append(["Attendance Log", "section", "=", section])
+
+    logs = frappe.get_all(
+        "Attendance Log",
+        filters=filters,
+        fields=["name", "rfid_uid", "student", "swipe_time", "device_id",
+                "terminal_alias", "location", "source", "match_status",
+                "processed", "sync_method", "synced_by", "synced_on", "creation", "modified",
+                "programme", "academic_year", "academic_term", "batch", "section"],
+        order_by="swipe_time desc",
+        limit=500,
+    )
+
+    for log in logs:
+        log["student_name"] = None
+        log["student_email"] = None
+        if log.get("student"):
+            student_info = frappe.db.get_value(
+                "Student Master", log["student"], ["first_name", "email"], as_dict=True
+            )
+            if student_info:
+                log["student_name"] = student_info.first_name
+                log["student_email"] = student_info.email
+
+        rooms = get_active_rooms_for_device(log.get("device_id"), on_date=getdate(log.get("swipe_time"))) \
+            if log.get("device_id") else []
+        log["resolved_rooms"] = rooms
+
+        candidate_sessions = []
+        if rooms:
+            candidate_sessions = frappe.get_all(
+                "Attendance Session",
+                filters={
+                    "room": ["in", rooms],
+                    "session_date": getdate(log.get("swipe_time")),
+                    "session_status": ["!=", "Cancelled"],
+                },
+                fields=["name", "course", "course_offering", "session_start_time", "session_end_time",
+                        "instructor", "rfid_activated_by", "rfid_activation_time", "duration_hours"],
+            )
+            for session in candidate_sessions:
+                session["course_code"] = frappe.db.get_value("Course", session.get("course"), "course_code") \
+                    if session.get("course") else None
+        log["candidate_sessions"] = candidate_sessions
+
+    return logs
+
+
+@frappe.whitelist()
+def sync_attendance_log(log_name, session_name, student=None, synced_via="Class Attendance"):
+    """Manually reconcile one Attendance Log against a staff-selected
+    Attendance Session (used when auto-matching failed — missing device/room
+    mapping, faculty forgot to activate, unknown card now identified, etc.).
+
+    synced_via distinguishes how this reconciliation was triggered — the
+    individual Sync dialog ("Class Attendance", the default) vs. the Bulk
+    Sync action (passes "Bulk Sync") — purely for the Attendance Sync UI's
+    Status column/filter."""
+    frappe.only_for(("System Manager", "slcm_Programme Chair"))
+
+    log_doc = frappe.get_doc("Attendance Log", log_name)
+    if log_doc.processed:
+        frappe.throw(_("This log has already been processed."))
+
+    if student:
+        log_doc.student = student
+    if not log_doc.student:
+        frappe.throw(_("Select a student before syncing this log — the card is not registered."))
+
+    if student or not log_doc.programme:
+        context = get_student_enrollment_context(log_doc.student)
+        for fieldname, value in context.items():
+            log_doc.set(fieldname, value)
+
+    session = frappe.get_doc("Attendance Session", session_name)
+
+    swipe_time = log_doc.swipe_time
+    hours = flt(session.duration_hours) or 1.0
+
+    existing = frappe.db.exists("Student Attendance", {
+        "student": log_doc.student,
+        "attendance_session": session.name,
+    })
+
+    if existing:
+        att = frappe.get_doc("Student Attendance", existing)
+        att.status = "Present"
+        att.source = "RFID"
+        att.in_time = swipe_time
+        att.attendance_log = log_doc.name
+        att.hours_counted = hours
+        att.save(ignore_permissions=True)
+    else:
+        att = frappe.get_doc({
+            "doctype": "Student Attendance",
+            "student": log_doc.student,
+            "attendance_session": session.name,
+            "course_offer": session.course_offering,
+            "course_schedule": session.course_schedule,
+            "attendance_date": getdate(swipe_time),
+            "date": getdate(swipe_time),
+            "status": "Present",
+            "source": "RFID",
+            "in_time": swipe_time,
+            "attendance_log": log_doc.name,
+            "session_type": session.session_type or "Lecture",
+            "hours_counted": hours,
+        })
+        att.insert(ignore_permissions=True)
+
+    log_doc.student_attendance = att.name
+    log_doc.processed = 1
+    log_doc.match_status = "Manually Synced"
+    log_doc.sync_method = synced_via
+    log_doc.synced_by = frappe.session.user
+    log_doc.synced_on = now_datetime()
+    log_doc.save(ignore_permissions=True)
+
+    return {"student_attendance": att.name}
+
+
+# ---------------------------------------------------------------------------
+# Bulk sync — System Manager catch-up for a date range
+# ---------------------------------------------------------------------------
+
+@frappe.whitelist()
+def bulk_sync_attendance_logs(from_date, to_date, programme=None, academic_year=None,
+                               academic_term=None, batch=None, section=None):
+    """Catch-up sync for unresolved Attendance Logs in a date range, for the
+    two most common human misses that the scheduled processor can't fix on
+    its own:
+
+      1. Faculty forgot to press "Activate RFID" at all, but the student's
+         swipe still falls within the first N minutes of the session
+         (N = Attendance Settings.rfid_active_window_minutes) — treated as
+         if it had been activated.
+      2. The System Manager hadn't mapped the reader to a room yet at
+         tap-time, but has since fixed the RFID Device Room Mapping — this
+         re-evaluates every log fresh, so a mapping fix immediately makes
+         past taps in that date range eligible.
+
+    A log is auto-synced ONLY when it resolves to exactly one Attendance
+    Session. Anything ambiguous, unregistered, unmapped, or tapped after the
+    session ended is left untouched for individual review/Sync on the
+    Attendance Sync page — this method never guesses.
+
+    from_date/to_date are required: bulk actions must be scoped to an
+    explicit window, never "all unresolved logs ever".
+    """
+    frappe.only_for(("System Manager", "slcm_Programme Chair"))
+
+    if not from_date or not to_date:
+        frappe.throw(_("Select both a From Date and To Date before running Bulk Sync."))
+
+    window_minutes = frappe.db.get_single_value("Attendance Settings", "rfid_active_window_minutes") or 10
+
+    filters = {
+        "processed": 0,
+        "swipe_time": ["between", [f"{from_date} 00:00:00", f"{to_date} 23:59:59"]],
+    }
+    if programme:
+        filters["programme"] = programme
+    if academic_year:
+        filters["academic_year"] = academic_year
+    if academic_term:
+        filters["academic_term"] = academic_term
+    if batch:
+        filters["batch"] = batch
+    if section:
+        filters["section"] = section
+
+    logs = frappe.get_all(
+        "Attendance Log",
+        filters=filters,
+        fields=["name", "student", "swipe_time", "device_id", "match_status"],
+        order_by="swipe_time asc",
+    )
+
+    synced, skipped = [], []
+
+    for log in logs:
+        outcome = _try_bulk_sync_one(log, window_minutes)
+        if outcome["synced"]:
+            synced.append(outcome["log"])
+        else:
+            skipped.append({"log": log.name, "reason": outcome["reason"]})
+
+    return {
+        "status": "success",
+        "from_date": str(from_date),
+        "to_date": str(to_date),
+        "total": len(logs),
+        "synced_count": len(synced),
+        "skipped_count": len(skipped),
+        "synced": synced,
+        "skipped": skipped,
+    }
+
+
+def _try_bulk_sync_one(log, window_minutes):
+    """Evaluate + sync a single log for bulk_sync_attendance_logs. Never
+    raises — any failure is reported back as a skip reason."""
+    if not log.get("student"):
+        return {"synced": False, "reason": "Unregistered card — identify the student manually"}
+
+    if not log.get("device_id"):
+        return {"synced": False, "reason": "No reader/device recorded on this log"}
+
+    swipe_time = get_datetime(log.get("swipe_time"))
+    log_date = getdate(swipe_time)
+
+    rooms = get_active_rooms_for_device(log.get("device_id"), on_date=log_date)
+    if not rooms:
+        return {"synced": False, "reason": "Device not mapped to a room yet"}
+
+    candidate_sessions = frappe.get_all(
+        "Attendance Session",
+        filters={
+            "room": ["in", rooms],
+            "session_date": log_date,
+            "session_status": ["!=", "Cancelled"],
+            "docstatus": ["<", 2],
+        },
+        fields=["name", "session_start_time", "session_end_time", "duration_hours"],
+    )
+
+    if not candidate_sessions:
+        return {"synced": False, "reason": "No session found for this room/date"}
+    if len(candidate_sessions) > 1:
+        return {"synced": False, "reason": "Multiple candidate sessions — ambiguous, sync individually"}
+
+    session = candidate_sessions[0]
+    start = get_datetime(f"{log_date} {session['session_start_time']}")
+    end = get_datetime(f"{log_date} {session['session_end_time']}")
+    window_end = add_to_date(start, minutes=int(window_minutes))
+
+    if swipe_time < start:
+        return {"synced": False, "reason": "Tapped before the session start time"}
+    if swipe_time > window_end:
+        if swipe_time <= end:
+            return {"synced": False, "reason": f"Tapped after the first {window_minutes}-minute window"}
+        return {"synced": False, "reason": "Tapped after the session ended"}
+
+    try:
+        result = sync_attendance_log(log.name, session.name, student=log.get("student"), synced_via="Bulk Sync")
+        return {"synced": True, "log": log.name, "student_attendance": result.get("student_attendance")}
+    except Exception:
+        frappe.log_error(
+            title=f"Bulk Sync — failed to sync {log.name}",
+            message=frappe.get_traceback(),
+        )
+        return {"synced": False, "reason": "Sync failed — see error log"}

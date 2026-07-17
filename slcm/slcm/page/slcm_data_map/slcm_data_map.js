@@ -66,8 +66,6 @@ frappe.pages['slcm-data-map'].on_page_load = function (wrapper) {
 			docs: [
 				{ name: 'Student Master',        dt: 'Student Master' },
 				{ name: 'Student Parent',        dt: 'Student Parent' },
-				{ name: 'Student Group',         dt: 'Student Group' },
-				{ name: 'Student Group Student', dt: 'Student Group Student' },
 			],
 		},
 		{

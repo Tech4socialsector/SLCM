@@ -6,7 +6,7 @@ frappe.ui.form.on("Course Schedule", {
 		if (
 			!frm.doc.__islocal &&
 			frm.doc.course &&
-			frm.doc.student_group &&
+			frm.doc.course_offering &&
 			frm.doc.instructor &&
 			frm.doc.schedule_date
 		) {
@@ -15,7 +15,6 @@ frappe.ui.form.on("Course Schedule", {
 					based_on: "Course Schedule",
 					course_schedule: frm.doc.name,
 					date: frm.doc.schedule_date,
-					student_group: frm.doc.student_group,
 				};
 				frappe.set_route("Form", "Student Attendance Tool");
 			});
