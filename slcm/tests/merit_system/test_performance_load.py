@@ -1,7 +1,8 @@
 import pytest
 import time
 from slcm.tests.merit_system.fixtures.candidate_fixtures import MockDoc, generate_bulk_candidates
-from slcm.admission.doctype.merit_generation.merit_service import execute_advanced_allocation_logic, execute_part_a_shortlisting
+import slcm.admission.doctype.merit_generation.merit_service as ms
+from slcm.admission.doctype.merit_generation.merit_service import execute_part_a_shortlisting
 
 class TestPerformanceLoad:
     def test_shortlisting_performance_2500_candidates(self, mock_policy, monkeypatch):
@@ -27,7 +28,7 @@ class TestPerformanceLoad:
         monkeypatch.setattr(ms, "_has_trait", lambda *args, **kwargs: False)
         
         start_time = time.time()
-        execute_advanced_allocation_logic(doc, is_shortlist_allocation=False)
+        ms.execute_advanced_allocation_logic(doc, is_shortlist_allocation=False)
         end_time = time.time()
         
         # Benchmark: Completes in < 1 second

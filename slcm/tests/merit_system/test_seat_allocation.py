@@ -1,6 +1,6 @@
 import pytest
 from slcm.tests.merit_system.fixtures.candidate_fixtures import MockDoc, generate_bulk_candidates, generate_candidate
-from slcm.admission.doctype.merit_generation.merit_service import execute_advanced_allocation_logic
+import slcm.admission.doctype.merit_generation.merit_service as ms
 
 class TestSeatAllocation:
     def test_seat_allocation_exact_120(self, mock_policy, monkeypatch):
@@ -15,7 +15,7 @@ class TestSeatAllocation:
         import slcm.admission.doctype.merit_generation.merit_service as ms
         monkeypatch.setattr(ms, "_has_trait", lambda *args, **kwargs: False)
         
-        execute_advanced_allocation_logic(doc, is_shortlist_allocation=False)
+        ms.execute_advanced_allocation_logic(doc, is_shortlist_allocation=False)
         
         # In final allotment, candidates are marked "Selected" by the generic process,
         # wait! Seat allocation actually assigns allocation_type and vertical_category
@@ -44,14 +44,14 @@ class TestSeatAllocation:
         import slcm.admission.doctype.merit_generation.merit_service as ms
         monkeypatch.setattr(ms, "_has_trait", lambda *args, **kwargs: False)
         
-        execute_advanced_allocation_logic(doc, is_shortlist_allocation=False)
+        ms.execute_advanced_allocation_logic(doc, is_shortlist_allocation=False)
         
         # Top 49 General should be in general_list
         general_list = getattr(doc, "general_list", [])
         assert len(general_list) == 49
         
         # Ensure they are the top 49 (rank 1 to 49)
-        ranks = [c["overall_rank"] for c in general_list]
+        ranks = [getattr(c, "overall_rank", c.get("overall_rank")) for c in general_list]
         assert max(ranks) == 49
         
     def test_seat_allocation_allocation_status_field(self, mock_policy, monkeypatch):
@@ -61,7 +61,7 @@ class TestSeatAllocation:
         import slcm.admission.doctype.merit_generation.merit_service as ms
         monkeypatch.setattr(ms, "_has_trait", lambda *args, **kwargs: False)
         
-        execute_advanced_allocation_logic(doc, is_shortlist_allocation=False)
+        ms.execute_advanced_allocation_logic(doc, is_shortlist_allocation=False)
         
         # The candidates in general_list should have allocation_type = "Open"
         # and vertical_category = "General"
@@ -89,7 +89,7 @@ class TestSeatAllocation:
         import slcm.admission.doctype.merit_generation.merit_service as ms
         monkeypatch.setattr(ms, "_has_trait", lambda *args, **kwargs: False)
         
-        execute_advanced_allocation_logic(doc, is_shortlist_allocation=False)
+        ms.execute_advanced_allocation_logic(doc, is_shortlist_allocation=False)
         
         # It should strictly cut off at 49 seats for General, using ID to break the tie.
         general_list = getattr(doc, "general_list", [])

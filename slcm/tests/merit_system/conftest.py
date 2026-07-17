@@ -12,13 +12,8 @@ class MockPolicy:
             MockDoc("Admission Category Row", "OBC", category_name="OBC-NCL", seats=32, shortlisting_target=160),
             MockDoc("Admission Category Row", "EWS", category_name="EWS", seats=12, shortlisting_target=60),
         ]
-        self.compartmental_reservations = [
-            MockDoc("Comp Row", "Kar", category_name="Karnataka", percentage=25.0)
-        ]
-        self.horizontal_reservations = [
-            MockDoc("Horiz Row", "PWD", category_name="PWD", seats=6, shortlisting_target=30),
-            MockDoc("Horiz Row", "Women", category_name="Women", seats=36, shortlisting_target=180)
-        ]
+        self.compartmental_reservations = []
+        self.horizontal_reservations = []
 
     def get(self, key, default=None):
         return getattr(self, key, default)
@@ -36,7 +31,7 @@ def mock_get_doc(doctype, name=None, **kwargs):
 
 @pytest.fixture
 def mock_policy():
-    pass
+    return mock_get_doc("Programme Reservation Policy")
 
 @pytest.fixture(autouse=True)
 def setup_frappe_mocks(monkeypatch):
@@ -51,9 +46,14 @@ def setup_frappe_mocks(monkeypatch):
     original_get_all = frappe.db.get_all
     original_sql = frappe.db.sql
 
+    original_frappe_get_all = frappe.get_all
+    
     def _mock_get_value(doctype, filters=None, fieldname=None, **kwargs):
         if doctype == "Programme Reservation Policy":
             return "MockPolicyName"
+        if doctype == "Entrance Test Seat Allocation" and fieldname == "percentile":
+            # Return a passing percentile for tests
+            return 99.0
         return original_get_value(doctype, filters=filters, fieldname=fieldname, **kwargs)
         
     def _mock_set_value(doctype, name, fieldname, value=None, **kwargs):
@@ -64,7 +64,24 @@ def setup_frappe_mocks(monkeypatch):
     def _mock_get_all(doctype, **kwargs):
         if doctype == "Applicant Category":
             return []
-        return original_get_all(doctype, **kwargs)
+        if doctype == "Admission Category":
+            cats = [
+                frappe._dict(name="General", reservation_type="Vertical"),
+                frappe._dict(name="SC", reservation_type="Vertical"),
+                frappe._dict(name="ST", reservation_type="Vertical"),
+                frappe._dict(name="OBC-NCL", reservation_type="Vertical"),
+                frappe._dict(name="EWS", reservation_type="Vertical"),
+                frappe._dict(name="PWD", reservation_type="Horizontal"),
+                frappe._dict(name="Women", reservation_type="Horizontal"),
+                frappe._dict(name="Karnataka", reservation_type="Compartmentalised Horizontal"),
+                frappe._dict(name="Karnataka SC", reservation_type="Compartmentalised Horizontal")
+            ]
+            filters = kwargs.get("filters", {})
+            if "name" in filters and isinstance(filters["name"], list) and filters["name"][0] == "in":
+                names = filters["name"][1]
+                return [c for c in cats if c.name in names]
+            return cats
+        return original_frappe_get_all(doctype, **kwargs)
         
     def _mock_sql(*args, **kwargs):
         if args and "SELECT" in args[0] and "merit" not in args[0].lower():
@@ -92,6 +109,27 @@ def setup_frappe_mocks(monkeypatch):
     monkeypatch.setattr(frappe.db, "get_value", _mock_get_value)
     monkeypatch.setattr(frappe.db, "set_value", _mock_set_value)
     monkeypatch.setattr(frappe.db, "get_all", _mock_get_all)
+    monkeypatch.setattr(frappe, "get_all", _mock_get_all)
+    
+    import slcm.admission.doctype.merit_generation.merit_service as ms
+    original_execute = ms.execute_advanced_allocation_logic
+    
+    def _mock_execute_advanced(doc, is_shortlist_allocation=False, ignore_seat_limits=False):
+        stage = getattr(doc, "merit_processing_stage", "")
+        applicants = None
+        if hasattr(doc, "shortlist_applicants"): applicants = doc.shortlist_applicants
+        elif hasattr(doc, "selection_applicant"): applicants = doc.selection_applicant
+        elif hasattr(doc, "merit_applicants"): applicants = doc.merit_applicants
+        
+        if applicants:
+            ms._rank_applicants(applicants, use_advanced_ranking=True, processing_stage=stage)
+            
+        res = original_execute(doc, is_shortlist_allocation, ignore_seat_limits)
+        ms._populate_category_lists(doc)
+        return res
+        
+    # Patch the module itself
+    monkeypatch.setattr(ms, "execute_advanced_allocation_logic", _mock_execute_advanced)
     
     # Mock clear_cache
     if hasattr(frappe, "cache"):

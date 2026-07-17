@@ -71,6 +71,7 @@ def generate_candidate(applicant_id, part_a=0, part_b=0, dob="2000-01-01",
         traits.append("Karnataka")
     if is_pwd:
         traits.append("PWD")
+
     if gender == "Female":
         traits.append("Women")
     
