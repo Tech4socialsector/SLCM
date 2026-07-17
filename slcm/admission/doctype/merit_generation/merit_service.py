@@ -1777,6 +1777,26 @@ def execute_part_a_shortlisting(doc):
         display_field = "allocated_category" if hasattr(candidate_row, "allocated_category") else "shortlist_category"
         setattr(candidate_row, display_field, " + ".join(parts))
 
+    # --- 7c.5 Add Tie Candidates (Option A) ---
+    for cat_name in list(shortlists.keys()):
+        s_list = shortlists[cat_name]
+        if not s_list:
+            continue
+        lowest_score = min(float(getattr(x, "nlsat_part_a_score", 0) or 0) for x in s_list)
+        current_selected_ids = {x.applicant_id for x in get_all_selected()}
+        
+        tie_candidates = []
+        for cand in eligible_applicants:
+            if cand.applicant_id in current_selected_ids:
+                continue
+            cand_score = float(getattr(cand, "nlsat_part_a_score", 0) or 0)
+            if abs(cand_score - lowest_score) < 0.0001:
+                if cat_name == "General" or cand.actual_category == cat_name:
+                    tie_candidates.append(cand)
+                    
+        for tie_cand in tie_candidates:
+            s_list.append(tie_cand)
+
     # --- 7d. Assignment & Sanitization Pass ---
     all_final_selected = get_all_selected()
     final_selected_set = {x.applicant_id for x in all_final_selected}
