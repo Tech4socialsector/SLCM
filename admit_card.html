@@ -32,7 +32,7 @@
 {%- set campus_logo_path = frappe.db.get_value("Campus", doc.campus, "logo") if doc.campus else None -%}
 {%- set admit_no = doc.admit_card_number or ("AC-" + doc.name) -%}
 {%- set dob = frappe.utils.formatdate(doc.date_of_birth) if doc.date_of_birth else "—" -%}
-{%- set exam_date_time = (frappe.utils.formatdate(f_date) if f_date else "—") + " &nbsp;&middot;&nbsp; As per center schedule" -%}
+{%- set exam_date_time = (frappe.utils.formatdate(f_date) if f_date else "—") + " &nbsp;&middot;&nbsp; As per centre schedule" -%}
 {%- set centre_full = "<strong>" + (f_center or "—") + "</strong><br><span style='font-size:10px; color:#444;'>" + (f_address or "—") + "</span>" -%}
 
 {%- set _site = frappe.utils.get_url() -%}

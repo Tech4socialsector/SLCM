@@ -67,15 +67,15 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
       
       // Ensure we don't add multiple buttons if refresh is called multiple times
       if (!frm.page.wrapper.find('.btn-center-change').length) {
-        let $btn = $(`<button class="btn btn-default btn-sm btn-center-change" style="margin-right: 10px;">${__("Center Change")}</button>`);
+        let $btn = $(`<button class="btn btn-default btn-sm btn-center-change" style="margin-right: 10px;">${__("Centre Change")}</button>`);
         $btn.insertBefore(frm.page.btn_primary);
         
         $btn.on('click', function() {
           let d = new frappe.ui.Dialog({
-            title: 'Change Entrance Test Center',
+            title: 'Change Entrance Test Centre',
             fields: [
               {
-                label: 'Choose Exam Center',
+                label: 'Choose Exam Centre',
                 fieldname: 'new_provider',
                 fieldtype: 'Link',
                 options: 'Entrance Test Provider',
@@ -110,7 +110,7 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
                   new_test_name: values.new_test_name
                 },
                 freeze: true,
-                freeze_message: __("Allocating new center and generating admit card..."),
+                freeze_message: __("Allocating new centre and generating admit card..."),
                 callback: function(r) {
                   if (!r.exc && r.message) {
                     frappe.show_alert({
@@ -163,8 +163,8 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
         const pinfo = r.message.find(p => p.entrance_test_provider === provider);
         if (pinfo && pinfo.is_full) {
           frappe.msgprint({
-            title: __("Center Full"),
-            message: __("<b>{0}</b> is currently full. Please choose another center.", [pinfo.center_name || provider]),
+            title: __("Centre Full"),
+            message: __("<b>{0}</b> is currently full. Please choose another centre.", [pinfo.center_name || provider]),
             indicator: "orange"
           });
           frm.set_value("entrance_test_provider", "");
@@ -199,8 +199,8 @@ frappe.ui.form.on("Entrance Test Seat Allocation", {
         const pinfo = r.message.find(p => p.entrance_test_provider === provider);
         if (pinfo && pinfo.is_full) {
           frappe.msgprint({
-            title: __("Center Full"),
-            message: __("<b>{0}</b> is currently full. Please choose another center.", [pinfo.center_name || provider]),
+            title: __("Centre Full"),
+            message: __("<b>{0}</b> is currently full. Please choose another centre.", [pinfo.center_name || provider]),
             indicator: "orange"
           });
           frm.set_value("re_entrance_test_provider", "");

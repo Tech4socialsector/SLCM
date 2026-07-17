@@ -1,4 +1,4 @@
-{
+5{
  "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
@@ -1023,7 +1023,7 @@
    "fieldname": "center_filled",
    "fieldtype": "Check",
    "in_list_view": 1,
-   "label": "Center Filled"
+   "label": "Centre Filled"
   },
   {
    "fieldname": "application_fee_status",

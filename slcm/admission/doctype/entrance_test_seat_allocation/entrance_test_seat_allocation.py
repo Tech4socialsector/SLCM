@@ -788,10 +788,10 @@ def change_center(allocation_name, new_provider, new_test_name):
             _send_automated_center_change_email(allocation, email)
             _send_allocation_notification(allocation, email)
         except Exception:
-            frappe.log_error(traceback.format_exc(), f"Center Change Email Failed: {allocation.name}")
+            frappe.log_error(traceback.format_exc(), f"Centre Change Email Failed: {allocation.name}")
 
     return {
-        "message": "Center changed successfully, seat allocated, admit card generated, and email sent.",
+        "message": "Centre changed successfully, seat allocated, admit card generated, and email sent.",
         "seat_number": allocated["seat_number"],
         "center_name": allocated["center_name"]
     }
@@ -859,8 +859,8 @@ def _send_automated_center_change_email(allocation, email):
                     now=False
                 )
             except Exception:
-                frappe.log_error(traceback.format_exc(), f"Center Change Email Queueing Failed: {allocation.name}")
+                frappe.log_error(traceback.format_exc(), f"Centre Change Email Queueing Failed: {allocation.name}")
 
     except Exception:
-        frappe.log_error(message=traceback.format_exc(), title=f"Center Change Email Failed: {allocation.name}")
+        frappe.log_error(message=traceback.format_exc(), title=f"Centre Change Email Failed: {allocation.name}")
 

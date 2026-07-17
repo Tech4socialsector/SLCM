@@ -1,12 +1,12 @@
 {#
 Name: Automated Entrance Test Allocation
-Subject: Congratulations! Your Entrance Test Center Is Allocated - {{ doc.applicant }}
+Subject: Congratulations! Your Entrance Test Centre Is Allocated - {{ doc.applicant }}
 
 Desk setup (run in bench console / execute):
 frappe.get_doc({
     "doctype": "Email Template",
     "name": "Automated Entrance Test Allocation",
-    "subject": "Congratulations! Your Entrance Test Center Is Allocated - {{ doc.applicant }}",
+    "subject": "Congratulations! Your Entrance Test Centre Is Allocated - {{ doc.applicant }}",
     "use_html": 1,
     "response_html": open("slcm/admission/slcm_email_template/Automated Entrance Test Allocation.html").read()
 }).insert(ignore_permissions=True)
@@ -18,7 +18,7 @@ frappe.get_doc({
     <p>Greetings from the Admissions Office.</p>
 
     <p>
-        Congratulations! Your Entrance Test center has been automatically allocated successfully based on your submitted preferences and seat availability.
+        Congratulations! Your Entrance Test centre has been automatically allocated successfully based on your submitted preferences and seat availability.
     </p>
 
     <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;">
@@ -27,8 +27,8 @@ frappe.get_doc({
         <p style="margin: 0;"><strong>Entrance Test:</strong> {{ doc.entrance_test_name or doc.entrance_test_list }}</p>
         <p style="margin: 0;"><strong>Program:</strong> {{ doc.program or "—" }}</p>
         <p style="margin: 0;"><strong>Campus:</strong> {{ doc.campus or "—" }}</p>
-        <p style="margin: 0;"><strong>Test Center:</strong> {{ doc.center_name or "—" }}</p>
-        <p style="margin: 0;"><strong>Center Address:</strong> {{ doc.center_address or "—" }}</p>
+        <p style="margin: 0;"><strong>Test Centre:</strong> {{ doc.center_name or "—" }}</p>
+        <p style="margin: 0;"><strong>Centre Address:</strong> {{ doc.center_address or "—" }}</p>
         <p style="margin: 0;"><strong>Room:</strong> {{ doc.room_name or "—" }}</p>
         <p style="margin: 0;"><strong>Seat Number:</strong> {{ doc.seat_number.split('-')[-1] if doc.seat_number else "—" }}</p>
         <p style="margin: 0;"><strong>Test Date:</strong>
@@ -48,7 +48,7 @@ frappe.get_doc({
     </div>
 
     <p>
-        Please report to the center on time and carry your Admit Card and valid photo ID proof.
+        Please report to the centre on time and carry your Admit Card and valid photo ID proof.
         We request you to attend the Entrance Test at the allocated location as communicated above.
     </p>
 
