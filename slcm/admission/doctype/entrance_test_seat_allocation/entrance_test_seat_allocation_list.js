@@ -138,6 +138,97 @@ frappe.listview_settings['Entrance Test Seat Allocation'] = {
                 ubtn.addClass('btn-update-rank');
             }
 
+            // Publish Result button (only once)
+            if (!listview.page.wrapper.find('.btn-publish-result').length) {
+                const pbtn = listview.page.add_inner_button(__("Publish Result"), function () {
+                    let pd = new frappe.ui.Dialog({
+                        title: __("Publish Entrance Test Result"),
+                        fields: [
+                            {
+                                label: __("Academic Year"),
+                                fieldname: "academic_year",
+                                fieldtype: "Link",
+                                options: "Academic Year",
+                                reqd: 1
+                            },
+                            {
+                                label: __("Admission Cycle"),
+                                fieldname: "admission_cycle",
+                                fieldtype: "Link",
+                                options: "Admission Cycle",
+                                reqd: 1
+                            },
+                            {
+                                label: __("Programme Level"),
+                                fieldname: "program_level",
+                                fieldtype: "Select",
+                                options: "Undergraduate\nPostgraduate\nResearch Course",
+                                reqd: 1
+                            },
+                            {
+                                label: __("Programme"),
+                                fieldname: "program",
+                                fieldtype: "Link",
+                                options: "Programme",
+                                depends_on: "eval:doc.program_level"
+                            },
+                            {
+                                label: __("Entrance Test List"),
+                                fieldname: "entrance_test_list",
+                                fieldtype: "Link",
+                                options: "Entrance Test List",
+                                description: __("Optional – limit to a specific entrance test event")
+                            }
+                        ],
+                        primary_action_label: __("Publish"),
+                        primary_action(values) {
+                            frappe.confirm(
+                                __("This will mark all matching Entrance Test Seat Allocation records as <b>Result Published</b> and send result emails to all applicants. Do you want to continue?"),
+                                function () {
+                                    pd.hide();
+                                    frappe.call({
+                                        method: "slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.publish_results",
+                                        args: values,
+                                        freeze: true,
+                                        freeze_message: __("Publishing Results..."),
+                                        callback: function (r) {
+                                            if (!r.exc && r.message) {
+                                                frappe.msgprint({
+                                                    title: __("Results Published"),
+                                                    message: __(
+                                                        "<b>{0}</b> records published. <b>{1}</b> notification emails queued.",
+                                                        [r.message.published, r.message.notified]
+                                                    ),
+                                                    indicator: "green"
+                                                });
+                                                listview.refresh();
+                                            }
+                                        }
+                                    });
+                                }
+                            );
+                        }
+                    });
+                    pd.set_query("admission_cycle", function () {
+                        return { filters: { "status": "Active" } };
+                    });
+                    pd.set_query("program", function () {
+                        return {
+                            query: "slcm.admission.doctype.entrance_test_generation.entrance_test_generation.get_program_query",
+                            filters: {
+                                "program_level": pd.get_value("program_level"),
+                                "admission_cycle": pd.get_value("admission_cycle")
+                            }
+                        };
+                    });
+                    pd.fields_dict.program_level.df.on_change = () => {
+                        pd.set_value("program", "");
+                    };
+                    pd.show();
+                });
+                pbtn.addClass('btn-publish-result');
+            }
+
             // Reschedule button (also only once)
             if (!listview.page.wrapper.find('.btn-reschedule').length) {
                 const rbtn = listview.page.add_button(__('Reschedule'), function () {

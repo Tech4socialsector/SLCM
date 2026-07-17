@@ -304,13 +304,13 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
     part_b_data = calculate_ranks_and_percentiles(attended_records, "part_b_total_marks_scored")
     cumulative_data = calculate_ranks_and_percentiles(attended_records, "total_marks_secured_in_part_a_b")
 
-    # 1.2 Update records (only for attended)
+    # 1.2 Update records in bulk (no per-doc load – much faster)
     for i, rec in enumerate(attended_records, start=1):
         rank_a = part_a_data.get(rec.name, {}).get("rank") or 0
         rank_b = part_b_data.get(rec.name, {}).get("rank") or 0
         rank_cum = cumulative_data.get(rec.name, {}).get("rank") or 0
         percentile = cumulative_data.get(rec.name, {}).get("percentile") or 0.0
-        
+
         frappe.db.set_value("Entrance Test Seat Allocation", rec.name, {
             "part_a_all_india_rank": rank_a,
             "part_b_all_india_rank": rank_b,
@@ -318,24 +318,18 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
             "percentile": percentile
         }, update_modified=False)
 
-        # Generate Result Card PDF
-        try:
-            doc_obj = frappe.get_doc("Entrance Test Seat Allocation", rec.name)
-            doc_obj.generate_result_card()
-        except Exception:
-            frappe.log_error(f"Auto-generation of Result Card failed for {rec.name}")
-        
-        if i % 10 == 0 or i == total_attended:
-            percent = (i / total_attended) * 50
-            frappe.publish_progress(percent, title=_("Update Ranking"))
+        if i % 50 == 0 or i == total_attended:
+            frappe.db.commit()
+            percent = (i / total_attended) * 100
+            frappe.publish_progress(percent, title=_("Update Ranking"), description=f"Ranked {i} of {total_attended}")
 
     frappe.db.commit()
 
-    # 1.3 Clear ranks and percentiles for Absent/Non-attended applicants
+    # 1.3 Clear ranks and percentiles for Absent/Non-attended applicants (bulk)
     absent_filters = attended_filters.copy()
     absent_filters["entrance_test_status"] = ["!=", "Attended"]
     absent_records = frappe.get_all("Entrance Test Seat Allocation", filters=absent_filters, fields=["name"])
-    
+
     for rec in absent_records:
         frappe.db.set_value("Entrance Test Seat Allocation", rec.name, {
             "part_a_all_india_rank": 0,
@@ -343,47 +337,72 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
             "entrance_test_rank": 0,
             "percentile": 0.0
         }, update_modified=False)
-    
-    frappe.db.commit()
 
-    # 2. Fetch ALL applicants (Attended + Absent) to send notifications
-    all_filters = {
+    frappe.db.commit()
+    return total_attended
+
+
+@frappe.whitelist()
+def publish_results(academic_year, admission_cycle, program_level, program=None, entrance_test_list=None):
+    """
+    Sets result_published = 1 for all Entrance Test Seat Allocation records
+    matching the given filters (Attended applicants) in bulk.
+    Also queues result notification emails for each record.
+    """
+    if not (academic_year and admission_cycle and program_level):
+        frappe.throw(_("Academic Year, Admission Cycle, and Program Level are required."))
+
+    filters = {
         "academic_year": academic_year,
         "admission_cycle": admission_cycle,
         "program_level": program_level,
         "entrance_test_status": ["in", ["Attended", "Absent"]]
     }
     if program:
-        all_filters["program"] = program
+        filters["program"] = program
     if entrance_test_list:
-        all_filters["entrance_test_list"] = entrance_test_list
+        filters["entrance_test_list"] = entrance_test_list
 
-    all_records = frappe.get_all("Entrance Test Seat Allocation",
-        filters=all_filters,
-        fields=["name", "applicant", "candidate_name", "email", "entrance_test_status", 
-                "total_marks_secured_in_part_a_b","entrance_test_rank", "entrance_test_list"]
+    records = frappe.get_all(
+        "Entrance Test Seat Allocation",
+        filters=filters,
+        fields=["name", "applicant", "candidate_name", "email",
+                "entrance_test_status", "total_marks_secured_in_part_a_b",
+                "entrance_test_rank", "entrance_test_list", "entrance_test_result_card"]
     )
 
+    total = len(records)
+    if total == 0:
+        frappe.throw(_("No matching records found to publish."))
+
     count = 0
-    total = len(all_records)
-    for i, rec in enumerate(all_records):
-        percent = 50 + ((float(i + 1) / total) * 50)
+    for i, rec in enumerate(records, start=1):
         frappe.publish_progress(
-            percent, 
-            title=_("Update Ranking"), 
-            description=f"Notifying {i + 1} of {total}"
+            (i / total) * 100,
+            title=_("Publishing Results"),
+            description=_("Generating & publishing {0} of {1}").format(i, total)
         )
 
-
+        # Load full doc (needed for generate_result_card + email)
         doc = frappe.get_doc("Entrance Test Seat Allocation", rec.name)
-        
+
+        # Mark as published
+        doc.db_set("result_published", 1, update_modified=False)
+
+        # Generate Result Card PDF for Attended applicants (skip if already generated)
+        if doc.entrance_test_status == "Attended":
+            if not doc.entrance_test_result_card:
+                try:
+                    doc.generate_result_card()
+                    doc.reload()  # reload so email picks up new card URL
+                except Exception:
+                    frappe.log_error(title=f"Result Card Generation Failed: {doc.name}")
+
         # Resolve email
         email = doc.email or ""
         if not email and doc.applicant:
             try:
-                app_email = frappe.db.get_value("Applicant", doc.applicant, "email")
-                if app_email:
-                    email = app_email
+                email = frappe.db.get_value("Applicant", doc.applicant, "email") or ""
             except Exception:
                 pass
 
@@ -393,13 +412,13 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
                 _send_result_notification(doc, email)
                 count += 1
             except Exception:
-                frappe.log_error(title=f"Result Email/Notification Failed: {doc.name}")
+                frappe.log_error(title=f"Publish Result Email Failed: {doc.name}")
 
-        if i % 10 == 0:
+        if i % 50 == 0:
             frappe.db.commit()
 
     frappe.db.commit()
-    return count
+    return {"published": total, "notified": count}
 
 
 def _send_result_notification_email(doc, email):
@@ -788,10 +807,10 @@ def change_center(allocation_name, new_provider, new_test_name):
             _send_automated_center_change_email(allocation, email)
             _send_allocation_notification(allocation, email)
         except Exception:
-            frappe.log_error(traceback.format_exc(), f"Center Change Email Failed: {allocation.name}")
+            frappe.log_error(traceback.format_exc(), f"Centre Change Email Failed: {allocation.name}")
 
     return {
-        "message": "Center changed successfully, seat allocated, admit card generated, and email sent.",
+        "message": "Centre changed successfully, seat allocated, admit card generated, and email sent.",
         "seat_number": allocated["seat_number"],
         "center_name": allocated["center_name"]
     }
@@ -859,8 +878,8 @@ def _send_automated_center_change_email(allocation, email):
                     now=False
                 )
             except Exception:
-                frappe.log_error(traceback.format_exc(), f"Center Change Email Queueing Failed: {allocation.name}")
+                frappe.log_error(traceback.format_exc(), f"Centre Change Email Queueing Failed: {allocation.name}")
 
     except Exception:
-        frappe.log_error(message=traceback.format_exc(), title=f"Center Change Email Failed: {allocation.name}")
+        frappe.log_error(message=traceback.format_exc(), title=f"Centre Change Email Failed: {allocation.name}")
 

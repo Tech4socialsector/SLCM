@@ -234,12 +234,12 @@
   {
    "fieldname": "center_name",
    "fieldtype": "Data",
-   "label": "Center Name"
+   "label": "Centre Name"
   },
   {
    "fieldname": "center_address",
    "fieldtype": "Small Text",
-   "label": "Center Address"
+   "label": "Centre Address"
   },
   {
    "fieldname": "room_code",
@@ -412,12 +412,12 @@
   {
    "fieldname": "re_center_name",
    "fieldtype": "Data",
-   "label": "Center Name"
+   "label": "Centre Name"
   },
   {
    "fieldname": "re_center_address",
    "fieldtype": "Small Text",
-   "label": "Center Address"
+   "label": "Centre Address"
   },
   {
    "fieldname": "re_room_code",
