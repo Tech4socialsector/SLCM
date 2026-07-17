@@ -9,7 +9,7 @@ class TestPerformanceLoad:
         candidates = generate_bulk_candidates(2500, vertical_distribution={"General": 1250, "SC": 500, "ST": 250, "OBC": 500})
         doc.merit_applicants = candidates
         import slcm.admission.doctype.merit_generation.merit_service as ms
-        monkeypatch.setattr(ms, "_has_trait", lambda a, t, i: False)
+        monkeypatch.setattr(ms, "_has_trait", lambda *args, **kwargs: False)
         
         start_time = time.time()
         execute_part_a_shortlisting(doc)
@@ -24,7 +24,7 @@ class TestPerformanceLoad:
         candidates = generate_bulk_candidates(600, vertical_distribution={"General": 300, "SC": 100, "ST": 50, "OBC": 150})
         doc.merit_applicants = candidates
         import slcm.admission.doctype.merit_generation.merit_service as ms
-        monkeypatch.setattr(ms, "_has_trait", lambda a, t, i: False)
+        monkeypatch.setattr(ms, "_has_trait", lambda *args, **kwargs: False)
         
         start_time = time.time()
         execute_advanced_allocation_logic(doc, is_shortlist_allocation=False)

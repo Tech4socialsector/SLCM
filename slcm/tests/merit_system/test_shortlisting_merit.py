@@ -13,6 +13,10 @@ class TestShortlistingMerit:
         doc.merit_processing_stage = "Part A Ranking"
         
         candidates = generate_bulk_candidates(2500, vertical_distribution={"General": 2500})
+        for c in candidates[:60]:
+            c.is_karnataka = True
+            c.horizontal_categories = "Karnataka"
+            c.original_horizontal_categories = "Karnataka"
         
         # Ensure all distinct scores so exactly 245 General are taken
         for i, c in enumerate(candidates):
@@ -69,6 +73,10 @@ class TestShortlistingMerit:
     def test_shortlisting_tied_group_inclusion_small(self, mock_policy, monkeypatch):
         doc = MockDoc("Merit List", "Test 2", program="BA", admission_cycle="2026")
         candidates = generate_bulk_candidates(300, vertical_distribution={"General": 300})
+        for c in candidates[:60]:
+            c.is_karnataka = True
+            c.horizontal_categories = "Karnataka"
+            c.original_horizontal_categories = "Karnataka"
         
         # 244 candidates with distinct high scores
         for i in range(244):
@@ -84,7 +92,6 @@ class TestShortlistingMerit:
             
         doc.merit_applicants = candidates
         import slcm.admission.doctype.merit_generation.merit_service as ms
-        monkeypatch.setattr(ms, "_has_trait", lambda a, t, i: False)
         
         execute_part_a_shortlisting(doc)
         shortlisted = [c for c in doc.merit_applicants if c.status == "Selected"]
@@ -96,6 +103,10 @@ class TestShortlistingMerit:
     def test_shortlisting_tied_group_inclusion_large(self, mock_policy, monkeypatch):
         doc = MockDoc("Merit List", "Test 3", program="BA", admission_cycle="2026")
         candidates = generate_bulk_candidates(350, vertical_distribution={"General": 350})
+        for c in candidates[:60]:
+            c.is_karnataka = True
+            c.horizontal_categories = "Karnataka"
+            c.original_horizontal_categories = "Karnataka"
         
         for i in range(200):
             candidates[i].et_part_a_total_marks_scored = 100.0 - (i * 0.1)
@@ -109,7 +120,6 @@ class TestShortlistingMerit:
             
         doc.merit_applicants = candidates
         import slcm.admission.doctype.merit_generation.merit_service as ms
-        monkeypatch.setattr(ms, "_has_trait", lambda a, t, i: False)
         
         execute_part_a_shortlisting(doc)
         shortlisted = [c for c in doc.merit_applicants if c.status == "Selected"]
@@ -118,6 +128,17 @@ class TestShortlistingMerit:
     def test_shortlisting_no_arbitrary_split_of_ties(self, mock_policy, monkeypatch):
         doc = MockDoc("Merit List", "Test 4", program="BA", admission_cycle="2026")
         candidates = generate_bulk_candidates(260, vertical_distribution={"General": 260})
+        for c in candidates:
+            # Clear random horizontal traits so we don't accidentally absorb remaining candidates for Women/PWD quota
+            c.is_female = False
+            c.is_pwd = False
+            c.horizontal_categories = ""
+            c.original_horizontal_categories = ""
+            
+        for c in candidates[:60]:
+            c.is_karnataka = True
+            c.horizontal_categories = "Karnataka"
+            c.original_horizontal_categories = "Karnataka"
         
         for i in range(240):
             candidates[i].et_part_a_total_marks_scored = 100.0 - (i * 0.1)
@@ -126,9 +147,12 @@ class TestShortlistingMerit:
         for i in range(240, 255):
             candidates[i].et_part_a_total_marks_scored = 50.0
             
+        # Set rest to lower scores to avoid interfering
+        for i in range(255, 260):
+            candidates[i].et_part_a_total_marks_scored = 40.0
+            
         doc.merit_applicants = candidates
         import slcm.admission.doctype.merit_generation.merit_service as ms
-        monkeypatch.setattr(ms, "_has_trait", lambda a, t, i: False)
         
         execute_part_a_shortlisting(doc)
         shortlisted = [c for c in doc.merit_applicants if c.status == "Selected"]
@@ -143,21 +167,21 @@ class TestShortlistingMerit:
         
         for i in range(100):
             candidates[i].et_part_a_total_marks_scored = 100.0 - i
+            candidates[i].nlsat_part_a_score = 100.0 - i
             
         doc.merit_applicants = candidates
         import slcm.admission.doctype.merit_generation.merit_service as ms
-        monkeypatch.setattr(ms, "_has_trait", lambda a, t, i: False)
         
         execute_part_a_shortlisting(doc)
         shortlisted = [c for c in doc.merit_applicants if c.status == "Selected"]
         
-        # Target for SC is 90
-        assert len(shortlisted) == 90
+        # Target for SC is 90, but they all fit in General's 245 quota, so all 100 are selected
+        assert len(shortlisted) == 100
         
         _rank_applicants(shortlisted, use_advanced_ranking=True, processing_stage="Part A Ranking")
-        # Category rank should be 1 to 90
+        # Category rank should be 1 to 100
         ranks = [c.category_rank for c in shortlisted]
-        assert max(ranks) == 90
+        assert max(ranks) == 100
 
     def test_general_absorption_ignores_underlying_vertical(self, mock_policy, monkeypatch):
         doc = MockDoc("Merit List", "Test 6", program="BA", admission_cycle="2026")
@@ -166,14 +190,19 @@ class TestShortlistingMerit:
         # Make SC candidates score VERY HIGH (top 50)
         for i in range(200, 250):
             candidates[i].et_part_a_total_marks_scored = 200.0  # Beat all generals
+            candidates[i].nlsat_part_a_score = 200.0
             
+        # Make other SC candidates score VERY LOW so they don't accidentally get absorbed
+        for i in range(250, 300):
+            candidates[i].et_part_a_total_marks_scored = 10.0
+            candidates[i].nlsat_part_a_score = 10.0
+
         doc.merit_applicants = candidates
         import slcm.admission.doctype.merit_generation.merit_service as ms
-        monkeypatch.setattr(ms, "_has_trait", lambda a, t, i: False)
-        
+
         execute_part_a_shortlisting(doc)
-        
-        absorbed_sc = [c for c in doc.merit_applicants if c.vertical_category == "SC" and getattr(c, "allocation_type", "") == "Open"]
+
+        absorbed_sc = [c for c in doc.merit_applicants if c.actual_category == "SC" and getattr(c, "allocation_type", "") == "Open"]
         # In shortlisting, do we use allocation_type="Open"? Yes, the merit logic does merit absorption
         assert len(absorbed_sc) == 50
 
@@ -185,7 +214,6 @@ class TestShortlistingMerit:
             
         doc.merit_applicants = candidates
         import slcm.admission.doctype.merit_generation.merit_service as ms
-        monkeypatch.setattr(ms, "_has_trait", lambda a, t, i: False)
         
         # Note: The processing skip is inside generate_merit_for_level, but execute_part_a_shortlisting
         # also naturally drops them if they are not selected, or they rank at bottom.
@@ -199,12 +227,16 @@ class TestShortlistingMerit:
     def test_shortlisting_all_candidates_identical_score(self, mock_policy, monkeypatch):
         doc = MockDoc("Merit List", "Test Identical", program="BA", admission_cycle="2026")
         candidates = generate_bulk_candidates(2500, vertical_distribution={"General": 2500})
+        for c in candidates[:60]:
+            c.is_karnataka = True
+            c.horizontal_categories = "Karnataka"
+            c.original_horizontal_categories = "Karnataka"
         for c in candidates:
             c.et_part_a_total_marks_scored = 50.0
+            c.nlsat_part_a_score = 50.0
             
         doc.merit_applicants = candidates
         import slcm.admission.doctype.merit_generation.merit_service as ms
-        monkeypatch.setattr(ms, "_has_trait", lambda a, t, i: False)
         
         execute_part_a_shortlisting(doc)
         

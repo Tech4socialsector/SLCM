@@ -12,7 +12,7 @@ class TestBoundaryConditions:
             
         doc.merit_applicants = candidates
         import slcm.admission.doctype.merit_generation.merit_service as ms
-        monkeypatch.setattr(ms, "_has_trait", lambda a, t, i: False)
+        monkeypatch.setattr(ms, "_has_trait", lambda *args, **kwargs: False)
         
         execute_advanced_allocation_logic(doc, is_shortlist_allocation=False)
         
@@ -24,7 +24,7 @@ class TestBoundaryConditions:
         doc = MockDoc("Merit List", "Test Bound 2", program="BA", admission_cycle="2026", merit_processing_stage="Final Allotment Ranking")
         doc.merit_applicants = []
         import slcm.admission.doctype.merit_generation.merit_service as ms
-        monkeypatch.setattr(ms, "_has_trait", lambda a, t, i: False)
+        monkeypatch.setattr(ms, "_has_trait", lambda *args, **kwargs: False)
         
         # It handles gracefully by returning early or throwing an expected error?
         # Typically the wrapper generate_merit_for_level handles empty checks, but 
@@ -52,7 +52,7 @@ class TestBoundaryConditions:
             
         doc.merit_applicants = candidates
         import slcm.admission.doctype.merit_generation.merit_service as ms
-        monkeypatch.setattr(ms, "_has_trait", lambda a, t, i: False)
+        monkeypatch.setattr(ms, "_has_trait", lambda *args, **kwargs: False)
         
         execute_part_a_shortlisting(doc)
         

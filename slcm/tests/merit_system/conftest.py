@@ -71,8 +71,23 @@ def setup_frappe_mocks(monkeypatch):
             pass
         return original_sql(*args, **kwargs)
         
-    monkeypatch.setattr("slcm.admission.doctype.seat_allocation.seat_allocation.get_applicant_categories", lambda *args, **kwargs: ["General"])
-    monkeypatch.setattr("slcm.admission.doctype.merit_generation.merit_service.get_applicant_categories", lambda *args, **kwargs: ["General"])
+    def mock_get_applicant_categories(applicant_id):
+        from slcm.tests.merit_system.fixtures.candidate_fixtures import mock_doc_registry
+        app = mock_doc_registry.get(f"Applicant-{applicant_id}")
+        cats = []
+        if app:
+            if getattr(app, "original_vertical_category", None):
+                cats.append(app.original_vertical_category)
+            hc = getattr(app, "original_horizontal_categories", "")
+            if hc:
+                if isinstance(hc, str):
+                    cats.extend([c.strip() for c in hc.split(",") if c.strip()])
+                elif isinstance(hc, list):
+                    cats.extend(hc)
+        return cats or ["General"]
+
+    monkeypatch.setattr("slcm.admission.doctype.seat_allocation.seat_allocation.get_applicant_categories", mock_get_applicant_categories)
+    monkeypatch.setattr("slcm.admission.doctype.merit_generation.merit_service.get_applicant_categories", mock_get_applicant_categories)
     
     monkeypatch.setattr(frappe.db, "get_value", _mock_get_value)
     monkeypatch.setattr(frappe.db, "set_value", _mock_set_value)

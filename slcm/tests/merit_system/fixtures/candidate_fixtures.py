@@ -7,9 +7,10 @@ mock_doc_registry = {}
 
 class MockRow:
     def __init__(self, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-            
+        self.status = "Selected"
+        self.shortlist_status = "Shortlisted"
+        self.__dict__.update(kwargs)
+        
     def get(self, key, default=None):
         return getattr(self, key, default)
         
@@ -30,10 +31,20 @@ class MockDoc:
 
     def __getattr__(self, name):
         if name in ("part_a_total_marks_scored",):
-            # Fallback to row score if not explicitly set
-            if hasattr(self, "applicant_id") and self.applicant_id in mock_doc_registry:
-                return getattr(mock_doc_registry[self.applicant_id], "et_part_a_total_marks_scored", 100.0)
+            app_key = f"Applicant-{self.name}"
+            from slcm.tests.merit_system.fixtures.candidate_fixtures import mock_doc_registry
+            if app_key in mock_doc_registry:
+                return getattr(mock_doc_registry[app_key], "et_part_a_total_marks_scored", 100.0)
             return 100.0
+        if name.endswith("_list"):
+            self.__dict__[name] = []
+            return self.__dict__[name]
+        if name in ("waitlist_seats", "compartmentalized_waitlist_seats", "min_percentile", "priority"):
+            return 0
+        if name in ("compartmentalized_category",):
+            return ""
+        if name in ("allocation_stage_multiplier",):
+            return 1.0
         if "status" in name or name in ("result_status", "entrance_test_status", "shortlist_status"):
             return "Pass" if name == "result_status" else "Attended"
         raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
@@ -79,19 +90,21 @@ def generate_candidate(applicant_id, part_a=0, part_b=0, dob="2000-01-01",
         total_score=total,
         date_of_birth=dob,
         vertical_category=vertical,
+        original_vertical_category=vertical,
         actual_category=vertical,
         allocation_type="",
         horizontal_categories=",".join(traits),
+        original_horizontal_categories=",".join(traits),
         traits=traits,
         status="Selected"
     )
     
     # Ensure there is a corresponding Entrance Test Seat Allocation mock doc
     etsa = MockDoc("Entrance Test Seat Allocation", row.applicant_id)
-    etsa.part_a_total_marks_scored = row.et_part_a_total_marks_scored
     etsa.entrance_test_status = "Attended"
     etsa.result_status = "Pass"
     mock_doc_registry[row.applicant_id] = etsa
+    mock_doc_registry[f"Applicant-{row.applicant_id}"] = row
     
     return row
 

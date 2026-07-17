@@ -16,7 +16,7 @@ class TestReservationPolicy:
             
         doc.merit_applicants = candidates
         import slcm.admission.doctype.merit_generation.merit_service as ms
-        monkeypatch.setattr(ms, "_has_trait", lambda a, t, i: False)
+        monkeypatch.setattr(ms, "_has_trait", lambda *args, **kwargs: False)
         
         execute_advanced_allocation_logic(doc, is_shortlist_allocation=False)
         
@@ -49,7 +49,7 @@ class TestReservationPolicy:
                 
         doc.merit_applicants = candidates
         import slcm.admission.doctype.merit_generation.merit_service as ms
-        monkeypatch.setattr(ms, "_has_trait", lambda a, t, i: False)
+        monkeypatch.setattr(ms, "_has_trait", lambda *args, **kwargs: False)
         
         execute_advanced_allocation_logic(doc, is_shortlist_allocation=False)
         

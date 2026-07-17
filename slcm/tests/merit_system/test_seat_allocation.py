@@ -13,7 +13,7 @@ class TestSeatAllocation:
             
         doc.merit_applicants = candidates
         import slcm.admission.doctype.merit_generation.merit_service as ms
-        monkeypatch.setattr(ms, "_has_trait", lambda a, t, i: False)
+        monkeypatch.setattr(ms, "_has_trait", lambda *args, **kwargs: False)
         
         execute_advanced_allocation_logic(doc, is_shortlist_allocation=False)
         
@@ -22,7 +22,12 @@ class TestSeatAllocation:
         # but does execute_advanced_allocation_logic change their status?
         # Actually it generates the lists (general_list, sc_list) which represent the seats!
         
+        
         allocated_total = len(getattr(doc, "general_list", []))
+        print("allocated_total=", allocated_total)
+        print("allocated_list size=", len(allocated_list) if 'allocated_list' in locals() else 'unknown')
+        print("general_list items=", getattr(doc, "general_list", []))
+
         
         # Policy says General has 49 seats. If everyone is General, only 49 will be allocated to General!
         # Because we only provided General candidates, the other reserved seats (SC, ST, OBC, EWS) will remain vacant.
@@ -37,7 +42,7 @@ class TestSeatAllocation:
             
         doc.merit_applicants = candidates
         import slcm.admission.doctype.merit_generation.merit_service as ms
-        monkeypatch.setattr(ms, "_has_trait", lambda a, t, i: False)
+        monkeypatch.setattr(ms, "_has_trait", lambda *args, **kwargs: False)
         
         execute_advanced_allocation_logic(doc, is_shortlist_allocation=False)
         
@@ -54,7 +59,7 @@ class TestSeatAllocation:
         candidates = generate_bulk_candidates(600, vertical_distribution={"General": 600})
         doc.merit_applicants = candidates
         import slcm.admission.doctype.merit_generation.merit_service as ms
-        monkeypatch.setattr(ms, "_has_trait", lambda a, t, i: False)
+        monkeypatch.setattr(ms, "_has_trait", lambda *args, **kwargs: False)
         
         execute_advanced_allocation_logic(doc, is_shortlist_allocation=False)
         
@@ -82,7 +87,7 @@ class TestSeatAllocation:
             
         doc.merit_applicants = candidates
         import slcm.admission.doctype.merit_generation.merit_service as ms
-        monkeypatch.setattr(ms, "_has_trait", lambda a, t, i: False)
+        monkeypatch.setattr(ms, "_has_trait", lambda *args, **kwargs: False)
         
         execute_advanced_allocation_logic(doc, is_shortlist_allocation=False)
         
