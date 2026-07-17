@@ -363,6 +363,11 @@ doc_events = {
     "Campus Seat Matrix": {
         "on_submit": "slcm.admission.events.on_seat_matrix_lock"
     },
+    "Time Table": {
+        "after_insert": "slcm.slcm.doctype.time_table.google_calendar_sync.sync_time_table_to_google_calendar",
+        "on_update": "slcm.slcm.doctype.time_table.google_calendar_sync.sync_time_table_to_google_calendar",
+        "on_trash": "slcm.slcm.doctype.time_table.google_calendar_sync.delete_linked_google_event"
+    },
 }
 
 # Scheduled Tasks
