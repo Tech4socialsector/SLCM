@@ -5224,7 +5224,12 @@ function setupCityStateFilter() {
 
 		function stateQueryFn() {
 			var eff = effCountry();
-			return { filters: [['State', 'country', '=', eff]] };
+			return {
+				or_filters: [
+					['State', 'country', '=', eff],
+					['State', 'name', '=', 'Other']
+				]
+			};
 		}
 
 		function cityQueryFn() {
@@ -5233,7 +5238,12 @@ function setupCityStateFilter() {
 				return { filters: [['name', '=', '__slcm_no_state__']] };
 			}
 			var eff = effCountry();
-			return { filters: [['state', '=', st], ['country', '=', eff]] };
+			return {
+				or_filters: [
+					['state', '=', st],
+					['name', '=', 'Other']
+				]
+			};
 		}
 
 		if (wf.set_query) {
@@ -5278,7 +5288,7 @@ function setupCityStateFilter() {
 				return;
 			}
 
-			if (currentCountry) {
+			if (currentCountry && String(currentState).toUpperCase() !== 'OTHER' && String(currentCountry).toUpperCase() !== 'OTHER') {
 				frappe.call({
 					method: "frappe.client.get_value",
 					args: {

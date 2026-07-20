@@ -3,7 +3,7 @@
 
     <p>Greetings from the Admissions Office.</p>
 
-    <p>We are pleased to inform you that your application has been successfully processed for the upcoming Entrance Test. You are now eligible to select your preferred test center.</p>
+    <p>We are pleased to inform you that your application has been successfully processed for the upcoming Entrance Test. You are now eligible to select your preferred test centre.</p>
 
     <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 5px solid #920c24; margin: 20px 0;">
         <h3 style="margin-top: 0; color: #920c24;">Application Details</h3>
@@ -28,7 +28,7 @@
     </div>
 
     {% if doc.assigned_preferences %}
-    <h3 style="color: #920c24;">Available Test Centers:</h3>
+    <h3 style="color: #920c24;">Available Test Centres:</h3>
     <ul style="padding-left: 20px;">
         {% for p in doc.assigned_preferences %}
         <li style="margin-bottom: 8px;">{{ p.center_name or p.provider }}</li>
@@ -36,11 +36,11 @@
     </ul>
     {% endif %}
 
-    <p style="font-size: 13px; color: #555;">Kindly note that test center allocation is based on availability and will be offered on a first-come, first-served basis. Once selected, changes are not permitted.</p>
+    <p style="font-size: 13px; color: #555;">Kindly note that test centre allocation is based on availability and will be offered on a first-come, first-served basis. Once selected, changes are not permitted.</p>
 
-    <p>Please log in to the admission portal and complete your test center selection at the earliest.</p>
+    <p>Please log in to the admission portal and complete your test centre selection at the earliest.</p>
 
-    <p><a href="{{ portal_url }}" style="background-color: #920c24; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">Select Test Center</a></p>
+    <p><a href="{{ portal_url }}" style="background-color: #920c24; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">Select Test Centre</a></p>
 
     <p>If you require assistance, please contact the Admissions Office.</p>
 
