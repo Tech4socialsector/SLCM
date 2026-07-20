@@ -46,7 +46,7 @@
   "pace_programme",
   "level_of_study",
   "column_break_bgkj",
-  "specialisation",
+  "concentration",
   "current_year",
   "cumulative_percentage",
   "master_programme",
@@ -493,12 +493,6 @@
    "fieldtype": "Link",
    "label": "Batch",
    "options": "Batch"
-  },
-  {
-   "fieldname": "specialisation",
-   "fieldtype": "Data",
-   "label": "Specialisation",
-   "length": 100
   },
   {
    "fieldname": "current_year",
@@ -1605,11 +1599,17 @@
    "fieldtype": "Small Text",
    "hidden": 1,
    "label": "Disability Type"
+  },
+  {
+   "fieldname": "concentration",
+   "fieldtype": "Data",
+   "label": "Concentration",
+   "length": 100
   }
  ],
  "image_field": "passport_size_photo",
  "links": [],
- "modified": "2026-07-20 15:32:09.176663",
+ "modified": "2026-07-20 17:20:13.040870",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",
