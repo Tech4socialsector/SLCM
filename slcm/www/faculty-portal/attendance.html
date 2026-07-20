@@ -321,6 +321,12 @@
 
 {% block content %}
 
+{# ── Success toast ── #}
+<div id="fp-toast" style="position:fixed;bottom:24px;right:24px;z-index:1300;background:var(--fp-success);color:#fff;padding:13px 20px;border-radius:var(--fp-radius-sm);box-shadow:0 4px 24px rgba(0,0,0,0.22);display:none;align-items:center;gap:10px;font-size:13px;font-weight:600;min-width:200px;pointer-events:none;">
+  <span class="fp-ms" style="font-size:20px;">check_circle</span>
+  <span id="fp-toast-msg">Saved</span>
+</div>
+
 {# ── Page Header ──────────────────────────────────────────────── #}
 <div class="fp-page-header fade-in">
   <div class="fp-page-header-left">
@@ -644,6 +650,44 @@ function escHtml(s) {
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+/* ── Toast helper ── */
+function fpShowToast(msg, isError) {
+  var el    = document.getElementById('fp-toast');
+  var msgEl = document.getElementById('fp-toast-msg');
+  if (!el) return;
+  if (msgEl) msgEl.textContent = msg || 'Done';
+  el.style.background = isError ? 'var(--fp-danger)' : 'var(--fp-success)';
+  el.style.display = 'flex';
+  clearTimeout(el._t);
+  el._t = setTimeout(function() { el.style.display = 'none'; }, 3500);
+}
+
+/* ── Reload without the visible "jump": remember scroll position and a
+   pending toast message in sessionStorage, then restore both once the
+   fresh page has loaded (see the DOMContentLoaded handler below). ── */
+function fpReloadPreservingScroll(toastMsg) {
+  try {
+    sessionStorage.setItem('fpAttScrollY', String(window.scrollY));
+    sessionStorage.setItem('fpAttPendingToast', toastMsg || '');
+  } catch (e) { /* sessionStorage unavailable — reload still works, just without scroll restore */ }
+  location.reload();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    var y = sessionStorage.getItem('fpAttScrollY');
+    var toast = sessionStorage.getItem('fpAttPendingToast');
+    if (y !== null) {
+      window.scrollTo(0, parseInt(y, 10) || 0);
+      sessionStorage.removeItem('fpAttScrollY');
+    }
+    if (toast) {
+      fpShowToast(toast);
+      sessionStorage.removeItem('fpAttPendingToast');
+    }
+  } catch (e) { /* ignore */ }
+});
+
 /* ── Modal open/close helpers ── */
 function _openModal(id) {
   var el = document.getElementById(id);
@@ -655,7 +699,7 @@ function _closeModal(id) {
 }
 /* Backdrop close */
 document.addEventListener('DOMContentLoaded', function() {
-  ['att-session-picker','att-mark-modal','att-rec-modal','att-view-modal','att-drill-modal'].forEach(function(id) {
+  ['att-session-picker','att-mark-modal','att-rec-modal','att-view-modal','att-drill-modal','att-hist-modal'].forEach(function(id) {
     var el = document.getElementById(id);
     if (!el) return;
     el.addEventListener('click', function(e) {
@@ -666,36 +710,21 @@ document.addEventListener('DOMContentLoaded', function() {
 /* Escape key */
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Escape') return;
-  ['att-session-picker','att-mark-modal','att-rec-modal','att-view-modal','att-drill-modal'].forEach(function(id) {
+  ['att-session-picker','att-mark-modal','att-rec-modal','att-view-modal','att-drill-modal','att-hist-modal'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el && el.classList.contains('open')) _closeModal(id);
   });
 });
 
-/* ── Today's Classes: compact slot picker (pill + floating popover) ──
-   Switches which time slot's details/actions are shown inside a course's
-   card, no reload needed. */
-function fpToggleSlotPicker(btn) {
-  var picker = btn.closest('.fp-slot-picker');
-  var menu = picker ? picker.querySelector('.fp-slot-picker-menu') : null;
-  if (!menu) return;
-  var isOpen = menu.style.display === 'block';
-  _fpCloseAllSlotPickers();
-  menu.style.display = isOpen ? 'none' : 'block';
-}
-
-function _fpCloseAllSlotPickers() {
-  document.querySelectorAll('.fp-slot-picker-menu').forEach(function(m) { m.style.display = 'none'; });
-}
-
+/* ── Slot tabs (Mark Attendance modal + View Session modal): always-visible
+   segmented buttons injected via innerHTML, so they need a delegated click
+   listener rather than inline onclick handlers. ── */
 document.addEventListener('click', function(e) {
-  if (!e.target.closest('.fp-slot-picker')) _fpCloseAllSlotPickers();
+  var markTab = e.target.closest('#sat-slot-picker .fp-slot-tab');
+  if (markTab) { fpChooseModalSlot(markTab.getAttribute('data-session')); return; }
 
-  /* Delegated: the modal's slot picker options are injected via innerHTML
-     (see _satRenderModalSlotPicker), so they need a delegated listener
-     rather than an inline onclick. */
-  var opt = e.target.closest('#sat-slot-picker .fp-slot-picker-opt');
-  if (opt) fpChooseModalSlot(opt.getAttribute('data-session'));
+  var viewTab = e.target.closest('#att-view-slot-picker .fp-slot-tab');
+  if (viewTab) fpChooseViewSlot(viewTab.getAttribute('data-session'));
 });
 
 /* ── Term switch — full page reload with ?term=, since it changes which
@@ -995,46 +1024,35 @@ function fpTodayCardClick(card, evt) {
   }
 }
 
-/* ── Render the compact slot picker inside the Mark Attendance modal
-   header (only shown when opened with 2+ sibling slots). ── */
+/* ── Render the slot picker inside the Mark Attendance modal header
+   (only shown when opened with 2+ sibling slots) — always-visible
+   segmented tabs, one per slot, no popover. ── */
 function _satRenderModalSlotPicker(slots, activeSessionName) {
   var el = document.getElementById('sat-slot-picker');
   if (!el) return;
   if (!slots || slots.length < 2) { el.innerHTML = ''; return; }
 
-  var active = slots.filter(function(s) { return s.session === activeSessionName; })[0] || slots[0];
-  var label = active.fromTime + (active.toTime ? ' – ' + active.toTime : '');
-
-  var optsHtml = slots.map(function(s) {
+  var tabsHtml = slots.map(function(s) {
+    var isActive = s.session === activeSessionName;
     var slotLabel = s.fromTime + (s.toTime ? ' – ' + s.toTime : '');
-    /* data-session + a delegated click listener, not an inline onclick —
-       building onclick="...(\"" + session + "\")" breaks when the session
-       name itself needs quoting inside an already double-quoted attribute. */
-    return '<div class="fp-slot-picker-opt" data-session="' + escHtml(s.session) + '" '
-      + 'style="padding:9px 12px;font-size:12px;font-weight:600;color:var(--fp-text-2);cursor:pointer;'
-      + 'border-bottom:1px solid var(--fp-border-light);display:flex;align-items:center;justify-content:space-between;gap:8px;">'
-      + '<span>' + escHtml(slotLabel) + '</span>'
-      + (s.marked ? '<span class="fp-ms" style="font-size:14px;color:var(--fp-success);">check_circle</span>' : '')
-      + '</div>';
+    return '<button type="button" class="fp-slot-tab" data-session="' + escHtml(s.session) + '" '
+      + 'style="padding:6px 12px;font-size:12px;font-weight:700;border-radius:var(--fp-radius-sm);'
+      + 'cursor:pointer;font-family:inherit;white-space:nowrap;display:flex;align-items:center;gap:5px;'
+      + (isActive
+          ? 'background:var(--fp-primary);color:#fff;border:1.5px solid var(--fp-primary);'
+          : 'background:var(--fp-card);color:var(--fp-text-2);border:1.5px solid var(--fp-border);')
+      + '">'
+      + escHtml(slotLabel)
+      + (s.marked ? '<span class="fp-ms" style="font-size:13px;color:' + (isActive ? '#86efac' : 'var(--fp-success)') + ';">check_circle</span>' : '')
+      + '</button>';
   }).join('');
 
-  el.innerHTML = '<div class="fp-slot-picker" style="position:relative;">'
-    + '<button type="button" class="fp-slot-picker-trigger" onclick="fpToggleSlotPicker(this)" '
-    + 'style="display:flex;align-items:center;gap:4px;padding:5px 10px;border:1.5px solid var(--fp-border);border-radius:var(--fp-radius-sm);'
-    + 'background:var(--fp-card);font-size:12px;font-weight:700;color:var(--fp-primary);cursor:pointer;font-family:inherit;white-space:nowrap;">'
-    + '<span class="fp-slot-picker-label">' + escHtml(label) + '</span>'
-    + '<span class="fp-ms" style="font-size:16px;">expand_more</span>'
-    + '</button>'
-    + '<div class="fp-slot-picker-menu" style="display:none;position:absolute;top:calc(100% + 4px);left:0;min-width:190px;'
-    + 'background:var(--fp-card);border:1px solid var(--fp-border);border-radius:var(--fp-radius-sm);box-shadow:var(--fp-shadow-md);z-index:5;overflow:hidden;">'
-    + optsHtml
-    + '</div></div>';
+  el.innerHTML = '<div class="fp-slot-tabs" style="display:flex;gap:6px;flex-wrap:wrap;">' + tabsHtml + '</div>';
 }
 
 /* Switch the modal to a different sibling slot's roster, in place —
    no form reset, no re-open, just swap the active session. */
 function fpChooseModalSlot(sessionName) {
-  _fpCloseAllSlotPickers();
   if (sessionName === _sat.sessionName) return;
 
   var slots = _sat.modalSlots || [];
@@ -1046,7 +1064,11 @@ function fpChooseModalSlot(sessionName) {
   _satLoadSessionRoster(sessionName, chosen ? chosen.courseName : null);
 }
 
-/* ── Load a known session's roster straight into step 2 ── */
+/* ── Load a known session's roster straight into step 2 ──
+   Cached per session name so switching between slot tabs after the first
+   load is instant instead of re-fetching from the server every click. */
+var _satRosterCache = {};
+
 function _satLoadSessionRoster(sessionName, courseName) {
   var step1 = document.getElementById('sat-step-form');
   var step2 = document.getElementById('sat-step-att');
@@ -1057,6 +1079,14 @@ function _satLoadSessionRoster(sessionName, courseName) {
   }
   var cn = document.getElementById('sat-course-name');
   if (cn) cn.textContent = courseName || 'Loading…';
+
+  if (_satRosterCache[sessionName]) {
+    _sat.students = _satRosterCache[sessionName];
+    _satRenderList(_sat.students);
+    _satRefreshCounters();
+    return;
+  }
+
   document.getElementById('sat-list').innerHTML =
     '<div style="padding:40px;text-align:center;color:var(--fp-text-4);">'
     + '<span class="fp-ms" style="font-size:32px;display:block;margin-bottom:10px;animation:fp-spin 0.8s linear infinite;">sync</span>'
@@ -1064,10 +1094,15 @@ function _satLoadSessionRoster(sessionName, courseName) {
 
   fpCall('slcm.api.faculty_portal.get_session_students', { session_name: sessionName },
     function(data) {
-      _sat.students = (data && data.students) ? data.students.map(function(s) {
+      var students = (data && data.students) ? data.students.map(function(s) {
         return { student: s.student, student_name: s.student_name, group_roll_number: s.reg_id,
                  status: s.status === 'Absent' ? 'Absent' : 'Present' };
       }) : [];
+      _satRosterCache[sessionName] = students;
+      /* Guard against a slower earlier request resolving after a later
+         tab switch — only apply if this is still the active session. */
+      if (sessionName !== _sat.sessionName) return;
+      _sat.students = students;
       _satRenderList(_sat.students);
       _satRefreshCounters();
     },
@@ -1276,6 +1311,10 @@ function satGetStudents() {
 }
 
 /* ── Render checkbox grid ── */
+/* Row-per-student list with a colored PRESENT/ABSENT status pill (click to
+   toggle), instead of a plain checkbox grid — closer to the desk/mobile
+   attendance view. A hidden checkbox is kept in sync so the existing
+   attCollectData()/counter logic needs no changes. */
 function _satRenderList(students) {
   if (!students.length) {
     document.getElementById('sat-list').innerHTML =
@@ -1284,32 +1323,90 @@ function _satRenderList(students) {
       + 'No students found.</div>';
     return;
   }
-  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:4px 12px;padding-bottom:8px;">';
+  var html = '<div style="border:1px solid var(--fp-border);border-radius:var(--fp-radius-sm);overflow:hidden;">'
+    + '<div style="display:grid;grid-template-columns:32px 1fr auto;gap:0;padding:9px 16px;'
+    + 'background:var(--fp-bg);border-bottom:2px solid var(--fp-border);'
+    + 'font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--fp-text-4);">'
+    + '<span>#</span><span>Student</span><span>Attendance</span></div>';
+
   students.forEach(function(s, i) {
     var uid     = 'sat-chk-' + i;
-    var checked = (s.status !== 'Absent');
-    var roll    = s.group_roll_number ? s.group_roll_number + ' – ' : (i + 1) + ' – ';
-    html += '<label for="' + uid + '" '
-      + 'style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:6px;cursor:pointer;user-select:none;" '
-      + 'onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'\'">  '
-      + '<input type="checkbox" id="' + uid + '" class="sat-chk" '
-      + 'data-student="' + escHtml(s.student) + '" '
-      + (checked ? 'checked ' : '')
-      + 'onchange="_satRefreshCounters()" '
-      + 'style="width:15px;height:15px;accent-color:var(--fp-primary);cursor:pointer;flex-shrink:0;">'
-      + '<span style="font-size:13px;color:var(--fp-text-1);">'
-      + roll + escHtml(s.student_name || s.student)
-      + '</span></label>';
+    /* "Not Marked" (the roster default before anyone marks attendance) and
+       any other non-"Absent" status default to Present — faculty then flip
+       off the exceptions rather than starting from all-absent. */
+    var present = (s.status !== 'Absent');
+    var roll    = s.group_roll_number || '';
+    html += '<div class="sat-student-row-toggle" data-idx="' + i + '" '
+      + 'style="display:grid;grid-template-columns:32px 1fr auto auto;gap:10px;align-items:center;'
+      + 'padding:9px 16px;border-bottom:1px solid var(--fp-border-light);'
+      + 'background:' + (present ? 'rgba(22,163,74,0.04)' : 'rgba(220,38,38,0.03)') + ';">'
+      + '<span style="font-size:11px;color:var(--fp-text-5);font-weight:600;">' + (i + 1) + '</span>'
+      + '<div><div style="font-size:13px;font-weight:600;color:var(--fp-text-1);">' + escHtml(s.student_name || s.student) + '</div>'
+      + (roll ? '<div style="font-size:11px;color:var(--fp-text-4);font-family:monospace;">' + escHtml(roll) + '</div>' : '')
+      + '</div>'
+      + '<span class="sat-toggle-lbl" data-idx="' + i + '" style="font-size:11px;font-weight:700;min-width:52px;text-align:right;'
+      + 'color:' + (present ? 'var(--fp-success)' : 'var(--fp-danger)') + ';">' + (present ? 'PRESENT' : 'ABSENT') + '</span>'
+      + '<label class="sat-switch" style="position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0;cursor:pointer;">'
+      + '<input type="checkbox" id="' + uid + '" class="sat-chk" data-student="' + escHtml(s.student) + '" '
+      + 'data-idx="' + i + '" onchange="satToggleSwitch(this)" '
+      + (present ? 'checked ' : '') + 'style="opacity:0;width:0;height:0;position:absolute;">'
+      + '<span class="sat-switch-track" data-idx="' + i + '" style="position:absolute;inset:0;border-radius:22px;transition:background 0.15s;'
+      + 'background:' + (present ? 'var(--fp-success)' : 'var(--fp-border)') + ';">'
+      + '<span class="sat-switch-thumb" style="position:absolute;top:2px;left:' + (present ? '20px' : '2px') + ';width:18px;height:18px;'
+      + 'border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.3);transition:left 0.15s;"></span>'
+      + '</span></label>'
+      + '</div>';
   });
   html += '</div>';
   document.getElementById('sat-list').innerHTML = html;
 }
 
-/* ── Checkbox helpers ── */
+/* ── Toggle switch — flips the checkbox (native change event drives this
+   too, e.g. keyboard toggling) and re-renders that row's label/track/thumb
+   and tint in place. ── */
+function satToggleSwitch(chk) {
+  var idx = chk.getAttribute('data-idx');
+  var present = chk.checked;
+
+  var label = document.querySelector('.sat-toggle-lbl[data-idx="' + idx + '"]');
+  if (label) {
+    label.textContent = present ? 'PRESENT' : 'ABSENT';
+    label.style.color = present ? 'var(--fp-success)' : 'var(--fp-danger)';
+  }
+  var track = document.querySelector('.sat-switch-track[data-idx="' + idx + '"]');
+  if (track) {
+    track.style.background = present ? 'var(--fp-success)' : 'var(--fp-border)';
+    var thumb = track.querySelector('.sat-switch-thumb');
+    if (thumb) thumb.style.left = present ? '20px' : '2px';
+  }
+  var row = chk.closest('.sat-student-row-toggle');
+  if (row) row.style.background = present ? 'rgba(22,163,74,0.04)' : 'rgba(220,38,38,0.03)';
+
+  _satRefreshCounters();
+}
+
+/* ── Bulk helpers ── */
 function satChkChange(chk) { _satRefreshCounters(); }
-function satCheckAll()   { document.querySelectorAll('#sat-list .sat-chk').forEach(function(c){ c.checked = true;  }); _satRefreshCounters(); }
-function satUncheckAll() { document.querySelectorAll('#sat-list .sat-chk').forEach(function(c){ c.checked = false; }); _satRefreshCounters(); }
-function attMarkAll(status) { if (status === 'Present') satCheckAll(); else satUncheckAll(); }
+function satCheckAll()   { _satSetAllPills(true); }
+function satUncheckAll() { _satSetAllPills(false); }
+function attMarkAll(status) { _satSetAllPills(status === 'Present'); }
+
+function _satSetAllPills(present) {
+  document.querySelectorAll('#sat-list .sat-chk').forEach(function(c) { c.checked = present; });
+  document.querySelectorAll('#sat-list .sat-toggle-lbl').forEach(function(label) {
+    label.textContent = present ? 'PRESENT' : 'ABSENT';
+    label.style.color = present ? 'var(--fp-success)' : 'var(--fp-danger)';
+  });
+  document.querySelectorAll('#sat-list .sat-switch-track').forEach(function(track) {
+    track.style.background = present ? 'var(--fp-success)' : 'var(--fp-border)';
+    var thumb = track.querySelector('.sat-switch-thumb');
+    if (thumb) thumb.style.left = present ? '20px' : '2px';
+  });
+  document.querySelectorAll('#sat-list .sat-student-row-toggle').forEach(function(row) {
+    row.style.background = present ? 'rgba(22,163,74,0.04)' : 'rgba(220,38,38,0.03)';
+  });
+  _satRefreshCounters();
+}
 
 /* ── Live counters ── */
 function _satRefreshCounters() {
@@ -1354,7 +1451,7 @@ function fpSaveAttendance() {
     btn.style.background = '#16a34a';
     setTimeout(function() {
       _closeModal('att-mark-modal');
-      location.reload();
+      fpReloadPreservingScroll('Attendance marked successfully');
     }, 800);
   }
   function onFailed(msg) {
@@ -1409,6 +1506,37 @@ function fpCloseMarkModal() {
 ══════════════════════════════════════════════════════════ */
 var _viewSessionName = null;
 
+/* Sibling slots for a session = other Attendance Sessions for the same
+   course offering, on the same date — sourced from _attSessions (already
+   embedded for the current term), so this works whether the session was
+   opened from the main table or a Today's Classes card.
+   Falls back to scraping a matching Today's Classes card if _attSessions
+   doesn't have the sibling (e.g. term-filtered out, or opened from a
+   session outside the currently loaded page of sessions). */
+function _fpFindSiblingSlots(sessionName) {
+  var current = _attSessions.filter(function(s) { return s.name === sessionName; })[0];
+  if (current) {
+    var siblings = _attSessions.filter(function(s) {
+      return s.course_offering === current.course_offering && s.session_date === current.session_date;
+    }).sort(function(a, b) { return (a.from_time_sort || '').localeCompare(b.from_time_sort || ''); });
+    if (siblings.length > 1) {
+      return siblings.map(function(s) {
+        return { session: s.name, courseName: s.course_name, fromTime: s.from_time, toTime: s.to_time, marked: s.marked };
+      });
+    }
+  }
+
+  /* Fallback: look for a Today's Classes card containing this session */
+  var slotDiv = document.querySelector('.fp-today-slot[data-session="' + sessionName + '"]');
+  var card = slotDiv ? slotDiv.closest('.fp-today-course-card') : null;
+  if (card) {
+    var domSlots = _fpCollectTodaySlots(card);
+    if (domSlots.length > 1) return domSlots;
+  }
+
+  return null;
+}
+
 function fpViewSession(sessionName) {
   _viewSessionName = sessionName;
 
@@ -1431,63 +1559,243 @@ function fpViewSession(sessionName) {
   /* Render RFID control into modal header (moved from list view) */
   _renderRfidControl('att-view-rfid', sessionName);
 
+  /* Show a slot picker if this course has multiple sessions today */
+  _viewModalSlots = _fpFindSiblingSlots(sessionName);
+  _renderViewSlotPicker(_viewModalSlots, sessionName);
+
+  _openModal('att-view-modal');
+  _fpLoadViewSessionBody(sessionName);
+}
+
+var _viewModalSlots = null;
+
+/* Always-visible segmented tabs — one pill per slot, no popover to open/
+   close or overlap other elements. Simpler and more visible than a
+   dropdown for the 2-3 slots this ever needs to show. */
+function _renderViewSlotPicker(slots, activeSessionName) {
+  var el = document.getElementById('att-view-slot-picker');
+  if (!el) return;
+  if (!slots || slots.length < 2) { el.innerHTML = ''; return; }
+
+  var tabsHtml = slots.map(function(s) {
+    var isActive = s.session === activeSessionName;
+    var slotLabel = s.fromTime + (s.toTime ? ' – ' + s.toTime : '');
+    return '<button type="button" class="fp-slot-tab" data-session="' + escHtml(s.session) + '" '
+      + 'style="padding:6px 12px;font-size:12px;font-weight:700;border:1px solid rgba(255,255,255,0.3);'
+      + 'cursor:pointer;font-family:inherit;white-space:nowrap;display:flex;align-items:center;gap:5px;'
+      + (isActive
+          ? 'background:#fff;color:var(--fp-primary);'
+          : 'background:rgba(255,255,255,0.12);color:#fff;')
+      + '">'
+      + escHtml(slotLabel)
+      + (s.marked ? '<span class="fp-ms" style="font-size:13px;color:' + (isActive ? 'var(--fp-success)' : '#86efac') + ';">check_circle</span>' : '')
+      + '</button>';
+  }).join('');
+
+  el.innerHTML = '<div class="fp-slot-tabs" style="display:flex;gap:6px;flex-wrap:wrap;">' + tabsHtml + '</div>';
+}
+
+/* Switch the View modal to a sibling slot's roster, in place. */
+function fpChooseViewSlot(sessionName) {
+  if (sessionName === _viewSessionName) return;
+
+  var slots = _viewModalSlots || [];
+  var chosen = slots.filter(function(s) { return s.session === sessionName; })[0];
+
+  _viewSessionName = sessionName;
+  document.getElementById('att-view-course').textContent = chosen ? chosen.courseName : '—';
+  var timeLabel = chosen ? (chosen.fromTime + (chosen.toTime ? ' – ' + chosen.toTime : '')) : '';
+  document.getElementById('att-view-meta').textContent = timeLabel;
+
+  _renderRfidControl('att-view-rfid', sessionName);
+  _renderViewSlotPicker(slots, sessionName);
+  _fpLoadViewSessionBody(sessionName);
+}
+
+function _fpRenderViewSessionBody(students, audit) {
+  var present  = students.filter(function(s) { return s.status === 'Present'; }).length;
+  var late     = students.filter(function(s) { return s.status === 'Late'; }).length;
+  var absent   = students.length - present - late;
+  var pct      = students.length ? Math.round(((present + late) / students.length) * 100) : 0;
+  var pctColor = pct >= 75 ? 'var(--fp-success)' : pct >= 60 ? 'var(--fp-warning)' : 'var(--fp-danger)';
+
+  /* Summary chips */
+  var html = '<div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">'
+    + '<span class="fp-badge fp-badge-success" style="font-size:13px;padding:6px 14px;">'
+    + '<span class="fp-ms" style="font-size:15px;">check_circle</span>' + present + ' Present</span>';
+  if (late) {
+    html += '<span class="fp-badge fp-badge-warning" style="font-size:13px;padding:6px 14px;">'
+      + '<span class="fp-ms" style="font-size:15px;">schedule</span>' + late + ' Late</span>';
+  }
+  html += '<span class="fp-badge fp-badge-danger" style="font-size:13px;padding:6px 14px;">'
+    + '<span class="fp-ms" style="font-size:15px;">cancel</span>' + absent + ' Absent</span>'
+    + '<span class="fp-badge" style="font-size:13px;padding:6px 14px;background:var(--fp-primary-light);color:' + pctColor + ';font-weight:700;">'
+    + '<span class="fp-ms" style="font-size:15px;">percent</span>' + pct + '% Attendance</span>'
+    + '</div>';
+
+  /* Student table */
+  if (students.length) {
+    /* Stash per-student detail for the History popover to read without
+       re-fetching or re-escaping data in a click handler. */
+    window._fpViewStudents = students;
+
+    /* Status/Type/History use fixed widths (not `auto`) so the header row
+       and every body row — each a separate CSS grid — line up consistently
+       regardless of how long any one row's content happens to be. */
+    var COLS = '32px 1fr 90px 140px 70px';
+    html += '<div style="border:1px solid var(--fp-border);border-radius:var(--fp-radius-sm);overflow:hidden;">'
+      + '<div style="display:grid;grid-template-columns:' + COLS + ';gap:12px;padding:9px 16px;'
+      + 'background:var(--fp-bg);border-bottom:2px solid var(--fp-border);'
+      + 'font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--fp-text-4);">'
+      + '<span>#</span><span>Student</span><span>Status</span><span>Type</span><span>History</span></div>'
+      + '<div style="max-height:400px;overflow-y:auto;">';
+
+    students.forEach(function(s, i) {
+      var st = s.status || 'Absent';
+      var badgeCls = st === 'Present' ? 'fp-badge-success' : st === 'Late' ? 'fp-badge-warning' : 'fp-badge-danger';
+      var rowBg    = st === 'Present' ? 'rgba(22,163,74,0.04)' : st === 'Late' ? 'rgba(217,119,6,0.04)' : 'rgba(220,38,38,0.03)';
+      var typeIcon = (s.source === 'RFID' || s.source === 'QR') ? 'wifi_tethering' : 'edit_note';
+      var typeLabel = s.type_label || 'Not marked';
+      html += '<div style="display:grid;grid-template-columns:' + COLS + ';gap:12px;align-items:center;'
+        + 'padding:10px 16px;border-bottom:1px solid var(--fp-border-light);background:' + rowBg + ';">'
+        + '<span style="font-size:11px;color:var(--fp-text-5);font-weight:600;">' + (i+1) + '</span>'
+        + '<div style="min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--fp-text-1);">' + escHtml(s.student_name) + '</div>'
+        + '<div style="font-size:11px;color:var(--fp-text-4);font-family:monospace;">' + escHtml(s.reg_id || s.student) + '</div></div>'
+        + '<span class="fp-badge ' + badgeCls + '" style="justify-self:start;">' + escHtml(st) + '</span>'
+        + '<span style="font-size:11px;color:var(--fp-text-4);display:flex;align-items:center;gap:4px;white-space:nowrap;">'
+        + '<span class="fp-ms" style="font-size:15px;flex-shrink:0;">' + typeIcon + '</span>' + escHtml(typeLabel) + '</span>'
+        + '<button type="button" class="fp-link-btn" onclick="fpShowAttendanceHistory(' + i + ')" '
+        + 'style="background:none;border:none;color:var(--fp-accent);font-size:12px;font-weight:600;cursor:pointer;'
+        + 'font-family:inherit;padding:0;text-decoration:underline;justify-self:start;">View</button>'
+        + '</div>';
+    });
+    html += '</div></div>';
+  } else {
+    html += '<div style="padding:32px;text-align:center;color:var(--fp-text-4);">No student records found.</div>';
+  }
+  document.getElementById('att-view-body').innerHTML = html;
+
+  _renderSessionAuditFooter(audit);
+}
+
+/* ── Session-level audit footer — activated-by/on, last-updated-by/on ── */
+function _renderSessionAuditFooter(audit) {
+  var el = document.getElementById('att-view-audit');
+  if (!el) return;
+  if (!audit) { el.innerHTML = ''; return; }
+
+  var left = '';
+  if (audit.rfid_activated_on) {
+    left = '<span class="fp-ms" style="font-size:14px;">wifi_tethering</span>'
+      + 'Biometric Attendance | Activated On ' + escHtml(audit.rfid_activated_on)
+      + (audit.rfid_activated_by ? ' by ' + escHtml(audit.rfid_activated_by) : '');
+  } else {
+    left = '<span class="fp-ms" style="font-size:14px;">wifi_off</span>Biometric Attendance not activated for this session';
+  }
+
+  el.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;'
+    + 'padding:10px 22px;border-top:1px solid var(--fp-border);background:var(--fp-bg);'
+    + 'font-size:11.5px;font-weight:600;color:var(--fp-text-3);">'
+    + '<span style="display:flex;align-items:center;gap:5px;">' + left + '</span>'
+    + '<span style="display:flex;align-items:center;gap:5px;">'
+    + '<span class="fp-ms" style="font-size:14px;">history_edu</span>'
+    + 'By ' + escHtml(audit.last_updated_by) + ' &middot; Attendance updated on ' + escHtml(audit.last_updated_on)
+    + '</span></div>';
+}
+
+/* ── Attendance history popup ──
+   Fetches the real change log (status/source over time) from Frappe's
+   Version records, now that track_changes is enabled on Student Attendance.
+   Only changes made after that was turned on will show as separate rows —
+   older records fall back to showing just their current state. */
+function fpShowAttendanceHistory(idx) {
+  var s = (window._fpViewStudents || [])[idx];
+  if (!s) return;
+
+  var header = '<div style="font-size:13px;font-weight:700;color:var(--fp-text-1);margin-bottom:2px;">' + escHtml(s.student_name) + '</div>'
+    + '<div style="font-size:11px;color:var(--fp-text-4);font-family:monospace;margin-bottom:16px;">' + escHtml(s.reg_id || s.student) + '</div>';
+
+  if (!s.attendance_record) {
+    document.getElementById('att-hist-body').innerHTML = header
+      + '<div style="padding:20px;text-align:center;color:var(--fp-text-4);font-size:12px;">'
+      + '<span class="fp-ms" style="font-size:28px;display:block;margin-bottom:8px;opacity:0.4;">history</span>'
+      + 'No attendance record found for this student on this date.</div>';
+    _openModal('att-hist-modal');
+    return;
+  }
+
+  document.getElementById('att-hist-body').innerHTML = header
+    + '<div style="text-align:center;padding:24px;">'
+    + '<span class="fp-ms" style="font-size:28px;display:block;animation:fp-spin 0.8s linear infinite;color:var(--fp-text-4);">sync</span></div>';
+  _openModal('att-hist-modal');
+
+  fpCall('slcm.api.faculty_portal.get_attendance_history', { attendance_record: s.attendance_record },
+    function(data) {
+      var entries = (data && data.entries) ? data.entries : [];
+      var rowsHtml = entries.map(function(e) {
+        var badgeCls = e.status === 'Present' ? 'fp-badge-success' : e.status === 'Late' ? 'fp-badge-warning' : 'fp-badge-danger';
+        var typeIcon = (e.source === 'RFID' || e.source === 'QR') ? 'wifi_tethering' : 'edit_note';
+        return '<tr>'
+          + '<td style="padding:10px;color:var(--fp-text-2);">' + escHtml(e.date) + '</td>'
+          + '<td style="padding:10px;"><span class="fp-badge ' + badgeCls + '">' + escHtml(e.status) + '</span></td>'
+          + '<td style="padding:10px;color:var(--fp-text-2);">' + escHtml(e.by) + '</td>'
+          + '<td style="padding:10px;color:var(--fp-text-2);"><span style="display:flex;align-items:center;gap:4px;">'
+          + '<span class="fp-ms" style="font-size:15px;">' + typeIcon + '</span>' + escHtml(e.type_label) + '</span></td>'
+          + '</tr>';
+      }).join('');
+
+      var html = header
+        + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+        + '<thead><tr style="border-bottom:2px solid var(--fp-border);">'
+        + '<th style="text-align:left;padding:8px 10px;color:var(--fp-text-4);font-weight:700;text-transform:uppercase;font-size:10.5px;">Date</th>'
+        + '<th style="text-align:left;padding:8px 10px;color:var(--fp-text-4);font-weight:700;text-transform:uppercase;font-size:10.5px;">Status</th>'
+        + '<th style="text-align:left;padding:8px 10px;color:var(--fp-text-4);font-weight:700;text-transform:uppercase;font-size:10.5px;">By</th>'
+        + '<th style="text-align:left;padding:8px 10px;color:var(--fp-text-4);font-weight:700;text-transform:uppercase;font-size:10.5px;">Type</th>'
+        + '</tr></thead><tbody>' + rowsHtml + '</tbody></table>';
+
+      if (!data || !data.tracked) {
+        html += '<div style="margin-top:12px;font-size:11px;color:var(--fp-text-4);display:flex;align-items:center;gap:5px;">'
+          + '<span class="fp-ms" style="font-size:13px;">info</span>'
+          + 'Only one entry on file — earlier changes (if any) were made before edit history was enabled.</div>';
+      }
+      document.getElementById('att-hist-body').innerHTML = html;
+    },
+    function(msg) {
+      document.getElementById('att-hist-body').innerHTML = header
+        + '<div class="fp-alert fp-alert-danger" style="border-radius:var(--fp-radius-sm);">'
+        + '<span class="fp-ms">error</span><div>' + escHtml(msg || 'Could not load history.') + '</div></div>';
+    }
+  );
+}
+
+/* Cached per session name so switching between slot tabs after the first
+   load is instant instead of re-fetching from the server every click. */
+var _viewRosterCache = {};
+
+function _fpLoadViewSessionBody(sessionName) {
+  if (_viewRosterCache[sessionName]) {
+    var cached = _viewRosterCache[sessionName];
+    _fpRenderViewSessionBody(cached.students, cached.audit);
+    return;
+  }
+
   /* Show spinner */
   document.getElementById('att-view-body').innerHTML =
     '<div style="text-align:center;padding:48px;">'
     + '<span class="fp-ms" style="font-size:36px;display:block;margin-bottom:10px;animation:fp-spin 0.8s linear infinite;color:var(--fp-text-4);">sync</span>'
     + '<span style="color:var(--fp-text-4);font-size:13px;">Loading attendance…</span></div>';
   document.getElementById('att-view-error').style.display = 'none';
-  _openModal('att-view-modal');
+  document.getElementById('att-view-audit').innerHTML = '';
 
   fpCall('slcm.api.faculty_portal.get_session_students', { session_name: sessionName },
     function(data) {
       var students = (data && data.students) ? data.students : [];
-      var present  = students.filter(function(s) { return s.status === 'Present'; }).length;
-      var late     = students.filter(function(s) { return s.status === 'Late'; }).length;
-      var absent   = students.length - present - late;
-      var pct      = students.length ? Math.round(((present + late) / students.length) * 100) : 0;
-      var pctColor = pct >= 75 ? 'var(--fp-success)' : pct >= 60 ? 'var(--fp-warning)' : 'var(--fp-danger)';
-
-      /* Summary chips */
-      var html = '<div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">'
-        + '<span class="fp-badge fp-badge-success" style="font-size:13px;padding:6px 14px;">'
-        + '<span class="fp-ms" style="font-size:15px;">check_circle</span>' + present + ' Present</span>';
-      if (late) {
-        html += '<span class="fp-badge fp-badge-warning" style="font-size:13px;padding:6px 14px;">'
-          + '<span class="fp-ms" style="font-size:15px;">schedule</span>' + late + ' Late</span>';
-      }
-      html += '<span class="fp-badge fp-badge-danger" style="font-size:13px;padding:6px 14px;">'
-        + '<span class="fp-ms" style="font-size:15px;">cancel</span>' + absent + ' Absent</span>'
-        + '<span class="fp-badge" style="font-size:13px;padding:6px 14px;background:var(--fp-primary-light);color:' + pctColor + ';font-weight:700;">'
-        + '<span class="fp-ms" style="font-size:15px;">percent</span>' + pct + '% Attendance</span>'
-        + '</div>';
-
-      /* Student table */
-      if (students.length) {
-        html += '<div style="border:1px solid var(--fp-border);border-radius:var(--fp-radius-sm);overflow:hidden;">'
-          + '<div style="display:grid;grid-template-columns:32px 1fr auto;gap:0;padding:9px 16px;'
-          + 'background:var(--fp-bg);border-bottom:2px solid var(--fp-border);'
-          + 'font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--fp-text-4);">'
-          + '<span>#</span><span>Student</span><span>Status</span></div>'
-          + '<div style="max-height:400px;overflow-y:auto;">';
-
-        students.forEach(function(s, i) {
-          var st = s.status || 'Absent';
-          var badgeCls = st === 'Present' ? 'fp-badge-success' : st === 'Late' ? 'fp-badge-warning' : 'fp-badge-danger';
-          var rowBg    = st === 'Present' ? 'rgba(22,163,74,0.04)' : st === 'Late' ? 'rgba(217,119,6,0.04)' : 'rgba(220,38,38,0.03)';
-          html += '<div style="display:grid;grid-template-columns:32px 1fr auto;align-items:center;'
-            + 'padding:10px 16px;border-bottom:1px solid var(--fp-border-light);background:' + rowBg + ';">'
-            + '<span style="font-size:11px;color:var(--fp-text-5);font-weight:600;">' + (i+1) + '</span>'
-            + '<div><div style="font-size:13px;font-weight:600;color:var(--fp-text-1);">' + escHtml(s.student_name) + '</div>'
-            + '<div style="font-size:11px;color:var(--fp-text-4);font-family:monospace;">' + escHtml(s.reg_id || s.student) + '</div></div>'
-            + '<span class="fp-badge ' + badgeCls + '">' + escHtml(st) + '</span>'
-            + '</div>';
-        });
-        html += '</div></div>';
-      } else {
-        html += '<div style="padding:32px;text-align:center;color:var(--fp-text-4);">No student records found.</div>';
-      }
-      document.getElementById('att-view-body').innerHTML = html;
+      var audit = data && data.session_audit;
+      _viewRosterCache[sessionName] = { students: students, audit: audit };
+      /* Guard against a slower earlier request resolving after a later
+         tab switch — only render if this is still the active session. */
+      if (sessionName !== _viewSessionName) return;
+      _fpRenderViewSessionBody(students, audit);
     },
     function(msg) {
       document.getElementById('att-view-body').innerHTML = '';
@@ -1496,11 +1804,13 @@ function fpViewSession(sessionName) {
   );
 }
 
-/* Switch view modal → SAT form tool for re-marking */
+/* Switch view modal → SAT tool for re-marking the session being viewed
+   (including its sibling slot picker, if the course has multiple slots
+   today) instead of dropping to the blank free-text form. */
 function fpEditFromView() {
   _closeModal('att-view-modal');
-  /* Open the form-based SAT tool — faculty selects group + date to re-mark */
-  fpOpenMarkModal(null, null);
+  var courseName = document.getElementById('att-view-course').textContent;
+  fpOpenMarkModal(_viewSessionName, courseName, _viewModalSlots);
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -1891,7 +2201,14 @@ function _fpStartRfidTimers() {
   }, 1000);
 }
 
-document.addEventListener('DOMContentLoaded', _fpStartRfidTimers);
+/* Only start the per-second RFID timer if something is actually active —
+   no point scanning all session rows every second on page load when no
+   RFID window is currently open. */
+document.addEventListener('DOMContentLoaded', function() {
+  if (document.querySelector('.fp-session-row[data-rfid-active-until]:not([data-rfid-active-until=""])')) {
+    _fpStartRfidTimers();
+  }
+});
 </script>
 
 {# ══════════════════════════════════════════════════════════
@@ -2099,7 +2416,7 @@ document.addEventListener('DOMContentLoaded', _fpStartRfidTimers);
 
 {# ── View Session Modal ── #}
 <div id="att-view-modal" class="att-modal-backdrop">
-  <div class="att-modal-box" style="max-width:620px;display:flex;flex-direction:column;max-height:88vh;">
+  <div class="att-modal-box" style="max-width:820px;display:flex;flex-direction:column;max-height:90vh;">
 
     {# Header — gradient with Edit button #}
     <div style="background:linear-gradient(135deg,#920c24,#2b2e4a);padding:18px 22px 14px;flex-shrink:0;position:relative;overflow:hidden;border-radius:var(--fp-radius-lg) var(--fp-radius-lg) 0 0;">
@@ -2114,13 +2431,13 @@ document.addEventListener('DOMContentLoaded', _fpStartRfidTimers);
             <div style="font-size:12px;color:rgba(255,255,255,0.65);margin-top:2px;" id="att-view-course">—</div>
           </div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <div id="att-view-rfid" style="display:flex;align-items:center;margin-right:8px;"></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
+          <div id="att-view-rfid" style="display:flex;align-items:center;"></div>
           <button onclick="fpEditFromView()"
                   style="display:flex;align-items:center;gap:6px;padding:7px 14px;
                          background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);
                          border-radius:8px;font-size:12px;font-weight:700;color:#fff;
-                         cursor:pointer;font-family:inherit;transition:background 0.15s;"
+                         cursor:pointer;font-family:inherit;transition:background 0.15s;white-space:nowrap;"
                   onmouseover="this.style.background='rgba(255,255,255,0.25)'"
                   onmouseout="this.style.background='rgba(255,255,255,0.15)'"
                   title="Edit this attendance">
@@ -2131,9 +2448,15 @@ document.addEventListener('DOMContentLoaded', _fpStartRfidTimers);
           </button>
         </div>
       </div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:8px;position:relative;z-index:1;display:flex;align-items:center;gap:6px;">
-        <span class="fp-ms" style="font-size:14px;">schedule</span>
-        <span id="att-view-meta">—</span>
+      {# Second row: schedule/venue meta on the left, slot picker on the
+         right when this course has multiple slots today — own row, so it
+         never crowds or overlaps the top-right action buttons. #}
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;position:relative;z-index:1;flex-wrap:wrap;">
+        <div style="font-size:11px;color:rgba(255,255,255,0.5);display:flex;align-items:center;gap:6px;">
+          <span class="fp-ms" style="font-size:14px;">schedule</span>
+          <span id="att-view-meta">—</span>
+        </div>
+        <div id="att-view-slot-picker" style="display:flex;align-items:center;"></div>
       </div>
     </div>
 
@@ -2150,6 +2473,9 @@ document.addEventListener('DOMContentLoaded', _fpStartRfidTimers);
       <span class="fp-ms">error</span><div></div>
     </div>
 
+    {# Session-level audit trail — activated-by/on, last-updated-by/on #}
+    <div id="att-view-audit" style="flex-shrink:0;"></div>
+
     {# Footer #}
     <div style="padding:14px 22px;border-top:1px solid var(--fp-border);display:flex;gap:10px;flex-shrink:0;">
       <button onclick="fpEditFromView()" class="fp-btn fp-btn-primary" style="flex:1;justify-content:center;font-size:14px;padding:10px 18px;">
@@ -2160,6 +2486,22 @@ document.addEventListener('DOMContentLoaded', _fpStartRfidTimers);
       </button>
     </div>
 
+  </div>
+</div>
+
+{# ── Attendance History Modal (per-student, single-entry) ── #}
+<div id="att-hist-modal" class="att-modal-backdrop">
+  <div class="att-modal-box att-modal-sm">
+    <div class="att-modal-hdr">
+      <div>
+        <div class="att-modal-hdr-title">Attendance History</div>
+        <div class="att-modal-hdr-sub">Current attendance record for this student</div>
+      </div>
+      <button class="att-modal-close" onclick="_closeModal('att-hist-modal')" aria-label="Close">
+        <span class="fp-ms" style="font-size:18px;color:var(--fp-text-3);">close</span>
+      </button>
+    </div>
+    <div class="att-modal-body" id="att-hist-body"></div>
   </div>
 </div>
 

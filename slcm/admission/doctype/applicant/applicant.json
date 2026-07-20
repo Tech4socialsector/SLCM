@@ -466,16 +466,18 @@
    "reqd": 1
   },
   {
+   "depends_on": "eval: doc.program_level == \"Postgraduate\" || doc.program_level == \"Research Course\"",
    "fieldname": "employment_history_tab",
    "fieldtype": "Tab Break",
    "label": "Employment History"
   },
   {
+   "depends_on": "eval: doc.program_level == \"Postgraduate\" || doc.program_level == \"Research Course\"",
    "fieldname": "post_degree_work_experience",
    "fieldtype": "Select",
    "label": "Do you have any post-degree work experience?",
-   "options": "\nYes\nNo",
-   "reqd": 1
+   "mandatory_depends_on": "eval: doc.program_level == \"Postgraduate\" || doc.program_level == \"Research Course\"",
+   "options": "\nYes\nNo"
   },
   {
    "depends_on": "eval:doc.post_degree_work_experience === \"Yes\"",
@@ -1306,7 +1308,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-17 11:20:13.035606",
+ "modified": "2026-07-20 09:57:34.376889",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

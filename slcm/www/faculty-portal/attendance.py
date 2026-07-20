@@ -82,6 +82,7 @@ def get_context(context):
                     "session_type": s.session_type or "Lecture",
                     "from_time": fmt_time(s.session_start_time),
                     "to_time": fmt_time(s.session_end_time),
+                    "from_time_sort": str(s.session_start_time) if s.session_start_time else "",
                     "venue": s.room or "—",
                     "status": s.session_status or "Active",
                     "total": s.total_students or 0,

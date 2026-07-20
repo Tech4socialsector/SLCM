@@ -1,3 +1,5 @@
+import json
+
 import frappe
 from slcm.utils.faculty_portal import get_faculty_name
 
@@ -142,6 +144,12 @@ def _assert_session_owned_by_faculty(session, faculty_name):
         frappe.throw("Not permitted", frappe.PermissionError)
 
 
+# Attendance Type shown to faculty: RFID/QR taps are "Biometric", everything
+# else (Manual, Auto, or unset) reads as "Class attendance".
+def _attendance_type_label(source):
+    return "Biometric" if source in ("RFID", "QR") else "Class attendance"
+
+
 @frappe.whitelist()
 def get_session_students(session_name):
     """Return students in an attendance session with their current status."""
@@ -155,6 +163,18 @@ def get_session_students(session_name):
     session = frappe.get_doc("Attendance Session", session_name, ignore_permissions=True)
     _assert_session_owned_by_faculty(session, faculty_name)
 
+    # Attendance Session Student (roster) has no source/who/when — that detail
+    # only lives on the actual Student Attendance record, when one exists.
+    att_by_student = {
+        r.student: r
+        for r in frappe.get_all(
+            "Student Attendance",
+            filters={"attendance_session": session_name},
+            fields=["name", "student", "source", "modified_by", "modified"],
+            ignore_permissions=True,
+        )
+    }
+
     students = []
     for row in session.get("students", []):
         student_doc = frappe.db.get_value(
@@ -164,21 +184,138 @@ def get_session_students(session_name):
             as_dict=True,
         ) or frappe._dict()
         full_name = " ".join(filter(None, [student_doc.get("first_name"), student_doc.get("last_name")]))
+        att = att_by_student.get(row.student)
+        marked_by_name = frappe.db.get_value("User", att.modified_by, "full_name") if att else None
         students.append({
             "student": row.student,
             "student_name": full_name or row.student,
             "reg_id": student_doc.get("registration_id") or row.student,
             "status": row.status or "Absent",
+            "source": (att.source if att else None) or "—",
+            "type_label": _attendance_type_label(att.source if att else None) if att else "Not marked",
+            "marked_by": marked_by_name or (att.modified_by if att else None) or "—",
+            "marked_on": frappe.utils.format_datetime(att.modified, "dd MMM yyyy, hh:mm a") if att and att.modified else "—",
+            "attendance_record": att.name if att else None,
         })
 
-    return {"students": students, "session_name": session_name}
+    # Session-level audit trail for the footer: when/who activated RFID,
+    # and when attendance was last touched (most recent Student Attendance
+    # edit — falls back to the session doc's own modified timestamp when no
+    # Student Attendance records exist yet).
+    rfid_activated_by_name = (
+        frappe.db.get_value("User", session.rfid_activated_by, "full_name")
+        if session.rfid_activated_by else None
+    )
+    last_updated_by = session.modified_by
+    last_updated_on = session.modified
+    if att_by_student:
+        most_recent = max(att_by_student.values(), key=lambda r: r.modified or "")
+        if most_recent.modified and (not last_updated_on or most_recent.modified > last_updated_on):
+            last_updated_on = most_recent.modified
+            last_updated_by = most_recent.modified_by
+    last_updated_by_name = frappe.db.get_value("User", last_updated_by, "full_name") if last_updated_by else None
+
+    session_audit = {
+        "rfid_activated_by": rfid_activated_by_name or session.rfid_activated_by or None,
+        "rfid_activated_on": frappe.utils.format_datetime(session.rfid_activation_time, "dd MMM yyyy, hh:mm a")
+            if session.rfid_activation_time else None,
+        "last_updated_by": last_updated_by_name or last_updated_by or "—",
+        "last_updated_on": frappe.utils.format_datetime(last_updated_on, "dd MMM yyyy, hh:mm a")
+            if last_updated_on else "—",
+    }
+
+    return {"students": students, "session_name": session_name, "session_audit": session_audit}
+
+
+@frappe.whitelist()
+def get_attendance_history(attendance_record):
+    """Return the change history (status + source over time) for one
+    Student Attendance record, sourced from Frappe's Version log.
+    Requires track_changes to be enabled on Student Attendance — only
+    changes made after that was turned on will appear here."""
+    if frappe.session.user == "Guest":
+        frappe.throw("Not permitted", frappe.PermissionError)
+
+    faculty_name = get_faculty_name()
+    if not faculty_name:
+        frappe.throw("No faculty record found", frappe.DoesNotExistError)
+
+    att = frappe.get_doc("Student Attendance", attendance_record, ignore_permissions=True)
+    if att.attendance_session:
+        session = frappe.get_doc("Attendance Session", att.attendance_session, ignore_permissions=True)
+        _assert_session_owned_by_faculty(session, faculty_name)
+
+    versions = frappe.get_all(
+        "Version",
+        filters={"ref_doctype": "Student Attendance", "docname": attendance_record},
+        fields=["name", "data", "owner", "creation"],
+        order_by="creation asc",
+        ignore_permissions=True,
+    )
+
+    # Track running state so each entry shows the resulting status/source at
+    # that point in time, not just whichever field happened to change.
+    running_status = None
+    running_source = None
+    raw_entries = []
+
+    for v in versions:
+        try:
+            data = json.loads(v.data or "{}")
+        except (ValueError, TypeError):
+            continue
+        changed = data.get("changed") or []
+        field_changes = {row[0]: row[2] for row in changed if len(row) >= 3}
+        if "status" not in field_changes and "source" not in field_changes:
+            continue
+
+        running_status = field_changes.get("status", running_status)
+        running_source = field_changes.get("source", running_source)
+        by_name = frappe.db.get_value("User", v.owner, "full_name") or v.owner
+
+        raw_entries.append({
+            "creation": v.creation,
+            "status": running_status or "—",
+            "by": by_name,
+            "source": running_source or "—",
+            "type_label": _attendance_type_label(running_source),
+        })
+
+    # Always include the current state as the most recent entry, even if no
+    # Version rows exist yet (e.g. track_changes was enabled after creation,
+    # or this is the very first save since it was turned on).
+    current_by = frappe.db.get_value("User", att.modified_by, "full_name") or att.modified_by
+    raw_entries.append({
+        "creation": att.modified,
+        "status": att.status or "—",
+        "by": current_by or "—",
+        "source": att.source or "—",
+        "type_label": _attendance_type_label(att.source),
+    })
+
+    # Collapse consecutive entries that look identical to the faculty — same
+    # status and same displayed Type — even if the raw `source` values differ
+    # (e.g. "Manual" vs None both render as "Class attendance"). Saving the
+    # same attendance twice in a row (Mark then a no-op Edit) creates two
+    # real Version rows but no real second event worth showing. Keep the
+    # earliest timestamp of each such streak.
+    entries = []
+    for entry in raw_entries:
+        if entries and entries[-1]["status"] == entry["status"] and entries[-1]["type_label"] == entry["type_label"]:
+            continue
+        entries.append(entry)
+
+    for entry in entries:
+        entry["date"] = frappe.utils.format_datetime(entry["creation"], "dd MMM yyyy, hh:mm a") if entry["creation"] else "—"
+        del entry["creation"]
+
+    entries.reverse()  # most recent first, matching the reference screenshot
+    return {"entries": entries, "tracked": bool(versions)}
 
 
 @frappe.whitelist()
 def save_attendance(session_name, attendance):
     """Save attendance for an attendance session."""
-    import json
-
     if frappe.session.user == "Guest":
         frappe.throw("Not permitted", frappe.PermissionError)
 
@@ -206,8 +343,45 @@ def save_attendance(session_name, attendance):
         else:
             absent_count += 1
 
+        # Upsert the real Student Attendance record — Attendance Session
+        # Student (the roster row above) has no source/who/when, so without
+        # this, "who marked it / via what method" can never be shown later.
+        existing = frappe.db.exists(
+            "Student Attendance",
+            {"student": row.student, "attendance_session": session_name, "docstatus": ("<", 2)},
+        )
+        if existing:
+            att_doc = frappe.get_doc("Student Attendance", existing)
+            att_doc.status = status
+            att_doc.source = "Manual"
+            att_doc.save(ignore_permissions=True)
+        else:
+            frappe.get_doc({
+                "doctype": "Student Attendance",
+                "student": row.student,
+                "attendance_session": session_name,
+                "class_schedule": session.class_schedule,
+                "course_schedule": session.course_schedule,
+                "course_offer": session.course_offering,
+                "attendance_date": session.session_date,
+                "date": session.session_date,
+                "session_type": session.session_type,
+                "status": status,
+                "source": "Manual",
+                "hours_counted": session.duration_hours or 1.0,
+            }).insert(ignore_permissions=True)
+
     total = len(session.get("students", []))
     pct = round((present_count / total) * 100, 2) if total else 0
+
+    # Reload before this final save — the Student Attendance upserts above
+    # can touch the parent session's `modified` timestamp via controller
+    # hooks, and saving the stale in-memory `session` doc at that point
+    # trips Frappe's TimestampMismatchError ("has been modified after you
+    # have opened it").
+    session = frappe.get_doc("Attendance Session", session_name, ignore_permissions=True)
+    for row in session.get("students", []):
+        row.status = att_map.get(row.student, "Absent")
     session.present_count = present_count
     session.absent_count = absent_count
     session.total_students = total

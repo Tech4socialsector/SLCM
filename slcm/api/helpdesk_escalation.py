@@ -99,7 +99,7 @@ def _process_team(team):
         "HD Ticket",
         filters={
             "agent_group": team.name,
-            "status": "Open",
+            "status_category": "Open",
             "first_responded_on": ["is", "not set"],
         },
         fields=CANDIDATE_TICKET_FIELDS,
@@ -463,7 +463,7 @@ def _send_templated_email(template_name, recipient, context):
 
     template = frappe.get_doc("Email Template", template_name)
     subject = frappe.render_template(template.subject, context)
-    message = frappe.render_template(template.response, context)
+    message = frappe.render_template(template.response_, context)
 
     try:
         frappe.sendmail(

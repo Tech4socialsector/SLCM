@@ -193,7 +193,11 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
         student.intake = raw_intake
 
     # Map quota based on reservation fields
-    if str(applicant.get("ews")).strip() == "Yes":
+    is_international = str(applicant.get("foriegn_national")).strip().lower() in ("yes", "1")
+    
+    if is_international:
+        student.quota = "NA"
+    elif str(applicant.get("ews")).strip() == "Yes":
         student.quota = "EWS"
     else:
         sc_st_obc = (applicant.get("whether_scstobc_ncl") or "").strip()
@@ -203,6 +207,59 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
             student.quota = sc_st_obc
         else:
             student.quota = "General"
+
+    # ── Fetch Dynamic Data from Entrance Test / Merit ──────────────────────────
+    sa_data = frappe.db.get_value(
+        "Entrance Test Seat Allocation",
+        {"applicant": applicant.name, "program": program},
+        ["admit_card_number", "entrance_test_status", "total_marks_secured_in_part_a_b"],
+        as_dict=True
+    )
+    if sa_data:
+        student.admit_card_number = sa_data.admit_card_number
+        if sa_data.entrance_test_status == "Attended":
+            student.exam_attended = "Attended"
+        else:
+            student.exam_attended = "Not Attended"
+        student.total_marks_obtained = sa_data.total_marks_secured_in_part_a_b
+        
+    ma_data = frappe.db.get_value(
+        "Merit List Applicant",
+        {"applicant_id": applicant.name},
+        ["overall_rank", "category_rank", "shortlist_category", "vertical_category", "horizontal_categories", "percentile_score"],
+        as_dict=True
+    )
+    if ma_data:
+        student.final_rank = ma_data.overall_rank
+        student.final_category_rank = ma_data.category_rank
+        student.final_percentile = ma_data.percentile_score
+        student.final_rank_category = ma_data.shortlist_category
+        student.rank_category = ma_data.shortlist_category
+        student.final_vertical = ma_data.vertical_category
+        student.final_horizontal = ma_data.horizontal_categories
+
+    # ── Map Direct Applicant Fields ───────────────────────────────────────────
+    student.annual_income = applicant.get("annual_house_hold_income")
+    student.id_proof_govt_issued_photo_id = applicant.get("id_proof")
+    student.caste_certificate = applicant.get("caste_certificate")
+    student.whether_ews = applicant.get("ews")
+    student.ews_certificate = applicant.get("ews_certificate")
+    student.pwd_required_test = applicant.get("pwd_required_test")
+    student.scribe_allotment = applicant.get("scribe_allotment")
+    student.karnataka_category = applicant.get("karnataka_category")
+    student.ka_study_7yrs = applicant.get("ka_study_7yrs")
+    student.ka_study_7yrs_certificate = applicant.get("ka_study_7yrs_certificate")
+    student.ka_defence_child = applicant.get("ka_defence_child")
+    student.ka_defence_child_certificate = applicant.get("ka_defence_child_certificate")
+    student.ka_govt_child = applicant.get("ka_govt_child")
+    student.ka_govt_child_certificate = applicant.get("ka_govt_child_certificate")
+    student.ka_ais_child = applicant.get("ka_ais_child")
+    student.ka_ais_child_certificate = applicant.get("ka_ais_child_certificate")
+    student.ka_capf_child = applicant.get("ka_capf_child")
+    student.ka_capf_child_certificate = applicant.get("ka_capf_child_certificate")
+    student.curriculum_vitae = applicant.get("cv")
+    student.do_you_have_any_post_degree_work_experince = applicant.get("post_degree_work_experience")
+    student.how_many_years_of_work_experince_do_you_have = applicant.get("years_of_work_experience")
 
     # Set registration date
     student.date_of_registration = nowdate()
@@ -224,7 +281,6 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
 
     # ── Documents (Attachments) ───────────────────────────────────────────────
     student.passport_size_photo           = applicant.get("candidate_photo") or None
-    student.aadhaar_card                  = applicant.get("id_proof") or None
     student.std_x_marksheet               = applicant.get("class_x_marksheet") or None
     student.class_xii_marksheet           = applicant.get("class_xii_marksheet") or None
     student.pwd_certificate               = applicant.get("pwd_certificate") or None
@@ -607,6 +663,10 @@ def convert_applicant_to_student(applicant_name, program, admission_cycle, offer
                 "Could not create Student record. Please check the Error Log for details. Error: {0}"
             ).format(str(err))
         )
+
+    # Mark Applicant as Enrolled
+    if applicant.status != "Enrolled":
+        applicant.db_set("status", "Enrolled", update_modified=True)
 
     # ── 4. Swap User roles ─────────────────────────────────────────────────────
     _update_user_roles_for_student(applicant.email)

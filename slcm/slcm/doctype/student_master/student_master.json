@@ -243,7 +243,9 @@
   "final_category_rank",
   "final_rank_category",
   "final_horizontal",
-  "where_did_you_hear_about_the_programme"
+  "where_did_you_hear_about_the_programme",
+  "pwd_required_test",
+  "scribe_allotment"
  ],
  "fields": [
   {
@@ -269,8 +271,7 @@
   {
    "fieldname": "registration_id",
    "fieldtype": "Data",
-   "label": "Student ID",
-   "length": 20
+   "label": "Student ID"
   },
   {
    "fieldname": "rfid_uid",
@@ -287,7 +288,6 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Application Number",
-   "length": 20,
    "reqd": 1
   },
   {
@@ -1577,37 +1577,37 @@
   },
   {
    "fieldname": "final_rank",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Final Rank"
   },
   {
    "fieldname": "final_percentile",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Final Percentile"
   },
   {
    "fieldname": "final_vertical",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Final Vertical"
   },
   {
    "fieldname": "allotment_round",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Allotment Round"
   },
   {
    "fieldname": "final_category_rank",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Final Category Rank"
   },
   {
    "fieldname": "final_rank_category",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Final Rank Category"
   },
   {
    "fieldname": "final_horizontal",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Final Horizontal"
   },
   {
@@ -1626,17 +1626,17 @@
   },
   {
    "fieldname": "where_did_you_hear_about_the_programme",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Where Did You Hear About the Programme?"
   },
   {
    "fieldname": "rank_category",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Rank Category"
   },
   {
    "fieldname": "do_you_have_any_post_degree_work_experince",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Do you have any Post Degree work experince?"
   },
   {
@@ -1646,12 +1646,24 @@
   },
   {
    "fieldname": "how_many_years_of_work_experince_do_you_have",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "How many years of work experince do you have?"
+  },
+  {
+   "fieldname": "pwd_required_test",
+   "fieldtype": "Select",
+   "label": "Whether scribe required for the test",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "scribe_allotment",
+   "fieldtype": "Select",
+   "label": "Will you arrange for a scribe yourself",
+   "options": "\nI require NLSIU to arrange a scribe for me\nI will arrange the scribe for myself"
   }
  ],
  "links": [],
- "modified": "2026-07-17 14:42:50.925332",
+ "modified": "2026-07-20 13:05:28.900472",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",
