@@ -187,7 +187,7 @@ class EntranceTestList(Document):
 
 
 def _send_allocation_email(allocation, email):
-    """Send a formal Entrance Test Center Selection email to the applicant."""
+    """Send a formal Entrance Test Centre Selection email to the applicant."""
     try:
         template_name = "Entrance Test Allocation"
         if not frappe.db.exists("Email Template", template_name):

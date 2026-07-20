@@ -94,14 +94,14 @@
   {
    "fieldname": "center_name",
    "fieldtype": "Data",
-   "label": "Center Name",
+   "label": "Centre Name",
    "reqd": 1,
    "unique": 1
   },
   {
    "fieldname": "center_address",
    "fieldtype": "Small Text",
-   "label": "Center Address",
+   "label": "Centre Address",
    "reqd": 1
   },
   {

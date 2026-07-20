@@ -110,9 +110,9 @@ function _show_allocation_dialog(frm, applicants, providers) {
                 fieldtype: "HTML",
                 fieldname: "provider_section_label",
                 options: `<div style="font-weight:600; font-size:13px; margin-bottom:8px; color:#333;">
-                            ${__("Select Entrance Test Centers")}
+                            ${__("Select Entrance Test Centres")}
                             <span style="font-weight:400; font-size:11px; color:#888; margin-left:8px;">
-                                — Select one or more centers as preferences for applicants
+                                — Select one or more centres as preferences for applicants
                             </span>
                           </div>`
             },

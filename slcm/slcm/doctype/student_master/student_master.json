@@ -23,12 +23,6 @@
   "id_validity",
   "official_email_id",
   "section",
-  "section_break_ulsd",
-  "scribe_required",
-  "7_years_recognized_education",
-  "column_break_tupx",
-  "arrange_scribe",
-  "recognized_certificate",
   "which_of_the_following_applies_to_you_section",
   "karnataka_category",
   "ka_study_7yrs",
@@ -60,7 +54,6 @@
   "tab_personal",
   "personal_details_section",
   "first_name",
-  "last_name",
   "dob",
   "gender",
   "religion",
@@ -74,7 +67,6 @@
   "date_of_registration",
   "are_you_a_resident_of_bengaluru",
   "column_break_yeox",
-  "middle_name",
   "aadhaar_number",
   "pan_number",
   "nationality",
@@ -174,14 +166,6 @@
   "class_xii_completion_year",
   "class_xii_board",
   "class_xii_max_cgpa",
-  "ug_degree_details_section",
-  "ug_degree_completed",
-  "ug_completion_year",
-  "ug_percentage",
-  "column_break_hmho",
-  "ug_degree_name",
-  "ug_college",
-  "ug_max_cgpa",
   "section_break_lgks",
   "ug_degree_details",
   "pg_degree_details_section",
@@ -219,8 +203,6 @@
   "offer_letter_verified",
   "column_break_xgpy",
   "class_xii_marksheet",
-  "ug_certificate",
-  "ug_transcripts",
   "rules_and_regulations_section",
   "posh_anti_ragging_declaration",
   "parent_declaration",
@@ -261,7 +243,9 @@
   "final_category_rank",
   "final_rank_category",
   "final_horizontal",
-  "where_did_you_hear_about_the_programme"
+  "where_did_you_hear_about_the_programme",
+  "pwd_required_test",
+  "scribe_allotment"
  ],
  "fields": [
   {
@@ -323,7 +307,7 @@
    "fieldtype": "Select",
    "label": "Whether SC/ST/OBC-NCL",
    "length": 15,
-   "options": "General\nSC\nST\nOBC\nEWS\nNRI",
+   "options": "General\nSC\nST\nOBC\nEWS\nNRI\nNA\nOBC-NCL",
    "permlevel": 1
   },
   {
@@ -574,21 +558,9 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "First Name",
+   "label": "Full Name",
    "length": 100,
    "reqd": 1
-  },
-  {
-   "fieldname": "middle_name",
-   "fieldtype": "Data",
-   "label": "Middle Name",
-   "length": 100
-  },
-  {
-   "fieldname": "last_name",
-   "fieldtype": "Data",
-   "label": "Last Name",
-   "length": 100
   },
   {
    "fieldname": "dob",
@@ -621,7 +593,7 @@
    "fieldtype": "Select",
    "label": "Blood Group",
    "length": 5,
-   "options": "A+\nA-\nB+\nB-\nO+\nO-\nAB+\nAB-"
+   "options": "A+\nA-\nB+\nB-\nO+\nO-\nAB+\nAB-\nN/A"
   },
   {
    "default": "0",
@@ -719,20 +691,20 @@
   },
   {
    "fieldname": "phone",
-   "fieldtype": "Phone",
+   "fieldtype": "Data",
    "label": "Phone",
    "length": 20,
    "reqd": 1
   },
   {
    "fieldname": "alternate_phone",
-   "fieldtype": "Phone",
+   "fieldtype": "Data",
    "label": "Alternate Phone",
    "length": 20
   },
   {
    "fieldname": "emergency_contact",
-   "fieldtype": "Phone",
+   "fieldtype": "Data",
    "label": "Emergency Contact",
    "length": 20
   },
@@ -946,57 +918,6 @@
    "label": "If CGPA, maximum CGPA (Class XII/Equivalent)"
   },
   {
-   "fieldname": "ug_degree_details_section",
-   "fieldtype": "Section Break",
-   "label": "UG Degree details"
-  },
-  {
-   "fieldname": "ug_degree_completed",
-   "fieldtype": "Select",
-   "label": "Have you completed your UG degree",
-   "length": 30,
-   "options": "\nYes\nNo\nFinal Year of UG Degree\nUG Degree completed",
-   "reqd": 1
-  },
-  {
-   "depends_on": "eval:doc.ug_degree_completed=='Yes'",
-   "fieldname": "ug_degree_name",
-   "fieldtype": "Data",
-   "label": "Name of Degree (UG)",
-   "length": 100,
-   "mandatory_depends_on": "eval:doc.ug_degree_completed=='Yes'"
-  },
-  {
-   "depends_on": "eval:doc.ug_degree_completed=='Yes'",
-   "fieldname": "ug_completion_year",
-   "fieldtype": "Data",
-   "label": "Year of Completion (UG Degree)",
-   "length": 10,
-   "mandatory_depends_on": "eval:doc.ug_degree_completed=='Yes'"
-  },
-  {
-   "depends_on": "eval:doc.ug_degree_completed=='Yes'",
-   "fieldname": "ug_college",
-   "fieldtype": "Data",
-   "label": "College/University (UG Degree)",
-   "length": 140,
-   "mandatory_depends_on": "eval:doc.ug_degree_completed=='Yes'"
-  },
-  {
-   "depends_on": "eval:doc.ug_degree_completed=='Yes'",
-   "fieldname": "ug_percentage",
-   "fieldtype": "Float",
-   "label": "Percentage/CGPA obtained (UG Degree)",
-   "mandatory_depends_on": "eval:doc.ug_degree_completed=='Yes'"
-  },
-  {
-   "depends_on": "eval:doc.ug_degree_completed=='Yes'",
-   "fieldname": "ug_max_cgpa",
-   "fieldtype": "Float",
-   "label": "If CGPA, maximum CGPA (UG Degree)",
-   "mandatory_depends_on": "eval:doc.ug_degree_completed=='Yes'"
-  },
-  {
    "fieldname": "tab_account",
    "fieldtype": "Tab Break",
    "label": "Account"
@@ -1139,8 +1060,7 @@
   {
    "fieldname": "pan_card",
    "fieldtype": "Attach",
-   "label": "PAN Card",
-   "reqd": 1
+   "label": "PAN Card"
   },
   {
    "default": "0",
@@ -1193,20 +1113,6 @@
    "fieldtype": "Attach",
    "label": "Class XII Marksheet/Equivalent (Max 5MB - png, jpeg, jpg, pdf)",
    "reqd": 1
-  },
-  {
-   "depends_on": "eval:doc.ug_degree_completed=='Yes'",
-   "fieldname": "ug_certificate",
-   "fieldtype": "Attach",
-   "label": "UG Degree/Bonafide Certificate (Max 5MB - png, jpeg, jpg, pdf)",
-   "mandatory_depends_on": "eval:doc.ug_degree_completed=='Yes'"
-  },
-  {
-   "depends_on": "eval:doc.ug_degree_completed=='Yes'",
-   "fieldname": "ug_transcripts",
-   "fieldtype": "Attach",
-   "label": "Transcripts/Marksheets (Max 5MB - png, jpeg, jpg, pdf)",
-   "mandatory_depends_on": "eval:doc.ug_degree_completed=='Yes'"
   },
   {
    "fieldname": "transfer_certificate",
@@ -1308,8 +1214,7 @@
    "fieldtype": "Select",
    "label": "Marital status",
    "length": 15,
-   "options": "\nMarried\nUnmarried\nWidowed\nDivorced\nSeparated",
-   "reqd": 1
+   "options": "\nMarried\nUnmarried\nWidowed\nDivorced\nSeparated"
   },
   {
    "depends_on": "eval:doc.state",
@@ -1412,10 +1317,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "column_break_hmho",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "section_break_lgks",
    "fieldtype": "Section Break",
    "label": "UG Degree Deatils"
@@ -1492,7 +1393,6 @@
    "fetch_from": "programme_of_study.program_name",
    "fieldname": "master_programme",
    "fieldtype": "Link",
-   "hidden": 1,
    "label": "Programme",
    "options": "Programme Master"
   },
@@ -1504,7 +1404,7 @@
   },
   {
    "fieldname": "id_validity",
-   "fieldtype": "Date",
+   "fieldtype": "Int",
    "label": "ID Validity"
   },
   {
@@ -1527,7 +1427,7 @@
    "fieldname": "annual_income",
    "fieldtype": "Data",
    "label": "Current Annual Household Income (in INR)",
-   "length": 20
+   "length": 30
   },
   {
    "fieldname": "employement_details",
@@ -1551,38 +1451,6 @@
    "fieldname": "ews_certificate",
    "fieldtype": "Attach",
    "label": "EWS Certificate"
-  },
-  {
-   "fieldname": "scribe_required",
-   "fieldtype": "Select",
-   "label": "Whether scribe required for the test?",
-   "length": 5,
-   "options": "\nYes\nNo"
-  },
-  {
-   "fieldname": "arrange_scribe",
-   "fieldtype": "Small Text",
-   "label": "Will you arrange for a scribe yourself or would you require the NLSIU to arrange a scribe for you?"
-  },
-  {
-   "fieldname": "section_break_ulsd",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "7_years_recognized_education",
-   "fieldtype": "Select",
-   "label": "Studied for not less than 7 years in a recognized educational institution in Karnataka",
-   "length": 5,
-   "options": "\nYes\nNo"
-  },
-  {
-   "fieldname": "column_break_tupx",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "recognized_certificate",
-   "fieldtype": "Attach",
-   "label": "Recognized Certificate"
   },
   {
    "fieldname": "curriculum_vitae",
@@ -1780,10 +1648,22 @@
    "fieldname": "how_many_years_of_work_experince_do_you_have",
    "fieldtype": "Small Text",
    "label": "How many years of work experince do you have?"
+  },
+  {
+   "fieldname": "pwd_required_test",
+   "fieldtype": "Select",
+   "label": "Whether scribe required for the test",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "scribe_allotment",
+   "fieldtype": "Select",
+   "label": "Will you arrange for a scribe yourself",
+   "options": "\nI require NLSIU to arrange a scribe for me\nI will arrange the scribe for myself"
   }
  ],
  "links": [],
- "modified": "2026-07-20 09:13:17.571291",
+ "modified": "2026-07-20 13:05:28.900472",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",

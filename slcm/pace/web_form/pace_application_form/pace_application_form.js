@@ -3883,7 +3883,12 @@ function paceWireAddressLinkFilters() {
 
 		function stateQueryFn() {
 			var eff = effCountryFrom(countryFld);
-			return { filters: [['State', 'country', '=', eff]] };
+			return {
+				or_filters: [
+					['State', 'country', '=', eff],
+					['State', 'name', '=', 'Other']
+				]
+			};
 		}
 
 		function districtQueryFn() {
@@ -3891,12 +3896,12 @@ function paceWireAddressLinkFilters() {
 			if (!st) {
 				return { filters: [['City', 'name', '=', '__slcm_no_state__']] };
 			}
-			var filters = [['City', 'state', '=', st]];
-			var eff = effCountryFrom(countryFld);
-			if (eff) {
-				filters.push(['City', 'country', '=', eff]);
-			}
-			return { filters: filters };
+			return {
+				or_filters: [
+					['City', 'state', '=', st],
+					['City', 'name', '=', 'Other']
+				]
+			};
 		}
 
 		if (wf.set_query) {
@@ -3950,8 +3955,8 @@ function paceWireAddressLinkFilters() {
 				return;
 			}
 
-			// Validate State against Country
-			if (currentCountry) {
+			// Validate State against Country (bypass if 'Other')
+			if (currentCountry && String(currentState).toUpperCase() !== 'OTHER' && String(currentCountry).toUpperCase() !== 'OTHER') {
 				frappe.call({
 					method: "frappe.client.get_value",
 					args: {
@@ -3991,8 +3996,8 @@ function paceWireAddressLinkFilters() {
 				return;
 			}
 
-			// Validate District against State
-			if (currentState) {
+			// Validate District against State (bypass if 'Other')
+			if (currentState && String(currentDistrict).toUpperCase() !== 'OTHER' && String(currentState).toUpperCase() !== 'OTHER') {
 				frappe.call({
 					method: "frappe.client.get_value",
 					args: {

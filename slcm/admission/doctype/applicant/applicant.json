@@ -466,16 +466,18 @@
    "reqd": 1
   },
   {
+   "depends_on": "eval: doc.program_level == \"Postgraduate\" || doc.program_level == \"Research Course\"",
    "fieldname": "employment_history_tab",
    "fieldtype": "Tab Break",
    "label": "Employment History"
   },
   {
+   "depends_on": "eval: doc.program_level == \"Postgraduate\" || doc.program_level == \"Research Course\"",
    "fieldname": "post_degree_work_experience",
    "fieldtype": "Select",
    "label": "Do you have any post-degree work experience?",
-   "options": "\nYes\nNo",
-   "reqd": 1
+   "mandatory_depends_on": "eval: doc.program_level == \"Postgraduate\" || doc.program_level == \"Research Course\"",
+   "options": "\nYes\nNo"
   },
   {
    "depends_on": "eval:doc.post_degree_work_experience === \"Yes\"",
@@ -575,7 +577,7 @@
    "depends_on": "eval:doc.karnataka_category === \"Yes\"",
    "fieldname": "ka_defence_child",
    "fieldtype": "Check",
-   "label": "Child of Defence / Ex-Serviceman (Karnataka domicile)"
+   "label": "Child of Defence / Ex-Serviceman (Karnataka)"
   },
   {
    "depends_on": "eval:doc.ka_defence_child",
@@ -605,7 +607,7 @@
    "depends_on": "eval:doc.karnataka_category === \"Yes\"",
    "fieldname": "ka_ais_child",
    "fieldtype": "Check",
-   "label": "Child of CAPF employee with Karnataka domicile"
+   "label": "Child of CAPF employee with Karnataka"
   },
   {
    "depends_on": "eval:doc.ka_ais_child",
@@ -620,7 +622,7 @@
    "depends_on": "eval:doc.karnataka_category === \"Yes\"",
    "fieldname": "ka_capf_child",
    "fieldtype": "Check",
-   "label": "Child of Central Armed Police Force employee (Karnataka domicile)"
+   "label": "Child of Central Armed Police Force employee (Karnataka)"
   },
   {
    "depends_on": "eval:doc.ka_capf_child",
@@ -1023,7 +1025,7 @@
    "fieldname": "center_filled",
    "fieldtype": "Check",
    "in_list_view": 1,
-   "label": "Center Filled"
+   "label": "Centre Filled"
   },
   {
    "fieldname": "application_fee_status",
@@ -1247,7 +1249,7 @@
   {
    "fieldname": "foriegn_national",
    "fieldtype": "Select",
-   "label": "Are you a Foriegn National with a valid passport of a country other that India?",
+   "label": "Are you a foreign national with a valid passport of a country other that India?",
    "options": "\nYes\nNo",
    "reqd": 1
   },
@@ -1306,7 +1308,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-15 10:34:52.657585",
+ "modified": "2026-07-20 09:57:34.376889",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

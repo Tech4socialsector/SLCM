@@ -1,10 +1,6 @@
 // Copyright (c) 2026, TFSS and contributors
 // For license information, please see license.txt
 
-/** Country link equals India → all states for that country; otherwise only State named "Other". */
-function pace_country_link_is_india(country_link_name) {
-    return ((country_link_name || "") + "").trim().toLowerCase() === "india";
-}
 
 function pace_setup_address_link_queries(frm) {
     const blocks = [
@@ -14,12 +10,10 @@ function pace_setup_address_link_queries(frm) {
 
     blocks.forEach(({ country, state, district }) => {
         frm.set_query(state, () => {
-            const raw = frm.doc[country];
-            const effective_country = ((raw || "") + "").trim() || "India";
-            if (pace_country_link_is_india(effective_country)) {
-                return { filters: { country: effective_country } };
+            if (frm.doc[country]) {
+                return { filters: { country: frm.doc[country] } };
             }
-            return { filters: { name: "Other" } };
+            return { filters: { name: "!__noop__" } };
         });
 
         frm.set_query(district, () => {
@@ -79,6 +73,28 @@ frappe.ui.form.on("PACE Application", {
         }, 200);
 
         pace_setup_address_link_queries(frm);
+
+        if (frm.doc.status === "Draft" || frm.doc.__islocal) {
+            frm.add_custom_button(__("Save as Draft"), function () {
+                frm.set_value("status", "Draft");
+                
+                frappe.call({
+                    method: "frappe.desk.form.save.savedocs",
+                    args: {
+                        doc: JSON.stringify(frm.doc),
+                        action: "Save"
+                    },
+                    freeze: true,
+                    freeze_message: __("Saving Draft..."),
+                    callback: function(r) {
+                        if (!r.exc) {
+                            frappe.show_alert({message: __("Saved as Draft"), indicator: "green"});
+                            frm.reload_doc();
+                        }
+                    }
+                });
+            });
+        }
 
         if (!frm.is_new()) {
             frm.add_custom_button(__("Application Fee Invoice"), function() {

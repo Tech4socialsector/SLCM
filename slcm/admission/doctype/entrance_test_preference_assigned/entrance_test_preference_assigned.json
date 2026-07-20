@@ -24,12 +24,12 @@
             "fieldname": "center_name",
             "fieldtype": "Data",
             "in_list_view": 1,
-            "label": "Center Name"
+            "label": "Centre Name"
         },
         {
             "fieldname": "center_address",
             "fieldtype": "Small Text",
-            "label": "Center Address"
+            "label": "Centre Address"
         },
         {
             "fieldname": "preference_order",
