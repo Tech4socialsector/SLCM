@@ -1224,11 +1224,11 @@
   "state": "Chhattisgarh"
  },
  {
-  "city_name": "Bilaspur",
+  "city_name": "Bilaspur (Chhattisgarh)",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-07-20 14:04:49.075165",
+  "modified": "2026-07-20 14:32:58.815830",
   "name": "a4qhk5p6fn",
   "state": "Chhattisgarh"
  },
@@ -2124,11 +2124,11 @@
   "state": "Himachal Pradesh"
  },
  {
-  "city_name": "Hamirpur",
+  "city_name": "Hamirpur (Himachal Pradesh)",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-07-20 14:04:49.536612",
+  "modified": "2026-07-20 14:33:42.536361",
   "name": "a4vf0loioo",
   "state": "Himachal Pradesh"
  },
@@ -5157,11 +5157,11 @@
   "state": "Rajasthan"
  },
  {
-  "city_name": "Pratapgarh",
+  "city_name": "Pratapgarh (Rajasthan)",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-07-20 14:04:51.042500",
+  "modified": "2026-07-20 14:34:22.457768",
   "name": "a5erjtbugs",
   "state": "Rajasthan"
  },
@@ -6984,29 +6984,29 @@
   "state": "West Bengal"
  },
  {
-  "city_name": "Hamirpur",
+  "city_name": "Hamirpur (Uttar Pradesh)",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-07-20 14:06:50.891516",
+  "modified": "2026-07-20 14:33:51.582955",
   "name": "bas0h6t8g1",
   "state": "Uttar Pradesh"
  },
  {
-  "city_name": "Pratapgarh",
+  "city_name": "Pratapgarh (Uttar Pradesh)",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-07-20 14:08:00.359243",
+  "modified": "2026-07-20 14:34:31.096859",
   "name": "c0jh2vcp9n",
   "state": "Uttar Pradesh"
  },
  {
-  "city_name": "Bilaspur",
+  "city_name": "Bilaspur ( Himachal Pradesh )",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-07-20 14:09:22.392230",
+  "modified": "2026-07-20 14:32:49.725041",
   "name": "cq7ltukct2",
   "state": "Himachal Pradesh"
  }
