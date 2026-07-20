@@ -243,7 +243,9 @@
   "final_category_rank",
   "final_rank_category",
   "final_horizontal",
-  "where_did_you_hear_about_the_programme"
+  "where_did_you_hear_about_the_programme",
+  "pwd_required_test",
+  "scribe_allotment"
  ],
  "fields": [
   {
@@ -1646,10 +1648,22 @@
    "fieldname": "how_many_years_of_work_experince_do_you_have",
    "fieldtype": "Small Text",
    "label": "How many years of work experince do you have?"
+  },
+  {
+   "fieldname": "pwd_required_test",
+   "fieldtype": "Select",
+   "label": "Whether scribe required for the test",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "scribe_allotment",
+   "fieldtype": "Select",
+   "label": "Will you arrange for a scribe yourself",
+   "options": "\nI require NLSIU to arrange a scribe for me\nI will arrange the scribe for myself"
   }
  ],
  "links": [],
- "modified": "2026-07-20 09:13:17.571291",
+ "modified": "2026-07-20 13:05:28.900472",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",
