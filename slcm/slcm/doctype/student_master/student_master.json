@@ -45,7 +45,6 @@
   "programme_of_study",
   "pace_programme",
   "level_of_study",
-  "attendance_status",
   "column_break_bgkj",
   "specialisation",
   "current_year",
@@ -57,23 +56,18 @@
   "dob",
   "gender",
   "religion",
-  "marital_status",
   "quota",
   "pre_existing_conditions",
-  "state_of_domicile",
   "city",
   "country",
   "passport_available",
   "date_of_registration",
   "are_you_a_resident_of_bengaluru",
   "column_break_yeox",
-  "aadhaar_number",
-  "pan_number",
   "nationality",
   "blood_group",
   "pwd",
-  "disability_special_needs",
-  "dietary_restrictions",
+  "disability_type",
   "state",
   "district",
   "pincode",
@@ -519,12 +513,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "attendance_status",
-   "fieldtype": "Data",
-   "label": "Attendance Status",
-   "length": 20
-  },
-  {
    "fieldname": "tab_academic_progress",
    "fieldtype": "Tab Break",
    "label": "Current Academic Progress"
@@ -600,29 +588,10 @@
    "label": "PWD"
   },
   {
-   "depends_on": "eval:doc.pwd==1",
-   "fieldname": "disability_special_needs",
-   "fieldtype": "Small Text",
-   "hidden": 1,
-   "label": "Disability/Special Needs"
-  },
-  {
    "fieldname": "pre_existing_conditions",
    "fieldtype": "Small Text",
    "hidden": 1,
    "label": "Pre-existing Conditions"
-  },
-  {
-   "fieldname": "dietary_restrictions",
-   "fieldtype": "Data",
-   "label": "Dietary Restrictions",
-   "length": 100
-  },
-  {
-   "fieldname": "state_of_domicile",
-   "fieldtype": "Data",
-   "label": "State of Domicile",
-   "length": 50
   },
   {
    "fieldname": "state",
@@ -636,18 +605,6 @@
    "fieldtype": "Link",
    "label": "District",
    "options": "City"
-  },
-  {
-   "fieldname": "aadhaar_number",
-   "fieldtype": "Int",
-   "label": "Aadhaar Number",
-   "length": 12
-  },
-  {
-   "fieldname": "pan_number",
-   "fieldtype": "Data",
-   "label": "PAN Number",
-   "length": 10
   },
   {
    "fieldname": "passport_available",
@@ -1198,21 +1155,13 @@
    "fieldtype": "Data",
    "label": "Personal Email",
    "length": 100,
-   "options": "Email",
-   "reqd": 1
+   "options": "Email"
   },
   {
    "fieldname": "key_number",
    "fieldtype": "Data",
    "label": "Key Number",
    "length": 20
-  },
-  {
-   "fieldname": "marital_status",
-   "fieldtype": "Select",
-   "label": "Marital status",
-   "length": 15,
-   "options": "\nMarried\nUnmarried\nWidowed\nDivorced\nSeparated"
   },
   {
    "depends_on": "eval:doc.state",
@@ -1616,11 +1565,13 @@
   {
    "fieldname": "fin_certificate_h",
    "fieldtype": "Attach",
+   "hidden": 1,
    "label": "Fin. Certificate (H)"
   },
   {
    "fieldname": "fin_certificate_wh",
    "fieldtype": "Attach",
+   "hidden": 1,
    "label": "Fin. Certificate (WH)"
   },
   {
@@ -1647,11 +1598,18 @@
    "fieldname": "how_many_years_of_work_experince_do_you_have",
    "fieldtype": "Small Text",
    "label": "How many years of work experince do you have?"
+  },
+  {
+   "depends_on": "eval:doc.pwd==1",
+   "fieldname": "disability_type",
+   "fieldtype": "Small Text",
+   "hidden": 1,
+   "label": "Disability Type"
   }
  ],
  "image_field": "passport_size_photo",
  "links": [],
- "modified": "2026-07-20 09:13:17.571291",
+ "modified": "2026-07-20 15:32:09.176663",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",
