@@ -1,14 +1,5 @@
 [
  {
-  "city_name": "Bangaluru",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-03-10 20:39:20.535871",
-  "name": "Bangaluru",
-  "state": "Karnataka"
- },
- {
   "city_name": "Ambarnath",
   "country": "India",
   "docstatus": 0,
@@ -3654,15 +3645,6 @@
   "state": "Tamil Nadu"
  },
  {
-  "city_name": "Hosur",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.244117",
-  "name": "Hosur",
-  "state": "Tamil Nadu"
- },
- {
   "city_name": "Kallakurichi",
   "country": "India",
   "docstatus": 0,
@@ -3678,15 +3660,6 @@
   "doctype": "City",
   "modified": "2026-06-16 15:02:26.254997",
   "name": "Kanchipuram",
-  "state": "Tamil Nadu"
- },
- {
-  "city_name": "Karaikudi",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.263243",
-  "name": "Karaikudi",
   "state": "Tamil Nadu"
  },
  {
@@ -3708,39 +3681,12 @@
   "state": "Tamil Nadu"
  },
  {
-  "city_name": "Kumarapalayam",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.293428",
-  "name": "Kumarapalayam",
-  "state": "Tamil Nadu"
- },
- {
-  "city_name": "Kumbakonam",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.303200",
-  "name": "Kumbakonam",
-  "state": "Tamil Nadu"
- },
- {
   "city_name": "Madurai",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
   "modified": "2026-06-16 15:02:26.313846",
   "name": "Madurai",
-  "state": "Tamil Nadu"
- },
- {
-  "city_name": "Nagercoil",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.320509",
-  "name": "Nagercoil",
   "state": "Tamil Nadu"
  },
  {
@@ -3753,15 +3699,6 @@
   "state": "Tamil Nadu"
  },
  {
-  "city_name": "Neyveli",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.344218",
-  "name": "Neyveli",
-  "state": "Tamil Nadu"
- },
- {
   "city_name": "Perambalur",
   "country": "India",
   "docstatus": 0,
@@ -3771,30 +3708,12 @@
   "state": "Tamil Nadu"
  },
  {
-  "city_name": "Pollachi",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.366868",
-  "name": "Pollachi",
-  "state": "Tamil Nadu"
- },
- {
   "city_name": "Pudukkottai",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
   "modified": "2026-06-16 15:02:26.375597",
   "name": "Pudukkottai",
-  "state": "Tamil Nadu"
- },
- {
-  "city_name": "Rajapalayam",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.381419",
-  "name": "Rajapalayam",
   "state": "Tamil Nadu"
  },
  {
@@ -3813,15 +3732,6 @@
   "doctype": "City",
   "modified": "2026-06-16 15:02:26.395070",
   "name": "Salem",
-  "state": "Tamil Nadu"
- },
- {
-  "city_name": "Sivakasi",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.400148",
-  "name": "Sivakasi",
   "state": "Tamil Nadu"
  },
  {

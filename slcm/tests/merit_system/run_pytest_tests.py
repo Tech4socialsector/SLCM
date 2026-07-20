@@ -6,3 +6,5 @@ def run():
 
 if __name__ == "__main__":
     run()
+
+# bench --site slcm execute slcm.tests.merit_system.run_pytest_tests.run
