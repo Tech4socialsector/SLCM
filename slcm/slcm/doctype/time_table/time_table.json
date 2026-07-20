@@ -38,7 +38,8 @@
   "title",
   "color",
   "column_break_4",
-  "class_schedule_color"
+  "class_schedule_color",
+  "linked_google_event"
  ],
  "fields": [
   {
@@ -244,6 +245,14 @@
    "fieldtype": "Float",
    "label": "Duration (Hours)",
    "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "linked_google_event",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Linked Google Calendar Event",
+   "options": "Event",
    "read_only": 1
   }
  ],

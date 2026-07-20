@@ -211,15 +211,40 @@ class StudentAttendance(Document):
 			frappe.log_error(message=f"Error triggering recalculation: {str(e)}", title="Recalculation Trigger Error")
 
 	def trigger_session_update(self):
-		"""Update the parent Attendance Session counts"""
-		if self.attendance_session:
-			try:
-				doc = frappe.get_doc("Attendance Session", self.attendance_session)
-				doc.flags.from_student_attendance = True  # Prevents cascade recalculations
-				doc.update_attendance_summary()
-				doc.save(ignore_permissions=True)
-			except Exception as e:
-				frappe.log_error(message=f"Error updating session summary: {str(e)}", title="Session Summary Update Error")
+		"""Update the parent Attendance Session counts.
+
+		Multiple Student Attendance records for the same session can save in
+		quick succession (e.g. bulk-marking a whole class), each triggering
+		this update — a normal load -> modify -> doc.save() here would race
+		on the session's in-memory timestamp and fail under that contention.
+		Recompute in memory (reusing the doctype's own aggregation logic),
+		then write the scalar fields directly via frappe.db.set_value(),
+		which has no timestamp to go stale.
+		"""
+		if not self.attendance_session:
+			return
+
+		try:
+			doc = frappe.get_doc("Attendance Session", self.attendance_session)
+			doc.flags.from_student_attendance = True  # Prevents cascade recalculations
+			doc.update_attendance_summary()
+			frappe.db.set_value(
+				"Attendance Session",
+				doc.name,
+				{
+					"present_count": doc.present_count,
+					"absent_count": doc.absent_count,
+					"total_boys": doc.total_boys,
+					"total_girls": doc.total_girls,
+					"attendance_marked": doc.attendance_marked,
+					"session_status": doc.session_status,
+					"total_students": doc.total_students,
+					"attendance_percentage": doc.attendance_percentage,
+				},
+				update_modified=True,
+			)
+		except Exception as e:
+			frappe.log_error(message=f"Error updating session summary: {str(e)}", title="Session Summary Update Error")
 
 
 @frappe.whitelist()

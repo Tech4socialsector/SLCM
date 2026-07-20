@@ -15,39 +15,43 @@ from frappe.utils import flt
 def calculate_student_attendance(student, course_offering):
 	"""
 	Calculate attendance for a single student in a specific course offering.
-	
+
 	Args:
 		student: Student ID
 		course_offering: Course Offering ID
-	
+
 	Returns:
 		dict: Attendance summary with all calculated fields
 	"""
+	return _calculate_and_save_summary(student, course_offering)
+
+
+def _calculate_and_save_summary(student, course_offering):
 	# Get or create attendance summary
 	summary = get_or_create_summary(student, course_offering)
-	
+
 	# Get Settings
 	settings = frappe.get_single("Attendance Settings")
 	exam_settings = frappe.get_single("Examination Settings")
 
 	# Calculate sessions
 	sessions_data = calculate_sessions(course_offering)
-	
+
 	# Calculate attendance
 	attendance_data = calculate_attendance_records(student, course_offering)
-	
+
 	# Calculate office hours
 	office_hours_data = calculate_office_hours(student, course_offering)
-	
+
 	# Update Office Hours Group Student (Office Hours)
 	update_office_hours_in_group(student, course_offering, office_hours_data['total_hours'])
-	
+
 	# Get condonation
 	condonation_data = get_approved_condonation(student, course_offering)
 
 	# Get FA/MFA hours
 	fa_mfa_data = calculate_fa_mfa_hours(student, course_offering)
-	
+
 	# -- Update summary fields --
 	# 0. Total Scheduled Class Hours (all planned sessions from Time Table)
 	summary.total_scheduled_class_hours = sessions_data['total_hours']
@@ -66,20 +70,20 @@ def calculate_student_attendance(student, course_offering):
 
 	# 5. Total FA/MFA Hours
 	summary.total_fa_mfa_hours = fa_mfa_data['total_hours']
-	
+
 	# 6. Basic Attendance (Sessions/Hours Attended)
 	# This usually tracks Class Hours attended
 	raw_attended = attendance_data['attended_hours']
 	summary.total_attended_class_hours = raw_attended
-	
+
 	# 7. Total Hours (Calculated)
 	# Sum of Class + Office + Condonation + FA/MFA
 	# As requested: "only calculate total attended class, total office hours, total condonation hours, total fa mfa hours"
 	total_hours_calculated = raw_attended
-	
+
 	# Add Office Hours
-	total_hours_calculated += office_hours_data['total_hours'] 
-	
+	total_hours_calculated += office_hours_data['total_hours']
+
 	# Add Condonation
 	total_hours_calculated += condonation_data['hours']
 
@@ -87,21 +91,21 @@ def calculate_student_attendance(student, course_offering):
 	total_hours_calculated += fa_mfa_data['total_hours']
 
 	summary.attended_classes = total_hours_calculated
-	
+
 	# Calculate Percentage
 	# Percentage = (Total Hours Calculated / Total Class Hours Conducted) * 100
 	# Note: Office hours usually don't add to the denominator unless they are mandatory "sessions".
 	# If Office Hours are purely supplementary (bonus), denominator stays as Class Hours.
 	# If Office Hours are mandatory, they should be in 'total_classes' (denominator).
 	# Assuming standard "Bonus" behavior for now: Denominator = Class Hours.
-	
+
 	denominator = summary.total_class_hours
-	
+
 	if denominator > 0:
 		summary.attendance_percentage = (summary.attended_classes / denominator) * 100
 	else:
 		summary.attendance_percentage = 0
-	
+
 	# Determine eligibility
 	minimum_required = flt(settings.minimum_attendance_percentage)
 	summary.minimum_required_percentage = minimum_required
@@ -109,27 +113,83 @@ def calculate_student_attendance(student, course_offering):
 	is_eligible = 0
 	if summary.attendance_percentage >= minimum_required:
 		is_eligible = 1
-	
+
 	# Check FA/MFA status (Override)
 	if not is_eligible and exam_settings.allow_fa_mfa:
 		if check_fa_mfa_eligibility(student, course_offering):
 			is_eligible = 1
 			# Optionally log or mark separate field that it is via FA/MFA
-	
+
 	summary.eligible_for_exam = is_eligible
 	# summary.eligibility_status = "Eligible" if is_eligible else "Shortage"
-	
+
 	# Populate Application Lists (Condonation & FA/MFA)
 	populate_application_lists(summary, student, course_offering)
-	
+
 	# Populate Section
 	summary.section = get_student_section(student, course_offering)
-
-	# Save
 	summary.last_updated = frappe.utils.now()
-	summary.save(ignore_permissions=True)
-	
+
+	_persist_summary(summary)
+
 	return summary.as_dict()
+
+
+# Scalar fields written via a lock-free frappe.db.set_value() below — kept
+# as an explicit list (rather than looping over every meta field) so a
+# future field addition to Attendance Summary doesn't silently start (or
+# stop) being persisted here without a deliberate decision.
+_SUMMARY_SCALAR_FIELDS = [
+	"total_scheduled_class_hours", "total_classes", "total_class_hours",
+	"total_office_hours", "total_condonation_hours", "total_fa_mfa_hours",
+	"total_attended_class_hours", "attended_classes", "attendance_percentage",
+	"minimum_required_percentage", "eligible_for_exam", "section", "last_updated",
+]
+
+
+def _persist_summary(summary):
+	"""Write the calculated Attendance Summary without loading-then-saving
+	the whole document.
+
+	This calculation can be triggered many times in quick succession for the
+	same student+course_offering (queued recalculation jobs racing manual
+	saves), and Frappe's normal load -> modify -> doc.save() flow throws
+	TimestampMismatchError whenever another writer touches the row in
+	between — under heavy contention that can fail every retry attempt.
+	frappe.db.set_value() issues a direct UPDATE keyed by document name, with
+	no in-memory timestamp to go stale, so concurrent recalculations simply
+	each apply their own (idempotent) result instead of fighting over one
+	stale copy. Child tables (condonation_list / fa_mfa_list) still need a
+	full table rewrite, which we do directly via SQL for the same reason.
+	"""
+	frappe.db.set_value(
+		"Attendance Summary",
+		summary.name,
+		{field: summary.get(field) for field in _SUMMARY_SCALAR_FIELDS},
+		update_modified=True,
+	)
+	_replace_child_rows(summary, "condonation_list")
+	_replace_child_rows(summary, "fa_mfa_list")
+
+
+def _replace_child_rows(summary, table_fieldname):
+	"""Directly rewrite a child table's rows for one parent, without going
+	through the parent document's save (and its timestamp check)."""
+	rows = summary.get(table_fieldname) or []
+	child_doctype = summary.meta.get_field(table_fieldname).options
+
+	frappe.db.delete(child_doctype, {"parent": summary.name, "parenttype": "Attendance Summary"})
+
+	for idx, row in enumerate(rows, start=1):
+		row_dict = row.as_dict()
+		row_dict.update({
+			"parent": summary.name,
+			"parenttype": "Attendance Summary",
+			"parentfield": table_fieldname,
+			"idx": idx,
+		})
+		row_dict.pop("name", None)
+		frappe.get_doc(row_dict).db_insert()
 
 
 def calculate_sessions(course_offering):
