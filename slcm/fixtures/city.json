@@ -1,101 +1,47 @@
 [
  {
-  "city_name": "Bangaluru",
+  "city_name": "Nicobar",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-03-10 20:39:20.535871",
-  "name": "Bangaluru",
-  "state": "Karnataka"
- },
- {
-  "city_name": "Ambarnath",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-05-04 10:41:07.574543",
-  "name": "Ambarnath",
-  "state": "Maharashtra"
- },
- {
-  "city_name": "Karaikkudi",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-05-04 10:41:08.049242",
-  "name": "Karaikkudi",
-  "state": "Tamil Nadu"
- },
- {
-  "city_name": "Other",
-  "country": "Other",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-05-04 11:31:27.472812",
-  "name": "Other",
-  "state": "Other"
- },
- {
-  "city_name": "Car Nicobar",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.053132",
-  "name": "Car Nicobar",
+  "modified": "2026-07-20 14:04:48.445509",
+  "name": "a4kdsta13i",
   "state": "Andaman and Nicobar Islands"
  },
  {
-  "city_name": "Diglipur",
+  "city_name": "North and Middle Andaman",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.067535",
-  "name": "Diglipur",
+  "modified": "2026-07-20 14:04:48.462306",
+  "name": "a4kghfvjn8",
   "state": "Andaman and Nicobar Islands"
  },
  {
-  "city_name": "Mayabunder",
+  "city_name": "South Andaman",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.073834",
-  "name": "Mayabunder",
+  "modified": "2026-07-20 14:04:48.466494",
+  "name": "a4k2u9vjfg",
   "state": "Andaman and Nicobar Islands"
  },
  {
-  "city_name": "Port Blair",
+  "city_name": "Alluri Sitharama Raju",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.081683",
-  "name": "Port Blair",
-  "state": "Andaman and Nicobar Islands"
- },
- {
-  "city_name": "Rangat",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.086512",
-  "name": "Rangat",
-  "state": "Andaman and Nicobar Islands"
- },
- {
-  "city_name": "Adoni",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.091391",
-  "name": "Adoni",
+  "modified": "2026-07-20 14:04:48.472083",
+  "name": "a4k7fbar06",
   "state": "Andhra Pradesh"
  },
  {
-  "city_name": "Amaravati",
+  "city_name": "Anakapalli",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.096974",
-  "name": "Amaravati",
+  "modified": "2026-07-20 14:04:48.477527",
+  "name": "a4kso4vn1a",
   "state": "Andhra Pradesh"
  },
  {
@@ -103,17 +49,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.100953",
-  "name": "Anantapur",
+  "modified": "2026-07-20 14:04:48.482254",
+  "name": "a4kr8so629",
   "state": "Andhra Pradesh"
  },
  {
-  "city_name": "Bhimavaram",
+  "city_name": "Annamayya",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.106396",
-  "name": "Bhimavaram",
+  "modified": "2026-07-20 14:04:48.487560",
+  "name": "a4kc974q7l",
+  "state": "Andhra Pradesh"
+ },
+ {
+  "city_name": "Bapatla",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.492169",
+  "name": "a4khjosvfl",
   "state": "Andhra Pradesh"
  },
  {
@@ -121,8 +76,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.110755",
-  "name": "Chittoor",
+  "modified": "2026-07-20 14:04:48.496294",
+  "name": "a4kvkederp",
+  "state": "Andhra Pradesh"
+ },
+ {
+  "city_name": "East Godavari",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.503765",
+  "name": "a4lbl03fu0",
   "state": "Andhra Pradesh"
  },
  {
@@ -130,8 +94,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.115136",
-  "name": "Eluru",
+  "modified": "2026-07-20 14:04:48.508154",
+  "name": "a4lk1f9e8u",
   "state": "Andhra Pradesh"
  },
  {
@@ -139,17 +103,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.119662",
-  "name": "Guntur",
-  "state": "Andhra Pradesh"
- },
- {
-  "city_name": "Hindupur",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.124729",
-  "name": "Hindupur",
+  "modified": "2026-07-20 14:04:48.511735",
+  "name": "a4l2r9fua0",
   "state": "Andhra Pradesh"
  },
  {
@@ -157,8 +112,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.128640",
-  "name": "Kakinada",
+  "modified": "2026-07-20 14:04:48.515908",
+  "name": "a4l1tg8ct4",
+  "state": "Andhra Pradesh"
+ },
+ {
+  "city_name": "Konaseema",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.521416",
+  "name": "a4lrgg9i7t",
+  "state": "Andhra Pradesh"
+ },
+ {
+  "city_name": "Krishna",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.525506",
+  "name": "a4lurdvuoc",
   "state": "Andhra Pradesh"
  },
  {
@@ -166,17 +139,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.132613",
-  "name": "Kurnool",
+  "modified": "2026-07-20 14:04:48.529353",
+  "name": "a4l2433gqf",
   "state": "Andhra Pradesh"
  },
  {
-  "city_name": "Machilipatnam",
+  "city_name": "NTR",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.137701",
-  "name": "Machilipatnam",
+  "modified": "2026-07-20 14:04:48.534495",
+  "name": "a4l96j517t",
   "state": "Andhra Pradesh"
  },
  {
@@ -184,8 +157,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.141761",
-  "name": "Nandyal",
+  "modified": "2026-07-20 14:04:48.540190",
+  "name": "a4l2ot946v",
   "state": "Andhra Pradesh"
  },
  {
@@ -193,35 +166,44 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.145771",
-  "name": "Nellore",
+  "modified": "2026-07-20 14:04:48.543797",
+  "name": "a4l5e21jvo",
   "state": "Andhra Pradesh"
  },
  {
-  "city_name": "Ongole",
+  "city_name": "Palnadu",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.150594",
-  "name": "Ongole",
+  "modified": "2026-07-20 14:04:48.547778",
+  "name": "a4l4f1reur",
   "state": "Andhra Pradesh"
  },
  {
-  "city_name": "Proddatur",
+  "city_name": "Parvathipuram Manyam",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.156093",
-  "name": "Proddatur",
+  "modified": "2026-07-20 14:04:48.554373",
+  "name": "a4ljjbetqd",
   "state": "Andhra Pradesh"
  },
  {
-  "city_name": "Rajahmundry",
+  "city_name": "Prakasam",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.160671",
-  "name": "Rajahmundry",
+  "modified": "2026-07-20 14:04:48.559020",
+  "name": "a4l0ldovli",
+  "state": "Andhra Pradesh"
+ },
+ {
+  "city_name": "Sri Sathya Sai",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.563423",
+  "name": "a4l51g0rrs",
   "state": "Andhra Pradesh"
  },
  {
@@ -229,8 +211,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.164816",
-  "name": "Srikakulam",
+  "modified": "2026-07-20 14:04:48.569155",
+  "name": "a4lb1ero11",
   "state": "Andhra Pradesh"
  },
  {
@@ -238,17 +220,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.168968",
-  "name": "Tirupati",
-  "state": "Andhra Pradesh"
- },
- {
-  "city_name": "Vijayawada",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.173679",
-  "name": "Vijayawada",
+  "modified": "2026-07-20 14:04:48.574270",
+  "name": "a4lebshqrd",
   "state": "Andhra Pradesh"
  },
  {
@@ -256,8 +229,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.178410",
-  "name": "Visakhapatnam",
+  "modified": "2026-07-20 14:04:48.578037",
+  "name": "a4ld57iqk4",
   "state": "Andhra Pradesh"
  },
  {
@@ -265,53 +238,161 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.182707",
-  "name": "Vizianagaram",
+  "modified": "2026-07-20 14:04:48.582439",
+  "name": "a4losrpvqe",
   "state": "Andhra Pradesh"
  },
  {
-  "city_name": "Along",
+  "city_name": "West Godavari",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.188051",
-  "name": "Along",
+  "modified": "2026-07-20 14:04:48.588207",
+  "name": "a4lndqupnc",
+  "state": "Andhra Pradesh"
+ },
+ {
+  "city_name": "YSR Kadapa",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.592662",
+  "name": "a4l7r7prbi",
+  "state": "Andhra Pradesh"
+ },
+ {
+  "city_name": "Anjaw",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.596377",
+  "name": "a4l7oquhfv",
   "state": "Arunachal Pradesh"
  },
  {
-  "city_name": "Bomdila",
+  "city_name": "Bichom",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.192633",
-  "name": "Bomdila",
+  "modified": "2026-07-20 14:04:48.600993",
+  "name": "a4m0ohs0h6",
   "state": "Arunachal Pradesh"
  },
  {
-  "city_name": "Itanagar",
+  "city_name": "Changlang",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.196802",
-  "name": "Itanagar",
+  "modified": "2026-07-20 14:04:48.606241",
+  "name": "a4m1h3trcn",
   "state": "Arunachal Pradesh"
  },
  {
-  "city_name": "Khonsa",
+  "city_name": "East Kameng",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.200923",
-  "name": "Khonsa",
+  "modified": "2026-07-20 14:04:48.610033",
+  "name": "a4mij0a429",
   "state": "Arunachal Pradesh"
  },
  {
-  "city_name": "Naharlagun",
+  "city_name": "East Siang",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.206020",
-  "name": "Naharlagun",
+  "modified": "2026-07-20 14:04:48.613644",
+  "name": "a4ms1epjf6",
+  "state": "Arunachal Pradesh"
+ },
+ {
+  "city_name": "Kamle",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.618533",
+  "name": "a4msp4kg3t",
+  "state": "Arunachal Pradesh"
+ },
+ {
+  "city_name": "Keyi Panyor",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.623441",
+  "name": "a4mb68e611",
+  "state": "Arunachal Pradesh"
+ },
+ {
+  "city_name": "Kra Daadi",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.627360",
+  "name": "a4m3iant8a",
+  "state": "Arunachal Pradesh"
+ },
+ {
+  "city_name": "Kurung Kumey",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.631430",
+  "name": "a4mnl3g72u",
+  "state": "Arunachal Pradesh"
+ },
+ {
+  "city_name": "Lepa Rada",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.637090",
+  "name": "a4mo67k3b1",
+  "state": "Arunachal Pradesh"
+ },
+ {
+  "city_name": "Lohit",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.641394",
+  "name": "a4m72d2ekm",
+  "state": "Arunachal Pradesh"
+ },
+ {
+  "city_name": "Longding",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.645271",
+  "name": "a4maacsf5a",
+  "state": "Arunachal Pradesh"
+ },
+ {
+  "city_name": "Lower Dibang Valley",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.650076",
+  "name": "a4mcf9c1u3",
+  "state": "Arunachal Pradesh"
+ },
+ {
+  "city_name": "Lower Siang",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.655662",
+  "name": "a4m0dp0asd",
+  "state": "Arunachal Pradesh"
+ },
+ {
+  "city_name": "Lower Subansiri",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.659457",
+  "name": "a4m46ooh1m",
   "state": "Arunachal Pradesh"
  },
  {
@@ -319,17 +400,44 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.209918",
-  "name": "Namsai",
+  "modified": "2026-07-20 14:04:48.663075",
+  "name": "a4movlgj5t",
   "state": "Arunachal Pradesh"
  },
  {
-  "city_name": "Pasighat",
+  "city_name": "Pakke-Kessang",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.214294",
-  "name": "Pasighat",
+  "modified": "2026-07-20 14:04:48.667892",
+  "name": "a4m5skk007",
+  "state": "Arunachal Pradesh"
+ },
+ {
+  "city_name": "Papum Pare",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.674883",
+  "name": "a4ml757tcg",
+  "state": "Arunachal Pradesh"
+ },
+ {
+  "city_name": "Shi Yomi",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.678586",
+  "name": "a4m9mienfa",
+  "state": "Arunachal Pradesh"
+ },
+ {
+  "city_name": "Siang",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.683095",
+  "name": "a4mr9ujdef",
   "state": "Arunachal Pradesh"
  },
  {
@@ -337,35 +445,98 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.223063",
-  "name": "Tawang",
+  "modified": "2026-07-20 14:04:48.688696",
+  "name": "a4m7s8q2of",
   "state": "Arunachal Pradesh"
  },
  {
-  "city_name": "Tezu",
+  "city_name": "Tirap",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.228089",
-  "name": "Tezu",
+  "modified": "2026-07-20 14:04:48.692532",
+  "name": "a4munslbhv",
   "state": "Arunachal Pradesh"
  },
  {
-  "city_name": "Ziro",
+  "city_name": "Upper Dibang Valley",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.234165",
-  "name": "Ziro",
+  "modified": "2026-07-20 14:04:48.696363",
+  "name": "a4m1h1cirt",
   "state": "Arunachal Pradesh"
+ },
+ {
+  "city_name": "Upper Siang",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.701716",
+  "name": "a4n83cmsgv",
+  "state": "Arunachal Pradesh"
+ },
+ {
+  "city_name": "Upper Subansiri",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.706335",
+  "name": "a4nl19f46i",
+  "state": "Arunachal Pradesh"
+ },
+ {
+  "city_name": "West Kameng",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.710082",
+  "name": "a4n5arktvi",
+  "state": "Arunachal Pradesh"
+ },
+ {
+  "city_name": "West Siang",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.713856",
+  "name": "a4n7peobo1",
+  "state": "Arunachal Pradesh"
+ },
+ {
+  "city_name": "Bajali",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.720020",
+  "name": "a4nhvhpamh",
+  "state": "Assam"
+ },
+ {
+  "city_name": "Baksa",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.724117",
+  "name": "a4nrboatcl",
+  "state": "Assam"
  },
  {
   "city_name": "Barpeta",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.240498",
-  "name": "Barpeta",
+  "modified": "2026-07-20 14:04:48.727816",
+  "name": "a4nd3d8nhu",
+  "state": "Assam"
+ },
+ {
+  "city_name": "Biswanath",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.732644",
+  "name": "a4nogi7uli",
   "state": "Assam"
  },
  {
@@ -373,8 +544,53 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.246853",
-  "name": "Bongaigaon",
+  "modified": "2026-07-20 14:04:48.739079",
+  "name": "a4ne6jel0o",
+  "state": "Assam"
+ },
+ {
+  "city_name": "Cachar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.742750",
+  "name": "a4nact1fdg",
+  "state": "Assam"
+ },
+ {
+  "city_name": "Charaideo",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.746276",
+  "name": "a4n7ici3c0",
+  "state": "Assam"
+ },
+ {
+  "city_name": "Chirang",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.751197",
+  "name": "a4n1gqc1qb",
+  "state": "Assam"
+ },
+ {
+  "city_name": "Darrang",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.756058",
+  "name": "a4nm5654ii",
+  "state": "Assam"
+ },
+ {
+  "city_name": "Dhemaji",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.759721",
+  "name": "a4nspuu14t",
   "state": "Assam"
  },
  {
@@ -382,8 +598,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.252689",
-  "name": "Dhubri",
+  "modified": "2026-07-20 14:04:48.763297",
+  "name": "a4n3454qr1",
   "state": "Assam"
  },
  {
@@ -391,26 +607,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.257840",
-  "name": "Dibrugarh",
+  "modified": "2026-07-20 14:04:48.768210",
+  "name": "a4nbbil9c4",
   "state": "Assam"
  },
  {
-  "city_name": "Diphu",
+  "city_name": "Dima Hasao",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.263839",
-  "name": "Diphu",
-  "state": "Assam"
- },
- {
-  "city_name": "Dispur",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.269247",
-  "name": "Dispur",
+  "modified": "2026-07-20 14:04:48.773558",
+  "name": "a4n53i0e3v",
   "state": "Assam"
  },
  {
@@ -418,26 +625,35 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.273762",
-  "name": "Goalpara",
+  "modified": "2026-07-20 14:04:48.777236",
+  "name": "a4n0cujv0b",
   "state": "Assam"
  },
  {
-  "city_name": "Guwahati",
+  "city_name": "Golaghat",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.277912",
-  "name": "Guwahati",
+  "modified": "2026-07-20 14:04:48.781193",
+  "name": "a4nnnsl2em",
   "state": "Assam"
  },
  {
-  "city_name": "Haflong",
+  "city_name": "Hailakandi",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.284984",
-  "name": "Haflong",
+  "modified": "2026-07-20 14:04:48.786799",
+  "name": "a4ntvhq501",
+  "state": "Assam"
+ },
+ {
+  "city_name": "Hojai",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.791033",
+  "name": "a4nndb74m2",
   "state": "Assam"
  },
  {
@@ -445,8 +661,35 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.296141",
-  "name": "Jorhat",
+  "modified": "2026-07-20 14:04:48.794593",
+  "name": "a4n5c2sakl",
+  "state": "Assam"
+ },
+ {
+  "city_name": "Kamrup",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.798460",
+  "name": "a4nn11713m",
+  "state": "Assam"
+ },
+ {
+  "city_name": "Kamrup Metropolitan",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.803587",
+  "name": "a4oqkhc7el",
+  "state": "Assam"
+ },
+ {
+  "city_name": "Karbi Anglong",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.807438",
+  "name": "a4ontbt5ia",
   "state": "Assam"
  },
  {
@@ -454,8 +697,44 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.303753",
-  "name": "Karimganj",
+  "modified": "2026-07-20 14:04:48.811142",
+  "name": "a4odis1vfu",
+  "state": "Assam"
+ },
+ {
+  "city_name": "Kokrajhar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.815066",
+  "name": "a4o0feih7d",
+  "state": "Assam"
+ },
+ {
+  "city_name": "Lakhimpur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.820522",
+  "name": "a4oqii4kde",
+  "state": "Assam"
+ },
+ {
+  "city_name": "Majuli",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.824365",
+  "name": "a4oj8p4cff",
+  "state": "Assam"
+ },
+ {
+  "city_name": "Morigaon",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.828036",
+  "name": "a4ojsc8g5g",
   "state": "Assam"
  },
  {
@@ -463,8 +742,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.309061",
-  "name": "Nagaon",
+  "modified": "2026-07-20 14:04:48.832315",
+  "name": "a4oqsfebd6",
   "state": "Assam"
  },
  {
@@ -472,17 +751,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.313585",
-  "name": "Nalbari",
-  "state": "Assam"
- },
- {
-  "city_name": "Silchar",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.318731",
-  "name": "Silchar",
+  "modified": "2026-07-20 14:04:48.838458",
+  "name": "a4o88fsj6h",
   "state": "Assam"
  },
  {
@@ -490,17 +760,35 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.326157",
-  "name": "Sivasagar",
+  "modified": "2026-07-20 14:04:48.842498",
+  "name": "a4o0ollonr",
   "state": "Assam"
  },
  {
-  "city_name": "Tezpur",
+  "city_name": "Sonitpur",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.330831",
-  "name": "Tezpur",
+  "modified": "2026-07-20 14:04:48.846264",
+  "name": "a4ovf3nat4",
+  "state": "Assam"
+ },
+ {
+  "city_name": "South Salmara-Mankachar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.851512",
+  "name": "a4o1vpd1rb",
+  "state": "Assam"
+ },
+ {
+  "city_name": "Tamulpur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.856306",
+  "name": "a4oj0u7rqn",
   "state": "Assam"
  },
  {
@@ -508,17 +796,44 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.336055",
-  "name": "Tinsukia",
+  "modified": "2026-07-20 14:04:48.860021",
+  "name": "a4o47m1bqq",
   "state": "Assam"
  },
  {
-  "city_name": "Arrah",
+  "city_name": "Udalguri",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.340968",
-  "name": "Arrah",
+  "modified": "2026-07-20 14:04:48.863727",
+  "name": "a4omtk0ulc",
+  "state": "Assam"
+ },
+ {
+  "city_name": "West Karbi Anglong",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.869307",
+  "name": "a4oeq0ooam",
+  "state": "Assam"
+ },
+ {
+  "city_name": "Araria",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.873637",
+  "name": "a4o4rnalhl",
+  "state": "Bihar"
+ },
+ {
+  "city_name": "Arwal",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.877282",
+  "name": "a4oqlkj065",
   "state": "Bihar"
  },
  {
@@ -526,26 +841,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:04:48.518945",
-  "name": "Aurangabad",
-  "state": "Maharashtra"
+  "modified": "2026-07-20 14:04:48.881231",
+  "name": "a4onq4cpt3",
+  "state": "Bihar"
+ },
+ {
+  "city_name": "Banka",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.887265",
+  "name": "a4oe8jbtas",
+  "state": "Bihar"
  },
  {
   "city_name": "Begusarai",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.352807",
-  "name": "Begusarai",
-  "state": "Bihar"
- },
- {
-  "city_name": "Bettiah",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.358328",
-  "name": "Bettiah",
+  "modified": "2026-07-20 14:04:48.891288",
+  "name": "a4oorm22pa",
   "state": "Bihar"
  },
  {
@@ -553,26 +868,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.361886",
-  "name": "Bhagalpur",
+  "modified": "2026-07-20 14:04:48.895396",
+  "name": "a4ogll0gcc",
   "state": "Bihar"
  },
  {
-  "city_name": "Bihar Sharif",
+  "city_name": "Bhojpur",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.366617",
-  "name": "Bihar Sharif",
+  "modified": "2026-07-20 14:04:48.900273",
+  "name": "a4pe804n8v",
   "state": "Bihar"
  },
  {
-  "city_name": "Chhapra",
+  "city_name": "Buxar",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.370887",
-  "name": "Chhapra",
+  "modified": "2026-07-20 14:04:48.905269",
+  "name": "a4p4dpnkt0",
   "state": "Bihar"
  },
  {
@@ -580,8 +895,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.375230",
-  "name": "Darbhanga",
+  "modified": "2026-07-20 14:04:48.908806",
+  "name": "a4p50mfg8u",
+  "state": "Bihar"
+ },
+ {
+  "city_name": "East Champaran",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.912259",
+  "name": "a4p5pe53fd",
   "state": "Bihar"
  },
  {
@@ -589,17 +913,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.378821",
-  "name": "Gaya",
+  "modified": "2026-07-20 14:04:48.917260",
+  "name": "a4papecolh",
   "state": "Bihar"
  },
  {
-  "city_name": "Hajipur",
+  "city_name": "Gopalganj",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.383657",
-  "name": "Hajipur",
+  "modified": "2026-07-20 14:04:48.922493",
+  "name": "a4poopv51g",
+  "state": "Bihar"
+ },
+ {
+  "city_name": "Jamui",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.926355",
+  "name": "a4pq9bp8tt",
   "state": "Bihar"
  },
  {
@@ -607,8 +940,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.388729",
-  "name": "Jehanabad",
+  "modified": "2026-07-20 14:04:48.930143",
+  "name": "a4p3anr7if",
+  "state": "Bihar"
+ },
+ {
+  "city_name": "Kaimur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.935875",
+  "name": "a4pbhq730h",
   "state": "Bihar"
  },
  {
@@ -616,8 +958,44 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.393297",
-  "name": "Katihar",
+  "modified": "2026-07-20 14:04:48.940622",
+  "name": "a4p3d9mvr7",
+  "state": "Bihar"
+ },
+ {
+  "city_name": "Khagaria",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.944260",
+  "name": "a4ppbr498i",
+  "state": "Bihar"
+ },
+ {
+  "city_name": "Kishanganj",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.948376",
+  "name": "a4pvroinml",
+  "state": "Bihar"
+ },
+ {
+  "city_name": "Lakhisarai",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.953302",
+  "name": "a4p3k68hpr",
+  "state": "Bihar"
+ },
+ {
+  "city_name": "Madhepura",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.957470",
+  "name": "a4pig64evp",
   "state": "Bihar"
  },
  {
@@ -625,17 +1003,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.398916",
-  "name": "Madhubani",
-  "state": "Bihar"
- },
- {
-  "city_name": "Motihari",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.408141",
-  "name": "Motihari",
+  "modified": "2026-07-20 14:04:48.961118",
+  "name": "a4pjj5siv6",
   "state": "Bihar"
  },
  {
@@ -643,8 +1012,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.414134",
-  "name": "Munger",
+  "modified": "2026-07-20 14:04:48.964949",
+  "name": "a4pfrf3e79",
   "state": "Bihar"
  },
  {
@@ -652,8 +1021,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.420331",
-  "name": "Muzaffarpur",
+  "modified": "2026-07-20 14:04:48.971151",
+  "name": "a4pu5kbec2",
   "state": "Bihar"
  },
  {
@@ -661,8 +1030,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.427034",
-  "name": "Nalanda",
+  "modified": "2026-07-20 14:04:48.975250",
+  "name": "a4pjvqfs16",
+  "state": "Bihar"
+ },
+ {
+  "city_name": "Nawada",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.979114",
+  "name": "a4pva5rg1q",
   "state": "Bihar"
  },
  {
@@ -670,8 +1048,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.432462",
-  "name": "Patna",
+  "modified": "2026-07-20 14:04:48.984612",
+  "name": "a4p7o1blhr",
   "state": "Bihar"
  },
  {
@@ -679,8 +1057,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.443898",
-  "name": "Purnia",
+  "modified": "2026-07-20 14:04:48.989556",
+  "name": "a4pbhj7ao9",
+  "state": "Bihar"
+ },
+ {
+  "city_name": "Rohtas",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:48.993290",
+  "name": "a4p2u82vp3",
   "state": "Bihar"
  },
  {
@@ -688,17 +1075,44 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.447854",
-  "name": "Saharsa",
+  "modified": "2026-07-20 14:04:48.996779",
+  "name": "a4pcie8j28",
   "state": "Bihar"
  },
  {
-  "city_name": "Sasaram",
+  "city_name": "Samastipur",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.456713",
-  "name": "Sasaram",
+  "modified": "2026-07-20 14:04:49.002583",
+  "name": "a4qj2t97tf",
+  "state": "Bihar"
+ },
+ {
+  "city_name": "Saran",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.007778",
+  "name": "a4qpmhvnvc",
+  "state": "Bihar"
+ },
+ {
+  "city_name": "Sheikhpura",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.011800",
+  "name": "a4qkpkjih0",
+  "state": "Bihar"
+ },
+ {
+  "city_name": "Sheohar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.016690",
+  "name": "a4qkmrrfae",
   "state": "Bihar"
  },
  {
@@ -706,8 +1120,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.462068",
-  "name": "Sitamarhi",
+  "modified": "2026-07-20 14:04:49.021533",
+  "name": "a4qng49nhj",
   "state": "Bihar"
  },
  {
@@ -715,8 +1129,35 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.466807",
-  "name": "Siwan",
+  "modified": "2026-07-20 14:04:49.026131",
+  "name": "a4q3d234b9",
+  "state": "Bihar"
+ },
+ {
+  "city_name": "Supaul",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.030056",
+  "name": "a4q3lfl2p2",
+  "state": "Bihar"
+ },
+ {
+  "city_name": "Vaishali",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.035366",
+  "name": "a4q05sikbb",
+  "state": "Bihar"
+ },
+ {
+  "city_name": "West Champaran",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.040077",
+  "name": "a4q8edl20p",
   "state": "Bihar"
  },
  {
@@ -724,26 +1165,62 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.473708",
-  "name": "Chandigarh",
+  "modified": "2026-07-20 14:04:49.043719",
+  "name": "a4qq5m7f1d",
   "state": "Chandigarh"
  },
  {
-  "city_name": "Ambikapur",
+  "city_name": "Balod",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.478283",
-  "name": "Ambikapur",
+  "modified": "2026-07-20 14:04:49.047675",
+  "name": "a4qouuljbr",
   "state": "Chhattisgarh"
  },
  {
-  "city_name": "Bhilai",
+  "city_name": "Baloda Bazar",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.486325",
-  "name": "Bhilai",
+  "modified": "2026-07-20 14:04:49.053259",
+  "name": "a4q4dgvusj",
+  "state": "Chhattisgarh"
+ },
+ {
+  "city_name": "Balrampur-Ramanujganj",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.057665",
+  "name": "a4q87fak1o",
+  "state": "Chhattisgarh"
+ },
+ {
+  "city_name": "Bastar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.061220",
+  "name": "a4qfigeu5a",
+  "state": "Chhattisgarh"
+ },
+ {
+  "city_name": "Bemetara",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.065649",
+  "name": "a4ql7bmsdr",
+  "state": "Chhattisgarh"
+ },
+ {
+  "city_name": "Bijapur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.071296",
+  "name": "a4qshl5ii6",
   "state": "Chhattisgarh"
  },
  {
@@ -751,17 +1228,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:04:09.079650",
-  "name": "Bilaspur",
-  "state": "Himachal Pradesh"
+  "modified": "2026-07-20 14:04:49.075165",
+  "name": "a4qhk5p6fn",
+  "state": "Chhattisgarh"
+ },
+ {
+  "city_name": "Dantewada",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.078733",
+  "name": "a4qmh967lm",
+  "state": "Chhattisgarh"
  },
  {
   "city_name": "Dhamtari",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.502013",
-  "name": "Dhamtari",
+  "modified": "2026-07-20 14:04:49.083304",
+  "name": "a4qfn7fj35",
   "state": "Chhattisgarh"
  },
  {
@@ -769,17 +1255,53 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.507351",
-  "name": "Durg",
+  "modified": "2026-07-20 14:04:49.088975",
+  "name": "a4qjevkoih",
   "state": "Chhattisgarh"
  },
  {
-  "city_name": "Jagdalpur",
+  "city_name": "Gariaband",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.511845",
-  "name": "Jagdalpur",
+  "modified": "2026-07-20 14:04:49.093185",
+  "name": "a4quu2l5n9",
+  "state": "Chhattisgarh"
+ },
+ {
+  "city_name": "Gaurela-Pendra-Marwahi",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.097323",
+  "name": "a4qlbgc28o",
+  "state": "Chhattisgarh"
+ },
+ {
+  "city_name": "Janjgir-Champa",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.102923",
+  "name": "a4rh66v8nm",
+  "state": "Chhattisgarh"
+ },
+ {
+  "city_name": "Jashpur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.107437",
+  "name": "a4rpsh2q4o",
+  "state": "Chhattisgarh"
+ },
+ {
+  "city_name": "Kabirdham",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.111394",
+  "name": "a4reepv370",
   "state": "Chhattisgarh"
  },
  {
@@ -787,17 +1309,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.515760",
-  "name": "Kanker",
+  "modified": "2026-07-20 14:04:49.115685",
+  "name": "a4r0ss6cm0",
   "state": "Chhattisgarh"
  },
  {
-  "city_name": "Kawardha",
+  "city_name": "Khairagarh-Chhuikhadan-Gandai",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.523029",
-  "name": "Kawardha",
+  "modified": "2026-07-20 14:04:49.122044",
+  "name": "a4rlse3h9j",
+  "state": "Chhattisgarh"
+ },
+ {
+  "city_name": "Kondagaon",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.126085",
+  "name": "a4rgtt6jp5",
   "state": "Chhattisgarh"
  },
  {
@@ -805,8 +1336,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.527698",
-  "name": "Korba",
+  "modified": "2026-07-20 14:04:49.129804",
+  "name": "a4rccm5nph",
+  "state": "Chhattisgarh"
+ },
+ {
+  "city_name": "Korea",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.134764",
+  "name": "a4r5fdde86",
   "state": "Chhattisgarh"
  },
  {
@@ -814,8 +1354,44 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.533307",
-  "name": "Mahasamund",
+  "modified": "2026-07-20 14:04:49.139878",
+  "name": "a4rpqt9osh",
+  "state": "Chhattisgarh"
+ },
+ {
+  "city_name": "Manendragarh-Chirmiri-Bharatpur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.143616",
+  "name": "a4rlli9iv0",
+  "state": "Chhattisgarh"
+ },
+ {
+  "city_name": "Mohla-Manpur-Ambagarh Chowki",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.147093",
+  "name": "a4rq2p67ik",
+  "state": "Chhattisgarh"
+ },
+ {
+  "city_name": "Mungeli",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.152657",
+  "name": "a4rh0vs8mj",
+  "state": "Chhattisgarh"
+ },
+ {
+  "city_name": "Narayanpur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.157448",
+  "name": "a4r6sgd2d4",
   "state": "Chhattisgarh"
  },
  {
@@ -823,8 +1399,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.540603",
-  "name": "Raigarh",
+  "modified": "2026-07-20 14:04:49.161252",
+  "name": "a4rmqmn1ga",
   "state": "Chhattisgarh"
  },
  {
@@ -832,8 +1408,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.546940",
-  "name": "Raipur",
+  "modified": "2026-07-20 14:04:49.165394",
+  "name": "a4r16uh1ff",
   "state": "Chhattisgarh"
  },
  {
@@ -841,17 +1417,71 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.555228",
-  "name": "Rajnandgaon",
+  "modified": "2026-07-20 14:04:49.170781",
+  "name": "a4r6btbucb",
   "state": "Chhattisgarh"
+ },
+ {
+  "city_name": "Sakti",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.174336",
+  "name": "a4re0j0tt6",
+  "state": "Chhattisgarh"
+ },
+ {
+  "city_name": "Sarangarh-Bilaigarh",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.177994",
+  "name": "a4r43ci7fj",
+  "state": "Chhattisgarh"
+ },
+ {
+  "city_name": "Sukma",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.181860",
+  "name": "a4rg54n3al",
+  "state": "Chhattisgarh"
+ },
+ {
+  "city_name": "Surajpur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.188131",
+  "name": "a4r1mngiqb",
+  "state": "Chhattisgarh"
+ },
+ {
+  "city_name": "Surguja",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.191795",
+  "name": "a4rm4mb3lf",
+  "state": "Chhattisgarh"
+ },
+ {
+  "city_name": "Dadra and Nagar Haveli",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.195156",
+  "name": "a4r5qptjdo",
+  "state": "Dadra and Nagar Haveli and Daman and Diu"
  },
  {
   "city_name": "Daman",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.560839",
-  "name": "Daman",
+  "modified": "2026-07-20 14:04:49.199937",
+  "name": "a4s0iubmgq",
   "state": "Dadra and Nagar Haveli and Daman and Diu"
  },
  {
@@ -859,62 +1489,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.567855",
-  "name": "Diu",
+  "modified": "2026-07-20 14:04:49.205489",
+  "name": "a4s8cnqjfb",
   "state": "Dadra and Nagar Haveli and Daman and Diu"
  },
  {
-  "city_name": "Silvassa",
+  "city_name": "Central Delhi",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.574982",
-  "name": "Silvassa",
-  "state": "Dadra and Nagar Haveli and Daman and Diu"
- },
- {
-  "city_name": "Delhi",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.579946",
-  "name": "Delhi",
+  "modified": "2026-07-20 14:04:49.209207",
+  "name": "a4sok8geth",
   "state": "Delhi"
  },
  {
-  "city_name": "Dwarka",
+  "city_name": "East Delhi",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.586703",
-  "name": "Dwarka",
-  "state": "Delhi"
- },
- {
-  "city_name": "Faridabad",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.592005",
-  "name": "Faridabad",
-  "state": "Haryana"
- },
- {
-  "city_name": "Gurgaon",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.597484",
-  "name": "Gurgaon",
-  "state": "Delhi"
- },
- {
-  "city_name": "Janakpuri",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.602803",
-  "name": "Janakpuri",
+  "modified": "2026-07-20 14:04:49.212860",
+  "name": "a4sqb3lndf",
   "state": "Delhi"
  },
  {
@@ -922,35 +1516,35 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.609320",
-  "name": "New Delhi",
+  "modified": "2026-07-20 14:04:49.217917",
+  "name": "a4shhou8ii",
   "state": "Delhi"
  },
  {
-  "city_name": "Noida",
+  "city_name": "North Delhi",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.614307",
-  "name": "Noida",
+  "modified": "2026-07-20 14:04:49.222387",
+  "name": "a4sj6cnar1",
   "state": "Delhi"
  },
  {
-  "city_name": "Pitampura",
+  "city_name": "North East Delhi",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.619872",
-  "name": "Pitampura",
+  "modified": "2026-07-20 14:04:49.226462",
+  "name": "a4sgoubkdk",
   "state": "Delhi"
  },
  {
-  "city_name": "Rohini",
+  "city_name": "North West Delhi",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.624573",
-  "name": "Rohini",
+  "modified": "2026-07-20 14:04:49.230338",
+  "name": "a4s608ug9g",
   "state": "Delhi"
  },
  {
@@ -958,89 +1552,62 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.630113",
-  "name": "Shahdara",
+  "modified": "2026-07-20 14:04:49.235469",
+  "name": "a4sq8um5kc",
   "state": "Delhi"
  },
  {
-  "city_name": "Bicholim",
+  "city_name": "South Delhi",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.636397",
-  "name": "Bicholim",
+  "modified": "2026-07-20 14:04:49.240324",
+  "name": "a4sl4oebu8",
+  "state": "Delhi"
+ },
+ {
+  "city_name": "South East Delhi",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.244228",
+  "name": "a4soqs1op8",
+  "state": "Delhi"
+ },
+ {
+  "city_name": "South West Delhi",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.248091",
+  "name": "a4snbka49c",
+  "state": "Delhi"
+ },
+ {
+  "city_name": "West Delhi",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.254251",
+  "name": "a4skbdce78",
+  "state": "Delhi"
+ },
+ {
+  "city_name": "North Goa",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.257961",
+  "name": "a4s25s0o7e",
   "state": "Goa"
  },
  {
-  "city_name": "Curchorem",
+  "city_name": "South Goa",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.640864",
-  "name": "Curchorem",
-  "state": "Goa"
- },
- {
-  "city_name": "Mapusa",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.644967",
-  "name": "Mapusa",
-  "state": "Goa"
- },
- {
-  "city_name": "Margao",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.649752",
-  "name": "Margao",
-  "state": "Goa"
- },
- {
-  "city_name": "Panaji",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.656651",
-  "name": "Panaji",
-  "state": "Goa"
- },
- {
-  "city_name": "Pernem",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.660405",
-  "name": "Pernem",
-  "state": "Goa"
- },
- {
-  "city_name": "Ponda",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.664281",
-  "name": "Ponda",
-  "state": "Goa"
- },
- {
-  "city_name": "Sanquelim",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.672687",
-  "name": "Sanquelim",
-  "state": "Goa"
- },
- {
-  "city_name": "Vasco da Gama",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.676491",
-  "name": "Vasco da Gama",
+  "modified": "2026-07-20 14:04:49.261367",
+  "name": "a4saer34ne",
   "state": "Goa"
  },
  {
@@ -1048,8 +1615,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.680335",
-  "name": "Ahmedabad",
+  "modified": "2026-07-20 14:04:49.265429",
+  "name": "a4sphr4j23",
   "state": "Gujarat"
  },
  {
@@ -1057,8 +1624,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.685860",
-  "name": "Amreli",
+  "modified": "2026-07-20 14:04:49.271619",
+  "name": "a4s3nerbdv",
   "state": "Gujarat"
  },
  {
@@ -1066,17 +1633,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.690090",
-  "name": "Anand",
+  "modified": "2026-07-20 14:04:49.275460",
+  "name": "a4ssve80cr",
   "state": "Gujarat"
  },
  {
-  "city_name": "Ankleshwar",
+  "city_name": "Aravalli",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.693906",
-  "name": "Ankleshwar",
+  "modified": "2026-07-20 14:04:49.279023",
+  "name": "a4sbprb7pq",
+  "state": "Gujarat"
+ },
+ {
+  "city_name": "Banaskantha",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.283606",
+  "name": "a4sf1bvtrs",
   "state": "Gujarat"
  },
  {
@@ -1084,8 +1660,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.697898",
-  "name": "Bharuch",
+  "modified": "2026-07-20 14:04:49.288479",
+  "name": "a4s5d9g6r1",
   "state": "Gujarat"
  },
  {
@@ -1093,17 +1669,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.702361",
-  "name": "Bhavnagar",
-  "state": "Gujarat"
- },
- {
-  "city_name": "Bhuj",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.707327",
-  "name": "Bhuj",
+  "modified": "2026-07-20 14:04:49.292251",
+  "name": "a4s7v2kgst",
   "state": "Gujarat"
  },
  {
@@ -1111,8 +1678,44 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.711197",
-  "name": "Botad",
+  "modified": "2026-07-20 14:04:49.295936",
+  "name": "a4ss2o3bm7",
+  "state": "Gujarat"
+ },
+ {
+  "city_name": "Chhota Udaipur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.300733",
+  "name": "a4t9a8gn4r",
+  "state": "Gujarat"
+ },
+ {
+  "city_name": "Dahod",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.305446",
+  "name": "a4t6u74bcr",
+  "state": "Gujarat"
+ },
+ {
+  "city_name": "Dang",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.309411",
+  "name": "a4t2o745u8",
+  "state": "Gujarat"
+ },
+ {
+  "city_name": "Devbhumi Dwarka",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.313139",
+  "name": "a4tgdd0liq",
   "state": "Gujarat"
  },
  {
@@ -1120,26 +1723,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.715740",
-  "name": "Gandhinagar",
+  "modified": "2026-07-20 14:04:49.318238",
+  "name": "a4t38fsg0s",
   "state": "Gujarat"
  },
  {
-  "city_name": "Godhra",
+  "city_name": "Gir Somnath",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.722373",
-  "name": "Godhra",
-  "state": "Gujarat"
- },
- {
-  "city_name": "Gondal",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.727097",
-  "name": "Gondal",
+  "modified": "2026-07-20 14:04:49.323121",
+  "name": "a4t7mcbbjr",
   "state": "Gujarat"
  },
  {
@@ -1147,8 +1741,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.731728",
-  "name": "Jamnagar",
+  "modified": "2026-07-20 14:04:49.326868",
+  "name": "a4th9j1cp8",
   "state": "Gujarat"
  },
  {
@@ -1156,8 +1750,35 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.738051",
-  "name": "Junagadh",
+  "modified": "2026-07-20 14:04:49.330425",
+  "name": "a4tjuo907g",
+  "state": "Gujarat"
+ },
+ {
+  "city_name": "Kheda",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.335812",
+  "name": "a4tditu16s",
+  "state": "Gujarat"
+ },
+ {
+  "city_name": "Kutch",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.340326",
+  "name": "a4t80jfrgo",
+  "state": "Gujarat"
+ },
+ {
+  "city_name": "Mahisagar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.344000",
+  "name": "a4tus8ejrj",
   "state": "Gujarat"
  },
  {
@@ -1165,8 +1786,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.744176",
-  "name": "Mehsana",
+  "modified": "2026-07-20 14:04:49.347754",
+  "name": "a4tlfccvol",
   "state": "Gujarat"
  },
  {
@@ -1174,8 +1795,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.748156",
-  "name": "Morbi",
+  "modified": "2026-07-20 14:04:49.352747",
+  "name": "a4tp8lqoi0",
+  "state": "Gujarat"
+ },
+ {
+  "city_name": "Narmada",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.357227",
+  "name": "a4tcocgvbv",
   "state": "Gujarat"
  },
  {
@@ -1183,8 +1813,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.755446",
-  "name": "Navsari",
+  "modified": "2026-07-20 14:04:49.360959",
+  "name": "a4tt9l9pgq",
+  "state": "Gujarat"
+ },
+ {
+  "city_name": "Panchmahal",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.364723",
+  "name": "a4tk8g2gs1",
   "state": "Gujarat"
  },
  {
@@ -1192,8 +1831,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.759723",
-  "name": "Patan",
+  "modified": "2026-07-20 14:04:49.369913",
+  "name": "a4t8mptq1r",
   "state": "Gujarat"
  },
  {
@@ -1201,8 +1840,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.765941",
-  "name": "Porbandar",
+  "modified": "2026-07-20 14:04:49.374134",
+  "name": "a4t69n0j75",
   "state": "Gujarat"
  },
  {
@@ -1210,8 +1849,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.772292",
-  "name": "Rajkot",
+  "modified": "2026-07-20 14:04:49.378484",
+  "name": "a4tskful5j",
+  "state": "Gujarat"
+ },
+ {
+  "city_name": "Sabarkantha",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.383406",
+  "name": "a4tg6i6s7j",
   "state": "Gujarat"
  },
  {
@@ -1219,8 +1867,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.778863",
-  "name": "Surat",
+  "modified": "2026-07-20 14:04:49.388528",
+  "name": "a4ts8jonis",
   "state": "Gujarat"
  },
  {
@@ -1228,8 +1876,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.783432",
-  "name": "Surendranagar",
+  "modified": "2026-07-20 14:04:49.392259",
+  "name": "a4t202g2s5",
+  "state": "Gujarat"
+ },
+ {
+  "city_name": "Tapi",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.399095",
+  "name": "a4u5t20p6c",
   "state": "Gujarat"
  },
  {
@@ -1237,17 +1894,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.789159",
-  "name": "Vadodara",
+  "modified": "2026-07-20 14:04:49.407256",
+  "name": "a4u37tdoic",
   "state": "Gujarat"
  },
  {
-  "city_name": "Vapi",
+  "city_name": "Valsad",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.793390",
-  "name": "Vapi",
+  "modified": "2026-07-20 14:04:49.414021",
+  "name": "a4upba4bf7",
+  "state": "Gujarat"
+ },
+ {
+  "city_name": "Vav-Tharad",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.422249",
+  "name": "a4u5jv3ivr",
   "state": "Gujarat"
  },
  {
@@ -1255,17 +1921,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.797681",
-  "name": "Ambala",
-  "state": "Haryana"
- },
- {
-  "city_name": "Bahadurgarh",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.801940",
-  "name": "Bahadurgarh",
+  "modified": "2026-07-20 14:04:49.426103",
+  "name": "a4u4ihj5nc",
   "state": "Haryana"
  },
  {
@@ -1273,8 +1930,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.806748",
-  "name": "Bhiwani",
+  "modified": "2026-07-20 14:04:49.429766",
+  "name": "a4utlso5vh",
+  "state": "Haryana"
+ },
+ {
+  "city_name": "Charkhi Dadri",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.434474",
+  "name": "a4upi3m1vc",
+  "state": "Haryana"
+ },
+ {
+  "city_name": "Faridabad",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.439497",
+  "name": "a4ud5521ld",
   "state": "Haryana"
  },
  {
@@ -1282,8 +1957,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.811104",
-  "name": "Fatehabad",
+  "modified": "2026-07-20 14:04:49.443449",
+  "name": "a4ug9bep1v",
   "state": "Haryana"
  },
  {
@@ -1291,8 +1966,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.816271",
-  "name": "Gurugram",
+  "modified": "2026-07-20 14:04:49.447239",
+  "name": "a4ud10re93",
   "state": "Haryana"
  },
  {
@@ -1300,8 +1975,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.822948",
-  "name": "Hisar",
+  "modified": "2026-07-20 14:04:49.453526",
+  "name": "a4u0n3ua4v",
+  "state": "Haryana"
+ },
+ {
+  "city_name": "Jhajjar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.457530",
+  "name": "a4ucrmp0tj",
   "state": "Haryana"
  },
  {
@@ -1309,8 +1993,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.827144",
-  "name": "Jind",
+  "modified": "2026-07-20 14:04:49.461318",
+  "name": "a4urq58ath",
+  "state": "Haryana"
+ },
+ {
+  "city_name": "Kaithal",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.465590",
+  "name": "a4upi9s7j0",
   "state": "Haryana"
  },
  {
@@ -1318,8 +2011,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.832149",
-  "name": "Karnal",
+  "modified": "2026-07-20 14:04:49.471197",
+  "name": "a4ucqtkbhu",
   "state": "Haryana"
  },
  {
@@ -1327,8 +2020,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.837592",
-  "name": "Kurukshetra",
+  "modified": "2026-07-20 14:04:49.475077",
+  "name": "a4ugv0sn23",
+  "state": "Haryana"
+ },
+ {
+  "city_name": "Mahendragarh",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.478918",
+  "name": "a4ubr7qsd9",
+  "state": "Haryana"
+ },
+ {
+  "city_name": "Nuh",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.483955",
+  "name": "a4urval693",
   "state": "Haryana"
  },
  {
@@ -1336,8 +2047,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.842646",
-  "name": "Palwal",
+  "modified": "2026-07-20 14:04:49.489160",
+  "name": "a4udo68ntr",
   "state": "Haryana"
  },
  {
@@ -1345,8 +2056,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.846745",
-  "name": "Panchkula",
+  "modified": "2026-07-20 14:04:49.493021",
+  "name": "a4uhk8quud",
   "state": "Haryana"
  },
  {
@@ -1354,8 +2065,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.850240",
-  "name": "Panipat",
+  "modified": "2026-07-20 14:04:49.497244",
+  "name": "a4urmtadqr",
   "state": "Haryana"
  },
  {
@@ -1363,8 +2074,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.856376",
-  "name": "Rewari",
+  "modified": "2026-07-20 14:04:49.503546",
+  "name": "a4v15sd0mq",
   "state": "Haryana"
  },
  {
@@ -1372,8 +2083,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.860649",
-  "name": "Rohtak",
+  "modified": "2026-07-20 14:04:49.507629",
+  "name": "a4vnj0crv4",
   "state": "Haryana"
  },
  {
@@ -1381,8 +2092,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.864882",
-  "name": "Sirsa",
+  "modified": "2026-07-20 14:04:49.511537",
+  "name": "a4vvjt9f9i",
   "state": "Haryana"
  },
  {
@@ -1390,8 +2101,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.871726",
-  "name": "Sonipat",
+  "modified": "2026-07-20 14:04:49.516138",
+  "name": "a4vq9laam8",
   "state": "Haryana"
  },
  {
@@ -1399,35 +2110,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.875467",
-  "name": "Yamunanagar",
+  "modified": "2026-07-20 14:04:49.522280",
+  "name": "a4vo3cd7j9",
   "state": "Haryana"
- },
- {
-  "city_name": "Baddi",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.880029",
-  "name": "Baddi",
-  "state": "Himachal Pradesh"
  },
  {
   "city_name": "Chamba",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.904736",
-  "name": "Chamba",
-  "state": "Himachal Pradesh"
- },
- {
-  "city_name": "Dharamshala",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.908748",
-  "name": "Dharamshala",
+  "modified": "2026-07-20 14:04:49.530741",
+  "name": "a4vsc7slc7",
   "state": "Himachal Pradesh"
  },
  {
@@ -1435,8 +2128,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.913682",
-  "name": "Hamirpur",
+  "modified": "2026-07-20 14:04:49.536612",
+  "name": "a4vf0loioo",
   "state": "Himachal Pradesh"
  },
  {
@@ -1444,8 +2137,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.918493",
-  "name": "Kangra",
+  "modified": "2026-07-20 14:04:49.540550",
+  "name": "a4vsvra9bo",
+  "state": "Himachal Pradesh"
+ },
+ {
+  "city_name": "Kinnaur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.544258",
+  "name": "a4vdddubud",
   "state": "Himachal Pradesh"
  },
  {
@@ -1453,17 +2155,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.923663",
-  "name": "Kullu",
+  "modified": "2026-07-20 14:04:49.548189",
+  "name": "a4v36b7j9p",
   "state": "Himachal Pradesh"
  },
  {
-  "city_name": "Manali",
+  "city_name": "Lahaul and Spiti",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.927622",
-  "name": "Manali",
+  "modified": "2026-07-20 14:04:49.553509",
+  "name": "a4vlasglj5",
   "state": "Himachal Pradesh"
  },
  {
@@ -1471,26 +2173,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.931703",
-  "name": "Mandi",
-  "state": "Himachal Pradesh"
- },
- {
-  "city_name": "Nahan",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.937407",
-  "name": "Nahan",
-  "state": "Himachal Pradesh"
- },
- {
-  "city_name": "Palampur",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.941838",
-  "name": "Palampur",
+  "modified": "2026-07-20 14:04:49.557672",
+  "name": "a4v54qlji0",
   "state": "Himachal Pradesh"
  },
  {
@@ -1498,8 +2182,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.947479",
-  "name": "Shimla",
+  "modified": "2026-07-20 14:04:49.561527",
+  "name": "a4vmh0j5d4",
+  "state": "Himachal Pradesh"
+ },
+ {
+  "city_name": "Sirmaur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.565961",
+  "name": "a4vuhstacq",
   "state": "Himachal Pradesh"
  },
  {
@@ -1507,8 +2200,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.953864",
-  "name": "Solan",
+  "modified": "2026-07-20 14:04:49.572014",
+  "name": "a4v4p5srno",
   "state": "Himachal Pradesh"
  },
  {
@@ -1516,8 +2209,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.958267",
-  "name": "Una",
+  "modified": "2026-07-20 14:04:49.576115",
+  "name": "a4vbotfpdm",
   "state": "Himachal Pradesh"
  },
  {
@@ -1525,8 +2218,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.963318",
-  "name": "Anantnag",
+  "modified": "2026-07-20 14:04:49.580369",
+  "name": "a4v0qvultu",
+  "state": "Jammu and Kashmir"
+ },
+ {
+  "city_name": "Bandipore",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.586268",
+  "name": "a4vu2h224s",
   "state": "Jammu and Kashmir"
  },
  {
@@ -1534,8 +2236,35 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.967293",
-  "name": "Baramulla",
+  "modified": "2026-07-20 14:04:49.590428",
+  "name": "a4vbmbhgoe",
+  "state": "Jammu and Kashmir"
+ },
+ {
+  "city_name": "Budgam",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.594094",
+  "name": "a4v914aq10",
+  "state": "Jammu and Kashmir"
+ },
+ {
+  "city_name": "Doda",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.598077",
+  "name": "a4vtdgv7tb",
+  "state": "Jammu and Kashmir"
+ },
+ {
+  "city_name": "Ganderbal",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.604097",
+  "name": "a501sp6uds",
   "state": "Jammu and Kashmir"
  },
  {
@@ -1543,8 +2272,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.972372",
-  "name": "Jammu",
+  "modified": "2026-07-20 14:04:49.607760",
+  "name": "a508qjpvnk",
   "state": "Jammu and Kashmir"
  },
  {
@@ -1552,8 +2281,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.976650",
-  "name": "Kathua",
+  "modified": "2026-07-20 14:04:49.611033",
+  "name": "a507tq8q6n",
+  "state": "Jammu and Kashmir"
+ },
+ {
+  "city_name": "Kishtwar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.615467",
+  "name": "a50t8e046l",
+  "state": "Jammu and Kashmir"
+ },
+ {
+  "city_name": "Kulgam",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.621992",
+  "name": "a50upflh73",
   "state": "Jammu and Kashmir"
  },
  {
@@ -1561,8 +2308,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.981109",
-  "name": "Kupwara",
+  "modified": "2026-07-20 14:04:49.625692",
+  "name": "a506t33gec",
+  "state": "Jammu and Kashmir"
+ },
+ {
+  "city_name": "Poonch",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.629323",
+  "name": "a50s7su6i6",
   "state": "Jammu and Kashmir"
  },
  {
@@ -1570,17 +2326,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:24.991321",
-  "name": "Pulwama",
-  "state": "Jammu and Kashmir"
- },
- {
-  "city_name": "Punch",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:24.995001",
-  "name": "Punch",
+  "modified": "2026-07-20 14:04:49.633946",
+  "name": "a50h81e529",
   "state": "Jammu and Kashmir"
  },
  {
@@ -1588,17 +2335,44 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.000013",
-  "name": "Rajouri",
+  "modified": "2026-07-20 14:04:49.638775",
+  "name": "a5058lfvgq",
   "state": "Jammu and Kashmir"
  },
  {
-  "city_name": "Sopore",
+  "city_name": "Ramban",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.004368",
-  "name": "Sopore",
+  "modified": "2026-07-20 14:04:49.642499",
+  "name": "a50oc7dq8e",
+  "state": "Jammu and Kashmir"
+ },
+ {
+  "city_name": "Reasi",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.646372",
+  "name": "a50b9ekood",
+  "state": "Jammu and Kashmir"
+ },
+ {
+  "city_name": "Samba",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.651402",
+  "name": "a50mjnvuip",
+  "state": "Jammu and Kashmir"
+ },
+ {
+  "city_name": "Shopian",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.655789",
+  "name": "a5070jiefi",
   "state": "Jammu and Kashmir"
  },
  {
@@ -1606,8 +2380,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.008243",
-  "name": "Srinagar",
+  "modified": "2026-07-20 14:04:49.659398",
+  "name": "a50jt22sl5",
   "state": "Jammu and Kashmir"
  },
  {
@@ -1615,8 +2389,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.011387",
-  "name": "Udhampur",
+  "modified": "2026-07-20 14:04:49.662922",
+  "name": "a502d4kaif",
   "state": "Jammu and Kashmir"
  },
  {
@@ -1624,26 +2398,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.015725",
-  "name": "Bokaro",
+  "modified": "2026-07-20 14:04:49.667436",
+  "name": "a50hbj410r",
   "state": "Jharkhand"
  },
  {
-  "city_name": "Chaibasa",
+  "city_name": "Chatra",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.020341",
-  "name": "Chaibasa",
-  "state": "Jharkhand"
- },
- {
-  "city_name": "Chirkunda",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:25.024305",
-  "name": "Chirkunda",
+  "modified": "2026-07-20 14:04:49.672393",
+  "name": "a50je2gt8p",
   "state": "Jharkhand"
  },
  {
@@ -1651,8 +2416,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.027589",
-  "name": "Deoghar",
+  "modified": "2026-07-20 14:04:49.675882",
+  "name": "a5048550qb",
   "state": "Jharkhand"
  },
  {
@@ -1660,8 +2425,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.031070",
-  "name": "Dhanbad",
+  "modified": "2026-07-20 14:04:49.679552",
+  "name": "a506m0n557",
   "state": "Jharkhand"
  },
  {
@@ -1669,8 +2434,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.038848",
-  "name": "Dumka",
+  "modified": "2026-07-20 14:04:49.684906",
+  "name": "a508tn1sj9",
+  "state": "Jharkhand"
+ },
+ {
+  "city_name": "East Singhbhum",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.689607",
+  "name": "a50qgcv8a8",
+  "state": "Jharkhand"
+ },
+ {
+  "city_name": "Garhwa",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.693147",
+  "name": "a50bg2gtm6",
   "state": "Jharkhand"
  },
  {
@@ -1678,8 +2461,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.043205",
-  "name": "Giridih",
+  "modified": "2026-07-20 14:04:49.696726",
+  "name": "a50ndeuc0s",
+  "state": "Jharkhand"
+ },
+ {
+  "city_name": "Godda",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.701876",
+  "name": "a51hv5ku0u",
+  "state": "Jharkhand"
+ },
+ {
+  "city_name": "Gumla",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.706695",
+  "name": "a51oq8or7h",
   "state": "Jharkhand"
  },
  {
@@ -1687,26 +2488,71 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.048883",
-  "name": "Hazaribagh",
+  "modified": "2026-07-20 14:04:49.710519",
+  "name": "a51vilvdbc",
   "state": "Jharkhand"
  },
  {
-  "city_name": "Jamshedpur",
+  "city_name": "Jamtara",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.053571",
-  "name": "Jamshedpur",
+  "modified": "2026-07-20 14:04:49.714612",
+  "name": "a51jji7rvo",
   "state": "Jharkhand"
  },
  {
-  "city_name": "Medininagar",
+  "city_name": "Khunti",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.057648",
-  "name": "Medininagar",
+  "modified": "2026-07-20 14:04:49.719612",
+  "name": "a51rmab1ur",
+  "state": "Jharkhand"
+ },
+ {
+  "city_name": "Koderma",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.723980",
+  "name": "a51dn49hpt",
+  "state": "Jharkhand"
+ },
+ {
+  "city_name": "Latehar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.727497",
+  "name": "a51k535af4",
+  "state": "Jharkhand"
+ },
+ {
+  "city_name": "Lohardaga",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.731578",
+  "name": "a51hbps51h",
+  "state": "Jharkhand"
+ },
+ {
+  "city_name": "Pakur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.737989",
+  "name": "a51t0pd2gn",
+  "state": "Jharkhand"
+ },
+ {
+  "city_name": "Palamu",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.741852",
+  "name": "a51vegp42c",
   "state": "Jharkhand"
  },
  {
@@ -1714,8 +2560,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.063368",
-  "name": "Ramgarh",
+  "modified": "2026-07-20 14:04:49.745603",
+  "name": "a51qknqt4l",
   "state": "Jharkhand"
  },
  {
@@ -1723,8 +2569,44 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.068108",
-  "name": "Ranchi",
+  "modified": "2026-07-20 14:04:49.750774",
+  "name": "a51jepopvd",
+  "state": "Jharkhand"
+ },
+ {
+  "city_name": "Sahibganj",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.756062",
+  "name": "a512g0hns0",
+  "state": "Jharkhand"
+ },
+ {
+  "city_name": "Seraikela-Kharsawan",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.759905",
+  "name": "a51aurt3o1",
+  "state": "Jharkhand"
+ },
+ {
+  "city_name": "Simdega",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.763640",
+  "name": "a51pk0g66t",
+  "state": "Jharkhand"
+ },
+ {
+  "city_name": "West Singhbhum",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.769722",
+  "name": "a51i3dql4s",
   "state": "Jharkhand"
  },
  {
@@ -1732,8 +2614,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.073407",
-  "name": "Bagalkote",
+  "modified": "2026-07-20 14:04:49.774062",
+  "name": "a51kbl70ck",
   "state": "Karnataka"
  },
  {
@@ -1741,8 +2623,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.079140",
-  "name": "Ballari",
+  "modified": "2026-07-20 14:04:49.777652",
+  "name": "a5164lq7pm",
+  "state": "Karnataka"
+ },
+ {
+  "city_name": "Bangalore Rural",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.781865",
+  "name": "a514vgpjhr",
   "state": "Karnataka"
  },
  {
@@ -1750,8 +2641,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.083230",
-  "name": "Belagavi",
+  "modified": "2026-07-20 14:04:49.787770",
+  "name": "a519dmd999",
   "state": "Karnataka"
  },
  {
@@ -1759,8 +2650,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.088187",
-  "name": "Bengaluru",
+  "modified": "2026-07-20 14:04:49.791748",
+  "name": "a51kpjdt9j",
   "state": "Karnataka"
  },
  {
@@ -1768,8 +2659,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.092873",
-  "name": "Bidar",
+  "modified": "2026-07-20 14:04:49.795428",
+  "name": "a515l63f79",
   "state": "Karnataka"
  },
  {
@@ -1777,17 +2668,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.098311",
-  "name": "Chamarajanagar",
+  "modified": "2026-07-20 14:04:49.800507",
+  "name": "a52sus9ucj",
   "state": "Karnataka"
  },
  {
-  "city_name": "Chikballapur",
+  "city_name": "Chikkaballapur",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.102468",
-  "name": "Chikballapur",
+  "modified": "2026-07-20 14:04:49.806035",
+  "name": "a52unsbvu5",
   "state": "Karnataka"
  },
  {
@@ -1795,8 +2686,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.108492",
-  "name": "Chikkamagaluru",
+  "modified": "2026-07-20 14:04:49.809888",
+  "name": "a52v11tm3t",
   "state": "Karnataka"
  },
  {
@@ -1804,8 +2695,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.112956",
-  "name": "Chitradurga",
+  "modified": "2026-07-20 14:04:49.813440",
+  "name": "a52sak1rdq",
   "state": "Karnataka"
  },
  {
@@ -1813,8 +2704,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.116842",
-  "name": "Dakshina Kannada",
+  "modified": "2026-07-20 14:04:49.820206",
+  "name": "a52n36dmb6",
   "state": "Karnataka"
  },
  {
@@ -1822,8 +2713,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.121936",
-  "name": "Davanagere",
+  "modified": "2026-07-20 14:04:49.824550",
+  "name": "a52eshvhhd",
   "state": "Karnataka"
  },
  {
@@ -1831,8 +2722,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.126004",
-  "name": "Dharwad",
+  "modified": "2026-07-20 14:04:49.828277",
+  "name": "a5285e4smd",
   "state": "Karnataka"
  },
  {
@@ -1840,8 +2731,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.131851",
-  "name": "Gadag",
+  "modified": "2026-07-20 14:04:49.833066",
+  "name": "a526phjokg",
   "state": "Karnataka"
  },
  {
@@ -1849,8 +2740,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.139899",
-  "name": "Hassan",
+  "modified": "2026-07-20 14:04:49.838512",
+  "name": "a52m9akt23",
   "state": "Karnataka"
  },
  {
@@ -1858,26 +2749,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.144814",
-  "name": "Haveri",
-  "state": "Karnataka"
- },
- {
-  "city_name": "Hospet",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:25.149785",
-  "name": "Hospet",
-  "state": "Karnataka"
- },
- {
-  "city_name": "Hubballi",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:25.155707",
-  "name": "Hubballi",
+  "modified": "2026-07-20 14:04:49.842266",
+  "name": "a523dbupff",
   "state": "Karnataka"
  },
  {
@@ -1885,8 +2758,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.158962",
-  "name": "Kalaburagi",
+  "modified": "2026-07-20 14:04:49.845995",
+  "name": "a52g3nr49p",
   "state": "Karnataka"
  },
  {
@@ -1894,8 +2767,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.164832",
-  "name": "Kodagu",
+  "modified": "2026-07-20 14:04:49.850940",
+  "name": "a52lrscggu",
   "state": "Karnataka"
  },
  {
@@ -1903,8 +2776,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.169883",
-  "name": "Kolar",
+  "modified": "2026-07-20 14:04:49.856628",
+  "name": "a52cieuet2",
   "state": "Karnataka"
  },
  {
@@ -1912,8 +2785,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.175055",
-  "name": "Koppal",
+  "modified": "2026-07-20 14:04:49.860305",
+  "name": "a52k73j3pj",
   "state": "Karnataka"
  },
  {
@@ -1921,17 +2794,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.179494",
-  "name": "Mandya",
-  "state": "Karnataka"
- },
- {
-  "city_name": "Mangaluru",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:25.184070",
-  "name": "Mangaluru",
+  "modified": "2026-07-20 14:04:49.864267",
+  "name": "a5218980gb",
   "state": "Karnataka"
  },
  {
@@ -1939,8 +2803,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.189286",
-  "name": "Mysuru",
+  "modified": "2026-07-20 14:04:49.869821",
+  "name": "a522ag2gnv",
   "state": "Karnataka"
  },
  {
@@ -1948,8 +2812,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.195096",
-  "name": "Raichur",
+  "modified": "2026-07-20 14:04:49.874158",
+  "name": "a529vm9qhs",
+  "state": "Karnataka"
+ },
+ {
+  "city_name": "Ramanagara",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.877860",
+  "name": "a5243tgauc",
   "state": "Karnataka"
  },
  {
@@ -1957,8 +2830,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.199989",
-  "name": "Shivamogga",
+  "modified": "2026-07-20 14:04:49.881773",
+  "name": "a52kmp1nqc",
   "state": "Karnataka"
  },
  {
@@ -1966,8 +2839,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.205876",
-  "name": "Tumakuru",
+  "modified": "2026-07-20 14:04:49.887260",
+  "name": "a52jghpbee",
   "state": "Karnataka"
  },
  {
@@ -1975,8 +2848,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.211101",
-  "name": "Udupi",
+  "modified": "2026-07-20 14:04:49.891323",
+  "name": "a52eoe8m5t",
+  "state": "Karnataka"
+ },
+ {
+  "city_name": "Uttara Kannada",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.895022",
+  "name": "a52tb8690j",
+  "state": "Karnataka"
+ },
+ {
+  "city_name": "Vijayanagara",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.898998",
+  "name": "a53ii36r2p",
   "state": "Karnataka"
  },
  {
@@ -1984,8 +2875,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.215523",
-  "name": "Vijayapura",
+  "modified": "2026-07-20 14:04:49.904632",
+  "name": "a53o944upt",
   "state": "Karnataka"
  },
  {
@@ -1993,8 +2884,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.221893",
-  "name": "Yadgir",
+  "modified": "2026-07-20 14:04:49.908585",
+  "name": "a535a2ckmj",
   "state": "Karnataka"
  },
  {
@@ -2002,8 +2893,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.227033",
-  "name": "Alappuzha",
+  "modified": "2026-07-20 14:04:49.912427",
+  "name": "a53m42abc8",
   "state": "Kerala"
  },
  {
@@ -2011,8 +2902,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.231724",
-  "name": "Ernakulam",
+  "modified": "2026-07-20 14:04:49.917858",
+  "name": "a53kvuu0m7",
   "state": "Kerala"
  },
  {
@@ -2020,8 +2911,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.237746",
-  "name": "Idukki",
+  "modified": "2026-07-20 14:04:49.922663",
+  "name": "a53nbqv6po",
   "state": "Kerala"
  },
  {
@@ -2029,8 +2920,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.241867",
-  "name": "Kannur",
+  "modified": "2026-07-20 14:04:49.926310",
+  "name": "a53lnb7pvo",
   "state": "Kerala"
  },
  {
@@ -2038,17 +2929,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.246484",
-  "name": "Kasaragod",
-  "state": "Kerala"
- },
- {
-  "city_name": "Kochi",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:25.254784",
-  "name": "Kochi",
+  "modified": "2026-07-20 14:04:49.929923",
+  "name": "a531iel2gm",
   "state": "Kerala"
  },
  {
@@ -2056,8 +2938,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.259071",
-  "name": "Kollam",
+  "modified": "2026-07-20 14:04:49.935091",
+  "name": "a53m6dik15",
   "state": "Kerala"
  },
  {
@@ -2065,8 +2947,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.262673",
-  "name": "Kottayam",
+  "modified": "2026-07-20 14:04:49.939993",
+  "name": "a537gdk3ba",
   "state": "Kerala"
  },
  {
@@ -2074,8 +2956,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.268254",
-  "name": "Kozhikode",
+  "modified": "2026-07-20 14:04:49.943758",
+  "name": "a53mhk1glc",
   "state": "Kerala"
  },
  {
@@ -2083,8 +2965,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.273372",
-  "name": "Malappuram",
+  "modified": "2026-07-20 14:04:49.948011",
+  "name": "a53r45bciu",
   "state": "Kerala"
  },
  {
@@ -2092,8 +2974,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.277572",
-  "name": "Palakkad",
+  "modified": "2026-07-20 14:04:49.953871",
+  "name": "a53fvpsgi4",
   "state": "Kerala"
  },
  {
@@ -2101,8 +2983,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.281853",
-  "name": "Pathanamthitta",
+  "modified": "2026-07-20 14:04:49.958095",
+  "name": "a53n3j8gts",
   "state": "Kerala"
  },
  {
@@ -2110,8 +2992,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.288104",
-  "name": "Thiruvananthapuram",
+  "modified": "2026-07-20 14:04:49.961783",
+  "name": "a53af10g2a",
+  "state": "Kerala"
+ },
+ {
+  "city_name": "Thrissur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:49.966471",
+  "name": "a53kpqlfnv",
   "state": "Kerala"
  },
  {
@@ -2119,80 +3010,107 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.297719",
-  "name": "Wayanad",
+  "modified": "2026-07-20 14:04:49.971836",
+  "name": "a5320rrhov",
   "state": "Kerala"
- },
- {
-  "city_name": "Diskit",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:25.305438",
-  "name": "Diskit",
-  "state": "Ladakh"
  },
  {
   "city_name": "Kargil",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.309846",
-  "name": "Kargil",
+  "modified": "2026-07-20 14:04:49.975891",
+  "name": "a53a8vvfs6",
   "state": "Ladakh"
  },
  {
-  "city_name": "Padum",
+  "city_name": "Leh",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.320253",
-  "name": "Padum",
+  "modified": "2026-07-20 14:04:49.979497",
+  "name": "a53k82nmgr",
   "state": "Ladakh"
  },
  {
-  "city_name": "Agatti",
+  "city_name": "Lakshadweep",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.324831",
-  "name": "Agatti",
+  "modified": "2026-07-20 14:04:49.985517",
+  "name": "a53siqhopd",
   "state": "Lakshadweep"
  },
  {
-  "city_name": "Amini",
+  "city_name": "Agar Malwa",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.328820",
-  "name": "Amini",
-  "state": "Lakshadweep"
+  "modified": "2026-07-20 14:04:49.990083",
+  "name": "a5314id796",
+  "state": "Madhya Pradesh"
  },
  {
-  "city_name": "Kavaratti",
+  "city_name": "Alirajpur",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.333491",
-  "name": "Kavaratti",
-  "state": "Lakshadweep"
+  "modified": "2026-07-20 14:04:49.993777",
+  "name": "a53f53fo6r",
+  "state": "Madhya Pradesh"
  },
  {
-  "city_name": "Minicoy",
+  "city_name": "Anuppur",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.338753",
-  "name": "Minicoy",
-  "state": "Lakshadweep"
+  "modified": "2026-07-20 14:04:49.997929",
+  "name": "a53v2tqmro",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Ashoknagar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.005224",
+  "name": "a54os225kg",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Balaghat",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.009118",
+  "name": "a54ib8r9ss",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Barwani",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.012798",
+  "name": "a54lp6bpqe",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Betul",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.017590",
+  "name": "a54h726fbd",
+  "state": "Madhya Pradesh"
  },
  {
   "city_name": "Bhind",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.343190",
-  "name": "Bhind",
+  "modified": "2026-07-20 14:04:50.022959",
+  "name": "a54usq66nu",
   "state": "Madhya Pradesh"
  },
  {
@@ -2200,8 +3118,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.347494",
-  "name": "Bhopal",
+  "modified": "2026-07-20 14:04:50.026825",
+  "name": "a54vs17c6s",
   "state": "Madhya Pradesh"
  },
  {
@@ -2209,8 +3127,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.353892",
-  "name": "Burhanpur",
+  "modified": "2026-07-20 14:04:50.030630",
+  "name": "a54epe1rn6",
   "state": "Madhya Pradesh"
  },
  {
@@ -2218,8 +3136,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.358062",
-  "name": "Chhatarpur",
+  "modified": "2026-07-20 14:04:50.036095",
+  "name": "a54lfibpot",
   "state": "Madhya Pradesh"
  },
  {
@@ -2227,8 +3145,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.363398",
-  "name": "Chhindwara",
+  "modified": "2026-07-20 14:04:50.040704",
+  "name": "a54u2vd7o7",
   "state": "Madhya Pradesh"
  },
  {
@@ -2236,8 +3154,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.367491",
-  "name": "Damoh",
+  "modified": "2026-07-20 14:04:50.044781",
+  "name": "a54jh918o6",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Datia",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.049138",
+  "name": "a549up1h2s",
   "state": "Madhya Pradesh"
  },
  {
@@ -2245,8 +3172,35 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.373771",
-  "name": "Dewas",
+  "modified": "2026-07-20 14:04:50.054884",
+  "name": "a544ie1c4l",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Dhar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.058742",
+  "name": "a5485s0kaa",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Dindori",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.062281",
+  "name": "a54nd03mon",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Guna",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.067745",
+  "name": "a54intd7sa",
   "state": "Madhya Pradesh"
  },
  {
@@ -2254,8 +3208,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.380107",
-  "name": "Gwalior",
+  "modified": "2026-07-20 14:04:50.072265",
+  "name": "a54s2cg7p8",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Harda",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.076003",
+  "name": "a54jop9ucd",
   "state": "Madhya Pradesh"
  },
  {
@@ -2263,8 +3226,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.384890",
-  "name": "Indore",
+  "modified": "2026-07-20 14:04:50.079505",
+  "name": "a54qagi6d0",
   "state": "Madhya Pradesh"
  },
  {
@@ -2272,8 +3235,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.389374",
-  "name": "Jabalpur",
+  "modified": "2026-07-20 14:04:50.084560",
+  "name": "a54jgqa2pd",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Jhabua",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.089291",
+  "name": "a54svcjjop",
   "state": "Madhya Pradesh"
  },
  {
@@ -2281,8 +3253,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.393317",
-  "name": "Katni",
+  "modified": "2026-07-20 14:04:50.093541",
+  "name": "a54naaea0o",
   "state": "Madhya Pradesh"
  },
  {
@@ -2290,8 +3262,35 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.399189",
-  "name": "Khandwa",
+  "modified": "2026-07-20 14:04:50.098073",
+  "name": "a54hoiidvr",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Khargone",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.103991",
+  "name": "a55q8bm98t",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Maihar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.108172",
+  "name": "a55s65658a",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Mandla",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.111793",
+  "name": "a55dsm8g2c",
   "state": "Madhya Pradesh"
  },
  {
@@ -2299,17 +3298,44 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.404066",
-  "name": "Mandsaur",
+  "modified": "2026-07-20 14:04:50.116744",
+  "name": "a554ulpu55",
   "state": "Madhya Pradesh"
  },
  {
-  "city_name": "Murwara",
+  "city_name": "Mauganj",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.409891",
-  "name": "Murwara",
+  "modified": "2026-07-20 14:04:50.121867",
+  "name": "a55ptc6rri",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Morena",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.125464",
+  "name": "a55vdkho40",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Narmadapuram",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.128857",
+  "name": "a55titt3sh",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Narsinghpur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.133339",
+  "name": "a553b7nnpm",
   "state": "Madhya Pradesh"
  },
  {
@@ -2317,8 +3343,53 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.415898",
-  "name": "Neemuch",
+  "modified": "2026-07-20 14:04:50.138034",
+  "name": "a55ncki8pp",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Niwari",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.141671",
+  "name": "a55ko5a8un",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Pandhurna",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.145504",
+  "name": "a5586r9l2l",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Panna",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.150199",
+  "name": "a55c102tsh",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Raisen",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.155395",
+  "name": "a55ldoq4gu",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Rajgarh",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.159068",
+  "name": "a55g901kat",
   "state": "Madhya Pradesh"
  },
  {
@@ -2326,8 +3397,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.422732",
-  "name": "Ratlam",
+  "modified": "2026-07-20 14:04:50.162518",
+  "name": "a55s85ip8g",
   "state": "Madhya Pradesh"
  },
  {
@@ -2335,8 +3406,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.426819",
-  "name": "Rewa",
+  "modified": "2026-07-20 14:04:50.167271",
+  "name": "a55j843k4v",
   "state": "Madhya Pradesh"
  },
  {
@@ -2344,8 +3415,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.431852",
-  "name": "Sagar",
+  "modified": "2026-07-20 14:04:50.172102",
+  "name": "a55nefnagq",
   "state": "Madhya Pradesh"
  },
  {
@@ -2353,8 +3424,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.438620",
-  "name": "Satna",
+  "modified": "2026-07-20 14:04:50.175851",
+  "name": "a55mofmeen",
   "state": "Madhya Pradesh"
  },
  {
@@ -2362,8 +3433,44 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.442357",
-  "name": "Sehore",
+  "modified": "2026-07-20 14:04:50.179497",
+  "name": "a55sondcbg",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Seoni",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.184185",
+  "name": "a559vn3rld",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Shahdol",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.189020",
+  "name": "a55q0sufvt",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Shajapur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.193294",
+  "name": "a55birokn8",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Sheopur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.196946",
+  "name": "a55iv1c4f8",
   "state": "Madhya Pradesh"
  },
  {
@@ -2371,8 +3478,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.447147",
-  "name": "Shivpuri",
+  "modified": "2026-07-20 14:04:50.203099",
+  "name": "a567pkadda",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Sidhi",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.207293",
+  "name": "a56e88b37h",
   "state": "Madhya Pradesh"
  },
  {
@@ -2380,8 +3496,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.450750",
-  "name": "Singrauli",
+  "modified": "2026-07-20 14:04:50.211043",
+  "name": "a5644s3vlp",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Tikamgarh",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.215362",
+  "name": "a560nfrv5f",
   "state": "Madhya Pradesh"
  },
  {
@@ -2389,8 +3514,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.455444",
-  "name": "Ujjain",
+  "modified": "2026-07-20 14:04:50.221568",
+  "name": "a562vsrjlk",
+  "state": "Madhya Pradesh"
+ },
+ {
+  "city_name": "Umaria",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.225122",
+  "name": "a567pj83dj",
   "state": "Madhya Pradesh"
  },
  {
@@ -2398,8 +3532,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.459742",
-  "name": "Vidisha",
+  "modified": "2026-07-20 14:04:50.228635",
+  "name": "a56mtken7i",
   "state": "Madhya Pradesh"
  },
  {
@@ -2407,8 +3541,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.463765",
-  "name": "Ahmednagar",
+  "modified": "2026-07-20 14:04:50.233284",
+  "name": "a56cj3mvsn",
   "state": "Maharashtra"
  },
  {
@@ -2416,17 +3550,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.467405",
-  "name": "Akola",
-  "state": "Maharashtra"
- },
- {
-  "city_name": "Ambamath",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:25.472724",
-  "name": "Ambamath",
+  "modified": "2026-07-20 14:04:50.238369",
+  "name": "a56sjvl7p2",
   "state": "Maharashtra"
  },
  {
@@ -2434,17 +3559,35 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.477068",
-  "name": "Amravati",
+  "modified": "2026-07-20 14:04:50.242347",
+  "name": "a56piiecup",
   "state": "Maharashtra"
  },
  {
-  "city_name": "Bhiwandi",
+  "city_name": "Beed",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.487419",
-  "name": "Bhiwandi",
+  "modified": "2026-07-20 14:04:50.246382",
+  "name": "a56c9gg93q",
+  "state": "Maharashtra"
+ },
+ {
+  "city_name": "Bhandara",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.251139",
+  "name": "a56uirq20a",
+  "state": "Maharashtra"
+ },
+ {
+  "city_name": "Buldhana",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.255857",
+  "name": "a56tuo7cn7",
   "state": "Maharashtra"
  },
  {
@@ -2452,8 +3595,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.491205",
-  "name": "Chandrapur",
+  "modified": "2026-07-20 14:04:50.259740",
+  "name": "a56g1f7ugv",
+  "state": "Maharashtra"
+ },
+ {
+  "city_name": "Chhatrapati Sambhajinagar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.263506",
+  "name": "a5679vcdef",
+  "state": "Maharashtra"
+ },
+ {
+  "city_name": "Dharashiv",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.269458",
+  "name": "a56pauj42a",
   "state": "Maharashtra"
  },
  {
@@ -2461,17 +3622,35 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.495144",
-  "name": "Dhule",
+  "modified": "2026-07-20 14:04:50.273979",
+  "name": "a569ep2trr",
   "state": "Maharashtra"
  },
  {
-  "city_name": "Ichalkaranji",
+  "city_name": "Gadchiroli",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.499334",
-  "name": "Ichalkaranji",
+  "modified": "2026-07-20 14:04:50.277362",
+  "name": "a56oimsjun",
+  "state": "Maharashtra"
+ },
+ {
+  "city_name": "Gondia",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.281748",
+  "name": "a56dnhgmnb",
+  "state": "Maharashtra"
+ },
+ {
+  "city_name": "Hingoli",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.287673",
+  "name": "a5695bgai6",
   "state": "Maharashtra"
  },
  {
@@ -2479,8 +3658,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.504282",
-  "name": "Jalgaon",
+  "modified": "2026-07-20 14:04:50.291336",
+  "name": "a56uquvold",
   "state": "Maharashtra"
  },
  {
@@ -2488,8 +3667,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.509443",
-  "name": "Jalna",
+  "modified": "2026-07-20 14:04:50.294949",
+  "name": "a56b3ti4bh",
   "state": "Maharashtra"
  },
  {
@@ -2497,8 +3676,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.513702",
-  "name": "Kolhapur",
+  "modified": "2026-07-20 14:04:50.299408",
+  "name": "a57uvqq2pf",
   "state": "Maharashtra"
  },
  {
@@ -2506,26 +3685,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.518068",
-  "name": "Latur",
+  "modified": "2026-07-20 14:04:50.304333",
+  "name": "a57ti7ek0r",
   "state": "Maharashtra"
  },
  {
-  "city_name": "Malegaon",
+  "city_name": "Mumbai City",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.522506",
-  "name": "Malegaon",
+  "modified": "2026-07-20 14:04:50.308209",
+  "name": "a57qrdct9d",
   "state": "Maharashtra"
  },
  {
-  "city_name": "Mumbai",
+  "city_name": "Mumbai Suburban",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.526741",
-  "name": "Mumbai",
+  "modified": "2026-07-20 14:04:50.312362",
+  "name": "a57ajtgnre",
   "state": "Maharashtra"
  },
  {
@@ -2533,8 +3712,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.530653",
-  "name": "Nagpur",
+  "modified": "2026-07-20 14:04:50.317538",
+  "name": "a576mv7slg",
   "state": "Maharashtra"
  },
  {
@@ -2542,8 +3721,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.534860",
-  "name": "Nanded",
+  "modified": "2026-07-20 14:04:50.322507",
+  "name": "a57kpdmldl",
+  "state": "Maharashtra"
+ },
+ {
+  "city_name": "Nandurbar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.326356",
+  "name": "a57bkr2ece",
   "state": "Maharashtra"
  },
  {
@@ -2551,26 +3739,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.539563",
-  "name": "Nashik",
+  "modified": "2026-07-20 14:04:50.330152",
+  "name": "a57087beb0",
   "state": "Maharashtra"
  },
  {
-  "city_name": "Osmanabad",
+  "city_name": "Palghar",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.543079",
-  "name": "Osmanabad",
-  "state": "Maharashtra"
- },
- {
-  "city_name": "Panvel",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:25.547184",
-  "name": "Panvel",
+  "modified": "2026-07-20 14:04:50.335353",
+  "name": "a57ejaoaog",
   "state": "Maharashtra"
  },
  {
@@ -2578,17 +3757,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.551219",
-  "name": "Parbhani",
-  "state": "Maharashtra"
- },
- {
-  "city_name": "Pimpri-Chinchwad",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:25.556660",
-  "name": "Pimpri-Chinchwad",
+  "modified": "2026-07-20 14:04:50.339944",
+  "name": "a57s1miaft",
   "state": "Maharashtra"
  },
  {
@@ -2596,8 +3766,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.560094",
-  "name": "Pune",
+  "modified": "2026-07-20 14:04:50.343726",
+  "name": "a57l5jj3s6",
+  "state": "Maharashtra"
+ },
+ {
+  "city_name": "Raigad",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.347689",
+  "name": "a57nkjbfv8",
   "state": "Maharashtra"
  },
  {
@@ -2605,8 +3784,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.564904",
-  "name": "Ratnagiri",
+  "modified": "2026-07-20 14:04:50.354191",
+  "name": "a570bfq7b8",
   "state": "Maharashtra"
  },
  {
@@ -2614,8 +3793,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.569494",
-  "name": "Sangli",
+  "modified": "2026-07-20 14:04:50.358084",
+  "name": "a5752487al",
+  "state": "Maharashtra"
+ },
+ {
+  "city_name": "Satara",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.361941",
+  "name": "a57i96s0ab",
+  "state": "Maharashtra"
+ },
+ {
+  "city_name": "Sindhudurg",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.366397",
+  "name": "a57j7ptgq9",
   "state": "Maharashtra"
  },
  {
@@ -2623,8 +3820,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.575117",
-  "name": "Solapur",
+  "modified": "2026-07-20 14:04:50.371935",
+  "name": "a57ru73kmf",
   "state": "Maharashtra"
  },
  {
@@ -2632,8 +3829,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.579204",
-  "name": "Thane",
+  "modified": "2026-07-20 14:04:50.375775",
+  "name": "a574s77qs6",
   "state": "Maharashtra"
  },
  {
@@ -2641,8 +3838,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.584723",
-  "name": "Wardha",
+  "modified": "2026-07-20 14:04:50.380577",
+  "name": "a57i5p1q3t",
+  "state": "Maharashtra"
+ },
+ {
+  "city_name": "Washim",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.386698",
+  "name": "a5724ktahj",
   "state": "Maharashtra"
  },
  {
@@ -2650,8 +3856,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.589951",
-  "name": "Yavatmal",
+  "modified": "2026-07-20 14:04:50.390805",
+  "name": "a57pjqqua8",
   "state": "Maharashtra"
  },
  {
@@ -2659,8 +3865,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.594514",
-  "name": "Bishnupur",
+  "modified": "2026-07-20 14:04:50.394454",
+  "name": "a57mqko76i",
+  "state": "Manipur"
+ },
+ {
+  "city_name": "Chandel",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.398834",
+  "name": "a58jn0kej6",
   "state": "Manipur"
  },
  {
@@ -2668,17 +3883,35 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.599700",
-  "name": "Churachandpur",
+  "modified": "2026-07-20 14:04:50.404102",
+  "name": "a58897tqkm",
   "state": "Manipur"
  },
  {
-  "city_name": "Imphal",
+  "city_name": "Imphal East",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.605751",
-  "name": "Imphal",
+  "modified": "2026-07-20 14:04:50.407745",
+  "name": "a5808kkpje",
+  "state": "Manipur"
+ },
+ {
+  "city_name": "Imphal West",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.411220",
+  "name": "a5819bupfe",
+  "state": "Manipur"
+ },
+ {
+  "city_name": "Jiribam",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.415114",
+  "name": "a58p9q4ufp",
   "state": "Manipur"
  },
  {
@@ -2686,17 +3919,44 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.609673",
-  "name": "Kakching",
+  "modified": "2026-07-20 14:04:50.421264",
+  "name": "a58i1m9pgd",
   "state": "Manipur"
  },
  {
-  "city_name": "Moreh",
+  "city_name": "Kamjong",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.619180",
-  "name": "Moreh",
+  "modified": "2026-07-20 14:04:50.425176",
+  "name": "a58u28q99d",
+  "state": "Manipur"
+ },
+ {
+  "city_name": "Kangpokpi",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.428906",
+  "name": "a584t7tmv1",
+  "state": "Manipur"
+ },
+ {
+  "city_name": "Noney",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.433788",
+  "name": "a58b226mdk",
+  "state": "Manipur"
+ },
+ {
+  "city_name": "Pherzawl",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.438992",
+  "name": "a58mdlb1k5",
   "state": "Manipur"
  },
  {
@@ -2704,8 +3964,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.624603",
-  "name": "Senapati",
+  "modified": "2026-07-20 14:04:50.442514",
+  "name": "a58uhemi2d",
+  "state": "Manipur"
+ },
+ {
+  "city_name": "Tamenglong",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.446254",
+  "name": "a58nrk03ai",
+  "state": "Manipur"
+ },
+ {
+  "city_name": "Tengnoupal",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.451028",
+  "name": "a58biqq63n",
   "state": "Manipur"
  },
  {
@@ -2713,8 +3991,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.629733",
-  "name": "Thoubal",
+  "modified": "2026-07-20 14:04:50.456744",
+  "name": "a58phisp1d",
   "state": "Manipur"
  },
  {
@@ -2722,71 +4000,116 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.633520",
-  "name": "Ukhrul",
+  "modified": "2026-07-20 14:04:50.460487",
+  "name": "a58do6odgn",
   "state": "Manipur"
  },
  {
-  "city_name": "Baghmara",
+  "city_name": "East Garo Hills",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.637782",
-  "name": "Baghmara",
+  "modified": "2026-07-20 14:04:50.464419",
+  "name": "a58ig4hst9",
   "state": "Meghalaya"
  },
  {
-  "city_name": "Jowai",
+  "city_name": "East Jaintia Hills",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.641719",
-  "name": "Jowai",
+  "modified": "2026-07-20 14:04:50.470361",
+  "name": "a58pdq97pb",
   "state": "Meghalaya"
  },
  {
-  "city_name": "Nongstoin",
+  "city_name": "East Khasi Hills",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.646654",
-  "name": "Nongstoin",
+  "modified": "2026-07-20 14:04:50.474300",
+  "name": "a58898bn24",
   "state": "Meghalaya"
  },
  {
-  "city_name": "Resubelpara",
+  "city_name": "Eastern West Khasi Hills",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.653166",
-  "name": "Resubelpara",
+  "modified": "2026-07-20 14:04:50.477695",
+  "name": "a58tjt0q43",
   "state": "Meghalaya"
  },
  {
-  "city_name": "Shillong",
+  "city_name": "North Garo Hills",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.657492",
-  "name": "Shillong",
+  "modified": "2026-07-20 14:04:50.481886",
+  "name": "a58kkjf64f",
   "state": "Meghalaya"
  },
  {
-  "city_name": "Tura",
+  "city_name": "Ri Bhoi",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.662950",
-  "name": "Tura",
+  "modified": "2026-07-20 14:04:50.488134",
+  "name": "a5855ehqnh",
   "state": "Meghalaya"
  },
  {
-  "city_name": "Williamnagar",
+  "city_name": "South Garo Hills",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.667376",
-  "name": "Williamnagar",
+  "modified": "2026-07-20 14:04:50.491983",
+  "name": "a58qtkr7l7",
+  "state": "Meghalaya"
+ },
+ {
+  "city_name": "South West Garo Hills",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.495563",
+  "name": "a58e5aoc2v",
+  "state": "Meghalaya"
+ },
+ {
+  "city_name": "South West Khasi Hills",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.504807",
+  "name": "a59pro08q8",
+  "state": "Meghalaya"
+ },
+ {
+  "city_name": "West Garo Hills",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.510722",
+  "name": "a593eph7hu",
+  "state": "Meghalaya"
+ },
+ {
+  "city_name": "West Jaintia Hills",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.518092",
+  "name": "a594r90smc",
+  "state": "Meghalaya"
+ },
+ {
+  "city_name": "West Khasi Hills",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.524543",
+  "name": "a59iib5i57",
   "state": "Meghalaya"
  },
  {
@@ -2794,8 +4117,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.675291",
-  "name": "Aizawl",
+  "modified": "2026-07-20 14:04:50.531130",
+  "name": "a597dg9bei",
   "state": "Mizoram"
  },
  {
@@ -2803,8 +4126,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.680683",
-  "name": "Champhai",
+  "modified": "2026-07-20 14:04:50.537768",
+  "name": "a59n6vdos2",
+  "state": "Mizoram"
+ },
+ {
+  "city_name": "Hnahthial",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.541984",
+  "name": "a59bai6rfq",
+  "state": "Mizoram"
+ },
+ {
+  "city_name": "Khawzawl",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.545764",
+  "name": "a59luvrrcp",
   "state": "Mizoram"
  },
  {
@@ -2812,8 +4153,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.685048",
-  "name": "Kolasib",
+  "modified": "2026-07-20 14:04:50.550275",
+  "name": "a59ggbdnm8",
   "state": "Mizoram"
  },
  {
@@ -2821,8 +4162,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.691472",
-  "name": "Lawngtlai",
+  "modified": "2026-07-20 14:04:50.555565",
+  "name": "a599ov7uns",
   "state": "Mizoram"
  },
  {
@@ -2830,8 +4171,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.699484",
-  "name": "Lunglei",
+  "modified": "2026-07-20 14:04:50.559187",
+  "name": "a59ebib8v5",
   "state": "Mizoram"
  },
  {
@@ -2839,8 +4180,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.706994",
-  "name": "Mamit",
+  "modified": "2026-07-20 14:04:50.562923",
+  "name": "a595na8s18",
   "state": "Mizoram"
  },
  {
@@ -2848,8 +4189,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.711633",
-  "name": "Saiha",
+  "modified": "2026-07-20 14:04:50.567754",
+  "name": "a592nnsek4",
+  "state": "Mizoram"
+ },
+ {
+  "city_name": "Saitual",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.573278",
+  "name": "a595fptdfu",
   "state": "Mizoram"
  },
  {
@@ -2857,17 +4207,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.717055",
-  "name": "Serchhip",
+  "modified": "2026-07-20 14:04:50.577139",
+  "name": "a59anejrud",
   "state": "Mizoram"
+ },
+ {
+  "city_name": "Chumoukedima",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.581332",
+  "name": "a59tsdpcgt",
+  "state": "Nagaland"
  },
  {
   "city_name": "Dimapur",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.724399",
-  "name": "Dimapur",
+  "modified": "2026-07-20 14:04:50.586799",
+  "name": "a59hagujio",
   "state": "Nagaland"
  },
  {
@@ -2875,8 +4234,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.729472",
-  "name": "Kiphire",
+  "modified": "2026-07-20 14:04:50.590956",
+  "name": "a59b0vqq8r",
   "state": "Nagaland"
  },
  {
@@ -2884,8 +4243,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.733461",
-  "name": "Kohima",
+  "modified": "2026-07-20 14:04:50.594390",
+  "name": "a599j300jl",
   "state": "Nagaland"
  },
  {
@@ -2893,8 +4252,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.739569",
-  "name": "Longleng",
+  "modified": "2026-07-20 14:04:50.598545",
+  "name": "a59l4abfj3",
   "state": "Nagaland"
  },
  {
@@ -2902,8 +4261,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.744224",
-  "name": "Mokokchung",
+  "modified": "2026-07-20 14:04:50.603915",
+  "name": "a5acngomj1",
   "state": "Nagaland"
  },
  {
@@ -2911,8 +4270,35 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.754217",
-  "name": "Mon",
+  "modified": "2026-07-20 14:04:50.607889",
+  "name": "a5a12ima53",
+  "state": "Nagaland"
+ },
+ {
+  "city_name": "Niuland",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.611401",
+  "name": "a5ae6icn8n",
+  "state": "Nagaland"
+ },
+ {
+  "city_name": "Noklak",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.615376",
+  "name": "a5ag1crgqf",
+  "state": "Nagaland"
+ },
+ {
+  "city_name": "Peren",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.620874",
+  "name": "a5a1l11sqj",
   "state": "Nagaland"
  },
  {
@@ -2920,8 +4306,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.759498",
-  "name": "Phek",
+  "modified": "2026-07-20 14:04:50.624476",
+  "name": "a5ai8sh702",
+  "state": "Nagaland"
+ },
+ {
+  "city_name": "Shamator",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.627968",
+  "name": "a5amm3d06f",
+  "state": "Nagaland"
+ },
+ {
+  "city_name": "Tseminyu",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.632042",
+  "name": "a5aleukq5r",
   "state": "Nagaland"
  },
  {
@@ -2929,8 +4333,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.765122",
-  "name": "Tuensang",
+  "modified": "2026-07-20 14:04:50.637189",
+  "name": "a5agqtg0pd",
   "state": "Nagaland"
  },
  {
@@ -2938,8 +4342,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.770667",
-  "name": "Wokha",
+  "modified": "2026-07-20 14:04:50.641179",
+  "name": "a5a3uk8n6b",
   "state": "Nagaland"
  },
  {
@@ -2947,8 +4351,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.779574",
-  "name": "Zunheboto",
+  "modified": "2026-07-20 14:04:50.644631",
+  "name": "a5adqfmhnq",
   "state": "Nagaland"
  },
  {
@@ -2956,8 +4360,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.783821",
-  "name": "Angul",
+  "modified": "2026-07-20 14:04:50.648411",
+  "name": "a5at8nff9n",
+  "state": "Odisha"
+ },
+ {
+  "city_name": "Balangir",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.653767",
+  "name": "a5al2ibk6s",
   "state": "Odisha"
  },
  {
@@ -2965,17 +4378,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.789858",
-  "name": "Balasore",
+  "modified": "2026-07-20 14:04:50.657700",
+  "name": "a5anm2uc6l",
   "state": "Odisha"
  },
  {
-  "city_name": "Baripada",
+  "city_name": "Bargarh",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.798444",
-  "name": "Baripada",
+  "modified": "2026-07-20 14:04:50.661150",
+  "name": "a5am8pbtp9",
   "state": "Odisha"
  },
  {
@@ -2983,35 +4396,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.802872",
-  "name": "Bhadrak",
+  "modified": "2026-07-20 14:04:50.665025",
+  "name": "a5am4et6h0",
   "state": "Odisha"
  },
  {
-  "city_name": "Bhubaneswar",
+  "city_name": "Boudh",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.808499",
-  "name": "Bhubaneswar",
-  "state": "Odisha"
- },
- {
-  "city_name": "Bolangir",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:25.813735",
-  "name": "Bolangir",
-  "state": "Odisha"
- },
- {
-  "city_name": "Brahmapur",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:25.821472",
-  "name": "Brahmapur",
+  "modified": "2026-07-20 14:04:50.670315",
+  "name": "a5af8k4g6f",
   "state": "Odisha"
  },
  {
@@ -3019,8 +4414,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.830828",
-  "name": "Cuttack",
+  "modified": "2026-07-20 14:04:50.674176",
+  "name": "a5ah56u2b0",
+  "state": "Odisha"
+ },
+ {
+  "city_name": "Debagarh",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.677983",
+  "name": "a5al21mqrq",
   "state": "Odisha"
  },
  {
@@ -3028,17 +4432,44 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.837195",
-  "name": "Dhenkanal",
+  "modified": "2026-07-20 14:04:50.682039",
+  "name": "a5a5f8vflb",
   "state": "Odisha"
  },
  {
-  "city_name": "Jeypore",
+  "city_name": "Gajapati",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.843564",
-  "name": "Jeypore",
+  "modified": "2026-07-20 14:04:50.687240",
+  "name": "a5aj06n11u",
+  "state": "Odisha"
+ },
+ {
+  "city_name": "Ganjam",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.691465",
+  "name": "a5a7cmuo9o",
+  "state": "Odisha"
+ },
+ {
+  "city_name": "Jagatsinghpur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.695148",
+  "name": "a5aq5q6268",
+  "state": "Odisha"
+ },
+ {
+  "city_name": "Jajpur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.700272",
+  "name": "a5bijljun2",
   "state": "Odisha"
  },
  {
@@ -3046,8 +4477,35 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.848619",
-  "name": "Jharsuguda",
+  "modified": "2026-07-20 14:04:50.705935",
+  "name": "a5bmnab107",
+  "state": "Odisha"
+ },
+ {
+  "city_name": "Kalahandi",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.709932",
+  "name": "a5b4v1upqn",
+  "state": "Odisha"
+ },
+ {
+  "city_name": "Kandhamal",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.713530",
+  "name": "a5bi7dp5im",
+  "state": "Odisha"
+ },
+ {
+  "city_name": "Kendrapara",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.719778",
+  "name": "a5bhti9jkb",
   "state": "Odisha"
  },
  {
@@ -3055,8 +4513,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.855722",
-  "name": "Kendujhar",
+  "modified": "2026-07-20 14:04:50.723523",
+  "name": "a5b1fvubu8",
+  "state": "Odisha"
+ },
+ {
+  "city_name": "Khordha",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.726993",
+  "name": "a5bqir884o",
   "state": "Odisha"
  },
  {
@@ -3064,17 +4531,53 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.865096",
-  "name": "Koraput",
+  "modified": "2026-07-20 14:04:50.730445",
+  "name": "a5b43d374t",
   "state": "Odisha"
  },
  {
-  "city_name": "Paradip",
+  "city_name": "Malkangiri",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.871789",
-  "name": "Paradip",
+  "modified": "2026-07-20 14:04:50.735653",
+  "name": "a5b7gh4gno",
+  "state": "Odisha"
+ },
+ {
+  "city_name": "Mayurbhanj",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.740608",
+  "name": "a5b6fpkntq",
+  "state": "Odisha"
+ },
+ {
+  "city_name": "Nabarangpur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.744303",
+  "name": "a5bekijduj",
+  "state": "Odisha"
+ },
+ {
+  "city_name": "Nayagarh",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.748274",
+  "name": "a5bneib1rj",
+  "state": "Odisha"
+ },
+ {
+  "city_name": "Nuapada",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.753558",
+  "name": "a5b1gasuit",
   "state": "Odisha"
  },
  {
@@ -3082,17 +4585,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.877977",
-  "name": "Puri",
+  "modified": "2026-07-20 14:04:50.758363",
+  "name": "a5bfscetfi",
   "state": "Odisha"
  },
  {
-  "city_name": "Rourkela",
+  "city_name": "Rayagada",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.884039",
-  "name": "Rourkela",
+  "modified": "2026-07-20 14:04:50.762178",
+  "name": "a5bvqng02m",
   "state": "Odisha"
  },
  {
@@ -3100,8 +4603,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.891945",
-  "name": "Sambalpur",
+  "modified": "2026-07-20 14:04:50.767216",
+  "name": "a5bb27n43r",
+  "state": "Odisha"
+ },
+ {
+  "city_name": "Subarnapur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.772513",
+  "name": "a5bq8hsr3v",
   "state": "Odisha"
  },
  {
@@ -3109,8 +4621,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.900660",
-  "name": "Sundargarh",
+  "modified": "2026-07-20 14:04:50.776267",
+  "name": "a5bkq9to1l",
   "state": "Odisha"
  },
  {
@@ -3118,8 +4630,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.914630",
-  "name": "Karaikal",
+  "modified": "2026-07-20 14:04:50.779739",
+  "name": "a5b7gs78kr",
   "state": "Puducherry"
  },
  {
@@ -3127,8 +4639,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.921190",
-  "name": "Mahe",
+  "modified": "2026-07-20 14:04:50.784226",
+  "name": "a5b8crpoq7",
   "state": "Puducherry"
  },
  {
@@ -3136,8 +4648,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.927175",
-  "name": "Puducherry",
+  "modified": "2026-07-20 14:04:50.789056",
+  "name": "a5btd1o332",
   "state": "Puducherry"
  },
  {
@@ -3145,8 +4657,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.931742",
-  "name": "Yanam",
+  "modified": "2026-07-20 14:04:50.792744",
+  "name": "a5bdd8lpou",
   "state": "Puducherry"
  },
  {
@@ -3154,17 +4666,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.936190",
-  "name": "Amritsar",
+  "modified": "2026-07-20 14:04:50.796576",
+  "name": "a5b19rrmlc",
   "state": "Punjab"
  },
  {
-  "city_name": "Batala",
+  "city_name": "Barnala",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.942067",
-  "name": "Batala",
+  "modified": "2026-07-20 14:04:50.801094",
+  "name": "a5c1baq4qm",
   "state": "Punjab"
  },
  {
@@ -3172,8 +4684,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.950647",
-  "name": "Bathinda",
+  "modified": "2026-07-20 14:04:50.805710",
+  "name": "a5cbe9fc1q",
   "state": "Punjab"
  },
  {
@@ -3181,8 +4693,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.957222",
-  "name": "Faridkot",
+  "modified": "2026-07-20 14:04:50.809199",
+  "name": "a5ci0i28rj",
+  "state": "Punjab"
+ },
+ {
+  "city_name": "Fatehgarh Sahib",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.812853",
+  "name": "a5cib63tgo",
+  "state": "Punjab"
+ },
+ {
+  "city_name": "Fazilka",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.817557",
+  "name": "a5cl4luttv",
   "state": "Punjab"
  },
  {
@@ -3190,8 +4720,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.963526",
-  "name": "Firozpur",
+  "modified": "2026-07-20 14:04:50.822884",
+  "name": "a5c7buei43",
   "state": "Punjab"
  },
  {
@@ -3199,8 +4729,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.967830",
-  "name": "Gurdaspur",
+  "modified": "2026-07-20 14:04:50.826487",
+  "name": "a5c6ejggg4",
   "state": "Punjab"
  },
  {
@@ -3208,8 +4738,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.975847",
-  "name": "Hoshiarpur",
+  "modified": "2026-07-20 14:04:50.834220",
+  "name": "a5cjt92ge7",
   "state": "Punjab"
  },
  {
@@ -3217,8 +4747,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.980879",
-  "name": "Jalandhar",
+  "modified": "2026-07-20 14:04:50.839658",
+  "name": "a5ce5lrjks",
+  "state": "Punjab"
+ },
+ {
+  "city_name": "Kapurthala",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.843448",
+  "name": "a5clqdbvcj",
   "state": "Punjab"
  },
  {
@@ -3226,8 +4765,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.987870",
-  "name": "Ludhiana",
+  "modified": "2026-07-20 14:04:50.847296",
+  "name": "a5cbvn2oc5",
+  "state": "Punjab"
+ },
+ {
+  "city_name": "Malerkotla",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.852471",
+  "name": "a5cutfvuu2",
+  "state": "Punjab"
+ },
+ {
+  "city_name": "Mansa",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.857263",
+  "name": "a5cs15e4fs",
   "state": "Punjab"
  },
  {
@@ -3235,35 +4792,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.992411",
-  "name": "Moga",
-  "state": "Punjab"
- },
- {
-  "city_name": "Mohali",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:25.996246",
-  "name": "Mohali",
-  "state": "Punjab"
- },
- {
-  "city_name": "Muktsar",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:25.999973",
-  "name": "Muktsar",
-  "state": "Punjab"
- },
- {
-  "city_name": "Nawanshahr",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.004285",
-  "name": "Nawanshahr",
+  "modified": "2026-07-20 14:04:50.860942",
+  "name": "a5caofoqrk",
   "state": "Punjab"
  },
  {
@@ -3271,8 +4801,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.010124",
-  "name": "Pathankot",
+  "modified": "2026-07-20 14:04:50.864788",
+  "name": "a5ciq5gm5r",
   "state": "Punjab"
  },
  {
@@ -3280,17 +4810,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.015782",
-  "name": "Patiala",
+  "modified": "2026-07-20 14:04:50.870239",
+  "name": "a5c02p1og1",
   "state": "Punjab"
  },
  {
-  "city_name": "Ropar",
+  "city_name": "Rupnagar",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.019571",
-  "name": "Ropar",
+  "modified": "2026-07-20 14:04:50.874183",
+  "name": "a5cnag1jgr",
+  "state": "Punjab"
+ },
+ {
+  "city_name": "Sahibzada Ajit Singh Nagar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.877743",
+  "name": "a5cg6g0793",
   "state": "Punjab"
  },
  {
@@ -3298,8 +4837,35 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.024362",
-  "name": "Sangrur",
+  "modified": "2026-07-20 14:04:50.882560",
+  "name": "a5c32116rv",
+  "state": "Punjab"
+ },
+ {
+  "city_name": "Shahid Bhagat Singh Nagar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.888689",
+  "name": "a5c8u4a41g",
+  "state": "Punjab"
+ },
+ {
+  "city_name": "Sri Muktsar Sahib",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.892421",
+  "name": "a5cq4tk0io",
+  "state": "Punjab"
+ },
+ {
+  "city_name": "Tarn Taran",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.896016",
+  "name": "a5cn3r422s",
   "state": "Punjab"
  },
  {
@@ -3307,8 +4873,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.028087",
-  "name": "Ajmer",
+  "modified": "2026-07-20 14:04:50.900696",
+  "name": "a5d73q9te0",
   "state": "Rajasthan"
  },
  {
@@ -3316,8 +4882,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.032174",
-  "name": "Alwar",
+  "modified": "2026-07-20 14:04:50.905691",
+  "name": "a5dp83lrq1",
+  "state": "Rajasthan"
+ },
+ {
+  "city_name": "Balotra",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.909333",
+  "name": "a5d8qhg1p1",
   "state": "Rajasthan"
  },
  {
@@ -3325,8 +4900,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.036404",
-  "name": "Banswara",
+  "modified": "2026-07-20 14:04:50.913146",
+  "name": "a5diqkeceb",
   "state": "Rajasthan"
  },
  {
@@ -3334,8 +4909,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.040839",
-  "name": "Baran",
+  "modified": "2026-07-20 14:04:50.918924",
+  "name": "a5dp8mt7ip",
   "state": "Rajasthan"
  },
  {
@@ -3343,8 +4918,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.045041",
-  "name": "Barmer",
+  "modified": "2026-07-20 14:04:50.923925",
+  "name": "a5de8jbae2",
+  "state": "Rajasthan"
+ },
+ {
+  "city_name": "Beawar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.927336",
+  "name": "a5dordp59v",
   "state": "Rajasthan"
  },
  {
@@ -3352,8 +4936,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.048986",
-  "name": "Bharatpur",
+  "modified": "2026-07-20 14:04:50.931306",
+  "name": "a5dgqkl1hm",
   "state": "Rajasthan"
  },
  {
@@ -3361,8 +4945,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.052640",
-  "name": "Bhilwara",
+  "modified": "2026-07-20 14:04:50.936924",
+  "name": "a5dbr6uuga",
   "state": "Rajasthan"
  },
  {
@@ -3370,8 +4954,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.058376",
-  "name": "Bikaner",
+  "modified": "2026-07-20 14:04:50.940954",
+  "name": "a5dqkn0ioh",
+  "state": "Rajasthan"
+ },
+ {
+  "city_name": "Bundi",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.944433",
+  "name": "a5dvsvi047",
   "state": "Rajasthan"
  },
  {
@@ -3379,8 +4972,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.062871",
-  "name": "Chittorgarh",
+  "modified": "2026-07-20 14:04:50.948393",
+  "name": "a5dhbeg275",
+  "state": "Rajasthan"
+ },
+ {
+  "city_name": "Churu",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.954458",
+  "name": "a5dluepgcr",
   "state": "Rajasthan"
  },
  {
@@ -3388,8 +4990,35 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.068422",
-  "name": "Dausa",
+  "modified": "2026-07-20 14:04:50.958400",
+  "name": "a5difuk4s7",
+  "state": "Rajasthan"
+ },
+ {
+  "city_name": "Deeg",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.962171",
+  "name": "a5dkaqalgu",
+  "state": "Rajasthan"
+ },
+ {
+  "city_name": "Dholpur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.967355",
+  "name": "a5droj7jjm",
+  "state": "Rajasthan"
+ },
+ {
+  "city_name": "Didwana Kuchaman",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.972808",
+  "name": "a5d188vbfp",
   "state": "Rajasthan"
  },
  {
@@ -3397,8 +5026,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.074664",
-  "name": "Dungarpur",
+  "modified": "2026-07-20 14:04:50.976637",
+  "name": "a5dld03ko3",
   "state": "Rajasthan"
  },
  {
@@ -3406,8 +5035,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.079386",
-  "name": "Hanumangarh",
+  "modified": "2026-07-20 14:04:50.980332",
+  "name": "a5db0atq7l",
   "state": "Rajasthan"
  },
  {
@@ -3415,8 +5044,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.083296",
-  "name": "Jaipur",
+  "modified": "2026-07-20 14:04:50.985571",
+  "name": "a5dcqiiqjc",
   "state": "Rajasthan"
  },
  {
@@ -3424,8 +5053,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.088440",
-  "name": "Jaisalmer",
+  "modified": "2026-07-20 14:04:50.990485",
+  "name": "a5ds54k2cn",
+  "state": "Rajasthan"
+ },
+ {
+  "city_name": "Jalore",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.994012",
+  "name": "a5d1ob9k5n",
+  "state": "Rajasthan"
+ },
+ {
+  "city_name": "Jhalawar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:50.997773",
+  "name": "a5d8hqsdcl",
   "state": "Rajasthan"
  },
  {
@@ -3433,8 +5080,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.092946",
-  "name": "Jhunjhunu",
+  "modified": "2026-07-20 14:04:51.002914",
+  "name": "a5ehh6s1nn",
   "state": "Rajasthan"
  },
  {
@@ -3442,17 +5089,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.097039",
-  "name": "Jodhpur",
+  "modified": "2026-07-20 14:04:51.007272",
+  "name": "a5ej00qurc",
   "state": "Rajasthan"
  },
  {
-  "city_name": "Kishangarh",
+  "city_name": "Karauli",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.100847",
-  "name": "Kishangarh",
+  "modified": "2026-07-20 14:04:51.011125",
+  "name": "a5ep9p20oe",
+  "state": "Rajasthan"
+ },
+ {
+  "city_name": "Khairthal-Tijara",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.015154",
+  "name": "a5e1bgn2gp",
   "state": "Rajasthan"
  },
  {
@@ -3460,8 +5116,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.106413",
-  "name": "Kota",
+  "modified": "2026-07-20 14:04:51.021555",
+  "name": "a5e0136cpk",
+  "state": "Rajasthan"
+ },
+ {
+  "city_name": "Kotputli-Behror",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.025314",
+  "name": "a5evbiij32",
   "state": "Rajasthan"
  },
  {
@@ -3469,8 +5134,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.110706",
-  "name": "Nagaur",
+  "modified": "2026-07-20 14:04:51.028915",
+  "name": "a5ea31ln1g",
   "state": "Rajasthan"
  },
  {
@@ -3478,8 +5143,44 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.115114",
-  "name": "Pali",
+  "modified": "2026-07-20 14:04:51.033562",
+  "name": "a5e5lev0o5",
+  "state": "Rajasthan"
+ },
+ {
+  "city_name": "Phalodi",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.038908",
+  "name": "a5emq3dpj7",
+  "state": "Rajasthan"
+ },
+ {
+  "city_name": "Pratapgarh",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.042500",
+  "name": "a5erjtbugs",
+  "state": "Rajasthan"
+ },
+ {
+  "city_name": "Rajsamand",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.046033",
+  "name": "a5eb169grc",
+  "state": "Rajasthan"
+ },
+ {
+  "city_name": "Salumbar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.050515",
+  "name": "a5edra6jcl",
   "state": "Rajasthan"
  },
  {
@@ -3487,8 +5188,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.120781",
-  "name": "Sawai Madhopur",
+  "modified": "2026-07-20 14:04:51.056083",
+  "name": "a5egn0jh3d",
   "state": "Rajasthan"
  },
  {
@@ -3496,8 +5197,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.125661",
-  "name": "Sikar",
+  "modified": "2026-07-20 14:04:51.059946",
+  "name": "a5efgejjkc",
+  "state": "Rajasthan"
+ },
+ {
+  "city_name": "Sirohi",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.063717",
+  "name": "a5egrlghul",
   "state": "Rajasthan"
  },
  {
@@ -3505,8 +5215,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.129302",
-  "name": "Sri Ganganagar",
+  "modified": "2026-07-20 14:04:51.069135",
+  "name": "a5e6kjq7ab",
   "state": "Rajasthan"
  },
  {
@@ -3514,8 +5224,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.133663",
-  "name": "Tonk",
+  "modified": "2026-07-20 14:04:51.073582",
+  "name": "a5epubucnt",
   "state": "Rajasthan"
  },
  {
@@ -3523,17 +5233,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:05:06.297835",
-  "name": "Udaipur",
-  "state": "Tripura"
+  "modified": "2026-07-20 14:04:51.077229",
+  "name": "a5e3044mrs",
+  "state": "Rajasthan"
  },
  {
   "city_name": "Gangtok",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.142697",
-  "name": "Gangtok",
+  "modified": "2026-07-20 14:04:51.081713",
+  "name": "a5eoj2njpj",
   "state": "Sikkim"
  },
  {
@@ -3541,8 +5251,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.147663",
-  "name": "Gyalshing",
+  "modified": "2026-07-20 14:04:51.087241",
+  "name": "a5eokoup29",
   "state": "Sikkim"
  },
  {
@@ -3550,8 +5260,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.151941",
-  "name": "Mangan",
+  "modified": "2026-07-20 14:04:51.091652",
+  "name": "a5evainvau",
   "state": "Sikkim"
  },
  {
@@ -3559,44 +5269,35 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.171335",
-  "name": "Namchi",
+  "modified": "2026-07-20 14:04:51.095362",
+  "name": "a5ednvcl6o",
   "state": "Sikkim"
  },
  {
-  "city_name": "Pelling",
+  "city_name": "Pakyong",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.176461",
-  "name": "Pelling",
+  "modified": "2026-07-20 14:04:51.100194",
+  "name": "a5fbcjefpb",
   "state": "Sikkim"
  },
  {
-  "city_name": "Ravangla",
+  "city_name": "Soreng",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.183736",
-  "name": "Ravangla",
+  "modified": "2026-07-20 14:04:51.105794",
+  "name": "a5fpb8kcr9",
   "state": "Sikkim"
- },
- {
-  "city_name": "Ambattur",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.197362",
-  "name": "Ambattur",
-  "state": "Tamil Nadu"
  },
  {
   "city_name": "Ariyalur",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.203987",
-  "name": "Ariyalur",
+  "modified": "2026-07-20 14:04:51.110273",
+  "name": "a5ffkad2uh",
   "state": "Tamil Nadu"
  },
  {
@@ -3604,8 +5305,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.209862",
-  "name": "Chengalpattu",
+  "modified": "2026-07-20 14:04:51.114731",
+  "name": "a5f461gtng",
   "state": "Tamil Nadu"
  },
  {
@@ -3613,8 +5314,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.217569",
-  "name": "Chennai",
+  "modified": "2026-07-20 14:04:51.120912",
+  "name": "a5fmfhtg8p",
   "state": "Tamil Nadu"
  },
  {
@@ -3622,8 +5323,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.225097",
-  "name": "Coimbatore",
+  "modified": "2026-07-20 14:04:51.125465",
+  "name": "a5f8108mk4",
   "state": "Tamil Nadu"
  },
  {
@@ -3631,8 +5332,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.230865",
-  "name": "Cuddalore",
+  "modified": "2026-07-20 14:04:51.129656",
+  "name": "a5f4vdkln7",
+  "state": "Tamil Nadu"
+ },
+ {
+  "city_name": "Dharmapuri",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.135462",
+  "name": "a5fo4c78tc",
   "state": "Tamil Nadu"
  },
  {
@@ -3640,8 +5350,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.234450",
-  "name": "Dindigul",
+  "modified": "2026-07-20 14:04:51.140714",
+  "name": "a5fekvl3do",
   "state": "Tamil Nadu"
  },
  {
@@ -3649,17 +5359,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.238942",
-  "name": "Erode",
-  "state": "Tamil Nadu"
- },
- {
-  "city_name": "Hosur",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.244117",
-  "name": "Hosur",
+  "modified": "2026-07-20 14:04:51.145058",
+  "name": "a5fo4iso2q",
   "state": "Tamil Nadu"
  },
  {
@@ -3667,8 +5368,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.250157",
-  "name": "Kallakurichi",
+  "modified": "2026-07-20 14:04:51.150731",
+  "name": "a5fiv1vcpm",
   "state": "Tamil Nadu"
  },
  {
@@ -3676,17 +5377,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.254997",
-  "name": "Kanchipuram",
+  "modified": "2026-07-20 14:04:51.156421",
+  "name": "a5fci4e3q5",
   "state": "Tamil Nadu"
  },
  {
-  "city_name": "Karaikudi",
+  "city_name": "Kanyakumari",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.263243",
-  "name": "Karaikudi",
+  "modified": "2026-07-20 14:04:51.160276",
+  "name": "a5fmottjv5",
   "state": "Tamil Nadu"
  },
  {
@@ -3694,8 +5395,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.272244",
-  "name": "Karur",
+  "modified": "2026-07-20 14:04:51.164517",
+  "name": "a5f3va1hlo",
   "state": "Tamil Nadu"
  },
  {
@@ -3703,26 +5404,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.285345",
-  "name": "Krishnagiri",
-  "state": "Tamil Nadu"
- },
- {
-  "city_name": "Kumarapalayam",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.293428",
-  "name": "Kumarapalayam",
-  "state": "Tamil Nadu"
- },
- {
-  "city_name": "Kumbakonam",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.303200",
-  "name": "Kumbakonam",
+  "modified": "2026-07-20 14:04:51.170469",
+  "name": "a5f1tsje15",
   "state": "Tamil Nadu"
  },
  {
@@ -3730,17 +5413,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.313846",
-  "name": "Madurai",
+  "modified": "2026-07-20 14:04:51.174799",
+  "name": "a5f418fh9s",
   "state": "Tamil Nadu"
  },
  {
-  "city_name": "Nagercoil",
+  "city_name": "Mayiladuthurai",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.320509",
-  "name": "Nagercoil",
+  "modified": "2026-07-20 14:04:51.178768",
+  "name": "a5fnphot0u",
+  "state": "Tamil Nadu"
+ },
+ {
+  "city_name": "Nagapattinam",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.184090",
+  "name": "a5flvg0aul",
   "state": "Tamil Nadu"
  },
  {
@@ -3748,17 +5440,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.329173",
-  "name": "Namakkal",
+  "modified": "2026-07-20 14:04:51.189749",
+  "name": "a5fso0e892",
   "state": "Tamil Nadu"
  },
  {
-  "city_name": "Neyveli",
+  "city_name": "Nilgiris",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.344218",
-  "name": "Neyveli",
+  "modified": "2026-07-20 14:04:51.193813",
+  "name": "a5fnep9e9c",
   "state": "Tamil Nadu"
  },
  {
@@ -3766,17 +5458,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.360306",
-  "name": "Perambalur",
-  "state": "Tamil Nadu"
- },
- {
-  "city_name": "Pollachi",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.366868",
-  "name": "Pollachi",
+  "modified": "2026-07-20 14:04:51.197824",
+  "name": "a5fsj758sf",
   "state": "Tamil Nadu"
  },
  {
@@ -3784,17 +5467,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.375597",
-  "name": "Pudukkottai",
+  "modified": "2026-07-20 14:04:51.203969",
+  "name": "a5gaig64ib",
   "state": "Tamil Nadu"
  },
  {
-  "city_name": "Rajapalayam",
+  "city_name": "Ramanathapuram",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.381419",
-  "name": "Rajapalayam",
+  "modified": "2026-07-20 14:04:51.207964",
+  "name": "a5gds9mgb9",
   "state": "Tamil Nadu"
  },
  {
@@ -3802,8 +5485,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.389692",
-  "name": "Ranipet",
+  "modified": "2026-07-20 14:04:51.211736",
+  "name": "a5g1vph0fp",
   "state": "Tamil Nadu"
  },
  {
@@ -3811,17 +5494,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.395070",
-  "name": "Salem",
+  "modified": "2026-07-20 14:04:51.216567",
+  "name": "a5gb6o1oi3",
   "state": "Tamil Nadu"
  },
  {
-  "city_name": "Sivakasi",
+  "city_name": "Sivaganga",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.400148",
-  "name": "Sivakasi",
+  "modified": "2026-07-20 14:04:51.221610",
+  "name": "a5gb0qp7jq",
+  "state": "Tamil Nadu"
+ },
+ {
+  "city_name": "Tenkasi",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.225385",
+  "name": "a5gjb4gesg",
   "state": "Tamil Nadu"
  },
  {
@@ -3829,8 +5521,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.407993",
-  "name": "Thanjavur",
+  "modified": "2026-07-20 14:04:51.229207",
+  "name": "a5gfdaboiq",
   "state": "Tamil Nadu"
  },
  {
@@ -3838,8 +5530,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.413845",
-  "name": "Theni",
+  "modified": "2026-07-20 14:04:51.234123",
+  "name": "a5gsdqrupf",
   "state": "Tamil Nadu"
  },
  {
@@ -3847,8 +5539,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.418995",
-  "name": "Thoothukudi",
+  "modified": "2026-07-20 14:04:51.239018",
+  "name": "a5gqb95gcq",
   "state": "Tamil Nadu"
  },
  {
@@ -3856,8 +5548,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.425406",
-  "name": "Tiruchirappalli",
+  "modified": "2026-07-20 14:04:51.242856",
+  "name": "a5gm2qgm39",
   "state": "Tamil Nadu"
  },
  {
@@ -3865,8 +5557,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.430880",
-  "name": "Tirunelveli",
+  "modified": "2026-07-20 14:04:51.246389",
+  "name": "a5gf3uq0g6",
   "state": "Tamil Nadu"
  },
  {
@@ -3874,8 +5566,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.435858",
-  "name": "Tirupattur",
+  "modified": "2026-07-20 14:04:51.251553",
+  "name": "a5g2stsnbd",
   "state": "Tamil Nadu"
  },
  {
@@ -3883,8 +5575,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.445138",
-  "name": "Tiruppur",
+  "modified": "2026-07-20 14:04:51.256482",
+  "name": "a5g43tfnhj",
+  "state": "Tamil Nadu"
+ },
+ {
+  "city_name": "Tiruvallur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.260660",
+  "name": "a5gd3momf5",
   "state": "Tamil Nadu"
  },
  {
@@ -3892,17 +5593,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.450225",
-  "name": "Tiruvannamalai",
+  "modified": "2026-07-20 14:04:51.264865",
+  "name": "a5gk5aeprj",
   "state": "Tamil Nadu"
  },
  {
-  "city_name": "Udhagamandalam",
+  "city_name": "Tiruvarur",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.457374",
-  "name": "Udhagamandalam",
+  "modified": "2026-07-20 14:04:51.271092",
+  "name": "a5givjt40o",
   "state": "Tamil Nadu"
  },
  {
@@ -3910,17 +5611,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.462828",
-  "name": "Vellore",
+  "modified": "2026-07-20 14:04:51.274888",
+  "name": "a5gk34sa1b",
   "state": "Tamil Nadu"
  },
  {
-  "city_name": "Villupuram",
+  "city_name": "Viluppuram",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.466902",
-  "name": "Villupuram",
+  "modified": "2026-07-20 14:04:51.278732",
+  "name": "a5glm4m9ku",
   "state": "Tamil Nadu"
  },
  {
@@ -3928,8 +5629,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.472013",
-  "name": "Virudhunagar",
+  "modified": "2026-07-20 14:04:51.284109",
+  "name": "a5gqmdm7m6",
   "state": "Tamil Nadu"
  },
  {
@@ -3937,8 +5638,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.485951",
-  "name": "Adilabad",
+  "modified": "2026-07-20 14:04:51.289472",
+  "name": "a5gj6v9fbq",
+  "state": "Telangana"
+ },
+ {
+  "city_name": "Bhadradri Kothagudem",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.293771",
+  "name": "a5go4vlndq",
+  "state": "Telangana"
+ },
+ {
+  "city_name": "Hanamkonda",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.298273",
+  "name": "a5hvjc1de6",
   "state": "Telangana"
  },
  {
@@ -3946,8 +5665,53 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.492304",
-  "name": "Hyderabad",
+  "modified": "2026-07-20 14:04:51.304577",
+  "name": "a5hsrt20ah",
+  "state": "Telangana"
+ },
+ {
+  "city_name": "Jagtial",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.308448",
+  "name": "a5h2dk4ilh",
+  "state": "Telangana"
+ },
+ {
+  "city_name": "Jangaon",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.312131",
+  "name": "a5hf0cnv02",
+  "state": "Telangana"
+ },
+ {
+  "city_name": "Jayashankar Bhupalpally",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.317475",
+  "name": "a5h6suu5oq",
+  "state": "Telangana"
+ },
+ {
+  "city_name": "Jogulamba Gadwal",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.322570",
+  "name": "a5h5t56dcn",
+  "state": "Telangana"
+ },
+ {
+  "city_name": "Kamareddy",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.326371",
+  "name": "a5h2l9c30p",
   "state": "Telangana"
  },
  {
@@ -3955,8 +5719,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.499363",
-  "name": "Karimnagar",
+  "modified": "2026-07-20 14:04:51.330513",
+  "name": "a5hh9v0ba9",
   "state": "Telangana"
  },
  {
@@ -3964,8 +5728,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.504288",
-  "name": "Khammam",
+  "modified": "2026-07-20 14:04:51.336020",
+  "name": "a5hiq1vss2",
+  "state": "Telangana"
+ },
+ {
+  "city_name": "Kumuram Bheem Asifabad",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.342084",
+  "name": "a5h6o5ci1q",
+  "state": "Telangana"
+ },
+ {
+  "city_name": "Mahabubabad",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.346336",
+  "name": "a5hbmj2hcj",
   "state": "Telangana"
  },
  {
@@ -3973,8 +5755,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.512288",
-  "name": "Mahbubnagar",
+  "modified": "2026-07-20 14:04:51.351334",
+  "name": "a5hed1s84v",
   "state": "Telangana"
  },
  {
@@ -3982,17 +5764,44 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.517440",
-  "name": "Mancherial",
+  "modified": "2026-07-20 14:04:51.356078",
+  "name": "a5he5im30o",
   "state": "Telangana"
  },
  {
-  "city_name": "Miryalaguda",
+  "city_name": "Medak",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.526266",
-  "name": "Miryalaguda",
+  "modified": "2026-07-20 14:04:51.360541",
+  "name": "a5h8d1deoo",
+  "state": "Telangana"
+ },
+ {
+  "city_name": "Medchal-Malkajgiri",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.364773",
+  "name": "a5hhp7rqml",
+  "state": "Telangana"
+ },
+ {
+  "city_name": "Mulugu",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.370397",
+  "name": "a5h9sjbh5k",
+  "state": "Telangana"
+ },
+ {
+  "city_name": "Nagarkurnool",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.374775",
+  "name": "a5h774bk95",
   "state": "Telangana"
  },
  {
@@ -4000,8 +5809,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.536005",
-  "name": "Nalgonda",
+  "modified": "2026-07-20 14:04:51.378569",
+  "name": "a5hndno2ia",
+  "state": "Telangana"
+ },
+ {
+  "city_name": "Narayanpet",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.384404",
+  "name": "a5h9gqvi4g",
   "state": "Telangana"
  },
  {
@@ -4009,8 +5827,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.542578",
-  "name": "Nirmal",
+  "modified": "2026-07-20 14:04:51.389665",
+  "name": "a5h62brj4m",
   "state": "Telangana"
  },
  {
@@ -4018,17 +5836,35 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.552686",
-  "name": "Nizamabad",
+  "modified": "2026-07-20 14:04:51.393342",
+  "name": "a5h2aeuhi3",
   "state": "Telangana"
  },
  {
-  "city_name": "Ramagundam",
+  "city_name": "Peddapalli",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.557452",
-  "name": "Ramagundam",
+  "modified": "2026-07-20 14:04:51.397648",
+  "name": "a5hs27g6q9",
+  "state": "Telangana"
+ },
+ {
+  "city_name": "Rajanna Sircilla",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.403825",
+  "name": "a5igvdvr35",
+  "state": "Telangana"
+ },
+ {
+  "city_name": "Ranga Reddy",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.408098",
+  "name": "a5i66cj64k",
   "state": "Telangana"
  },
  {
@@ -4036,8 +5872,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.564142",
-  "name": "Sangareddy",
+  "modified": "2026-07-20 14:04:51.411730",
+  "name": "a5iq8pdo52",
   "state": "Telangana"
  },
  {
@@ -4045,8 +5881,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.568188",
-  "name": "Siddipet",
+  "modified": "2026-07-20 14:04:51.416146",
+  "name": "a5i8t5tekb",
   "state": "Telangana"
  },
  {
@@ -4054,8 +5890,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.573704",
-  "name": "Suryapet",
+  "modified": "2026-07-20 14:04:51.421970",
+  "name": "a5ir07eurl",
+  "state": "Telangana"
+ },
+ {
+  "city_name": "Vikarabad",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.425554",
+  "name": "a5ibtnu9o1",
+  "state": "Telangana"
+ },
+ {
+  "city_name": "Wanaparthy",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.429072",
+  "name": "a5ig3mgmmp",
   "state": "Telangana"
  },
  {
@@ -4063,62 +5917,89 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.577363",
-  "name": "Warangal",
+  "modified": "2026-07-20 14:04:51.434017",
+  "name": "a5i35ijl0n",
   "state": "Telangana"
  },
  {
-  "city_name": "Agartala",
+  "city_name": "Yadadri Bhuvanagiri",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.581365",
-  "name": "Agartala",
+  "modified": "2026-07-20 14:04:51.438929",
+  "name": "a5i92febgl",
+  "state": "Telangana"
+ },
+ {
+  "city_name": "Dhalai",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.442413",
+  "name": "a5ifrf4mih",
   "state": "Tripura"
  },
  {
-  "city_name": "Ambassa",
+  "city_name": "Gomati",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.584946",
-  "name": "Ambassa",
+  "modified": "2026-07-20 14:04:51.446058",
+  "name": "a5iog20ov9",
   "state": "Tripura"
  },
  {
-  "city_name": "Belonia",
+  "city_name": "Khowai",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.589033",
-  "name": "Belonia",
+  "modified": "2026-07-20 14:04:51.450900",
+  "name": "a5i5p1fs6i",
   "state": "Tripura"
  },
  {
-  "city_name": "Dharmanagar",
+  "city_name": "North Tripura",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.592909",
-  "name": "Dharmanagar",
+  "modified": "2026-07-20 14:04:51.456177",
+  "name": "a5in6esapn",
   "state": "Tripura"
  },
  {
-  "city_name": "Kailasahar",
+  "city_name": "Sepahijala",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.598120",
-  "name": "Kailasahar",
+  "modified": "2026-07-20 14:04:51.459715",
+  "name": "a5i0bgcppi",
   "state": "Tripura"
  },
  {
-  "city_name": "Sabroom",
+  "city_name": "South Tripura",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.601669",
-  "name": "Sabroom",
+  "modified": "2026-07-20 14:04:51.463401",
+  "name": "a5ir2rkrio",
+  "state": "Tripura"
+ },
+ {
+  "city_name": "Unakoti",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.468585",
+  "name": "a5ibgaefji",
+  "state": "Tripura"
+ },
+ {
+  "city_name": "West Tripura",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.473338",
+  "name": "a5ikpfqo2c",
   "state": "Tripura"
  },
  {
@@ -4126,8 +6007,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.611678",
-  "name": "Agra",
+  "modified": "2026-07-20 14:04:51.476830",
+  "name": "a5inu3l85d",
   "state": "Uttar Pradesh"
  },
  {
@@ -4135,8 +6016,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.615698",
-  "name": "Aligarh",
+  "modified": "2026-07-20 14:04:51.480355",
+  "name": "a5ijeip2kj",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Ambedkar Nagar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.485643",
+  "name": "a5ig1oti22",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Amethi",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.489905",
+  "name": "a5irscttn5",
   "state": "Uttar Pradesh"
  },
  {
@@ -4144,8 +6043,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.620216",
-  "name": "Amroha",
+  "modified": "2026-07-20 14:04:51.493707",
+  "name": "a5i9v4vg1q",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Auraiya",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.498493",
+  "name": "a5jcseghci",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Ayodhya",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.504108",
+  "name": "a5j86altsr",
   "state": "Uttar Pradesh"
  },
  {
@@ -4153,8 +6070,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.626196",
-  "name": "Azamgarh",
+  "modified": "2026-07-20 14:04:51.507882",
+  "name": "a5jqhilr7r",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Baghpat",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.511428",
+  "name": "a5joenbp4n",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Bahraich",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.515488",
+  "name": "a5jd96o6ll",
   "state": "Uttar Pradesh"
  },
  {
@@ -4162,8 +6097,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.631166",
-  "name": "Ballia",
+  "modified": "2026-07-20 14:04:51.522409",
+  "name": "a5jk7i0huq",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Balrampur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.526208",
+  "name": "a5jb6g2do0",
   "state": "Uttar Pradesh"
  },
  {
@@ -4171,8 +6115,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.635627",
-  "name": "Banda",
+  "modified": "2026-07-20 14:04:51.530302",
+  "name": "a5j6balhli",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Barabanki",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.536025",
+  "name": "a5jeice8p0",
   "state": "Uttar Pradesh"
  },
  {
@@ -4180,8 +6133,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.640057",
-  "name": "Bareilly",
+  "modified": "2026-07-20 14:04:51.540575",
+  "name": "a5jpbbpsae",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Basti",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.544362",
+  "name": "a5jbh2b4f2",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Bhadohi",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.548434",
+  "name": "a5jb1qvl2j",
   "state": "Uttar Pradesh"
  },
  {
@@ -4189,8 +6160,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.646848",
-  "name": "Bijnor",
+  "modified": "2026-07-20 14:04:51.553538",
+  "name": "a5jpqfm3s3",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Budaun",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.557554",
+  "name": "a5j016m0ec",
   "state": "Uttar Pradesh"
  },
  {
@@ -4198,8 +6178,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.652263",
-  "name": "Bulandshahr",
+  "modified": "2026-07-20 14:04:51.561110",
+  "name": "a5jf3o3jvh",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Chandauli",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.565489",
+  "name": "a5jg7fh5ff",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Chitrakoot",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.570885",
+  "name": "a5jv8l327q",
   "state": "Uttar Pradesh"
  },
  {
@@ -4207,8 +6205,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.657833",
-  "name": "Deoria",
+  "modified": "2026-07-20 14:04:51.574356",
+  "name": "a5j78o19qe",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Etah",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.577913",
+  "name": "a5j8aem1o7",
   "state": "Uttar Pradesh"
  },
  {
@@ -4216,17 +6223,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.661453",
-  "name": "Etawah",
-  "state": "Uttar Pradesh"
- },
- {
-  "city_name": "Faizabad",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.666484",
-  "name": "Faizabad",
+  "modified": "2026-07-20 14:04:51.581925",
+  "name": "a5jvufhfho",
   "state": "Uttar Pradesh"
  },
  {
@@ -4234,8 +6232,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.672853",
-  "name": "Farrukhabad",
+  "modified": "2026-07-20 14:04:51.587240",
+  "name": "a5jsrpd4i7",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Fatehpur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.591322",
+  "name": "a5jqdj1sib",
   "state": "Uttar Pradesh"
  },
  {
@@ -4243,8 +6250,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.676493",
-  "name": "Firozabad",
+  "modified": "2026-07-20 14:04:51.594832",
+  "name": "a5j87q1erp",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Gautam Buddha Nagar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.599047",
+  "name": "a5k3o934it",
   "state": "Uttar Pradesh"
  },
  {
@@ -4252,8 +6268,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.680720",
-  "name": "Ghaziabad",
+  "modified": "2026-07-20 14:04:51.604888",
+  "name": "a5k9jg48nl",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Ghazipur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.608383",
+  "name": "a5k2l82502",
   "state": "Uttar Pradesh"
  },
  {
@@ -4261,8 +6286,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.684926",
-  "name": "Gonda",
+  "modified": "2026-07-20 14:04:51.611673",
+  "name": "a5kq9u3ara",
   "state": "Uttar Pradesh"
  },
  {
@@ -4270,8 +6295,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.692180",
-  "name": "Gorakhpur",
+  "modified": "2026-07-20 14:04:51.615760",
+  "name": "a5khb8aong",
   "state": "Uttar Pradesh"
  },
  {
@@ -4279,8 +6304,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.695935",
-  "name": "Hapur",
+  "modified": "2026-07-20 14:04:51.625362",
+  "name": "a5kjgcvh41",
   "state": "Uttar Pradesh"
  },
  {
@@ -4288,8 +6313,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.699987",
-  "name": "Hardoi",
+  "modified": "2026-07-20 14:04:51.628778",
+  "name": "a5k4r1jt0f",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Hathras",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.633935",
+  "name": "a5k0kb3b35",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Jalaun",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.639079",
+  "name": "a5k5clo51d",
   "state": "Uttar Pradesh"
  },
  {
@@ -4297,8 +6340,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.707792",
-  "name": "Jaunpur",
+  "modified": "2026-07-20 14:04:51.643671",
+  "name": "a5kib1o2nb",
   "state": "Uttar Pradesh"
  },
  {
@@ -4306,26 +6349,80 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.712539",
-  "name": "Jhansi",
+  "modified": "2026-07-20 14:04:51.647645",
+  "name": "a5k1f4856q",
   "state": "Uttar Pradesh"
  },
  {
-  "city_name": "Kanpur",
+  "city_name": "Kannauj",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.716452",
-  "name": "Kanpur",
+  "modified": "2026-07-20 14:04:51.653205",
+  "name": "a5kkhj4mfg",
   "state": "Uttar Pradesh"
  },
  {
-  "city_name": "Lakhimpur",
+  "city_name": "Kanpur Dehat",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.721094",
-  "name": "Lakhimpur",
+  "modified": "2026-07-20 14:04:51.657295",
+  "name": "a5kpqe7fkr",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Kanpur Nagar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.660793",
+  "name": "a5kbfrjuiv",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Kasganj",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.665035",
+  "name": "a5kgaroms1",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Kaushambi",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.670736",
+  "name": "a5k47hmvgg",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Kushinagar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.674539",
+  "name": "a5kd53o5eb",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Lakhimpur Kheri",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.678001",
+  "name": "a5k1vvsjfu",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Lalitpur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.682709",
+  "name": "a5kao41r4c",
   "state": "Uttar Pradesh"
  },
  {
@@ -4333,8 +6430,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.726399",
-  "name": "Lucknow",
+  "modified": "2026-07-20 14:04:51.688263",
+  "name": "a5k9f5ht59",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Maharajganj",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.691955",
+  "name": "a5krds6cob",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Mahoba",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.695263",
+  "name": "a5knshphuj",
   "state": "Uttar Pradesh"
  },
  {
@@ -4342,8 +6457,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.730775",
-  "name": "Mainpuri",
+  "modified": "2026-07-20 14:04:51.699942",
+  "name": "a5l6gumrcb",
   "state": "Uttar Pradesh"
  },
  {
@@ -4351,8 +6466,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.736880",
-  "name": "Mathura",
+  "modified": "2026-07-20 14:04:51.705192",
+  "name": "a5lgs7lceg",
   "state": "Uttar Pradesh"
  },
  {
@@ -4360,8 +6475,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.741679",
-  "name": "Mau",
+  "modified": "2026-07-20 14:04:51.708722",
+  "name": "a5l6s05pp2",
   "state": "Uttar Pradesh"
  },
  {
@@ -4369,8 +6484,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.746061",
-  "name": "Meerut",
+  "modified": "2026-07-20 14:04:51.712140",
+  "name": "a5lml5ile1",
   "state": "Uttar Pradesh"
  },
  {
@@ -4378,8 +6493,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.750045",
-  "name": "Mirzapur",
+  "modified": "2026-07-20 14:04:51.716568",
+  "name": "a5l4i43npv",
   "state": "Uttar Pradesh"
  },
  {
@@ -4387,8 +6502,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.754804",
-  "name": "Moradabad",
+  "modified": "2026-07-20 14:04:51.722156",
+  "name": "a5lq6dpq9h",
   "state": "Uttar Pradesh"
  },
  {
@@ -4396,17 +6511,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.759867",
-  "name": "Muzaffarnagar",
+  "modified": "2026-07-20 14:04:51.725994",
+  "name": "a5lq8bbbuh",
   "state": "Uttar Pradesh"
  },
  {
-  "city_name": "Pratapgarh",
+  "city_name": "Pilibhit",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.764014",
-  "name": "Pratapgarh",
+  "modified": "2026-07-20 14:04:51.729527",
+  "name": "a5ls8u7mi4",
   "state": "Uttar Pradesh"
  },
  {
@@ -4414,8 +6529,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.767793",
-  "name": "Prayagraj",
+  "modified": "2026-07-20 14:04:51.739048",
+  "name": "a5l4dphtgl",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Raebareli",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.742684",
+  "name": "a5l762pjrc",
   "state": "Uttar Pradesh"
  },
  {
@@ -4423,8 +6547,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.772308",
-  "name": "Rampur",
+  "modified": "2026-07-20 14:04:51.749330",
+  "name": "a5l8rol2dp",
   "state": "Uttar Pradesh"
  },
  {
@@ -4432,8 +6556,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.776615",
-  "name": "Saharanpur",
+  "modified": "2026-07-20 14:04:51.756164",
+  "name": "a5lguk7uol",
   "state": "Uttar Pradesh"
  },
  {
@@ -4441,8 +6565,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.780948",
-  "name": "Sambhal",
+  "modified": "2026-07-20 14:04:51.760883",
+  "name": "a5l724qkg7",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Sant Kabir Nagar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.767318",
+  "name": "a5lqo8mmad",
   "state": "Uttar Pradesh"
  },
  {
@@ -4450,8 +6583,35 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.784752",
-  "name": "Shahjahanpur",
+  "modified": "2026-07-20 14:04:51.772611",
+  "name": "a5l5v0bas0",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Shamli",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.776423",
+  "name": "a5lpnrk5um",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Shravasti",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.780172",
+  "name": "a5lbg2k5oc",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Siddharthnagar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.785329",
+  "name": "a5lug0kk4g",
   "state": "Uttar Pradesh"
  },
  {
@@ -4459,8 +6619,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.788916",
-  "name": "Sitapur",
+  "modified": "2026-07-20 14:04:51.789834",
+  "name": "a5l545c2i5",
+  "state": "Uttar Pradesh"
+ },
+ {
+  "city_name": "Sonbhadra",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.793538",
+  "name": "a5lk16lbll",
   "state": "Uttar Pradesh"
  },
  {
@@ -4468,8 +6637,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.793068",
-  "name": "Sultanpur",
+  "modified": "2026-07-20 14:04:51.797737",
+  "name": "a5l3mfm3jn",
   "state": "Uttar Pradesh"
  },
  {
@@ -4477,8 +6646,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.797741",
-  "name": "Unnao",
+  "modified": "2026-07-20 14:04:51.803764",
+  "name": "a5mmq04h6v",
   "state": "Uttar Pradesh"
  },
  {
@@ -4486,8 +6655,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.802892",
-  "name": "Varanasi",
+  "modified": "2026-07-20 14:04:51.807480",
+  "name": "a5mv1fn303",
   "state": "Uttar Pradesh"
  },
  {
@@ -4495,8 +6664,26 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.807321",
-  "name": "Almora",
+  "modified": "2026-07-20 14:04:51.811291",
+  "name": "a5mdqgq8ij",
+  "state": "Uttarakhand"
+ },
+ {
+  "city_name": "Bageshwar",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.815950",
+  "name": "a5mbq87pg6",
+  "state": "Uttarakhand"
+ },
+ {
+  "city_name": "Chamoli",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.821215",
+  "name": "a5md549ba4",
   "state": "Uttarakhand"
  },
  {
@@ -4504,8 +6691,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.811757",
-  "name": "Champawat",
+  "modified": "2026-07-20 14:04:51.824808",
+  "name": "a5mndmu74c",
   "state": "Uttarakhand"
  },
  {
@@ -4513,17 +6700,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.815797",
-  "name": "Dehradun",
-  "state": "Uttarakhand"
- },
- {
-  "city_name": "Haldwani",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.820065",
-  "name": "Haldwani",
+  "modified": "2026-07-20 14:04:51.828291",
+  "name": "a5mlup2s02",
   "state": "Uttarakhand"
  },
  {
@@ -4531,26 +6709,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.826017",
-  "name": "Haridwar",
-  "state": "Uttarakhand"
- },
- {
-  "city_name": "Kashipur",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.831660",
-  "name": "Kashipur",
-  "state": "Uttarakhand"
- },
- {
-  "city_name": "Kotdwar",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.836069",
-  "name": "Kotdwar",
+  "modified": "2026-07-20 14:04:51.832582",
+  "name": "a5meo2vm7c",
   "state": "Uttarakhand"
  },
  {
@@ -4558,8 +6718,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.840389",
-  "name": "Nainital",
+  "modified": "2026-07-20 14:04:51.837877",
+  "name": "a5m69dhbou",
+  "state": "Uttarakhand"
+ },
+ {
+  "city_name": "Pauri Garhwal",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.841667",
+  "name": "a5mljuf6l8",
   "state": "Uttarakhand"
  },
  {
@@ -4567,62 +6736,53 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.844429",
-  "name": "Pithoragarh",
+  "modified": "2026-07-20 14:04:51.845219",
+  "name": "a5mjjfhpul",
   "state": "Uttarakhand"
  },
  {
-  "city_name": "Ramnagar",
+  "city_name": "Rudraprayag",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.848239",
-  "name": "Ramnagar",
+  "modified": "2026-07-20 14:04:51.849966",
+  "name": "a5m5liuqa0",
   "state": "Uttarakhand"
  },
  {
-  "city_name": "Rishikesh",
+  "city_name": "Tehri Garhwal",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.852790",
-  "name": "Rishikesh",
+  "modified": "2026-07-20 14:04:51.854737",
+  "name": "a5m4eua2pl",
   "state": "Uttarakhand"
  },
  {
-  "city_name": "Roorkee",
+  "city_name": "Udham Singh Nagar",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.857571",
-  "name": "Roorkee",
+  "modified": "2026-07-20 14:04:51.858686",
+  "name": "a5moknlvgm",
   "state": "Uttarakhand"
  },
  {
-  "city_name": "Rudrapur",
+  "city_name": "Uttarkashi",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.861776",
-  "name": "Rudrapur",
+  "modified": "2026-07-20 14:04:51.862174",
+  "name": "a5mpagdoi8",
   "state": "Uttarakhand"
  },
  {
-  "city_name": "Tehri",
+  "city_name": "Alipurduar",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.866295",
-  "name": "Tehri",
-  "state": "Uttarakhand"
- },
- {
-  "city_name": "Asansol",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.874121",
-  "name": "Asansol",
+  "modified": "2026-07-20 14:04:51.866566",
+  "name": "a5mbstdjm7",
   "state": "West Bengal"
  },
  {
@@ -4630,26 +6790,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.883007",
-  "name": "Bankura",
-  "state": "West Bengal"
- },
- {
-  "city_name": "Barasat",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.890764",
-  "name": "Barasat",
-  "state": "West Bengal"
- },
- {
-  "city_name": "Bardhaman",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.902999",
-  "name": "Bardhaman",
+  "modified": "2026-07-20 14:04:51.871938",
+  "name": "a5mu553skg",
   "state": "West Bengal"
  },
  {
@@ -4657,8 +6799,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.907406",
-  "name": "Birbhum",
+  "modified": "2026-07-20 14:04:51.875671",
+  "name": "a5mscgdm2t",
   "state": "West Bengal"
  },
  {
@@ -4666,8 +6808,17 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.911752",
-  "name": "Cooch Behar",
+  "modified": "2026-07-20 14:04:51.879317",
+  "name": "a5me16fsa5",
+  "state": "West Bengal"
+ },
+ {
+  "city_name": "Dakshin Dinajpur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.884407",
+  "name": "a5mgmikv2l",
   "state": "West Bengal"
  },
  {
@@ -4675,26 +6826,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.916450",
-  "name": "Darjeeling",
-  "state": "West Bengal"
- },
- {
-  "city_name": "Durgapur",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.923286",
-  "name": "Durgapur",
-  "state": "West Bengal"
- },
- {
-  "city_name": "Haldia",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.929418",
-  "name": "Haldia",
+  "modified": "2026-07-20 14:04:51.889078",
+  "name": "a5m8edo6bq",
   "state": "West Bengal"
  },
  {
@@ -4702,8 +6835,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.934721",
-  "name": "Hooghly",
+  "modified": "2026-07-20 14:04:51.892850",
+  "name": "a5mi51njj6",
   "state": "West Bengal"
  },
  {
@@ -4711,8 +6844,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.940923",
-  "name": "Howrah",
+  "modified": "2026-07-20 14:04:51.896358",
+  "name": "a5mb3eblge",
   "state": "West Bengal"
  },
  {
@@ -4720,26 +6853,35 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.946840",
-  "name": "Jalpaiguri",
+  "modified": "2026-07-20 14:04:51.901612",
+  "name": "a5nu3ualqe",
   "state": "West Bengal"
  },
  {
-  "city_name": "Kharagpur",
+  "city_name": "Jhargram",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.952804",
-  "name": "Kharagpur",
+  "modified": "2026-07-20 14:04:51.906452",
+  "name": "a5n7p38efj",
   "state": "West Bengal"
  },
  {
-  "city_name": "Krishnanagar",
+  "city_name": "Kalimpong",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.965659",
-  "name": "Krishnanagar",
+  "modified": "2026-07-20 14:04:51.910645",
+  "name": "a5ng4kvveu",
+  "state": "West Bengal"
+ },
+ {
+  "city_name": "Kolkata",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.914409",
+  "name": "a5n2m0anda",
   "state": "West Bengal"
  },
  {
@@ -4747,17 +6889,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.970474",
-  "name": "Malda",
-  "state": "West Bengal"
- },
- {
-  "city_name": "Midnapore",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-06-16 15:02:26.975516",
-  "name": "Midnapore",
+  "modified": "2026-07-20 14:04:51.919759",
+  "name": "a5nv4bk0qr",
   "state": "West Bengal"
  },
  {
@@ -4765,8 +6898,8 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.981800",
-  "name": "Murshidabad",
+  "modified": "2026-07-20 14:04:51.924066",
+  "name": "a5nhbbfcbd",
   "state": "West Bengal"
  },
  {
@@ -4774,8 +6907,53 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.990923",
-  "name": "Nadia",
+  "modified": "2026-07-20 14:04:51.927756",
+  "name": "a5nt30jshv",
+  "state": "West Bengal"
+ },
+ {
+  "city_name": "North 24 Parganas",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.931700",
+  "name": "a5n4bj7v83",
+  "state": "West Bengal"
+ },
+ {
+  "city_name": "Paschim Bardhaman",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.937358",
+  "name": "a5nu0fm07a",
+  "state": "West Bengal"
+ },
+ {
+  "city_name": "Paschim Medinipur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.941425",
+  "name": "a5noudpm8v",
+  "state": "West Bengal"
+ },
+ {
+  "city_name": "Purba Bardhaman",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.945348",
+  "name": "a5ngp7iurh",
+  "state": "West Bengal"
+ },
+ {
+  "city_name": "Purba Medinipur",
+  "country": "India",
+  "docstatus": 0,
+  "doctype": "City",
+  "modified": "2026-07-20 14:04:51.950333",
+  "name": "a5n28vni35",
   "state": "West Bengal"
  },
  {
@@ -4783,62 +6961,53 @@
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.997230",
-  "name": "Purulia",
+  "modified": "2026-07-20 14:04:51.955317",
+  "name": "a5n9c6v1i0",
   "state": "West Bengal"
  },
  {
-  "city_name": "Raiganj",
+  "city_name": "South 24 Parganas",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:27.005498",
-  "name": "Raiganj",
+  "modified": "2026-07-20 14:04:51.959059",
+  "name": "a5nfr7act3",
   "state": "West Bengal"
  },
  {
-  "city_name": "Siliguri",
+  "city_name": "Uttar Dinajpur",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:27.019279",
-  "name": "Siliguri",
+  "modified": "2026-07-20 14:04:51.962734",
+  "name": "a5n4d1vipm",
   "state": "West Bengal"
  },
  {
-  "city_name": "Leh",
+  "city_name": "Hamirpur",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:09:52.615005",
-  "name": "Leh",
-  "state": "Ladakh"
+  "modified": "2026-07-20 14:06:50.891516",
+  "name": "bas0h6t8g1",
+  "state": "Uttar Pradesh"
  },
  {
-  "city_name": "Thrissur",
+  "city_name": "Pratapgarh",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:25.292615",
-  "name": "Thrissur",
-  "state": "Kerala"
+  "modified": "2026-07-20 14:08:00.359243",
+  "name": "c0jh2vcp9n",
+  "state": "Uttar Pradesh"
  },
  {
-  "city_name": "Kolkata",
+  "city_name": "Bilaspur",
   "country": "India",
   "docstatus": 0,
   "doctype": "City",
-  "modified": "2026-06-16 15:02:26.959677",
-  "name": "Kolkata",
-  "state": "West Bengal"
- },
- {
-  "city_name": "Palghar",
-  "country": "India",
-  "docstatus": 0,
-  "doctype": "City",
-  "modified": "2026-07-03 11:43:28.400769",
-  "name": "Palghar",
-  "state": "Maharashtra"
+  "modified": "2026-07-20 14:09:22.392230",
+  "name": "cq7ltukct2",
+  "state": "Himachal Pradesh"
  }
 ]
