@@ -125,6 +125,9 @@
   "col_break_overdue",
   "overdue_notice_template",
   "tab_advanced",
+  "login_security_section",
+  "enable_google_login",
+  "google_login_allowed_domain",
   "advanced_section",
   "custom_css"
  ],
@@ -897,6 +900,25 @@
    "fieldname": "tab_advanced",
    "fieldtype": "Tab Break",
    "label": "Advanced"
+  },
+  {
+   "description": "Controls the \"Continue with Google\" option on the student login page",
+   "fieldname": "login_security_section",
+   "fieldtype": "Section Break",
+   "label": "Login & Security"
+  },
+  {
+   "default": "1",
+   "description": "Show a \"Continue with Google\" button on the student login page. Requires a Social Login Key for Google to be configured and enabled.",
+   "fieldname": "enable_google_login",
+   "fieldtype": "Check",
+   "label": "Enable Google Login for Students"
+  },
+  {
+   "description": "Only Google accounts on this domain may log in as a student (e.g. nls.ac.in). Leave blank to allow any domain (not recommended for production).",
+   "fieldname": "google_login_allowed_domain",
+   "fieldtype": "Data",
+   "label": "Allowed Google Account Domain"
   },
   {
    "description": "Inject raw CSS that is appended after all portal styles. Use this for pixel-perfect adjustments not covered by the settings above.",
