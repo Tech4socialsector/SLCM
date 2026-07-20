@@ -608,6 +608,11 @@ def convert_applicant_to_student(applicant_name, program, admission_cycle, offer
             ).format(str(err))
         )
 
+    # Mark Applicant as Enrolled
+    if applicant.status != "Enrolled":
+        applicant.status = "Enrolled"
+        applicant.save(ignore_permissions=True)
+
     # ── 4. Swap User roles ─────────────────────────────────────────────────────
     _update_user_roles_for_student(applicant.email)
 
