@@ -1,4 +1,5 @@
 import frappe
+from frappe.utils.oauth import get_oauth2_authorize_url
 
 
 no_cache = 1
@@ -28,6 +29,27 @@ def get_context(context):
     context.no_cache = 1
     context.csrf_token = frappe.local.session.data.csrf_token or ""
     context.title = context.portal_title + " — Login"
+    context.google_login_url = _get_google_login_url(context.redirect_to)
+    context.google_login_error = frappe.local.request.args.get("error", "")
+
+
+def _get_google_login_url(redirect_to):
+    # Returns the URL that starts the Google OAuth flow (redirects to Google's
+    # consent screen), or None if Google login isn't configured/enabled — in
+    # which case the "Continue with Google" button is hidden on the page.
+    if not frappe.db.get_single_value("Student Portal Settings", "enable_google_login"):
+        return None
+    if not frappe.db.exists(
+        "Social Login Key",
+        {"social_login_provider": "Google", "enable_social_login": 1}
+    ):
+        return None
+    try:
+        # "google" here is the Social Login Key docname, not the display label.
+        return get_oauth2_authorize_url("google", redirect_to)
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "student/login: google oauth url failed")
+        return None
 
 
 def _load_settings(context):

@@ -2,12 +2,15 @@
  {
   "docstatus": 0,
   "doctype": "Role Profile",
-  "modified": "2026-04-20 10:07:40.198909",
+  "modified": "2026-07-20 09:18:41.277052",
   "name": "PACE Admission Manager",
   "role_profile": "PACE Admission Manager",
   "roles": [
    {
     "role": "PACE Admission Manager"
+   },
+   {
+    "role": "Agent"
    }
   ]
  },

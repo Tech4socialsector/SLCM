@@ -248,6 +248,8 @@ def _set_student_nav(context, student):
     )
     context.department = student.department or ""
     context.batch_year = student.batch_year or ""
+    context.official_email_id = student.official_email_id or ""
+    context.personal_email    = student.personal_email or ""
 
 
 def _set_nav_defaults(context):

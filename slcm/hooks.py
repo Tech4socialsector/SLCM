@@ -363,6 +363,11 @@ doc_events = {
     "Campus Seat Matrix": {
         "on_submit": "slcm.admission.events.on_seat_matrix_lock"
     },
+    "Time Table": {
+        "after_insert": "slcm.slcm.doctype.time_table.google_calendar_sync.sync_time_table_to_google_calendar",
+        "on_update": "slcm.slcm.doctype.time_table.google_calendar_sync.sync_time_table_to_google_calendar",
+        "on_trash": "slcm.slcm.doctype.time_table.google_calendar_sync.delete_linked_google_event"
+    },
 }
 
 # Scheduled Tasks
@@ -421,6 +426,7 @@ before_request = [
     "slcm.admission.portal_application_web_form.slcm_before_request"
 ]
 on_logout = "slcm.utils.auth_routing.handle_logout"
+on_session_creation = ["slcm.utils.auth_routing.enforce_student_google_login"]
 # after_request = ["slcm.utils.after_request"]
 
 # Job Events
