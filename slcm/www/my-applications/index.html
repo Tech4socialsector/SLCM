@@ -3249,7 +3249,7 @@ or _app.current_stage)) or _status %}
               <div class="stage-name-main">{{ s.display_name if s is mapping else _slabel }}</div>
               {% if s is mapping and s.status_label %}
               <div class="stage-status-sub{% if s.status_label == 'Paid' %} stage-status-paid{% endif %}" style="font-size: 8px; font-weight: 400; margin-top: 2px; opacity: 0.8;">
-                ({{ s.status_label }})
+                ({{ s.status_label | replace('Test ', '') }})
               </div>
               {% endif %}
             </span>
