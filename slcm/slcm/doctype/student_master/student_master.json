@@ -269,6 +269,7 @@
   {
    "fieldname": "registration_id",
    "fieldtype": "Data",
+   "in_standard_filter": 1,
    "label": "Student ID",
    "length": 20
   },
@@ -1082,7 +1083,7 @@
   {
    "description": "Latest image",
    "fieldname": "passport_size_photo",
-   "fieldtype": "Attach",
+   "fieldtype": "Attach Image",
    "label": "Passport size photo",
    "reqd": 1
   },
@@ -1420,6 +1421,7 @@
   {
    "fieldname": "annual_income_candidate",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Current Annual Income of Candidate (if employed)/ else current annual household income",
    "length": 20
   },
@@ -1650,8 +1652,9 @@
    "label": "How many years of work experince do you have?"
   }
  ],
+ "image_field": "passport_size_photo",
  "links": [],
- "modified": "2026-07-17 14:42:50.925332",
+ "modified": "2026-07-17 16:56:12.397074",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",
