@@ -54,6 +54,7 @@ class ShortlistingMeritList(Document):
                 "candidate_name": row.candidate_name,
                 "program": row.program,
                 "nlsat_part_a_score": row.total_score, # Use total_score from Part A Ranking
+                "percentile_score": row.get("percentile_score") or getattr(row, "percentile_score", 0),
                 "shortlist_rank": row.overall_rank,
                 "category_rank": row.category_rank,
                 "actual_category": row.get("actual_category"),
@@ -101,12 +102,26 @@ class ShortlistingMeritList(Document):
         return merit_list.name
 
 @frappe.whitelist()
+def get_generation_progress(docname):
+    """
+    Returns cached progress for Final Merit List generation.
+    """
+    doc = frappe.get_doc("Shortlisting Merit List", docname)
+    cache_key = f"merit_generation_{doc.admission_cycle}_{doc.campus}_{doc.program_level}_{doc.program or ''}".replace(" ", "_")
+    progress = frappe.cache().get_value(cache_key)
+    
+    if progress:
+        return progress
+
+    return {"status": "In Progress", "percent": 0, "description": "Preparing..."}
+
+@frappe.whitelist()
 def download_merit_list(name, download_type, category=None):
     doc = frappe.get_doc("Shortlisting Merit List", name)
     
     columns = [
         "Applicant ID", "Candidate Name", "Rank", "Candidate Category", 
-        "Category Rank", "Part A Score", "Vertical Category", 
+        "Category Rank", "Part A Score", "Part A Percentile", "Vertical Category", 
         "Compartmentalized Category", "Horizontal Categories", 
         "Allocation Type", "Shortlisted Category"
     ]
@@ -119,6 +134,7 @@ def download_merit_list(name, download_type, category=None):
             candidate.actual_category,
             candidate.category_rank,
             candidate.nlsat_part_a_score,
+            candidate.get("percentile_score") or 0,
             candidate.vertical_category,
             candidate.compartmentalized_category,
             candidate.horizontal_categories,
