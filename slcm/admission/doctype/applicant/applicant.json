@@ -380,8 +380,7 @@
    "fieldname": "city",
    "fieldtype": "Link",
    "label": "City",
-   "options": "City",
-   "reqd": 1
+   "options": "City"
   },
   {
    "fieldname": "pincode",
@@ -404,22 +403,19 @@
   {
    "fieldname": "class_x_school",
    "fieldtype": "Data",
-   "label": "School/College/University (Class X)",
-   "reqd": 1
+   "label": "School/College/University (Class X)"
   },
   {
    "fieldname": "class_x_board",
    "fieldtype": "Data",
-   "label": "Board (Class X)",
-   "reqd": 1
+   "label": "Board (Class X)"
   },
   {
    "fieldname": "class_x_percentage",
    "fieldtype": "Float",
    "label": "Percentage or CGPA (Class X)",
    "non_negative": 1,
-   "precision": "2",
-   "reqd": 1
+   "precision": "2"
   },
   {
    "fieldname": "class_x_cgpa",
@@ -449,8 +445,7 @@
   {
    "fieldname": "class_xii_school",
    "fieldtype": "Data",
-   "label": "School/College/University (Class XII/Equivalent)",
-   "reqd": 1
+   "label": "School/College/University (Class XII/Equivalent)"
   },
   {
    "fieldname": "class_xii_board",
@@ -537,7 +532,7 @@
    "depends_on": "eval:doc.pwd_required_test === \"Yes\"",
    "fieldname": "scribe_allotment",
    "fieldtype": "Select",
-   "label": "Will you arrange for a scribe yourself or would you require the NLSIU to arrange a scribe for you",
+   "label": "Will you arrange for a scribe yourself or would you require the NLSIU to arrange a scribe for you?",
    "mandatory_depends_on": "eval:doc.pwd_required_test === \"Yes\"",
    "options": "\nI require NLSIU to arrange a scribe for me\nI will arrange the scribe for myself"
   },
@@ -812,7 +807,7 @@
    "depends_on": "eval:doc.source_of_information === \"Others\"",
    "fieldname": "please_mention",
    "fieldtype": "Data",
-   "label": "Please mention",
+   "label": "Please Mention",
    "mandatory_depends_on": "eval:doc.source_of_information === \"Others\""
   },
   {
@@ -914,8 +909,7 @@
    "fieldtype": "Percent",
    "label": "Percentage or CGPA  (Class XII)",
    "non_negative": 1,
-   "precision": "2",
-   "reqd": 1
+   "precision": "2"
   },
   {
    "fieldname": "hsc_group",
@@ -1308,7 +1302,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-20 09:57:34.376889",
+ "modified": "2026-07-20 23:43:16.817122",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
