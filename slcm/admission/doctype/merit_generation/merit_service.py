@@ -235,6 +235,48 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
                     current_rank = i + 1
             row.category_rank = current_rank
 
+    # 3. Part A Rank Calculation
+    def get_part_a_score(x):
+        score = float(
+            getattr(x, "entrance_score", None) or (x.get("entrance_score") if isinstance(x, dict) else None) or
+            getattr(x, "et_part_a_total_marks_scored", None) or (x.get("et_part_a_total_marks_scored") if isinstance(x, dict) else None) or
+            getattr(x, "nlsat_part_a_score", None) or (x.get("nlsat_part_a_score") if isinstance(x, dict) else None) or 0
+        )
+        return round(score, 3)
+
+    def get_part_a_key(x):
+        app_id = getattr(x, "applicant_id", None) or getattr(x, "applicant", None) or getattr(x, "name", "")
+        return (-get_part_a_score(x), app_id)
+
+    sorted_by_pa = sorted(applicant_rows, key=get_part_a_key)
+    current_pa_rank = 1
+    for i, row in enumerate(sorted_by_pa):
+        if i > 0:
+            if get_part_a_score(row) != get_part_a_score(sorted_by_pa[i-1]):
+                current_pa_rank = i + 1
+        setattr(row, "part_a_rank", current_pa_rank)
+
+    # 4. Part B Rank Calculation
+    def get_part_b_score(x):
+        score = float(
+            getattr(x, "interview_score", None) or (x.get("interview_score") if isinstance(x, dict) else None) or
+            getattr(x, "et_part_b_total_marks_scored", None) or (x.get("et_part_b_total_marks_scored") if isinstance(x, dict) else None) or
+            getattr(x, "nlsat_part_b_score", None) or (x.get("nlsat_part_b_score") if isinstance(x, dict) else None) or 0
+        )
+        return round(score, 3)
+
+    def get_part_b_key(x):
+        app_id = getattr(x, "applicant_id", None) or getattr(x, "applicant", None) or getattr(x, "name", "")
+        return (-get_part_b_score(x), app_id)
+
+    sorted_by_pb = sorted(applicant_rows, key=get_part_b_key)
+    current_pb_rank = 1
+    for i, row in enumerate(sorted_by_pb):
+        if i > 0:
+            if get_part_b_score(row) != get_part_b_score(sorted_by_pb[i-1]):
+                current_pb_rank = i + 1
+        setattr(row, "part_b_rank", current_pb_rank)
+
 def generate_merit_for_level(cycle, campus, program_level, program=None, processing_stage="Part A Ranking", save=True):
     """
     Generates a Merit List for a specific Program Level or Program.
@@ -411,6 +453,8 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
             "total_score": total_score,
             "status": status,
             "overall_rank": 0,
+            "part_a_rank": 0,
+            "part_b_rank": 0,
             "program_rank": 0,
             "category_rank": 0,
             "actual_category": primary_cat,
@@ -627,11 +671,11 @@ def _populate_category_lists(doc):
             # 1. Main vertical categories
             for v in policy.categories:
                 v_cat_name = v.category_name or "General"
-                req_seats = v.get("shortlisting_target")
-                if not req_seats:
-                    if is_shortlist and multiplier == 0:
-                        req_seats = total_eligible_summary
-                    else:
+                if is_shortlist and multiplier == 0:
+                    req_seats = total_eligible_summary
+                else:
+                    req_seats = v.get("shortlisting_target")
+                    if not req_seats:
                         req_seats = int((v.seats or 0) * multiplier)
                 category_mapping[v_cat_name] = {
                     "seats": v.seats or 0,
@@ -662,11 +706,11 @@ def _populate_category_lists(doc):
             # 3. Horizontal
             for h in policy.horizontal_reservations:
                 h_name = h.category_name
-                req_seats = h.get("shortlisting_target")
-                if not req_seats:
-                    if is_shortlist and multiplier == 0:
-                        req_seats = total_eligible_summary
-                    else:
+                if is_shortlist and multiplier == 0:
+                    req_seats = total_eligible_summary
+                else:
+                    req_seats = h.get("shortlisting_target")
+                    if not req_seats:
                         req_seats = int((h.seats or 0) * multiplier)
                 category_mapping[h_name] = {
                     "seats": h.seats or 0,
@@ -801,14 +845,14 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
         for v in policy.categories:
             v_cat_name = v.category_name or "General"
             
-            seats = v.get("shortlisting_target") if is_shortlist_phase else v.seats
-            if is_shortlist_phase and not seats:
-                if multiplier == 0:
-                    seats = total_eligible_count
-                else:
+            if is_shortlist_phase and multiplier == 0:
+                seats = total_eligible_count
+            else:
+                seats = v.get("shortlisting_target") if is_shortlist_phase else v.seats
+                if is_shortlist_phase and not seats:
                     seats = int((v.seats or 0) * multiplier)
-            elif not is_shortlist_phase:
-                seats = v.seats or 0
+                elif not is_shortlist_phase:
+                    seats = v.seats or 0
             
             vertical_targets[v_cat_name] = {
                 "seats": seats or 0,
@@ -841,11 +885,11 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
 
         horizontal_targets = {}
         for h in policy.horizontal_reservations:
-            seats = h.shortlisting_target if is_shortlist_phase else h.seats
-            if is_shortlist_phase and not seats:
-                if multiplier == 0:
-                    seats = total_eligible_count
-                else:
+            if is_shortlist_phase and multiplier == 0:
+                seats = total_eligible_count
+            else:
+                seats = h.shortlisting_target if is_shortlist_phase else h.seats
+                if is_shortlist_phase and not seats:
                     seats = int((h.seats or 0) * multiplier)
             horizontal_targets[h.category_name] = {
                 "name": h.category_name,
@@ -938,7 +982,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                     # Recalculate deficit after attempting to fill with available Karnataka candidates
                     comp_in_v = [a for a in allocated_list if a.vertical_category == v_cat and _has_trait(a.applicant_id, comp_cat)]
                     remaining_deficit = target_info["seats"] - len(comp_in_v)
-                    if remaining_deficit > 0:
+                    if remaining_deficit > 0 and not (is_shortlist_phase and multiplier == 0):
                         # Identify All-India candidates in this category that are currently allocated
                         eligible_out = [a for a in allocated_list if a.vertical_category == v_cat and not _has_trait(a.applicant_id, comp_cat)]
                         max_ai_allowed = v_info["seats"] - target_info["seats"]
@@ -1012,12 +1056,19 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                 
                 _assign_seat_to_applicant(in_cand, v_cat, "Open" if v_cat == "General" else "Reserved", allocated_list, unallocated, v_info, status_field)
 
-        # Explicitly Reject remaining before Waitlist Phase
+        # Explicitly Reject remaining before Waitlist Phase (unless shortlisting with multiplier = 0)
         for u in unallocated:
-            setattr(u, status_field, "Rejected")
-            u.allocation_type = "Not Allocated"
-            u.remarks = "Not enough merit to secure a seat"
-            u.vertical_category = ""
+            if is_shortlist_phase and multiplier == 0:
+                setattr(u, status_field, "Shortlisted")
+                u.allocation_type = "Open"
+                u.vertical_category = getattr(u, "actual_category", "General") or "General"
+                display_field = "allocated_category" if hasattr(u, "allocated_category") else "shortlist_category"
+                setattr(u, display_field, u.vertical_category)
+            else:
+                setattr(u, status_field, "Rejected")
+                u.allocation_type = "Not Allocated"
+                u.remarks = "Not enough merit to secure a seat"
+                u.vertical_category = ""
 
         # --- PHASE 4: WAITLIST ALLOCATION ---
         _publish_allocation_progress(doc, 98, "Generating waitlist and final summaries...")
@@ -1489,11 +1540,11 @@ def execute_part_a_shortlisting(doc):
         # 1. Main vertical categories
         for v in policy.categories:
             v_cat_name = v.category_name or "General"
-            req_seats = v.get("shortlisting_target")
-            if not req_seats:
-                if multiplier == 0:
-                    req_seats = total_eligible_count
-                else:
+            if multiplier == 0:
+                req_seats = total_eligible_count
+            else:
+                req_seats = v.get("shortlisting_target")
+                if not req_seats:
                     req_seats = int((v.seats or 0) * multiplier)
             if v_cat_name not in targets:
                 targets[v_cat_name] = {}
@@ -1519,11 +1570,11 @@ def execute_part_a_shortlisting(doc):
         for h in policy.horizontal_reservations:
             h_name = h.category_name
             if not h_name: continue
-            req_seats = h.get("shortlisting_target")
-            if not req_seats:
-                if multiplier == 0:
-                    req_seats = total_eligible_count
-                else:
+            if multiplier == 0:
+                req_seats = total_eligible_count
+            else:
+                req_seats = h.get("shortlisting_target")
+                if not req_seats:
                     req_seats = int((h.seats or 0) * multiplier)
             targets[h_name] = req_seats
 
@@ -1548,17 +1599,18 @@ def execute_part_a_shortlisting(doc):
                     break
 
     # Ensure All-India candidates do not exceed their quota, leaving unfilled Karnataka seats vacant
-    max_ai_allowed = targets["General"]["total"] - kar_req_gen
-    ai_in_shortlist = [x for x in general_shortlist if not x.is_karnataka]
-    excess_ai = len(ai_in_shortlist) - max_ai_allowed
-    if excess_ai > 0:
-        removed_count = 0
-        for idx in range(len(general_shortlist) - 1, -1, -1):
-            if not general_shortlist[idx].is_karnataka:
-                general_shortlist.pop(idx)
-                removed_count += 1
-                if removed_count == excess_ai:
-                    break
+    if multiplier != 0:
+        max_ai_allowed = targets["General"]["total"] - kar_req_gen
+        ai_in_shortlist = [x for x in general_shortlist if not x.is_karnataka]
+        excess_ai = len(ai_in_shortlist) - max_ai_allowed
+        if excess_ai > 0:
+            removed_count = 0
+            for idx in range(len(general_shortlist) - 1, -1, -1):
+                if not general_shortlist[idx].is_karnataka:
+                    general_shortlist.pop(idx)
+                    removed_count += 1
+                    if removed_count == excess_ai:
+                        break
 
     targets["General"]["total"] = len(general_shortlist)
 
@@ -1849,6 +1901,9 @@ def execute_part_a_shortlisting(doc):
     # Mark candidates not selected as Rejected / Not Allocated
     for row in applicants:
         if row.applicant_id not in final_selected_set:
+            if multiplier == 0 and hasattr(row, "nlsat_part_a_score") and float(row.nlsat_part_a_score or 0) > 0:
+                assign_candidate(row, getattr(row, "actual_category", "General") or "General", "Open")
+                continue
             row.vertical_category = ""
             row.allocation_type = "Not Allocated"
             setattr(row, status_field, "Rejected")

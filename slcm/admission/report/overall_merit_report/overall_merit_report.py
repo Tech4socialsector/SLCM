@@ -15,6 +15,8 @@ def execute(filters=None):
 def get_columns():
     return [
         {"label": _("Rank"), "fieldname": "overall_rank", "fieldtype": "Int", "width": 60},
+        {"label": _("Part A Rank"), "fieldname": "part_a_rank", "fieldtype": "Int", "width": 80},
+        {"label": _("Part B Rank"), "fieldname": "part_b_rank", "fieldtype": "Int", "width": 80},
         {"label": _("Candidate Name"), "fieldname": "candidate_name", "fieldtype": "Data", "width": 180},
         {"label": _("Applicant ID"), "fieldname": "applicant_id", "fieldtype": "Link", "options": "Applicant", "width": 120},
         {"label": _("Category"), "fieldname": "actual_category", "fieldtype": "Data", "width": 120},
@@ -46,6 +48,8 @@ def get_part_a_data(filters):
     query = f"""
         SELECT
             mla.shortlist_rank as overall_rank,
+            mla.shortlist_rank as part_a_rank,
+            0 as part_b_rank,
             mla.candidate_name,
             mla.applicant_id,
             mla.actual_category,
@@ -85,6 +89,8 @@ def get_final_allotment_data(filters):
     query = f"""
         SELECT
             mla.overall_rank,
+            mla.part_a_rank,
+            mla.part_b_rank,
             mla.candidate_name,
             mla.applicant_id,
             mla.actual_category,
