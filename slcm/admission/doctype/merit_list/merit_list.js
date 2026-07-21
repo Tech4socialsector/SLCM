@@ -115,6 +115,31 @@ frappe.ui.form.on("Merit List", {
                 frm.page.set_indicator(__("Generated"), "blue");
             }
         }
+    },
+    onload(frm) {
+        frm.set_query("program", function () {
+            let filters = {};
+            if (frm.doc.program_level) {
+                filters["level_of_study"] = frm.doc.program_level;
+            }
+            return { filters: filters };
+        });
+    },
+    program_level(frm) {
+        frm.set_query("program", function () {
+            let filters = {};
+            if (frm.doc.program_level) {
+                filters["level_of_study"] = frm.doc.program_level;
+            }
+            return { filters: filters };
+        });
+        if (frm.doc.program && frm.doc.program_level) {
+            frappe.db.get_value("Programme", frm.doc.program, "level_of_study", (r) => {
+                if (r && r.level_of_study && r.level_of_study !== frm.doc.program_level) {
+                    frm.set_value("program", "");
+                }
+            });
+        }
     }
 });
 
@@ -244,15 +269,33 @@ function open_allocation_dialog(frm) {
             const selected = checked.map(el => applicants[parseInt(el.dataset.idx)]);
             dialog.hide();
 
+            frappe.show_progress(__("Allocating Seats"), 0, 100, __("Starting seat allocation..."));
+
+            let progress_interval = setInterval(() => {
+                frappe.call({
+                    method: "slcm.admission.doctype.seat_allocation.seat_allocation.get_allocation_progress",
+                    args: { docname: frm.doc.name },
+                    callback: (res) => {
+                        let data = res.message;
+                        if (data) {
+                            let percent = Math.round(data.percent || 0);
+                            let desc = data.description || __("Allocating seats based on merit and capacity...");
+                            frappe.show_progress(__("Allocating Seats"), percent, 100, desc);
+                        }
+                    }
+                });
+            }, 500);
+
             frappe.call({
                 method: "slcm.admission.doctype.merit_list.merit_list.create_seat_allocation",
                 args: {
                     merit_list_name: frm.doc.name,
                     selected_applicants: selected.map(r => r.applicant_id || r.applicant)
                 },
-                freeze: true,
-                freeze_message: __("Creating Seat Allocation..."),
                 callback(r) {
+                    clearInterval(progress_interval);
+                    frappe.hide_progress();
+
                     if (!r.exc && r.message) {
                         frappe.show_alert({
                             message: __(`Seat Allocation <b>${r.message}</b> created successfully.`),
@@ -260,6 +303,10 @@ function open_allocation_dialog(frm) {
                         });
                         frappe.set_route("Form", "Seat Allocation", r.message);
                     }
+                },
+                error() {
+                    clearInterval(progress_interval);
+                    frappe.hide_progress();
                 }
             });
         }

@@ -359,9 +359,10 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
         applicant_records = frappe.db.sql(f"""
             SELECT etsa.applicant
             FROM `tabEntrance Test Seat Allocation` etsa
+            LEFT JOIN `tabProgramme` p ON etsa.program = p.name
             WHERE etsa.admission_cycle = %(cycle)s
               AND etsa.campus = %(campus)s
-              AND etsa.program_level = %(program_level)s
+              AND (etsa.program_level = %(program_level)s OR p.level_of_study = %(program_level)s)
               AND etsa.entrance_test_status = 'Attended'
               AND etsa.result_status = 'Pass'
               {program_cond}
@@ -380,11 +381,20 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
     merit.generated_on = now_datetime()
     merit.status = "Generated"
 
+    cache_key = f"merit_generation_{cycle}_{campus}_{program_level}_{program or ''}".replace(" ", "_")
+    frappe.cache().delete_value(cache_key)
+    frappe.cache().set_value(cache_key, {
+        "current": 0,
+        "total": len(applicant_names),
+        "percent": 0,
+        "description": "Starting merit generation...",
+        "status": "In Progress"
+    }, expires_in_sec=300)
+
     total_applicants = len(applicant_names)
     for i, name in enumerate(applicant_names):
         percent = (i + 1) * 80.0 / total_applicants
         description = _("Processing applicant {0} of {1}").format(i + 1, total_applicants)
-        cache_key = f"merit_generation_{cycle}_{campus}_{program_level}_{program or ''}".replace(" ", "_")
         frappe.cache().set_value(cache_key, {
             "current": i + 1,
             "total": total_applicants,
@@ -508,6 +518,8 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
         merit.insert()
 
         frappe.db.commit()
+
+    _publish_allocation_progress(merit, 100, "Merit List Generated Successfully", status="Completed")
     return merit
 
 

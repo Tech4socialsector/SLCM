@@ -102,6 +102,20 @@ class ShortlistingMeritList(Document):
         return merit_list.name
 
 @frappe.whitelist()
+def get_generation_progress(docname):
+    """
+    Returns cached progress for Final Merit List generation.
+    """
+    doc = frappe.get_doc("Shortlisting Merit List", docname)
+    cache_key = f"merit_generation_{doc.admission_cycle}_{doc.campus}_{doc.program_level}_{doc.program or ''}".replace(" ", "_")
+    progress = frappe.cache().get_value(cache_key)
+    
+    if progress:
+        return progress
+
+    return {"status": "In Progress", "percent": 0, "description": "Preparing..."}
+
+@frappe.whitelist()
 def download_merit_list(name, download_type, category=None):
     doc = frappe.get_doc("Shortlisting Merit List", name)
     
