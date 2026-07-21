@@ -15,6 +15,8 @@
   "ug_cgpa",
   "pg_cgpa",
   "total_score",
+  "part_a_rank",
+  "part_b_rank",
   "overall_rank",
   "actual_category",
   "category_rank",
@@ -73,7 +75,7 @@
    "fieldname": "entrance_score",
    "fieldtype": "Float",
    "in_list_view": 1,
-   "label": "Part A Score",
+   "label": "Part A Marks",
    "precision": "2"
   },
   {
@@ -81,7 +83,7 @@
    "fieldname": "interview_score",
    "fieldtype": "Float",
    "in_list_view": 1,
-   "label": "Part B Score",
+   "label": "Part B Marks",
    "precision": "2"
   },
   {
@@ -99,15 +101,31 @@
    "fieldname": "total_score",
    "fieldtype": "Float",
    "in_list_view": 1,
-   "label": "Total Score",
+   "label": "Total Marks",
    "precision": "2"
+  },
+  {
+   "columns": 2,
+   "fieldname": "part_a_rank",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Part A Rank",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "part_b_rank",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Part B Rank",
+   "read_only": 1
   },
   {
    "columns": 2,
    "fieldname": "overall_rank",
    "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Overall Rank"
+   "label": "Final Rank"
   },
   {
    "columns": 2,
@@ -141,7 +159,7 @@
   {
    "fieldname": "percentile_score",
    "fieldtype": "Float",
-   "label": "Percentile Score",
+   "label": "Percentile ",
    "read_only": 1
   },
   {
@@ -186,7 +204,7 @@
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-07-11 15:55:15.929295",
+ "modified": "2026-07-21 17:31:17.729436",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit List Applicant",
