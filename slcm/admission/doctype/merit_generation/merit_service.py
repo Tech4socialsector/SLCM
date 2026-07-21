@@ -516,10 +516,10 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
 
     if save:
         merit.insert()
-
         frappe.db.commit()
-
-    _publish_allocation_progress(merit, 100, "Merit List Generated Successfully", status="Completed")
+        _publish_allocation_progress(merit, 100, "Merit List Generated Successfully", status="Completed")
+    else:
+        _publish_allocation_progress(merit, 80, "Shortlisting candidates...", status="In Progress")
     return merit
 
 

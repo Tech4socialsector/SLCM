@@ -8,27 +8,46 @@ frappe.ui.form.on("Merit Generation", {
                 start_merit_progress_polling(frm);
             } else if (frm.doc.status === "Draft" || frm.doc.status === "Failed") {
                 frm.add_custom_button(__("Generate Shortlist"), () => {
-                    start_merit_progress_polling(frm);
                     frm.call({
-                        method: "trigger_generation",
+                        method: "clear_generation_progress",
                         doc: frm.doc,
-                        callback: (r) => {
-                            if (!r.exc && r.message && r.message.success) {
-                                if (!r.message.async) {
-                                    frappe.show_alert({
-                                        message: __("Shortlist generated successfully."),
-                                        indicator: "green"
-                                    });
+                        callback: () => {
+                            frappe.show_progress(__("Generating Merit List"), 0, 100, __("Starting merit generation..."));
+                            start_merit_progress_polling(frm);
+                            frm.call({
+                                method: "trigger_generation",
+                                doc: frm.doc,
+                                callback: (r) => {
+                                    if (frm._progress_interval) {
+                                        clearInterval(frm._progress_interval);
+                                        frm._progress_interval = null;
+                                    }
+                                    frappe.hide_progress();
+                                    if (!r.exc && r.message && r.message.success) {
+                                        if (!r.message.async) {
+                                            frappe.show_alert({
+                                                message: __("Shortlist generated successfully."),
+                                                indicator: "green"
+                                            });
+                                        }
+                                    } else if (r.message && r.message.error) {
+                                        frappe.msgprint({
+                                            title: __("Generation Failed"),
+                                            indicator: "red",
+                                            message: r.message.error
+                                        });
+                                    }
+                                    frm.dirty(false);
+                                    frm.reload_doc();
+                                },
+                                error: () => {
+                                    if (frm._progress_interval) {
+                                        clearInterval(frm._progress_interval);
+                                        frm._progress_interval = null;
+                                    }
+                                    frappe.hide_progress();
                                 }
-                            } else if (r.message && r.message.error) {
-                                frappe.msgprint({
-                                    title: __("Generation Failed"),
-                                    indicator: "red",
-                                    message: r.message.error
-                                });
-                            }
-                            frm.dirty(false);
-                            frm.reload_doc();
+                            });
                         }
                     });
                 });
@@ -95,8 +114,6 @@ function start_merit_progress_polling(frm) {
         clearInterval(frm._progress_interval);
     }
 
-    let progress_dialog = null;
-
     frm._progress_interval = setInterval(() => {
         frappe.call({
             method: "slcm.admission.doctype.merit_generation.merit_generation.get_generation_progress",
@@ -107,21 +124,16 @@ function start_merit_progress_polling(frm) {
                 let data = res.message;
                 if (data) {
                     let percent = Math.round(data.percent || 0);
-                    let desc = data.description || `Processing applicants...`;
+                    let desc = data.description || __("Merit Generation in Progress...");
 
                     if (data.status === "In Progress") {
-                        if (!progress_dialog) {
-                            progress_dialog = frappe.show_progress(__("Generating Merit List"), percent, 100, desc);
-                        } else {
-                            frappe.show_progress(__("Generating Merit List"), percent, 100, desc);
+                        frappe.show_progress(__("Generating Merit List"), percent, 100, desc);
+                    } else {
+                        if (frm._progress_interval) {
+                            clearInterval(frm._progress_interval);
+                            frm._progress_interval = null;
                         }
-                    } else if (data.status === "Completed" || data.status === "Failed") {
-                        clearInterval(frm._progress_interval);
-                        frm._progress_interval = null;
-                        frm.dirty(false);
-                        frm.reload_doc().then(() => {
-                            frappe.hide_progress();
-                        });
+                        frappe.hide_progress();
                     }
                 }
             }
