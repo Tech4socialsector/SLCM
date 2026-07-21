@@ -589,7 +589,7 @@ class SeatAllocation(Document):
 
     @frappe.whitelist()
     def allocate_seats(self):
-        from slcm.admission.doctype.merit_generation.merit_service import execute_advanced_allocation_logic, clear_category_cache
+        from slcm.admission.doctype.merit_generation.merit_service import execute_advanced_allocation_logic, clear_category_cache, _publish_allocation_progress
         clear_category_cache()
         if not self.admission_cycle:
             frappe.throw("Admission Cycle is required.")
@@ -600,12 +600,49 @@ class SeatAllocation(Document):
         if self.status == "Published":
             frappe.throw("Cannot re-run allocation after publish.")
 
+        cache_key = f"merit_generation_{self.admission_cycle}_{self.campus}_{self.program_level}_{self.program or ''}".replace(" ", "_")
+        frappe.cache().delete_value(cache_key)
+
+        _publish_allocation_progress(self, 0, "Initializing Seat Allocation...", status="In Progress")
+        _publish_allocation_progress(self, 5, "Pulling candidates & preparing allocation...")
+
         if not self.selection_applicant:
             self.pull_from_merit_list()
+
+        _publish_allocation_progress(self, 20, "Executing seat allocation engine...")
 
         # Execute dynamic consolidated logic from merit_service
         execute_advanced_allocation_logic(self, is_shortlist_allocation=False)
         self._finish_allocation()
+        _publish_allocation_progress(self, 100, "Seats Allocated Successfully", status="Completed")
+
+@frappe.whitelist()
+def get_allocation_progress(docname):
+    """
+    Returns the cached progress of the seat allocation process.
+    Supports docname being a Seat Allocation, Merit List, or Shortlisting Merit List.
+    """
+    doc = None
+    for dt in ["Seat Allocation", "Merit List", "Shortlisting Merit List", "Merit Generation"]:
+        if frappe.db.exists(dt, docname):
+            doc = frappe.get_doc(dt, docname)
+            break
+
+    if not doc:
+        return {"status": "In Progress", "percent": 0, "description": "Preparing allocation..."}
+
+    cycle = getattr(doc, "admission_cycle", None)
+    campus = getattr(doc, "campus", None)
+    program_level = getattr(doc, "program_level", None) or getattr(doc, "generation_type", None)
+    program = getattr(doc, "program", None) or ""
+
+    cache_key = f"merit_generation_{cycle}_{campus}_{program_level}_{program}".replace(" ", "_")
+    progress = frappe.cache().get_value(cache_key)
+    
+    if progress:
+        return progress
+
+    return {"status": "In Progress", "percent": 0, "description": "Preparing allocation..."}
 
     @frappe.whitelist()
     def get_waitlist_promotion_preview(self):
