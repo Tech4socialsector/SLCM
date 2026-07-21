@@ -87,10 +87,24 @@ class ShortlistingMeritList(Document):
         frappe.db.commit()
 
     @frappe.whitelist()
+    def clear_generation_progress(self):
+        cache_key = f"merit_generation_{self.admission_cycle}_{self.campus}_{self.program_level}_{self.program or ''}".replace(" ", "_")
+        frappe.cache().delete_value(cache_key)
+        frappe.cache().set_value(cache_key, {
+            "percent": 0,
+            "status": "In Progress",
+            "description": "Starting Final Merit List generation...",
+            "current": 0,
+            "total": 100
+        }, expires_in_sec=300)
+
+    @frappe.whitelist()
     def generate_final_merit_list(self):
         """
         Triggers the Phase 2 Merit Generation (Entrance + Interview).
         """
+        self.clear_generation_progress()
+
         from slcm.admission.doctype.merit_generation.merit_service import generate_merit_for_level
         merit_list = generate_merit_for_level(
             self.admission_cycle, 
@@ -108,12 +122,16 @@ def get_generation_progress(docname):
     """
     doc = frappe.get_doc("Shortlisting Merit List", docname)
     cache_key = f"merit_generation_{doc.admission_cycle}_{doc.campus}_{doc.program_level}_{doc.program or ''}".replace(" ", "_")
-    progress = frappe.cache().get_value(cache_key)
+    progress = frappe.cache().get_value(cache_key) or {}
     
-    if progress:
-        return progress
+    if "status" not in progress:
+        progress["status"] = "In Progress"
+    if "percent" not in progress:
+        progress["percent"] = 0
+    if "description" not in progress:
+        progress["description"] = "Starting Final Merit List generation..."
 
-    return {"status": "In Progress", "percent": 0, "description": "Preparing..."}
+    return progress
 
 @frappe.whitelist()
 def download_merit_list(name, download_type, category=None):

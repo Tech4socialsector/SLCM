@@ -19,33 +19,42 @@ frappe.ui.form.on("Shortlisting Merit List", {
 
             frm.add_custom_button(__("Generate Final Admission Merit"), function () {
                 frappe.confirm(__("This will generate the final Merit List (Part A + Part B). Continue?"), function () {
-                    frappe.show_progress(__("Generating Final Merit List"), 0, 100, __("Starting Final Merit List generation..."));
-                    start_shortlist_progress_polling(frm);
-
                     frappe.call({
-                        method: "generate_final_merit_list",
+                        method: "clear_generation_progress",
                         doc: frm.doc,
-                        callback: function (r) {
-                            if (frm._progress_interval) {
-                                clearInterval(frm._progress_interval);
-                                frm._progress_interval = null;
-                            }
-                            frappe.hide_progress();
+                        callback: function () {
+                            frappe.show_progress(__("Generating Final Merit List"), 0, 100, __("Starting Final Merit List generation..."));
+                            start_shortlist_progress_polling(frm);
 
-                            if (r.message) {
-                                frappe.show_alert({
-                                    message: __("Final Merit List generated: " + r.message),
-                                    indicator: "green"
-                                });
-                                frappe.set_route("Form", "Merit List", r.message);
-                            }
-                        },
-                        error: function() {
-                            if (frm._progress_interval) {
-                                clearInterval(frm._progress_interval);
-                                frm._progress_interval = null;
-                            }
-                            frappe.hide_progress();
+                            frappe.call({
+                                method: "generate_final_merit_list",
+                                doc: frm.doc,
+                                callback: function (r) {
+                                    if (frm._progress_interval) {
+                                        clearInterval(frm._progress_interval);
+                                        frm._progress_interval = null;
+                                    }
+
+                                    if (r.message) {
+                                        frappe.show_alert({
+                                            message: __("Final Merit List generated: " + r.message),
+                                            indicator: "green"
+                                        });
+                                        frappe.set_route("Form", "Merit List", r.message).then(() => {
+                                            frappe.hide_progress();
+                                        });
+                                    } else {
+                                        frappe.hide_progress();
+                                    }
+                                },
+                                error: function () {
+                                    if (frm._progress_interval) {
+                                        clearInterval(frm._progress_interval);
+                                        frm._progress_interval = null;
+                                    }
+                                    frappe.hide_progress();
+                                }
+                            });
                         }
                     });
                 });
@@ -133,8 +142,6 @@ function start_shortlist_progress_polling(frm) {
         clearInterval(frm._progress_interval);
     }
 
-    let progress_dialog = null;
-
     frm._progress_interval = setInterval(() => {
         frappe.call({
             method: "slcm.admission.doctype.shortlisting_merit_list.shortlisting_merit_list.get_generation_progress",
@@ -147,18 +154,19 @@ function start_shortlist_progress_polling(frm) {
                     let percent = Math.round(data.percent || 0);
                     let desc = data.description || __("Processing applicants...");
                     if (data.status === "In Progress") {
-                        if (!progress_dialog) {
-                            progress_dialog = frappe.show_progress(__("Generating Final Merit List"), percent, 100, desc);
-                        } else {
-                            frappe.show_progress(__("Generating Final Merit List"), percent, 100, desc);
+                        frappe.show_progress(__("Generating Final Merit List"), percent, 100, desc);
+                    } else if (data.status === "Completed") {
+                        frappe.show_progress(__("Generating Final Merit List"), 100, 100, __("Final Merit List Generated. Redirecting..."));
+                        if (frm._progress_interval) {
+                            clearInterval(frm._progress_interval);
+                            frm._progress_interval = null;
                         }
-                    } else if (data.status === "Completed" || data.status === "Failed") {
-                        clearInterval(frm._progress_interval);
-                        frm._progress_interval = null;
-                        frm.dirty(false);
-                        frm.reload_doc().then(() => {
-                            frappe.hide_progress();
-                        });
+                    } else if (data.status === "Failed") {
+                        if (frm._progress_interval) {
+                            clearInterval(frm._progress_interval);
+                            frm._progress_interval = null;
+                        }
+                        frappe.hide_progress();
                     }
                 }
             }

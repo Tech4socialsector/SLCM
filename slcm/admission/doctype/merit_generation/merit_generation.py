@@ -30,10 +30,23 @@ class MeritGeneration(Document):
             self.name = make_autoname(f"MG-{cycle}-{campus}-{level}-.####", ignore_validate=True)
 
     @frappe.whitelist()
+    def clear_generation_progress(self):
+        cache_key = f"merit_generation_{self.admission_cycle}_{self.campus}_{self.generation_type}_{self.program or ''}".replace(" ", "_")
+        frappe.cache().delete_value(cache_key)
+        frappe.cache().set_value(cache_key, {
+            "percent": 0,
+            "status": "In Progress",
+            "description": "Starting merit generation...",
+            "current": 0,
+            "total": 100
+        }, expires_in_sec=300)
+
+    @frappe.whitelist()
     def trigger_generation(self):
         """
         Triggers merit list generation for the selected Program Level.
         """
+        self.clear_generation_progress()
         program_level = self.generation_type
         if not program_level:
             frappe.throw("Please select a Program Level (UG / PG / PhD) before generating.")
@@ -198,16 +211,21 @@ def run_generation_main(docname):
             sp_doc = frappe.new_doc("Shortlisting Merit List")
             sp_doc.update(sp_filters)
         
+        cache_key = f"merit_generation_{doc.admission_cycle}_{doc.campus}_{program_level}_{doc.program or ''}".replace(" ", "_")
+        frappe.cache().set_value(cache_key, {
+            "status": "In Progress",
+            "percent": 85,
+            "description": "Creating Shortlisting Merit List..."
+        }, expires_in_sec=300)
+
         sp_doc.generated_on = merit_list_doc.generated_on
         sp_doc.pull_from_merit_list(merit_list_doc)
-        sp_doc.save(ignore_permissions=True)
 
         doc.status = "Completed"
         doc.generated_on = merit_list_doc.generated_on
         doc.save()
 
         # Update cache to completed
-        cache_key = f"merit_generation_{doc.admission_cycle}_{doc.campus}_{program_level}_{doc.program or ''}".replace(" ", "_")
         frappe.cache().set_value(cache_key, {
             "status": "Completed",
             "percent": 100,
@@ -265,16 +283,26 @@ def get_generation_progress(docname):
     progress = frappe.cache().get_value(cache_key) or {}
     
     db_status = frappe.db.get_value("Merit Generation", docname, "status")
-    progress["status"] = db_status
-    if db_status == "Completed":
+    
+    if db_status in ["Completed", "Failed"]:
+        progress["status"] = db_status
+    elif progress.get("status") in ["Completed", "Failed"]:
+        pass
+    else:
+        progress["status"] = db_status or "In Progress"
+
+    if progress.get("status") == "Completed":
         progress["percent"] = 100
         progress["description"] = "Completed"
-    elif db_status == "Failed":
+    elif progress.get("status") == "Failed":
         progress["percent"] = 100
         progress["description"] = "Failed"
-    elif "percent" not in progress:
-        progress["percent"] = 0
-        progress["description"] = "Initializing..."
+    else:
+        if "percent" not in progress:
+            progress["percent"] = 0
+        desc = progress.get("description")
+        if not desc or desc in ["Initializing...", "Completed"]:
+            progress["description"] = "Processing applicants..."
 
     return progress
     
