@@ -92,7 +92,7 @@
   {
    "fieldname": "total_shortlisted",
    "fieldtype": "Int",
-   "label": "Shortlisted Count",
+   "label": "Shortlisted Count For Part B",
    "read_only": 1
   },
   {
@@ -194,7 +194,7 @@
  "hide_toolbar": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-07 12:44:17.858101",
+ "modified": "2026-07-21 16:45:44.119553",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Shortlisting Merit List",

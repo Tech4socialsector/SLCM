@@ -86,6 +86,8 @@ def create_seat_allocation(merit_list_name, selected_applicants):
         frappe.throw("No applicants selected.", title="Empty Selection")
 
     merit = frappe.get_doc("Merit List", merit_list_name)
+    cache_key = f"merit_generation_{merit.admission_cycle}_{merit.campus}_{merit.program_level}_{merit.program or ''}".replace(" ", "_")
+    frappe.cache().delete_value(cache_key)
 
     # Build a lookup map: applicant ID -> merit row data
     merit_data = {
