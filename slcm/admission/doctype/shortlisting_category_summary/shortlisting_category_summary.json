@@ -10,7 +10,8 @@
   "seats",
   "multiplier",
   "required_to_shortlist",
-  "actually_shortlisted"
+  "actually_shortlisted",
+  "vacant_seats"
  ],
  "fields": [
   {
@@ -46,6 +47,13 @@
    "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Actually Shortlisted",
+   "read_only": 1
+  },
+  {
+   "fieldname": "vacant_seats",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Vacant / Shortfall",
    "read_only": 1
   }
  ],
