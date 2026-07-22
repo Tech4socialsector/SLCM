@@ -1347,7 +1347,7 @@
   },
   {
    "fieldname": "id_validity",
-   "fieldtype": "Date",
+   "fieldtype": "Int",
    "label": "ID Validity"
   },
   {
