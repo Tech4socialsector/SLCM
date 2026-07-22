@@ -237,7 +237,9 @@
   "final_category_rank",
   "final_rank_category",
   "final_horizontal",
-  "where_did_you_hear_about_the_programme"
+  "where_did_you_hear_about_the_programme",
+  "pwd_required_test",
+  "scribe_allotment"
  ],
  "fields": [
   {
@@ -1345,7 +1347,7 @@
   },
   {
    "fieldname": "id_validity",
-   "fieldtype": "Int",
+   "fieldtype": "Date",
    "label": "ID Validity"
   },
   {

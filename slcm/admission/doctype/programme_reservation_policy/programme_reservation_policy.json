@@ -216,7 +216,8 @@
    "description": "Shortlisting Merit List multiplier (e.g. 5 for 1:5 ratio)",
    "fieldname": "shortlisting_multiplier",
    "fieldtype": "Float",
-   "label": "Shortlisting Merit List Ratio"
+   "label": "Shortlisting Merit List Ratio",
+   "precision": "0"
   },
   {
    "fieldname": "international_seats",
@@ -225,7 +226,7 @@
   }
  ],
  "links": [],
- "modified": "2026-07-10 11:10:17.344101",
+ "modified": "2026-07-21 13:49:27.152853",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Programme Reservation Policy",

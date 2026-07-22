@@ -14,6 +14,40 @@ frappe.ui.form.on("Seat Allocation", {
             if (frm.doc.program) filters.program = frm.doc.program;
             return { filters: filters };
         });
+        frm.set_query("program", () => {
+            let filters = {};
+            if (frm.doc.program_level) {
+                filters["level_of_study"] = frm.doc.program_level;
+            }
+            return { filters: filters };
+        });
+    },
+
+    onload(frm) {
+        frm.set_query("program", () => {
+            let filters = {};
+            if (frm.doc.program_level) {
+                filters["level_of_study"] = frm.doc.program_level;
+            }
+            return { filters: filters };
+        });
+    },
+
+    program_level(frm) {
+        frm.set_query("program", () => {
+            let filters = {};
+            if (frm.doc.program_level) {
+                filters["level_of_study"] = frm.doc.program_level;
+            }
+            return { filters: filters };
+        });
+        if (frm.doc.program && frm.doc.program_level) {
+            frappe.db.get_value("Programme", frm.doc.program, "level_of_study", (r) => {
+                if (r && r.level_of_study && r.level_of_study !== frm.doc.program_level) {
+                    frm.set_value("program", "");
+                }
+            });
+        }
     },
 
     merit_list(frm) {
@@ -40,6 +74,10 @@ frappe.ui.form.on("Seat Allocation", {
     },
 
     refresh(frm) {
+        if (frm.doc.status === "In Progress") {
+            start_allocation_progress_polling(frm);
+        }
+
         // Prevent selecting past dates for published_on
         frm.set_df_property("published_on", "options", {
             minDate: new Date()
@@ -81,15 +119,34 @@ frappe.ui.form.on("Seat Allocation", {
 
         if (frm.doc.status === "Draft") {
             frm.add_custom_button(__("Allocate Seats"), () => {
+                frappe.show_progress(__("Allocating Seats"), 0, 100, __("Starting seat allocation..."));
+                start_allocation_progress_polling(frm);
+
                 frm.call({
                     method: "allocate_seats",
                     doc: frm.doc,
-                    freeze: true,
-                    freeze_message: __("Allocating seats based on merit and capacity..."),
                     callback(r) {
+                        if (frm._progress_interval) {
+                            clearInterval(frm._progress_interval);
+                            frm._progress_interval = null;
+                        }
+                        frappe.hide_progress();
+
                         if (!r.exc) {
+                            frappe.show_alert({
+                                message: __("Seats allocated successfully."),
+                                indicator: "green"
+                            });
+                            frm.dirty(false);
                             frm.reload_doc();
                         }
+                    },
+                    error() {
+                        if (frm._progress_interval) {
+                            clearInterval(frm._progress_interval);
+                            frm._progress_interval = null;
+                        }
+                        frappe.hide_progress();
                     }
                 });
             }, __("Actions"));
@@ -623,3 +680,41 @@ frappe.ui.form.on("Seat Allocation", {
         }
     }
 });
+
+function start_allocation_progress_polling(frm) {
+    if (frm._progress_interval) {
+        clearInterval(frm._progress_interval);
+    }
+
+    let progress_dialog = null;
+
+    frm._progress_interval = setInterval(() => {
+        frappe.call({
+            method: "slcm.admission.doctype.seat_allocation.seat_allocation.get_allocation_progress",
+            args: {
+                docname: frm.doc.name
+            },
+            callback: (res) => {
+                let data = res.message;
+                if (data) {
+                    let percent = Math.round(data.percent || 0);
+                    let desc = data.description || __("Allocating seats based on merit and capacity...");
+                    if (data.status === "In Progress") {
+                        if (!progress_dialog) {
+                            progress_dialog = frappe.show_progress(__("Allocating Seats"), percent, 100, desc);
+                        } else {
+                            frappe.show_progress(__("Allocating Seats"), percent, 100, desc);
+                        }
+                    } else if (data.status === "Completed" || data.status === "Failed" || data.status === "Allocated" || data.status === "Published") {
+                        clearInterval(frm._progress_interval);
+                        frm._progress_interval = null;
+                        frm.dirty(false);
+                        frm.reload_doc().then(() => {
+                            frappe.hide_progress();
+                        });
+                    }
+                }
+            }
+        });
+    }, 500);
+}

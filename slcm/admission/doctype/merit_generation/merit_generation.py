@@ -30,10 +30,23 @@ class MeritGeneration(Document):
             self.name = make_autoname(f"MG-{cycle}-{campus}-{level}-.####", ignore_validate=True)
 
     @frappe.whitelist()
+    def clear_generation_progress(self):
+        cache_key = f"merit_generation_{self.admission_cycle}_{self.campus}_{self.generation_type}_{self.program or ''}".replace(" ", "_")
+        frappe.cache().delete_value(cache_key)
+        frappe.cache().set_value(cache_key, {
+            "percent": 0,
+            "status": "In Progress",
+            "description": "Starting merit generation...",
+            "current": 0,
+            "total": 100
+        }, expires_in_sec=300)
+
+    @frappe.whitelist()
     def trigger_generation(self):
         """
         Triggers merit list generation for the selected Program Level.
         """
+        self.clear_generation_progress()
         program_level = self.generation_type
         if not program_level:
             frappe.throw("Please select a Program Level (UG / PG / PhD) before generating.")
@@ -53,8 +66,9 @@ class MeritGeneration(Document):
         applicants = frappe.db.sql(f"""
             SELECT etsa.name 
             FROM `tabEntrance Test Seat Allocation` etsa
+            LEFT JOIN `tabProgramme` p ON etsa.program = p.name
             WHERE etsa.admission_cycle = %(cycle)s
-              AND etsa.program_level = %(level)s
+              AND (etsa.program_level = %(level)s OR p.level_of_study = %(level)s)
               AND etsa.campus = %(campus)s
               AND etsa.entrance_test_status = 'Attended'
               AND etsa.result_status = 'Pass'
@@ -113,6 +127,7 @@ class MeritGeneration(Document):
         if mode == "sync":
             try:
                 run_generation_main(self.name)
+                self.reload()
             except Exception as e:
                 frappe.msgprint(
                     f"Merit generation for {program_level} failed: {str(e)}",
@@ -139,6 +154,7 @@ class MeritGeneration(Document):
             # If enqueue fails (redis/worker issues), run inline so hosted setups still work.
             try:
                 run_generation_main(self.name)
+                self.reload()
             except Exception as e:
                 frappe.msgprint(
                     f"Merit generation for {program_level} failed: {str(e)}",
@@ -195,20 +211,26 @@ def run_generation_main(docname):
             sp_doc = frappe.new_doc("Shortlisting Merit List")
             sp_doc.update(sp_filters)
         
+        cache_key = f"merit_generation_{doc.admission_cycle}_{doc.campus}_{program_level}_{doc.program or ''}".replace(" ", "_")
+        frappe.cache().set_value(cache_key, {
+            "status": "In Progress",
+            "percent": 85,
+            "description": "Creating Shortlisting Merit List..."
+        }, expires_in_sec=300)
+
         sp_doc.generated_on = merit_list_doc.generated_on
         sp_doc.pull_from_merit_list(merit_list_doc)
-        sp_doc.save(ignore_permissions=True)
 
         doc.status = "Completed"
         doc.generated_on = merit_list_doc.generated_on
         doc.save()
 
         # Update cache to completed
-        cache_key = f"merit_generation_{doc.admission_cycle}_{doc.campus}_{program_level}_{doc.program or ''}".replace(" ", "_")
         frappe.cache().set_value(cache_key, {
             "status": "Completed",
-            "percent": 100
-        }, expires_in_sec=60)
+            "percent": 100,
+            "description": "Completed"
+        }, expires_in_sec=300)
 
         frappe.db.commit()
 
@@ -219,7 +241,7 @@ def run_generation_main(docname):
 
         frappe.msgprint(
             msg=(
-                f"Phase 1 Shortlisting Merit List generated. Results pushed to <b>{sp_doc.name}</b>.<br><br>"
+                f"Phase 1 Shortlisting Merit List generated. Results pushed to <b><a href='/app/shortlisting-merit-list/{sp_doc.name}'>{sp_doc.name}</a></b>.<br><br>"
                 f"<b>Summary:</b><br>"
                 f"• Total Candidates: {total_candidates}<br>"
                 f"• Shortlisted: {total_shortlisted}<br>"
@@ -229,7 +251,8 @@ def run_generation_main(docname):
             indicator="green",
             primary_action={
                 "label": "View Merit List",
-                "action": f"frappe.set_route('Form', 'Shortlisting Merit List', '{sp_doc.name}')"
+                "client_action": "frappe.set_route",
+                "args": ["Form", "Shortlisting Merit List", sp_doc.name]
             }
         )
 
@@ -257,8 +280,29 @@ def get_generation_progress(docname):
     """
     doc = frappe.get_doc("Merit Generation", docname)
     cache_key = f"merit_generation_{doc.admission_cycle}_{doc.campus}_{doc.generation_type}_{doc.program or ''}".replace(" ", "_")
-    progress = frappe.cache().get_value(cache_key)
-    if not progress:
-        return {"status": doc.status, "percent": 100 if doc.status == "Completed" else 0}
+    progress = frappe.cache().get_value(cache_key) or {}
+    
+    db_status = frappe.db.get_value("Merit Generation", docname, "status")
+    
+    if db_status in ["Completed", "Failed"]:
+        progress["status"] = db_status
+    elif progress.get("status") in ["Completed", "Failed"]:
+        pass
+    else:
+        progress["status"] = db_status or "In Progress"
+
+    if progress.get("status") == "Completed":
+        progress["percent"] = 100
+        progress["description"] = "Completed"
+    elif progress.get("status") == "Failed":
+        progress["percent"] = 100
+        progress["description"] = "Failed"
+    else:
+        if "percent" not in progress:
+            progress["percent"] = 0
+        desc = progress.get("description")
+        if not desc or desc in ["Initializing...", "Completed"]:
+            progress["description"] = "Processing applicants..."
+
     return progress
     
