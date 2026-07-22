@@ -36,21 +36,9 @@ slcm.show_bulk_email_dialog = function (reference_doctype, docnames, listview) {
             }
 
             let d = new frappe.ui.Dialog({
-                title: __('Send Bulk Email'),
+                title: __('Compose Bulk Email'),
+                size: 'extra-large',
                 fields: [
-                    {
-                        fieldname: 'recipients_table',
-                        label: __('Selected Recipients'),
-                        fieldtype: 'Table',
-                        cannot_add_rows: 1,
-                        cannot_delete_rows: 1,
-                        data: recipients_data,
-                        fields: [
-                            { fieldname: 'id', fieldtype: 'Data', label: __('ID'), in_list_view: 1, read_only: 1, columns: 3 },
-                            { fieldname: 'applicant_name', fieldtype: 'Data', label: __('Name'), in_list_view: 1, read_only: 1, columns: 4 },
-                            { fieldname: 'email', fieldtype: 'Data', label: __('Email'), in_list_view: 1, read_only: 1, columns: 3 }
-                        ]
-                    },
                     {
                         fieldname: 'sender_email_account',
                         label: __('Sender Email Account'),
@@ -62,14 +50,7 @@ slcm.show_bulk_email_dialog = function (reference_doctype, docnames, listview) {
                         }
                     },
                     {
-                        fieldname: 'cc',
-                        label: __('CC'),
-                        fieldtype: 'Small Text'
-                    },
-                    {
-                        fieldname: 'bcc',
-                        label: __('BCC'),
-                        fieldtype: 'Small Text'
+                        fieldtype: 'Column Break'
                     },
                     {
                         fieldname: 'email_template',
@@ -92,10 +73,40 @@ slcm.show_bulk_email_dialog = function (reference_doctype, docnames, listview) {
                         }
                     },
                     {
+                        fieldtype: 'Section Break'
+                    },
+                    {
+                        fieldname: 'cc',
+                        label: __('CC'),
+                        fieldtype: 'Small Text'
+                    },
+                    {
+                        fieldtype: 'Column Break'
+                    },
+                    {
+                        fieldname: 'bcc',
+                        label: __('BCC'),
+                        fieldtype: 'Small Text'
+                    },
+                    {
+                        fieldtype: 'Section Break'
+                    },
+                    {
                         fieldname: 'subject',
                         label: __('Subject'),
                         fieldtype: 'Data',
                         reqd: 1
+                    },
+                    {
+                        fieldtype: 'Section Break'
+                    },
+                    {
+                        fieldname: 'attachment',
+                        label: __('Attachment'),
+                        fieldtype: 'Attach'
+                    },
+                    {
+                        fieldtype: 'Column Break'
                     },
                     {
                         fieldname: 'message_type',
@@ -103,6 +114,9 @@ slcm.show_bulk_email_dialog = function (reference_doctype, docnames, listview) {
                         fieldtype: 'Select',
                         options: 'Text\nHTML',
                         default: 'Text'
+                    },
+                    {
+                        fieldtype: 'Section Break'
                     },
                     {
                         fieldname: 'message',
@@ -118,9 +132,23 @@ slcm.show_bulk_email_dialog = function (reference_doctype, docnames, listview) {
                         depends_on: 'eval:doc.message_type==="HTML"'
                     },
                     {
-                        fieldname: 'attachment',
-                        label: __('Attachment'),
-                        fieldtype: 'Attach'
+                        fieldtype: 'Section Break',
+                        label: __('Selected Recipients (' + recipients_data.length + ')')
+                    },
+                    {
+                        fieldname: 'recipients_table',
+                        label: __('Recipients'),
+                        fieldtype: 'Table',
+                        read_only: 1,
+                        cannot_add_rows: true,
+                        cannot_delete_rows: true,
+                        in_place_edit: false,
+                        data: recipients_data,
+                        fields: [
+                            { fieldname: 'id', fieldtype: 'Data', label: __('ID'), in_list_view: 1, read_only: 1, columns: 3 },
+                            { fieldname: 'applicant_name', fieldtype: 'Data', label: __('Name'), in_list_view: 1, read_only: 1, columns: 4 },
+                            { fieldname: 'email', fieldtype: 'Data', label: __('Email'), in_list_view: 1, read_only: 1, columns: 3 }
+                        ]
                     }
                 ],
                 primary_action_label: __('Send'),
@@ -168,6 +196,17 @@ slcm.show_bulk_email_dialog = function (reference_doctype, docnames, listview) {
             });
 
             d.show();
+
+            // Inject CSS to forcefully hide the edit pencil icon and checkboxes since this table is strictly for viewing
+            let style = `
+                <style>
+                    .frappe-control[data-fieldname="recipients_table"] .grid-row-check { display: none !important; }
+                    .frappe-control[data-fieldname="recipients_table"] svg use[href="#icon-edit"],
+                    .frappe-control[data-fieldname="recipients_table"] svg.icon-edit,
+                    .frappe-control[data-fieldname="recipients_table"] .btn-open-row { display: none !important; }
+                </style>
+            `;
+            $(style).appendTo(d.$wrapper);
         }
     });
 };
