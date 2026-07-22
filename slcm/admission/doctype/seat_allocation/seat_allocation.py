@@ -149,13 +149,19 @@ class SeatAllocation(Document):
                 matching_apps = []
                 is_comp = False
                 for comp_name in comp_types:
-                    if cat.startswith(f"{comp_name} "):
-                        v_name = cat[len(comp_name)+1:]
-                        matching_apps = [
-                            x for x in self.selection_applicant
-                            if (getattr(x, "actual_category", "") == v_name or getattr(x, "vertical_category", "") == v_name)
-                            and comp_name in get_applicant_categories(x.applicant_id)
-                        ]
+                    if cat.startswith(f"{comp_name} ") or cat.startswith(f"{comp_name}("):
+                        v_name = cat[len(comp_name):].strip("() ")
+                        if v_name == "Common":
+                            matching_apps = [
+                                x for x in self.selection_applicant
+                                if comp_name in get_applicant_categories(x.applicant_id)
+                            ]
+                        else:
+                            matching_apps = [
+                                x for x in self.selection_applicant
+                                if (getattr(x, "vertical_category", "") or getattr(x, "actual_category", "")) == v_name
+                                and comp_name in get_applicant_categories(x.applicant_id)
+                            ]
                         is_comp = True
                         break
                 

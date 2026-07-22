@@ -760,9 +760,12 @@ def _populate_category_lists(doc):
         for cat in ordered_cats:
             is_comp = False
             for comp_name in comp_types:
-                if cat.startswith(f"{comp_name} "):
-                    v_name = cat[len(comp_name)+1:]
-                    counts[cat] = len([x for x in sorted_applicants if getattr(x, status_field, "") != "Rejected" and getattr(x, "vertical_category", "") == v_name and _has_trait(x.applicant_id, comp_name, is_shortlist)])
+                if cat.startswith(f"{comp_name} ") or cat.startswith(f"{comp_name}("):
+                    v_name = cat[len(comp_name):].strip("() ")
+                    if v_name == "Common":
+                        counts[cat] = len([x for x in sorted_applicants if getattr(x, status_field, "") != "Rejected" and _has_trait(x.applicant_id, comp_name, is_shortlist)])
+                    else:
+                        counts[cat] = len([x for x in sorted_applicants if getattr(x, status_field, "") != "Rejected" and (getattr(x, "vertical_category", "") or getattr(x, "actual_category", "")) == v_name and _has_trait(x.applicant_id, comp_name, is_shortlist)])
                     is_comp = True
                     break
             if not is_comp:
@@ -773,12 +776,15 @@ def _populate_category_lists(doc):
         
         for cat in ordered_cats:
             info = category_mapping.get(cat, {"seats": 0, "required": 0})
+            req_val = info["required"]
+            act_val = counts.get(cat, 0)
             doc.append("category_summary", {
                 "category": cat,
                 "seats": info["seats"],
                 "multiplier": multiplier,
-                "required_to_shortlist": info["required"],
-                "actually_shortlisted": counts.get(cat, 0)
+                "required_to_shortlist": req_val,
+                "actually_shortlisted": act_val,
+                "vacant_seats": max(0, req_val - act_val)
             })
 
 
@@ -1134,9 +1140,12 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
             def get_rejected_count(cat):
                 is_comp = False
                 for comp_name in comp_types:
-                    if cat.startswith(f"{comp_name} "):
-                        v_name = cat[len(comp_name)+1:]
-                        return len([x for x in applicants_list if getattr(x, status_field, "") in rejection_statuses and (getattr(x, "actual_category", "") == v_name or getattr(x, "vertical_category", "") == v_name) and _has_trait(x.applicant_id, comp_name, is_shortlist_allocation)])
+                    if cat.startswith(f"{comp_name} ") or cat.startswith(f"{comp_name}("):
+                        v_name = cat[len(comp_name):].strip("() ")
+                        if v_name == "Common":
+                            return len([x for x in applicants_list if getattr(x, status_field, "") in rejection_statuses and _has_trait(x.applicant_id, comp_name, is_shortlist_allocation)])
+                        else:
+                            return len([x for x in applicants_list if getattr(x, status_field, "") in rejection_statuses and (getattr(x, "vertical_category", "") or getattr(x, "actual_category", "")) == v_name and _has_trait(x.applicant_id, comp_name, is_shortlist_allocation)])
                 if cat in horiz_types:
                     return len([x for x in applicants_list if getattr(x, status_field, "") in rejection_statuses and _has_trait(x.applicant_id, cat, is_shortlist_allocation)])
                 else:
@@ -1152,6 +1161,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                 if hasattr(doc, "shortlist_applicants"):
                     row["required_to_shortlist"] = req
                     row["actually_shortlisted"] = filled
+                    row["vacant_seats"] = max(0, req - filled)
                 else:
                     row["required"] = req
                     row["actually_allocated"] = filled
