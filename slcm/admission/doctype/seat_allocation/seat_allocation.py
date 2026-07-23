@@ -1137,7 +1137,7 @@ def download_summary(name):
     doc = frappe.get_doc("Seat Allocation", name)
     
     columns = [
-        "Category", "Total Seats", "Seats", "Multiplier", 
+        "Category", "Total Seats", "Seats", 
         "Required", "Actually Allocated", "Allocated Seats", "Vacant Seats",
         "Waitlist Required", "Actually Waitlisted", "Actually Rejected"
     ]
@@ -1147,7 +1147,6 @@ def download_summary(name):
             summary_row.category,
             summary_row.total_seats,
             summary_row.seats,
-            summary_row.multiplier,
             summary_row.required,
             summary_row.actually_allocated,
             summary_row.allocated_seats,
