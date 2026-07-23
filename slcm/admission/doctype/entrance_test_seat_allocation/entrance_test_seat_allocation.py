@@ -17,6 +17,28 @@ class EntranceTestSeatAllocation(Document):
             frappe.throw(f"Total Score (Part A + Part B) cannot be more than {max_marks}.")
 
     def before_save(self):
+        # Fetch start/end time from Admission Cycle Entrance Test Details child table
+        is_res = (self.is_rescheduled == 1 or self.entrance_test_status == "Rescheduled")
+        f_test = self.re_entrance_test_name or self.re_entrance_test_list if is_res else (self.entrance_test_name or self.entrance_test_list)
+        if self.admission_cycle and f_test:
+            filters = {"parent": self.admission_cycle, "entrance_test_name": f_test}
+            if self.program_level:
+                filters["programme_level"] = self.program_level
+            test_details = frappe.db.get_value("Entrance Test Details", 
+                filters, 
+                ["start_time", "end_time"], 
+                as_dict=True
+            )
+            if not test_details and self.program_level:
+                test_details = frappe.db.get_value("Entrance Test Details", 
+                    {"parent": self.admission_cycle, "entrance_test_name": f_test}, 
+                    ["start_time", "end_time"], 
+                    as_dict=True
+                )
+            if test_details:
+                self.start_time = test_details.start_time
+                self.end_time = test_details.end_time
+
         # Check if the applicant is an international applicant
         if self.applicant:
             foreign_national = frappe.db.get_value("Applicant", self.applicant, "foriegn_national")
