@@ -77,7 +77,6 @@
   "column_break_ddwb",
   "part_a_all_india_rank",
   "shortlisted_status",
-  "tab_part_b",
   "section_break_part_b",
   "part_b_total_marks_scored",
   "column_break_yrhn",
@@ -326,7 +325,7 @@
   {
    "fieldname": "tab_part_a",
    "fieldtype": "Tab Break",
-   "label": "Part A"
+   "label": "Result"
   },
   {
    "fieldname": "shortlisted_status",
@@ -336,11 +335,6 @@
    "label": "Shortlisted Status",
    "options": "\nShortlisted\nRejected",
    "read_only": 1
-  },
-  {
-   "fieldname": "tab_part_b",
-   "fieldtype": "Tab Break",
-   "label": "Part B"
   },
   {
    "fieldname": "attendance_marked_on",
@@ -623,7 +617,7 @@
  "image_field": "profile",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-21 11:04:39.077176",
+ "modified": "2026-07-23 10:01:54.994780",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",
