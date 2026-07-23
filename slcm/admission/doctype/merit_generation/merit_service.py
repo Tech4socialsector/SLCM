@@ -1050,7 +1050,6 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                             eligible_out.sort(key=lambda x: -(x.overall_rank or 999999))
                             out_cand = eligible_out[0]
                             comp_candidates = [a for a in unallocated if _has_trait(a.applicant_id, comp_cat) and _check_percentile_eligibility(a, vertical_targets, horizontal_targets)]
-                            print(f"DEBUG: comp_candidates for {comp_cat} in {v_cat}: {len(comp_candidates)}")
                             # Recursive Displacement: Save out_cand in their reserved category if possible
                             _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies)
                             _assign_seat_to_applicant(in_cand, v_cat, "Open" if v_cat == "General" else "Reserved", allocated_list, unallocated, v_info, status_field)
