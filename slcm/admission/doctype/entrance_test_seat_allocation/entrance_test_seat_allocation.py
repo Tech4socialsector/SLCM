@@ -99,6 +99,39 @@ class EntranceTestSeatAllocation(Document):
             frappe.log_error(traceback.format_exc(), f"Result Card Generation Failed: {self.name}")
             return None
 
+    def on_update(self):
+        # Regenerate Admit Card if any relevant fields are changed or if it hasn't been generated yet
+        is_rescheduled = (self.is_rescheduled == 1 or self.entrance_test_status == "Rescheduled")
+        status = self.re_allocation_status if is_rescheduled else self.allocation_status
+        field_to_update = "re_admit_card_download" if is_rescheduled else "admit_card_download"
+        
+        if status in ["Allocated", "Reallocated"]:
+            doc_before = self.get_doc_before_save()
+            should_regenerate = False
+            
+            if not getattr(self, field_to_update):
+                should_regenerate = True
+            elif doc_before:
+                fields_to_check = [
+                    "candidate_name", "gender", "date_of_birth", "email",
+                    "entrance_test_name", "entrance_test_provider", "center_name",
+                    "center_address", "room_code", "room_name", "building", "floor",
+                    "seat_number", "allocation_status", "allocation_date", "start_time", "end_time",
+                    "re_entrance_test_name", "re_entrance_test_provider", "re_center_name",
+                    "re_center_address", "re_room_code", "re_room_name", "re_building", "re_floor",
+                    "re_seat_number", "re_allocation_status", "re_allocation_date",
+                    "campus", "academic_year", "admission_cycle", "program"
+                ]
+                for f in fields_to_check:
+                    if self.get(f) != doc_before.get(f):
+                        should_regenerate = True
+                        break
+                        
+            if should_regenerate:
+                from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
+                generate_and_store_admit_card(self, is_rescheduled=is_rescheduled)
+
+
 
 def _update_applicant_status_for_entrance_test_status(applicant_name, entrance_test_status):
     """
