@@ -3300,6 +3300,8 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
     allocation.program_level = applicant_doc.program_level
     allocation.entrance_test_name = test_cfg.get("entrance_test_name")
     allocation.allocation_date = test_cfg.get("entrance_test_date")
+    allocation.start_time = test_cfg.get("start_time")
+    allocation.end_time = test_cfg.get("end_time")
 
     allocation.applicant = applicant_doc.name
     allocation.candidate_name = applicant_doc.candidate_name
@@ -3441,7 +3443,7 @@ def _resolve_entrance_test_config_for_applicant(applicant_doc):
     rows = frappe.get_all(
         "Entrance Test Details",
         filters={"parent": applicant_doc.admission_cycle, "parenttype": "Admission Cycle"},
-        fields=["programme", "programme_level", "entrance_test_name", "entrance_test_date", "idx"],
+        fields=["programme", "programme_level", "entrance_test_name", "entrance_test_date", "start_time", "end_time", "idx"],
         order_by="idx asc",
     )
     if not rows:
@@ -3756,6 +3758,8 @@ def _auto_allocate_international_entrance_test(applicant_doc):
     allocation.program_level        = applicant_doc.program_level
     allocation.entrance_test_name   = test_cfg.get("entrance_test_name")
     allocation.allocation_date      = test_cfg.get("entrance_test_date")
+    allocation.start_time           = test_cfg.get("start_time")
+    allocation.end_time             = test_cfg.get("end_time")
 
     allocation.applicant            = applicant_doc.name
     allocation.candidate_name       = applicant_doc.candidate_name

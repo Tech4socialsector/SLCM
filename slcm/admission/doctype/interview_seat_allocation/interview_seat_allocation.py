@@ -43,6 +43,11 @@ class InterviewSeatAllocation(Document):
 
 
     def before_save(self):
+        # Check if the applicant is an international applicant
+        if self.applicant:
+            foreign_national = frappe.db.get_value("Applicant", self.applicant, "foriegn_national")
+            self.is_international_applicant = 1 if foreign_national == "Yes" else 0
+
         doc_before = self.get_doc_before_save()
         # Mirror entrance test behaviour: stamp attendance when status changed manually
         if not self.is_new():

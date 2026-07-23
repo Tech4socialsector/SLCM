@@ -46,6 +46,8 @@
   "seat_number",
   "allocation_status",
   "allocation_date",
+  "start_time",
+  "end_time",
   "allocated_by",
   "admit_card_download",
   "tab_9_tab",
@@ -276,8 +278,18 @@
   },
   {
    "fieldname": "allocation_date",
-   "fieldtype": "Datetime",
+   "fieldtype": "Date",
    "label": "Entrance Test Date"
+  },
+  {
+   "fieldname": "start_time",
+   "fieldtype": "Time",
+   "label": "Start Time"
+  },
+  {
+   "fieldname": "end_time",
+   "fieldtype": "Time",
+   "label": "End Time"
   },
   {
    "fieldname": "allocated_by",
