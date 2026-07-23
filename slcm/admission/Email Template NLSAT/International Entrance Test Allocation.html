@@ -15,7 +15,7 @@
             .container { width: 100% !important; min-width: 100% !important; }
             .mobile-header-padding { padding: 30px 20px 15px 20px !important; }
             .logo-img { height: 42px !important; width: auto !important; }
-            .univ-name, .campus-name { font-size: 16px !important; line-height: 1.2 !important; }
+            .univ-name, .campus-name { font-size: 16px !important; line-height: 1.2 !important; white-space: nowrap !important; }
             .body-content { padding: 20px 20px !important; }
         }
     </style>
@@ -46,11 +46,11 @@
                                     </td>
                                     <!-- Title Cell -->
                                     <td style="vertical-align: middle; text-align: left;">
-                                        <div class="univ-name" style="font-family: 'Merriweather', serif; font-size: 20px; color: #920c24; line-height: 1.25; font-weight: 400; margin: 0;">
+                                        <div class="univ-name" style="font-family: 'Merriweather', serif; font-size: 20px; color: #920c24; line-height: 1.25; font-weight: 400; margin: 0; white-space: nowrap;">
                                             National Law School of India University
                                         </div>
                                         <div style="border-top: 1.5px solid #920c24; margin: 5px 0; padding: 0; font-size: 0px; line-height: 0px;">&nbsp;</div>
-                                        <div class="campus-name" style="font-family: 'Merriweather', serif; font-size: 20px; color: #920c24; line-height: 1.25; font-weight: 700; margin: 0;">
+                                        <div class="campus-name" style="font-family: 'Merriweather', serif; font-size: 20px; color: #920c24; line-height: 1.25; font-weight: 700; margin: 0; white-space: nowrap;">
                                             Bengaluru
                                         </div>
                                     </td>
@@ -89,6 +89,18 @@
         {% else %}
             To be announced
         {% endif %}
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Start Time</td>
+      <td style="padding: 8px; border: 1px solid #ddd;">
+        {{ frappe.utils.get_time(doc.start_time).strftime('%I:%M %p') if doc.start_time else 'To be announced' }}
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">End Time</td>
+      <td style="padding: 8px; border: 1px solid #ddd;">
+        {{ frappe.utils.get_time(doc.end_time).strftime('%I:%M %p') if doc.end_time else 'To be announced' }}
       </td>
     </tr>
     <tr>
