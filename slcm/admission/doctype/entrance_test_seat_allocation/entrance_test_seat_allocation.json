@@ -69,19 +69,21 @@
   "reschedule_reason",
   "rescheduled_on",
   "rescheduled_by",
-  "tab_result",
+  "tab_part_a",
   "entrance_test_status",
   "attendance_marked_on",
-  "total_marks",
   "section_break_part_a",
   "part_a_total_marks_scored",
   "column_break_ddwb",
   "part_a_all_india_rank",
+  "shortlisted_status",
+  "tab_part_b",
   "section_break_part_b",
   "part_b_total_marks_scored",
   "column_break_yrhn",
   "part_b_all_india_rank",
   "section_break_cumulative",
+  "total_marks",
   "total_marks_secured_in_part_a_b",
   "percentage",
   "entrance_test_rank",
@@ -322,9 +324,23 @@
    "label": "Admit Card Number"
   },
   {
-   "fieldname": "tab_result",
+   "fieldname": "tab_part_a",
    "fieldtype": "Tab Break",
-   "label": "Result"
+   "label": "Part A"
+  },
+  {
+   "fieldname": "shortlisted_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Shortlisted Status",
+   "options": "\nShortlisted\nRejected",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tab_part_b",
+   "fieldtype": "Tab Break",
+   "label": "Part B"
   },
   {
    "fieldname": "attendance_marked_on",
