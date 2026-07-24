@@ -99,6 +99,7 @@
    "default": "0",
    "fieldname": "is_hod",
    "fieldtype": "Check",
+   "hidden": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Is HOD"
@@ -160,7 +161,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-10 13:14:19.748321",
+ "modified": "2026-07-24 15:55:34.972501",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Faculty",
