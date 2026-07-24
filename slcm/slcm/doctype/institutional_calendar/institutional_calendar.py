@@ -14,6 +14,14 @@ class InstitutionalCalendar(Document):
 			frappe.throw(_("Please select at least one Weekly Off Day"))
 
 
+#: Days that are always non-teaching regardless of Institutional Calendar setup.
+#: Sunday is a mandatory weekly off everywhere in this institution, so it must
+#: not depend on an admin remembering to create a "Weekly Off" calendar entry.
+#: Institutional Calendar "Weekly Off" entries are for ADDITIONAL off-days on
+#: top of this (e.g. an institute that is also closed on Saturdays).
+DEFAULT_WEEKLY_OFF_DAYS = {"Sunday"}
+
+
 ENTRY_COLORS = {
 	"Holiday": "#e74c3c",
 	"Exam": "#9b59b6",
@@ -94,6 +102,9 @@ def get_non_teaching_reason(check_date):
 	check_date = getdate(check_date)
 	weekday_name = check_date.strftime("%A")
 
+	if weekday_name in DEFAULT_WEEKLY_OFF_DAYS:
+		return {"reason": f"Weekly Off ({weekday_name})", "entry_type": "Weekly Off", "name1": weekday_name, "name": None}
+
 	holiday = frappe.db.get_value(
 		"Institutional Calendar",
 		{
@@ -158,6 +169,13 @@ def get_non_teaching_dates_in_range(start_date, end_date):
 	start_date = getdate(start_date)
 	end_date = getdate(end_date)
 	non_teaching = {}
+
+	day = start_date
+	while day <= end_date:
+		weekday_name = day.strftime("%A")
+		if weekday_name in DEFAULT_WEEKLY_OFF_DAYS:
+			non_teaching[day] = f"Weekly Off ({weekday_name})"
+		day += timedelta(days=1)
 
 	holidays = frappe.get_all(
 		"Institutional Calendar",
