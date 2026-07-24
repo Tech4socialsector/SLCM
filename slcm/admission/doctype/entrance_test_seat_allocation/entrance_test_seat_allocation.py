@@ -17,6 +17,28 @@ class EntranceTestSeatAllocation(Document):
             frappe.throw(f"Total Score (Part A + Part B) cannot be more than {max_marks}.")
 
     def before_save(self):
+        # Fetch start/end time from Admission Cycle Entrance Test Details child table
+        is_res = (self.is_rescheduled == 1 or self.entrance_test_status == "Rescheduled")
+        f_test = self.re_entrance_test_name or self.re_entrance_test_list if is_res else (self.entrance_test_name or self.entrance_test_list)
+        if self.admission_cycle and f_test:
+            filters = {"parent": self.admission_cycle, "entrance_test_name": f_test}
+            if self.program_level:
+                filters["programme_level"] = self.program_level
+            test_details = frappe.db.get_value("Entrance Test Details", 
+                filters, 
+                ["start_time", "end_time"], 
+                as_dict=True
+            )
+            if not test_details and self.program_level:
+                test_details = frappe.db.get_value("Entrance Test Details", 
+                    {"parent": self.admission_cycle, "entrance_test_name": f_test}, 
+                    ["start_time", "end_time"], 
+                    as_dict=True
+                )
+            if test_details:
+                self.start_time = test_details.start_time
+                self.end_time = test_details.end_time
+
         # Check if the applicant is an international applicant
         if self.applicant:
             foreign_national = frappe.db.get_value("Applicant", self.applicant, "foriegn_national")
@@ -98,6 +120,39 @@ class EntranceTestSeatAllocation(Document):
         except Exception:
             frappe.log_error(traceback.format_exc(), f"Result Card Generation Failed: {self.name}")
             return None
+
+    def on_update(self):
+        # Regenerate Admit Card if any relevant fields are changed or if it hasn't been generated yet
+        is_rescheduled = (self.is_rescheduled == 1 or self.entrance_test_status == "Rescheduled")
+        status = self.re_allocation_status if is_rescheduled else self.allocation_status
+        field_to_update = "re_admit_card_download" if is_rescheduled else "admit_card_download"
+        
+        if status in ["Allocated", "Reallocated"]:
+            doc_before = self.get_doc_before_save()
+            should_regenerate = False
+            
+            if not getattr(self, field_to_update):
+                should_regenerate = True
+            elif doc_before:
+                fields_to_check = [
+                    "candidate_name", "gender", "date_of_birth", "email",
+                    "entrance_test_name", "entrance_test_provider", "center_name",
+                    "center_address", "room_code", "room_name", "building", "floor",
+                    "seat_number", "allocation_status", "allocation_date", "start_time", "end_time",
+                    "re_entrance_test_name", "re_entrance_test_provider", "re_center_name",
+                    "re_center_address", "re_room_code", "re_room_name", "re_building", "re_floor",
+                    "re_seat_number", "re_allocation_status", "re_allocation_date",
+                    "campus", "academic_year", "admission_cycle", "program"
+                ]
+                for f in fields_to_check:
+                    if self.get(f) != doc_before.get(f):
+                        should_regenerate = True
+                        break
+                        
+            if should_regenerate:
+                from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
+                generate_and_store_admit_card(self, is_rescheduled=is_rescheduled)
+
 
 
 def _update_applicant_status_for_entrance_test_status(applicant_name, entrance_test_status):

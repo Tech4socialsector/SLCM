@@ -152,6 +152,7 @@ fixtures = [
         "doctype": "Email Template",
         "filters": [
             ["name", "in", [
+                "Refund Processed",
                 "Scholarship Updates",
                 "Merit List Template",
                 "Seat Allocation Result Notification",
@@ -181,6 +182,9 @@ fixtures = [
                 "Admission Offer Letter",
                 "Pace Application Completed but Payment Pending",
                 "PACE Verifier Action Confirmation",
+                "PACE Application Withdrawn",
+                "Automated Entrance Test Allocation",
+                "International Entrance Test Allocation",
                 "Parent RFID Absence Alert",
                 "HD Ticket SLA Escalation - New Agent",
                 "HD Ticket SLA Escalation - Previous Agent",
