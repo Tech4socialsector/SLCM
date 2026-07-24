@@ -15,6 +15,7 @@
   "start_date",
   "end_date",
   "status",
+  "weekly_off_days",
   "description"
  ],
  "fields": [
@@ -41,7 +42,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Entry Type",
-   "options": "Holiday\nExam\nSemester Start\nSemester End\nEvent\nOrientation\nOther",
+   "options": "Holiday\nExam\nSemester Start\nSemester End\nEvent\nOrientation\nWeekly Off\nOther",
    "reqd": 1
   },
   {
@@ -70,6 +71,14 @@
    "label": "Status",
    "options": "\nActive\nInactive",
    "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.entry_type=='Weekly Off'",
+   "description": "Days of the week that are always non-teaching (e.g. Sunday), for the duration of Start Date to End Date. Applies on top of any Holiday entries.",
+   "fieldname": "weekly_off_days",
+   "fieldtype": "Table MultiSelect",
+   "label": "Weekly Off Days",
+   "options": "Institutional Calendar Weekly Off Day"
   },
   {
    "fieldname": "description",

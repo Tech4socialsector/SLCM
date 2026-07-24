@@ -226,7 +226,8 @@
    "fieldname": "venue",
    "fieldtype": "Link",
    "label": "Venue",
-   "options": "Venue Booking"
+   "options": "Venue Booking",
+   "reqd": 1
   },
   {
    "fetch_from": "venue.capacity",
@@ -257,7 +258,7 @@
   }
  ],
  "links": [],
- "modified": "2026-07-14 10:39:21.463179",
+ "modified": "2026-07-24 16:01:21.773671",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Time Table",

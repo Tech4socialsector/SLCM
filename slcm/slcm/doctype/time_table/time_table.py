@@ -19,27 +19,21 @@ class TimeTable(Document):
         self.calculate_duration()
 
     def check_holiday_conflict(self):
-        """Block scheduling a class on a date marked as a Holiday in the Institutional Calendar"""
+        """Block scheduling a class on a date that Institutional Calendar marks
+        as a Holiday or a configured Weekly Off day (e.g. Sunday)."""
         if not self.schedule_date:
             return
 
-        holidays = frappe.get_all(
-            "Institutional Calendar",
-            filters={
-                "entry_type": "Holiday",
-                "start_date": ["<=", self.schedule_date],
-                "end_date": [">=", self.schedule_date],
-                "status": ["!=", "Inactive"],
-                "docstatus": ["<", 2],
-            },
-            fields=["name1"],
+        from slcm.slcm.doctype.institutional_calendar.institutional_calendar import (
+            get_non_teaching_reason,
         )
 
-        if holidays:
+        non_teaching = get_non_teaching_reason(self.schedule_date)
+        if non_teaching:
             frappe.throw(
-                f"Cannot schedule a class on {self.schedule_date} — it is marked as a holiday "
-                f"({holidays[0].name1}) in the Institutional Calendar.",
-                title="Holiday",
+                f"Cannot schedule a class on {self.schedule_date} — it is marked as "
+                f"{non_teaching['reason']} ({non_teaching['name1']}) in the Institutional Calendar.",
+                title="Non-Teaching Day",
             )
 
     def on_update(self):
@@ -285,55 +279,60 @@ class TimeTable(Document):
             holiday_skip_count = 0
             schedules_to_create = []
 
-            # First, collect all schedules to create and check for conflicts
-            while current_date <= end_date:
-                # Skip dates marked as a Holiday in the Institutional Calendar
-                if frappe.get_all(
-                    "Institutional Calendar",
+            from frappe.utils import getdate
+
+            from slcm.slcm.doctype.institutional_calendar.institutional_calendar import (
+                get_non_teaching_dates_in_range,
+            )
+
+            # Batch-fetch non-teaching dates and instructor's existing schedules for the
+            # whole range up front instead of querying per iteration — a semester-long
+            # Daily repeat would otherwise issue 500+ queries in a single request.
+            non_teaching_dates = get_non_teaching_dates_in_range(current_date.date(), end_date.date())
+
+            existing_by_date = {}
+            if self.instructor:
+                existing = frappe.get_all(
+                    "Time Table",
                     filters={
-                        "entry_type": "Holiday",
-                        "start_date": ["<=", current_date.strftime("%Y-%m-%d")],
-                        "end_date": [">=", current_date.strftime("%Y-%m-%d")],
-                        "status": ["!=", "Inactive"],
+                        "name": ["!=", self.name],
+                        "instructor": self.instructor,
+                        "schedule_date": ["between", [current_date.date(), end_date.date()]],
                         "docstatus": ["<", 2],
                     },
-                    limit=1,
-                ):
+                    fields=["name", "schedule_date", "from_time", "to_time", "course"],
+                )
+                for row in existing:
+                    existing_by_date.setdefault(getdate(row.schedule_date), []).append(row)
+
+            # First, collect all schedules to create and check for conflicts
+            while current_date <= end_date:
+                date_only = current_date.date()
+
+                # Skip dates marked as a Holiday or Weekly Off (e.g. Sunday) in the Institutional Calendar
+                if date_only in non_teaching_dates:
                     holiday_skip_count += 1
                     current_date += increment
                     continue
 
                 # Check for conflicts on this date
                 has_conflict = False
-                if self.instructor:
-                    conflicts = frappe.get_all(
-                        "Time Table",
-                        filters={
-                            "instructor": self.instructor,
-                            "schedule_date": current_date.strftime("%Y-%m-%d"),
-                        },
-                        fields=["name", "from_time", "to_time", "course"],
-                    )
-                    
-                    for conflict in conflicts:
-                        if self.times_overlap(
-                            self.from_time, self.to_time, conflict.from_time, conflict.to_time
-                        ):
-                            has_conflict = True
-                            conflict_count += 1
-                            frappe.logger().warning(
-                                f"Skipping schedule on {current_date.strftime('%Y-%m-%d')} due to conflict with {conflict.name}"
-                            )
-                            break
-                
+                for conflict in existing_by_date.get(date_only, []):
+                    if self.times_overlap(
+                        self.from_time, self.to_time, conflict.from_time, conflict.to_time
+                    ):
+                        has_conflict = True
+                        conflict_count += 1
+                        frappe.logger().warning(
+                            f"Skipping schedule on {date_only} due to conflict with {conflict.name}"
+                        )
+                        break
+
                 if not has_conflict:
                     schedules_to_create.append(current_date.strftime("%Y-%m-%d"))
-                
+
                 # Increment based on frequency
-                if self.repeat_frequency == "Monthly":
-                    current_date += increment
-                else:
-                    current_date += increment
+                current_date += increment
 
             # Now create all schedules in a transaction
             for schedule_date in schedules_to_create:
