@@ -44,6 +44,35 @@ secondary_color=portal_config.secondary_color, navbar_color=portal_config.navbar
 footer_color=portal_config.footer_color, button_border_radius=portal_config.button_border_radius )
 }}
 
+<!-- TFSS team added this code from here... -->
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1279045953496223');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1279045953496223&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=AW-11282568347"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'AW-11282568347');
+</script>
+<!-- ...to here (TFSS team) -->
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
 <link
 	rel="stylesheet"
@@ -7736,6 +7765,10 @@ footer_color=portal_config.footer_color, button_border_radius=portal_config.butt
 	            const navBtns = document.querySelector('.nav-buttons');
 	            if (navBtns) navBtns.style.display = 'none';
 	            document.getElementById('successScreen').style.display = 'block';
+
+	            // TFSS team added this code from here...
+	            if (typeof fbq === 'function') fbq('track', 'SubmitApplication');
+	            // ...to here (TFSS team)
 
 	            // Show payment receipt button on success page if application fee is paid/waived
 	            const successReceiptWrap = document.getElementById('successReceiptBtnWrap');
