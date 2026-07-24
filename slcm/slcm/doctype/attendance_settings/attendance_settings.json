@@ -24,6 +24,24 @@
   "allow_condonation",
   "condonation_approval_role",
   "condonation_min_percentage",
+  "level_one_aad_authority_section",
+  "l1_assignment_email_template",
+  "l1_approval_email_template",
+  "l1_due_days",
+  "column_break_condonation_l1",
+  "l1_rejected_email_template",
+  "l1_last_assigned_index",
+  "section_break_condonation_l1_table",
+  "level_one_authority",
+  "level_two_authority_section",
+  "l2_assignment_email_template",
+  "l2_approval_email_template",
+  "l2_due_days",
+  "column_break_condonation_l2",
+  "l2_rejected_email_template",
+  "l2_last_assigned_index",
+  "section_break_condonation_l2_table",
+  "level_two_authority",
   "tab_parent_alert",
   "parent_alert_note",
   "enable_parent_rfid_alert",
@@ -183,6 +201,122 @@
    "label": "Minimum Attendance for Condonation"
   },
   {
+   "depends_on": "eval:doc.allow_condonation==1",
+   "fieldname": "level_one_aad_authority_section",
+   "fieldtype": "Section Break",
+   "label": "Level One AAD Authority"
+  },
+  {
+   "default": "AAD Assignment Email Template",
+   "description": "Email sent to AAD upon new assignment",
+   "fieldname": "l1_assignment_email_template",
+   "fieldtype": "Link",
+   "label": "Assignment Email Template",
+   "options": "Email Template"
+  },
+  {
+   "default": "AAD Approval Email Template",
+   "fieldname": "l1_approval_email_template",
+   "fieldtype": "Link",
+   "label": "Approval Email Template",
+   "options": "Email Template"
+  },
+  {
+   "default": "3",
+   "fieldname": "l1_due_days",
+   "fieldtype": "Int",
+   "label": "Due Days",
+   "length": 1,
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_condonation_l1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "AAD Rejected Email Template",
+   "fieldname": "l1_rejected_email_template",
+   "fieldtype": "Link",
+   "label": "Rejected Email Template",
+   "options": "Email Template"
+  },
+  {
+   "default": "0",
+   "fieldname": "l1_last_assigned_index",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Last Assigned Index"
+  },
+  {
+   "depends_on": "eval:doc.allow_condonation==1",
+   "fieldname": "section_break_condonation_l1_table",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "level_one_authority",
+   "fieldtype": "Table",
+   "label": "Level One Authority",
+   "options": "Attendance Condonation Table"
+  },
+  {
+   "depends_on": "eval:doc.allow_condonation==1",
+   "fieldname": "level_two_authority_section",
+   "fieldtype": "Section Break",
+   "label": "Level Two Authority"
+  },
+  {
+   "default": "Programme Chair Assignment Email Template",
+   "description": "Email sent to Programme Chair upon new assignment",
+   "fieldname": "l2_assignment_email_template",
+   "fieldtype": "Link",
+   "label": "Assignment Email Template",
+   "options": "Email Template"
+  },
+  {
+   "default": "Programme Chair Approval Email Template",
+   "fieldname": "l2_approval_email_template",
+   "fieldtype": "Link",
+   "label": "Approval Email Template",
+   "options": "Email Template"
+  },
+  {
+   "default": "3",
+   "fieldname": "l2_due_days",
+   "fieldtype": "Int",
+   "label": "Due Days",
+   "length": 1,
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_condonation_l2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Programme Chair Rejected Email Template",
+   "fieldname": "l2_rejected_email_template",
+   "fieldtype": "Link",
+   "label": "Rejected Email Template",
+   "options": "Email Template"
+  },
+  {
+   "default": "0",
+   "fieldname": "l2_last_assigned_index",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Last Assigned Index"
+  },
+  {
+   "depends_on": "eval:doc.allow_condonation==1",
+   "fieldname": "section_break_condonation_l2_table",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "level_two_authority",
+   "fieldtype": "Table",
+   "label": "Level Two Authority",
+   "options": "Attendance Condonation Table"
+  },
+  {
    "fieldname": "tab_parent_alert",
    "fieldtype": "Tab Break",
    "label": "Parent Absence Alert"
@@ -300,6 +434,14 @@
    "role": "System Manager",
    "share": 1,
    "write": 1
+  },
+  {
+   "read": 1,
+   "role": "AAD"
+  },
+  {
+   "read": 1,
+   "role": "Programme Chair"
   }
  ],
  "row_format": "Dynamic",

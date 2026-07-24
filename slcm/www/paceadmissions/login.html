@@ -1375,9 +1375,13 @@ async function doRegister() {
     }
     var success = lpHandleApiResponse(data, 'register', 'Registration failed. Please try again.');
     if (success) {
+      // TFSS team added this code from here...
+      if (typeof fbq === 'function') fbq('track', 'CompleteRegistration');
+      if (typeof gtag_report_conversion === 'function') gtag_report_conversion();
+      // ...to here (TFSS team)
       document.getElementById('reg-name').value = '';
       document.getElementById('reg-email').value = '';
-      setTimeout(function() { lpTab('login'); }, 1000);
+      setTimeout(function() { lpTab('login'); }, 2500);
     }
   } catch(e) {
     lpNotify('Connection error. Please try again.', 'danger', 'register');
