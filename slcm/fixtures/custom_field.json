@@ -7090,5 +7090,15 @@
   "translatable": 0,
   "unique": 0,
   "width": null
+ },
+ {
+  "dt": "User",
+  "fieldname": "last_applicant_reminder_sent",
+  "fieldtype": "Datetime",
+  "hidden": 0,
+  "insert_after": "last_active",
+  "label": "Last Applicant Reminder Sent",
+  "name": "User-last_applicant_reminder_sent",
+  "read_only": 0    
  }
 ]

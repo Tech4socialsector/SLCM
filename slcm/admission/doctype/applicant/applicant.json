@@ -163,6 +163,8 @@
   "academic_year",
   "application_type",
   "campus",
+  "last_draft_reminder_sent",
+  "last_fee_reminder_sent",
   "section_break_portal",
   "center_filled",
   "application_fee_status",
@@ -1271,6 +1273,16 @@
   {
    "fieldname": "section_break_zsrj",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "last_draft_reminder_sent",
+   "fieldtype": "Datetime",
+   "label": "Last Draft Reminder Sent"
+  },
+  {
+   "fieldname": "last_fee_reminder_sent",
+   "fieldtype": "Datetime",
+   "label": "Last Fee Reminder Sent"
   }
  ],
  "grid_page_length": 50,
@@ -1306,7 +1318,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-20 22:44:34.812111",
+ "modified": "2026-07-25 12:24:10.903460",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

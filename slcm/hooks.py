@@ -197,9 +197,22 @@ fixtures = [
                 "AAD Rejected Email Template",
                 "Programme Chair Assignment Email Template",
                 "Programme Chair Approval Email Template",
-                "Programme Chair Rejected Email Template"
+                "Programme Chair Rejected Email Template",
+                # Admission Module — Applicant Reminder Emails
+                "Applicant Not Started Application Reminder",
+                "Applicant Draft Application Reminder",
+                "Applicant Fee Payment Pending Reminder",
+                "Applicant Application Rejected"
             ]]
         ]
+    },
+    # --- Admission Reminder Email DocTypes ---
+    {
+        "doctype": "Applicant Reminder Email Configuration",
+        "filters": [["name", "=", "Applicant Reminder Email Configuration"]]
+    },
+    {
+        "doctype": "Applicant Reminder Email Log"
     },
     # --- Student Portal Settings (single doctype — ships with defaults) ---
     {
@@ -518,7 +531,11 @@ scheduler_events = {
 		    "slcm.pace.doctype.pace_application.pace_application.send_document_reminders",
 		    "slcm.pace.doctype.pace_application.pace_application.send_correction_reminders",
 		    "slcm.pace.doctype.pace_applicant_fee_assignment.pace_applicant_fee_assignment.send_course_fee_reminders",
-		    "slcm.pace.assignment_logic.check_overdue_verifications"
+		    "slcm.pace.assignment_logic.check_overdue_verifications",
+		    # Admission Module — Applicant Reminder Emails
+		    "slcm.admission.applicant_reminder_emails.send_not_started_reminders",
+		    "slcm.admission.applicant_reminder_emails.send_draft_applicant_reminders",
+		    "slcm.admission.applicant_reminder_emails.send_unpaid_fee_reminders"
 		],
 		"daily": [
 		]

@@ -1,0 +1,141 @@
+import frappe
+from frappe.model.document import Document
+
+
+class ApplicantReminderEmailConfiguration(Document):
+    pass
+
+
+def is_reminder_enabled(reminder_fieldname):
+    """
+    Checks if a specific reminder is enabled.
+    reminder_fieldname: e.g., 'enable_not_started_reminder'
+    """
+    config = frappe.get_single("Applicant Reminder Email Configuration")
+    return config.get(reminder_fieldname) == "Active"
+
+
+def get_rejection_reason(reason_fieldname):
+    """
+    Gets the configurable rejection reason.
+    reason_fieldname: e.g., 'draft_rejection_reason'
+    """
+    config = frappe.get_single("Applicant Reminder Email Configuration")
+    return config.get(reason_fieldname) or ""
+
+
+def should_send_reminder(reminder_type, last_sent_date, cycle_end_date=None):
+    """
+    Determines if a reminder should be sent.
+    reminder_type: 'not_started' | 'draft' | 'unpaid_fee'
+    last_sent_date: date/datetime or None
+    cycle_end_date: application_end_date from Admission Cycle
+    """
+    from frappe.utils import today, getdate, date_diff
+
+    config = frappe.get_single("Applicant Reminder Email Configuration")
+
+    field_map = {
+        "not_started": ("enable_not_started_reminder", "not_started_reminder_interval"),
+        "draft":       ("enable_draft_reminder",       "draft_reminder_interval"),
+        "unpaid_fee":  ("enable_unpaid_fee_reminder",  "unpaid_fee_reminder_interval"),
+    }
+
+    if reminder_type not in field_map:
+        return False
+
+    enable_field, interval_field = field_map[reminder_type]
+
+    # 1. Must be Active
+    if config.get(enable_field) != "Active":
+        return False
+
+    today_date = getdate(today())
+
+    # 2. Cycle end date special logic
+    if cycle_end_date:
+        close_date = getdate(cycle_end_date)
+        if today_date == close_date:
+            # Send on the last day unless already sent today
+            if last_sent_date and getdate(last_sent_date) == today_date:
+                return False
+            return True
+        # After close date → trigger rejection flow
+        if today_date > close_date:
+            return True
+
+    # 3. Same-day safety
+    if last_sent_date and getdate(last_sent_date) == today_date:
+        return False
+
+    # 4. First-ever reminder
+    if not last_sent_date:
+        return True
+
+    # 5. Interval check
+    interval_val = config.get(interval_field)
+    interval = frappe.utils.cint(interval_val) if interval_val is not None else 1
+    days_since = date_diff(today_date, getdate(last_sent_date))
+    return days_since > interval
+
+
+@frappe.whitelist()
+def trigger_manual_reminders(reminders):
+    """
+    Whitelisted: triggered from the JS "Send Reminders" button.
+    reminders: JSON list of enabled fieldnames to process.
+    """
+    if isinstance(reminders, str):
+        import json
+        reminders = json.loads(reminders)
+
+    if not reminders:
+        return {"status": "success", "sent_count": 0}
+
+    from slcm.admission.applicant_reminder_emails import (
+        send_not_started_reminders,
+        send_draft_applicant_reminders,
+        send_unpaid_fee_reminders,
+    )
+
+    tasks_with_counts = []
+    total_items = 0
+
+    if "enable_not_started_reminder" in reminders:
+        users = frappe.get_all("Has Role", filters={"role": "Applicant"}, fields=["parent"])
+        count = len(list(set([u.parent for u in users])))
+        tasks_with_counts.append({"task": send_not_started_reminders, "count": count})
+        total_items += count
+
+    if "enable_draft_reminder" in reminders:
+        count = frappe.db.count("Applicant", {"status": "Draft"})
+        tasks_with_counts.append({"task": send_draft_applicant_reminders, "count": count})
+        total_items += count
+
+    if "enable_unpaid_fee_reminder" in reminders:
+        count = frappe.db.count("Applicant", {
+            "status": "Submitted",
+            "application_fee_status": ["in", ["Pending", "Requested"]]
+        })
+        tasks_with_counts.append({"task": send_unpaid_fee_reminders, "count": count})
+        total_items += count
+
+    total_sent = 0
+    current_processed = 0
+
+    for item in tasks_with_counts:
+        try:
+            res = item["task"](current_item=current_processed, total_items=total_items)
+            total_sent += (res or 0)
+            current_processed += item["count"]
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), f"Manual Reminder Trigger Failed: {item['task'].__name__}")
+
+    if total_sent == 0:
+        return {
+            "status": "success",
+            "message": frappe._("No reminder emails were sent. All eligible recipients may have already received their reminders today."),
+            "sent_count": 0
+        }
+
+    return {"status": "success", "sent_count": total_sent}
