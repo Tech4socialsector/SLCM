@@ -296,17 +296,16 @@ tests/
   - Expected: Women distributed across verticals.
   - Assertion: len(set(vertical for c in allocated if c.gender=='Female')) > 1 (ideally).
 
-### 3.6 Hard 120-Seat Cap (No Tie Inclusion)
+### 3.6 Seat Allocation Tie Inclusion
 - **test_seat_allocation_exactly_120_no_overflow_at_cutoff**
   - Input: 120 top-ranked candidates, Rank 120 unique (no tie).
   - Expected: Exactly 120 allocated, Rank 121+ not included.
-  - Assertion: allocated_count == 120 (hard stop, unlike shortlisting's tie-group inclusion).
+  - Assertion: allocated_count == 120.
 
-- **test_seat_allocation_tied_at_rank_120_does_not_all_include**
-  - Input: Ranks 1-119 unique, Rank 120 tied between 5 candidates (same total, part_b, dob, id prefix collision scenario).
-  - Expected: Only 1 of the 5 tied at Rank 120 is included, bringing total to 120. The other 4 are not allocated.
-  - **Note:** This assumes Rank 120 is unique (final tiebreak ensures it). If truly tied in rank value, clarify policy: include all 5 (total 124) or hard cap at 120?
-  - **Assumption:** With full tiebreak (DOB, ID), Rank 120 is always unique. Test validates this assumption holds.
+- **test_seat_allocation_tied_at_rank_120_includes_all_ties**
+  - Input: Ranks 1-119 unique, Rank 120 tied between 5 candidates.
+  - Expected: All 5 tied at Rank 120 are included, bringing total to 124.
+  - Assertion: All tied candidates at cutoff are allocated.
 
 ### 3.7 Reservation Policy Integration
 - **test_merit_absorption_at_allocation_stage**
