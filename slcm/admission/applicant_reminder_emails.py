@@ -118,7 +118,7 @@ def _send_email_from_template(template_name, recipient, args, reference_doctype=
 # 1. Not-Started Application Reminder
 # ---------------------------------------------------------------------------
 
-def send_not_started_reminders(current_item=0, total_items=0):
+def send_not_started_reminders(current_item=0, total_items=0, is_rejection_only=False):
     """
     Sends reminders to users with role 'Applicant' who have NO Applicant record
     in the current active admission cycle.
@@ -137,6 +137,9 @@ def send_not_started_reminders(current_item=0, total_items=0):
 
     today_date = getdate(today())
     close_date = getdate(cycle_end_date)
+    
+    if is_rejection_only and today_date <= close_date:
+        return 0
 
     # All users with Applicant role
     users = frappe.get_all("Has Role", filters={"role": "Applicant"}, fields=["parent"])
@@ -151,6 +154,13 @@ def send_not_started_reminders(current_item=0, total_items=0):
     )
     existing_set = set(existing)
 
+    already_rejected = frappe.get_all(
+        "Applicant Reminder Email Log",
+        filters={"reminder_type": "Not Started Application Rejected"},
+        pluck="recipient"
+    )
+    already_rejected_set = set(already_rejected)
+
     template_name = "Applicant Not Started Application Reminder"
     institution_name = _get_institution_name()
     sent_count = 0
@@ -163,7 +173,7 @@ def send_not_started_reminders(current_item=0, total_items=0):
                 "description": f"Not Started Reminders: {email}"
             }, user=frappe.session.user)
 
-        if email in existing_set:
+        if email in existing_set or email in already_rejected_set:
             continue
 
         try:
@@ -194,7 +204,6 @@ def send_not_started_reminders(current_item=0, total_items=0):
                     },
                     reference_doctype="User",
                     reference_name=email,
-                    now=True,
                 )
                 if ok:
                     log_applicant_reminder_email(
@@ -245,7 +254,7 @@ def send_not_started_reminders(current_item=0, total_items=0):
 # 2. Draft Application Reminder
 # ---------------------------------------------------------------------------
 
-def send_draft_applicant_reminders(current_item=0, total_items=0):
+def send_draft_applicant_reminders(current_item=0, total_items=0, is_rejection_only=False):
     """
     Sends reminders to applicants whose Applicant doc is still in Draft (docstatus=0).
     After application_end_date: rejects the application.
@@ -263,6 +272,9 @@ def send_draft_applicant_reminders(current_item=0, total_items=0):
 
     today_date = getdate(today())
     close_date = getdate(cycle_end_date)
+    
+    if is_rejection_only and today_date <= close_date:
+        return 0
 
     applications = frappe.get_all(
         "Applicant",
@@ -306,11 +318,10 @@ def send_draft_applicant_reminders(current_item=0, total_items=0):
                     },
                     reference_doctype="Applicant",
                     reference_name=app.name,
-                    now=True,
                 )
                 if ok:
                     # Mark application as Rejected via db_set to skip submit validation
-                    rejected_status = frappe.db.get_value("Applicant Status", {"status_name": "Rejected"}, "name") or "Rejected"
+                    rejected_status = frappe.db.get_value("Applicant Status", {"name": "Rejected"}, "name") or "Rejected"
                     frappe.db.set_value("Applicant", app.name, "status", rejected_status, update_modified=False)
                     frappe.db.set_value("Applicant", app.name, "rejected_reason", rejection_reason, update_modified=False)
                     frappe.db.commit()
@@ -364,7 +375,7 @@ def send_draft_applicant_reminders(current_item=0, total_items=0):
 # 3. Submitted But Unpaid Application Fee Reminder
 # ---------------------------------------------------------------------------
 
-def send_unpaid_fee_reminders(current_item=0, total_items=0):
+def send_unpaid_fee_reminders(current_item=0, total_items=0, is_rejection_only=False):
     """
     Sends reminders to submitted applicants (docstatus=1) whose application_fee_status
     is still Pending or Requested.
@@ -383,6 +394,9 @@ def send_unpaid_fee_reminders(current_item=0, total_items=0):
 
     today_date = getdate(today())
     close_date = getdate(cycle_end_date)
+    
+    if is_rejection_only and today_date <= close_date:
+        return 0
 
     applications = frappe.get_all(
         "Applicant",
@@ -430,17 +444,16 @@ def send_unpaid_fee_reminders(current_item=0, total_items=0):
                     },
                     reference_doctype="Applicant",
                     reference_name=app.name,
-                    now=True,
                 )
                 if ok:
-                    rejected_status = frappe.db.get_value("Applicant Status", {"status_name": "Rejected"}, "name") or "Rejected"
+                    rejected_status = frappe.db.get_value("Applicant Status", {"name": "Rejected"}, "name") or "Rejected"
                     frappe.db.set_value("Applicant", app.name, "status", rejected_status, update_modified=False)
                     frappe.db.set_value("Applicant", app.name, "rejected_reason", rejection_reason, update_modified=False)
                     frappe.db.commit()
                     log_applicant_reminder_email(
                         recipient=recipient,
                         subject=subject or "Application Rejected",
-                        reminder_type="Unpaid Fee Rejected",
+                        reminder_type="Unpaid Application Fee Rejected",
                         sender=_get_template_sender("Applicant Application Rejected"),
                         reference_doctype="Applicant",
                         reference_name=app.name,
@@ -470,7 +483,7 @@ def send_unpaid_fee_reminders(current_item=0, total_items=0):
                 log_applicant_reminder_email(
                     recipient=recipient,
                     subject=subject,
-                    reminder_type="Unpaid Fee Reminder",
+                    reminder_type="Application Fee Reminder",
                     sender=_get_template_sender(template_name),
                     reference_doctype="Applicant",
                     reference_name=app.name,

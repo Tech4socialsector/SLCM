@@ -78,7 +78,7 @@
    "default": "Active",
    "fieldname": "enable_unpaid_fee_reminder",
    "fieldtype": "Select",
-   "label": "Unpaid Application Fee Reminder Status",
+   "label": "Application Fee Reminder Status",
    "options": "Active\nInactive"
   },
   {
@@ -90,7 +90,7 @@
    "depends_on": "eval:doc.enable_unpaid_fee_reminder == 'Active'",
    "fieldname": "unpaid_fee_reminder_interval",
    "fieldtype": "Int",
-   "label": "Unpaid Fee Reminder Interval (Days)",
+   "label": "Application Fee Reminder Interval (Days)",
    "mandatory_depends_on": "eval:doc.enable_unpaid_fee_reminder == 'Active'"
   },
   {

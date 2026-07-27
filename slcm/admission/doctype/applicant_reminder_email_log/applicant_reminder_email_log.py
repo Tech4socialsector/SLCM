@@ -19,7 +19,8 @@ def log_applicant_reminder_email(
     """
     try:
         # Validate reminder_type against allowed options
-        allowed_types = frappe.get_meta("Applicant Reminder Email Log").get_field("reminder_type").options.split("\n")
+        options = frappe.get_meta("Applicant Reminder Email Log").get_field("reminder_type").options or ""
+        allowed_types = [t.strip() for t in options.split("\n") if t.strip()]
         if reminder_type not in allowed_types:
             reminder_type = allowed_types[0] if allowed_types else "Not Started Application Reminder"
 

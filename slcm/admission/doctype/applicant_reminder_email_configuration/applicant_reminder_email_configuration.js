@@ -1,12 +1,15 @@
 frappe.ui.form.on("Applicant Reminder Email Configuration", {
     refresh(frm) {
         frm.add_custom_button(__("Send Reminders Now"), function () {
-            _trigger_manual_reminders(frm);
+            _trigger_manual_reminders(frm, false);
+        }, __("Actions"));
+        frm.add_custom_button(__("Send Rejected Email"), function () {
+            _trigger_manual_reminders(frm, true);
         }, __("Actions"));
     }
 });
 
-function _trigger_manual_reminders(frm) {
+function _trigger_manual_reminders(frm, is_rejection_only = false) {
     // Collect which reminders are Active
     const reminder_fields = [
         "enable_not_started_reminder",
@@ -26,11 +29,13 @@ function _trigger_manual_reminders(frm) {
     }
 
     frappe.confirm(
-        __("This will immediately send reminder emails to all eligible applicants for the selected active reminder types. Do you want to continue?"),
+        is_rejection_only 
+            ? __("This will immediately send rejection emails to all eligible applicants whose cycle has ended. Do you want to continue?")
+            : __("This will immediately send reminder emails to all eligible applicants for the selected active reminder types. Do you want to continue?"),
         function () {
             // Show progress dialog
             const dialog = new frappe.ui.Dialog({
-                title: __("Sending Reminder Emails..."),
+                title: is_rejection_only ? __("Sending Rejection Emails...") : __("Sending Reminder Emails..."),
                 fields: [{
                     fieldtype: "HTML",
                     fieldname: "progress_area"
@@ -64,7 +69,7 @@ function _trigger_manual_reminders(frm) {
 
             frappe.call({
                 method: "slcm.admission.doctype.applicant_reminder_email_configuration.applicant_reminder_email_configuration.trigger_manual_reminders",
-                args: { reminders: active_reminders },
+                args: { reminders: active_reminders, is_rejection_only: is_rejection_only },
                 freeze: false,
                 callback(r) {
                     frappe.realtime.off("applicant_reminder_progress");

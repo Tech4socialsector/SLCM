@@ -49,7 +49,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Reminder Type",
-   "options": "Not Started Application Reminder\nDraft Application Reminder\nUnpaid Fee Reminder\nApplication Rejected\nNot Started Application Rejected\nDraft Application Rejected\nUnpaid Fee Rejected"
+   "options": "Not Started Application Reminder\nDraft Application Reminder\nApplication Fee Reminder\nApplication Rejected\nNot Started Application Rejected\nDraft Application Rejected\nUnpaid Application Fee Rejected"
   },
   {
    "default": "Sent",

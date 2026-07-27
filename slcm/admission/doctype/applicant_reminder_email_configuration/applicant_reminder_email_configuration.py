@@ -80,7 +80,7 @@ def should_send_reminder(reminder_type, last_sent_date, cycle_end_date=None):
 
 
 @frappe.whitelist()
-def trigger_manual_reminders(reminders):
+def trigger_manual_reminders(reminders, is_rejection_only=False):
     """
     Whitelisted: triggered from the JS "Send Reminders" button.
     reminders: JSON list of enabled fieldnames to process.
@@ -88,6 +88,8 @@ def trigger_manual_reminders(reminders):
     if isinstance(reminders, str):
         import json
         reminders = json.loads(reminders)
+        
+    is_rejection_only = frappe.utils.cint(is_rejection_only) == 1 or str(is_rejection_only).lower() == 'true'
 
     if not reminders:
         return {"status": "success", "sent_count": 0}
@@ -125,16 +127,17 @@ def trigger_manual_reminders(reminders):
 
     for item in tasks_with_counts:
         try:
-            res = item["task"](current_item=current_processed, total_items=total_items)
+            res = item["task"](current_item=current_processed, total_items=total_items, is_rejection_only=is_rejection_only)
             total_sent += (res or 0)
             current_processed += item["count"]
         except Exception:
             frappe.log_error(frappe.get_traceback(), f"Manual Reminder Trigger Failed: {item['task'].__name__}")
 
     if total_sent == 0:
+        msg = frappe._("No eligible applicant is rejected at this time.") if is_rejection_only else frappe._("No reminder emails were sent. All eligible recipients may have already received their reminders today.")
         return {
             "status": "success",
-            "message": frappe._("No reminder emails were sent. All eligible recipients may have already received their reminders today."),
+            "message": msg,
             "sent_count": 0
         }
 

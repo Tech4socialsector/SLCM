@@ -652,19 +652,8 @@ class Applicant(Document):
         # ── Fetch active Admission Cycle config ──────────────────────────────
         cycle_name = self.admission_cycle  # already linked on the applicant
 
-        email_template_name = None
-        print_format_name = "Applicant Application Form"  # default fallback
-
-        if cycle_name:
-            cycle = frappe.db.get_value(
-                "Admission Cycle",
-                {"name": cycle_name, "status": "Active"},
-                ["email_template", "application_form_template"],
-                as_dict=True
-            )
-            if cycle:
-                email_template_name = cycle.get("email_template")
-                print_format_name = cycle.get("application_form_template") or print_format_name
+        email_template_name = "Application Submitted Email"
+        print_format_name = "Applicant Application Form"
 
         # ── Reservation summary ──────────────────────────────────────────────
         reservation_parts = []
