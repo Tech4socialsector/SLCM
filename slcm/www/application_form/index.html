@@ -4813,80 +4813,26 @@ src="https://www.facebook.com/tr?id=1279045953496223&ev=PageView&noscript=1"
 						<div id="reviewContent"></div>
 
 						<div class="declaration-box" id="declBox" style="margin-top: 1.5rem">
-							<label
-								style="
-									display: flex;
-									gap: 1rem;
-									align-items: flex-start;
-									cursor: pointer;
-								"
-							>
-								<input
-									type="checkbox"
-									name="declaration_undertaking"
-									id="declaration_undertaking"
-									style="
-										width: 18px;
-										height: 18px;
-										margin-top: 0.2rem;
-										accent-color: var(--navy);
-										flex-shrink: 0;
-									"
-									onchange="onDeclarationChange(this)"
-								/>
-								<span
-									style="
-										font-size: 0.88rem;
-										line-height: 1.7;
-										color: var(--slate-700);
-									"
-								>
-									I hereby undertake that the information and documents furnished
-									by me are true to the best of my knowledge and belief. I
-									acknowledge that the submission of incorrect or false
-									information/documents shall result in my disqualification. I
-									acknowledge that my admission is contingent upon my meeting the
-									eligibility criteria.
+							<label style="display: flex; gap: 1rem; align-items: flex-start; cursor: pointer;">
+								<input type="checkbox" name="authorisation_information" id="authorisation_information" style="width: 18px; height: 18px; margin-top: 0.2rem; accent-color: var(--navy); flex-shrink: 0;" onchange="onDeclarationChange(this)" />
+								<span style="font-size: 0.88rem; line-height: 1.7; color: var(--slate-700);">
+									Authorisation & Information: I hereby undertake that the information and documents furnished by me are true to the best of my knowledge and belief. I acknowledge that the submission of incorrect or false information/documents shall result in my disqualification. I acknowledge that my admission is contingent upon my meeting the eligibility criteria.
+								</span>
+							</label>
+							<label style="display: flex; gap: 1rem; align-items: flex-start; cursor: pointer; margin-top: 1rem;">
+								<input type="checkbox" name="agreement_to_communications" id="agreement_to_communications" style="width: 18px; height: 18px; margin-top: 0.2rem; accent-color: var(--navy); flex-shrink: 0;" onchange="onDeclarationChange(this)" />
+								<span style="font-size: 0.88rem; line-height: 1.7; color: var(--slate-700);">
+									Agreement to Communications: I agree to receive communications regarding my application.
+								</span>
+							</label>
+							<label style="display: flex; gap: 1rem; align-items: flex-start; cursor: pointer; margin-top: 1rem;">
+								<input type="checkbox" name="agreement_withdrawal_conditions" id="agreement_withdrawal_conditions" style="width: 18px; height: 18px; margin-top: 0.2rem; accent-color: var(--navy); flex-shrink: 0;" onchange="onDeclarationChange(this)" />
+								<span style="font-size: 0.88rem; line-height: 1.7; color: var(--slate-700);">
+									Agreement on Withdrawal Conditions: I have read and agree to the conditions related to withdrawal.
 								</span>
 							</label>
 						</div>
-						<div style="margin-top: 0.85rem">
-							<label
-								style="
-									display: flex;
-									gap: 1rem;
-									align-items: flex-start;
-									cursor: pointer;
-									padding: 0.85rem 1.25rem;
-									border-radius: var(--radius-sm);
-									border: 1.5px solid var(--slate-200);
-									background: var(--slate-50);
-								"
-							>
-								<input
-									type="checkbox"
-									name="consent_third_party"
-									id="consent_third_party"
-									style="
-										width: 18px;
-										height: 18px;
-										margin-top: 0.2rem;
-										accent-color: var(--navy);
-										flex-shrink: 0;
-									"
-								/>
-								<span
-									style="
-										font-size: 0.85rem;
-										line-height: 1.7;
-										color: var(--slate-600);
-									"
-								>
-									I consent to my details being shared with third party
-									affiliates.
-								</span>
-							</label>
-						</div>
+
 						<div>Please Note: The Application Fee is non-refundable.</div>
 						<span class="field-error" id="err_declaration" style="margin-top: 0.5rem"
 							>You must accept the Declaration before submission</span
@@ -5394,8 +5340,10 @@ src="https://www.facebook.com/tr?id=1279045953496223&ev=PageView&noscript=1"
 	    source_of_information: 'Where did you hear about the programme?',
 	    please_mention: 'Please mention',
 	    cv: 'Curriculum vitae (CV)',
-	    declaration_undertaking: 'Declaration',
-	    consent_third_party: 'Consent',
+	    authorisation_information: 'Authorisation & Information',
+	    agreement_to_communications: 'Agreement to Communications',
+	    agreement_withdrawal_conditions: 'Agreement on Withdrawal Conditions',
+
 	    post_degree_work_experience: 'Post-degree work experience',
 	    years_of_work_experience: 'Years of work experience',
 	    ews: 'EWS',
@@ -6344,7 +6292,9 @@ src="https://www.facebook.com/tr?id=1279045953496223&ev=PageView&noscript=1"
 	        if (!document.getElementById('please_mention')?.value?.trim()) { showError('please_mention'); v = false; }
 	    }
 	    if (!(formData.cv && String(formData.cv).trim())) { showError('cv', 'Curriculum vitae (CV) is required'); v = false; }
-	    if (!document.getElementById('declaration_undertaking')?.checked) {
+	    const declIds = ['authorisation_information', 'agreement_to_communications', 'agreement_withdrawal_conditions'];
+	    const allDeclChecked = declIds.every(id => document.getElementById(id)?.checked);
+	    if (!allDeclChecked) {
 	        const errEl = document.getElementById('err_declaration');
 	        if (errEl) errEl.classList.add('show');
 	        v = false;
@@ -7376,8 +7326,10 @@ src="https://www.facebook.com/tr?id=1279045953496223&ev=PageView&noscript=1"
 
 	    // Guardian and Undertaking
 	    formData.guardian_required = document.getElementById('guardian_required')?.value || 'No';
-	    formData.declaration_undertaking = document.getElementById('declaration_undertaking')?.checked ? 1 : 0;
-	    formData.consent_third_party = document.getElementById('consent_third_party')?.checked ? 1 : 0;
+	    formData.authorisation_information = document.getElementById('authorisation_information')?.checked ? 1 : 0;
+	    formData.agreement_to_communications = document.getElementById('agreement_to_communications')?.checked ? 1 : 0;
+	    formData.agreement_withdrawal_conditions = document.getElementById('agreement_withdrawal_conditions')?.checked ? 1 : 0;
+
 
 	    // Reservation / category fields
 	    const resCat = document.getElementById('reservation_category')?.value || '';
@@ -7669,7 +7621,9 @@ src="https://www.facebook.com/tr?id=1279045953496223&ev=PageView&noscript=1"
 	        showToast('In this stage, only parent/guardian details can be updated.', 'info');
 	    }
 	    // 1. Declaration is validated (handled within Step 6 validation, but checked explicitly for immediate feedback)
-	    if (!document.getElementById('declaration_undertaking')?.checked) {
+	    const declIdsSub = ['authorisation_information', 'agreement_to_communications', 'agreement_withdrawal_conditions'];
+	    const allDeclCheckedSub = declIdsSub.every(id => document.getElementById(id)?.checked);
+	    if (!allDeclCheckedSub) {
 	        showToast('Please accept the declaration before submitting.', 'error');
 	        const declErr = document.getElementById('err_declaration');
 	        if (declErr) declErr.classList.add('show');

@@ -2703,7 +2703,7 @@ function runSubmitFlow() {
 	var missChkSubmit = _slcmCollectAllEmptyRequiredChecks(wf);
 	
 	// Explicitly ensure critical checkboxes are checked
-	['declaration_undertaking', 'consent_third_party'].forEach(function(fn) {
+	['authorisation_information', 'agreement_to_communications', 'agreement_withdrawal_conditions'].forEach(function(fn) {
 		var f = wf.fields_dict[fn];
 		if (f && !missChkSubmit.some(function(m) { return m.field === f; })) {
 			var val = f.get_value ? f.get_value() : 0;

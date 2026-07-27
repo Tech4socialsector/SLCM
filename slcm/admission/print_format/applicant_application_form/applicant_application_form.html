@@ -1139,10 +1139,10 @@ set _show_other = _has_source or _has_cv -%}
 		<div class="decl-item">
 			<div class="decl-row">
 				<span class="chk-cell"
-					>{{ '&#9745;' if doc.declaration_undertaking else '&#9744;' }}</span
+					>{{ '&#9745;' if doc.authorisation_information else '&#9744;' }}</span
 				>
 				<span class="decl-text"
-					>I declare that the information provided is true and complete. False
+					>Authorisation & Information: I declare that the information provided is true and complete. False
 					information may lead to disqualification or cancellation of admission.</span
 				>
 			</div>
@@ -1150,15 +1150,24 @@ set _show_other = _has_source or _has_cv -%}
 		<div class="decl-item">
 			<div class="decl-row">
 				<span class="chk-cell"
-					>{{ '&#9745;' if doc.consent_third_party else '&#9744;' }}</span
+					>{{ '&#9745;' if doc.agreement_to_communications else '&#9744;' }}</span
 				>
 				<span class="decl-text"
-					>I consent to my personal details being shared with relevant third party
-					affiliates for purposes of admission.
-					<strong>Note: The Application Fee is non-refundable.</strong></span
+					>Agreement to Communications: I agree to receive communications regarding my application.</span
 				>
 			</div>
 		</div>
+		<div class="decl-item">
+			<div class="decl-row">
+				<span class="chk-cell"
+					>{{ '&#9745;' if doc.agreement_withdrawal_conditions else '&#9744;' }}</span
+				>
+				<span class="decl-text"
+					>Agreement on Withdrawal Conditions: I have read and agree to the conditions related to withdrawal.</span
+				>
+			</div>
+		</div>
+
 	</div>
 
 	<div class="invig">To be signed in the presence of the Invigilator / Authorised Officer</div>
