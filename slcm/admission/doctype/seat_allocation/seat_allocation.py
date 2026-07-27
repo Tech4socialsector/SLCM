@@ -189,11 +189,10 @@ class SeatAllocation(Document):
 
             def get_save_sort_key(x):
                 overall_rnk = flt(getattr(x, "overall_rank", None) or x.get("overall_rank") or 999999)
-                part_b = flt(getattr(x, "nlsat_part_b_score", None) or x.get("nlsat_part_b_score") or 0)
                 return (
                     overall_rnk,
-                    -part_b
                 )
+
 
             self.selection_applicant.sort(key=get_save_sort_key)
             for i, row in enumerate(self.selection_applicant):
@@ -550,12 +549,11 @@ class SeatAllocation(Document):
             from frappe.utils import flt
             status_pri = status_priority.get(x.selection_status, 99)
             overall_rnk = flt(getattr(x, "overall_rank", None) or x.get("overall_rank") or 999999)
-            part_b = flt(getattr(x, "nlsat_part_b_score", None) or x.get("nlsat_part_b_score") or 0)
             return (
                 status_pri,
-                overall_rnk,
-                -part_b
+                overall_rnk
             )
+
 
         sorted_rows = sorted(self.selection_applicant, key=get_allocation_sort_key)
         

@@ -88,6 +88,9 @@ class TestEntranceTestMarksImportExport(IntegrationTestCase):
             self.alloc2 = doc2
         else:
             self.alloc2 = frappe.get_doc("Entrance Test Seat Allocation", {"applicant": self.app_no_2})
+        frappe.db.set_value("Entrance Test Seat Allocation", self.alloc2.name, "shortlisted_status", "No")
+
+
 
     def tearDown(self):
         super().tearDown()
