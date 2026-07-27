@@ -1046,8 +1046,7 @@
    "description": "PDF snapshot generated when the application is first submitted. Bulk download uses this file for speed when present.",
    "fieldname": "application_form",
    "fieldtype": "Attach",
-   "label": "Application Form (PDF)",
-   "read_only": 1
+   "label": "Application Form (PDF)"
   },
   {
    "depends_on": "eval:doc.application_fee_status=='Waived'",
@@ -1324,7 +1323,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-27 15:11:51.655359",
+ "modified": "2026-07-27 17:10:32.947654",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
