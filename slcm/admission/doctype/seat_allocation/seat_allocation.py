@@ -591,8 +591,8 @@ class SeatAllocation(Document):
         _publish_allocation_progress(self, 0, "Initializing Seat Allocation...", status="In Progress")
         _publish_allocation_progress(self, 5, "Pulling candidates & preparing allocation...")
 
-        if not self.selection_applicant:
-            self.pull_from_merit_list()
+        # Always pull/sync from merit list to ensure manual changes to ranks/categories are respected
+        self.pull_from_merit_list()
 
         _publish_allocation_progress(self, 20, "Executing seat allocation engine...")
 
