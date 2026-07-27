@@ -346,6 +346,10 @@ frappe.pages['publish-result'].on_page_load = function (wrapper) {
 							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
 							Institutional Filter
 						</button>
+						<button class="pr-btn" id="pr-bulk-email-btn">
+							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="m4 4 8 8 8-8"/></svg>
+							Send Bulk Email
+						</button>
 						<div class="pr-btn-dd" id="pr-publish-dd">
 							<button class="pr-btn primary" id="pr-publish-btn">
 								<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
@@ -537,6 +541,55 @@ frappe.pages['publish-result'].on_page_load = function (wrapper) {
 				window.open(url, '_blank');
 				d.hide();
 			}
+		});
+		d.show();
+	});
+
+	// ── Send Bulk Email ──────────────────────────────────────────────────────
+	$body.find('#pr-bulk-email-btn').on('click', function () {
+		if (!S.exam_plan) { frappe.show_alert({ message: 'Select an Exam Plan first.', indicator: 'orange' }); return; }
+
+		var d = new frappe.ui.Dialog({
+			title: 'Send Bulk Email',
+			fields: [
+				{
+					fieldtype: 'HTML',
+					options: '<div class="text-muted" style="margin-bottom:10px;">' +
+						'Sends to every student currently matching the page filters (Programme/Course/search/status) — ' +
+						'not just the students visible on this page.' +
+						'</div>',
+				},
+				{ label: 'Email Template', fieldname: 'email_template', fieldtype: 'Link', options: 'Email Template', reqd: 1 },
+			],
+			primary_action_label: 'Send',
+			primary_action: function (v) {
+				if (!v.email_template) { frappe.msgprint('Select an Email Template.'); return; }
+				d.set_primary_action('Sending…');
+				d.disable_primary_action();
+				frappe.call({
+					method: 'slcm.slcm.page.publish_result.publish_result.send_bulk_publish_email',
+					args: {
+						exam_plan:       S.exam_plan,
+						email_template:  v.email_template,
+						search:          S.search,
+						status_filter:   S.status_filter,
+						inst_programmes: JSON.stringify(S.inst_filter.programmes),
+						inst_batches:    JSON.stringify(S.inst_filter.batches),
+						programme:       S.programme || '',
+						course:          S.course || '',
+					},
+					callback: function (r) {
+						d.hide();
+						if (r.message) {
+							frappe.show_alert({ message: r.message.message, indicator: 'green' });
+						}
+					},
+					error: function () {
+						d.enable_primary_action();
+						d.set_primary_action('Send');
+					},
+				});
+			},
 		});
 		d.show();
 	});
