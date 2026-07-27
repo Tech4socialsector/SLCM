@@ -25,7 +25,7 @@ class AttendanceSummaryReport {
 	constructor(page) {
 		this.page = page;
 		this.ctrls = {};
-		this.tab = "summary"; // summary | monthly | daily
+		this.tab = "summary"; // summary | weekly | monthly | daily
 		this._export = null;  // { headers, rows } for the last successfully rendered view
 		this._filters_ready = false; // guards auto-apply while default values are still being set
 		this._build();
@@ -37,6 +37,7 @@ class AttendanceSummaryReport {
 
 		this._build_filters($main);
 		this._build_tabs($main);
+		this._build_search($main);
 
 		this.$summary = $(`<div class="asr-kpi-row"></div>`).appendTo($main);
 		this.$table = $(`<div class="asr-card asr-table-card"></div>`).appendTo($main);
@@ -64,6 +65,7 @@ class AttendanceSummaryReport {
 		this.ctrls.course = this._link($grid, "Course", "Course");
 		this.ctrls.batch = this._link($grid, "Batch", "Batch");
 		this.ctrls.section = this._link($grid, "Section", "Section");
+		this.ctrls.student = this._link($grid, "Student", "Student Master");
 
 		this._load_terms();
 
@@ -112,6 +114,7 @@ class AttendanceSummaryReport {
 		const $tabs = $(`<div class="asr-tabs"></div>`).appendTo($main);
 		const tabs = [
 			["summary", __("Summary")],
+			["weekly", __("Weekly")],
 			["monthly", __("Monthly")],
 			["daily", __("Daily")],
 		];
@@ -130,6 +133,24 @@ class AttendanceSummaryReport {
 		this.$month_picker.toggle(key === "daily");
 		this.$to_date_field.toggle(key === "daily");
 		this._load();
+	}
+
+	_build_search($main) {
+		const search_icon = `<svg class="asr-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>`;
+		const $wrap = $(`<div class="asr-search-row">
+			<div class="asr-search-box">
+				${search_icon}
+				<input type="text" placeholder="${esc(__("Search by student name or ID..."))}" />
+			</div>
+		</div>`).appendTo($main);
+
+		this._search_text = "";
+		let debounce_timer = null;
+		$wrap.find("input").on("input", (e) => {
+			const value = e.target.value;
+			clearTimeout(debounce_timer);
+			debounce_timer = setTimeout(() => this._on_search_change(value), 150);
+		});
 	}
 
 	_mark_active_tab() {
@@ -276,18 +297,23 @@ class AttendanceSummaryReport {
 			course: this.ctrls.course.get_value(),
 			batch: this.ctrls.batch.get_value(),
 			section: this.ctrls.section.get_value(),
+			student: this.ctrls.student.get_value(),
 		};
 	}
 
 	_clear() {
 		this._filters_ready = false; // resetting shouldn't auto-trigger a load per field
-		["academic_year", "term", "programme", "course", "batch", "section"].forEach(key => {
+		["academic_year", "term", "programme", "course", "batch", "section", "student"].forEach(key => {
 			this.ctrls[key].set_value([]);
 		});
 		this.ctrls.from_date.set_value(frappe.datetime.month_start());
 		this.ctrls.to_date.set_value(frappe.datetime.now_date());
 		this.ctrls.include_condonation.set_value(false);
 		this._filters_ready = true;
+		this._search_text = "";
+		this._last_response = undefined;
+		this._last_daily_filters = null;
+		$(".asr-search-box input").val("");
 		this.$summary.empty();
 		this._export = null;
 		this.$export_btn.prop("disabled", true);
@@ -301,31 +327,87 @@ class AttendanceSummaryReport {
 		this._render_skeleton();
 		this._export = null;
 		this.$export_btn.prop("disabled", true);
+		this._last_daily_filters = null;
 
 		if (this.tab === "summary") {
 			const include_condonation = this.ctrls.include_condonation.get_value();
 			frappe.call({
 				method: "slcm.slcm.page.attendance_summary_report.attendance_summary_report.get_data",
 				args: Object.assign({}, f, { include_condonation }),
-				callback: r => this._render_summary(r.message || [], include_condonation),
+				callback: r => {
+					this._last_response = r.message || [];
+					this._render_summary(this._search_filter_rows(this._last_response), include_condonation);
+				},
+				error: () => this._render_error(),
+			});
+		} else if (this.tab === "weekly") {
+			frappe.call({
+				method: "slcm.slcm.page.attendance_summary_report.attendance_summary_report.get_weekly_matrix",
+				args: f,
+				callback: r => {
+					this._last_response = r.message || { weeks: [], rows: [] };
+					this._render_weekly(this._search_filter_matrix(this._last_response));
+				},
 				error: () => this._render_error(),
 			});
 		} else if (this.tab === "monthly") {
 			frappe.call({
 				method: "slcm.slcm.page.attendance_summary_report.attendance_summary_report.get_monthly_matrix",
 				args: f,
-				callback: r => this._render_monthly(r.message || { months: [], rows: [] }),
+				callback: r => {
+					this._last_response = r.message || { months: [], rows: [] };
+					this._render_monthly(this._search_filter_matrix(this._last_response));
+				},
 				error: () => this._render_error(),
 			});
 		} else {
 			const from_date = this.ctrls.from_date.get_value();
 			const to_date = this.ctrls.to_date.get_value();
+			this._last_daily_filters = f;
 			frappe.call({
 				method: "slcm.slcm.page.attendance_summary_report.attendance_summary_report.get_daily_matrix",
 				args: Object.assign({}, f, { from_date, to_date }),
-				callback: r => this._render_daily(r.message || { days: [], rows: [] }),
+				callback: r => {
+					this._last_response = r.message || { days: [], rows: [] };
+					this._render_daily(this._search_filter_matrix(this._last_response));
+				},
 				error: () => this._render_error(),
 			});
+		}
+	}
+
+	/* ---------- global search (client-side, filters the last-loaded rows) ---------- */
+
+	_matches_search(row) {
+		if (!this._search_text) return true;
+		const q = this._search_text.toLowerCase();
+		return String(row.student_name || "").toLowerCase().includes(q)
+			|| String(row.student_id || "").toLowerCase().includes(q);
+	}
+
+	// Summary tab: rows is a flat array.
+	_search_filter_rows(rows) {
+		return (rows || []).filter(r => this._matches_search(r));
+	}
+
+	// Weekly/Monthly/Daily tabs: { weeks|months|days, rows }, rows keeps its shape.
+	_search_filter_matrix(payload) {
+		if (!payload || !payload.rows) return payload;
+		return Object.assign({}, payload, { rows: payload.rows.filter(r => this._matches_search(r)) });
+	}
+
+	_on_search_change(text) {
+		this._search_text = text;
+		if (this._last_response === undefined) return;
+		if (this.tab === "summary") {
+			const include_condonation = this.ctrls.include_condonation.get_value();
+			this._render_summary(this._search_filter_rows(this._last_response), include_condonation);
+		} else if (this.tab === "weekly") {
+			this._render_weekly(this._search_filter_matrix(this._last_response));
+		} else if (this.tab === "monthly") {
+			this._render_monthly(this._search_filter_matrix(this._last_response));
+		} else {
+			this._render_daily(this._search_filter_matrix(this._last_response));
 		}
 	}
 
@@ -360,12 +442,17 @@ class AttendanceSummaryReport {
 	_render_table(columns, data, footer_text) {
 		this.$table.html(`<div class="asr-datatable-wrap"></div><div class="asr-footer"></div>`);
 		this.$table.find(".asr-footer").text(footer_text);
-		columns.forEach(c => {
+		columns.forEach((c, i) => {
 			if (c.editable === undefined) c.editable = false;
 			// "fixed" layout keeps every column at a readable minimum width and
 			// lets the wrapper scroll horizontally instead of squeezing headers
 			// into truncated garbage once condonation columns are added in.
 			if (c.width === undefined) c.width = 140;
+			// Keep the identifying column (Student ID / Student Name, always
+			// first) visible while scrolling right through weeks/months/days —
+			// otherwise a wide matrix makes it impossible to tell which row is
+			// which once you've scrolled past the first couple of columns.
+			if (i === 0 && c.sticky === undefined) c.sticky = true;
 		});
 		this._datatable = new frappe.DataTable(this.$table.find(".asr-datatable-wrap").get(0), {
 			columns,
@@ -458,6 +545,59 @@ class AttendanceSummaryReport {
 		this.$export_btn.prop("disabled", false);
 	}
 
+	/* ---------- render: Weekly tab (classic spreadsheet look) ---------- */
+
+	_render_weekly({ weeks, rows, min_pct }) {
+		this.$summary.empty();
+
+		if (!rows.length || !weeks.length) {
+			this._render_empty(__("No attendance records found"), __("Try adjusting the filters, or check that sessions have been conducted for this period."));
+			return;
+		}
+		min_pct = min_pct || 0;
+
+		this._render_legend(min_pct);
+
+		const flat_rows = rows.map(r => {
+			const flat = { student: r.student, student_id: r.student_id, student_name: r.student_name };
+			weeks.forEach(w => { flat[w.key] = r.weeks[w.key]; });
+			return flat;
+		});
+
+		const columns = [
+			{
+				id: "student_name", name: __("Student Name"),
+				format: (v, row, col, d) => {
+					const values = weeks.map(w => d[w.key]).filter(Boolean).map(c => c.percentage);
+					const row_low = values.length && (values.reduce((a, b) => a + b, 0) / values.length) < min_pct;
+					return `<div class="${row_low ? "asr-pivot-name-low" : ""}">${esc(d.student_name)}<div class="asr-pivot-subid">${esc(d.student_id)}</div></div>`;
+				},
+			},
+			...weeks.map(w => ({
+				id: w.key, name: esc(w.label), align: "center",
+				format: (v, row, col, d) => {
+					const cell = d[w.key];
+					if (!cell) return `<div class="asr-cell-muted">—</div>`;
+					const low = cell.percentage < min_pct;
+					const title = __("{0} of {1} hrs attended", [cell.attended_hours, cell.conducted_hours]);
+					return `<div class="asr-pivot-cell ${low ? "asr-pivot-low" : "asr-pivot-ok"}" title="${esc(title)}">${cell.percentage}%</div>`;
+				},
+			})),
+		];
+
+		this._render_table(columns, flat_rows, __("Showing {0} student(s) across {1} week(s)", [rows.length, weeks.length]));
+
+		this._export = {
+			headers: ["Student Name", "Student ID", ...weeks.map(w => w.label)],
+			rows: rows.map(r => [r.student_name, r.student_id, ...weeks.map(w => {
+				const c = r.weeks[w.key];
+				return c ? `${c.percentage}% (${c.attended_hours}/${c.conducted_hours} hrs)` : "";
+			})]),
+			filename: "attendance_weekly",
+		};
+		this.$export_btn.prop("disabled", false);
+	}
+
 	/* ---------- render: Monthly tab (classic spreadsheet look) ---------- */
 
 	_render_monthly({ months, rows, min_pct }) {
@@ -547,12 +687,17 @@ class AttendanceSummaryReport {
 					if (!cell) return `<div class="asr-cell-muted">—</div>`;
 					const ratio = cell.scheduled_hours ? cell.attended_hours / cell.scheduled_hours : 0;
 					const cls = ratio >= 1 ? "asr-day-full" : ratio === 0 ? "asr-day-none" : "asr-day-partial";
-					return `<div class="asr-day-cell ${cls}">${cell.attended_hours}/${cell.scheduled_hours} hrs</div>`;
+					return `<div class="asr-day-cell asr-day-cell-clickable ${cls}" data-student="${esc(data.student)}" data-date="${esc(d.key)}">${cell.attended_hours}/${cell.scheduled_hours} hrs</div>`;
 				},
 			})),
 		];
 
 		this._render_table(columns, flat_rows, __("Showing {0} student(s) across {1} day(s)", [rows.length, days.length]));
+
+		this.$table.find(".asr-day-cell-clickable").on("click", (e) => {
+			const $cell = $(e.currentTarget);
+			this._open_daily_drilldown($cell.data("student"), $cell.data("date"));
+		});
 
 		this._export = {
 			headers: ["Student Name", "Student ID", ...days.map(d => d.label)],
@@ -563,6 +708,88 @@ class AttendanceSummaryReport {
 			filename: "attendance_daily",
 		};
 		this.$export_btn.prop("disabled", false);
+	}
+
+	/* ---------- Daily tab: cell drill-down ---------- */
+
+	_open_daily_drilldown(student, date) {
+		const row = ((this._last_response && this._last_response.rows) || []).find(r => r.student === student);
+		const student_label = row ? `${row.student_name} (${row.student_id})` : student;
+
+		const dialog = new frappe.ui.Dialog({
+			title: __("{0} — {1}", [student_label, frappe.datetime.str_to_user(date)]),
+			size: "large",
+			fields: [{ fieldname: "detail_html", fieldtype: "HTML" }],
+		});
+		dialog.fields_dict.detail_html.$wrapper.html(`<div class="asr-drilldown-loading">${__("Loading...")}</div>`);
+		dialog.show();
+
+		const args = Object.assign({}, this._last_daily_filters || {}, { student, date });
+		frappe.call({
+			method: "slcm.slcm.page.attendance_summary_report.attendance_summary_report.get_daily_drilldown",
+			args,
+			callback: (r) => this._render_drilldown_dialog(dialog, r.message || []),
+			error: () => {
+				dialog.fields_dict.detail_html.$wrapper.html(
+					`<div class="asr-drilldown-error">${esc(__("Could not load session details."))}</div>`
+				);
+			},
+		});
+	}
+
+	_render_drilldown_dialog(dialog, sessions) {
+		if (!sessions.length) {
+			dialog.fields_dict.detail_html.$wrapper.html(
+				`<div class="asr-drilldown-empty">${esc(__("No sessions found for this day."))}</div>`
+			);
+			return;
+		}
+
+		const status_meta = {
+			"Present": { color: "#16a34a", bg: "#dcfce7" },
+			"Late": { color: "#d97706", bg: "#fef3c7" },
+			"Excused": { color: "#0284c7", bg: "#e0f2fe" },
+			"Absent": { color: "#dc2626", bg: "#fee2e2" },
+			"Not Marked": { color: "#64748b", bg: "#f1f5f9" },
+		};
+
+		const rows_html = sessions.map(s => {
+			const meta = status_meta[s.status] || status_meta["Not Marked"];
+			const time = (s.from_time && s.to_time) ? `${s.from_time.slice(0, 5)} - ${s.to_time.slice(0, 5)}` : "—";
+			return `<tr>
+				<td>${esc(s.course)}</td>
+				<td>${esc(time)}</td>
+				<td>${esc(s.instructor || "—")}</td>
+				<td>${esc(s.room || "—")}</td>
+				<td><span class="asr-badge" style="color:${meta.color};background:${meta.bg}">${esc(s.status)}</span></td>
+				<td>
+					<a href="#" class="asr-drilldown-link" data-session="${esc(s.session)}">${esc(__("View"))}</a>
+				</td>
+			</tr>`;
+		}).join("");
+
+		dialog.fields_dict.detail_html.$wrapper.html(`
+			<div class="asr-drilldown-table-wrap">
+				<table class="asr-drilldown-table">
+					<thead>
+						<tr>
+							<th>${__("Course")}</th>
+							<th>${__("Time")}</th>
+							<th>${__("Instructor")}</th>
+							<th>${__("Room")}</th>
+							<th>${__("Status")}</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>${rows_html}</tbody>
+				</table>
+			</div>
+		`);
+
+		dialog.fields_dict.detail_html.$wrapper.find(".asr-drilldown-link").on("click", (e) => {
+			e.preventDefault();
+			frappe.set_route("Form", "Attendance Session", $(e.currentTarget).data("session"));
+		});
 	}
 
 	/* ---------- render: shared states ---------- */
@@ -821,6 +1048,32 @@ function asr_inject_styles() {
 		.asr-tab:hover { color: #1e293b; }
 		.asr-tab.active { color: #0284c7; border-bottom-color: #0284c7; }
 
+		.asr-search-row { margin-bottom: 20px; }
+		.asr-search-box {
+			position: relative;
+			max-width: 340px;
+		}
+		.asr-search-icon {
+			position: absolute;
+			left: 12px;
+			top: 50%;
+			transform: translateY(-50%);
+			color: #94a3b8;
+			pointer-events: none;
+		}
+		.asr-search-box input {
+			width: 100%;
+			height: 38px;
+			border: 1px solid #d7dce4;
+			border-radius: 8px;
+			padding: 0 14px 0 36px;
+			font-size: 13px;
+			color: #334155;
+			outline: none;
+			transition: border-color 0.15s;
+		}
+		.asr-search-box input:focus { border-color: #0284c7; box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12); }
+
 		.asr-kpi-row {
 			display: grid;
 			grid-template-columns: repeat(4, 1fr);
@@ -951,5 +1204,33 @@ function asr_inject_styles() {
 		.asr-day-full { color: #15803d; background: #f0fdf4; }
 		.asr-day-partial { color: #b45309; background: #fffbeb; }
 		.asr-day-none { color: #dc2626; background: #fef2f2; }
+		.asr-day-cell-clickable { cursor: pointer; transition: box-shadow 0.15s; }
+		.asr-day-cell-clickable:hover { box-shadow: inset 0 0 0 2px currentColor; }
+
+		.asr-drilldown-loading, .asr-drilldown-empty, .asr-drilldown-error {
+			padding: 30px 10px;
+			text-align: center;
+			color: #64748b;
+			font-size: 13px;
+		}
+		.asr-drilldown-table-wrap { overflow-x: auto; }
+		.asr-drilldown-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+		.asr-drilldown-table th {
+			text-align: left;
+			padding: 8px 12px;
+			font-size: 11px;
+			font-weight: 700;
+			text-transform: uppercase;
+			color: #64748b;
+			border-bottom: 2px solid #e5e9f0;
+			white-space: nowrap;
+		}
+		.asr-drilldown-table td {
+			padding: 10px 12px;
+			border-bottom: 1px solid #f1f4f9;
+			color: #334155;
+			white-space: nowrap;
+		}
+		.asr-drilldown-link { color: #0284c7; font-weight: 600; }
 	</style>`).appendTo("head");
 }

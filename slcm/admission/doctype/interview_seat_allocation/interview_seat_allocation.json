@@ -25,6 +25,7 @@
   "gender",
   "entrance_test",
   "intereview",
+  "is_international_applicant",
   "section_break_isa_src",
   "source_type",
   "tab_slot",
@@ -186,6 +187,13 @@
    "fieldname": "intereview",
    "fieldtype": "Check",
    "label": "Interview",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_international_applicant",
+   "fieldtype": "Check",
+   "label": "Is International Applicant",
    "read_only": 1
   },
   {

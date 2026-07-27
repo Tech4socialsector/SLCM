@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+    <style>
+        /* Base reset for email clients */
+        body { margin: 0; padding: 0; background-color: #ffffff; font-family: 'Merriweather', serif; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse !important; }
+        img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+        
+        /* Responsive overrides */
+        @media only screen and (max-width: 600px) {
+            .container { width: 100% !important; min-width: 100% !important; }
+            .mobile-header-padding { padding: 30px 20px 15px 20px !important; }
+            .logo-img { height: 42px !important; width: auto !important; }
+            .univ-name, .campus-name { font-size: 16px !important; line-height: 1.2 !important; white-space: nowrap !important; }
+            .body-content { padding: 20px 20px !important; }
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: 'Merriweather', serif;">
+    <!-- Gmail mobile auto-shrink fix -->
+    <div style="display:none; white-space:nowrap; font:15px courier; line-height:0;">
+        &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    </div>
+
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; background-color: #ffffff; table-layout: fixed;">
+        <!-- Header Section -->
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="max-width: 600px; width: 100%;">
+                    <tr>
+                        <td style="padding: 40px 40px 15px 40px;" class="mobile-header-padding">
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%;">
+                                <tr>
+                                    <!-- Logo Cell -->
+                                    <td width="1" style="vertical-align: middle; padding-right: 20px;">
+                                        {% set inst_logo = frappe.db.get_single_value('Institution Settings', 'logo') %}
+                                        {% if inst_logo %}
+                                            <img src="{{ frappe.utils.get_url(inst_logo) }}" alt="Logo" class="logo-img" style="height: 52px; width: auto; display: block; border: 0;">
+                                        {% else %}
+                                            <div style="width: 40px; height: 40px; background-color: #f3f4f6; border-radius: 4px;"></div>
+                                        {% endif %}
+                                    </td>
+                                    <!-- Title Cell -->
+                                    <td style="vertical-align: middle; text-align: left;">
+                                        <div class="univ-name" style="font-family: 'Merriweather', serif; font-size: 20px; color: #920c24; line-height: 1.25; font-weight: 400; margin: 0; white-space: nowrap;">
+                                            National Law School of India University
+                                        </div>
+                                        <div style="border-top: 1.5px solid #920c24; margin: 5px 0; padding: 0; font-size: 0px; line-height: 0px;">&nbsp;</div>
+                                        <div class="campus-name" style="font-family: 'Merriweather', serif; font-size: 20px; color: #920c24; line-height: 1.25; font-weight: 700; margin: 0; white-space: nowrap;">
+                                            Bengaluru
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+
+        <!-- Body Section -->
+        <tr>
+            <td align="center">
+                <!-- Content Wrapper -->
+                <table width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="max-width: 600px; width: 100%;">
+                    <!-- Body Content -->
+                    <tr>
+                        <td class="body-content" style="padding: 20px 40px 40px 40px; font-family: 'Merriweather', serif; font-size: 16px; line-height: 1.6; color: #333333;">
+<p>Dear {{ candidate_name }},</p>
+
+        <p>
+            We acknowledge receipt of your application to
+            <strong>{{ institution_name }}</strong> for the
+            <strong>{{ program }}</strong> programme
+            for the admission cycle <strong>{{ admission_cycle }}</strong>.
+        </p>
+
+        <div style="background-color: #f9f9f9; padding: 20px; border-radius: 4px; margin: 20px 0; border: 1px solid #eeeeee;">
+            <strong style="display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #666666; margin-bottom: 6px;">Your Application Reference</strong>
+            <span style="font-size: 17px; font-weight: bold; color: #920c24; letter-spacing: 0.04em;">{{ applicant_id }}</span>
+            <span style="font-size: 12px; color: #555555; margin-top: 4px; display: block;">
+                Please quote this reference in all correspondence with the Admissions Office.
+            </span>
+        </div>
+
+        <p>
+            Your completed application form is attached to this email as a PDF.
+            Please retain it for your records.
+        </p>
+
+        <div style="font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.06em; color: #555555; border-bottom: 1px solid #dddddd; padding-bottom: 6px; margin: 28px 0 14px 0;">What happens next</div>
+        <ul style="margin: 0; padding: 0; list-style: none;">
+            <li style="margin-bottom: 12px; font-size: 13px;">
+                <span style="font-weight: bold; color: #920c24; margin-right: 8px;">1.</span>
+                <span>Your application will be reviewed for eligibility. You will be notified by email if any documents or information are required.</span>
+            </li>
+            <li style="margin-bottom: 12px; font-size: 13px;">
+                <span style="font-weight: bold; color: #920c24; margin-right: 8px;">2.</span>
+                <span>Shortlisted candidates will receive details regarding the entrance test or interview, as applicable to your programme.</span>
+            </li>
+            <li style="margin-bottom: 12px; font-size: 13px;">
+                <span style="font-weight: bold; color: #920c24; margin-right: 8px;">3.</span>
+                <span>Admit card and examination schedule details will be communicated to eligible candidates in due course.</span>
+            </li>
+            <li style="margin-bottom: 12px; font-size: 13px;">
+                <span style="font-weight: bold; color: #920c24; margin-right: 8px;">4.</span>
+                <span>You may track the status of your application and complete any pending actions by logging into the admission portal.</span>
+            </li>
+        </ul>
+
+        <p style="text-align: center; margin: 30px 0;">
+            <a href="{{ admission_portal_url }}" style="background-color: #920c24; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">Track Your Application</a>
+        </p>
+
+        <div style="background: transparent; border-bottom: 1px solid #eee; padding: 11px 16px; font-size: 13px; color: #4a3c00; margin: 24px 0 0 0;">
+            <strong>Note:</strong> Please check your spam or promotions folder if you do not receive further communications. Keep your original documents ready for verification when requested.
+        </div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

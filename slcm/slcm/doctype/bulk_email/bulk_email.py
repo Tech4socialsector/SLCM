@@ -180,6 +180,9 @@ def _send_emails(doc, is_resend=False):
                 failed += 1
                 
             row.db_update()
+            doc.db_set("sent_count", sent)
+            doc.db_set("failed_count", failed)
+            frappe.db.commit()
             
             frappe.publish_realtime("bulk_email_progress", {
                 "bulk_email": doc.name,

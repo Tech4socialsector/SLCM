@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+    <style>
+        /* Base reset for email clients */
+        body { margin: 0; padding: 0; background-color: #ffffff; font-family: 'Merriweather', serif; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse !important; }
+        img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+        
+        /* Responsive overrides */
+        @media only screen and (max-width: 600px) {
+            .container { width: 100% !important; min-width: 100% !important; }
+            .mobile-header-padding { padding: 30px 20px 15px 20px !important; }
+            .logo-img { height: 42px !important; width: auto !important; }
+            .univ-name, .campus-name { font-size: 16px !important; line-height: 1.2 !important; white-space: nowrap !important; }
+            .body-content { padding: 20px 20px !important; }
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: 'Merriweather', serif;">
+    <!-- Gmail mobile auto-shrink fix -->
+    <div style="display:none; white-space:nowrap; font:15px courier; line-height:0;">
+        &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    </div>
+
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; background-color: #ffffff; table-layout: fixed;">
+        <!-- Header Section -->
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="max-width: 600px; width: 100%;">
+                    <tr>
+                        <td style="padding: 40px 40px 15px 40px;" class="mobile-header-padding">
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%;">
+                                <tr>
+                                    <!-- Logo Cell -->
+                                    <td width="1" style="vertical-align: middle; padding-right: 20px;">
+                                        {% set inst_logo = frappe.db.get_single_value('Institution Settings', 'logo') %}
+                                        {% if inst_logo %}
+                                            <img src="{{ frappe.utils.get_url(inst_logo) }}" alt="Logo" class="logo-img" style="height: 52px; width: auto; display: block; border: 0;">
+                                        {% else %}
+                                            <div style="width: 40px; height: 40px; background-color: #f3f4f6; border-radius: 4px;"></div>
+                                        {% endif %}
+                                    </td>
+                                    <!-- Title Cell -->
+                                    <td style="vertical-align: middle; text-align: left;">
+                                        <div class="univ-name" style="font-family: 'Merriweather', serif; font-size: 20px; color: #920c24; line-height: 1.25; font-weight: 400; margin: 0; white-space: nowrap;">
+                                            National Law School of India University
+                                        </div>
+                                        <div style="border-top: 1.5px solid #920c24; margin: 5px 0; padding: 0; font-size: 0px; line-height: 0px;">&nbsp;</div>
+                                        <div class="campus-name" style="font-family: 'Merriweather', serif; font-size: 20px; color: #920c24; line-height: 1.25; font-weight: 700; margin: 0; white-space: nowrap;">
+                                            Bengaluru
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+
+        <!-- Body Section -->
+        <tr>
+            <td align="center">
+                <!-- Content Wrapper -->
+                <table width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="max-width: 600px; width: 100%;">
+                    <!-- Body Content -->
+                    <tr>
+                        <td class="body-content" style="padding: 20px 40px 40px 40px; font-family: 'Merriweather', serif; font-size: 16px; line-height: 1.6; color: #333333;">
+<p>Dear {{ doc.candidate_name or doc.applicant }},</p>
+    
+    <p>Greetings from the Admissions Office.</p>
+    
+    <p>We would like to inform you that the results of your admission interview have been officially processed. Your performance details are provided below for your reference.</p>
+    
+    <div style="padding: 20px; margin: 20px 0; border-bottom: 1px solid #eee;">
+        <h3 style="margin-top: 0; color: #920c24;">Applicant Details:</h3>
+        <p style="margin: 0;"><strong>Applicant ID:</strong> {{ doc.applicant }}</p>
+        <p style="margin: 0;"><strong>Interview Session:</strong> {{ doc.interview_list or '—' }}</p>
+        <p style="margin: 0;"><strong>Status:</strong> {{ doc.interview_result_status or doc.interview_status or "Processed" }}</p>
+    </div>
+
+    {% if doc.interview_status == "Absent" %}
+        <div style="padding: 20px; margin: 20px 0; border-bottom: 1px solid #eee;">
+            <p style="margin: 0; color: #d73a49;"><strong>Notice: Interview Absence</strong></p>
+            <p style="margin: 5px 0 0 0; color: #333;">Our records indicate that you were marked as absent for this interview session. As no evaluation was recorded, the status has been updated accordingly.</p>
+        </div>
+    {% endif %}
+    
+    <p>You may access your detailed interview evaluation and status by logging into the admission portal using the link provided below.</p>
+    
+    <p style="text-align: center; margin: 30px 0;">
+        <a href="{{ portal_url }}" style="background-color: #920c24; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">View Interview Result</a>
+    </p>
+    
+    <p>Please note that further updates regarding your admission status or next steps will be communicated to you in due course.</p>
+    
+    <p>If you require any clarification or assistance, please feel free to contact the Admissions Office.</p>
+    
+    <p>We appreciate your participation in the interview process and wish you the very best.</p>
+
+    <p>Regards,<br>
+    <strong>Admissions Team</strong><br>
+    National Law School of India University</p>
+
+    <hr style="border-top: 1px solid #e5e7eb; margin: 20px 0; border-bottom: 1px solid #eee;">
+    <p style="font-size: 12px; color: #777;">This is an automated message. Please do not reply to this email.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
