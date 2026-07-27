@@ -10,6 +10,8 @@
   "first_name",
   "last_name",
   "email",
+  "official_email_id",
+  "auto_create_user",
   "phone",
   "department",
   "designation",
@@ -62,6 +64,23 @@
    "label": "Email",
    "options": "Email",
    "reqd": 1
+  },
+  {
+   "description": "Institutional email (e.g. Google Workspace account) used for portal login. Separate from the Email field above, which may be a personal contact address. Google OAuth sign-in is matched against this field.",
+   "fieldname": "official_email_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Official Email ID",
+   "options": "Email",
+   "unique": 1
+  },
+  {
+   "default": "0",
+   "description": "When checked (and saved by a System Manager), a Frappe User account is automatically created for the Official Email ID above, with the slcm_Faculty role and Website User access — so this faculty member can sign in to the Faculty Portal via Google immediately, without a separate manual User setup step.",
+   "fieldname": "auto_create_user",
+   "fieldtype": "Check",
+   "label": "Auto Create User"
   },
   {
    "fieldname": "phone",

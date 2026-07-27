@@ -426,7 +426,11 @@ before_request = [
     "slcm.admission.portal_application_web_form.slcm_before_request"
 ]
 on_logout = "slcm.utils.auth_routing.handle_logout"
-on_session_creation = ["slcm.utils.auth_routing.enforce_student_google_login"]
+on_session_creation = [
+    "slcm.utils.auth_routing.enforce_faculty_google_login",
+    "slcm.utils.auth_routing.enforce_parent_google_login",
+    "slcm.utils.auth_routing.enforce_student_google_login",
+]
 # after_request = ["slcm.utils.after_request"]
 
 # Job Events
