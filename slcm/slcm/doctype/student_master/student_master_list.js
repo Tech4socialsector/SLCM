@@ -748,9 +748,9 @@ function render_auto_generate_dialog(listview, options) {
 		size: "large",
 		fields: [
 			{ fieldtype: "Select", fieldname: "programme", label: __("Programme"), options: [], reqd: 1 },
-			{ fieldtype: "Select", fieldname: "academic_year", label: __("Academic Year"), options: [], reqd: 1 },
 			{ fieldtype: "Column Break" },
-			{ fieldtype: "Select", fieldname: "term_name", label: __("Term"), options: [], reqd: 1 },
+			{ fieldtype: "Select", fieldname: "academic_year", label: __("Academic Year"), options: [], reqd: 1 },
+			{ fieldtype: "Section Break" },
 			{ fieldtype: "Button", fieldname: "load_preview", label: __("Show Students") },
 			{ fieldtype: "Section Break" },
 			{ fieldtype: "HTML", fieldname: "preview_html" },
