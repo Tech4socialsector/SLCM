@@ -43,7 +43,7 @@ def _as_list(value):
 
 
 def _resolve_offerings_and_roster(academic_year=None, term=None, programme=None,
-	course=None, batch=None, section=None):
+	course=None, batch=None, section=None, student=None):
 	"""Shared first step for every view on this page: build the Course
 	Offering filter from whichever params were passed, apply faculty
 	role-scoping, then resolve the actual student roster (via Student
@@ -63,6 +63,7 @@ def _resolve_offerings_and_roster(academic_year=None, term=None, programme=None,
 	courses = _as_list(course)
 	batches = _as_list(batch)
 	sections = _as_list(section)
+	students = _as_list(student)
 
 	co_filters = {}
 	if academic_years:
@@ -110,7 +111,11 @@ def _resolve_offerings_and_roster(academic_year=None, term=None, programme=None,
 
 	offering_names = [o.name for o in offerings]
 
-	roster = frappe.db.sql("""
+	student_clause = ""
+	if students:
+		student_clause = "AND se.student IN %(students)s"
+
+	roster = frappe.db.sql(f"""
 		SELECT sec.course_offering, se.student, se.section, s.first_name, s.last_name,
 			s.registration_id
 		FROM `tabStudent Enrollment` se
@@ -118,7 +123,8 @@ def _resolve_offerings_and_roster(academic_year=None, term=None, programme=None,
 		JOIN `tabStudent Master` s ON s.name = se.student
 		WHERE sec.course_offering IN %(offerings)s
 		AND sec.status = 'Enrolled' AND se.status = 'Enrolled'
-	""", {"offerings": offering_names}, as_dict=True)
+		{student_clause}
+	""", {"offerings": offering_names, "students": students}, as_dict=True)
 
 	return offerings, roster
 
@@ -181,7 +187,7 @@ def _condonation_by_student_offering(offering_names, students):
 
 @frappe.whitelist()
 def get_data(academic_year=None, term=None, programme=None, course=None, batch=None,
-	section=None, include_condonation=None):
+	section=None, student=None, include_condonation=None):
 	"""Read-only, batched attendance summary — recomputed fresh from
 	Time Table (scheduled), Attendance Session (conducted), and
 	Student Attendance ⋈ Attendance Session (attended). Does not read or
@@ -194,7 +200,7 @@ def get_data(academic_year=None, term=None, programme=None, course=None, batch=N
 	since both are drawn from the same pool of conducted session durations.
 	"""
 	offerings, roster = _resolve_offerings_and_roster(
-		academic_year, term, programme, course, batch, section
+		academic_year, term, programme, course, batch, section, student
 	)
 	if not offerings or not roster:
 		return []
@@ -314,12 +320,13 @@ def get_data(academic_year=None, term=None, programme=None, course=None, batch=N
 
 
 @frappe.whitelist()
-def get_monthly_matrix(academic_year=None, term=None, programme=None, course=None, batch=None, section=None):
+def get_monthly_matrix(academic_year=None, term=None, programme=None, course=None, batch=None,
+	section=None, student=None):
 	"""Students × calendar-month matrix. Each cell is that student's
 	attendance % for that month, using the same attended/conducted hours
 	definition as get_data(), just grouped by month instead of totalled."""
 	offerings, roster = _resolve_offerings_and_roster(
-		academic_year, term, programme, course, batch, section
+		academic_year, term, programme, course, batch, section, student
 	)
 	if not offerings or not roster:
 		return {"months": [], "rows": []}
@@ -400,12 +407,110 @@ def get_monthly_matrix(academic_year=None, term=None, programme=None, course=Non
 	return {"months": month_labels, "rows": rows, "min_pct": min_pct}
 
 
+@frappe.whitelist()
+def get_weekly_matrix(academic_year=None, term=None, programme=None, course=None, batch=None,
+	section=None, student=None):
+	"""Students × week matrix. Each cell is that student's attendance % for
+	that week, using the same attended/conducted hours definition as
+	get_data(), just grouped by week instead of totalled.
+
+	Weeks run Monday-Sunday (Sunday is the institution's mandatory weekly
+	off — see Institutional Calendar's DEFAULT_WEEKLY_OFF_DAYS — so a week
+	is labeled/anchored by its Monday rather than MySQL's default
+	Sunday-starts-the-week convention, which would otherwise split the
+	teaching week across two columns)."""
+	offerings, roster = _resolve_offerings_and_roster(
+		academic_year, term, programme, course, batch, section, student
+	)
+	if not offerings or not roster:
+		return {"weeks": [], "rows": []}
+
+	offering_names = [o.name for o in offerings]
+	students = list({r.student for r in roster})
+	student_offerings = _student_offerings_map(roster)
+	student_name_by_id = {
+		r.student: " ".join(filter(None, [r.first_name, r.last_name])) or r.student
+		for r in roster
+	}
+	student_id_by_id = {r.student: r.registration_id or r.student for r in roster}
+
+	# WEEKDAY() is 0=Monday..6=Sunday, so subtracting it from the date always
+	# lands on that date's Monday regardless of MySQL's default week-start.
+	conducted = frappe.db.sql("""
+		SELECT course_offering,
+			DATE_SUB(session_date, INTERVAL WEEKDAY(session_date) DAY) as week_start,
+			SUM(COALESCE(duration_hours, 0)) as hours
+		FROM `tabAttendance Session`
+		WHERE course_offering IN %(offerings)s
+		AND session_status = 'Conducted'
+		AND session_type IN ('Lecture', 'Tutorial')
+		GROUP BY course_offering, week_start
+	""", {"offerings": offering_names}, as_dict=True)
+	conducted_by_offering_week = {}
+	all_weeks = set()
+	for r in conducted:
+		wk = str(r.week_start)
+		conducted_by_offering_week[(r.course_offering, wk)] = r.hours or 0
+		all_weeks.add(wk)
+
+	attended = frappe.db.sql("""
+		SELECT ats.course_offering as course_offering, sa.student,
+			DATE_SUB(ats.session_date, INTERVAL WEEKDAY(ats.session_date) DAY) as week_start,
+			SUM(ats.duration_hours) as hours
+		FROM `tabStudent Attendance` sa
+		JOIN `tabAttendance Session` ats ON ats.name = sa.attendance_session
+		WHERE ats.course_offering IN %(offerings)s AND sa.student IN %(students)s
+		AND sa.status IN ('Present', 'Late', 'Excused')
+		AND ats.session_status = 'Conducted'
+		AND ats.session_type IN ('Lecture', 'Tutorial')
+		AND sa.docstatus < 2
+		GROUP BY ats.course_offering, sa.student, week_start
+	""", {"offerings": offering_names, "students": students}, as_dict=True)
+	attended_by_offering_student_week = {
+		(r.course_offering, r.student, str(r.week_start)): r.hours or 0 for r in attended
+	}
+
+	weeks = sorted(all_weeks)
+
+	min_pct = frappe.db.get_single_value("Attendance Settings", "minimum_attendance_percentage") or 0
+
+	rows = []
+	for student in students:
+		own_offerings = student_offerings.get(student, set())
+		week_data = {}
+		for wk in weeks:
+			conducted_hours = sum(
+				conducted_by_offering_week.get((off, wk), 0) for off in own_offerings
+			)
+			attended_hours = sum(
+				attended_by_offering_student_week.get((off, student, wk), 0) for off in own_offerings
+			)
+			pct = round((attended_hours / conducted_hours * 100), 2) if conducted_hours else None
+			week_data[wk] = None if pct is None else {
+				"percentage": pct,
+				"conducted_hours": round(conducted_hours, 2),
+				"attended_hours": round(attended_hours, 2),
+			}
+
+		rows.append({
+			"student": student,
+			"student_id": student_id_by_id.get(student, student),
+			"student_name": student_name_by_id.get(student, student),
+			"weeks": week_data,
+		})
+
+	rows.sort(key=lambda r: r["student_name"] or "")
+
+	week_labels = [{"key": wk, "label": _format_week_label(wk)} for wk in weeks]
+	return {"weeks": week_labels, "rows": rows, "min_pct": min_pct}
+
+
 MAX_DAILY_RANGE = 62  # ~2 months, keeps the register table a reasonable width
 
 
 @frappe.whitelist()
 def get_daily_matrix(academic_year=None, term=None, programme=None, course=None, batch=None,
-	section=None, from_date=None, to_date=None):
+	section=None, student=None, from_date=None, to_date=None):
 	"""Students × day matrix for a custom date range, showing EVERY day in
 	that range (like a manual attendance register) — not just days that had
 	a class. Days with no conducted session for a student's own offering are
@@ -429,7 +534,7 @@ def get_daily_matrix(academic_year=None, term=None, programme=None, course=None,
 		d = frappe.utils.add_days(d, 1)
 
 	offerings, roster = _resolve_offerings_and_roster(
-		academic_year, term, programme, course, batch, section
+		academic_year, term, programme, course, batch, section, student
 	)
 	if not offerings or not roster:
 		return {"days": [], "rows": []}
@@ -512,6 +617,87 @@ def _format_month_label(ym):
 	return f"{calendar.month_abbr[int(month)]} {year}"
 
 
+@frappe.whitelist()
+def get_daily_drilldown(student, date, academic_year=None, term=None, programme=None,
+	course=None, batch=None, section=None):
+	"""Per-session detail for one student on one day, used by the Daily tab's
+	cell drill-down. Re-applies the same filters (and therefore the same
+	faculty/role scoping) as get_daily_matrix so a faculty member can't pull
+	up detail for a student/offering outside what they're permitted to see,
+	then further restricts to just that one student's own enrolled
+	offering(s) — never every offering the page-level filters matched."""
+	if not student or not date:
+		frappe.throw(frappe._("Student and Date are required"))
+
+	target_date = getdate(date)
+
+	offerings, roster = _resolve_offerings_and_roster(
+		academic_year, term, programme, course, batch, section
+	)
+	if not offerings or not roster:
+		return []
+
+	student_offerings = _student_offerings_map(roster)
+	own_offerings = student_offerings.get(student)
+	if not own_offerings:
+		# Either the student isn't in the roster this filter combination
+		# resolves to, or isn't enrolled in any matching offering — either
+		# way there is nothing this caller is entitled to see for them.
+		return []
+
+	course_title_by_offering = {o.name: o.course_title for o in offerings}
+
+	sessions = frappe.db.sql("""
+		SELECT ats.name, ats.course_offering, ats.session_start_time, ats.session_end_time,
+			ats.instructor, ats.room, ats.duration_hours,
+			sa.status, sa.remarks, sa.in_time, sa.out_time
+		FROM `tabAttendance Session` ats
+		LEFT JOIN `tabStudent Attendance` sa
+			ON sa.attendance_session = ats.name AND sa.student = %(student)s AND sa.docstatus < 2
+		WHERE ats.course_offering IN %(offerings)s
+		AND ats.session_status = 'Conducted'
+		AND ats.session_type IN ('Lecture', 'Tutorial')
+		AND ats.session_date = %(date)s
+		ORDER BY ats.session_start_time
+	""", {
+		"student": student,
+		"offerings": list(own_offerings),
+		"date": target_date,
+	}, as_dict=True)
+
+	instructor_names = {s.instructor for s in sessions if s.instructor}
+	faculty_name_by_id = {}
+	if instructor_names:
+		faculty_name_by_id = {
+			str(f.name): " ".join(filter(None, [f.first_name, f.last_name]))
+			for f in frappe.get_all(
+				"Faculty", filters={"name": ["in", list(instructor_names)]},
+				fields=["name", "first_name", "last_name"],
+			)
+		}
+
+	return [{
+		"session": s.name,
+		"course": course_title_by_offering.get(s.course_offering, s.course_offering),
+		"from_time": str(s.session_start_time) if s.session_start_time else None,
+		"to_time": str(s.session_end_time) if s.session_end_time else None,
+		"instructor": faculty_name_by_id.get(s.instructor, s.instructor),
+		"room": s.room,
+		"duration_hours": s.duration_hours,
+		"status": s.status or "Not Marked",
+		"remarks": s.remarks,
+	} for s in sessions]
+
+
 def _format_day_label(date_str):
 	d = getdate(date_str)
 	return f"{d.day} {calendar.month_abbr[d.month]}"
+
+
+def _format_week_label(week_start_str):
+	"""e.g. '6 - 12 Jul' or '30 Jun - 6 Jul' when the week spans a month boundary."""
+	start = getdate(week_start_str)
+	end = frappe.utils.add_days(start, 6)
+	if start.month == end.month:
+		return f"{start.day} - {end.day} {calendar.month_abbr[start.month]}"
+	return f"{start.day} {calendar.month_abbr[start.month]} - {end.day} {calendar.month_abbr[end.month]}"

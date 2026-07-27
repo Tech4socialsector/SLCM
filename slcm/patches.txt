@@ -39,3 +39,4 @@ slcm.patches.v2_0.set_web_form_field_label_max_length
 slcm.patches.v2_0.update_parent_portal_sidebar_colours
 slcm.patches.v2_0.backfill_batch_enrolled_count
 slcm.patches.v2_0.consolidate_attendance_edit_log_from_stash
+slcm.patches.v2_0.merge_condonation_config_into_attendance_settings

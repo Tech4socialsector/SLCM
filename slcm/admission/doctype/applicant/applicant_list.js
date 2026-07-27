@@ -321,5 +321,21 @@ frappe.listview_settings['Applicant'] = {
 			});
 			d.show();
 		});
+
+		listview.page.add_inner_button(__("Bulk Email"), function () {
+			let docnames = listview.get_checked_items(true);
+			if (!docnames || docnames.length === 0) {
+				frappe.msgprint(__("Please select at least one applicant."));
+				return;
+			}
+			if (typeof docnames[0] !== 'string') {
+				docnames = docnames.map(i => i.name);
+			}
+			if (typeof slcm !== 'undefined' && slcm.show_bulk_email_dialog) {
+				slcm.show_bulk_email_dialog("Applicant", docnames, listview);
+			} else {
+				frappe.msgprint(__("Bulk email module not loaded properly. Please refresh the page."));
+			}
+		});
 	},
 };

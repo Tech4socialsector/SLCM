@@ -395,16 +395,7 @@ frappe.ui.form.on("Applicant", {
         frm.toggle_reqd("percentage", !!frm.doc.national_test_name);
     },
 
-    // ── DECLARATION UNDERTAKING ──────────────
-    declaration_undertaking: function (frm) {
-        if (!frm.doc.declaration_undertaking) {
-            frappe.msgprint({
-                title: __("Declaration Required"),
-                indicator: "orange",
-                message: __("You must accept the Declaration & Undertaking to submit.")
-            });
-        }
-    },
+
 
     // ── HSC PERCENTAGE ───────────────────────
     hsc_percentage: function (frm) {

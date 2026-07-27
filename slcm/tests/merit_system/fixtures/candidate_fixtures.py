@@ -29,17 +29,38 @@ class MockDoc:
     def get(self, key, default=None):
         return getattr(self, key, default)
 
+    def db_set(self, fieldname, value, *args, **kwargs):
+        setattr(self, fieldname, value)
+
+    def db_insert(self, *args, **kwargs):
+        from slcm.tests.merit_system.fixtures.candidate_fixtures import mock_doc_registry
+        if hasattr(self, "name") and self.name:
+            mock_doc_registry[self.name] = self
+
+    def add_comment(self, *args, **kwargs):
+        return None
+
     def __getattr__(self, name):
-        if name in ("part_a_total_marks_scored",):
+
+        if name in self.__dict__:
+            return self.__dict__[name]
+        if name in ("part_a_total_marks_scored", "part_b_total_marks_scored"):
+            if name in self.__dict__:
+                return self.__dict__[name]
             app_key = f"Applicant-{self.name}"
             from slcm.tests.merit_system.fixtures.candidate_fixtures import mock_doc_registry
             if app_key in mock_doc_registry:
-                return getattr(mock_doc_registry[app_key], "et_part_a_total_marks_scored", 100.0)
-            return 100.0
+                prop = "et_part_a_total_marks_scored" if "part_a" in name else "et_part_b_total_marks_scored"
+                if hasattr(mock_doc_registry[app_key], prop):
+                    return getattr(mock_doc_registry[app_key], prop)
+            return 100.0 if "part_a" in name else 40.0
+
+
+
         if name.endswith("_list"):
             self.__dict__[name] = []
             return self.__dict__[name]
-        if name in ("waitlist_seats", "compartmentalized_waitlist_seats", "min_percentile", "priority"):
+        if name in ("waitlist_seats", "compartmentalized_waitlist_seats", "min_percentile", "priority", "seats", "shortlisting_target"):
             return 0
         if name in ("compartmentalized_category",):
             return ""

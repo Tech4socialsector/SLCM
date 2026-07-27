@@ -1,8 +1,8 @@
 {
  "app": "slcm",
  "charts": [],
- "content": "[{\"id\":\"0WcaoNmjBn\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">MSA Overview</span>\",\"col\":12}},{\"id\":\"MsR5cSvJ6W\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Shortlisted Merit Lists\",\"col\":3}},{\"id\":\"zkHoeRPN0M\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit List\",\"col\":3}},{\"id\":\"2m0Ije2OHl\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Seat Allocation\",\"col\":3}},{\"id\":\"WUc1ICGUOz\",\"type\":\"card\",\"data\":{\"card_name\":\"Merit \",\"col\":4}},{\"id\":\"2nFwcalWX_\",\"type\":\"card\",\"data\":{\"card_name\":\"Seat Allocation\",\"col\":4}},{\"id\":\"Uv0kebi4uV\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"1REulgiGgO\",\"type\":\"card\",\"data\":{\"card_name\":\"Setup\",\"col\":4}},{\"id\":\"vEO09THmKr\",\"type\":\"card\",\"data\":{\"card_name\":\"Logs\",\"col\":4}},{\"id\":\"ue_oanO0PA\",\"type\":\"card\",\"data\":{\"card_name\":\"page\",\"col\":4}}]",
- "creation": "2026-07-23 09:32:36.219499",
+ "content": "[{\"id\":\"0WcaoNmjBn\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">MSA Overview</span>\",\"col\":12}},{\"id\":\"Gsf6Z7kRHI\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Reservation policy\",\"col\":3}},{\"id\":\"MsR5cSvJ6W\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Shortlisted Merit Lists\",\"col\":3}},{\"id\":\"zkHoeRPN0M\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit List\",\"col\":3}},{\"id\":\"2m0Ije2OHl\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Seat Allocation\",\"col\":3}},{\"id\":\"WUc1ICGUOz\",\"type\":\"card\",\"data\":{\"card_name\":\"Merit \",\"col\":4}},{\"id\":\"2nFwcalWX_\",\"type\":\"card\",\"data\":{\"card_name\":\"Seat Allocation\",\"col\":4}},{\"id\":\"Uv0kebi4uV\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"1REulgiGgO\",\"type\":\"card\",\"data\":{\"card_name\":\"Setup\",\"col\":4}},{\"id\":\"vEO09THmKr\",\"type\":\"card\",\"data\":{\"card_name\":\"Logs\",\"col\":4}},{\"id\":\"ue_oanO0PA\",\"type\":\"card\",\"data\":{\"card_name\":\"page\",\"col\":4}}]",
+ "creation": "2026-07-27 15:10:36.767476",
  "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
@@ -211,7 +211,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-07-23 09:34:15.704648",
+ "modified": "2026-07-27 16:25:46.051077",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "MSA",
@@ -219,6 +219,10 @@
   {
    "label": "Shortlisted Merit Lists",
    "number_card_name": "Shortlisted Merit Lists"
+  },
+  {
+   "label": "Reservation policy",
+   "number_card_name": "Resrvation Policy"
   },
   {
    "label": "Merit List",
