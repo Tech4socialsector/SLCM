@@ -180,7 +180,7 @@ def get_session_students(session_name):
         student_doc = frappe.db.get_value(
             "Student Master",
             row.student,
-            ["first_name", "last_name", "registration_id"],
+            ["first_name", "last_name", "registration_id", "passport_size_photo"],
             as_dict=True,
         ) or frappe._dict()
         full_name = " ".join(filter(None, [student_doc.get("first_name"), student_doc.get("last_name")]))
@@ -190,6 +190,7 @@ def get_session_students(session_name):
             "student": row.student,
             "student_name": full_name or row.student,
             "reg_id": student_doc.get("registration_id") or row.student,
+            "student_image": student_doc.get("passport_size_photo"),
             "status": row.status or "Absent",
             "source": (att.source if att else None) or "—",
             "type_label": _attendance_type_label(att.source if att else None) if att else "Not marked",

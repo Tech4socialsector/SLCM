@@ -444,7 +444,11 @@ before_request = [
     "slcm.admission.portal_application_web_form.slcm_before_request"
 ]
 on_logout = "slcm.utils.auth_routing.handle_logout"
-on_session_creation = ["slcm.utils.auth_routing.enforce_student_google_login"]
+on_session_creation = [
+    "slcm.utils.auth_routing.enforce_faculty_google_login",
+    "slcm.utils.auth_routing.enforce_parent_google_login",
+    "slcm.utils.auth_routing.enforce_student_google_login",
+]
 # after_request = ["slcm.utils.after_request"]
 
 # Job Events
@@ -561,7 +565,11 @@ scheduler_events = {
 		# Fee Management — daily automation
 		"slcm.slcm.fee.scheduler.mark_overdue_demands",
 		"slcm.slcm.fee.scheduler.send_due_reminders",
-		"slcm.slcm.fee.scheduler.check_phd_year_transition"
+		"slcm.slcm.fee.scheduler.check_phd_year_transition",
+		# Attendance Condonation — auto-reject applications below the attendance
+		# floor once their Academic Term has ended (see programme_chair_decision,
+		# which no longer checks this at approval time).
+		"slcm.slcm.doctype.student_attendance_condonation.student_attendance_condonation.auto_reject_below_attendance_floor",
 	]
 }
 

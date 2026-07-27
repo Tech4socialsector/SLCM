@@ -56,6 +56,73 @@ frappe.ui.form.on('Bulk Email', {
                 </div>`
             );
         }
+
+        if (frm.doc.reference_doctype && !frm.doc.__islocal && (frm.doc.status === 'Queued' || frm.doc.status === 'Partial' || frm.doc.status === 'Error')) {
+            let last_focused = 'subject';
+            frm.fields_dict.subject.$input.on('focus', () => { last_focused = 'subject'; });
+            
+            setTimeout(() => {
+                if (frm.fields_dict.message && frm.fields_dict.message.quill) {
+                    frm.fields_dict.message.quill.root.addEventListener('focus', () => { last_focused = 'message'; });
+                }
+            }, 500);
+
+            frappe.call({
+                method: "slcm.slcm.doctype.bulk_email.bulk_email.get_available_fields",
+                args: { reference_doctype: frm.doc.reference_doctype },
+                callback: function (r) {
+                    if (r.message) {
+                        let chips_html = r.message.map(f => 
+                            `<div class="btn btn-default btn-xs placeholder-chip" data-fieldname="${f.fieldname}" style="margin: 0 5px 5px 0; cursor: pointer;" title="Insert {{ ${f.fieldname} }}">
+                                <span>{{ ${f.fieldname} }}</span><br>
+                                <small class="text-muted" style="font-size: 10px;">${f.label}</small>
+                            </div>`
+                        ).join('');
+                        
+                        let panel_html = `
+                            <div style="border: 1px solid #dfdff0; border-radius: 4px; padding: 10px; background-color: #fafbfc; max-height: 150px; overflow-y: auto;">
+                                ${chips_html}
+                            </div>
+                        `;
+                        frm.fields_dict.placeholders_html.$wrapper.html(panel_html);
+
+                        frm.fields_dict.placeholders_html.$wrapper.find('.placeholder-chip').on('click', function() {
+                            let fieldname = $(this).data('fieldname');
+                            let text_to_insert = `{{ ${fieldname} }}`;
+                            
+                            if (frm.doc.use_html) {
+                                last_focused = 'message_html';
+                            }
+
+                            if (last_focused === 'subject') {
+                                let input = frm.fields_dict.subject.$input.get(0);
+                                let start = input.selectionStart;
+                                let end = input.selectionEnd;
+                                let val = input.value;
+                                input.value = val.slice(0, start) + text_to_insert + val.slice(end);
+                                input.selectionStart = input.selectionEnd = start + text_to_insert.length;
+                                input.focus();
+                                frm.set_value('subject', input.value);
+                            } else if (last_focused === 'message') {
+                                let quill = frm.fields_dict.message.quill;
+                                if (quill) {
+                                    let range = quill.getSelection(true);
+                                    let index = range ? range.index : 0;
+                                    quill.insertText(index, text_to_insert);
+                                    quill.setSelection(index + text_to_insert.length);
+                                }
+                            } else if (last_focused === 'message_html') {
+                                let cm = frm.fields_dict.message_html.editor;
+                                if (cm) {
+                                    cm.replaceSelection(text_to_insert);
+                                    cm.focus();
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+        }
     },
 
     use_html: function(frm) {
