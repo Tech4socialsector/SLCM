@@ -118,16 +118,6 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    .lp-support { margin-top: 40px; }
-    .lp-support-title { font-size: 10px; font-weight: 700; letter-spacing: .12em;
-                        color: #3a3d43; margin-bottom: 14px; }
-    .lp-support-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .lp-support-link {
-      display: flex; align-items: center; gap: 7px;
-      font-size: 12.5px; color: var(--primary); text-decoration: none;
-    }
-    .lp-support-link .material-symbols-outlined { font-size: 17px; }
-
     .lp-right { flex: 1; position: relative; overflow: hidden; background: #0d1b2a; }
     .lp-right-overlay {
       position: absolute; inset: 0;
@@ -176,7 +166,7 @@
       .lp-right { display: none; }
     }
     @media (max-width: 600px) { .lp-left { padding: 36px 24px; max-width: 100%; } }
-    @media (max-width: 480px) { .lp-left { padding: 28px 16px; } .lp-support-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 480px) { .lp-left { padding: 28px 16px; } }
     @media (min-width: 1400px) { .lp-left { width: 520px; flex: 0 0 520px; padding: 60px 56px; } }
   </style>
 </head>
@@ -287,19 +277,6 @@
       </p>
     </div>
 
-    <div class="lp-support">
-      <div class="lp-support-title">Support &amp; Links</div>
-      <div class="lp-support-grid">
-        <a href="/parent-portal" class="lp-support-link">
-          <span class="material-symbols-outlined">help_outline</span>
-          Help &amp; Support
-        </a>
-        <a href="/parent-portal" class="lp-support-link">
-          <span class="material-symbols-outlined">dashboard</span>
-          Parent Portal
-        </a>
-      </div>
-    </div>
   </div>
 
   <!-- RIGHT -->

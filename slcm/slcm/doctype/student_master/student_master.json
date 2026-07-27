@@ -488,7 +488,7 @@
   {
    "fieldname": "program_mapping_section",
    "fieldtype": "Section Break",
-   "label": "Program & Academic Mapping"
+   "label": "Programme & Academic Mapping"
   },
   {
    "fieldname": "programme",
@@ -1611,7 +1611,7 @@
  ],
  "image_field": "passport_size_photo",
  "links": [],
- "modified": "2026-07-20 17:20:13.040870",
+ "modified": "2026-07-23 10:40:44.483834",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",

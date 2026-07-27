@@ -12,7 +12,7 @@ def assign_round_robin_authority(config_doc, authority_table_fieldname, last_ind
 	"""
 	authorities = config_doc.get(authority_table_fieldname)
 	if not authorities:
-		frappe.throw(f"No authorities configured in Attendance Condonation Configuration for {authority_table_fieldname}.")
+		frappe.throw(f"No authorities configured in Attendance Settings (Condonation) for {authority_table_fieldname}.")
 
 	# Filter by programme
 	valid_authorities = [a for a in authorities if a.programme == programme]
@@ -31,13 +31,13 @@ def assign_round_robin_authority(config_doc, authority_table_fieldname, last_ind
 
 	# Update the config doc's last assigned index
 	new_index = (start_idx + 1) % num_valid
-	frappe.db.set_value("Attendance Condonation Configuration", config_doc.name, last_index_fieldname, new_index, update_modified=False)
+	frappe.db.set_value("Attendance Settings", config_doc.name, last_index_fieldname, new_index, update_modified=False)
 
 	return selected_row.authority
 
 
 def send_condonation_email(template_fieldname, doc, recipients):
-	config = frappe.get_single("Attendance Condonation Configuration")
+	config = frappe.get_single("Attendance Settings")
 	template_name = config.get(template_fieldname)
 	if not template_name:
 		return
@@ -121,7 +121,7 @@ class StudentAttendanceCondonation(Document):
 			frappe.throw("Programme is required. Please ensure the student is mapped to a Programme.")
 	
 	def before_submit(self):
-		config = frappe.get_single("Attendance Condonation Configuration")
+		config = frappe.get_single("Attendance Settings")
 		self.aad_approver = assign_round_robin_authority(config, "level_one_authority", "l1_last_assigned_index", self.programme)
 		self.submitted_date = now_datetime()
 		if config.l1_due_days:
@@ -152,7 +152,7 @@ class StudentAttendanceCondonation(Document):
 			frappe.throw("Decision can only be made when status is Pending.")
 			
 		self.aad_approve_or_rejected_timestamp = now_datetime()
-		config = frappe.get_single("Attendance Condonation Configuration")
+		config = frappe.get_single("Attendance Settings")
 		
 		# Find child row to increment
 		authorities = config.get("level_one_authority")
@@ -198,7 +198,7 @@ class StudentAttendanceCondonation(Document):
 			frappe.throw("Decision can only be made when status is May Be Approved.")
 			
 		self.programme_chair_approve_or_rejected_timestamp = now_datetime()
-		config = frappe.get_single("Attendance Condonation Configuration")
+		config = frappe.get_single("Attendance Settings")
 		
 		# Find child row to increment
 		authorities = config.get("level_two_authority")
