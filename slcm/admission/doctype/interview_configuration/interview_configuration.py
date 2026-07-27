@@ -366,6 +366,7 @@ class InterviewConfiguration(Document):
                 "gender":               app["gender"],
                 "entrance_test":        app["entrance_test"],
                 "intereview":           app["intereview"],
+                "is_international_applicant": 1 if app.get("foriegn_national") == "Yes" else 0,
                 "source_type":          app["source_type"],
                 "interview_status":     "Pending"
             })

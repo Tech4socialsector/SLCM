@@ -119,6 +119,7 @@ class InterviewList(Document):
                 allocation.gender              = row.gender
                 allocation.entrance_test         = row.entrance_test
                 allocation.intereview            = row.intereview
+                allocation.is_international_applicant = row.is_international_applicant or (1 if frappe.db.get_value("Applicant", row.applicant_id, "foriegn_national") == "Yes" else 0)
 
                 # FETCH CATEGORIES CORRECTLY
                 if allocation.applicant:

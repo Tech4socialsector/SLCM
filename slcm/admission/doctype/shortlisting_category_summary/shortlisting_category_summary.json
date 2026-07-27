@@ -31,7 +31,7 @@
   {
    "fieldname": "multiplier",
    "fieldtype": "Float",
-   "in_list_view": 1,
+   "in_list_view": 0,
    "label": "Multiplier",
    "read_only": 1
   },

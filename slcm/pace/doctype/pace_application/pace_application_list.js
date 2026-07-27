@@ -1,16 +1,16 @@
 frappe.listview_settings['PACE Application'] = {
-	onload: function(listview) {
+	onload: function (listview) {
 		// Add to the 'Actions' menu that appears when records are selected
-		listview.page.add_actions_menu_item(__('Export Application Attachments'), function() {
+		listview.page.add_actions_menu_item(__('Export Application Attachments'), function () {
 			const selected_items = listview.get_checked_items();
-			
+
 			if (selected_items.length === 0) {
 				frappe.msgprint(__('Please select at least one record to download.'));
 				return;
 			}
 
 			const names = selected_items.map(item => item.name);
-			
+
 			// Show progress bar
 			frappe.show_progress(__('Exporting Attachments'), 0, names.length, __('Preparing records...'));
 
@@ -20,7 +20,7 @@ frappe.listview_settings['PACE Application'] = {
 					names: names
 				},
 				freeze: false,
-				callback: function(r) {
+				callback: function (r) {
 					frappe.hide_progress();
 					if (r.message) {
 						const file_url = r.message;
@@ -30,22 +30,22 @@ frappe.listview_settings['PACE Application'] = {
 						document.body.appendChild(link);
 						link.click();
 						document.body.removeChild(link);
-						
+
 						frappe.show_alert({
 							message: __('Download started successfully.'),
 							indicator: 'green'
 						});
 					}
 				},
-				error: function() {
+				error: function () {
 					frappe.hide_progress();
 				}
 			});
 		});
 	},
-	refresh: function(listview) {
+	refresh: function (listview) {
 		listview.page.add_inner_button(__("Convert to Student"), function () {
-			frappe.model.with_doctype('PACE Application', function() {
+			frappe.model.with_doctype('PACE Application', function () {
 				new frappe.ui.form.MultiSelectDialog({
 					doctype: "PACE Application",
 					target: listview,
@@ -82,11 +82,11 @@ frappe.listview_settings['PACE Application'] = {
 									return;
 								}
 								const msg = r.message;
-								
+
 								const success_count = (msg.success || []).length;
 								const error_count = (msg.errors || []).length;
 								const skipped_count = (msg.skipped || []).length;
-								
+
 								let message = `
 									<div style="padding: 10px;">
 										<div style="display: flex; gap: 15px; margin-bottom: 20px;">
@@ -128,7 +128,7 @@ frappe.listview_settings['PACE Application'] = {
 										</div>
 									`;
 								}
-								
+
 								if (error_count > 0) {
 									message += `
 										<div style="margin-bottom: 8px; font-weight: 600; color: #4a5568;">${__('Generation Failures:')}</div>
@@ -177,6 +177,20 @@ frappe.listview_settings['PACE Application'] = {
 					},
 				});
 			});
+		});
+
+		listview.page.add_inner_button(__("Send Email"), function () {
+			const checked_items = listview.get_checked_items();
+			if (!checked_items || checked_items.length === 0) {
+				frappe.msgprint(__("Please select at least one application."));
+				return;
+			}
+			const docnames = checked_items.map(i => i.name);
+			if (typeof slcm !== 'undefined' && slcm.show_bulk_email_dialog) {
+				slcm.show_bulk_email_dialog("PACE Application", docnames, listview);
+			} else {
+				frappe.msgprint(__("Bulk email module not loaded properly. Please refresh the page."));
+			}
 		});
 	}
 };
