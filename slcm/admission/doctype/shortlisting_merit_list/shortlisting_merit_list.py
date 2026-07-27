@@ -115,6 +115,72 @@ class ShortlistingMeritList(Document):
         )
         return merit_list.name
 
+    def on_update(self):
+        self.sync_shortlisted_status_to_entrance_test_allocations()
+
+    def on_trash(self):
+        self.clear_shortlisted_status_in_entrance_test_allocations()
+
+    def on_cancel(self):
+        self.clear_shortlisted_status_in_entrance_test_allocations()
+
+    def sync_shortlisted_status_to_entrance_test_allocations(self):
+        """
+        Synchronizes shortlisted_status field in Entrance Test Seat Allocation
+        with candidate shortlist_status from this Shortlisting Merit List.
+        """
+        shortlisted_map = {}
+        if self.shortlist_applicants:
+            for row in self.shortlist_applicants:
+                if row.applicant_id:
+                    shortlisted_map[row.applicant_id] = row.shortlist_status or "Shortlisted"
+
+        filters = {}
+        if self.admission_cycle:
+            filters["admission_cycle"] = self.admission_cycle
+        if self.campus:
+            filters["campus"] = self.campus
+        if self.program_level:
+            filters["program_level"] = self.program_level
+        if self.program:
+            filters["program"] = self.program
+
+        allocations = frappe.get_all("Entrance Test Seat Allocation", filters=filters, fields=["name", "applicant", "shortlisted_status"])
+
+        for alloc in allocations:
+            app_id = alloc.applicant
+            new_status = shortlisted_map.get(app_id, "")
+            if (alloc.shortlisted_status or "") != new_status:
+                frappe.db.set_value("Entrance Test Seat Allocation", alloc.name, "shortlisted_status", new_status, update_modified=False)
+
+    def clear_shortlisted_status_in_entrance_test_allocations(self):
+        """
+        Clears shortlisted_status to blank ("") in Entrance Test Seat Allocation
+        for all applicants associated with this Shortlisting Merit List.
+        """
+        applicant_ids = [row.applicant_id for row in (self.shortlist_applicants or []) if row.applicant_id]
+
+        filters = {}
+        if self.admission_cycle:
+            filters["admission_cycle"] = self.admission_cycle
+        if self.campus:
+            filters["campus"] = self.campus
+        if self.program_level:
+            filters["program_level"] = self.program_level
+        if self.program:
+            filters["program"] = self.program
+
+        allocations = frappe.get_all("Entrance Test Seat Allocation", filters=filters, fields=["name", "applicant"])
+        alloc_names = set(a.name for a in allocations)
+
+        if applicant_ids:
+            by_app = frappe.get_all("Entrance Test Seat Allocation", filters={"applicant": ["in", applicant_ids]}, fields=["name"])
+            for a in by_app:
+                alloc_names.add(a.name)
+
+        for alloc_name in alloc_names:
+            frappe.db.set_value("Entrance Test Seat Allocation", alloc_name, "shortlisted_status", "", update_modified=False)
+
 @frappe.whitelist()
 def get_generation_progress(docname):
     """

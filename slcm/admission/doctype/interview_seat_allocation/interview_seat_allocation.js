@@ -17,7 +17,7 @@ frappe.ui.form.on("Interview Seat Allocation", {
 
         // Action buttons when interview_result_status is Pass
         const is_internal = !frappe.user_roles.includes("Applicant") || frappe.user_roles.includes("System Manager") || frappe.user_roles.includes("Administrator") || frappe.user_roles.includes("Interview Admin");
-        if (frm.doc.interview_result_status === "Pass" && is_internal) {
+        if (frm.doc.interview_result_status === "Pass" && is_internal && frm.doc.is_international_applicant) {
             const hide_all_statuses = ["Selected", "Rejected", "Offer Issued"];
             
             if (!hide_all_statuses.includes(frm.doc.status)) {
@@ -113,6 +113,7 @@ frappe.ui.form.on("Interview Seat Allocation", {
                 frm.set_value("program", app.program);
                 frm.set_value("email", app.email);
                 frm.set_value("gender", app.gender);
+                frm.set_value("is_international_applicant", app.foriegn_national === "Yes" ? 1 : 0);
 
                 // Source tracking fields (if present on the form)
                 if (app.exempts_entrance_test !== undefined) {
@@ -205,7 +206,7 @@ function _apply_applicant_permissions(frm) {
     // Applicant info read-only (including the category table)
     const info_fields = [
         "applicant", "candidate_name", "program",
-        "email", "gender"
+        "email", "gender", "is_international_applicant"
     ];
     info_fields.forEach(f => frm.set_df_property(f, "read_only", 1));
 

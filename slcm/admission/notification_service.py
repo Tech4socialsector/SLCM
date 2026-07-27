@@ -580,81 +580,41 @@ def notify_refund_processed(refund_request_name):
 
     refund_amount_str = fmt_money(refund.refund_amount)
     
-    subject = f"Refund Processed Successfully - {refund.name}"
-    
-    email_styles = """
-        <style>
-            .email-container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
-            .header { background-color: #0d9488; color: #ffffff; padding: 30px; text-align: center; }
-            .header h1 { margin: 0; font-size: 22px; letter-spacing: 1px; }
-            .content { padding: 40px; background-color: #ffffff; }
-            .success-badge { display: inline-block; padding: 6px 12px; border-radius: 4px; font-weight: bold; background-color: #dcfce7; color: #166534; font-size: 12px; margin-bottom: 20px; text-transform: uppercase; }
-            .details-box { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 20px; margin: 25px 0; }
-            .label { font-weight: bold; color: #64748b; font-size: 13px; text-align: left; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
-            .value { font-weight: bold; color: #1e293b; font-size: 14px; text-align: right; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
-            .footer { background-color: #f1f5f9; color: #64748b; padding: 20px; text-align: center; font-size: 12px; }
-        </style>
-    """
+    template_name = "Refund Processed"
+    if not frappe.db.exists("Email Template", template_name):
+        frappe.logger().error(f"Notification error: Email Template '{template_name}' not found.")
+        return
 
-    body_html = f"""
-        <div class="success-badge">Refund Completed</div>
-        <p>Dear <strong>{applicant_name}</strong>,</p>
-        <p>This is to inform you that your refund request regarding your admission withdrawal has been successfully processed.</p>
-        
-        <div class="details-box">
-            <table style="width: 100%; border-collapse: collapse;">
-                <tr>
-                    <td class="label">Refund Request ID:</td>
-                    <td class="value">{refund.name}</td>
-                </tr>
-                <tr>
-                    <td class="label">Refund Amount:</td>
-                    <td class="value" style="color: #0d9488;">{refund_amount_str}</td>
-                </tr>
-                <tr>
-                    <td class="label">Transaction ID (Razorpay):</td>
-                    <td class="value">{refund.razorpay_refund_id or 'N/A'}</td>
-                </tr>
-                <tr>
-                    <td class="label">Original Payment Ref:</td>
-                    <td class="value">{refund.razorpay_payment_id or 'N/A'}</td>
-                </tr>
-            </table>
-        </div>
-        
-        <p>The amount should reflect in your original payment source (Bank Account/Card/UPI) within 5-7 working days, depending on your bank's processing time.</p>
-        
-        <p>If you have any further queries, please feel free to reach out to our admissions support team.</p>
-    """
+    template = frappe.get_doc("Email Template", template_name)
 
-    full_html = f"""
-        <html>
-            <head>{email_styles}</head>
-            <body>
-                <div class="email-container">
-                    <div class="header">
-                        <h1>ADMISSIONS OFFICE</h1>
-                    </div>
-                    <div class="content">
-                        {body_html}
-                    </div>
-                    <div class="footer">
-                        <p>&copy; {nowdate()[:4]} University Admissions. All rights reserved.</p>
-                        <p>This is an automated transaction confirmation.</p>
-                    </div>
-                </div>
-            </body>
-        </html>
-    """
+    context = {
+        "doc": refund,
+        "applicant_name": applicant_name,
+        "refund_amount_str": refund_amount_str,
+        "refund_amount": refund_amount_str,
+        "razorpay_refund_id": refund.razorpay_refund_id or "N/A",
+        "razorpay_payment_id": refund.razorpay_payment_id or "N/A",
+        "portal_url": get_url("/my-applications?app=" + str(refund.applicant))
+    }
+
+    # Render body
+    if template.get("use_html"):
+        template_body = template.response_html
+    else:
+        template_body = template.response or template.get("message")
 
     try:
+        subject = frappe.render_template(template.subject, context)
+        message = frappe.render_template(template_body, context)
+
         # Send the email using robust method
         _robust_sendmail(
             recipients=[email],
-            subject=subject,
-            message=full_html,
+            subject=subject or f"Refund Processed Successfully - {refund.name}",
+            message=message,
             reference_doctype="Refund Request",
-            reference_name=refund.name
+            reference_name=refund.name,
+            template=template
         )
         frappe.logger().info(f"Refund Notification sent (robust) for {refund.name} to {email}")
 
@@ -678,3 +638,5 @@ def notify_refund_processed(refund_request_name):
 
     except Exception as e:
         frappe.logger().error(f"Refund Notification error for {refund.name}: {e}")
+
+
