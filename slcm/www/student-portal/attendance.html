@@ -65,13 +65,6 @@
     <span class="sp-ms">event_available</span>
     Overview
   </button>
-  <button class="sp-tab" onclick="spSwitchTab('famfa', this)" id="tab-btn-famfa">
-    <span class="sp-ms">assignment</span>
-    FA / MFA
-    {% if fa_mfa_applications %}
-    <span class="sp-tab-badge">{{ fa_mfa_applications|length }}</span>
-    {% endif %}
-  </button>
   <button class="sp-tab" onclick="spSwitchTab('condonation', this)" id="tab-btn-condonation">
     <span class="sp-ms">how_to_reg</span>
     Condonation
@@ -170,22 +163,10 @@
             <span class="sp-ms">how_to_reg</span>Cond: {{ s.total_condonation_hours }}h
           </span>
           {% endif %}
-          {% if s.total_fa_mfa_hours and s.total_fa_mfa_hours > 0 %}
-          <span class="sp-badge" style="background:#f3e8ff;color:#7c3aed;">
-            <span class="sp-ms">assignment</span>FA/MFA: {{ s.total_fa_mfa_hours }}h
-          </span>
-          {% endif %}
         </div>
 
         {# Apply Buttons #}
         <div style="display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid var(--sp-border);padding-top:10px;">
-          {% if allow_fa_mfa %}
-          <button class="sp-btn sp-btn-outline sp-btn-sm"
-            onclick="spOpenFAMFA('{{ s.course }}', '{{ s.course_display|replace("'", "\\'") }}')"
-            title="Apply for First Attempt / Medical First Attempt">
-            <span class="sp-ms">assignment</span>Apply FA/MFA
-          </button>
-          {% endif %}
           {% if s.can_apply_condonation %}
           <button class="sp-btn sp-btn-outline-warning sp-btn-sm"
             onclick="spOpenCondonation('{{ s.course_offering }}', '{{ s.course_display|replace("'", "\\'") }}')"
@@ -233,108 +214,6 @@
   {% endif %}{# end not attendance_summaries #}
 </div>{# end tab-overview #}
 
-
-{# ══════════════════════════════════════════════════════════════════
-   TAB 2 — FA / MFA APPLICATIONS
-══════════════════════════════════════════════════════════════════ #}
-<div id="sp-tab-famfa" class="sp-tab-panel">
-
-  <div class="sp-tab-section-header">
-    <div>
-      <h2 class="sp-section-title">FA / MFA Applications</h2>
-      <p class="sp-section-sub">First Attempt &amp; Medical First Attempt applications for examinations</p>
-    </div>
-    {% if allow_fa_mfa %}
-    <button class="sp-btn sp-btn-primary" onclick="spOpenFAMFA('', '')">
-      <span class="sp-ms">add</span> New Application
-    </button>
-    {% endif %}
-  </div>
-
-  {% if not allow_fa_mfa %}
-  <div class="sp-alert sp-alert-info fade-in" style="margin-top:16px;">
-    <span class="sp-ms">info</span>
-    <div>FA/MFA Applications are currently <strong>disabled</strong> by the administration.</div>
-  </div>
-  {% elif not fa_mfa_applications %}
-  <div class="sp-empty fade-in">
-    <span class="sp-ms">assignment</span>
-    <p class="sp-empty-title">No FA/MFA Applications</p>
-    <p class="sp-empty-sub">You have not submitted any FA/MFA applications yet.</p>
-    <button class="sp-btn sp-btn-primary" style="margin-top:16px;" onclick="spOpenFAMFA('', '')">
-      <span class="sp-ms">add</span> New Application
-    </button>
-  </div>
-  {% else %}
-  <div style="overflow-x:auto;margin-top:4px;">
-    <table class="sp-table sp-card fade-in" style="overflow:hidden;">
-      <thead>
-        <tr>
-          <th>App ID</th>
-          <th>Course</th>
-          <th>Exam Date</th>
-          <th>Type</th>
-          <th>Reason</th>
-          <th>Status</th>
-          <th>Granted Hours</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for app in fa_mfa_applications %}
-        <tr>
-          <td>
-            <span style="font-family:monospace;font-size:12px;color:var(--sp-text-4);">{{ app.name }}</span>
-          </td>
-          <td style="font-weight:500;">{{ app.course_name or app.course or "—" }}</td>
-          <td style="white-space:nowrap;">
-            {{ frappe.utils.formatdate(app.examination_date, "dd MMM yyyy") if app.examination_date else "—" }}
-          </td>
-          <td>
-            <span class="sp-badge" style="background:var(--sp-info-bg);color:var(--sp-info);">
-              {{ app.application_type or "—" }}
-            </span>
-          </td>
-          <td style="font-size:13px;color:var(--sp-text-3);">{{ app.reason or "—" }}</td>
-          <td>
-            <span class="sp-badge" style="background:{{ app.status_bg }};color:{{ app.status_color }};">
-              {% if app.status == "Pending" %}<span class="sp-ms">hourglass_empty</span>
-              {% elif app.status == "Approved" %}<span class="sp-ms">check_circle</span>
-              {% else %}<span class="sp-ms">cancel</span>{% endif %}
-              {{ app.status }}
-            </span>
-          </td>
-          <td style="text-align:center;">
-            {% if app.granted_hours %}
-            <strong style="color:var(--sp-success);">{{ app.granted_hours }}h</strong>
-            {% else %}—{% endif %}
-          </td>
-        </tr>
-        {% if app.status == "Rejected" and app.rejection_reason %}
-        <tr style="background:var(--sp-danger-bg);">
-          <td colspan="7" style="font-size:12px;color:var(--sp-danger);padding:6px 16px;">
-            <strong>Rejection Reason:</strong> {{ app.rejection_reason }}
-          </td>
-        </tr>
-        {% endif %}
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% endif %}
-
-  {# Info box about FA/MFA #}
-  <div class="sp-info-box fade-in" style="margin-top:24px;">
-    <span class="sp-ms">info</span>
-    <div>
-      <strong>About FA/MFA:</strong>
-      <ul style="margin:6px 0 0 16px;padding:0;font-size:13px;line-height:1.8;">
-        <li><strong>First Attempt (FA)</strong> — For University Representation (competitions, events)</li>
-        <li><strong>Medical First Attempt (MFA)</strong> — For Medical Reasons or Bereavement</li>
-        <li>Submit before the exam date with valid proof. Approval grants attendance hours.</li>
-      </ul>
-    </div>
-  </div>
-</div>{# end tab-famfa #}
 
 
 {# ══════════════════════════════════════════════════════════════════
@@ -556,140 +435,6 @@
     <div class="sp-modal-body" id="day-modal-body" style="max-height:60vh;overflow-y:auto;"></div>
     <div class="sp-modal-footer">
       <button class="sp-btn sp-btn-secondary" onclick="spCloseModal('modal-day-detail')">Close</button>
-    </div>
-  </div>
-</div>
-
-
-{# ══════════════════════════════════════════════════════════════════
-   MODAL — FA / MFA APPLICATION
-══════════════════════════════════════════════════════════════════ #}
-<div class="sp-modal-overlay" id="modal-famfa" onclick="spCloseModalIf(event, 'modal-famfa')">
-  <div class="sp-modal" role="dialog" aria-modal="true" aria-labelledby="famfa-modal-title">
-    <div class="sp-modal-header">
-      <div class="sp-modal-title" id="famfa-modal-title">
-        <span class="sp-ms">assignment</span> New FA / MFA Application
-      </div>
-      <button class="sp-modal-close" onclick="spCloseModal('modal-famfa')" aria-label="Close">
-        <span class="sp-ms">close</span>
-      </button>
-    </div>
-
-    <div class="sp-modal-body">
-      <div id="famfa-alert" class="sp-form-alert" style="display:none;"></div>
-
-      <form id="form-famfa" onsubmit="return false;">
-
-        {# Course #}
-        <div class="sp-form-group">
-          <label class="sp-form-label" for="famfa-course">
-            Course <span class="sp-required">*</span>
-          </label>
-          {% if student_courses %}
-          <select class="sp-form-control" id="famfa-course" name="course" required>
-            <option value="">— Select Course —</option>
-            {% for c in student_courses %}
-            <option value="{{ c.course }}">{{ c.name }}</option>
-            {% endfor %}
-          </select>
-          {% else %}
-          <input type="text" class="sp-form-control" id="famfa-course" name="course"
-            placeholder="Enter course ID" required>
-          {% endif %}
-        </div>
-
-        <div class="sp-form-row">
-          {# Application Type #}
-          <div class="sp-form-group">
-            <label class="sp-form-label" for="famfa-type">
-              Application Type <span class="sp-required">*</span>
-            </label>
-            <select class="sp-form-control" id="famfa-type" name="application_type" required>
-              <option value="">— Select —</option>
-              <option value="First Attempt (FA)">First Attempt (FA)</option>
-              <option value="Medical First Attempt (MFA)">Medical First Attempt (MFA)</option>
-            </select>
-          </div>
-
-          {# Reason #}
-          <div class="sp-form-group">
-            <label class="sp-form-label" for="famfa-reason">
-              Reason <span class="sp-required">*</span>
-            </label>
-            <select class="sp-form-control" id="famfa-reason" name="reason" required
-              onchange="spToggleEventDates()">
-              <option value="">— Select Reason —</option>
-              <option value="University Representation">University Representation</option>
-              <option value="Medical Reasons">Medical Reasons</option>
-              <option value="Bereavement">Bereavement</option>
-            </select>
-          </div>
-        </div>
-
-        {# Examination Date #}
-        <div class="sp-form-group">
-          <label class="sp-form-label" for="famfa-exam-date">
-            Examination Date <span class="sp-required">*</span>
-          </label>
-          <input type="date" class="sp-form-control" id="famfa-exam-date"
-            name="examination_date" required>
-        </div>
-
-        {# Event Dates (conditional) #}
-        <div id="famfa-event-dates" style="display:none;">
-          <div class="sp-form-row">
-            <div class="sp-form-group">
-              <label class="sp-form-label" for="famfa-event-from">
-                Event From Date <span class="sp-required">*</span>
-              </label>
-              <input type="date" class="sp-form-control" id="famfa-event-from"
-                name="event_from_date">
-            </div>
-            <div class="sp-form-group">
-              <label class="sp-form-label" for="famfa-event-to">
-                Event To Date <span class="sp-required">*</span>
-              </label>
-              <input type="date" class="sp-form-control" id="famfa-event-to"
-                name="event_to_date">
-            </div>
-          </div>
-        </div>
-
-        {# Description #}
-        <div class="sp-form-group">
-          <label class="sp-form-label" for="famfa-desc">Description / Details</label>
-          <textarea class="sp-form-control sp-form-textarea" id="famfa-desc"
-            name="description" rows="3"
-            placeholder="Briefly describe the circumstances…"></textarea>
-        </div>
-
-        {# Proof Document #}
-        <div class="sp-form-group">
-          <label class="sp-form-label" for="famfa-proof">
-            Proof Document <span class="sp-required">*</span>
-          </label>
-          <div class="sp-file-upload-wrapper">
-            <input type="file" class="sp-file-input" id="famfa-proof" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
-            <label class="sp-file-label" for="famfa-proof">
-              <span class="sp-ms">upload_file</span>
-              <span id="famfa-proof-name">Click to upload (PDF, JPG, PNG, DOC)</span>
-            </label>
-          </div>
-          <div id="famfa-upload-progress" class="sp-upload-progress" style="display:none;">
-            <div class="sp-upload-bar"></div>
-          </div>
-        </div>
-
-      </form>
-    </div>
-
-    <div class="sp-modal-footer">
-      <button class="sp-btn sp-btn-secondary" onclick="spCloseModal('modal-famfa')">
-        Cancel
-      </button>
-      <button class="sp-btn sp-btn-primary" onclick="spSubmitFAMFA()" id="btn-submit-famfa">
-        <span class="sp-ms">send</span> Submit Application
-      </button>
     </div>
   </div>
 </div>
@@ -982,74 +727,7 @@
       lbl.textContent = inp.files[0] ? inp.files[0].name : 'Click to upload (PDF, JPG, PNG, DOC)';
     });
   }
-  spBindFileInput('famfa-proof', 'famfa-proof-name');
   spBindFileInput('cond-proof', 'cond-proof-name');
-
-  /* ── FA/MFA ─────────────────────────────────────────────────── */
-  window.spOpenFAMFA = function (courseId, courseName) {
-    spHideAlert('famfa-alert');
-    document.getElementById('form-famfa').reset();
-    document.getElementById('famfa-proof-name').textContent = 'Click to upload (PDF, JPG, PNG, DOC)';
-    document.getElementById('famfa-event-dates').style.display = 'none';
-
-    /* Pre-select course if provided */
-    var sel = document.getElementById('famfa-course');
-    if (sel && courseId) {
-      for (var i = 0; i < sel.options.length; i++) {
-        if (sel.options[i].value === courseId) {
-          sel.selectedIndex = i;
-          break;
-        }
-      }
-    }
-    spOpenModal('modal-famfa');
-  };
-
-  window.spToggleEventDates = function () {
-    var reason = document.getElementById('famfa-reason').value;
-    var block = document.getElementById('famfa-event-dates');
-    if (block) block.style.display = reason === 'University Representation' ? 'block' : 'none';
-  };
-
-  window.spSubmitFAMFA = function () {
-    spHideAlert('famfa-alert');
-    var btn = document.getElementById('btn-submit-famfa');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="sp-ms">hourglass_top</span> Uploading…';
-
-    var proofInput = document.getElementById('famfa-proof');
-
-    spUploadFile(proofInput, 'famfa-upload-progress')
-      .then(function (fileUrl) {
-        btn.innerHTML = '<span class="sp-ms">hourglass_top</span> Submitting…';
-
-        var reason = document.getElementById('famfa-reason').value;
-        var args = {
-          course: document.getElementById('famfa-course').value,
-          examination_date: document.getElementById('famfa-exam-date').value,
-          application_type: document.getElementById('famfa-type').value,
-          reason: reason,
-          description: document.getElementById('famfa-desc').value,
-          proof_document: fileUrl,
-        };
-        if (reason === 'University Representation') {
-          args.event_from_date = document.getElementById('famfa-event-from').value || null;
-          args.event_to_date = document.getElementById('famfa-event-to').value || null;
-        }
-
-        return spCall('slcm.api.student_portal.submit_fa_mfa_application', args);
-      })
-      .then(function (result) {
-        spCloseModal('modal-famfa');
-        spToast(result.message || 'FA/MFA Application submitted successfully!', 'success');
-        setTimeout(function () { location.reload(); }, 2000);
-      })
-      .catch(function (err) {
-        spShowAlert('famfa-alert', err.message || 'Submission failed. Please try again.');
-        btn.disabled = false;
-        btn.innerHTML = '<span class="sp-ms">send</span> Submit Application';
-      });
-  };
 
   /* ── Condonation ────────────────────────────────────────────── */
   window.spOpenCondonation = function (courseOffering, courseName) {
