@@ -186,23 +186,13 @@ class SeatAllocation(Document):
         # Always enforce ascending sort by overall rank before saving
         if self.selection_applicant:
             from frappe.utils import flt
-            app_ids = [getattr(row, "applicant_id", None) or getattr(row, "applicant", None) for row in self.selection_applicant]
-            app_ids = [aid for aid in app_ids if aid]
-            dob_map = {}
-            if app_ids:
-                dob_map = {r.name: r.date_of_birth for r in frappe.db.get_all("Applicant", filters={"name": ["in", app_ids]}, fields=["name", "date_of_birth"])}
 
             def get_save_sort_key(x):
                 overall_rnk = flt(getattr(x, "overall_rank", None) or x.get("overall_rank") or 999999)
                 part_b = flt(getattr(x, "nlsat_part_b_score", None) or x.get("nlsat_part_b_score") or 0)
-                app_id = getattr(x, "applicant_id", None) or getattr(x, "applicant", None) or getattr(x, "name", "")
-                dob_val = getattr(x, "date_of_birth", None) or x.get("date_of_birth") or dob_map.get(app_id)
-                dob = str(dob_val) if dob_val else "9999-12-31"
                 return (
                     overall_rnk,
-                    -part_b,
-                    dob,
-                    app_id
+                    -part_b
                 )
 
             self.selection_applicant.sort(key=get_save_sort_key)
@@ -556,26 +546,15 @@ class SeatAllocation(Document):
         # Sort selection_applicant table
         status_priority = {"Selected": 1, "Waitlisted": 2, "Rejected": 3, "Draft": 4}
         
-        app_ids = [getattr(row, "applicant_id", None) or getattr(row, "applicant", None) for row in self.selection_applicant]
-        app_ids = [aid for aid in app_ids if aid]
-        dob_map = {}
-        if app_ids:
-            dob_map = {r.name: r.date_of_birth for r in frappe.db.get_all("Applicant", filters={"name": ["in", app_ids]}, fields=["name", "date_of_birth"])}
-
         def get_allocation_sort_key(x):
             from frappe.utils import flt
             status_pri = status_priority.get(x.selection_status, 99)
             overall_rnk = flt(getattr(x, "overall_rank", None) or x.get("overall_rank") or 999999)
             part_b = flt(getattr(x, "nlsat_part_b_score", None) or x.get("nlsat_part_b_score") or 0)
-            app_id = getattr(x, "applicant_id", None) or getattr(x, "applicant", None) or getattr(x, "name", "")
-            dob_val = getattr(x, "date_of_birth", None) or x.get("date_of_birth") or dob_map.get(app_id)
-            dob = str(dob_val) if dob_val else "9999-12-31"
             return (
                 status_pri,
                 overall_rnk,
-                -part_b,
-                dob,
-                app_id
+                -part_b
             )
 
         sorted_rows = sorted(self.selection_applicant, key=get_allocation_sort_key)

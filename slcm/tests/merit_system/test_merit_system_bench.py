@@ -539,6 +539,10 @@ class TestDataConsistencyBench(MeritSystemTestBase):
 
     def test_missing_part_a_score(self):
         candidates = generate_bulk_candidates(5, vertical_distribution={"General": 5})
+        for c in candidates:
+            c.et_part_b_total_marks_scored = 0
+            c.nlsat_part_b_score = 0
+            c.interview_score = 0
         candidates[0].et_part_a_total_marks_scored = None
         candidates[0].part_a_total_marks_scored = None
         candidates[0].nlsat_part_a_score = None
@@ -607,19 +611,40 @@ class TestSeatAllocationBench(MeritSystemTestBase):
                 c.get("vertical_category") == "General" or c.get("allocation_type") == "Open"
             )
 
-    def test_seat_allocation_tied_at_rank_does_not_overflow(self):
+    def test_seat_allocation_tied_at_rank_includes_all_ties(self):
         candidates = generate_bulk_candidates(60, vertical_distribution={"General": 60})
         for i in range(48):
             candidates[i].et_part_a_total_marks_scored = 100.0 - i
+            candidates[i].nlsat_part_a_score = 100.0 - i
+            candidates[i].entrance_score = 100.0 - i
+            candidates[i].et_part_b_total_marks_scored = 50.0
+            candidates[i].nlsat_part_b_score = 50.0
+            candidates[i].interview_score = 50.0
+            candidates[i].total_score = (100.0 - i) + 50.0
         for i in range(48, 53):
             candidates[i].et_part_a_total_marks_scored = 50.0
+            candidates[i].nlsat_part_a_score = 50.0
+            candidates[i].entrance_score = 50.0
             candidates[i].et_part_b_total_marks_scored = 50.0
+            candidates[i].nlsat_part_b_score = 50.0
+            candidates[i].interview_score = 50.0
+            candidates[i].total_score = 100.0
             candidates[i].date_of_birth = "2000-01-01"
+            
+        # Ensure candidates 53-59 have lower scores so they rank below the tie group
+        for i in range(53, 60):
+            candidates[i].et_part_a_total_marks_scored = 10.0
+            candidates[i].nlsat_part_a_score = 10.0
+            candidates[i].entrance_score = 10.0
+            candidates[i].et_part_b_total_marks_scored = 10.0
+            candidates[i].nlsat_part_b_score = 10.0
+            candidates[i].interview_score = 10.0
+            candidates[i].total_score = 20.0
 
         doc = self._make_allotment_doc(candidates, name="TEST-SA4")
         execute_advanced_allocation_logic_wrapped(doc, is_shortlist_allocation=False)
 
-        self.assertEqual(len(getattr(doc, "general_list", [])), 49)
+        self.assertEqual(len(getattr(doc, "general_list", [])), 53)
 
 
 # ===========================================================================

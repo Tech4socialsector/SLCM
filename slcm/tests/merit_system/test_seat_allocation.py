@@ -70,20 +70,41 @@ class TestSeatAllocation:
             # Depending on how it's stored in the dict
             assert c.get("vertical_category") == "General" or c.get("allocation_type") == "Open"
 
-    def test_seat_allocation_tied_at_rank_120_does_not_all_include(self, mock_policy, monkeypatch):
+    def test_seat_allocation_tied_at_rank_120_includes_all_ties(self, mock_policy, monkeypatch):
         doc = MockDoc("Merit List", "Test Allocation 4", program="BA", admission_cycle="2026", merit_processing_stage="Final Allotment Ranking")
         # 60 candidates total, 49 general seats. 
         # Make rank 49 tied.
         candidates = generate_bulk_candidates(60, vertical_distribution={"General": 60})
         for i in range(48):
             candidates[i].et_part_a_total_marks_scored = 100.0 - i
+            candidates[i].nlsat_part_a_score = 100.0 - i
+            candidates[i].entrance_score = 100.0 - i
+            candidates[i].et_part_b_total_marks_scored = 50.0
+            candidates[i].nlsat_part_b_score = 50.0
+            candidates[i].interview_score = 50.0
+            candidates[i].total_score = (100.0 - i) + 50.0
             
         # Tie 5 people at the boundary
         for i in range(48, 53):
             candidates[i].et_part_a_total_marks_scored = 50.0
+            candidates[i].nlsat_part_a_score = 50.0
+            candidates[i].entrance_score = 50.0
             candidates[i].et_part_b_total_marks_scored = 50.0
+            candidates[i].nlsat_part_b_score = 50.0
+            candidates[i].interview_score = 50.0
+            candidates[i].total_score = 100.0
             candidates[i].date_of_birth = "2000-01-01"
             # applicant IDs will break the tie
+            
+        # Ensure candidates 53-59 have lower scores so they rank below the tie group
+        for i in range(53, 60):
+            candidates[i].et_part_a_total_marks_scored = 10.0
+            candidates[i].nlsat_part_a_score = 10.0
+            candidates[i].entrance_score = 10.0
+            candidates[i].et_part_b_total_marks_scored = 10.0
+            candidates[i].nlsat_part_b_score = 10.0
+            candidates[i].interview_score = 10.0
+            candidates[i].total_score = 20.0
             
         doc.merit_applicants = candidates
         import slcm.admission.doctype.merit_generation.merit_service as ms
@@ -91,6 +112,6 @@ class TestSeatAllocation:
         
         ms.execute_advanced_allocation_logic(doc, is_shortlist_allocation=False)
         
-        # It should strictly cut off at 49 seats for General, using ID to break the tie.
+        # Under the new tie-breaking rules, all candidates tied at the cutoff rank are allocated.
         general_list = getattr(doc, "general_list", [])
-        assert len(general_list) == 49
+        assert len(general_list) == 53

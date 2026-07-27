@@ -1132,6 +1132,49 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                 
                 _assign_seat_to_applicant(in_cand, v_cat, "Open" if v_cat == "General" else "Reserved", allocated_list, unallocated, v_info, status_field)
 
+        # --- PHASE 3.6: TIE-BREAKER FOR SEAT ALLOCATION ---
+        # If candidates have the same overall_rank in the final rank as the last allocated candidate 
+        # in a category, they must be assigned/allocated to that category/seat.
+        if not is_shortlist_phase:
+            tie_candidates_to_assign = []
+            for v_cat in ordered_cats:
+                # Find all candidates allocated to this category
+                v_allocated = [x for x in allocated_list if x.vertical_category == v_cat]
+                if not v_allocated:
+                    continue
+                # Find the maximum (lowest merit) rank among them
+                max_rank = max(x.overall_rank for x in v_allocated)
+                
+                # Check for unallocated candidates who have the same rank and are eligible
+                for u in unallocated:
+                    if u.overall_rank == max_rank:
+                        # Check eligibility for v_cat
+                        actual_v = (
+                            getattr(u, "actual_category", None)
+                            or (getattr(u, "vertical_category", None))
+                            or "General"
+                        )
+                        if not actual_v or actual_v.strip() == "":
+                            v_traits, __, __ = _get_categorized_traits(u.applicant_id)
+                            actual_v = v_traits[0] if v_traits else "General"
+                            
+                        if v_cat == "General" or actual_v == v_cat:
+                            tie_candidates_to_assign.append((u, v_cat))
+
+            # Assign seats to tie candidates
+            for tie_cand, v_cat in tie_candidates_to_assign:
+                if tie_cand in unallocated:
+                    alloc_type = "Open" if v_cat == "General" else "Reserved"
+                    _assign_seat_to_applicant(
+                        tie_cand, 
+                        v_cat, 
+                        alloc_type, 
+                        allocated_list, 
+                        unallocated, 
+                        vertical_targets[v_cat], 
+                        status_field
+                    )
+
         # Explicitly Reject remaining before Waitlist Phase (unless shortlisting with multiplier = 0)
         for u in unallocated:
             if is_shortlist_phase and multiplier == 0:
