@@ -1667,7 +1667,7 @@ def upload_student_ids_bulk(file_url):
 @frappe.whitelist()
 def download_section_bulk_template(batches=None):
     """Build an xlsx template pre-filled with Student Name / Programme /
-    Academic Year / Term / Batch / current Section for the given Batches (or
+    Academic Year / Batch / current Section for the given Batches (or
     all students if none given), for the admin to fill in the Section column
     and upload back."""
     try:
@@ -1715,7 +1715,7 @@ def download_section_bulk_template(batches=None):
     ws = wb.active
     ws.title = "Sections"
 
-    headers = ["Row Key", "Student Name", "Programme", "Academic Year", "Term", "Batch", "Section"]
+    headers = ["Row Key", "Student Name", "Programme", "Academic Year", "Batch", "Section"]
     ws.append(headers)
     for ci in range(1, len(headers) + 1):
         cell = ws.cell(row=1, column=ci)
@@ -1730,13 +1730,12 @@ def download_section_bulk_template(batches=None):
             student_name,
             programme_code.get(batch.get("program")) or "",
             s.get("academic_year") or "",
-            s.get("academic_term") or "",
             batch.get("batch_name") or s.get("programme") or "",
             s.get("section") or "",
         ])
 
     ws.column_dimensions["A"].hidden = True
-    for col, width in zip("BCDEFG", [26, 14, 14, 16, 20, 16]):
+    for col, width in zip("BCDEF", [26, 14, 14, 20, 16]):
         ws.column_dimensions[col].width = width
 
     output = io.BytesIO()
@@ -1806,7 +1805,7 @@ def upload_sections_bulk(file_url):
 
         student = str(row[0]).strip()
         student_display = str(row[1]).strip() if len(row) > 1 and row[1] else student
-        new_section = str(row[6]).strip() if len(row) > 6 and row[6] else ""
+        new_section = str(row[5]).strip() if len(row) > 5 and row[5] else ""
 
         if not new_section:
             continue
