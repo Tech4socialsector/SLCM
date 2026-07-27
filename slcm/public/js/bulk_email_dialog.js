@@ -113,7 +113,12 @@ slcm.show_bulk_email_dialog = function (reference_doctype, docnames, listview) {
                         label: __('Message Type'),
                         fieldtype: 'Select',
                         options: 'Text\nHTML',
-                        default: 'Text'
+                        default: 'Text',
+                        onchange: function() {
+                            let type = d.get_value('message_type');
+                            d.set_df_property('message', 'hidden', type === 'HTML' ? 1 : 0);
+                            d.set_df_property('message_html', 'hidden', type === 'Text' ? 1 : 0);
+                        }
                     },
                     {
                         fieldtype: 'Section Break'
@@ -121,15 +126,14 @@ slcm.show_bulk_email_dialog = function (reference_doctype, docnames, listview) {
                     {
                         fieldname: 'message',
                         label: __('Message'),
-                        fieldtype: 'Text Editor',
-                        depends_on: 'eval:doc.message_type==="Text"'
+                        fieldtype: 'Text Editor'
                     },
                     {
                         fieldname: 'message_html',
                         label: __('Message (HTML)'),
                         fieldtype: 'Code',
                         options: 'HTML',
-                        depends_on: 'eval:doc.message_type==="HTML"'
+                        hidden: 1
                     },
                     {
                         fieldtype: 'Section Break',
@@ -264,21 +268,33 @@ slcm.show_bulk_email_progress = function (bulk_email_name) {
         handle_complete(data);
     });
 
-    // Check initial state to avoid race condition where job finishes before dialog opens
-    frappe.db.get_doc('Bulk Email', bulk_email_name).then(doc => {
-        if (['Success', 'Partial', 'Error'].includes(doc.status)) {
-            handle_complete({
-                bulk_email: doc.name,
-                sent: doc.sent_count || 0,
-                failed: doc.failed_count || 0,
-                total: doc.total_recipients || 0,
-                status: doc.status,
-                crashed: doc.status === 'Error' && doc.server_response
-            });
-        } else {
-            let percent = ((doc.sent_count || 0) + (doc.failed_count || 0)) / (doc.total_recipients || 1) * 100;
-            $('#be-progress-bar').css('width', percent + '%');
-            $('#be-progress-text').text(`Processed ${(doc.sent_count || 0) + (doc.failed_count || 0)} of ${doc.total_recipients || 0} (Sent: ${doc.sent_count || 0}, Failed: ${doc.failed_count || 0})`);
-        }
-    });
+    // Check state periodically as a robust fallback for flaky WebSocket connections
+    let poll_interval = setInterval(() => {
+        frappe.db.get_value('Bulk Email', bulk_email_name, ['status', 'sent_count', 'failed_count', 'total_recipients', 'server_response']).then(r => {
+            if (!r.message) return;
+            let doc = r.message;
+            if (['Success', 'Partial', 'Error'].includes(doc.status)) {
+                clearInterval(poll_interval);
+                handle_complete({
+                    bulk_email: bulk_email_name,
+                    sent: doc.sent_count || 0,
+                    failed: doc.failed_count || 0,
+                    total: doc.total_recipients || 0,
+                    status: doc.status,
+                    crashed: doc.status === 'Error' && doc.server_response && doc.server_response.includes("CRASHED")
+                });
+            } else {
+                let sent = doc.sent_count || 0;
+                let failed = doc.failed_count || 0;
+                let total = doc.total_recipients || 1;
+                let percent = (sent + failed) / total * 100;
+                $('#be-progress-bar').css('width', percent + '%');
+                $('#be-progress-text').text(`Processed ${sent + failed} of ${doc.total_recipients || 0} (Sent: ${sent}, Failed: ${failed})`);
+            }
+        });
+    }, 2000);
+
+    progress_dialog.onhide = () => {
+        clearInterval(poll_interval);
+    };
 };
