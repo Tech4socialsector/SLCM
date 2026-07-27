@@ -134,7 +134,7 @@ def calculate_merit_with_rule(applicant, rule):
     return total_score
 
 
-def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stage="Part A Ranking", preserve_existing_ranks=False):
+def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stage="Part A Ranking"):
     """
     Applies overall and program ranking.
     If use_advanced_ranking=True, applies Standard Competition Ranking (1, 2, 2, 4).
@@ -232,13 +232,6 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
             rejected_applicants.append(row)
         else:
             rankable_applicants.append(row)
-
-    if preserve_existing_ranks:
-        # Sort rankable applicants by their existing overall_rank
-        rankable_applicants.sort(key=lambda x: getattr(x, "overall_rank", 999999) or 999999)
-        # Re-assemble applicant_rows with rankable candidates first, rejected at the end
-        applicant_rows[:] = rankable_applicants + rejected_applicants
-        return
 
     # 1. Overall Rank (Only assigned to rankable applicants)
     rankable_applicants.sort(key=get_stable_key)
@@ -891,12 +884,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
 
     # Initial Rank
     processing_stage = "Part A Ranking" if is_shortlist_allocation else "Final Allotment Ranking"
-    _rank_applicants(
-        applicants_list,
-        use_advanced_ranking=True,
-        processing_stage=processing_stage,
-        preserve_existing_ranks=(doc.doctype == "Seat Allocation")
-    )
+    _rank_applicants(applicants_list, use_advanced_ranking=True, processing_stage=processing_stage)
 
     grouped_by_program = {}
     for row in applicants_list:
