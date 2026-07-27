@@ -31,6 +31,7 @@
   "improvement_marks",
   "improvement_grade",
   "improvement_applied",
+  "re_exam_grade",
   "section_entries",
   "marks_entries"
  ],
@@ -194,6 +195,12 @@
    "fieldname": "improvement_applied",
    "fieldtype": "Check",
    "label": "Improvement Applied"
+  },
+  {
+   "fieldname": "re_exam_grade",
+   "fieldtype": "Data",
+   "label": "Re Exam Grade",
+   "read_only": 1
   }
  ],
  "links": [],

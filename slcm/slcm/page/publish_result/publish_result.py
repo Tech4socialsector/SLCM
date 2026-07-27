@@ -142,28 +142,14 @@ def get_publish_inst_filter_options(exam_plan):
 	return {"programmes": programmes, "batches": batches}
 
 
-@frappe.whitelist()
-def get_publish_students(exam_plan, search="", page=1, page_length=20,
-                         status_filter="all", sort_by="registration_id", sort_order="asc",
+def _build_publish_where(exam_plan, search="", status_filter="all",
                          inst_programmes="", inst_batches="", course="", programme=""):
-	"""Return paginated students with their publish status for the given exam plan."""
-	if not exam_plan:
-		return {"students": [], "total": 0}
-
-	page        = int(page)
-	page_length = int(page_length)
-	offset      = (page - 1) * page_length
-	sort_dir    = "DESC" if sort_order == "desc" else "ASC"
-
+	"""Shared WHERE-clause builder for the Publish Results student query —
+	used both for the paginated table (get_publish_students) and for
+	resolving the full filtered set for bulk email, so "currently filtered
+	students" means exactly the same thing in both places."""
 	f_programmes = json.loads(inst_programmes) if inst_programmes else []
 	f_batches    = json.loads(inst_batches)    if inst_batches    else []
-
-	sort_col_map = {
-		"registration_id": "sm.registration_id",
-		"name":            "CONCAT_WS(' ', sm.first_name, sm.last_name)",
-		"programme":       "sm.programme_of_study",
-	}
-	sort_col = sort_col_map.get(sort_by, "sm.registration_id")
 
 	params     = {"exam_plan": exam_plan}
 	extra_cond = ""
@@ -199,6 +185,33 @@ def get_publish_students(exam_plan, search="", page=1, page_length=20,
 		extra_cond += f" AND sm.batch_year IN ({placeholders})"
 		for i, v in enumerate(f_batches):
 			params[f"batch_{i}"] = v
+
+	return params, extra_cond
+
+
+@frappe.whitelist()
+def get_publish_students(exam_plan, search="", page=1, page_length=20,
+                         status_filter="all", sort_by="registration_id", sort_order="asc",
+                         inst_programmes="", inst_batches="", course="", programme=""):
+	"""Return paginated students with their publish status for the given exam plan."""
+	if not exam_plan:
+		return {"students": [], "total": 0}
+
+	page        = int(page)
+	page_length = int(page_length)
+	offset      = (page - 1) * page_length
+	sort_dir    = "DESC" if sort_order == "desc" else "ASC"
+
+	sort_col_map = {
+		"registration_id": "sm.registration_id",
+		"name":            "CONCAT_WS(' ', sm.first_name, sm.last_name)",
+		"programme":       "sm.programme_of_study",
+	}
+	sort_col = sort_col_map.get(sort_by, "sm.registration_id")
+
+	params, extra_cond = _build_publish_where(
+		exam_plan, search, status_filter, inst_programmes, inst_batches, course, programme
+	)
 
 	students = frappe.db.sql(
 		f"""
@@ -318,3 +331,103 @@ def bulk_publish(exam_plan, students, publish):
 		count += 1
 
 	return count
+
+
+@frappe.whitelist()
+def send_bulk_publish_email(exam_plan, email_template, search="", status_filter="all",
+                            inst_programmes="", inst_batches="", course="", programme=""):
+	"""Enqueue a background job emailing every student currently matching the
+	Publish Results filters (same filter semantics as get_publish_students,
+	just without pagination) using the chosen Email Template."""
+	if not exam_plan:
+		frappe.throw("Select an Exam Plan first.")
+	if not email_template or not frappe.db.exists("Email Template", email_template):
+		frappe.throw("Select a valid Email Template.")
+
+	params, extra_cond = _build_publish_where(
+		exam_plan, search, status_filter, inst_programmes, inst_batches, course, programme
+	)
+
+	students = frappe.db.sql(
+		f"""
+		SELECT
+			sm.name                                                              AS student,
+			sm.registration_id,
+			TRIM(CONCAT_WS(' ', sm.first_name,
+				COALESCE(NULLIF(sm.middle_name,''), NULL),
+				sm.last_name))                                                   AS student_name,
+			sm.programme_of_study                                                AS programme,
+			sm.email
+		FROM `tabStudent Course Marks` scm
+		INNER JOIN `tabStudent Master` sm ON sm.name = scm.student
+		LEFT JOIN `tabStudent Result Publish` srp
+			ON srp.exam_plan = %(exam_plan)s AND srp.student = sm.name
+		WHERE scm.exam_plan = %(exam_plan)s
+		{extra_cond}
+		GROUP BY scm.student
+		""",
+		params,
+		as_dict=True,
+	)
+
+	recipients = [s for s in students if s.get("email")]
+	skipped_no_email = len(students) - len(recipients)
+
+	if not recipients:
+		frappe.throw("None of the matching students have an email address on file.")
+
+	exam_name = frappe.db.get_value("Exam Plan", exam_plan, "exam_name") or exam_plan
+
+	frappe.enqueue(
+		"slcm.slcm.page.publish_result.publish_result._bulk_send_publish_email_job",
+		queue="long",
+		timeout=1800,
+		students=recipients,
+		template_name=email_template,
+		exam_plan=exam_plan,
+		exam_name=exam_name,
+	)
+
+	msg = f"{len(recipients)} email(s) queued. Emails will be delivered shortly."
+	if skipped_no_email:
+		msg += f" ({skipped_no_email} student(s) skipped — no email on file.)"
+
+	return {"queued": len(recipients), "skipped_no_email": skipped_no_email, "message": msg}
+
+
+def _bulk_send_publish_email_job(students, template_name, exam_plan, exam_name):
+	"""Background job: render the chosen Email Template per student and send.
+	Runs outside the HTTP request — mirrors fee_reminder_tool's _bulk_send_job."""
+	email_template = frappe.get_doc("Email Template", template_name)
+
+	sent = skipped = 0
+	for s in students:
+		try:
+			args = {
+				"doc":             frappe.get_doc("Student Master", s["student"]),
+				"student_name":    s.get("student_name"),
+				"registration_id": s.get("registration_id"),
+				"programme":       s.get("programme"),
+				"exam_plan":       exam_plan,
+				"exam_name":       exam_name,
+			}
+			subject = frappe.render_template(email_template.subject, args)
+			if email_template.use_html:
+				message = frappe.render_template(email_template.response_html, args)
+			else:
+				message = frappe.render_template(email_template.response, args)
+
+			frappe.sendmail(
+				recipients=[s["email"]],
+				subject=subject,
+				message=message,
+				reference_doctype="Student Master",
+				reference_name=s["student"],
+			)
+			sent += 1
+		except Exception as e:
+			frappe.logger().warning(f"[publish_result] Bulk email failed for {s.get('student')}: {e}")
+			skipped += 1
+
+	frappe.db.commit()
+	frappe.logger().info(f"[publish_result] Bulk publish email done — sent: {sent}, skipped: {skipped}")

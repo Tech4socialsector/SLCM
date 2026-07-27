@@ -2,6 +2,26 @@ import frappe
 from slcm.slcm.doctype.parent_portal_settings.parent_portal_settings import get_parent_portal_settings
 
 
+def get_parent_wards(email):
+    """
+    Return the list of Student Master names for which the given email
+    appears as a parent/guardian (Student Parent child table row).
+    Empty list if the email matches no one — i.e. this account is not a parent.
+    """
+    if not email:
+        return []
+    return frappe.db.sql_list(
+        """
+        SELECT sm.name
+        FROM   `tabStudent Master` sm
+        INNER JOIN `tabStudent Parent` sp
+               ON sp.parent = sm.name AND sp.parenttype = 'Student Master'
+        WHERE  sp.email = %s
+        """,
+        email,
+    )
+
+
 def get_parent_context(context):
     """
     Shared setup for all parent portal pages.
