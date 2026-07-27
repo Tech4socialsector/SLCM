@@ -192,10 +192,6 @@
             title="Apply for Attendance Condonation">
             <span class="sp-ms">how_to_reg</span>Apply Condonation
           </button>
-          {% elif allow_condonation and s.pct < (s.minimum_required_percentage or 75) and not s.can_apply_condonation %}
-          <span class="sp-badge" style="background:var(--sp-bg);color:var(--sp-text-4);font-size:11px;" title="Attendance too low to apply for condonation">
-            <span class="sp-ms">lock</span>Condonation N/A
-          </span>
           {% endif %}
         </div>
 
@@ -432,7 +428,7 @@
     <div>
       <strong>About Condonation:</strong>
       <ul style="margin:6px 0 0 16px;padding:0;font-size:13px;line-height:1.8;">
-        <li>Eligible if your attendance is between <strong>{{ min_condonation_pct|int }}%</strong> and <strong>74%</strong></li>
+        <li>Apply anytime during the trimester — your attendance % is only checked at final (Programme Chair) approval, and must be <strong>{{ min_condonation_pct|int }}% or above</strong> at that point</li>
         <li>Requires Faculty recommendation followed by Programme Chair approval</li>
         <li>Submit with a valid proof document (medical certificate, event proof, etc.)</li>
         <li>Approval will automatically update your attendance percentage</li>
@@ -931,11 +927,13 @@
         if (data.exc) {
           var msg = data.exc;
           try { msg = JSON.parse(data.exc)[0]; } catch (e) {}
-          /* Strip Python traceback if present */
-          msg = (msg || 'An error occurred').split('\n').pop().trim();
+          /* Strip Python traceback if present — trim first so a trailing
+             newline (traceback.format_exc() always ends with one) doesn't
+             leave an empty string as the "last line". */
+          msg = (msg || 'An error occurred').trim().split('\n').pop().trim();
           /* Frappe wraps user-facing errors in ValidationError — strip prefix */
           msg = msg.replace(/^.*?ValidationError:\s*/i, '');
-          throw new Error(msg);
+          throw new Error(msg || 'An error occurred');
         }
         return data.message;
       });

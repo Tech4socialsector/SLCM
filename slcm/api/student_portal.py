@@ -188,22 +188,10 @@ def submit_condonation_application(
             f"(ID: {existing})."
         )
 
-    # Attendance eligibility check
-    summary = frappe.db.get_value(
-        "Attendance Summary",
-        {"student": student, "course_offering": course_offering},
-        ["attendance_percentage", "minimum_required_percentage"],
-        as_dict=True,
-    )
-    if summary:
-        min_cond_pct = flt(getattr(settings, "condonation_min_percentage", 66) or 66)
-        att_pct = flt(summary.attendance_percentage)
-        if att_pct < min_cond_pct:
-            frappe.throw(
-                f"Your attendance ({att_pct:.1f}%) is below the minimum required "
-                f"({min_cond_pct:.0f}%) to apply for condonation. "
-                "Please contact your Faculty Advisor."
-            )
+    # Attendance percentage is intentionally NOT checked here — students may
+    # apply for condonation anytime. The minimum-percentage floor is only
+    # enforced at final (Programme Chair) approval, closer to end-of-trimester
+    # attendance figures. See StudentAttendanceCondonation.programme_chair_decision.
 
     doc = frappe.new_doc("Student Attendance Condonation")
     doc.student = student

@@ -538,7 +538,11 @@ scheduler_events = {
 		# Fee Management — daily automation
 		"slcm.slcm.fee.scheduler.mark_overdue_demands",
 		"slcm.slcm.fee.scheduler.send_due_reminders",
-		"slcm.slcm.fee.scheduler.check_phd_year_transition"
+		"slcm.slcm.fee.scheduler.check_phd_year_transition",
+		# Attendance Condonation — auto-reject applications below the attendance
+		# floor once their Academic Term has ended (see programme_chair_decision,
+		# which no longer checks this at approval time).
+		"slcm.slcm.doctype.student_attendance_condonation.student_attendance_condonation.auto_reject_below_attendance_floor",
 	]
 }
 

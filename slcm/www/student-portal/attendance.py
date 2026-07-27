@@ -136,11 +136,10 @@ def get_context(context):
                 else context.att_label_danger
             )
             s["shortfall"] = max(0, round(req - pct, 1))
-            s["can_apply_condonation"] = (
-                context.allow_condonation
-                and pct >= context.min_condonation_pct
-                and pct < req
-            )
+            # Students may apply for condonation anytime regardless of their
+            # current attendance % — the minimum-percentage floor is only
+            # enforced at final (Programme Chair) approval time.
+            s["can_apply_condonation"] = context.allow_condonation
 
             # Build unique course list for FA/MFA modal
             course_id = s.course or ""

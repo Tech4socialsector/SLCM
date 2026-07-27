@@ -232,6 +232,96 @@ class StudentAttendanceCondonation(Document):
 		self.save(ignore_permissions=True)
 
 
+def auto_reject_below_attendance_floor():
+	"""Scheduled (daily) job.
+
+	The minimum-attendance floor for condonation is only meaningful once a
+	trimester's classes have actually finished — mid-term approval is allowed
+	regardless of current attendance % (see programme_chair_decision, which no
+	longer checks this). Once an Academic Term's term_end_date has passed,
+	auto-reject any still-undecided Student Attendance Condonation for that
+	term whose (freshly recalculated) attendance % falls below
+	Attendance Settings.condonation_min_percentage.
+	"""
+	from slcm.slcm.utils.attendance_calculator import calculate_student_attendance
+
+	config = frappe.get_single("Attendance Settings")
+	if not config.allow_condonation:
+		return
+
+	min_cond_pct = flt(getattr(config, "condonation_min_percentage", 66) or 66)
+
+	pending = frappe.get_all(
+		"Student Attendance Condonation",
+		filters={
+			"final_status": ["in", ["Pending", "May Be Approved"]],
+			"docstatus": ["<", 2],
+		},
+		fields=["name", "student", "course_offering", "programme", "programme_chair_approver"],
+	)
+
+	processed = 0
+	batch_size = 50
+
+	for i, row in enumerate(pending):
+		try:
+			if not row.course_offering:
+				continue
+
+			co_term_name = frappe.db.get_value("Course Offering", row.course_offering, "term_name")
+			if not co_term_name:
+				continue
+
+			term_end_date = frappe.db.get_value("Academic Term", {"term_name": co_term_name}, "term_end_date")
+			if not term_end_date or getdate(term_end_date) >= getdate():
+				continue  # term hasn't ended yet
+
+			calculate_student_attendance(row.student, row.course_offering)
+			att_pct = flt(frappe.db.get_value(
+				"Attendance Summary",
+				{"student": row.student, "course_offering": row.course_offering},
+				"attendance_percentage",
+			))
+			if att_pct >= min_cond_pct:
+				continue  # meets the floor — leave for normal approval
+
+			doc = frappe.get_doc("Student Attendance Condonation", row.name)
+			doc.programme_chair_approve_or_rejected_timestamp = now_datetime()
+			doc.final_status = "Rejected"
+			doc.programme_chair_rejected_reason = (
+				f"Auto-rejected by system: end-of-trimester attendance ({att_pct:.1f}%) is "
+				f"below the minimum required ({min_cond_pct:.0f}%) for condonation."
+			)
+
+			authorities = config.get("level_two_authority")
+			matched_row = next(
+				(a for a in authorities if a.authority == doc.programme_chair_approver and a.programme == doc.programme),
+				None,
+			)
+			if matched_row:
+				frappe.db.set_value("Attendance Condonation Table", matched_row.name, "rejected", (matched_row.rejected or 0) + 1, update_modified=False)
+
+			student_email = frappe.db.get_value("Student Master", doc.student, "official_email_id") or frappe.db.get_value("Student Master", doc.student, "email")
+			if student_email:
+				send_condonation_email("l2_rejected_email_template", doc, [student_email])
+
+			doc.save(ignore_permissions=True)
+			processed += 1
+
+			if (i + 1) % batch_size == 0:
+				frappe.db.commit()
+
+		except Exception:
+			frappe.db.rollback()
+			frappe.log_error(
+				frappe.get_traceback(),
+				f"auto_reject_below_attendance_floor: {row.name}",
+			)
+
+	if processed > 0:
+		frappe.db.commit()
+
+
 def get_permission_query_conditions(user):
 	if not user:
 		user = frappe.session.user
