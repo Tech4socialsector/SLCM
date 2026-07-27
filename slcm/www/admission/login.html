@@ -1371,6 +1371,11 @@ function applyVerificationResult(status) {
 }
 
 async function doRegister() {
+  // TFSS team added this code from here...
+  var lpRegBtnGuard = document.getElementById('lp-reg-btn');
+  if (lpRegBtnGuard && lpRegBtnGuard.disabled) return;
+  // ...to here (TFSS team)
+
   if (!lpValidate([
     { id: 'reg-name',   type: 'name',   msg: 'Please enter your full name.' },
     { id: 'reg-email',  type: 'email',  msg: 'Please enter a valid email address.' }
