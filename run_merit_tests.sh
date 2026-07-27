@@ -2,10 +2,24 @@
 # ============================================================
 # NLSAT Merit System — Full Test Runner
 # Runs all tests using bench run-tests (no pytest needed)
-# Usage: bash run_merit_tests.sh
+# Usage: bash run_merit_tests.sh [site_name]
 # ============================================================
 
-BENCH_DIR="/home/bsoft/frappe-bench"
+# Dynamically resolve BENCH_DIR relative to the script location
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BENCH_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# Resolve site name from argument or currentsite.txt
+SITE_NAME=$1
+if [ -z "$SITE_NAME" ]; then
+    if [ -f "$BENCH_DIR/sites/currentsite.txt" ]; then
+        SITE_NAME=$(cat "$BENCH_DIR/sites/currentsite.txt")
+    else
+        echo "Error: Please provide a site name as the first argument."
+        echo "Usage: bash run_merit_tests.sh [site_name]"
+        exit 1
+    fi
+fi
 
 echo ""
 echo "============================================================"
@@ -21,7 +35,7 @@ echo ">>> [1/2] Running unit tests (36 tests, ~2 min)..."
 echo ""
 
 cd "$BENCH_DIR"
-if bench --site slcm.com run-tests --app slcm \
+if bench --site "$SITE_NAME" run-tests --app slcm \
     --module slcm.tests.merit_system.test_merit_system_bench 2>&1; then
     PASS=$((PASS + 1))
     echo ""
@@ -37,7 +51,7 @@ echo ""
 echo ">>> [2/3] Running marks import/export tests (3 tests)..."
 echo ""
 
-if bench --site slcm.com run-tests --app slcm \
+if bench --site "$SITE_NAME" run-tests --app slcm \
     --module slcm.tests.merit_system.test_marks_import_export 2>&1; then
     PASS=$((PASS + 1))
     echo ""
@@ -53,7 +67,7 @@ echo ""
 echo ">>> [3/3] Running advanced edge case tests (31 tests, ~7 min)..."
 echo ""
 
-if bench --site slcm.com run-tests --app slcm \
+if bench --site "$SITE_NAME" run-tests --app slcm \
     --module slcm.tests.merit_system.test_advanced_merit_scenarios 2>&1; then
     PASS=$((PASS + 1))
     echo ""

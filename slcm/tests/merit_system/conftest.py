@@ -19,15 +19,33 @@ class MockPolicy:
         return getattr(self, key, default)
 
 original_get_doc = frappe.get_doc
+original_new_doc = frappe.new_doc
+
 def mock_get_doc(doctype, name=None, **kwargs):
+    if isinstance(doctype, dict):
+        return original_get_doc(doctype, **kwargs)
+        
     if doctype == "Programme Reservation Policy":
         return MockPolicy()
-    if doctype in ("Merit List", "Entrance Test Seat Allocation"):
+    if doctype in ("Merit List", "Shortlisting Merit List", "Entrance Test Seat Allocation"):
         from slcm.tests.merit_system.fixtures.candidate_fixtures import MockDoc, mock_doc_registry
-        if name in mock_doc_registry:
-            return mock_doc_registry[name]
-        return MockDoc(doctype, name, **kwargs)
+        
+        lookup_name = name
+        if isinstance(name, dict):
+            lookup_name = name.get("name") or name.get("applicant")
+            
+        if lookup_name and lookup_name in mock_doc_registry:
+            return mock_doc_registry[lookup_name]
+        return MockDoc(doctype, lookup_name or "New Doc", **kwargs)
+        
+    if name is None:
+        return original_get_doc(doctype, **kwargs)
     return original_get_doc(doctype, name, **kwargs)
+
+def mock_new_doc(doctype, **kwargs):
+    if doctype in ("Merit List", "Shortlisting Merit List", "Entrance Test Seat Allocation"):
+        return mock_get_doc(doctype, "New Doc", **kwargs)
+    return original_new_doc(doctype, **kwargs)
 
 @pytest.fixture
 def mock_policy():
@@ -39,7 +57,7 @@ def setup_frappe_mocks(monkeypatch):
     Auto-applied fixture to mock frappe DB calls in merit_service and seat_allocation
     """
     monkeypatch.setattr(frappe, "get_doc", mock_get_doc)
-    monkeypatch.setattr(frappe, "new_doc", lambda doctype: mock_get_doc(doctype, "New Doc"))
+    monkeypatch.setattr(frappe, "new_doc", mock_new_doc)
     
     original_get_value = frappe.db.get_value
     original_set_value = frappe.db.set_value
@@ -61,7 +79,7 @@ def setup_frappe_mocks(monkeypatch):
             return None
         return original_set_value(doctype, name, fieldname, value, **kwargs)
         
-    def _mock_get_all(doctype, **kwargs):
+    def _mock_get_all(doctype, filters=None, **kwargs):
         if doctype == "Applicant Category":
             return []
         if doctype == "Admission Category":
@@ -76,12 +94,12 @@ def setup_frappe_mocks(monkeypatch):
                 frappe._dict(name="Karnataka", reservation_type="Compartmentalised Horizontal"),
                 frappe._dict(name="Karnataka SC", reservation_type="Compartmentalised Horizontal")
             ]
-            filters = kwargs.get("filters", {})
-            if "name" in filters and isinstance(filters["name"], list) and filters["name"][0] == "in":
-                names = filters["name"][1]
+            actual_filters = filters or kwargs.get("filters", {})
+            if "name" in actual_filters and isinstance(actual_filters["name"], list) and actual_filters["name"][0] == "in":
+                names = actual_filters["name"][1]
                 return [c for c in cats if c.name in names]
             return cats
-        return original_frappe_get_all(doctype, **kwargs)
+        return original_frappe_get_all(doctype, filters=filters, **kwargs)
         
     def _mock_sql(*args, **kwargs):
         if args and "SELECT" in args[0] and "merit" not in args[0].lower():
