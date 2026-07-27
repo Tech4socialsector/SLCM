@@ -622,33 +622,6 @@ class SeatAllocation(Document):
         self._finish_allocation()
         _publish_allocation_progress(self, 100, "Seats Allocated Successfully", status="Completed")
 
-@frappe.whitelist()
-def get_allocation_progress(docname):
-    """
-    Returns the cached progress of the seat allocation process.
-    Supports docname being a Seat Allocation, Merit List, or Shortlisting Merit List.
-    """
-    doc = None
-    for dt in ["Seat Allocation", "Merit List", "Shortlisting Merit List", "Merit Generation"]:
-        if frappe.db.exists(dt, docname):
-            doc = frappe.get_doc(dt, docname)
-            break
-
-    if not doc:
-        return {"status": "In Progress", "percent": 0, "description": "Preparing allocation..."}
-
-    cycle = getattr(doc, "admission_cycle", None)
-    campus = getattr(doc, "campus", None)
-    program_level = getattr(doc, "program_level", None) or getattr(doc, "generation_type", None)
-    program = getattr(doc, "program", None) or ""
-
-    cache_key = f"merit_generation_{cycle}_{campus}_{program_level}_{program}".replace(" ", "_")
-    progress = frappe.cache().get_value(cache_key)
-    
-    if progress:
-        return progress
-
-    return {"status": "In Progress", "percent": 0, "description": "Preparing allocation..."}
 
     @frappe.whitelist()
     def get_waitlist_promotion_preview(self):
@@ -1137,7 +1110,7 @@ def download_summary(name):
     doc = frappe.get_doc("Seat Allocation", name)
     
     columns = [
-        "Category", "Total Seats", "Seats", "Multiplier", 
+        "Category", "Total Seats", "Seats", 
         "Required", "Actually Allocated", "Allocated Seats", "Vacant Seats",
         "Waitlist Required", "Actually Waitlisted", "Actually Rejected"
     ]
@@ -1147,7 +1120,6 @@ def download_summary(name):
             summary_row.category,
             summary_row.total_seats,
             summary_row.seats,
-            summary_row.multiplier,
             summary_row.required,
             summary_row.actually_allocated,
             summary_row.allocated_seats,
@@ -1178,3 +1150,32 @@ def download_summary(name):
     frappe.response['filename'] = f"seat allocation summary report - {prog} - {year}.xlsx"
     frappe.response['filecontent'] = output.getvalue()
     frappe.response['type'] = 'binary'
+
+
+@frappe.whitelist()
+def get_allocation_progress(docname):
+    """
+    Returns the cached progress of the seat allocation process.
+    Supports docname being a Seat Allocation, Merit List, or Shortlisting Merit List.
+    """
+    doc = None
+    for dt in ["Seat Allocation", "Merit List", "Shortlisting Merit List", "Merit Generation"]:
+        if frappe.db.exists(dt, docname):
+            doc = frappe.get_doc(dt, docname)
+            break
+
+    if not doc:
+        return {"status": "In Progress", "percent": 0, "description": "Preparing allocation..."}
+
+    cycle = getattr(doc, "admission_cycle", None)
+    campus = getattr(doc, "campus", None)
+    program_level = getattr(doc, "program_level", None) or getattr(doc, "generation_type", None)
+    program = getattr(doc, "program", None) or ""
+
+    cache_key = f"merit_generation_{cycle}_{campus}_{program_level}_{program}".replace(" ", "_")
+    progress = frappe.cache().get_value(cache_key)
+    
+    if progress:
+        return progress
+
+    return {"status": "In Progress", "percent": 0, "description": "Preparing allocation..."}

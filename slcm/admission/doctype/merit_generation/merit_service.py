@@ -207,22 +207,56 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
         
         return (score1 == score2) and (part_b1 == part_b2)
 
-    # 1. Overall Rank
-    applicant_rows.sort(key=get_stable_key)
+    # Separate rankable vs rejected candidates.
+    # Reject only if candidate did NOT appear for Part B (part_b_not_appeared=True).
+    # Candidates who appeared but scored 0 are still ranked (matched Excel behaviour).
+    rankable_applicants = []
+    rejected_applicants = []
+
+    for row in applicant_rows:
+        # part_b_not_appeared is set during Final Allotment Ranking build phase to True
+        # when the ETSA shortlisted_status != 'Shortlisted' (i.e. candidate never took Part B)
+        part_b_not_appeared = getattr(row, "part_b_not_appeared", False) or (row.get("part_b_not_appeared") if isinstance(row, dict) else False)
+        
+        status_val = getattr(row, "status", None) or getattr(row, "selection_status", None) or getattr(row, "shortlist_status", None) or ""
+        
+        if processing_stage == "Final Allotment Ranking" and part_b_not_appeared:
+            setattr(row, "status", "Rejected")
+            if hasattr(row, "shortlist_status"): setattr(row, "shortlist_status", "Rejected")
+            if hasattr(row, "selection_status"): setattr(row, "selection_status", "Rejected")
+            row.allocation_type = "Not Allocated"
+            if hasattr(row, "remarks"):
+                row.remarks = "Rejected: did not appear for Part B"
+            rejected_applicants.append(row)
+        elif status_val == "Rejected":
+            rejected_applicants.append(row)
+        else:
+            rankable_applicants.append(row)
+
+    # 1. Overall Rank (Only assigned to rankable applicants)
+    rankable_applicants.sort(key=get_stable_key)
     
     current_rank = 1
-    for i, row in enumerate(applicant_rows):
+    for i, row in enumerate(rankable_applicants):
         if i > 0:
-            if not is_same_rank(row, applicant_rows[i-1]):
+            if not is_same_rank(row, rankable_applicants[i-1]):
                 current_rank = i + 1
         row.overall_rank = current_rank
-        # Sync shortlist/admission rank to overall rank (since it's already program-specific)
-        if hasattr(row, "shortlist_rank"): row.shortlist_rank = current_rank
-        if hasattr(row, "admission_rank"): row.admission_rank = current_rank
+        if hasattr(row, "shortlist_rank"): row.shortlist_rank = current_rank if processing_stage == "Part A Ranking" else None
+        if hasattr(row, "admission_rank"): row.admission_rank = current_rank if processing_stage == "Final Allotment Ranking" else None
+
+    # Clear ranks for rejected applicants
+    for row in rejected_applicants:
+        row.overall_rank = 0
+        row.category_rank = 0
+        if hasattr(row, "shortlist_rank"): row.shortlist_rank = None
+        if hasattr(row, "admission_rank"): row.admission_rank = None
+        if hasattr(row, "part_a_rank"): row.part_a_rank = 0
+        if hasattr(row, "part_b_rank"): row.part_b_rank = 0
 
     # 2. Category Rank (Within actual vertical category)
     category_groups = defaultdict(list)
-    for row in applicant_rows:
+    for row in rankable_applicants:
         cat = getattr(row, "actual_category", None) or getattr(row, "vertical_category", None) or "General"
         category_groups[cat].append(row)
             
@@ -235,26 +269,37 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
                     current_rank = i + 1
             row.category_rank = current_rank
 
-    # 3. Part A Rank Calculation
-    def get_part_a_score(x):
-        score = float(
-            getattr(x, "entrance_score", None) or (x.get("entrance_score") if isinstance(x, dict) else None) or
-            getattr(x, "et_part_a_total_marks_scored", None) or (x.get("et_part_a_total_marks_scored") if isinstance(x, dict) else None) or
-            getattr(x, "nlsat_part_a_score", None) or (x.get("nlsat_part_a_score") if isinstance(x, dict) else None) or 0
-        )
-        return round(score, 3)
+    # Re-assemble applicant_rows with rankable candidates first, rejected at the end
+    applicant_rows[:] = rankable_applicants + rejected_applicants
 
-    def get_part_a_key(x):
-        app_id = getattr(x, "applicant_id", None) or getattr(x, "applicant", None) or getattr(x, "name", "")
-        return (-get_part_a_score(x), app_id)
+    # 3. Part A Rank Calculation (Only calculated during Part A Ranking stage; during Final Allotment stage, Part A rank is preserved from Shortlist)
+    if processing_stage == "Part A Ranking":
+        def get_part_a_score(x):
+            score = float(
+                getattr(x, "entrance_score", None) or (x.get("entrance_score") if isinstance(x, dict) else None) or
+                getattr(x, "et_part_a_total_marks_scored", None) or (x.get("et_part_a_total_marks_scored") if isinstance(x, dict) else None) or
+                getattr(x, "nlsat_part_a_score", None) or (x.get("nlsat_part_a_score") if isinstance(x, dict) else None) or 0
+            )
+            return round(score, 3)
 
-    sorted_by_pa = sorted(applicant_rows, key=get_part_a_key)
-    current_pa_rank = 1
-    for i, row in enumerate(sorted_by_pa):
-        if i > 0:
-            if get_part_a_score(row) != get_part_a_score(sorted_by_pa[i-1]):
-                current_pa_rank = i + 1
-        setattr(row, "part_a_rank", current_pa_rank)
+        def get_part_a_key(x):
+            app_id = getattr(x, "applicant_id", None) or getattr(x, "applicant", None) or getattr(x, "name", "")
+            return (-get_part_a_score(x), app_id)
+
+        sorted_by_pa = sorted(applicant_rows, key=get_part_a_key)
+        current_pa_rank = 1
+        for i, row in enumerate(sorted_by_pa):
+            if i > 0:
+                if get_part_a_score(row) != get_part_a_score(sorted_by_pa[i-1]):
+                    current_pa_rank = i + 1
+            setattr(row, "part_a_rank", current_pa_rank)
+            if hasattr(row, "shortlist_rank"):
+                setattr(row, "shortlist_rank", current_pa_rank)
+    else:
+        # Final Allotment stage: preserve original Part A rank carried over from Shortlist
+        for row in applicant_rows:
+            pa_rnk = getattr(row, "part_a_rank", None) or getattr(row, "shortlist_rank", None) or 0
+            setattr(row, "part_a_rank", pa_rnk)
 
     # 4. Part B Rank Calculation
     def get_part_b_score(x):
@@ -339,7 +384,8 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
             }, 
             fields=[
                 "applicant_id", "shortlist_category", "vertical_category", 
-                "allocation_type", "compartmentalized_category", "horizontal_categories"
+                "allocation_type", "compartmentalized_category", "horizontal_categories",
+                "shortlist_rank"
             ]
         )
         applicant_names = [d.applicant_id for d in shortlist_data]
@@ -418,6 +464,10 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
             if scores: pg_avg = sum(scores) / len(scores)
             
         # Build local dictionary mimicking Eligibility Result properties
+        # part_b_not_appeared: True when candidate was shortlisted for Part A but never appeared
+        # for Part B (shortlisted_status on ETSA is not 'Shortlisted').
+        # Candidates who appeared and scored 0 are NOT flagged as not_appeared.
+        etsa_part_b_shortlisted = (etsa_doc.shortlisted_status or "") == "Shortlisted"
         app = frappe._dict({
             "applicant_id": etsa_doc.applicant,
             "candidate_name": etsa_doc.candidate_name,
@@ -429,7 +479,8 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
             "ug_cgpa": ug_avg,
             "pg_cgpa": pg_avg,
             "date_of_birth": applicant_doc.get("date_of_birth"),
-            "percentile_score": etsa_doc.percentile or 0
+            "percentile_score": etsa_doc.percentile or 0,
+            "part_b_not_appeared": processing_stage != "Part A Ranking" and not etsa_part_b_shortlisted
         })
         
         # Advanced shortlisting logic (skip candidates with 0 or negative scores in Part A)
@@ -441,10 +492,11 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
         
         if processing_stage == "Part A Ranking":
             total_score = part_a
+            status = "Selected"
         else:
             total_score = part_a + part_b
-
-        status = "Selected" 
+            # Reject only if candidate never appeared for Part B; score of 0 is valid
+            status = "Rejected" if app.get("part_b_not_appeared") else "Selected"
 
         verticals, horizontals, compartmental = _get_categorized_traits(app.applicant_id)
         primary_cat = verticals[0] if verticals else "General"
@@ -463,7 +515,7 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
             "total_score": total_score,
             "status": status,
             "overall_rank": 0,
-            "part_a_rank": 0,
+            "part_a_rank": shortlist_cat_map.get(app.applicant_id, {}).get("shortlist_rank") or 0,
             "part_b_rank": 0,
             "program_rank": 0,
             "category_rank": 0,
@@ -499,7 +551,7 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
     for _prog_applicants in grouped_by_program.values():
         _calculate_and_sync_percentiles(_prog_applicants, is_shortlist=is_shortlist_stage)
 
-    merit.merit_applicants.sort(key=lambda x: x.overall_rank)
+    merit.merit_applicants.sort(key=lambda x: (1 if (x.overall_rank or 0) == 0 else 0, x.overall_rank or 999999))
     for i, row in enumerate(merit.merit_applicants):
         row.idx = i + 1
         
@@ -918,10 +970,17 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                 "priority": h.priority or 99
             }
 
-        # 2. Filter by Percentile Eligibility (Requirement I.6)
+        # 2. Filter by Part B appearance & Percentile Eligibility.
+        # Reject only candidates who did NOT appear for Part B (part_b_not_appeared=True).
+        # Candidates who appeared but scored 0 are still eligible for allocation.
         eligible_applicants = []
         for app in applicants:
-            if _check_percentile_eligibility(app, vertical_targets, horizontal_targets):
+            part_b_not_appeared = getattr(app, "part_b_not_appeared", False) or (app.get("part_b_not_appeared") if isinstance(app, dict) else False)
+            if not is_shortlist_phase and part_b_not_appeared:
+                setattr(app, status_field, "Rejected")
+                app.allocation_type = "Not Allocated"
+                app.remarks = "Rejected: did not appear for Part B"
+            elif _check_percentile_eligibility(app, vertical_targets, horizontal_targets):
                 eligible_applicants.append(app)
             else:
                 setattr(app, status_field, "Rejected")
@@ -991,7 +1050,6 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                             eligible_out.sort(key=lambda x: -(x.overall_rank or 999999))
                             out_cand = eligible_out[0]
                             comp_candidates = [a for a in unallocated if _has_trait(a.applicant_id, comp_cat) and _check_percentile_eligibility(a, vertical_targets, horizontal_targets)]
-                            print(f"DEBUG: comp_candidates for {comp_cat} in {v_cat}: {len(comp_candidates)}")
                             # Recursive Displacement: Save out_cand in their reserved category if possible
                             _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies)
                             _assign_seat_to_applicant(in_cand, v_cat, "Open" if v_cat == "General" else "Reserved", allocated_list, unallocated, v_info, status_field)

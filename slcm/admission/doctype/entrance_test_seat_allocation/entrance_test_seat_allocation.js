@@ -401,12 +401,12 @@ function _apply_applicant_permissions(frm) {
     frm.set_df_property("re_entrance_test_provider", "read_only", is_re_allocated ? 1 : 0);
   }
 
-  // ── 5. tab_result — fully read-only ──────────────────────
+  // ── 5. Part A & Part B tabs — fully read-only ──────────────────────
   const result_fields = [
     "entrance_test_status", "attendance_marked_on",
-    "section_break_part_a", "part_a_total_marks_scored", "part_a_all_india_rank",
+    "section_break_part_a", "part_a_total_marks_scored", "part_a_all_india_rank", "shortlisted_status",
     "section_break_part_b", "part_b_total_marks_scored", "part_b_all_india_rank",
-    "section_break_cumulative", "total_marks_secured_in_part_a_b", "percentile",
+    "section_break_cumulative", "total_marks", "total_marks_secured_in_part_a_b", "percentile",
     "entrance_test_rank", "result_published", "result_status"
   ];
   result_fields.forEach(f => frm.set_df_property(f, "read_only", 1));
