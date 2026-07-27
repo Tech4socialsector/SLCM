@@ -93,6 +93,11 @@ slcm.show_bulk_email_dialog = function (reference_doctype, docnames, listview) {
                         fieldtype: 'Section Break'
                     },
                     {
+                        fieldname: 'placeholders_html',
+                        label: __('Available Placeholders'),
+                        fieldtype: 'HTML'
+                    },
+                    {
                         fieldname: 'subject',
                         label: __('Subject'),
                         fieldtype: 'Data',
@@ -156,44 +161,62 @@ slcm.show_bulk_email_dialog = function (reference_doctype, docnames, listview) {
                         return;
                     }
 
-                    d.job_started = true;
-                    d.render_recipient_page(d.current_page); // Re-render to disable 'Remove' buttons
+                    // Check for old Jinja syntax {{ doc.something }}
+                    let check_str = (values.subject || "") + " " + 
+                        (values.message_type === "HTML" ? (values.message_html || "") : (values.message || ""));
+                    
+                    let do_send = () => {
+                        d.job_started = true;
+                        d.render_recipient_page(d.current_page); // Re-render to disable 'Remove' buttons
 
-                    let final_recipients = d.recipient_data.filter(r => !r.removed).map(r => r.id);
-                    if (final_recipients.length === 0) {
-                        frappe.msgprint(__('No valid recipients left.'));
-                        return;
-                    }
-
-                    let filters_applied = null;
-                    if (listview && listview.filter_area) {
-                        filters_applied = JSON.stringify(listview.filter_area.get());
-                    }
-
-                    frappe.call({
-                        method: "slcm.slcm.doctype.bulk_email.bulk_email.create_and_queue",
-                        args: {
-                            reference_doctype: reference_doctype,
-                            recipient_names: JSON.stringify(final_recipients),
-                            sender_email_account: values.sender_email_account,
-                            cc: values.cc,
-                            bcc: values.bcc,
-                            subject: values.subject,
-                            use_html: values.message_type === "HTML" ? 1 : 0,
-                            message: values.message,
-                            message_html: values.message_html,
-                            attachment: values.attachment,
-                            email_template: values.email_template,
-                            filters_applied: filters_applied
-                        },
-                        callback: function (r) {
-                            if (r.message) {
-                                let bulk_email_name = r.message;
-                                d.hide();
-                                slcm.show_bulk_email_progress(bulk_email_name, null);
-                            }
+                        let final_recipients = d.recipient_data.filter(r => !r.removed).map(r => r.id);
+                        if (final_recipients.length === 0) {
+                            frappe.msgprint(__('No valid recipients left.'));
+                            return;
                         }
-                    });
+
+                        let filters_applied = null;
+                        if (listview && listview.filter_area) {
+                            filters_applied = JSON.stringify(listview.filter_area.get());
+                        }
+
+                        frappe.call({
+                            method: "slcm.slcm.doctype.bulk_email.bulk_email.create_and_queue",
+                            args: {
+                                reference_doctype: reference_doctype,
+                                recipient_names: JSON.stringify(final_recipients),
+                                sender_email_account: values.sender_email_account,
+                                cc: values.cc,
+                                bcc: values.bcc,
+                                subject: values.subject,
+                                use_html: values.message_type === "HTML" ? 1 : 0,
+                                message: values.message,
+                                message_html: values.message_html,
+                                attachment: values.attachment,
+                                email_template: values.email_template,
+                                filters_applied: filters_applied
+                            },
+                            callback: function (r) {
+                                if (r.message) {
+                                    let bulk_email_name = r.message;
+                                    d.hide();
+                                    slcm.show_bulk_email_progress(bulk_email_name, null);
+                                }
+                            }
+                        });
+                    };
+
+                    if (check_str.includes("{{ doc.") || check_str.includes("{{doc.")) {
+                        frappe.warn(
+                            __('Old Template Syntax Detected'),
+                            __('Your template contains <b>{{ doc.fieldname }}</b>, which will not work with the new template system. You should use <b>{{ fieldname }}</b> directly.<br><br>Do you still want to send?'),
+                            () => do_send(),
+                            __('Send Anyway'),
+                            true
+                        );
+                    } else {
+                        do_send();
+                    }
                 }
             });
 
@@ -278,6 +301,75 @@ slcm.show_bulk_email_dialog = function (reference_doctype, docnames, listview) {
             d.show();
             d.render_recipient_page(0);
 
+            // Fetch and render placeholders
+            let last_focused = 'subject'; // default
+            
+            // Track focus on subject
+            d.fields_dict.subject.$input.on('focus', () => { last_focused = 'subject'; });
+            
+            // Track focus on Text Editor (Quill)
+            setTimeout(() => {
+                if (d.fields_dict.message && d.fields_dict.message.quill) {
+                    d.fields_dict.message.quill.root.addEventListener('focus', () => { last_focused = 'message'; });
+                }
+            }, 500);
+
+            frappe.call({
+                method: "slcm.slcm.doctype.bulk_email.bulk_email.get_available_fields",
+                args: { reference_doctype: reference_doctype },
+                callback: function (r) {
+                    if (r.message) {
+                        let chips_html = r.message.map(f => 
+                            `<div class="btn btn-default btn-xs placeholder-chip" data-fieldname="${f.fieldname}" style="margin: 0 5px 5px 0; cursor: pointer;" title="Insert {{ ${f.fieldname} }}">
+                                <span>{{ ${f.fieldname} }}</span><br>
+                                <small class="text-muted" style="font-size: 10px;">${f.label}</small>
+                            </div>`
+                        ).join('');
+                        
+                        let panel_html = `
+                            <div style="border: 1px solid #dfdff0; border-radius: 4px; padding: 10px; background-color: #fafbfc; max-height: 150px; overflow-y: auto;">
+                                ${chips_html}
+                            </div>
+                        `;
+                        d.fields_dict.placeholders_html.$wrapper.html(panel_html);
+
+                        d.fields_dict.placeholders_html.$wrapper.find('.placeholder-chip').on('click', function() {
+                            let fieldname = $(this).data('fieldname');
+                            let text_to_insert = `{{ ${fieldname} }}`;
+                            
+                            // Track HTML code editor (CodeMirror) manually because it initializes later or lazily sometimes
+                            if (d.get_value('message_type') === 'HTML') {
+                                last_focused = 'message_html';
+                            }
+
+                            if (last_focused === 'subject') {
+                                let input = d.fields_dict.subject.$input.get(0);
+                                let start = input.selectionStart;
+                                let end = input.selectionEnd;
+                                let val = input.value;
+                                input.value = val.slice(0, start) + text_to_insert + val.slice(end);
+                                input.selectionStart = input.selectionEnd = start + text_to_insert.length;
+                                input.focus();
+                                d.set_value('subject', input.value);
+                            } else if (last_focused === 'message') {
+                                let quill = d.fields_dict.message.quill;
+                                if (quill) {
+                                    let range = quill.getSelection(true);
+                                    quill.insertText(range.index, text_to_insert);
+                                    quill.setSelection(range.index + text_to_insert.length);
+                                }
+                            } else if (last_focused === 'message_html') {
+                                let cm = d.fields_dict.message_html.editor;
+                                if (cm) {
+                                    cm.replaceSelection(text_to_insert);
+                                    cm.focus();
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+
             // Listen for realtime row updates and update the dialog's data structure
             frappe.realtime.on("bulk_email_row_update", function(data) {
                 // If this dialog is closed/hidden, don't update
@@ -345,14 +437,6 @@ slcm.show_bulk_email_progress = function (bulk_email_name, recipients_data) {
         let percent = (data.sent + data.failed) / data.total * 100;
         $('#be-progress-bar').css('width', percent + '%');
         $('#be-progress-text').text(`Processed ${data.sent + data.failed} of ${data.total} (Sent: ${data.sent}, Failed: ${data.failed})`);
-    });
-
-    frappe.realtime.on("bulk_email_row_update", function(data) {
-        if (data.bulk_email !== bulk_email_name) return;
-
-        if (recipients_data && recipients_data.length) {
-            // Obsolete: Dialog handles its own updates, see above
-        }
     });
 
     const handle_complete = function(data) {

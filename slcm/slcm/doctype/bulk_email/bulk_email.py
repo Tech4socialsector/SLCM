@@ -7,6 +7,21 @@ class BulkEmail(Document):
 
 
 @frappe.whitelist()
+def get_available_fields(reference_doctype):
+    meta = frappe.get_meta(reference_doctype)
+    exclude_fieldtypes = ["Section Break", "Column Break", "Tab Break", 
+        "HTML", "Button", "Table", "Table MultiSelect"]
+    fields = [
+        {"fieldname": f.fieldname, "label": f.label or f.fieldname}
+        for f in meta.fields
+        if f.fieldtype not in exclude_fieldtypes and f.fieldname
+    ]
+    # always include "name" — every doc has it, often the docname/ID
+    fields.insert(0, {"fieldname": "name", "label": "ID / Name (docname)"})
+    return fields
+
+
+@frappe.whitelist()
 def create_and_queue(reference_doctype, recipient_names, sender_email_account, subject, cc=None, bcc=None, use_html=0, message=None, message_html=None, attachment=None, email_template=None, filters_applied=None):
     if isinstance(recipient_names, str):
         recipient_names = json.loads(recipient_names)
@@ -151,16 +166,46 @@ def _send_emails(doc, is_resend=False):
     for row in doc.recipients:
         if row.status == "Queued":
             try:
-                row.status = "Sending"
+                recipient_doc = frappe.get_doc(doc.reference_doctype, row.recipient_reference)
+                context = recipient_doc.as_dict()
+                rendered_subject = frappe.render_template(doc.subject, context)
+                rendered_message = frappe.render_template(
+                    doc.message_html if doc.use_html else doc.message, context)
+            except Exception:
+                row.status = "Failed"
+                row.error_message = "Template rendering failed:\n" + frappe.get_traceback()
                 row.db_update()
                 frappe.db.commit()
                 frappe.publish_realtime("bulk_email_row_update", {
                     "bulk_email": doc.name,
                     "row_name": row.name,
                     "recipient_reference": row.recipient_reference,
-                    "status": "Sending"
+                    "status": "Failed",
+                    "error_message": row.error_message
                 }, user=doc.triggered_by)
+                failed += 1
+                doc.db_set("failed_count", failed)
+                frappe.db.commit()
+                
+                frappe.publish_realtime("bulk_email_progress", {
+                    "bulk_email": doc.name,
+                    "sent": sent,
+                    "failed": failed,
+                    "total": doc.total_recipients
+                }, user=doc.triggered_by)
+                continue  # skip to next recipient, do not attempt send
 
+            row.status = "Sending"
+            row.db_update()
+            frappe.db.commit()
+            frappe.publish_realtime("bulk_email_row_update", {
+                "bulk_email": doc.name,
+                "row_name": row.name,
+                "recipient_reference": row.recipient_reference,
+                "status": "Sending"
+            }, user=doc.triggered_by)
+
+            try:
                 attachments = []
                 if doc.attachment:
                     file_doc = frappe.get_doc("File", {"file_url": doc.attachment})
@@ -175,8 +220,8 @@ def _send_emails(doc, is_resend=False):
                 frappe.sendmail(
                     recipients=[row.email],
                     sender=sender_email,
-                    subject=doc.subject,
-                    message=doc.message_html if doc.use_html else doc.message,
+                    subject=rendered_subject,
+                    message=rendered_message,
                     cc=doc.cc,
                     bcc=doc.bcc,
                     attachments=attachments if attachments else None,
@@ -187,7 +232,7 @@ def _send_emails(doc, is_resend=False):
                 sent += 1
             except Exception as e:
                 row.status = "Failed"
-                row.error_message = frappe.get_traceback()
+                row.error_message = "Send failed:\n" + frappe.get_traceback()
                 failed += 1
                 
             row.db_update()
