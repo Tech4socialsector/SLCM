@@ -77,11 +77,6 @@ def submit_fa_mfa_application(
         if not val:
             frappe.throw(f"{label} is required.")
 
-    # Check global setting
-    settings = frappe.get_single("Examination Settings")
-    if not settings.allow_fa_mfa:
-        frappe.throw("FA/MFA Applications are currently disabled by the administration.")
-
     # Prevent duplicate
     existing = frappe.db.exists(
         "FA MFA Application",
@@ -1731,6 +1726,27 @@ def initiate_re_exam_registration(exam_plan, course):
     return {"name": doc.name, "message": fee_msg}
 
 
+def check_improvement_cgpa_eligibility(student_name, exam_plan):
+    """Throw unless the student's published Cumulative GPA for this exam plan
+    is below Examination Settings.max_cgpa_for_improvement. Enforced
+    server-side here (not just hidden in the UI) since this is the actual
+    gate on who may register/pay for an Improvement Exam."""
+    cgpa = frappe.db.get_value(
+        "Student Result Publish",
+        {"student": student_name, "exam_plan": exam_plan, "is_published": 1},
+        "cumulative_gpa",
+    )
+    if not cgpa:
+        frappe.throw("Your result for this exam plan must be published before you can apply for Improvement Exam.")
+
+    max_cgpa = flt(frappe.db.get_single_value("Examination Settings", "max_cgpa_for_improvement") or 3.0)
+    if flt(cgpa) >= max_cgpa:
+        frappe.throw(
+            f"Improvement Exam is only open to students with a CGPA below {max_cgpa:g}. "
+            f"Your current CGPA is {flt(cgpa):g}."
+        )
+
+
 @frappe.whitelist()
 def initiate_improvement_exam_registration(exam_plan, course):
     """Create or retrieve an Improvement Exam Registration for free/counter-payment flow."""
@@ -1745,6 +1761,8 @@ def initiate_improvement_exam_registration(exam_plan, course):
     )
     if not student_name:
         frappe.throw("No student record found for this account.")
+
+    check_improvement_cgpa_eligibility(student_name, exam_plan)
 
     setting = frappe.db.get_value(
         "Improvement Exam Course Setting",
