@@ -49,7 +49,8 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Pending\nSent\nFailed",
+   "options": "Queued\nSending\nSent\nFailed",
+   "default": "Queued",
    "read_only": 1
   },
   {

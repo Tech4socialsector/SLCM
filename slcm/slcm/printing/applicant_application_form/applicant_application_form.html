@@ -671,8 +671,8 @@ frappe.utils.formatdate(val, 'dd-MM-yyyy') }}{%- else -%}&mdash;{%- endif -%} {%
 	{# END MAIN TABLE #} {# ── DECLARATION ──────────────────────────────────────────── #}
 	<div class="pf-declaration">
 		<div class="pf-declaration-title">Declaration &amp; Undertaking</div>
-		{%- if doc.declaration_undertaking -%}
-		<p>{{ doc.declaration_undertaking }}</p>
+		{%- if doc.authorisation_information -%}
+		<p><strong>Authorisation &amp; Information:</strong> I declare that the information provided is true and complete. False information may lead to disqualification.</p>
 		{%- else -%}
 		<p>
 			I hereby declare that all the information furnished above is true, complete, and
@@ -681,11 +681,18 @@ frappe.utils.formatdate(val, 'dd-MM-yyyy') }}{%- else -%}&mdash;{%- endif -%} {%
 			cancelled. I agree to abide by all the rules and regulations of National Law School of
 			India University, Bengaluru.
 		</p>
-		{%- endif -%} {%- if doc.consent_third_party -%}
+		{%- endif -%}
+		{%- if doc.agreement_to_communications -%}
 		<p style="margin-top: 6px; font-size: 8.5pt; color: #333">
-			<strong>Consent:</strong> {{ doc.consent_third_party }}
+			<strong>Agreement to Communications:</strong> I agree to receive communications regarding my application.
 		</p>
 		{%- endif -%}
+		{%- if doc.agreement_withdrawal_conditions -%}
+		<p style="margin-top: 6px; font-size: 8.5pt; color: #333">
+			<strong>Agreement on Withdrawal Conditions:</strong> I have read and agree to the conditions related to withdrawal.
+		</p>
+		{%- endif -%}
+
 	</div>
 
 	{# ── SIGNATURE ROW ────────────────────────────────────────── #}

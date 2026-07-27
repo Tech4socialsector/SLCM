@@ -333,9 +333,17 @@ frappe.ui.form.on("Applicant", {
             errors.push(__("Score or percentage is required when National test is selected."));
         }
 
-        // Declaration must be accepted when submitting
-        if (frm.doc.status === "Submitted" && !frm.doc.declaration_undertaking) {
-            errors.push(__("You must accept the Declaration & Undertaking before submitting."));
+        // Agreements must be accepted for any non-Draft status
+        if (frm.doc.status !== "Draft") {
+            if (!frm.doc.authorisation_information) {
+                errors.push(__("You must accept the Authorisation & Information."));
+            }
+            if (!frm.doc.agreement_to_communications) {
+                errors.push(__("You must accept the Agreement to Communications."));
+            }
+            if (!frm.doc.agreement_withdrawal_conditions) {
+                errors.push(__("You must accept the Agreement on Withdrawal Conditions."));
+            }
         }
 
         // Campus preference duplicates
@@ -377,16 +385,7 @@ frappe.ui.form.on("Applicant", {
         frm.toggle_reqd("percentage", !!frm.doc.national_test_name);
     },
 
-    // ── DECLARATION UNDERTAKING ──────────────
-    declaration_undertaking: function (frm) {
-        if (!frm.doc.declaration_undertaking) {
-            frappe.msgprint({
-                title: __("Declaration Required"),
-                indicator: "orange",
-                message: __("You must accept the Declaration & Undertaking to submit.")
-            });
-        }
-    },
+
 
     // ── HSC PERCENTAGE ───────────────────────
     hsc_percentage: function (frm) {

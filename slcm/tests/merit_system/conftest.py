@@ -39,6 +39,8 @@ def get_mock_policy():
     return _shared_mock_policy
 
 original_get_doc = frappe.get_doc
+original_new_doc = frappe.new_doc
+
 def mock_get_doc(doctype, name=None, **kwargs):
     if isinstance(doctype, dict):
         return original_get_doc(doctype)
@@ -108,7 +110,6 @@ def setup_frappe_mocks(monkeypatch):
 
     monkeypatch.setattr(frappe, "get_doc", mock_get_doc)
     monkeypatch.setattr(frappe, "new_doc", mock_new_doc)
-
     
     original_get_value = frappe.db.get_value
     original_set_value = frappe.db.set_value
@@ -169,7 +170,7 @@ def setup_frappe_mocks(monkeypatch):
 
                 return [c for c in cats if c.name in names]
             return cats
-        return original_frappe_get_all(doctype, **kwargs)
+        return original_frappe_get_all(doctype, filters=filters, **kwargs)
         
     def _mock_sql(*args, **kwargs):
         if args and "SELECT" in args[0] and "merit" not in args[0].lower():
