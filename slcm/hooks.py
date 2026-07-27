@@ -153,6 +153,7 @@ fixtures = [
         "doctype": "Email Template",
         "filters": [
             ["name", "in", [
+                "Refund Processed",
                 "Scholarship Updates",
                 "Merit List Template",
                 "Seat Allocation Result Notification",
