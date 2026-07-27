@@ -9,6 +9,17 @@ frappe.ui.form.on('Bulk Email', {
                 }
             };
         });
+
+        frappe.realtime.on("bulk_email_row_update", function(data) {
+            if (frm.doc.name !== data.bulk_email) return;
+
+            let row = (frm.doc.recipients || []).find(r => r.name === data.row_name);
+            if (row) {
+                row.status = data.status;
+                if (data.error_message) row.error_message = data.error_message;
+                frm.fields_dict.recipients.grid.refresh_row(row.name);
+            }
+        });
     },
 
     refresh: function(frm) {

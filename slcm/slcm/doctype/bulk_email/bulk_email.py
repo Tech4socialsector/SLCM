@@ -71,7 +71,7 @@ def create_and_queue(reference_doctype, recipient_names, sender_email_account, s
             "recipient_reference": r["recipient_reference"],
             "recipient_name": r["recipient_name"],
             "email": r["email"],
-            "status": "Pending"
+            "status": "Queued"
         })
         
     doc.insert(ignore_permissions=True)
@@ -143,14 +143,24 @@ def _send_emails(doc, is_resend=False):
         failed = 0
         for row in doc.recipients:
             if row.status == "Failed":
-                row.db_set("status", "Pending")
+                row.db_set("status", "Queued")
         frappe.db.commit()
         # Recalculate failed count based on what was previously failed but now is pending? 
         # Actually it's easier to just recalculate at the end.
     
     for row in doc.recipients:
-        if row.status == "Pending":
+        if row.status == "Queued":
             try:
+                row.status = "Sending"
+                row.db_update()
+                frappe.db.commit()
+                frappe.publish_realtime("bulk_email_row_update", {
+                    "bulk_email": doc.name,
+                    "row_name": row.name,
+                    "recipient_reference": row.recipient_reference,
+                    "status": "Sending"
+                }, user=doc.triggered_by)
+
                 attachments = []
                 if doc.attachment:
                     file_doc = frappe.get_doc("File", {"file_url": doc.attachment})
@@ -169,7 +179,8 @@ def _send_emails(doc, is_resend=False):
                     message=doc.message_html if doc.use_html else doc.message,
                     cc=doc.cc,
                     bcc=doc.bcc,
-                    attachments=attachments if attachments else None
+                    attachments=attachments if attachments else None,
+                    now=True
                 )
                 row.status = "Sent"
                 row.error_message = None
@@ -183,6 +194,14 @@ def _send_emails(doc, is_resend=False):
             doc.db_set("sent_count", sent)
             doc.db_set("failed_count", failed)
             frappe.db.commit()
+            
+            frappe.publish_realtime("bulk_email_row_update", {
+                "bulk_email": doc.name,
+                "row_name": row.name,
+                "recipient_reference": row.recipient_reference,
+                "status": row.status,
+                "error_message": row.error_message if row.status == "Failed" else None
+            }, user=doc.triggered_by)
             
             frappe.publish_realtime("bulk_email_progress", {
                 "bulk_email": doc.name,
