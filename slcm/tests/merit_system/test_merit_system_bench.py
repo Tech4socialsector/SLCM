@@ -538,6 +538,8 @@ class TestDataConsistencyBench(MeritSystemTestBase):
         self.assertEqual(sorted(ranks), list(range(1, 201)))
 
     def test_missing_part_a_score(self):
+        import random
+        random.seed(42)
         candidates = generate_bulk_candidates(5, vertical_distribution={"General": 5})
         for c in candidates:
             c.et_part_b_total_marks_scored = 0
