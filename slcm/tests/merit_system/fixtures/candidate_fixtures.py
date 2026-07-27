@@ -39,7 +39,7 @@ class MockDoc:
         if name.endswith("_list"):
             self.__dict__[name] = []
             return self.__dict__[name]
-        if name in ("waitlist_seats", "compartmentalized_waitlist_seats", "min_percentile", "priority"):
+        if name in ("waitlist_seats", "compartmentalized_waitlist_seats", "min_percentile", "priority", "seats", "shortlisting_target"):
             return 0
         if name in ("compartmentalized_category",):
             return ""
