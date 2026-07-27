@@ -345,12 +345,6 @@ slcm.show_bulk_email_progress = function (bulk_email_name, recipients_data) {
         let percent = (data.sent + data.failed) / data.total * 100;
         $('#be-progress-bar').css('width', percent + '%');
         $('#be-progress-text').text(`Processed ${data.sent + data.failed} of ${data.total} (Sent: ${data.sent}, Failed: ${data.failed})`);
-    frappe.realtime.on("bulk_email_row_update", function(data) {
-        if (data.bulk_email !== bulk_email_name) return;
-
-        if (recipients_data && recipients_data.length) {
-            // Obsolete: Dialog handles its own updates, see above
-        }
     });
 
     const handle_complete = function(data) {
