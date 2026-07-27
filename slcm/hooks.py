@@ -535,7 +535,8 @@ scheduler_events = {
 		    # Admission Module — Applicant Reminder Emails
 		    "slcm.admission.applicant_reminder_emails.send_not_started_reminders",
 		    "slcm.admission.applicant_reminder_emails.send_draft_applicant_reminders",
-		    "slcm.admission.applicant_reminder_emails.send_unpaid_fee_reminders"
+		    "slcm.admission.applicant_reminder_emails.send_unpaid_fee_reminders",
+		    "slcm.admission.applicant_reminder_emails.send_admission_fee_reminders"
 		],
 		"daily": [
 		]

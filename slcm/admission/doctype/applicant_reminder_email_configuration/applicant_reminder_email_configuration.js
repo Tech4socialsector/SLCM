@@ -14,7 +14,8 @@ function _trigger_manual_reminders(frm, is_rejection_only = false) {
     const reminder_fields = [
         "enable_not_started_reminder",
         "enable_draft_reminder",
-        "enable_unpaid_fee_reminder"
+        "enable_unpaid_fee_reminder",
+        "enable_admission_fee_reminder"
     ];
 
     const active_reminders = reminder_fields.filter(f => frm.doc[f] === "Active");

@@ -20,28 +20,28 @@ from frappe.utils import get_url, getdate, today, now_datetime, formatdate
 
 def _get_active_cycle():
     """
-    Returns (cycle_name, application_end_date) for the currently Active
+    Returns (cycle_name, cycle_end_date) for the currently Active
     Admission Cycle, or (None, None) if none found.
     """
     cycle = frappe.db.get_value(
         "Admission Cycle",
         {"status": "Active"},
-        ["name", "application_end_date"],
+        ["name", "cycle_end_date"],
         as_dict=True,
     )
     if cycle:
-        return cycle.name, cycle.application_end_date
+        return cycle.name, cycle.cycle_end_date
 
     # Fallback: look for the most recently closed cycle
     cycle = frappe.db.get_value(
         "Admission Cycle",
         {"status": "Closed"},
-        ["name", "application_end_date"],
+        ["name", "cycle_end_date"],
         as_dict=True,
-        order_by="application_end_date desc",
+        order_by="cycle_end_date desc",
     )
     if cycle:
-        return cycle.name, cycle.application_end_date
+        return cycle.name, cycle.cycle_end_date
 
     return None, None
 
@@ -493,5 +493,147 @@ def send_unpaid_fee_reminders(current_item=0, total_items=0, is_rejection_only=F
 
         except Exception:
             frappe.log_error(frappe.get_traceback(), f"Unpaid Fee Reminder Failed: {app.name}")
+
+    return sent_count
+
+# ---------------------------------------------------------------------------
+# 4. Admission Fee Pending Reminder
+# ---------------------------------------------------------------------------
+
+def send_admission_fee_reminders(current_item=0, total_items=0, is_rejection_only=False):
+    """
+    Sends reminders to applicants who have an unpaid Admission Fee assigned.
+    Uses Applicant Fee Assignment DocType where fee_type='Admission Fee' and status='Assigned'.
+    """
+    from slcm.admission.doctype.applicant_reminder_email_configuration.applicant_reminder_email_configuration import (
+        should_send_reminder, get_rejection_reason
+    )
+    from slcm.admission.doctype.applicant_reminder_email_log.applicant_reminder_email_log import (
+        log_applicant_reminder_email,
+    )
+    from frappe.utils import today, getdate, formatdate
+
+    cycle_name, cycle_end_date = _get_active_cycle()
+    if not cycle_name or not cycle_end_date:
+        return 0
+
+    today_date = getdate(today())
+    close_date = getdate(cycle_end_date)
+    
+    if is_rejection_only and today_date <= close_date:
+        return 0
+
+    fee_assignments = frappe.get_all(
+        "Applicant Fee Assignment",
+        filters={
+            "fee_type": "Admission Fee",
+            "status": "Assigned"
+        },
+        fields=["name", "applicant", "applicant_name", "academic_year", "program"]
+    )
+
+    template_name = "Admission Fee Pending Reminder"
+    institution_name = _get_institution_name()
+    sent_count = 0
+
+    for i, assignment in enumerate(fee_assignments):
+        if total_items > 0:
+            frappe.publish_realtime("applicant_reminder_progress", {
+                "progress": [current_item + i, total_items],
+                "title": "Applicant Reminders",
+                "description": f"Admission Fee Reminders: {assignment.applicant}",
+            }, user=frappe.session.user)
+
+        try:
+            if not frappe.db.exists("Applicant", assignment.applicant):
+                continue
+            applicant_doc = frappe.get_doc("Applicant", assignment.applicant)
+            if applicant_doc.status == "Rejected":
+                continue
+            recipient = applicant_doc.email
+            if not recipient:
+                continue
+
+            # Need to add last_admission_fee_reminder_sent_on if missing
+            last_sent = applicant_doc.get("last_admission_fee_reminder_sent_on")
+
+            if not should_send_reminder("admission_fee", last_sent, cycle_end_date):
+                continue
+
+            if today_date > close_date:
+                # Get specific admission fee rejection reason, or fallback to unpaid fee reason
+                rejection_reason = get_rejection_reason("unpaid_admission_fee_rejection_reason") or get_rejection_reason("unpaid_fee_rejection_reason")
+                subject, ok = _send_email_from_template(
+                    "Applicant Application Rejected",
+                    recipient,
+                    {
+                        "candidate_name": assignment.applicant_name or recipient,
+                        "applicant_id": assignment.applicant,
+                        "program": assignment.program or "",
+                        "rejection_reason": rejection_reason,
+                        "cycle_end_date": formatdate(cycle_end_date),
+                        "institution_name": institution_name,
+                        "admission_portal_url": get_url("/admission-dashboard"),
+                    },
+                    reference_doctype="Applicant",
+                    reference_name=assignment.applicant,
+                )
+                if ok:
+                    rejected_status = frappe.db.get_value("Applicant Status", {"name": "Rejected"}, "name") or "Rejected"
+                    frappe.db.set_value("Applicant", assignment.applicant, "status", rejected_status, update_modified=False)
+                    frappe.db.set_value("Applicant", assignment.applicant, "rejected_reason", rejection_reason, update_modified=False)
+                    
+                    # Optional: We could also cancel the Applicant Fee Assignment itself
+                    frappe.db.set_value("Applicant Fee Assignment", assignment.name, "status", "Cancelled", update_modified=False)
+                    
+                    frappe.db.commit()
+                    log_applicant_reminder_email(
+                        recipient=recipient,
+                        subject=subject or "Application Rejected",
+                        reminder_type="Unpaid Admission Fee Rejected",
+                        sender=_get_template_sender("Applicant Application Rejected"),
+                        reference_doctype="Applicant",
+                        reference_name=assignment.applicant,
+                        email_template="Applicant Application Rejected",
+                    )
+                    sent_count += 1
+                continue
+
+            # Send reminder
+            subject, ok = _send_email_from_template(
+                template_name,
+                recipient,
+                {
+                    "candidate_name": assignment.applicant_name or recipient,
+                    "applicant_id": assignment.applicant,
+                    "program": assignment.program or "",
+                    "cycle_end_date": formatdate(cycle_end_date),
+                    "institution_name": institution_name,
+                    "admission_portal_url": get_url("/admission-dashboard"),
+                },
+                reference_doctype="Applicant",
+                reference_name=assignment.applicant,
+            )
+            if ok:
+                # Reliably update the field, using raw SQL as fallback if metadata cache is stale
+                try:
+                    frappe.db.set_value("Applicant", assignment.applicant, "last_admission_fee_reminder_sent_on", now_datetime(), update_modified=False)
+                except Exception:
+                    pass
+                frappe.db.sql("""UPDATE `tabApplicant` SET last_admission_fee_reminder_sent_on = %s WHERE name = %s""", (now_datetime(), assignment.applicant))
+                
+                log_applicant_reminder_email(
+                    recipient=recipient,
+                    subject=subject,
+                    reminder_type="Admission Fee Pending Reminder",
+                    sender=_get_template_sender(template_name),
+                    reference_doctype="Applicant",
+                    reference_name=assignment.applicant,
+                    email_template=template_name,
+                )
+                sent_count += 1
+
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), f"Admission Fee Reminder Failed: {assignment.name}")
 
     return sent_count

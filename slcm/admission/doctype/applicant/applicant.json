@@ -165,6 +165,7 @@
   "campus",
   "last_draft_reminder_sent",
   "last_fee_reminder_sent",
+  "last_admission_fee_reminder_sent_on",
   "section_break_portal",
   "center_filled",
   "application_fee_status",
@@ -1283,6 +1284,11 @@
    "fieldname": "last_fee_reminder_sent",
    "fieldtype": "Datetime",
    "label": "Last Fee Reminder Sent"
+  },
+  {
+   "fieldname": "last_admission_fee_reminder_sent_on",
+   "fieldtype": "Datetime",
+   "label": "Last Admission Fee Reminder Sent On"
   }
  ],
  "grid_page_length": 50,
@@ -1318,7 +1324,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-25 12:24:10.903460",
+ "modified": "2026-07-27 15:11:51.655359",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
