@@ -1220,20 +1220,35 @@ class ExamBarcodeSheet {
 
 	// ── Generate barcodes ──────────────────────────────────────────────────────
 	_generate_barcodes(courses) {
-		frappe.call({
-			method: 'slcm.slcm.page.exam_barcode_sheet.exam_barcode_sheet.generate_barcodes',
-			args: { exam_plan: this.exam_plan, courses: JSON.stringify(courses) },
-			freeze: true,
-			freeze_message: 'Generating barcodes…',
-			callback: r => {
-				if (r.exc) {
-					frappe.show_alert({ message: 'Error generating barcodes.', indicator: 'red' });
-					return;
-				}
-				frappe.show_alert({ message: r.message?.message || 'Done.', indicator: 'green' });
-				this._load_courses();
-			}
-		});
+		frappe.prompt(
+			[{
+				fieldtype: 'Int',
+				fieldname: 'copies',
+				label: 'Copies per Student',
+				description: 'How many times should each student\'s barcode be printed (e.g. one per answer booklet)? The same barcode is repeated — no new barcode is generated per copy.',
+				default: 1,
+				reqd: 1,
+			}],
+			values => {
+				const copies = values.copies || 1;
+				frappe.call({
+					method: 'slcm.slcm.page.exam_barcode_sheet.exam_barcode_sheet.generate_barcodes',
+					args: { exam_plan: this.exam_plan, courses: JSON.stringify(courses), copies },
+					freeze: true,
+					freeze_message: 'Generating barcodes…',
+					callback: r => {
+						if (r.exc) {
+							frappe.show_alert({ message: 'Error generating barcodes.', indicator: 'red' });
+							return;
+						}
+						frappe.show_alert({ message: r.message?.message || 'Done.', indicator: 'green' });
+						this._load_courses();
+					}
+				});
+			},
+			'Generate Barcodes',
+			'Generate'
+		);
 	}
 
 	// ── By-Date dialog ─────────────────────────────────────────────────────────
