@@ -186,17 +186,19 @@ def get_offer_details(offer_name=None):
     # Calculate available scholarships
     from slcm.admission.utils.scholarship_availability import get_available_scholarships_for_dashboard
     available_scholarships_count = 0
-    try:
-        available_scholarships = get_available_scholarships_for_dashboard(
-            applicant_id=target_applicant,
-            cycle=admission_cycle,
-            campus=applicant_dict.get("campus"),
-            program=applicant_dict.get("program"),
-            applicant_statuses=[applicant_dict.get("status")]
-        )
-        available_scholarships_count = len(available_scholarships)
-    except Exception:
-        pass
+    enable_scholarship = frappe.db.get_value("Admission Cycle", admission_cycle, "enable_scholarship")
+    if enable_scholarship:
+        try:
+            available_scholarships = get_available_scholarships_for_dashboard(
+                applicant_id=target_applicant,
+                cycle=admission_cycle,
+                campus=applicant_dict.get("campus"),
+                program=applicant_dict.get("program"),
+                applicant_statuses=[applicant_dict.get("status")]
+            )
+            available_scholarships_count = len(available_scholarships)
+        except Exception:
+            pass
 
     return {
         "offer": offer_dict,
