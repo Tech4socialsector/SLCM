@@ -189,7 +189,7 @@
         <table class="data-tbl">
             <tr>
                 <td class="lb">Admit Card Number</td><td class="vl">: {{ admit_no }}</td>
-                <td rowspan="9" class="photo-col">
+                <td rowspan="8" class="photo-col">
                     <div class="photo-box">
                         {% if _photo_src %}<img src="{{ _photo_src }}" style="width:100%; height:100%; object-fit:cover;">
                         {% else %}<div style="line-height:140px; font-size:40px; color:#ccc;">👤</div>{% endif %}
@@ -203,11 +203,9 @@
             <tr><td class="lb">Gender</td><td class="vl">: {{ doc.gender or "—" }}</td></tr>
             <tr><td class="lb">Examination Date & Time</td><td class="vl">: {{ exam_date_time|safe }}</td></tr>
             <tr><td class="lb">Reporting Time</td><td class="vl">: {{ reporting_time }}</td></tr>
-        </table>
-        <table>
-            <tr class="data-tbl">
+            <tr>
                 <td class="lb">Test Centre Name &<br>Address</td>
-                <td style="padding:2px !important">: {{ centre_full|safe }}</td>
+                <td class="vl" colspan="2" style="padding:2px !important">: {{ centre_full|safe }}</td>
             </tr>
         </table>
     </div>
