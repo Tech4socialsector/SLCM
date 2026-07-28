@@ -92,6 +92,18 @@
   {
    "child": 1,
    "collapsible": 1,
+   "icon": "file-input",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Reservation Report",
+   "link_to": "Reservation Report",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
    "icon": "app-window",
    "indent": 0,
    "keep_closed": 0,
@@ -126,7 +138,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-07-10 11:13:23.069149",
+ "modified": "2026-07-27 11:08:16.427741",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit",

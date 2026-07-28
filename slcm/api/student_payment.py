@@ -1533,6 +1533,9 @@ def create_improvement_exam_payment_order(exam_plan, course):
     """Create (or retrieve) an Improvement Exam Registration and return a Razorpay order payload."""
     student_name = _require_student()
 
+    from slcm.api.student_portal import check_improvement_cgpa_eligibility
+    check_improvement_cgpa_eligibility(student_name, exam_plan)
+
     setting = frappe.db.get_value(
         "Improvement Exam Course Setting",
         {"exam_plan": exam_plan, "course": course},

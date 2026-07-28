@@ -37,13 +37,6 @@ def get_context(context):
             context.allow_condonation = True
             context.min_condonation_pct = 66.0
 
-        # ── Examination Settings ───────────────────────────────────
-        try:
-            exam_settings = frappe.get_single("Examination Settings")
-            context.allow_fa_mfa = bool(exam_settings.allow_fa_mfa)
-        except Exception:
-            context.allow_fa_mfa = True
-
         # ── Portal colour thresholds (from Student Portal Settings) ─
         try:
             from slcm.slcm.doctype.student_portal_settings.student_portal_settings import (
@@ -85,7 +78,7 @@ def get_context(context):
                 "academic_year", "term_name",
                 "total_classes", "attended_classes",
                 "total_class_hours", "total_attended_class_hours",
-                "total_office_hours", "total_condonation_hours", "total_fa_mfa_hours",
+                "total_office_hours", "total_condonation_hours",
                 "attendance_percentage", "minimum_required_percentage",
                 "eligible_for_exam", "last_updated",
             ],
@@ -94,9 +87,7 @@ def get_context(context):
         )
 
         # Enrich with Course Offering info
-        student_courses = []      # for FA/MFA course dropdown (Course link)
         student_cos = []          # for Condonation dropdown (Course Offering link)
-        seen_courses = set()
         seen_cos = set()
 
         for s in summaries:
@@ -136,20 +127,10 @@ def get_context(context):
                 else context.att_label_danger
             )
             s["shortfall"] = max(0, round(req - pct, 1))
-            s["can_apply_condonation"] = (
-                context.allow_condonation
-                and pct >= context.min_condonation_pct
-                and pct < req
-            )
-
-            # Build unique course list for FA/MFA modal
-            course_id = s.course or ""
-            if course_id and course_id not in seen_courses:
-                seen_courses.add(course_id)
-                student_courses.append({
-                    "course": course_id,
-                    "name": s["course_display"],
-                })
+            # Students may apply for condonation anytime regardless of their
+            # current attendance % — the minimum-percentage floor is only
+            # enforced at final (Programme Chair) approval time.
+            s["can_apply_condonation"] = context.allow_condonation
 
             # Build unique course-offering list for Condonation modal
             if co_name and co_name not in seen_cos:
@@ -159,7 +140,6 @@ def get_context(context):
                     "name": s["course_display"],
                 })
 
-        context.student_courses = student_courses
         context.student_cos = student_cos
 
         # ── Overall Stats ──────────────────────────────────────────
@@ -188,35 +168,6 @@ def get_context(context):
         context.term_groups = [
             {"term": t, "summaries": v} for t, v in term_groups.items()
         ]
-
-        # ── FA/MFA Applications ────────────────────────────────────
-        try:
-            fa_mfa_apps = frappe.get_all(
-                "FA MFA Application",
-                filters={"student": student_name},
-                fields=[
-                    "name", "course", "course_name", "examination_date",
-                    "application_type", "reason", "status",
-                    "granted_hours", "rejection_reason", "creation",
-                ],
-                order_by="creation desc",
-                ignore_permissions=True,
-            )
-            for app in fa_mfa_apps:
-                st = app.status or "Pending"
-                app["status_color"] = {
-                    "Pending":  "var(--sp-warning)",
-                    "Approved": "var(--sp-success)",
-                    "Rejected": "var(--sp-danger)",
-                }.get(st, "var(--sp-text-4)")
-                app["status_bg"] = {
-                    "Pending":  "var(--sp-warning-bg)",
-                    "Approved": "var(--sp-success-bg)",
-                    "Rejected": "var(--sp-danger-bg)",
-                }.get(st, "var(--sp-bg)")
-            context.fa_mfa_applications = fa_mfa_apps
-        except Exception:
-            context.fa_mfa_applications = []
 
         # ── Condonation Applications ───────────────────────────────
         try:
@@ -571,15 +522,12 @@ def _fmt_datetime_time(dt):
 
 
 def _set_defaults(context):
-    context.allow_fa_mfa = True
     context.allow_condonation = True
     context.min_condonation_pct = 66.0
     context.condonation_reasons = []
-    context.student_courses = []
     context.student_cos = []
     context.attendance_summaries = []
     context.term_groups = []
-    context.fa_mfa_applications = []
     context.condonation_applications = []
     context.office_hours_sessions = []
     context.recent_attendance = []

@@ -816,8 +816,7 @@ def sync_attendance_log(log_name, session_name, student=None, synced_via="Class 
 # ---------------------------------------------------------------------------
 
 @frappe.whitelist()
-def bulk_sync_attendance_logs(from_date, to_date, programme=None, academic_year=None,
-                               academic_term=None, batch=None, section=None):
+def bulk_sync_attendance_logs(from_date, to_date, from_time=None, to_time=None, venue=None):
     """Catch-up sync for unresolved Attendance Logs in a date range, for the
     two most common human misses that the scheduled processor can't fix on
     its own:
@@ -837,7 +836,9 @@ def bulk_sync_attendance_logs(from_date, to_date, programme=None, academic_year=
     Attendance Sync page — this method never guesses.
 
     from_date/to_date are required: bulk actions must be scoped to an
-    explicit window, never "all unresolved logs ever".
+    explicit window, never "all unresolved logs ever". from_time/to_time
+    narrow that window to a time-of-day range within it; venue further
+    restricts to taps on devices currently mapped to that Room.
     """
     frappe.only_for(("System Manager", "slcm_Programme Chair"))
 
@@ -848,18 +849,18 @@ def bulk_sync_attendance_logs(from_date, to_date, programme=None, academic_year=
 
     filters = {
         "processed": 0,
-        "swipe_time": ["between", [f"{from_date} 00:00:00", f"{to_date} 23:59:59"]],
+        "swipe_time": [
+            "between",
+            [f"{from_date} {from_time or '00:00:00'}", f"{to_date} {to_time or '23:59:59'}"],
+        ],
     }
-    if programme:
-        filters["programme"] = programme
-    if academic_year:
-        filters["academic_year"] = academic_year
-    if academic_term:
-        filters["academic_term"] = academic_term
-    if batch:
-        filters["batch"] = batch
-    if section:
-        filters["section"] = section
+    if venue:
+        device_ids = frappe.get_all(
+            "RFID Device Room Mapping",
+            filters={"room": venue, "is_active": 1},
+            pluck="device",
+        )
+        filters["device_id"] = ["in", device_ids or [""]]
 
     logs = frappe.get_all(
         "Attendance Log",

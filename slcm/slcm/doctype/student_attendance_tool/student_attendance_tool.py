@@ -75,6 +75,21 @@ def get_student_attendance_records(
 	if not student_list:
 		return []
 
+	# -------------------- FETCH PHOTOS --------------------
+
+	student_ids = [s["student"] for s in student_list]
+	photo_map = {}
+	if student_ids:
+		photo_rows = frappe.get_all(
+			"Student Master",
+			fields=["name", "passport_size_photo"],
+			filters={"name": ["in", student_ids]},
+		)
+		photo_map = {row["name"]: row["passport_size_photo"] for row in photo_rows}
+
+	for student in student_list:
+		student["student_image"] = photo_map.get(student["student"])
+
 	# -------------------- FETCH EXISTING ATTENDANCE --------------------
 
 	StudentAttendance = frappe.qb.DocType("Student Attendance")

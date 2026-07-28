@@ -1337,10 +1337,14 @@ function applyVerificationResult(status) {
   }
 }
 
+// TFSS team added this code from here...
+var _lpRegInFlight = false;
+// ...to here (TFSS team)
+
 async function doRegister() {
   // TFSS team added this code from here...
-  var lpRegBtnGuard = document.getElementById('lp-reg-btn');
-  if (lpRegBtnGuard && lpRegBtnGuard.disabled) return;
+  if (_lpRegInFlight) return;
+  _lpRegInFlight = true;
   // ...to here (TFSS team)
 
   if (!lpValidate([

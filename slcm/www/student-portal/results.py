@@ -26,6 +26,9 @@ def get_context(context):
         student = frappe.get_doc("Student Master", student_name)
         _set_student_nav(context, student)
 
+        exam_settings = frappe.get_single("Examination Settings")
+        max_cgpa_for_improvement = float(exam_settings.max_cgpa_for_improvement or 3.0)
+
         # ── Only show exam plans where this student's result is published ──
         publish_records = frappe.get_all(
             "Student Result Publish",
@@ -50,6 +53,13 @@ def get_context(context):
                 ["exam_name", "term", "status"],
                 as_dict=True,
             ) or frappe._dict()
+
+            # ── Improvement Exam eligibility gate — only students with a
+            # published CGPA below the configured threshold may apply ──
+            cgpa_for_eligibility = float(rec.cumulative_gpa) if rec.cumulative_gpa else None
+            improvement_cgpa_ok = bool(
+                cgpa_for_eligibility is not None and cgpa_for_eligibility < max_cgpa_for_improvement
+            )
 
             # ── Publish Result Setting ─────────────────────────────
             setting       = _get_publish_setting(ep_name)
@@ -162,7 +172,9 @@ def get_context(context):
                     "has_comp_marks":           bool(regular_groups or reexam_groups),
                     "show_total":               show_total,
                     "arrear_marker":            arrear_marker,
-                    "improvement_available":      bool(improv_setting),
+                    "improvement_available":      bool(improv_setting) and improvement_cgpa_ok,
+                    "improvement_setting_exists": bool(improv_setting),
+                    "improvement_cgpa_ok":        improvement_cgpa_ok,
                     "improvement_fee":           float(improv_setting.improvement_fee or 0) if improv_setting else 0,
                     "improvement_deadline_to":   str(improv_setting.deadline_to or "") if improv_setting else "",
                     "improvement_payment_status": improv_reg.payment_status if improv_reg else "",

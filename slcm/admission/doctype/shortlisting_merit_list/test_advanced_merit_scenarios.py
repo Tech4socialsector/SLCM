@@ -31,6 +31,149 @@ class IntegrationTestAdvancedMeritScenarios(IntegrationTestCase):
     - Section I: Performance & Scale with 2,500 Applicants
     """
 
+# Copyright (c) 2026, TFSS and Contributors
+# See license.txt
+
+import time
+import frappe
+from frappe.tests import IntegrationTestCase
+from frappe.utils import flt
+
+from slcm.admission.doctype.merit_generation.merit_service import (
+    _rank_applicants,
+    _calculate_and_sync_percentiles,
+    _check_percentile_eligibility,
+    execute_advanced_allocation_logic,
+    execute_part_a_shortlisting,
+    clear_category_cache
+)
+
+from slcm.tests.merit_system.fixtures.candidate_fixtures import MockDoc, generate_candidate
+
+_original_get_doc = None
+
+
+class MockPolicy:
+    def __init__(self):
+        self.shortlisting_multiplier = 5.0
+        self.categories = [
+            MockDoc("Admission Category Row", "Gen",
+                    category_name="General", seats=49, shortlisting_target=245, min_percentile=75.0, priority=1),
+            MockDoc("Admission Category Row", "SC",
+                    category_name="SC", seats=18, shortlisting_target=90, min_percentile=40.0, priority=2),
+            MockDoc("Admission Category Row", "OBC",
+                    category_name="OBC-NCL", seats=32, shortlisting_target=160, min_percentile=40.0, priority=3),
+            MockDoc("Admission Category Row", "EWS",
+                    category_name="EWS", seats=12, shortlisting_target=60, min_percentile=75.0, priority=4),
+            MockDoc("Admission Category Row", "ST",
+                    category_name="ST", seats=9, shortlisting_target=45, min_percentile=40.0, priority=5),
+        ]
+        self.horizontal_reservations = [
+            MockDoc("Horizontal Reservation Row", "PWD",
+                    category_name="PWD", percentage=5.0, shortlisting_target=30, min_percentile=0.0),
+            MockDoc("Horizontal Reservation Row", "Women",
+                    category_name="Women", percentage=30.0, shortlisting_target=180, min_percentile=0.0),
+        ]
+        self.compartmental_reservations = [
+            MockDoc("Compartmentalised Reservation Row", "Karnataka",
+                    category_name="Karnataka", percentage=25.0, shortlisting_target=150, min_percentile=0.0),
+        ]
+
+    def get(self, key, default=None):
+        return getattr(self, key, default)
+
+
+def _mock_get_doc(doctype, name=None, **kwargs):
+    if isinstance(doctype, dict):
+        return _original_get_doc(doctype)
+    if doctype == "Programme Reservation Policy":
+        return MockPolicy()
+    if doctype in ("Merit List", "Entrance Test Seat Allocation"):
+        from slcm.tests.merit_system.fixtures.candidate_fixtures import mock_doc_registry
+        if name in mock_doc_registry:
+            return mock_doc_registry[name]
+        return MockDoc(doctype, name, **kwargs)
+    if name is not None:
+        return _original_get_doc(doctype, name, **kwargs)
+    return _original_get_doc(doctype, **kwargs)
+
+
+def _mock_get_value(doctype, filters=None, fieldname=None, **kwargs):
+    if doctype == "Programme Reservation Policy":
+        return "MockPolicyName"
+    if doctype == "Entrance Test Seat Allocation":
+        if fieldname == "percentile":
+            return 99.0
+        if fieldname == "shortlisted_status":
+            return "Shortlisted"
+    return "MockValue"
+
+
+def _mock_get_all(doctype, **kwargs):
+    if doctype == "Applicant Category":
+        return []
+    if doctype == "Admission Category":
+        cats = [
+            frappe._dict(name="General",   reservation_type="Vertical"),
+            frappe._dict(name="SC",        reservation_type="Vertical"),
+            frappe._dict(name="ST",        reservation_type="Vertical"),
+            frappe._dict(name="OBC-NCL",   reservation_type="Vertical"),
+            frappe._dict(name="EWS",       reservation_type="Vertical"),
+            frappe._dict(name="PWD",       reservation_type="Horizontal"),
+            frappe._dict(name="Women",     reservation_type="Horizontal"),
+            frappe._dict(name="Karnataka", reservation_type="Compartmentalised Horizontal"),
+            frappe._dict(name="Karnataka SC", reservation_type="Compartmentalised Horizontal"),
+        ]
+        filters = kwargs.get("filters", {})
+        if "name" in filters and isinstance(filters["name"], list) and filters["name"][0] == "in":
+            names = filters["name"][1]
+            return [c for c in cats if c.name in names]
+        return cats
+    return []
+
+
+def _mock_has_trait(applicant_id, trait_name, is_shortlist=False):
+    from slcm.tests.merit_system.fixtures.candidate_fixtures import mock_doc_registry
+    app = mock_doc_registry.get(f"Applicant-{applicant_id}")
+    if app:
+        hc = getattr(app, "original_horizontal_categories", "")
+        if hc:
+            hc_list = [x.strip() for x in hc.split(",") if x.strip()]
+            return trait_name in hc_list
+    return False
+
+
+def _mock_get_applicant_categories(applicant_id):
+    from slcm.tests.merit_system.fixtures.candidate_fixtures import mock_doc_registry
+    app = mock_doc_registry.get(f"Applicant-{applicant_id}")
+    cats = []
+    if app:
+        if getattr(app, "original_vertical_category", None):
+            cats.append(app.original_vertical_category)
+        hc = getattr(app, "original_horizontal_categories", "")
+        if hc:
+            if isinstance(hc, str):
+                cats.extend([c.strip() for c in hc.split(",") if c.strip()])
+            elif isinstance(hc, list):
+                cats.extend(hc)
+    return cats or ["General"]
+
+
+class IntegrationTestAdvancedMeritScenarios(IntegrationTestCase):
+    """
+    Comprehensive Edge Case & Production Readiness Test Suite for NLSAT Merit System.
+    Validates Sections A through I:
+    - Section A: Category-Specific Zero/Shortage Scenarios
+    - Section B: Ratio Variation Scenarios (Below 1:5)
+    - Section C: Min Percentile Cutoff Tests
+    - Section D: Waitlist Scenarios
+    - Section E: Category-Wise Allocation Validation
+    - Section F: Total Sanity Checks
+    - Section G: Merit Order Validation
+    - Section H: Data Integrity Across Stages
+    - Section I: Performance & Scale with 2,500 Applicants
+    """
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -38,6 +181,67 @@ class IntegrationTestAdvancedMeritScenarios(IntegrationTestCase):
         cls.campus = "National Law School of India University"
         cls.program_level = "Undergraduate"
         cls.program = "5-YEAR B.A., LL.B-2026 - 2027-I-TRIMESTER"
+
+    def setUp(self):
+        super().setUp()
+        import slcm.admission.doctype.merit_generation.merit_service as _ms
+        self._ms = _ms
+
+        # Save originals
+        global _original_get_doc
+        _original_get_doc        = frappe.get_doc
+        self._orig_get_all       = frappe.get_all
+        self._orig_has_trait     = _ms._has_trait
+        self._orig_get_app_cats  = _ms.get_applicant_categories
+        self._orig_local_db      = frappe.local.db
+
+        # Patch functions
+        frappe.get_doc = _mock_get_doc
+        frappe.get_all = _mock_get_all
+        _ms._has_trait               = _mock_has_trait
+        _ms.get_applicant_categories = _mock_get_applicant_categories
+
+        # Patch DB with delegating mock
+        orig_db = self._orig_local_db
+        class _MockDB:
+            def get_value(self, doctype, *args, **kwargs):
+                if doctype in ("Programme Reservation Policy", "Entrance Test Seat Allocation"):
+                    return _mock_get_value(doctype, *args, **kwargs)
+                return orig_db.get_value(doctype, *args, **kwargs)
+                
+            def get_all(self, doctype, *args, **kwargs):
+                if doctype in ("Applicant Category", "Admission Category"):
+                    return _mock_get_all(doctype, *args, **kwargs)
+                return orig_db.get_all(doctype, *args, **kwargs)
+                
+            def set_value(self, doctype, *args, **kwargs):
+                if doctype in ("Programme Reservation Policy", "Entrance Test Seat Allocation"):
+                    return None
+                return orig_db.set_value(doctype, *args, **kwargs)
+                
+            def exists(self, doctype, *args, **kwargs):
+                if doctype in ("Programme Reservation Policy", "Entrance Test Seat Allocation"):
+                    return None
+                return orig_db.exists(doctype, *args, **kwargs)
+                
+            def __getattr__(self, name):
+                return getattr(orig_db, name)
+
+        frappe.local.db = _MockDB()
+
+        # Seed global registry
+        from slcm.tests.merit_system.fixtures.candidate_fixtures import mock_doc_registry
+        mock_doc_registry.clear()
+
+    def tearDown(self):
+        # Restore all originals
+        global _original_get_doc
+        frappe.get_doc = _original_get_doc
+        frappe.get_all = self._orig_get_all
+        self._ms._has_trait               = self._orig_has_trait
+        self._ms.get_applicant_categories = self._orig_get_app_cats
+        frappe.local.db = self._orig_local_db
+        super().tearDown()
 
     def _get_mock_doc(self, applicant_rows, is_shortlist=False):
         """Helper to create mock Merit List or Shortlisting Merit List document."""
@@ -56,62 +260,87 @@ class IntegrationTestAdvancedMeritScenarios(IntegrationTestCase):
         return doc
 
     def _get_real_dataset_rows(self):
-        """Fetches all 2,483 real candidate records from DB."""
-        etsa_records = frappe.db.get_all(
-            "Entrance Test Seat Allocation",
-            filters={
-                "admission_cycle": self.cycle,
-                "campus": self.campus
-            },
-            fields=[
-                "applicant", "candidate_name", "program", "program_level",
-                "part_a_total_marks_scored", "part_b_total_marks_scored",
-                "percentile", "shortlisted_status"
-            ]
-        )
+        """Generates 2,483 mock candidate records dynamically instead of fetching from DB."""
+        dist = {
+            "General": 1200,
+            "OBC-NCL": 600,
+            "SC": 300,
+            "ST": 200,
+            "EWS": 183
+        }
 
-        rows = []
-        for r in etsa_records:
-            app_id = r.applicant
-            cand_name = str(r.candidate_name)
-            pa = float(r.part_a_total_marks_scored or 0)
-            pb = float(r.part_b_total_marks_scored or 0)
-            shortlisted_b = (r.shortlisted_status or "") == "Shortlisted"
+        candidates = []
+        import random
+        from slcm.tests.merit_system.fixtures.candidate_fixtures import generate_candidate
 
-            app_doc = frappe.get_doc("Applicant", app_id) if frappe.db.exists("Applicant", app_id) else None
-            gender = app_doc.get("gender") if app_doc else "Male"
-            dob = app_doc.get("date_of_birth") if app_doc else None
+        # Set seed for reproducibility across runs
+        random.seed(42)
 
-            # Traits normalization via merit_service helper
-            from slcm.admission.doctype.merit_generation.merit_service import _get_categorized_traits
-            v_traits, h_traits, c_traits = _get_categorized_traits(app_id)
-            actual_cat = v_traits[0] if v_traits else "General"
+        curr_id = 1
+        for v_cat, v_count in dist.items():
+            for _ in range(v_count):
+                part_a = round(random.uniform(50, 100), 2)
+                part_b = round(random.uniform(10, 50), 2)
 
-            row = frappe._dict({
-                "applicant_id": app_id,
-                "candidate_name": cand_name,
-                "program": self.program,
-                "program_level": self.program_level,
-                "entrance_score": pa,
-                "interview_score": pb,
-                "total_score": pa + pb,
-                "date_of_birth": dob,
-                "gender": gender,
-                "actual_category": actual_cat,
-                "vertical_category": actual_cat,
-                "shortlist_status": "Shortlisted" if shortlisted_b else "Rejected",
-                "status": "Selected",
-                "overall_rank": 0,
-                "shortlist_rank": 0,
-                "part_a_rank": 0,
-                "part_b_rank": 0,
-                "category_rank": 0,
-                "part_b_not_appeared": not shortlisted_b,
-                "allocation_type": "Open"
-            })
-            rows.append(row)
+                is_karnataka = (curr_id % 3 == 0) # 33% Karnataka
+                is_pwd = (curr_id % 20 == 0)      # 5% PWD
+                gender = "Female" if (curr_id % 2 == 0) else "Male" # 50% Female
 
-        return rows
+                year = random.randint(1998, 2005)
+                month = random.randint(1, 12)
+                day = random.randint(1, 28)
+                dob = f"{year}-{month:02d}-{day:02d}"
+
+                c = generate_candidate(
+                    applicant_id=f"APP-2026-{curr_id:05d}",
+                    part_a=part_a,
+                    part_b=part_b,
+                    dob=dob,
+                    vertical=v_cat,
+                    is_karnataka=is_karnataka,
+                    is_pwd=is_pwd,
+                    gender=gender
+                )
+
+                traits = []
+                if is_karnataka:
+                    traits.append("Karnataka")
+                if is_pwd:
+                    traits.append("PWD")
+                if gender == "Female":
+                    traits.append("Women")
+
+                row = frappe._dict({
+                    "applicant_id": c.applicant_id,
+                    "candidate_name": c.candidate_name,
+                    "program": self.program,
+                    "program_level": self.program_level,
+                    "entrance_score": part_a,
+                    "interview_score": part_b,
+                    "total_score": part_a + part_b,
+                    "date_of_birth": dob,
+                    "gender": gender,
+                    "actual_category": v_cat,
+                    "vertical_category": v_cat,
+                    "shortlist_status": "Shortlisted",
+                    "status": "Selected",
+                    "overall_rank": 0,
+                    "shortlist_rank": 0,
+                    "part_a_rank": 0,
+                    "part_b_rank": 0,
+                    "category_rank": 0,
+                    "part_b_not_appeared": False,
+                    "allocation_type": "Open",
+                    "horizontal_categories": ",".join(traits),
+                    "original_horizontal_categories": ",".join(traits),
+                })
+                candidates.append(row)
+                curr_id += 1
+
+        # Seeded shuffle to mix categories across subsets (B.1-B.4 tests)
+        random.shuffle(candidates)
+        return candidates
+
 
     def _run_full_pipeline(self, rows):
         """Helper to run Stage 1 shortlisting and Stage 2/3 allocation."""

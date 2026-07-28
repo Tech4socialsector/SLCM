@@ -1127,11 +1127,12 @@ def get_marks_for_students(course, exam_plan, student_ids):
 	# Fetch header-level data (totals, grade, status fields)
 	header_rows = frappe.db.sql(
 		"""
-		SELECT scm.student, scm.total_marks, scm.grade,
+		SELECT scm.student, scm.course_offering, scm.total_marks, scm.grade,
 		       scm.status, scm.enrollment_status, scm.attendance_status,
 		       scm.mfa, scm.fairness_status, scm.consider_for_sgpa, scm.remark,
 		       scm.updated_final_marks, scm.updated_grade,
-		       scm.improvement_marks, scm.improvement_grade, scm.improvement_applied
+		       scm.improvement_marks, scm.improvement_grade, scm.improvement_applied,
+		       scm.re_exam_grade
 		FROM `tabStudent Course Marks` scm
 		WHERE scm.course = %(course)s
 		  AND scm.exam_plan = %(exam_plan)s
@@ -1140,6 +1141,23 @@ def get_marks_for_students(course, exam_plan, student_ids):
 		{"course": course, "exam_plan": exam_plan, "students": tuple(student_ids)},
 		as_dict=True,
 	)
+
+	# Attendance shortage: computed from Attendance Summary (which is itself
+	# evaluated against Attendance Settings.minimum_attendance_percentage) —
+	# not from a manually-picked status — so the Grade column can show "AS"
+	# whenever a student's real attendance falls below the configured minimum.
+	shortage_students = set()
+	course_offerings = {row["course_offering"] for row in header_rows if row.get("course_offering")}
+	if course_offerings:
+		att_rows = frappe.db.get_all(
+			"Attendance Summary",
+			filters={
+				"student": ["in", list(student_ids)],
+				"course_offering": ["in", list(course_offerings)],
+			},
+			fields=["student", "eligible_for_exam"],
+		)
+		shortage_students = {r.student for r in att_rows if not r.eligible_for_exam}
 
 	# Fetch Approved FA MFA Applications for this course
 	fa_mfa_apps = frappe.db.sql(
@@ -1204,6 +1222,7 @@ def get_marks_for_students(course, exam_plan, student_ids):
 			"status":              row["status"] or "",
 			"enrollment_status":   row["enrollment_status"] or "",
 			"attendance_status":   row["attendance_status"] or "",
+			"attendance_shortage": s in shortage_students,
 			"mfa":                 "Yes" if s in approved_fa_mfa_students else (row.get("mfa") or "No"),
 			"fairness_status":     row["fairness_status"] or "",
 			"consider_for_sgpa":   int(row["consider_for_sgpa"] or 0),
@@ -1213,6 +1232,7 @@ def get_marks_for_students(course, exam_plan, student_ids):
 			"improvement_marks":    row["improvement_marks"],
 			"improvement_grade":    row["improvement_grade"] or "",
 			"improvement_applied":  int(row["improvement_applied"] or 0),
+			"re_exam_grade":        row["re_exam_grade"] or "",
 			"arrear_marker":        _arrear_marker(s, row["grade"] or ""),
 			"entries":              {},
 		}
@@ -1237,9 +1257,11 @@ def get_marks_for_students(course, exam_plan, student_ids):
 		if s not in result:
 			result[s] = {"total": None, "grade": "",
 			             "status": "", "enrollment_status": "", "attendance_status": "",
+			             "attendance_shortage": s in shortage_students,
 			             "mfa": "Yes" if s in approved_fa_mfa_students else "No",
 			             "fairness_status": "", "consider_for_sgpa": 1, "remark": "",
-			             "updated_final_marks": None, "updated_grade": "", "entries": {}}
+			             "updated_final_marks": None, "updated_grade": "", "re_exam_grade": "",
+			             "entries": {}}
 		key = (row["component"] or "") + "|" + (row["assessment_type"] or "")
 		result[s]["entries"][key] = {
 			"marks":             row["marks"],
@@ -2008,11 +2030,19 @@ def _recalculate_student_marks(scm_name, course, exam_plan):
 	# Updated grade uses Re Exam Composition when the schema is configured for it
 	updated_grade = _lookup_grade(grade_schema, updated_final_marks, use_reexam=True) if grade_schema else ""
 
+	# Re-exam grade — the grade the re-exam attempt itself maps to (mirrors how
+	# improvement_grade is looked up from the raw improvement_marks alone),
+	# distinct from updated_grade which reflects the better-of-the-two total.
+	reexam_grade = ""
+	if grade_schema and reexam_configs and reexam_total > 0:
+		reexam_grade = _lookup_grade(grade_schema, reexam_total, use_reexam=True)
+
 	frappe.db.set_value("Student Course Marks", scm_name, {
 		"total_marks":        round(total, 2),
 		"grade":              grade,
 		"updated_final_marks": round(updated_final_marks, 2),
 		"updated_grade":      updated_grade,
+		"re_exam_grade":      reexam_grade,
 	})
 	frappe.db.commit()
 	return {
@@ -2020,6 +2050,7 @@ def _recalculate_student_marks(scm_name, course, exam_plan):
 		"grade":              grade,
 		"updated_final_marks": round(updated_final_marks, 2),
 		"updated_grade":      updated_grade,
+		"re_exam_grade":      reexam_grade,
 	}
 
 

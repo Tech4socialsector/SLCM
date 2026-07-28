@@ -11,6 +11,8 @@ def execute(filters=None):
     message = None
     if not data:
         message = _("No data found for the selected filters.")
+    else:
+        message = _("Category-wise seat capacity, allocated, waitlisted, vacant, and reservation utilization breakdown.")
     
     summary = get_summary(data)
     return columns, data, message, None, summary
@@ -29,23 +31,23 @@ def get_summary(data):
     return [
         {"label": _("Total Seats"), "value": total_seats, "indicator": "Blue"},
         {"label": _("Total Allocated"), "value": allocated, "indicator": "Green"},
-        {"label": _("Total Vacant"), "value": vacant, "indicator": "Red" if vacant < 0 else "Green"},
+        {"label": _("Total Vacant"), "value": vacant, "indicator": "Red" if vacant > 0 else "Green"},
         {"label": _("Utilization %"), "value": utilization, "indicator": "Blue"}
     ]
 
 def get_columns():
     return [
-        {"label": _("Campus"), "fieldname": "campus", "fieldtype": "Link", "options": "Campus", "width": 120},
-        {"label": _("Programme"), "fieldname": "program", "fieldtype": "Link", "options": "Programme", "width": 150},
-        {"label": _("Category"), "fieldname": "category", "fieldtype": "Data", "width": 120},
-        {"label": _("Total Seats"), "fieldname": "total_seats", "fieldtype": "Int", "width": 100, "align": "right"},
-        {"label": _("Allocated"), "fieldname": "allocated", "fieldtype": "Int", "width": 100, "align": "right"},
-        {"label": _("Waitlisted"), "fieldname": "waitlisted", "fieldtype": "Int", "width": 100, "align": "right"},
-        {"label": _("Vacant Seats"), "fieldname": "vacant_seats", "fieldtype": "Int", "width": 100, "align": "right"},
-        {"label": _("PWD"), "fieldname": "pwd_filled", "fieldtype": "Int", "width": 80, "align": "right"},
-        {"label": _("Women"), "fieldname": "women_filled", "fieldtype": "Int", "width": 80, "align": "right"},
-        {"label": _("Karnataka"), "fieldname": "karnataka_filled", "fieldtype": "Int", "width": 100, "align": "right"},
-        {"label": _("Utilization %"), "fieldname": "util", "fieldtype": "Float", "precision": 2, "width": 120, "align": "right", "is_total": 0}
+        {"label": _("Campus"), "fieldname": "campus", "fieldtype": "Link", "options": "Campus", "width": 140},
+        {"label": _("Programme"), "fieldname": "program", "fieldtype": "Link", "options": "Programme", "width": 160},
+        {"label": _("Category"), "fieldname": "category", "fieldtype": "Data", "width": 110},
+        {"label": _("Total Seats"), "fieldname": "total_seats", "fieldtype": "Int", "width": 100},
+        {"label": _("Allocated"), "fieldname": "allocated", "fieldtype": "Int", "width": 95},
+        {"label": _("Waitlisted"), "fieldname": "waitlisted", "fieldtype": "Int", "width": 95},
+        {"label": _("Vacant Seats"), "fieldname": "vacant_seats", "fieldtype": "Int", "width": 115},
+        {"label": _("PWD"), "fieldname": "pwd_filled", "fieldtype": "Int", "width": 75},
+        {"label": _("Women"), "fieldname": "women_filled", "fieldtype": "Int", "width": 80},
+        {"label": _("Karnataka"), "fieldname": "karnataka_filled", "fieldtype": "Int", "width": 95},
+        {"label": _("Utilization %"), "fieldname": "util", "fieldtype": "Float", "precision": 2, "width": 110, "is_total": 0}
     ]
 
 def get_data(filters):
