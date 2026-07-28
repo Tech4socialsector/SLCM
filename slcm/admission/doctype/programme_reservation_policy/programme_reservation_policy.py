@@ -197,58 +197,231 @@ class ProgrammeReservationPolicy(Document):
             first.category or first.category_name
         )
 
+    def render_matrix_html(self):
+        import math
+        vertical = self.categories or []
+        horizontal = self.horizontal_reservations or []
+        compartment = self.compartmental_reservations or []
+
+        # Tally waitlist counts if seat allocation exists
+        sa_filters = {
+            "admission_cycle": self.admission_cycle,
+            "program": self.program,
+            "status": ["in", ["Published", "Allocated", "Draft"]],
+            "docstatus": ["<", 2]
+        }
+        if self.campus:
+            sa_filters["campus"] = self.campus
+
+        sa_names = frappe.get_all("Seat Allocation", filters=sa_filters, pluck="name")
+        
+        waitlist_counts = {}
+        total_waitlist_per_v = {}
+        horizontal_waitlist = {}
+
+        if sa_names:
+            meta = frappe.get_meta("Seat Selection Applicant")
+            has_new_fields = meta.has_field("vertical_category")
+            
+            fields = ["applicant_id", "allocated_category", "selection_status"]
+            if has_new_fields:
+                fields.extend(["vertical_category", "compartmentalized_category"])
+
+            applicants = frappe.get_all("Seat Selection Applicant",
+                filters={
+                    "parent": ["in", sa_names],
+                    "program": self.program,
+                    "selection_status": "Waitlisted"
+                },
+                fields=fields
+            )
+
+            for app in applicants:
+                v_cat = app.get("vertical_category")
+                c_cat = app.get("compartmentalized_category")
+                h_cats_str = app.get("horizontal_categories") or ""
+
+                if not v_cat:
+                    cats = [c.strip() for c in (app.get("allocated_category") or "").split("+") if c.strip()]
+                    v_cat = cats[0] if cats else "General"
+                
+                v_key = (v_cat or "General").strip()
+                c_key = (c_cat or "").strip()
+                
+                waitlist_counts[(v_key, c_key)] = waitlist_counts.get((v_key, c_key), 0) + 1
+                total_waitlist_per_v[v_key] = total_waitlist_per_v.get(v_key, 0) + 1
+
+                if h_cats_str:
+                    for h_item in h_cats_str.split(","):
+                        h_name = h_item.strip()
+                        if h_name:
+                            horizontal_waitlist[h_name] = horizontal_waitlist.get(h_name, 0) + 1
+
+        def get_waitlisted(v_name, c_name=None):
+            w_sum = 0
+            for (v_k, c_k), count in waitlist_counts.items():
+                v_match = (v_k == v_name) or (v_name and v_k and (v_k.lower() in v_name.lower() or v_name.lower() in v_k.lower()))
+                if not v_match:
+                    continue
+                if c_name:
+                    c_match = (c_k == c_name) or (c_name and c_k and (c_k.lower() in c_name.lower() or c_name.lower() in c_k.lower()))
+                    if c_match:
+                        w_sum += count
+                else:
+                    if not c_k:
+                        w_sum += count
+            return w_sum
+
+        def get_waitlisted_v_total(v_name):
+            w_sum = 0
+            for v_k, count in total_waitlist_per_v.items():
+                if (v_k == v_name) or (v_name and v_k and (v_k.lower() in v_name.lower() or v_name.lower() in v_k.lower())):
+                    w_sum += count
+            return w_sum
+
+        def get_horizontal_waitlisted(h_name):
+            h_sum = 0
+            for h_k, count in horizontal_waitlist.items():
+                if (h_k == h_name) or (h_name and h_k and (h_k.lower() in h_name.lower() or h_name.lower() in h_k.lower())):
+                    h_sum += count
+            return h_sum
+
+        # Generate HTML Preview matching Screenshot 2 table layout
+        html = '<div style="overflow-x: auto; margin-top: 10px;">'
+        html += '<div style="font-weight: bold; margin-bottom: 8px; font-size: 13.5px; color: #1e293b;">The seat matrix is as follows (waitlist in parentheses):</div>'
+        html += '<table class="table table-bordered" style="width: 100%; border: 1.5px solid #1e293b; border-collapse: collapse; background-color: #fff; color: #0f172a; font-size: 13px; text-align: center; vertical-align: middle;">'
+        html += '<thead>'
+        html += '<tr style="background-color: #f8fafc;">'
+        html += '<th style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center; font-weight: bold; width: 35%;">Category</th>'
+        
+        has_compartment = len(compartment) > 0
+        html += '<th style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center; font-weight: bold;">All India Students</th>'
+        
+        if has_compartment:
+            for c in compartment:
+                pct = int(c.percentage) if float(c.percentage or 0).is_integer() else c.percentage
+                pct_str = f" ({pct}% HC)" if pct else ""
+                c_name = c.category_name or ""
+                c_label = f"{c_name} Students{pct_str}" if pct_str and pct_str.strip() not in c_name else c_name
+                html += f'<th style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center; font-weight: bold;">{c_label}</th>'
+            
+        html += '<th style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center; font-weight: bold; width: 15%;">Total</th>'
+        html += '</tr></thead><tbody>'
+
+        col_open_seats_total = 0
+        col_open_wait_total = 0
+        comp_col_seats_total = {c.name: 0 for c in compartment}
+        comp_col_wait_total = {c.name: 0 for c in compartment}
+        grand_total_seats = 0
+        grand_total_wait = 0
+
+        for v in vertical:
+            pct = int(v.percentage) if float(v.percentage or 0).is_integer() else v.percentage
+            pct_str = f" ({pct}%)" if pct else ""
+            v_name = v.category_name or ""
+            v_label = f"{v_name}{pct_str}" if pct_str and pct_str.strip() not in v_name else v_name
+
+            v_total = int(v.seats or 0)
+            open_wait = (getattr(v, "waitlist_seats", 0) or 0) or get_waitlisted(v.category_name, None)
+
+            comp_sum_seats = 0
+            comp_sum_wait = 0
+            comp_cells_html = ""
+
+            for c in compartment:
+                c_seats = math.floor(v_total * ((c.percentage or 0) / 100.0))
+                comp_sum_seats += c_seats
+
+                comp_wait_row = 0
+                if getattr(v, "compartmentalized_category", None) and (v.compartmentalized_category == c.category_name or c.category_name in (v.compartmentalized_category or "")):
+                    comp_wait_row = getattr(v, "compartmentalized_waitlist_seats", 0) or 0
+                if not comp_wait_row and getattr(c, "waitlist_seats", 0):
+                    comp_wait_row = c.waitlist_seats or 0
+
+                c_wait = comp_wait_row or get_waitlisted(v.category_name, c.category_name)
+                comp_sum_wait += c_wait
+
+                comp_col_seats_total[c.name] += c_seats
+                comp_col_wait_total[c.name] += c_wait
+
+                c_cell = f"{c_seats} ({c_wait})" if c_wait > 0 else f"{c_seats}"
+                comp_cells_html += f'<td style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center;">{c_cell}</td>'
+
+            open_seats = max(0, v_total - comp_sum_seats)
+            v_total_wait = open_wait + comp_sum_wait
+
+            grand_total_seats += v_total
+            grand_total_wait += v_total_wait
+
+            col_open_seats_total += open_seats
+            col_open_wait_total += open_wait
+
+            open_cell = f"{open_seats} ({open_wait})" if open_wait > 0 else f"{open_seats}"
+            total_cell = f"{v_total} ({v_total_wait})" if v_total_wait > 0 else f"{v_total}"
+
+            html += '<tr>'
+            html += f'<td style="border: 1px solid #1e293b; padding: 8px 12px; text-align: left;">{v_label}</td>'
+            html += f'<td style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center;">{open_cell}</td>'
+            if has_compartment:
+                html += comp_cells_html
+            html += f'<td style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center; font-weight: bold;">{total_cell}</td>'
+            html += '</tr>'
+
+        if not vertical:
+            html += '<tr><td colspan="100" style="text-align: center; padding: 12px; border: 1px solid #1e293b;">No vertical categories defined.</td></tr>'
+        else:
+            # Summary / Total Row at the bottom of vertical categories
+            html += '<tr style="background-color: #e2e8f0; font-weight: bold;">'
+            html += '<td style="border: 1px solid #1e293b; padding: 8px 12px; text-align: left;">Total</td>'
+            open_tot_cell = f"{col_open_seats_total} ({col_open_wait_total})" if col_open_wait_total > 0 else f"{col_open_seats_total}"
+            html += f'<td style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center;">{open_tot_cell}</td>'
+            
+            if has_compartment:
+                for c in compartment:
+                    c_tot_seats = comp_col_seats_total[c.name]
+                    c_tot_wait = comp_col_wait_total[c.name]
+                    c_tot_cell = f"{c_tot_seats} ({c_tot_wait})" if c_tot_wait > 0 else f"{c_tot_seats}"
+                    html += f'<td style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center;">{c_tot_cell}</td>'
+
+            grand_tot_cell = f"{grand_total_seats} ({grand_total_wait})" if grand_total_wait > 0 else f"{grand_total_seats}"
+            html += f'<td style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center;">{grand_tot_cell}</td>'
+            html += '</tr>'
+
+        # Horizontal Reservations Rows
+        num_cols = 2 + (len(compartment) if has_compartment else 0)
+        for h in horizontal:
+            pct = int(h.percentage) if float(h.percentage or 0).is_integer() else h.percentage
+            pct_str = f" ({pct}% H)" if pct else ""
+            h_name = h.category_name or ""
+            h_label = f"{h_name}{pct_str}" if pct_str and pct_str.strip() not in h_name else h_name
+
+            h_wait = (getattr(h, "waitlist_seats", 0) or 0) or get_horizontal_waitlisted(h.category_name)
+            h_cell = f"{h.seats or 0} ({h_wait})" if h_wait > 0 else f"{h.seats or 0}"
+
+            html += '<tr>'
+            html += f'<td colspan="{num_cols}" style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center;">{h_label}</td>'
+            html += f'<td style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center; font-weight: bold;">{h_cell}</td>'
+            html += '</tr>'
+
+        html += '</tbody></table>'
+        
+        # Legend / Footnotes
+        html += '<div style="font-size: 11px; color: #475569; margin-top: 6px; font-style: italic;">'
+        html += '*HC - Horizontal compartmentalized reservation<br>'
+        html += '#H - Horizontal overall reservation'
+        html += '</div></div>'
+
+        return html
+
+
 @frappe.whitelist()
 def generate_matrices(name):
-    import math
     doc = frappe.get_doc("Programme Reservation Policy", name)
     doc.vertical_matrix = []
     doc.horizontal_matrix = []
     doc.compartmentalised_matrix = []
 
-    vertical = doc.categories or []
-    horizontal = doc.horizontal_reservations or []
-    compartment = doc.compartmental_reservations or []
-
-    # Generate HTML Preview
-    html = '<div style="overflow-x: auto;"><table class="table table-bordered table-hover" style="background-color: var(--card-bg); border-radius: 8px; text-align: center; vertical-align: middle;">'
-    html += '<thead style="background-color: var(--gray-100);">'
-    html += '<tr><th style="text-align: left;">Main Category</th><th>Total Seats</th>'
-    
-    # Header columns: Compartment first (split), then Horizontal last (common)
-    for c in compartment:
-        html += f'<th>{c.category_name}</th>'
-    for h in horizontal:
-        html += f'<th>{h.category_name}</th>'
-        
-    html += '</tr></thead><tbody>'
-    
-    num_vertical = len(vertical)
-    
-    for i, v in enumerate(vertical):
-        v_total = v.seats or 0
-        html += '<tr>'
-        html += f'<td style="text-align: left;"><strong>{v.category_name}</strong></td>'
-        html += f'<td>{v_total}</td>'
-        
-        # 1. Compartmentalized categories: Split per vertical category row (Show these first)
-        for c in compartment:
-            c_seats = math.floor(v_total * ((c.percentage or 0) / 100.0))
-            html += f'<td>{c_seats}</td>'
-
-        # 2. Horizontal categories: Only add the rowspan cells on the first row (Show these last)
-        if i == 0:
-            for h in horizontal:
-                html += f'<td rowspan="{num_vertical}" style="vertical-align: middle; font-weight: bold; font-size: 1.2em; color: var(--primary-color); background-color: var(--gray-50);">'
-                html += f'{h.seats or 0}'
-                html += '</td>'
-        
-        html += '</tr>'
-        
-    if not vertical:
-        html += '<tr><td colspan="100" style="text-align: center;">No vertical categories defined.</td></tr>'
-        
-    html += '</tbody></table></div>'
-    
+    html = doc.render_matrix_html()
     doc.matrix_html = html
     doc.save()
     return html

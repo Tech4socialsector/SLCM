@@ -140,29 +140,15 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
     If use_advanced_ranking=True, applies Standard Competition Ranking (1, 2, 2, 4).
     Final ranking order:
     1. Total Score descending
-    2. Part B / Interview Score descending
-    3. Date of Birth ascending (earlier DOB / older candidate first)
+    2. Part B / Interview Score descending (for Final Allotment Stage)
     """
-    # 1. Prepare Keys for Sorting and Ranking
-    from frappe.utils import get_timestamp
-    
-    app_ids = [getattr(row, "applicant_id", None) or getattr(row, "applicant", None) for row in applicant_rows]
-    app_ids = [aid for aid in app_ids if aid]
-    dob_map = {}
-    if app_ids:
-        dob_map = {r.name: r.date_of_birth for r in frappe.db.get_all("Applicant", filters={"name": ["in", app_ids]}, fields=["name", "date_of_birth"])}
-    
     def get_stable_key(x):
-        """Used for actual list sorting (adds deterministic fallback)."""
+        """Used for list sorting based purely on merit scores without arbitrary tie-breakers."""
         score = float(getattr(x, "total_score", None) or x.get("total_score") or getattr(x, "entrance_score", None) or x.get("entrance_score") or getattr(x, "nlsat_part_a_score", None) or x.get("nlsat_part_a_score") or 0)
         score = round(score, 3)
-        app_id = getattr(x, "applicant_id", None) or getattr(x, "applicant", None) or getattr(x, "name", "")
         
         if processing_stage == "Part A Ranking":
-            return (
-                -score,
-                app_id
-            )
+            return (-score,)
         
         # Final Allotment ranking order:
         # 1. Total Score (Desc)
@@ -176,9 +162,9 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
         
         return (
             -score,
-            -part_b,
-            app_id
+            -part_b
         )
+
 
     # Helper to check for same rank (ignores deterministic fallback)
     def is_same_rank(app1, app2):
@@ -283,8 +269,7 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
             return round(score, 3)
 
         def get_part_a_key(x):
-            app_id = getattr(x, "applicant_id", None) or getattr(x, "applicant", None) or getattr(x, "name", "")
-            return (-get_part_a_score(x), app_id)
+            return (-get_part_a_score(x),)
 
         sorted_by_pa = sorted(applicant_rows, key=get_part_a_key)
         current_pa_rank = 1
@@ -311,8 +296,8 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
         return round(score, 3)
 
     def get_part_b_key(x):
-        app_id = getattr(x, "applicant_id", None) or getattr(x, "applicant", None) or getattr(x, "name", "")
-        return (-get_part_b_score(x), app_id)
+        return (-get_part_b_score(x),)
+
 
     sorted_by_pb = sorted(applicant_rows, key=get_part_b_key)
     current_pb_rank = 1
@@ -663,10 +648,11 @@ def _populate_category_lists(doc):
 
     for row in sorted_applicants:
         status_field = "status"
-        if hasattr(row, "shortlist_status"):
+        if hasattr(doc, "shortlist_applicants"):
             status_field = "shortlist_status"
-        elif hasattr(row, "selection_status"):
+        elif hasattr(doc, "selection_applicant"):
             status_field = "selection_status"
+
 
         if getattr(row, status_field, "") == "Rejected":
             continue
@@ -1023,6 +1009,9 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
         # --- PHASE 2: COMPARTMENTAL SUB-QUOTA ADJUSTMENT ---
         _publish_allocation_progress(doc, 90, "Applying compartmental sub-quota adjustments (Karnataka sub-quotas)...")
 
+
+
+
         # Requirement: Displace lowest AI in the pool with next highest student from compartmental category.
         for comp_row in policy.compartmental_reservations:
             comp_cat = comp_row.category_name
@@ -1075,6 +1064,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
 
         # --- PHASE 3: HORIZONTAL RESERVATION (e.g., PWD & Women) ---
         _publish_allocation_progress(doc, 93, "Applying horizontal reservations (Women & PWD quotas)...")
+
+
 
         ordered_h_cats = sorted(horizontal_targets.values(), key=lambda x: x["priority"])
         for h_info in ordered_h_cats:
@@ -1131,6 +1122,62 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                 in_cand = potential[0]
                 
                 _assign_seat_to_applicant(in_cand, v_cat, "Open" if v_cat == "General" else "Reserved", allocated_list, unallocated, v_info, status_field)
+
+        # --- PHASE 3.6: TIE-BREAKER FOR SEAT ALLOCATION ---
+        # If candidates have the same overall_rank in the final rank as the last allocated candidate 
+        # in a category, they must be assigned/allocated to that category/seat.
+        if not is_shortlist_phase:
+            tie_candidates_to_assign = []
+            for v_cat in ordered_cats:
+                # Find all candidates allocated to this category
+                v_allocated = [x for x in allocated_list if x.vertical_category == v_cat]
+                if not v_allocated:
+                    continue
+                # Find the maximum (lowest merit) overall rank among candidates allocated to this category
+                ranks_in_v = [getattr(x, "overall_rank", None) or (x.get("overall_rank") if isinstance(x, dict) else None) for x in v_allocated]
+                ranks_in_v = [r for r in ranks_in_v if r is not None]
+                if not ranks_in_v:
+                    continue
+                max_rank = max(ranks_in_v)
+                
+                # Check for unallocated candidates who have the exact same overall rank as max_rank and are eligible
+                for u in unallocated:
+                    u_rank = getattr(u, "overall_rank", None) or (u.get("overall_rank") if isinstance(u, dict) else None)
+                    if u_rank is not None and u_rank == max_rank:
+
+                        tie_candidates_to_assign.append((u, v_cat))
+
+                        # Check eligibility for v_cat
+                        actual_v = (
+                            getattr(u, "actual_category", None)
+                            or (getattr(u, "vertical_category", None))
+                            or "General"
+                        )
+                        if not actual_v or actual_v.strip() == "":
+                            v_traits, __, __ = _get_categorized_traits(u.applicant_id)
+                            actual_v = v_traits[0] if v_traits else "General"
+                            
+                        if v_cat == "General" or actual_v == v_cat:
+                            tie_candidates_to_assign.append((u, v_cat))
+
+
+
+            print(f"DEBUG After Phase 3.6: allocated_list={[(x.applicant_id, getattr(x, 'vertical_category', '')) for x in allocated_list]}")
+            # Assign seats to tie candidates
+
+            for tie_cand, v_cat in tie_candidates_to_assign:
+
+                if tie_cand in unallocated:
+                    alloc_type = "Open" if v_cat == "General" else "Reserved"
+                    _assign_seat_to_applicant(
+                        tie_cand, 
+                        v_cat, 
+                        alloc_type, 
+                        allocated_list, 
+                        unallocated, 
+                        vertical_targets[v_cat], 
+                        status_field
+                    )
 
         # Explicitly Reject remaining before Waitlist Phase (unless shortlisting with multiplier = 0)
         for u in unallocated:
@@ -1571,13 +1618,13 @@ def execute_part_a_shortlisting(doc):
             
             eligible_applicants.append(row)
 
-    # 3. Sort overall candidates by Part A score desc and applicant ID asc
+    # 3. Sort overall candidates by Part A score desc
     def get_part_a_stable_key(x):
         score = float(getattr(x, "nlsat_part_a_score", 0) or 0)
-        app_id = getattr(x, "applicant_id", None) or getattr(x, "applicant", None) or getattr(x, "name", "")
-        return (-score, app_id)
+        return (-score,)
 
     eligible_applicants.sort(key=get_part_a_stable_key)
+
 
     # 4. Assign overall rank using standard competition ranking
     current_rank = 1

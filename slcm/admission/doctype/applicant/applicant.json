@@ -163,6 +163,9 @@
   "academic_year",
   "application_type",
   "campus",
+  "last_draft_reminder_sent",
+  "last_fee_reminder_sent",
+  "last_admission_fee_reminder_sent_on",
   "section_break_portal",
   "center_filled",
   "application_fee_status",
@@ -1043,8 +1046,7 @@
    "description": "PDF snapshot generated when the application is first submitted. Bulk download uses this file for speed when present.",
    "fieldname": "application_form",
    "fieldtype": "Attach",
-   "label": "Application Form (PDF)",
-   "read_only": 1
+   "label": "Application Form (PDF)"
   },
   {
    "depends_on": "eval:doc.application_fee_status=='Waived'",
@@ -1271,6 +1273,21 @@
   {
    "fieldname": "section_break_zsrj",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "last_draft_reminder_sent",
+   "fieldtype": "Datetime",
+   "label": "Last Draft Reminder Sent"
+  },
+  {
+   "fieldname": "last_fee_reminder_sent",
+   "fieldtype": "Datetime",
+   "label": "Last Fee Reminder Sent"
+  },
+  {
+   "fieldname": "last_admission_fee_reminder_sent_on",
+   "fieldtype": "Datetime",
+   "label": "Last Admission Fee Reminder Sent On"
   }
  ],
  "grid_page_length": 50,
@@ -1306,7 +1323,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-20 22:44:34.812111",
+ "modified": "2026-07-27 17:10:32.947654",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",
