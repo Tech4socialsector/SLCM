@@ -10,7 +10,7 @@ const STATUS_LABELS = {
 	"Early Tap - Awaiting Activation": "Awaiting RFID Activation",
 	"Unmatched - No Session": "No Session Found",
 	"Unmatched - No Device Mapping": "Device/Venue Not Mapped",
-	"Unmatched - Unknown Card": "Unregistered Card",
+	"Unmatched - Unknown Card": "No Active Lesson",
 	"Pending": "Pending",
 	"Matched": "Matched",
 	"Manually Synced": "Manually Synced",
@@ -233,7 +233,7 @@ function build_html() {
 				<div class="col-sm-2"><div class="stat-card"><div class="stat-value" id="as-awaiting-activation">-</div><div class="stat-label">Awaiting Activation</div></div></div>
 				<div class="col-sm-2"><div class="stat-card"><div class="stat-value" id="as-no-session">-</div><div class="stat-label">No Session Found</div></div></div>
 				<div class="col-sm-3"><div class="stat-card"><div class="stat-value" id="as-no-device">-</div><div class="stat-label">Device Not Mapped</div></div></div>
-				<div class="col-sm-3"><div class="stat-card"><div class="stat-value" id="as-unknown">-</div><div class="stat-label">Unregistered Card</div></div></div>
+				<div class="col-sm-3"><div class="stat-card"><div class="stat-value" id="as-unknown">-</div><div class="stat-label">No Active Lesson</div></div></div>
 			</div>
 			<div style="margin-bottom: 10px;">
 				<span class="text-muted" id="as-shown-count"></span>
@@ -498,73 +498,20 @@ function open_bulk_sync_dialog(wrapper) {
 			},
 			{ fieldtype: "Column Break" },
 			{
-				fieldtype: "Link",
-				fieldname: "programme",
-				label: "Programme",
-				options: "Programme",
-				onchange() {
-					d.set_value("academic_year", "");
-					d.set_value("academic_term", "");
-					d.set_value("batch", "");
-					d.set_value("section", "");
-				},
+				fieldtype: "Time",
+				fieldname: "from_time",
+				label: "From Time",
+			},
+			{
+				fieldtype: "Time",
+				fieldname: "to_time",
+				label: "To Time",
 			},
 			{
 				fieldtype: "Link",
-				fieldname: "academic_year",
-				label: "Academic Year",
-				options: "Academic Year",
-				get_query() {
-					return {
-						query: "slcm.slcm.doctype.attendance_log.process_attendance_logs.academic_year_link_query",
-						filters: { programme: d.get_value("programme") },
-					};
-				},
-				onchange() {
-					d.set_value("academic_term", "");
-					d.set_value("batch", "");
-					d.set_value("section", "");
-				},
-			},
-			{
-				fieldtype: "Link",
-				fieldname: "academic_term",
-				label: "Academic Term",
-				options: "Academic Term",
-				get_query() {
-					return {
-						query: "slcm.slcm.doctype.attendance_log.process_attendance_logs.academic_term_link_query",
-						filters: {
-							programme: d.get_value("programme"),
-							academic_year: d.get_value("academic_year"),
-						},
-					};
-				},
-			},
-			{
-				fieldtype: "Link",
-				fieldname: "batch",
-				label: "Batch",
-				options: "Batch",
-				get_query() {
-					const filters = {};
-					if (d.get_value("programme")) filters.program = d.get_value("programme");
-					if (d.get_value("academic_year")) filters.academic_year = d.get_value("academic_year");
-					return { filters };
-				},
-				onchange() {
-					d.set_value("section", "");
-				},
-			},
-			{
-				fieldtype: "Link",
-				fieldname: "section",
-				label: "Section",
-				options: "Section",
-				get_query() {
-					const batch = d.get_value("batch");
-					return batch ? { filters: { batch } } : {};
-				},
+				fieldname: "venue",
+				label: "Venue",
+				options: "Room",
 			},
 		],
 		primary_action_label: "Run Bulk Sync",
@@ -574,11 +521,9 @@ function open_bulk_sync_dialog(wrapper) {
 				args: {
 					from_date: values.from_date,
 					to_date: values.to_date,
-					programme: values.programme || null,
-					academic_year: values.academic_year || null,
-					academic_term: values.academic_term || null,
-					batch: values.batch || null,
-					section: values.section || null,
+					from_time: values.from_time || null,
+					to_time: values.to_time || null,
+					venue: values.venue || null,
 				},
 				freeze: true,
 				freeze_message: __("Running Bulk Sync..."),

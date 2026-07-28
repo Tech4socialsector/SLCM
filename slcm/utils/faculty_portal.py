@@ -8,15 +8,17 @@ def get_faculty_name():
     """
     Return the Faculty doc name for the current session user.
 
-    Tries five strategies in order:
-      1. Faculty.user_id == session user  (fastest, canonical)
-      2. Faculty.email   == session user  (common setup path)
-      3. Faculty.email   == User.email    (handles aliased logins)
-      4. Faculty.user_id == User.email    (cross-field alias)
-      5. Admin/System Manager preview — returns first active Faculty record
+    Tries six strategies in order:
+      1. Faculty.user_id           == session user  (fastest, canonical)
+      2. Faculty.official_email_id == session user  (institutional/Google login email)
+      3. Faculty.email             == session user  (common setup path)
+      4. Faculty.official_email_id == User.email     }
+      5. Faculty.email             == User.email     } handle aliased logins
+      6. Faculty.user_id           == User.email     }
+      7. Admin/System Manager preview — returns first active Faculty record
          so administrators can preview the portal without a personal Faculty record.
 
-    On first successful match via strategies 2-4, back-fills user_id so
+    On first successful match via strategies 2-6, back-fills user_id so
     future lookups hit strategy 1.
     """
     user = frappe.session.user
@@ -28,16 +30,26 @@ def get_faculty_name():
     if name:
         return name
 
-    # Strategy 2 — email field direct match
+    # Strategy 2 — official email direct match (institutional/Google login email)
+    name = frappe.db.get_value("Faculty", {"official_email_id": user}, "name")
+    if name:
+        _backfill_user_id(name, user)
+        return name
+
+    # Strategy 3 — email field direct match
     name = frappe.db.get_value("Faculty", {"email": user}, "name")
     if name:
         _backfill_user_id(name, user)
         return name
 
-    # Strategies 3 & 4 — look up the User doc's email (handles SSO / aliased logins)
+    # Strategies 4-6 — look up the User doc's email (handles SSO / aliased logins)
     try:
         user_email = frappe.db.get_value("User", user, "email")
         if user_email and user_email != user:
+            name = frappe.db.get_value("Faculty", {"official_email_id": user_email}, "name")
+            if name:
+                _backfill_user_id(name, user)
+                return name
             name = frappe.db.get_value("Faculty", {"email": user_email}, "name")
             if name:
                 _backfill_user_id(name, user)
@@ -49,7 +61,7 @@ def get_faculty_name():
     except Exception:
         pass
 
-    # Strategy 5 — admin/system-manager preview using any active Faculty record
+    # Strategy 7 — admin/system-manager preview using any active Faculty record
     if _is_admin_user(user):
         name = frappe.db.get_value("Faculty", {"status": "Active"}, "name", order_by="name asc")
         if name:

@@ -699,11 +699,14 @@ function wire_programme_cascade(dialog, options, { includeBlank }) {
 		)];
 		dialog.set_df_property("academic_year", "options", [...blank, ...years]);
 		dialog.set_value("academic_year", "");
-		dialog.set_df_property("term_name", "options", blank);
-		dialog.set_value("term_name", "");
+		if (dialog.fields_dict.term_name) {
+			dialog.set_df_property("term_name", "options", blank);
+			dialog.set_value("term_name", "");
+		}
 	};
 
 	dialog.fields_dict.academic_year.df.change = function () {
+		if (!dialog.fields_dict.term_name) return;
 		const prog = dialog.get_value("programme");
 		const ay = dialog.get_value("academic_year");
 		const terms = [...new Set(
@@ -719,10 +722,16 @@ function wire_programme_cascade(dialog, options, { includeBlank }) {
 function resolve_selected_batches(dialog, options) {
 	const prog = dialog.get_value("programme");
 	const ay = dialog.get_value("academic_year");
-	const term = dialog.get_value("term_name");
-	if (!prog || !ay || !term) return null;
+	const term = dialog.fields_dict.term_name ? dialog.get_value("term_name") : null;
+
+	if (!prog && !ay && !term) return null; // no filters selected — all students
+
 	return options
-		.filter((o) => o.programme_label === prog && o.academic_year === ay && o.term_name === term)
+		.filter((o) =>
+			(!prog || o.programme_label === prog) &&
+			(!ay || o.academic_year === ay) &&
+			(!term || o.term_name === term)
+		)
 		.map((o) => o.batch);
 }
 
@@ -938,13 +947,12 @@ function render_bulk_section_upload_dialog(listview, options) {
 			{
 				fieldtype: "HTML",
 				options: `<div class="text-muted" style="margin-bottom:8px;">
-					${__("Filter by Programme / Academic Year / Term (or leave blank for all students) before downloading the template. Fill in the Section column and upload it back.")}
+					${__("Filter by Programme / Academic Year (or leave blank for all students) before downloading the template. Fill in the Section column and upload it back.")}
 				</div>`,
 			},
 			{ fieldtype: "Select", fieldname: "programme", label: __("Programme"), options: [] },
 			{ fieldtype: "Select", fieldname: "academic_year", label: __("Academic Year"), options: [] },
 			{ fieldtype: "Column Break" },
-			{ fieldtype: "Select", fieldname: "term_name", label: __("Term"), options: [] },
 			{ fieldtype: "Button", fieldname: "download_template", label: __("Download Sample Template") },
 			{ fieldtype: "Section Break" },
 			{ fieldtype: "Attach", fieldname: "filled_file", label: __("Upload Filled Template") },

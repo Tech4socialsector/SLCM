@@ -183,6 +183,11 @@
               Improve My Mark
             </button>
             {% endif %}
+          {% elif c.improvement_setting_exists and not c.improvement_cgpa_ok %}
+          <span class="sp-badge" style="font-size:11px;background:var(--sp-bg);color:var(--sp-text-4);"
+                title="Improvement Exam is only open to students below the CGPA eligibility threshold">
+            <span class="sp-ms">block</span>Not Eligible (CGPA)
+          </span>
           {% endif %}
         </div>
       </div>

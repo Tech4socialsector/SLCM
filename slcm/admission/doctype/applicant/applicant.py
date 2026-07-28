@@ -339,40 +339,28 @@ class Applicant(Document):
                 
                 # It's a genuine new upload, generate a UUID
                 try:
-                    import uuid
+                    import uuid, os, shutil
                     file_doc = frappe.get_doc("File", {"file_url": file_url})
                     
                     new_file_name = f"{uuid.uuid4().hex[:12]}_{file_doc.file_name}"
                     new_file_url = f"/private/files/{new_file_name}"
                     
-                    # Update doc IMMEDIATELY so the DB transaction saves it
+                    old_path = file_doc.get_full_path()
+                    new_path = frappe.get_site_path("private", "files", new_file_name)
+
+                    if os.path.exists(old_path):
+                        os.makedirs(os.path.dirname(new_path), exist_ok=True)
+                        shutil.move(old_path, new_path)
+
+                    file_doc.file_name = new_file_name
+                    file_doc.file_url = new_file_url
+                    file_doc.is_private = 1
+                    file_doc.attached_to_doctype = self.doctype
+                    file_doc.attached_to_name = self.name
+                    file_doc.attached_to_field = df.fieldname
+                    file_doc.save(ignore_permissions=True)
+
                     self.set(df.fieldname, new_file_url)
-                    
-                    # Defer physical move to avoid 404 on transaction rollback
-                    f_name = file_doc.name
-                    def move_file_after_commit(f_name, n_name, n_url):
-                        try:
-                            import shutil, os
-                            f_doc = frappe.get_doc("File", f_name)
-                            if not f_doc.is_private:
-                                f_doc.is_private = 1
-                                f_doc.save(ignore_permissions=True)
-                            
-                            old_path = f_doc.get_full_path()
-                            new_path = frappe.get_site_path("private", "files", n_name)
-                            
-                            if os.path.exists(old_path):
-                                shutil.move(old_path, new_path)
-                            
-                            frappe.db.set_value("File", f_name, {
-                                "file_name": n_name,
-                                "file_url": n_url
-                            })
-                            frappe.db.commit()
-                        except Exception as e:
-                            frappe.log_error("handle_file_name deferred error", str(e))
-                            
-                    frappe.db.after_commit.add(lambda f=f_name, n=new_file_name, u=new_file_url: move_file_after_commit(f, n, u))
                 except Exception:
                     frappe.log_error(title="handle_file_name error", message=frappe.get_traceback())
 
@@ -380,7 +368,21 @@ class Applicant(Document):
         if not self.user_id:
             frappe.db.set_value(self.doctype, self.name, "user_id", self.email, update_modified=False)
         self.sync_user_profile()
-        old_status = self.flags.get("old_status")
+
+        # Generate the application PDF when the status is submitted
+        if (
+            self.name
+            and self.status in APPLICATION_SUBMITTED_STATUSES
+            and not self.flags.get("in_pdf_generation")
+        ):
+            self.generate_application_pdf()
+
+        doc_before_save = self.get_doc_before_save()
+        old_status = (
+            doc_before_save.status
+            if doc_before_save and hasattr(doc_before_save, "status")
+            else self.flags.get("old_status")
+        )
         just_submitted = (
             old_status == "Draft"
             and self.status in APPLICATION_SUBMITTED_STATUSES
@@ -394,18 +396,19 @@ class Applicant(Document):
                 "Draft", self.status, "General"
             )
 
-            # ── Rich confirmation email with PDF attachment ──────────────
+            # ── Rich confirmation email with PDF attachment (Immediate) ────
             try:
-                frappe.enqueue(
-                    "slcm.admission.doctype.applicant.applicant.send_submission_confirmation_background",
-                    applicant_name=self.name,
-                    queue="long",
-                    enqueue_after_commit=True
-                )
+                sent = self.send_submission_confirmation()
+                if sent:
+                    frappe.msgprint(
+                        _("Application Submitted email sent to the applicant successfully."),
+                        alert=True,
+                        indicator="green",
+                    )
             except Exception:
                 frappe.log_error(
                     frappe.get_traceback(),
-                    f"Submission confirmation email queuing failed — {self.applicant_id}"
+                    f"Submission confirmation email failed — {self.applicant_id or self.name}"
                 )
             # ─────────────────────────────────────────────────────────────
 
@@ -640,31 +643,107 @@ class Applicant(Document):
             # Trigger a reload for the parent if it's being viewed (optional but helpful for some workflows)
             # frappe.publish_realtime("list_update", {"doctype": "Admission Cycle"})
 
+    def generate_application_pdf(self):
+        """Generates application PDF using 'Applicant Application Form' print format and attaches to application_form field."""
+        self.flags.in_pdf_generation = True
+        try:
+            pdf_content = self.get_application_pdf_content()
+            if not pdf_content:
+                return None
+
+            save_application_form_pdf_to_applicant(self, pdf_content)
+            return pdf_content
+        except Exception:
+            frappe.log_error(message=frappe.get_traceback(), title=f"Applicant PDF Generation Failed: {self.name}")
+            return None
+        finally:
+            self.flags.in_pdf_generation = False
+
+    def prepare_html_for_pdf(self, html):
+        """Inlines images and cleans up relative CSS links to avoid wkhtmltopdf network errors/timeouts."""
+        if not html:
+            return html
+        try:
+            import base64, mimetypes, os, re
+            from bs4 import BeautifulSoup
+            
+            # Remove external and relative link tags that cause wkhtmltopdf network timeouts / errors
+            html = re.sub(r'<link[^>]*href=["\']?/print\.bundle\.css["\']?[^>]*>', '', html)
+            html = re.sub(r'<link[^>]*fonts\.googleapis\.com[^>]*>', '', html)
+            html = re.sub(r'@import\s+url\([^)]*fonts\.googleapis\.com[^)]*\);?', '', html)
+
+            soup = BeautifulSoup(html, "html.parser")
+            for img in soup.find_all("img"):
+                src = img.get("src")
+                if not src or src.startswith("data:"):
+                    continue
+                file_url = src.split("?")[0]
+                file_name = frappe.db.get_value("File", {"file_url": file_url}, "name")
+                if not file_name:
+                    file_name = frappe.db.get_value("File", {"file_name": file_url.split("/")[-1]}, "name")
+                
+                full_path = None
+                if file_name:
+                    try:
+                        fdoc = frappe.get_doc("File", file_name)
+                        full_path = fdoc.get_full_path()
+                    except Exception:
+                        pass
+                
+                if not full_path or not os.path.exists(full_path):
+                    if file_url.startswith("/private/files/"):
+                        full_path = frappe.get_site_path("private", "files", file_url.replace("/private/files/", ""))
+                    elif file_url.startswith("/files/"):
+                        full_path = frappe.get_site_path("public", "files", file_url.replace("/files/", ""))
+
+                if full_path and os.path.exists(full_path):
+                    mime_type = mimetypes.guess_type(full_path)[0] or "image/jpeg"
+                    with open(full_path, "rb") as f:
+                        encoded = base64.b64encode(f.read()).decode("utf-8")
+                        img["src"] = f"data:{mime_type};base64,{encoded}"
+                else:
+                    img["src"] = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+            return str(soup)
+        except Exception:
+            frappe.log_error(title="prepare_html_for_pdf error", message=frappe.get_traceback())
+            return html
+
+    def get_application_pdf_content(self):
+        """Returns rendered PDF bytes for 'Applicant Application Form' print format."""
+        print_format_name = resolve_application_form_print_format_for_cycle(self.admission_cycle) or "Applicant Application Form"
+        if not frappe.db.exists("Print Format", print_format_name):
+            print_format_name = "Applicant Application Form"
+
+        with _ignore_print_permissions():
+            html = frappe.get_print(
+                self.doctype, 
+                self.name, 
+                print_format_name, 
+                as_pdf=False, 
+                no_letterhead=True,
+                doc=self
+            )
+            html = self.prepare_html_for_pdf(html)
+            from frappe.utils.pdf import get_pdf
+            return get_pdf(html, options={"load-error-handling": "ignore", "load-media-error-handling": "ignore"})
+
     def send_submission_confirmation(self):
         """
         Sends a formatted confirmation email on application submission.
-        - Email template fetched from active Admission Cycle's `email_template` field
-        - Print format fetched from active Admission Cycle's `application_form_template` field
-        - System notification created via Notification Log (no new DocType)
-        - Falls back to hardcoded HTML if no template is configured on the cycle
+        - Uses 'Application Submitted Email' Email Template
+        - Uses 'Applicant Application Form' Print Format
+        - Generates and stores PDF in application_form field
         """
+        email_template_name = "Application Submitted Email"
+        print_format_name = resolve_application_form_print_format_for_cycle(self.admission_cycle) or "Applicant Application Form"
 
-        # ── Fetch active Admission Cycle config ──────────────────────────────
-        cycle_name = self.admission_cycle  # already linked on the applicant
-
-        email_template_name = None
-        print_format_name = "Applicant Application Form"  # default fallback
-
-        if cycle_name:
-            cycle = frappe.db.get_value(
-                "Admission Cycle",
-                {"name": cycle_name, "status": "Active"},
-                ["email_template", "application_form_template"],
-                as_dict=True
+        recipient = self.email
+        if not recipient:
+            frappe.log_error(
+                f"No email address on Applicant {self.name}. Submission email skipped.",
+                "Applicant Submission Email: No Recipient"
             )
-            if cycle:
-                email_template_name = cycle.get("email_template")
-                print_format_name = cycle.get("application_form_template") or print_format_name
+            return False
 
         # ── Reservation summary ──────────────────────────────────────────────
         reservation_parts = []
@@ -713,15 +792,16 @@ class Applicant(Document):
 
         # ── Institution logo ──────────────────────────────────────────────────
         institution_logo = frappe.db.get_single_value("Institution Settings", "logo") or ""
-        # Convert to full URL if it's a file path
         if institution_logo and not institution_logo.startswith("http"):
             institution_logo = frappe.utils.get_url(institution_logo)
 
         # ── Context dict for template rendering ──────────────────────────────
+        doc_dict = self.as_dict() if hasattr(self, "as_dict") else self
         template_context = {
-            "doc": self,
-            "applicant_id": self.name,
-            "candidate_name": self.candidate_name,
+            "doc": doc_dict,
+            "applicant_id": self.applicant_id or self.name,
+            "candidate_name": self.candidate_name or "",
+            "first_name": (self.candidate_name or "").split()[0] if self.candidate_name else "",
             "program": self.program or "—",
             "program_level": self.program_level or "—",
             "application_type": self.application_type or "—",
@@ -753,44 +833,52 @@ class Applicant(Document):
         }
 
         # ── Resolve email subject and body ────────────────────────────────────
-        email_subject = f"Application Submitted — {self.name} | {self.program or 'Admissions'}"
+        email_subject = f"Application Submitted — {self.applicant_id or self.name} | {self.program or 'Admissions'}"
         html_body = None
+        email_template = None
 
-        if email_template_name:
+        if frappe.db.exists("Email Template", email_template_name):
             try:
                 email_template = frappe.get_doc("Email Template", email_template_name)
-                # Render subject and response using Jinja
-                email_subject = frappe.render_template(email_template.subject, template_context)
-                html_body = frappe.render_template(email_template.response, template_context)
+                if email_template.get("subject"):
+                    email_subject = frappe.render_template(email_template.subject, template_context)
+                
+                if email_template.get("use_html") and email_template.get("response_html"):
+                    html_body = frappe.render_template(email_template.response_html, template_context)
+                elif email_template.get("response"):
+                    html_body = frappe.render_template(email_template.response, template_context)
+
+                if not html_body:
+                    html_body = frappe.render_template(email_template.get("message") or "", template_context)
             except Exception:
                 frappe.log_error(
                     frappe.get_traceback(),
-                    f"Email template render failed for {self.applicant_id}, falling back to default"
+                    f"Email template render failed for {self.name}, falling back to default"
                 )
-                html_body = None  # will fall through to hardcoded below
+                html_body = None
 
         # ── Fallback to hardcoded HTML if no template or render failed ────────
         if not html_body:
             html_body = self._build_default_email_html(template_context)
 
-        # ── PDF attachment using dynamic print format ─────────────────────────
+        # ── PDF generation & storage in application_form field ────────────────
         try:
-            with _ignore_print_permissions():
-                pdf_content = frappe.get_print(
-                    doctype="Applicant",
-                    name=self.name,
-                    print_format=print_format_name,
-                    as_pdf=True,
-                )
-            save_application_form_pdf_to_applicant(self, pdf_content)
-            attachments = [{
-                "fname": f"Application_Form_{self.applicant_id or self.name}.pdf",
-                "fcontent": pdf_content
-            }]
+            pdf_content = self.generate_application_pdf()
+            if not pdf_content:
+                pdf_content = read_stored_application_form_pdf(self.name)
+            
+            attachments = []
+            if pdf_content:
+                attachments.append({
+                    "fname": f"Application_Form_{self.applicant_id or self.name}.pdf",
+                    "fcontent": pdf_content
+                })
+            elif self.application_form:
+                attachments = get_application_attachments(self)
         except Exception:
             frappe.log_error(
                 frappe.get_traceback(),
-                f"PDF generation failed for {self.applicant_id} using format '{print_format_name}'"
+                f"PDF generation failed for {self.applicant_id or self.name} using format '{print_format_name}'"
             )
             attachments = []
 
@@ -800,16 +888,19 @@ class Applicant(Document):
             sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
 
         frappe.sendmail(
-            recipients=[self.email],
+            recipients=[recipient],
             sender=sender,
             subject=email_subject,
             message=html_body,
             attachments=attachments,
+            reference_doctype=self.doctype,
+            reference_name=self.name,
             now=True
         )
 
-        # ── System notification (Notification Log — no new DocType) ──────────
+        # ── System notification ──────────────────────────────────────────────
         self._create_system_notification(institution_name)
+        return True
 
 
     def _create_system_notification(self, institution_name):
@@ -2809,14 +2900,9 @@ def ensure_application_form_pdf_for_applicant(applicant_name):
     doc = frappe.get_doc("Applicant", applicant_name, check_permission=False)
     print_format_name = resolve_application_form_print_format_for_cycle(doc.admission_cycle)
     try:
-        with _ignore_print_permissions():
-            pdf_content = frappe.get_print(
-                doctype="Applicant",
-                name=applicant_name,
-                print_format=print_format_name,
-                as_pdf=True,
-            )
-        save_application_form_pdf_to_applicant(doc, pdf_content)
+        pdf_content = doc.get_application_pdf_content()
+        if pdf_content:
+            save_application_form_pdf_to_applicant(doc, pdf_content)
     except Exception:
         frappe.log_error(
             frappe.get_traceback(),
@@ -2825,15 +2911,23 @@ def ensure_application_form_pdf_for_applicant(applicant_name):
 
 
 def _clear_application_form_attachment_files(applicant_name):
-    for fn in frappe.get_all(
-        "File",
-        filters={
-            "attached_to_doctype": "Applicant",
-            "attached_to_name": applicant_name,
-            "attached_to_field": "application_form",
-        },
-        pluck="name",
-    ):
+    url = frappe.db.get_value("Applicant", applicant_name, "application_form")
+    file_names = set(
+        frappe.get_all(
+            "File",
+            filters={
+                "attached_to_doctype": "Applicant",
+                "attached_to_name": applicant_name,
+                "attached_to_field": "application_form",
+            },
+            pluck="name",
+        )
+    )
+    if url:
+        for fn in frappe.get_all("File", filters={"file_url": url}, pluck="name"):
+            file_names.add(fn)
+
+    for fn in file_names:
         try:
             frappe.delete_doc("File", fn, force=1, ignore_permissions=True)
         except Exception:
@@ -2858,9 +2952,14 @@ def save_application_form_pdf_to_applicant(applicant_doc, pdf_content):
             "Applicant",
             applicant_doc.name,
             decode=False,
-            is_private=0,
+            is_private=1,
             df="application_form",
         )
+        if file_doc:
+            if not file_doc.is_private or (file_doc.file_url and not file_doc.file_url.startswith("/private")):
+                file_doc.is_private = 1
+                file_doc.save(ignore_permissions=True)
+
         # ``save_file`` creates the File row but does not set the parent Attach field on Applicant.
         if file_doc and getattr(file_doc, "file_url", None):
             frappe.db.set_value(
@@ -2870,6 +2969,8 @@ def save_application_form_pdf_to_applicant(applicant_doc, pdf_content):
                 file_doc.file_url,
                 update_modified=False,
             )
+            applicant_doc.application_form = file_doc.file_url
+            frappe.db.commit()
     except Exception:
         frappe.log_error(
             frappe.get_traceback(),
@@ -2909,6 +3010,22 @@ def read_stored_application_form_pdf(applicant_name):
             f"read_stored_application_form_pdf failed for {applicant_name}",
         )
         return None
+
+
+def get_application_attachments(doc):
+    """
+    Helper function to get the PDF attachment from application_form field.
+    """
+    attachments = []
+    if getattr(doc, "application_form", None):
+        file_name = frappe.db.get_value("File", {"file_url": doc.application_form}, "name")
+        if file_name:
+            file_doc = frappe.get_doc("File", file_name)
+            attachments.append({
+                "fname": file_doc.file_name,
+                "fcontent": file_doc.get_content()
+            })
+    return attachments
 
 
 @frappe.whitelist()

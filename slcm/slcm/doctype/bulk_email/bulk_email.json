@@ -17,6 +17,7 @@
   "triggered_by",
   "triggered_on",
   "section_break_content",
+  "placeholders_html",
   "subject",
   "use_html",
   "cc",
@@ -91,6 +92,11 @@
    "fieldname": "section_break_content",
    "fieldtype": "Section Break",
    "label": "Content"
+  },
+  {
+   "fieldname": "placeholders_html",
+   "fieldtype": "HTML",
+   "label": "Available Placeholders"
   },
   {
    "fieldname": "subject",

@@ -65,7 +65,15 @@ class AttendanceSummaryReport {
 		this.ctrls.course = this._link($grid, "Course", "Course");
 		this.ctrls.batch = this._link($grid, "Batch", "Batch");
 		this.ctrls.section = this._link($grid, "Section", "Section");
-		this.ctrls.student = this._link($grid, "Student", "Student Master");
+		this.ctrls.student = this._dropdown_multiselect($grid, "Student", (txt) =>
+			new Promise((resolve) => {
+				frappe.call({
+					method: "slcm.slcm.page.attendance_summary_report.attendance_summary_report.get_student_filter_options",
+					args: { txt },
+					callback: (r) => resolve(r.message || []),
+				});
+			})
+		);
 
 		this._load_terms();
 
@@ -482,7 +490,10 @@ class AttendanceSummaryReport {
 				id: "student_id", name: __("Student ID"), width: 140,
 				format: (v, row, col, d) => `<span class="asr-link" onclick="frappe.set_route('Form','Student Master','${esc(d.student)}')">${esc(d.student_id)}</span>`,
 			},
-			{ id: "student_name", name: __("Student Name") },
+			{
+				id: "student_name", name: __("Student Name"),
+				format: (v, row, col, d) => `<div class="asr-name-cell">${asr_avatar_html(d.student_image)}<div>${esc(d.student_name)}</div></div>`,
+			},
 			{ id: "course", name: __("Course") },
 			{ id: "section", name: __("Section"), format: (v, row, col, d) => esc(d.section || "—") },
 			{ id: "total_scheduled_hours", name: __("Scheduled Hrs"), align: "right" },
@@ -559,7 +570,7 @@ class AttendanceSummaryReport {
 		this._render_legend(min_pct);
 
 		const flat_rows = rows.map(r => {
-			const flat = { student: r.student, student_id: r.student_id, student_name: r.student_name };
+			const flat = { student: r.student, student_id: r.student_id, student_name: r.student_name, student_image: r.student_image };
 			weeks.forEach(w => { flat[w.key] = r.weeks[w.key]; });
 			return flat;
 		});
@@ -570,7 +581,7 @@ class AttendanceSummaryReport {
 				format: (v, row, col, d) => {
 					const values = weeks.map(w => d[w.key]).filter(Boolean).map(c => c.percentage);
 					const row_low = values.length && (values.reduce((a, b) => a + b, 0) / values.length) < min_pct;
-					return `<div class="${row_low ? "asr-pivot-name-low" : ""}">${esc(d.student_name)}<div class="asr-pivot-subid">${esc(d.student_id)}</div></div>`;
+					return `<div class="asr-name-cell">${asr_avatar_html(d.student_image)}<div class="${row_low ? "asr-pivot-name-low" : ""}">${esc(d.student_name)}<div class="asr-pivot-subid">${esc(d.student_id)}</div></div></div>`;
 				},
 			},
 			...weeks.map(w => ({
@@ -612,7 +623,7 @@ class AttendanceSummaryReport {
 		this._render_legend(min_pct);
 
 		const flat_rows = rows.map(r => {
-			const flat = { student: r.student, student_id: r.student_id, student_name: r.student_name };
+			const flat = { student: r.student, student_id: r.student_id, student_name: r.student_name, student_image: r.student_image };
 			months.forEach(m => { flat[m.key] = r.months[m.key]; });
 			return flat;
 		});
@@ -623,7 +634,7 @@ class AttendanceSummaryReport {
 				format: (v, row, col, d) => {
 					const values = months.map(m => d[m.key]).filter(Boolean).map(c => c.percentage);
 					const row_low = values.length && (values.reduce((a, b) => a + b, 0) / values.length) < min_pct;
-					return `<div class="${row_low ? "asr-pivot-name-low" : ""}">${esc(d.student_name)}<div class="asr-pivot-subid">${esc(d.student_id)}</div></div>`;
+					return `<div class="asr-name-cell">${asr_avatar_html(d.student_image)}<div class="${row_low ? "asr-pivot-name-low" : ""}">${esc(d.student_name)}<div class="asr-pivot-subid">${esc(d.student_id)}</div></div></div>`;
 				},
 			},
 			...months.map(m => ({
@@ -670,7 +681,7 @@ class AttendanceSummaryReport {
 		}
 
 		const flat_rows = rows.map(r => {
-			const flat = { student: r.student, student_id: r.student_id, student_name: r.student_name };
+			const flat = { student: r.student, student_id: r.student_id, student_name: r.student_name, student_image: r.student_image };
 			days.forEach(d => { flat[d.key] = r.days[d.key] || null; });
 			return flat;
 		});
@@ -678,7 +689,7 @@ class AttendanceSummaryReport {
 		const columns = [
 			{
 				id: "student_name", name: __("Student Name"),
-				format: (v, row, col, d) => `${esc(d.student_name)}<div class="asr-pivot-subid">${esc(d.student_id)}</div>`,
+				format: (v, row, col, d) => `<div class="asr-name-cell">${asr_avatar_html(d.student_image)}<div>${esc(d.student_name)}<div class="asr-pivot-subid">${esc(d.student_id)}</div></div></div>`,
 			},
 			...days.map(d => ({
 				id: d.key, name: esc(d.label), align: "center",
@@ -694,10 +705,17 @@ class AttendanceSummaryReport {
 
 		this._render_table(columns, flat_rows, __("Showing {0} student(s) across {1} day(s)", [rows.length, days.length]));
 
-		this.$table.find(".asr-day-cell-clickable").on("click", (e) => {
-			const $cell = $(e.currentTarget);
-			this._open_daily_drilldown($cell.data("student"), $cell.data("date"));
-		});
+		// Delegated binding: frappe.DataTable re-renders cells on horizontal/
+		// vertical scroll (virtual rendering), which would silently drop any
+		// handler bound directly to the initial `.find(...)` elements.
+		this.$table.off("click.asr-daily-drilldown").on(
+			"click.asr-daily-drilldown",
+			".asr-day-cell-clickable",
+			(e) => {
+				const $cell = $(e.currentTarget);
+				this._open_daily_drilldown($cell.data("student"), $cell.data("date"));
+			}
+		);
 
 		this._export = {
 			headers: ["Student Name", "Student ID", ...days.map(d => d.label)],
@@ -753,14 +771,23 @@ class AttendanceSummaryReport {
 			"Not Marked": { color: "#64748b", bg: "#f1f5f9" },
 		};
 
+		const attended_statuses = new Set(["Present", "Late", "Excused"]);
+		let total_hours = 0;
+		let attended_hours = 0;
+
 		const rows_html = sessions.map(s => {
 			const meta = status_meta[s.status] || status_meta["Not Marked"];
 			const time = (s.from_time && s.to_time) ? `${s.from_time.slice(0, 5)} - ${s.to_time.slice(0, 5)}` : "—";
+			const hours = flt(s.duration_hours);
+			total_hours += hours;
+			if (attended_statuses.has(s.status)) attended_hours += hours;
+
 			return `<tr>
 				<td>${esc(s.course)}</td>
 				<td>${esc(time)}</td>
 				<td>${esc(s.instructor || "—")}</td>
 				<td>${esc(s.room || "—")}</td>
+				<td>${hours ? hours.toFixed(2) : "—"}</td>
 				<td><span class="asr-badge" style="color:${meta.color};background:${meta.bg}">${esc(s.status)}</span></td>
 				<td>
 					<a href="#" class="asr-drilldown-link" data-session="${esc(s.session)}">${esc(__("View"))}</a>
@@ -777,11 +804,19 @@ class AttendanceSummaryReport {
 							<th>${__("Time")}</th>
 							<th>${__("Instructor")}</th>
 							<th>${__("Room")}</th>
+							<th>${__("Hours")}</th>
 							<th>${__("Status")}</th>
 							<th></th>
 						</tr>
 					</thead>
 					<tbody>${rows_html}</tbody>
+					<tfoot>
+						<tr class="asr-drilldown-total-row">
+							<td colspan="4">${__("Total")}</td>
+							<td>${attended_hours.toFixed(2)} / ${total_hours.toFixed(2)}</td>
+							<td colspan="2"></td>
+						</tr>
+					</tfoot>
 				</table>
 			</div>
 		`);
@@ -863,6 +898,11 @@ class AttendanceSummaryReport {
 
 function esc(s) {
 	return frappe.utils.escape_html(String(s || ""));
+}
+
+function asr_avatar_html(image_url) {
+	const src = image_url || "/assets/frappe/images/default-avatar.png";
+	return `<img class="asr-avatar" src="${esc(src)}" onerror="this.onerror=null;this.src='/assets/frappe/images/default-avatar.png';">`;
 }
 
 function asr_icon(name) {
@@ -1195,6 +1235,12 @@ function asr_inject_styles() {
 		/* Pivot tables (Monthly / Daily) — cell content inside frappe.DataTable */
 		.asr-pivot-name-low { color: #dc2626; font-weight: 600; }
 		.asr-pivot-subid { font-size: 11px; color: #94a3b8; font-weight: 400; }
+		.asr-name-cell { display: flex; align-items: center; gap: 8px; }
+		.asr-avatar {
+			width: 28px; height: 28px; border-radius: 50%;
+			object-fit: cover; flex-shrink: 0; border: 1px solid #e5e9f0;
+			background: #f1f5f9;
+		}
 		.asr-pivot-cell { text-align: center; font-weight: 700; }
 		.asr-pivot-cell.asr-pivot-ok { color: #15803d; }
 		.asr-pivot-cell.asr-pivot-low { color: #dc2626; }
@@ -1232,5 +1278,11 @@ function asr_inject_styles() {
 			white-space: nowrap;
 		}
 		.asr-drilldown-link { color: #0284c7; font-weight: 600; }
+		.asr-drilldown-total-row td {
+			font-weight: 700;
+			color: #1e293b;
+			border-bottom: none;
+			border-top: 2px solid #e5e9f0;
+		}
 	</style>`).appendTo("head");
 }

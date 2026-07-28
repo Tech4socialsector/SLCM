@@ -9,6 +9,8 @@
  "field_order": [
   "authority",
   "programme",
+  "year",
+  "batch",
   "assigned",
   "approved",
   "rejected"
@@ -50,13 +52,29 @@
    "in_list_view": 1,
    "label": "Rejected",
    "non_negative": 1
+  },
+  {
+   "fieldname": "year",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Year",
+   "options": "\n1st\n2nd\n3rd\n4th",
+   "reqd": 1
+  },
+  {
+   "fieldname": "batch",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Batch",
+   "options": "Batch",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-07-13 16:42:34.335708",
+ "modified": "2026-07-27 09:58:33.101059",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Attendance Condonation Table",

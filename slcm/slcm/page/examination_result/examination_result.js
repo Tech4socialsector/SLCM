@@ -320,6 +320,14 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		.er2-mi { transition:border-color .15s, box-shadow .15s; }
 		.er2-mi:focus { box-shadow:0 0 0 2px rgba(79,70,229,.12); }
 
+		/* ── Re-Exam Grade (read-only, boxed like the other grade/marks inputs) ── */
+		.er2-rxg-box {
+			display:inline-block; min-width:60px; height:26px; line-height:24px;
+			border:1.5px solid #fbcfe8; border-radius:6px; padding:0 6px;
+			background:#fdf2f8; font-size:12px; font-weight:700; text-align:center;
+			color:#be185d;
+		}
+
 		/* ── Overall status col header accent ── */
 		.er2-rtable th.er2-status-hdr { background:linear-gradient(90deg,#fffbeb,#fef3c7) !important; }
 
@@ -1973,7 +1981,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		// Each reexam assessment: 1 sub-col (Marks only)
 		// Updated Final Result: 2 cols
 		var proj_col_count = cols.filter(function (c) { return (c.type_name || c.label || '').toLowerCase() === 'project'; }).length;
-		var total_cols = (cols.length - proj_col_count) * 1 + proj_col_count * 3 + 2 + 6 + reexam_cols.length * 1 + 2 + 2;
+		var total_cols = (cols.length - proj_col_count) * 1 + proj_col_count * 3 + 2 + 6 + reexam_cols.length * 1 + (reexam_cols.length ? 1 : 0) + 2 + 2;
 
 		// ── CSS colours ──────────────────────────────────────────────────────────
 		var C_COMP   = 'background:linear-gradient(90deg,#eef2ff,#e0e7ff);color:#3730a3;border-bottom:2px solid #818cf8;';
@@ -1997,9 +2005,13 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		// Overall Status (span 6 — Fairness Status removed, Notes added)
 		th1 += '<th colspan="6" class="type-hdr er2-status-hdr" style="text-align:center;' + C_STATUS + '">' +
 			'Overall Status</th>';
-		// Re-Exam groups
-		rxgroups.forEach(function (g) {
-			th1 += '<th colspan="' + g.cols.length + '" class="type-hdr" style="text-align:center;' + C_REEXAM + '">' +
+		// Re-Exam groups — the trailing "Grade" column (one overall value, not
+		// per-group) is folded into the LAST group's span so it reads as part
+		// of the Re-Exam section instead of a lone floating header.
+		rxgroups.forEach(function (g, gi) {
+			var is_last  = gi === rxgroups.length - 1;
+			var g_span   = g.cols.length + (is_last ? 1 : 0);
+			th1 += '<th colspan="' + g_span + '" class="type-hdr" style="text-align:center;' + C_REEXAM + '">' +
 				frappe.utils.escape_html(g.component_name) + ' (Re-Exam)</th>';
 		});
 		// Improvement Exam (span 2)
@@ -2039,6 +2051,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					lbl + (max ? '<br><span style="font-size:10px;color:#6c757d;font-weight:400;">' + max + '</span>' : '') + '</th>';
 			});
 		});
+		// Re-Exam Grade row 2 label (matches Improvement Grade's placement)
+		if (reexam_cols.length) {
+			th2 += '<th style="font-size:11px;color:#6c757d;min-width:70px;">Re-Exam<br>Grade</th>';
+		}
 		// Improvement Exam row 2 labels, then Updated Final Result
 		th2 += '<th style="font-size:11px;color:#6c757d;min-width:80px;">Improvement<br>Marks</th>' +
 			'<th style="font-size:11px;color:#6c757d;min-width:80px;">Improvement<br>Grade</th>' +
@@ -2072,6 +2088,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		reexam_cols.forEach(function () {
 			th3 += '<th style="font-size:11px;color:#6c757d;min-width:70px;">Marks</th>';
 		});
+		// Re-Exam Grade row 3 (empty)
+		if (reexam_cols.length) th3 += '<th></th>';
 		// Improvement Exam row 3 (empty)
 		th3 += '<th></th><th></th>';
 		// Updated Final Result row 3 (empty)
@@ -2241,6 +2259,15 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				}
 			});
 
+			// Re-Exam Grade — read-only, computed server-side alongside Updated Grade
+			if (reexam_cols.length) {
+				var rxGradeVal = sm.re_exam_grade || '';
+				cells += '<td style="padding:4px 6px;text-align:center;" class="er2-rxg-cell" data-student="' +
+					frappe.utils.escape_html(s.student) + '">' +
+					'<span class="er2-rxg-box">' + frappe.utils.escape_html(rxGradeVal || '—') + '</span>' +
+					'</td>';
+			}
+
 			var stu_ug  = frappe.utils.escape_html(s.student);
 
 			// Improvement Exam cells (before Updated Final Result)
@@ -2396,6 +2423,9 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 								} else {
 									$ugCell.html(frappe.utils.escape_html(ugDisp || '—') + mStr + aStr + arrStr);
 								}
+								var rxGrade = r.message.re_exam_grade;
+								$mtable.find('.er2-rxg-cell[data-student="' + student + '"] .er2-rxg-box')
+									.text(rxGrade || '—');
 								// Update state
 								if (!S.marks[student]) S.marks[student] = { entries: {} };
 								if (!S.marks[student].entries) S.marks[student].entries = {};
@@ -2407,6 +2437,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 								S.marks[student].grade = grade;
 								S.marks[student].updated_final_marks = ufm;
 								S.marks[student].updated_grade = ug;
+								S.marks[student].re_exam_grade = rxGrade;
 								// Refresh stats bar
 								load_stats();
 							}

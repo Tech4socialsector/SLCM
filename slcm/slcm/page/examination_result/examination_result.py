@@ -1131,7 +1131,8 @@ def get_marks_for_students(course, exam_plan, student_ids):
 		       scm.status, scm.enrollment_status, scm.attendance_status,
 		       scm.mfa, scm.fairness_status, scm.consider_for_sgpa, scm.remark,
 		       scm.updated_final_marks, scm.updated_grade,
-		       scm.improvement_marks, scm.improvement_grade, scm.improvement_applied
+		       scm.improvement_marks, scm.improvement_grade, scm.improvement_applied,
+		       scm.re_exam_grade
 		FROM `tabStudent Course Marks` scm
 		WHERE scm.course = %(course)s
 		  AND scm.exam_plan = %(exam_plan)s
@@ -1213,6 +1214,7 @@ def get_marks_for_students(course, exam_plan, student_ids):
 			"improvement_marks":    row["improvement_marks"],
 			"improvement_grade":    row["improvement_grade"] or "",
 			"improvement_applied":  int(row["improvement_applied"] or 0),
+			"re_exam_grade":        row["re_exam_grade"] or "",
 			"arrear_marker":        _arrear_marker(s, row["grade"] or ""),
 			"entries":              {},
 		}
@@ -1239,7 +1241,8 @@ def get_marks_for_students(course, exam_plan, student_ids):
 			             "status": "", "enrollment_status": "", "attendance_status": "",
 			             "mfa": "Yes" if s in approved_fa_mfa_students else "No",
 			             "fairness_status": "", "consider_for_sgpa": 1, "remark": "",
-			             "updated_final_marks": None, "updated_grade": "", "entries": {}}
+			             "updated_final_marks": None, "updated_grade": "", "re_exam_grade": "",
+			             "entries": {}}
 		key = (row["component"] or "") + "|" + (row["assessment_type"] or "")
 		result[s]["entries"][key] = {
 			"marks":             row["marks"],
@@ -2008,11 +2011,19 @@ def _recalculate_student_marks(scm_name, course, exam_plan):
 	# Updated grade uses Re Exam Composition when the schema is configured for it
 	updated_grade = _lookup_grade(grade_schema, updated_final_marks, use_reexam=True) if grade_schema else ""
 
+	# Re-exam grade — the grade the re-exam attempt itself maps to (mirrors how
+	# improvement_grade is looked up from the raw improvement_marks alone),
+	# distinct from updated_grade which reflects the better-of-the-two total.
+	reexam_grade = ""
+	if grade_schema and reexam_configs and reexam_total > 0:
+		reexam_grade = _lookup_grade(grade_schema, reexam_total, use_reexam=True)
+
 	frappe.db.set_value("Student Course Marks", scm_name, {
 		"total_marks":        round(total, 2),
 		"grade":              grade,
 		"updated_final_marks": round(updated_final_marks, 2),
 		"updated_grade":      updated_grade,
+		"re_exam_grade":      reexam_grade,
 	})
 	frappe.db.commit()
 	return {
@@ -2020,6 +2031,7 @@ def _recalculate_student_marks(scm_name, course, exam_plan):
 		"grade":              grade,
 		"updated_final_marks": round(updated_final_marks, 2),
 		"updated_grade":      updated_grade,
+		"re_exam_grade":      reexam_grade,
 	}
 
 

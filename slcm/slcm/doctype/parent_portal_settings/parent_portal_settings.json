@@ -74,6 +74,9 @@
   "show_menu_fees",
   "tab_advanced",
   "html_advanced_note",
+  "login_security_section",
+  "enable_google_login",
+  "google_login_allowed_domain",
   "advanced_section",
   "custom_css"
  ],
@@ -521,6 +524,25 @@
    "fieldtype": "HTML",
    "label": "Advanced Note",
    "options": "<div class=\"alert\" style=\"background:#fefce8;border-left:4px solid #eab308;padding:10px 14px;border-radius:6px;margin-bottom:12px;\"><strong style=\"color:#854d0e;\">&#9888;&#65039; Advanced — Custom CSS</strong> &nbsp;Inject raw CSS that is appended after all portal stylesheets. Use CSS variables like <code>--pp-primary</code> for theme-consistent overrides. Incorrect CSS here can break the portal layout — test changes carefully before saving.</div>"
+  },
+  {
+   "description": "Controls the \"Sign in with NLS Google account\" option on the parent login page",
+   "fieldname": "login_security_section",
+   "fieldtype": "Section Break",
+   "label": "Login & Security"
+  },
+  {
+   "default": "1",
+   "description": "Show a \"Sign in with NLS Google account\" button on the parent login page. Requires a Social Login Key for Google to be configured and enabled, and the Google account's email must match a Parent/Guardian Email ID on at least one child's Student Master record.",
+   "fieldname": "enable_google_login",
+   "fieldtype": "Check",
+   "label": "Enable Google Login for Parents"
+  },
+  {
+   "description": "Only Google accounts on this domain may log in as a parent (e.g. gmail.com). Leave blank to allow any domain.",
+   "fieldname": "google_login_allowed_domain",
+   "fieldtype": "Data",
+   "label": "Allowed Google Account Domain"
   },
   {
    "collapsible": 1,

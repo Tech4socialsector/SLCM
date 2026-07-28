@@ -24,6 +24,14 @@
 }
 .att-modal-box.att-modal-sm { max-width: 460px; }
 .att-modal-box.att-modal-lg { max-width: 700px; }
+/* "Full screen" reads as a large panel with the page still peeking around
+   the edges, rather than an edge-to-edge takeover — keeps a sense of place
+   (you can see you're still on /attendance) while giving the modal far more
+   room than the old 580px dialog. */
+.att-modal-box.att-modal-full {
+  width: 96vw; max-width: 1400px;
+  height: 92vh; max-height: 92vh;
+}
 .att-modal-hdr {
   display: flex; align-items: center; justify-content: space-between;
   padding: 18px 24px 14px; border-bottom: 1px solid var(--fp-border);
@@ -688,15 +696,56 @@ document.addEventListener('DOMContentLoaded', function() {
   } catch (e) { /* ignore */ }
 });
 
-/* ── Modal open/close helpers ── */
+/* ── Modal open/close helpers ──
+   Each open modal pushes a history entry carrying its id, so the browser
+   Back button closes the modal (and returns to this page) instead of
+   leaving straight to whatever page was open before /attendance — pressing
+   Back again then leaves the page as normal.
+
+   One-modal-closes-straight-into-another (e.g. the session picker card
+   swapping to the Mark Attendance modal in one click) is handled by
+   REPLACING the history entry rather than popping + pushing — popping is
+   async (the resulting popstate only fires on the next tick), so a naive
+   back()-then-pushState() would let the new modal's pushState land first
+   and then get wiped out when the queued popstate arrives right after. */
+var _attModalSwapping = false;
+
 function _openModal(id) {
   var el = document.getElementById(id);
-  if (el) { el.classList.add('open'); document.body.style.overflow = 'hidden'; }
+  if (!el) return;
+  el.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  if (history.state && history.state.attModal === id) return;
+  if (_attModalSwapping) {
+    history.replaceState({ attModal: id }, '');
+  } else {
+    history.pushState({ attModal: id }, '');
+  }
 }
-function _closeModal(id) {
+function _closeModal(id, opts) {
   var el = document.getElementById(id);
-  if (el) { el.classList.remove('open'); document.body.style.overflow = ''; }
+  if (!el) return;
+  el.classList.remove('open');
+  document.body.style.overflow = '';
+  var fromPopState = opts && opts.fromPopState;
+  var swappingToAnother = opts && opts.swapping;
+  if (swappingToAnother) {
+    /* Leave the history entry alone — the next _openModal() call in this
+       same handler will replaceState() over it. */
+    _attModalSwapping = true;
+    setTimeout(function() { _attModalSwapping = false; }, 0);
+    return;
+  }
+  if (!fromPopState && history.state && history.state.attModal === id) {
+    history.back();
+  }
 }
+window.addEventListener('popstate', function() {
+  ['att-session-picker','att-mark-modal','att-rec-modal','att-view-modal','att-drill-modal','att-hist-modal'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el && el.classList.contains('open')) _closeModal(id, { fromPopState: true });
+  });
+});
 /* Backdrop close */
 document.addEventListener('DOMContentLoaded', function() {
   ['att-session-picker','att-mark-modal','att-rec-modal','att-view-modal','att-drill-modal','att-hist-modal'].forEach(function(id) {
@@ -914,7 +963,7 @@ function fpOpenSessionPicker() {
         } catch(e) { return false; }
       })();
 
-    html += '<div class="sp-session-card" onclick="_closeModal(\'att-session-picker\');fpOpenMarkModalDirect('
+    html += '<div class="sp-session-card" onclick="_closeModal(\'att-session-picker\',{swapping:true});fpOpenMarkModalDirect('
       + JSON.stringify(s.name) + ',' + JSON.stringify(s.course) + ',' + JSON.stringify(s.date) + ','
       + JSON.stringify(s.time) + ',' + JSON.stringify(s.venue) + ',' + JSON.stringify(s.total) + ')">'
       + '<div class="sp-session-icon"><span class="fp-ms">how_to_reg</span></div>'
@@ -1096,6 +1145,7 @@ function _satLoadSessionRoster(sessionName, courseName) {
     function(data) {
       var students = (data && data.students) ? data.students.map(function(s) {
         return { student: s.student, student_name: s.student_name, group_roll_number: s.reg_id,
+                 student_image: s.student_image,
                  status: s.status === 'Absent' ? 'Absent' : 'Present' };
       }) : [];
       _satRosterCache[sessionName] = students;
@@ -1141,8 +1191,10 @@ function _renderRfidControl(elId, sessionName) {
     el.innerHTML = '<span class="fp-badge fp-badge-neutral" title="RFID window closed">'
       + '<span class="fp-ms" style="font-size:12px;">wifi_off</span>Closed</span>';
   } else {
-    el.innerHTML = '<button class="fp-btn fp-btn-secondary fp-btn-sm fp-rfid-btn" onclick="fpActivateRfid(\'' + sessionName + '\', this)">'
-      + '<span class="fp-ms" style="font-size:14px;">wifi_tethering</span>Activate RFID</button>';
+    el.innerHTML = '<button class="fp-btn fp-btn-sm fp-rfid-btn" onclick="fpActivateRfid(\'' + sessionName + '\', this)" '
+      + 'style="background:var(--fp-primary);color:#fff;font-weight:700;box-shadow:0 2px 8px var(--fp-primary-glow);" '
+      + 'onmouseover="this.style.background=\'var(--fp-primary-dark)\'" onmouseout="this.style.background=\'var(--fp-primary)\'">'
+      + '<span class="fp-ms" style="font-size:14px;">wifi_tethering</span>Activate RFID Attendance</button>';
   }
 }
 
@@ -1323,11 +1375,12 @@ function _satRenderList(students) {
       + 'No students found.</div>';
     return;
   }
-  var html = '<div style="border:1px solid var(--fp-border);border-radius:var(--fp-radius-sm);overflow:hidden;">'
-    + '<div style="display:grid;grid-template-columns:32px 1fr auto;gap:0;padding:9px 16px;'
+  var COLS = '36px 44px 1fr auto auto';
+  var html = '<div style="border:1px solid var(--fp-border);border-radius:var(--fp-radius-sm);overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,0.03);">'
+    + '<div style="display:grid;grid-template-columns:' + COLS + ';gap:14px;padding:12px 20px;'
     + 'background:var(--fp-bg);border-bottom:2px solid var(--fp-border);'
     + 'font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--fp-text-4);">'
-    + '<span>#</span><span>Student</span><span>Attendance</span></div>';
+    + '<span>#</span><span></span><span>Student</span><span>Attendance</span><span></span></div>';
 
   students.forEach(function(s, i) {
     var uid     = 'sat-chk-' + i;
@@ -1336,29 +1389,50 @@ function _satRenderList(students) {
        off the exceptions rather than starting from all-absent. */
     var present = (s.status !== 'Absent');
     var roll    = s.group_roll_number || '';
-    html += '<div class="sat-student-row-toggle" data-idx="' + i + '" '
-      + 'style="display:grid;grid-template-columns:32px 1fr auto auto;gap:10px;align-items:center;'
-      + 'padding:9px 16px;border-bottom:1px solid var(--fp-border-light);'
-      + 'background:' + (present ? 'rgba(22,163,74,0.04)' : 'rgba(220,38,38,0.03)') + ';">'
-      + '<span style="font-size:11px;color:var(--fp-text-5);font-weight:600;">' + (i + 1) + '</span>'
-      + '<div><div style="font-size:13px;font-weight:600;color:var(--fp-text-1);">' + escHtml(s.student_name || s.student) + '</div>'
-      + (roll ? '<div style="font-size:11px;color:var(--fp-text-4);font-family:monospace;">' + escHtml(roll) + '</div>' : '')
+    var name    = s.student_name || s.student;
+    var initial = escHtml((name || '?').trim().charAt(0).toUpperCase());
+    var dotColor = present ? 'var(--fp-success)' : 'var(--fp-danger)';
+    var avatar  = s.student_image
+      ? '<img src="' + escHtml(s.student_image) + '" alt="" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid ' + dotColor + ';">'
+      : '<span style="width:40px;height:40px;border-radius:50%;background:var(--fp-primary-light);color:var(--fp-primary);'
+        + 'display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;border:2px solid ' + dotColor + ';">' + initial + '</span>';
+    var searchKey = escHtml(((name || '') + ' ' + (roll || '') + ' ' + (s.student || '')).toLowerCase());
+    html += '<div class="sat-student-row-toggle" data-idx="' + i + '" data-search="' + searchKey + '" '
+      + 'style="display:grid;grid-template-columns:' + COLS + ';gap:14px;align-items:center;'
+      + 'padding:12px 20px;border-bottom:1px solid var(--fp-border-light);transition:background 0.12s;'
+      + 'background:' + (present ? 'rgba(22,163,74,0.045)' : 'rgba(220,38,38,0.035)') + ';" '
+      + 'onmouseover="this.style.filter=\'brightness(0.97)\'" onmouseout="this.style.filter=\'\'">'
+      + '<span style="font-size:12px;color:var(--fp-text-5);font-weight:600;">' + (i + 1) + '</span>'
+      + avatar
+      + '<div style="min-width:0;"><div style="font-size:14px;font-weight:600;color:var(--fp-text-1);">' + escHtml(name) + '</div>'
+      + (roll ? '<div style="font-size:11.5px;color:var(--fp-text-4);font-family:monospace;">' + escHtml(roll) + '</div>' : '')
       + '</div>'
-      + '<span class="sat-toggle-lbl" data-idx="' + i + '" style="font-size:11px;font-weight:700;min-width:52px;text-align:right;'
+      + '<span class="sat-toggle-lbl" data-idx="' + i + '" style="font-size:12px;font-weight:700;min-width:56px;text-align:right;'
       + 'color:' + (present ? 'var(--fp-success)' : 'var(--fp-danger)') + ';">' + (present ? 'PRESENT' : 'ABSENT') + '</span>'
-      + '<label class="sat-switch" style="position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0;cursor:pointer;">'
+      + '<label class="sat-switch" style="position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;cursor:pointer;">'
       + '<input type="checkbox" id="' + uid + '" class="sat-chk" data-student="' + escHtml(s.student) + '" '
       + 'data-idx="' + i + '" onchange="satToggleSwitch(this)" '
       + (present ? 'checked ' : '') + 'style="opacity:0;width:0;height:0;position:absolute;">'
-      + '<span class="sat-switch-track" data-idx="' + i + '" style="position:absolute;inset:0;border-radius:22px;transition:background 0.15s;'
+      + '<span class="sat-switch-track" data-idx="' + i + '" style="position:absolute;inset:0;border-radius:24px;transition:background 0.15s;'
       + 'background:' + (present ? 'var(--fp-success)' : 'var(--fp-border)') + ';">'
-      + '<span class="sat-switch-thumb" style="position:absolute;top:2px;left:' + (present ? '20px' : '2px') + ';width:18px;height:18px;'
+      + '<span class="sat-switch-thumb" style="position:absolute;top:2px;left:' + (present ? '22px' : '2px') + ';width:20px;height:20px;'
       + 'border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.3);transition:left 0.15s;"></span>'
       + '</span></label>'
       + '</div>';
   });
   html += '</div>';
   document.getElementById('sat-list').innerHTML = html;
+
+  var searchBox = document.getElementById('sat-search');
+  if (searchBox) searchBox.value = '';
+}
+
+function satFilterStudents() {
+  var q = (document.getElementById('sat-search').value || '').toLowerCase().trim();
+  document.querySelectorAll('#sat-list .sat-student-row-toggle').forEach(function(row) {
+    var text = row.getAttribute('data-search') || '';
+    row.style.display = (!q || text.indexOf(q) !== -1) ? '' : 'none';
+  });
 }
 
 /* ── Toggle switch — flips the checkbox (native change event drives this
@@ -1377,10 +1451,12 @@ function satToggleSwitch(chk) {
   if (track) {
     track.style.background = present ? 'var(--fp-success)' : 'var(--fp-border)';
     var thumb = track.querySelector('.sat-switch-thumb');
-    if (thumb) thumb.style.left = present ? '20px' : '2px';
+    if (thumb) thumb.style.left = present ? '22px' : '2px';
   }
   var row = chk.closest('.sat-student-row-toggle');
-  if (row) row.style.background = present ? 'rgba(22,163,74,0.04)' : 'rgba(220,38,38,0.03)';
+  if (row) row.style.background = present ? 'rgba(22,163,74,0.045)' : 'rgba(220,38,38,0.035)';
+  var avatarBox = row ? row.querySelector('img, span[style*="border-radius:50%"]') : null;
+  if (avatarBox) avatarBox.style.borderColor = present ? 'var(--fp-success)' : 'var(--fp-danger)';
 
   _satRefreshCounters();
 }
@@ -1400,10 +1476,12 @@ function _satSetAllPills(present) {
   document.querySelectorAll('#sat-list .sat-switch-track').forEach(function(track) {
     track.style.background = present ? 'var(--fp-success)' : 'var(--fp-border)';
     var thumb = track.querySelector('.sat-switch-thumb');
-    if (thumb) thumb.style.left = present ? '20px' : '2px';
+    if (thumb) thumb.style.left = present ? '22px' : '2px';
   });
   document.querySelectorAll('#sat-list .sat-student-row-toggle').forEach(function(row) {
-    row.style.background = present ? 'rgba(22,163,74,0.04)' : 'rgba(220,38,38,0.03)';
+    row.style.background = present ? 'rgba(22,163,74,0.045)' : 'rgba(220,38,38,0.035)';
+    var avatarBox = row.querySelector('img, span[style*="border-radius:50%"]');
+    if (avatarBox) avatarBox.style.borderColor = present ? 'var(--fp-success)' : 'var(--fp-danger)';
   });
   _satRefreshCounters();
 }
@@ -1641,25 +1719,36 @@ function _fpRenderViewSessionBody(students, audit) {
 
     /* Status/Type/History use fixed widths (not `auto`) so the header row
        and every body row — each a separate CSS grid — line up consistently
-       regardless of how long any one row's content happens to be. */
-    var COLS = '32px 1fr 90px 140px 70px';
-    html += '<div style="border:1px solid var(--fp-border);border-radius:var(--fp-radius-sm);overflow:hidden;">'
-      + '<div style="display:grid;grid-template-columns:' + COLS + ';gap:12px;padding:9px 16px;'
+       regardless of how long any one row's content happens to be. A photo
+       column sits right after # so faculty can visually spot a student. */
+    var COLS = '32px 40px 1fr 100px 150px 70px';
+    html += '<div style="border:1px solid var(--fp-border);border-radius:var(--fp-radius-sm);overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,0.03);">'
+      + '<div style="display:grid;grid-template-columns:' + COLS + ';gap:12px;padding:11px 16px;'
       + 'background:var(--fp-bg);border-bottom:2px solid var(--fp-border);'
       + 'font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--fp-text-4);">'
-      + '<span>#</span><span>Student</span><span>Status</span><span>Type</span><span>History</span></div>'
+      + '<span>#</span><span></span><span>Student</span><span>Status</span><span>Type</span><span>History</span></div>'
       + '<div style="max-height:400px;overflow-y:auto;">';
 
     students.forEach(function(s, i) {
       var st = s.status || 'Absent';
+      var dotColor = st === 'Present' ? 'var(--fp-success)' : st === 'Late' ? 'var(--fp-warning)' : 'var(--fp-danger)';
       var badgeCls = st === 'Present' ? 'fp-badge-success' : st === 'Late' ? 'fp-badge-warning' : 'fp-badge-danger';
-      var rowBg    = st === 'Present' ? 'rgba(22,163,74,0.04)' : st === 'Late' ? 'rgba(217,119,6,0.04)' : 'rgba(220,38,38,0.03)';
+      var rowBg    = st === 'Present' ? 'rgba(22,163,74,0.045)' : st === 'Late' ? 'rgba(217,119,6,0.045)' : 'rgba(220,38,38,0.035)';
       var typeIcon = (s.source === 'RFID' || s.source === 'QR') ? 'wifi_tethering' : 'edit_note';
       var typeLabel = s.type_label || 'Not marked';
-      html += '<div style="display:grid;grid-template-columns:' + COLS + ';gap:12px;align-items:center;'
-        + 'padding:10px 16px;border-bottom:1px solid var(--fp-border-light);background:' + rowBg + ';">'
+      var name    = s.student_name || s.student;
+      var initial = escHtml((name || '?').trim().charAt(0).toUpperCase());
+      var avatar  = s.student_image
+        ? '<img src="' + escHtml(s.student_image) + '" alt="" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid ' + dotColor + ';">'
+        : '<span style="width:34px;height:34px;border-radius:50%;background:var(--fp-primary-light);color:var(--fp-primary);'
+          + 'display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;border:2px solid ' + dotColor + ';">' + initial + '</span>';
+      html += '<div class="att-view-row" data-search="' + escHtml((s.student_name || '') + ' ' + (s.reg_id || s.student || '')).toLowerCase() + '" '
+        + 'style="display:grid;grid-template-columns:' + COLS + ';gap:12px;align-items:center;'
+        + 'padding:9px 16px;border-bottom:1px solid var(--fp-border-light);background:' + rowBg + ';transition:background 0.12s;" '
+        + 'onmouseover="this.style.filter=\'brightness(0.97)\'" onmouseout="this.style.filter=\'\'">'
         + '<span style="font-size:11px;color:var(--fp-text-5);font-weight:600;">' + (i+1) + '</span>'
-        + '<div style="min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--fp-text-1);">' + escHtml(s.student_name) + '</div>'
+        + avatar
+        + '<div style="min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--fp-text-1);">' + escHtml(name) + '</div>'
         + '<div style="font-size:11px;color:var(--fp-text-4);font-family:monospace;">' + escHtml(s.reg_id || s.student) + '</div></div>'
         + '<span class="fp-badge ' + badgeCls + '" style="justify-self:start;">' + escHtml(st) + '</span>'
         + '<span style="font-size:11px;color:var(--fp-text-4);display:flex;align-items:center;gap:4px;white-space:nowrap;">'
@@ -1675,7 +1764,18 @@ function _fpRenderViewSessionBody(students, audit) {
   }
   document.getElementById('att-view-body').innerHTML = html;
 
+  var searchBox = document.getElementById('att-view-search');
+  if (searchBox) searchBox.value = '';
+
   _renderSessionAuditFooter(audit);
+}
+
+function fpFilterViewStudents() {
+  var q = (document.getElementById('att-view-search').value || '').toLowerCase().trim();
+  document.querySelectorAll('#att-view-body .att-view-row').forEach(function(row) {
+    var text = row.getAttribute('data-search') || '';
+    row.style.display = (!q || text.indexOf(q) !== -1) ? '' : 'none';
+  });
 }
 
 /* ── Session-level audit footer — activated-by/on, last-updated-by/on ── */
@@ -1808,7 +1908,7 @@ function _fpLoadViewSessionBody(sessionName) {
    (including its sibling slot picker, if the course has multiple slots
    today) instead of dropping to the blank free-text form. */
 function fpEditFromView() {
-  _closeModal('att-view-modal');
+  _closeModal('att-view-modal', { swapping: true });
   var courseName = document.getElementById('att-view-course').textContent;
   fpOpenMarkModal(_viewSessionName, courseName, _viewModalSlots);
 }
@@ -2242,7 +2342,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <div style="padding:16px 18px;overflow-y:auto;max-height:68vh;" id="sp-body"></div>
     <div style="padding:10px 18px 16px;border-top:1px solid var(--fp-border);text-align:center;">
-      <a href="javascript:void(0)" onclick="_closeModal('att-session-picker');fpOpenMarkModal(null,null)"
+      <a href="javascript:void(0)" onclick="_closeModal('att-session-picker',{swapping:true});fpOpenMarkModal(null,null)"
          style="font-size:12px;color:var(--fp-text-4);text-decoration:underline;">
         Not seeing your session? Enter details manually
       </a>
@@ -2255,8 +2355,8 @@ document.addEventListener('DOMContentLoaded', function() {
    Two-step: Step 1 = form fields, Step 2 = student checkbox grid
    Mirrors the desk Student Attendance Tool exactly
 ══════════════════════════════════════════════════════════ #}
-<div id="att-mark-modal" class="att-modal-backdrop" style="align-items:center;padding:16px;">
-  <div style="background:var(--fp-card);border-radius:var(--fp-radius-lg);width:100%;max-width:740px;max-height:94vh;display:flex;flex-direction:column;box-shadow:var(--fp-shadow-xl);animation:fpModalIn 0.22s var(--fp-ease);overflow:hidden;">
+<div id="att-mark-modal" class="att-modal-backdrop">
+  <div class="att-modal-box att-modal-full" style="display:flex;flex-direction:column;overflow:hidden;">
 
     {# ── Header bar ── #}
     <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 22px 12px;border-bottom:1px solid var(--fp-border);flex-shrink:0;">
@@ -2328,38 +2428,52 @@ document.addEventListener('DOMContentLoaded', function() {
     {# ── Step 2: Attendance section (shown after Get Students) ── #}
     <div id="sat-step-att" style="display:none;flex:1;overflow:hidden;flex-direction:column;">
 
-      {# Attendance label + bulk action bar #}
-      <div style="padding:12px 22px;border-bottom:1px solid var(--fp-border-light);flex-shrink:0;background:var(--fp-card);">
-        <div style="font-size:15px;font-weight:700;color:var(--fp-text-1);margin-bottom:10px;">Attendance</div>
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <button onclick="satCheckAll()"
-                    style="padding:5px 14px;border:1.5px solid var(--fp-border);border-radius:7px;background:var(--fp-card);font-size:12px;font-weight:600;color:var(--fp-text-2);cursor:pointer;font-family:inherit;transition:all 0.15s;display:flex;align-items:center;gap:5px;"
-                    onmouseover="this.style.background='#16a34a';this.style.color='#fff';this.style.borderColor='#16a34a';"
-                    onmouseout="this.style.background='var(--fp-card)';this.style.color='var(--fp-text-2)';this.style.borderColor='var(--fp-border)';">
-              Check all
-            </button>
-            <button onclick="satUncheckAll()"
-                    style="padding:5px 14px;border:1.5px solid var(--fp-border);border-radius:7px;background:var(--fp-card);font-size:12px;font-weight:600;color:var(--fp-text-2);cursor:pointer;font-family:inherit;transition:all 0.15s;display:flex;align-items:center;gap:5px;"
-                    onmouseover="this.style.background='#dc2626';this.style.color='#fff';this.style.borderColor='#dc2626';"
-                    onmouseout="this.style.background='var(--fp-card)';this.style.color='var(--fp-text-2)';this.style.borderColor='var(--fp-border)';">
-              Uncheck all
-            </button>
-            <button id="att-save-btn" onclick="fpSaveAttendance()"
-                    style="padding:6px 18px;border:none;border-radius:8px;background:#1e293b;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;transition:all 0.15s;">
-              <span class="fp-ms" style="font-size:16px;">how_to_reg</span>Mark Attendance
-            </button>
+      {# Attendance label + bulk action bar — centered to the same width as
+         the student list below it, so the whole step-2 layout reads as one
+         column instead of a full-bleed bar sitting above a narrow card. #}
+      <div style="padding:16px 22px;border-bottom:1px solid var(--fp-border-light);flex-shrink:0;background:var(--fp-card);">
+        <div style="max-width:900px;margin:0 auto;">
+          <div style="font-size:16px;font-weight:700;color:var(--fp-text-1);margin-bottom:12px;">Attendance</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <button onclick="satCheckAll()"
+                      style="padding:6px 16px;border:1.5px solid var(--fp-border);border-radius:7px;background:var(--fp-card);font-size:12px;font-weight:600;color:var(--fp-text-2);cursor:pointer;font-family:inherit;transition:all 0.15s;display:flex;align-items:center;gap:5px;"
+                      onmouseover="this.style.background='#16a34a';this.style.color='#fff';this.style.borderColor='#16a34a';"
+                      onmouseout="this.style.background='var(--fp-card)';this.style.color='var(--fp-text-2)';this.style.borderColor='var(--fp-border)';">
+                Check all
+              </button>
+              <button onclick="satUncheckAll()"
+                      style="padding:6px 16px;border:1.5px solid var(--fp-border);border-radius:7px;background:var(--fp-card);font-size:12px;font-weight:600;color:var(--fp-text-2);cursor:pointer;font-family:inherit;transition:all 0.15s;display:flex;align-items:center;gap:5px;"
+                      onmouseover="this.style.background='#dc2626';this.style.color='#fff';this.style.borderColor='#dc2626';"
+                      onmouseout="this.style.background='var(--fp-card)';this.style.color='var(--fp-text-2)';this.style.borderColor='var(--fp-border)';">
+                Uncheck all
+              </button>
+              <button id="att-save-btn" onclick="fpSaveAttendance()"
+                      style="padding:7px 20px;border:none;border-radius:8px;background:#1e293b;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;transition:all 0.15s;">
+                <span class="fp-ms" style="font-size:16px;">how_to_reg</span>Mark Attendance
+              </button>
+            </div>
+            <div style="font-size:13px;font-weight:600;color:var(--fp-text-2);">
+              Total: <span id="sat-cnt-total" style="color:var(--fp-text-1);">0</span> &nbsp;|&nbsp;
+              Present: <span id="sat-cnt-present" style="color:#16a34a;">0</span> &nbsp;|&nbsp;
+              Absent: <span id="sat-cnt-absent" style="color:#dc2626;">0</span>
+            </div>
           </div>
-          <div style="font-size:13px;font-weight:600;color:var(--fp-text-2);">
-            Total: <span id="sat-cnt-total" style="color:var(--fp-text-1);">0</span> &nbsp;|&nbsp;
-            Present: <span id="sat-cnt-present" style="color:#16a34a;">0</span> &nbsp;|&nbsp;
-            Absent: <span id="sat-cnt-absent" style="color:#dc2626;">0</span>
+          <div class="fp-search-wrap" style="max-width:360px;margin-top:12px;">
+            <span class="fp-ms">search</span>
+            <input type="text" class="fp-input fp-search-input" id="sat-search"
+                   placeholder="Search students…" oninput="satFilterStudents()"
+                   style="padding-top:8px;padding-bottom:8px;" autocomplete="off">
           </div>
         </div>
       </div>
 
-      {# Student checkbox grid #}
-      <div style="flex:1;overflow-y:auto;padding:14px 22px;" id="sat-list"></div>
+      {# Student list — centered to a comfortable reading width instead of
+         either stretching edge-to-edge or sitting flush-left in a
+         full-screen modal. #}
+      <div style="flex:1;overflow-y:auto;padding:18px 22px;" id="sat-list-wrap">
+        <div style="max-width:900px;margin:0 auto;" id="sat-list"></div>
+      </div>
 
       {# Error #}
       <div id="sat-error" class="fp-alert fp-alert-danger" style="display:none;margin:0 22px;border-radius:var(--fp-radius-sm);">
@@ -2416,7 +2530,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 {# ── View Session Modal ── #}
 <div id="att-view-modal" class="att-modal-backdrop">
-  <div class="att-modal-box" style="max-width:820px;display:flex;flex-direction:column;max-height:90vh;">
+  <div class="att-modal-box att-modal-full" style="display:flex;flex-direction:column;">
 
     {# Header — gradient with Edit button #}
     <div style="background:linear-gradient(135deg,#920c24,#2b2e4a);padding:18px 22px 14px;flex-shrink:0;position:relative;overflow:hidden;border-radius:var(--fp-radius-lg) var(--fp-radius-lg) 0 0;">
@@ -2433,16 +2547,6 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
           <div id="att-view-rfid" style="display:flex;align-items:center;"></div>
-          <button onclick="fpEditFromView()"
-                  style="display:flex;align-items:center;gap:6px;padding:7px 14px;
-                         background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);
-                         border-radius:8px;font-size:12px;font-weight:700;color:#fff;
-                         cursor:pointer;font-family:inherit;transition:background 0.15s;white-space:nowrap;"
-                  onmouseover="this.style.background='rgba(255,255,255,0.25)'"
-                  onmouseout="this.style.background='rgba(255,255,255,0.15)'"
-                  title="Edit this attendance">
-            <span class="fp-ms" style="font-size:16px;">edit</span>Edit
-          </button>
           <button class="sat-hdr-close" onclick="_closeModal('att-view-modal')" aria-label="Close">
             <span class="fp-ms" style="font-size:18px;">close</span>
           </button>
@@ -2457,6 +2561,16 @@ document.addEventListener('DOMContentLoaded', function() {
           <span id="att-view-meta">—</span>
         </div>
         <div id="att-view-slot-picker" style="display:flex;align-items:center;"></div>
+      </div>
+    </div>
+
+    {# Global search — filters the student list below by name/reg no #}
+    <div style="padding:12px 22px;border-bottom:1px solid var(--fp-border);flex-shrink:0;">
+      <div class="fp-search-wrap" style="max-width:320px;">
+        <span class="fp-ms">search</span>
+        <input type="text" class="fp-input fp-search-input" id="att-view-search"
+               placeholder="Search students…" oninput="fpFilterViewStudents()"
+               style="padding-top:7px;padding-bottom:7px;" autocomplete="off">
       </div>
     </div>
 

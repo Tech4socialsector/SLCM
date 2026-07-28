@@ -333,17 +333,14 @@ frappe.ui.form.on("Applicant", {
             errors.push(__("Score or percentage is required when National test is selected."));
         }
 
-        // Agreements must be accepted for any non-Draft status
-        if (frm.doc.status !== "Draft") {
-            if (!frm.doc.authorisation_information) {
-                errors.push(__("You must accept the Authorisation & Information."));
-            }
-            if (!frm.doc.agreement_to_communications) {
-                errors.push(__("You must accept the Agreement to Communications."));
-            }
-            if (!frm.doc.agreement_withdrawal_conditions) {
-                errors.push(__("You must accept the Agreement on Withdrawal Conditions."));
-            }
+        // Declaration must be accepted when submitting
+        const has_declaration = frm.doc.declaration_undertaking || (
+            frm.doc.authorisation_information &&
+            frm.doc.agreement_to_communications &&
+            frm.doc.agreement_withdrawal_conditions
+        );
+        if (frm.doc.status === "Submitted" && !has_declaration) {
+            errors.push(__("You must accept the Declaration & Undertaking before submitting."));
         }
 
         // Campus preference duplicates
@@ -360,6 +357,19 @@ frappe.ui.form.on("Applicant", {
                 message: errors.join("<br>")
             });
             frappe.validated = false;
+        }
+    },
+
+    before_save: function (frm) {
+        frm._previous_status = frm.doc ? frm.doc.status : null;
+    },
+
+    after_save: function (frm) {
+        if (frm.doc.status === "Submitted" && frm._previous_status === "Draft") {
+            frappe.show_alert({
+                message: __("Application Submitted email sent to the applicant successfully."),
+                indicator: "green"
+            }, 5);
         }
     },
 
