@@ -27,18 +27,12 @@
   "default_reexam_enrollment",
   "cb_reexam",
   "reexam_max_marks_cap",
-  "fa_mfa_section",
-  "allow_fa_mfa",
-  "fa_application_days_before_exam",
-  "fa_application_days_after_exam",
-  "cb_fa_mfa_notify",
-  "programme_chair_users",
-  "aad_team_users",
-  "fa_mfa_email_template",
   "section_display",
   "courses_per_page",
   "cb_display",
-  "show_unmapped_courses"
+  "show_unmapped_courses",
+  "section_improvement",
+  "max_cgpa_for_improvement"
  ],
  "fields": [
   {
@@ -181,60 +175,6 @@
    "description": "Cap re-exam score as a percentage (0 = no cap)."
   },
   {
-   "fieldname": "fa_mfa_section",
-   "fieldtype": "Section Break",
-   "label": "First Attempt (FA) / Medical First Attempt (MFA)"
-  },
-  {
-   "default": "1",
-   "description": "Allow students to apply for FA/MFA",
-   "fieldname": "allow_fa_mfa",
-   "fieldtype": "Check",
-   "label": "Allow FA/MFA Applications"
-  },
-  {
-   "default": "10",
-   "depends_on": "eval:doc.allow_fa_mfa==1",
-   "description": "Days before exam to apply for FA (University Representation)",
-   "fieldname": "fa_application_days_before_exam",
-   "fieldtype": "Int",
-   "label": "FA Application Days Before Exam"
-  },
-  {
-   "default": "10",
-   "depends_on": "eval:doc.allow_fa_mfa==1",
-   "description": "Days after exam to apply for FA with justification",
-   "fieldname": "fa_application_days_after_exam",
-   "fieldtype": "Int",
-   "label": "FA Application Days After Exam"
-  },
-  {
-   "fieldname": "cb_fa_mfa_notify",
-   "fieldtype": "Column Break"
-  },
-  {
-   "description": "Users who can approve/reject FA/MFA applications. Only these users are allowed to change an application's status.",
-   "fieldname": "programme_chair_users",
-   "fieldtype": "Table MultiSelect",
-   "label": "Programme Chair",
-   "options": "Notification Recipient User"
-  },
-  {
-   "description": "Users notified by email whenever a student raises an FA/MFA application, for visibility only — they cannot approve/reject.",
-   "fieldname": "aad_team_users",
-   "fieldtype": "Table MultiSelect",
-   "label": "AAD Team",
-   "options": "Notification Recipient User"
-  },
-  {
-   "default": "FA MFA Application Raised",
-   "description": "Email Template used to notify the Programme Chair(s) and AAD Team when a student raises an FA/MFA application.",
-   "fieldname": "fa_mfa_email_template",
-   "fieldtype": "Link",
-   "label": "FA/MFA Notification Email Template",
-   "options": "Email Template"
-  },
-  {
    "fieldname": "section_display",
    "fieldtype": "Section Break",
    "label": "Display / UI"
@@ -256,6 +196,18 @@
    "fieldtype": "Check",
    "label": "Show Unmapped Courses",
    "description": "Show courses with no schema in the mapping table by default."
+  },
+  {
+   "fieldname": "section_improvement",
+   "fieldtype": "Section Break",
+   "label": "Improvement Exam"
+  },
+  {
+   "default": "3.0",
+   "fieldname": "max_cgpa_for_improvement",
+   "fieldtype": "Float",
+   "label": "Max CGPA for Improvement Exam",
+   "description": "Students may only apply for Improvement Exam if their published Cumulative GPA for that exam plan is below this value."
   }
  ],
  "idx": 0,

@@ -13,7 +13,7 @@
   "doctype": "Attendance Settings",
   "elective_course_hours": 40,
   "elective_office_hours": 2,
-  "enable_parent_rfid_alert": 1,
+  "enable_parent_rfid_alert": 0,
   "enable_rfid": 1,
   "include_office_hours_in_attendance": 1,
   "late_entry_buffer_minutes": 15,

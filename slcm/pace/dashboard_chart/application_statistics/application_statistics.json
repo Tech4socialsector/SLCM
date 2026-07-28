@@ -3,7 +3,7 @@
  "chart_type": "Report",
  "creation": "2026-07-17 15:24:46.642109",
  "currency": "",
- "custom_options": "{\"type\": \"bar\", \"colors\": [\"#BA5A5A\", \"#723EC3\", \"#9FA1FF\"], \"axisOptions\": {\"shortenYAxisNumbers\": 1}, \"height\": 280}",
+ "custom_options": "{\"type\": \"bar\", \"colors\": [\"#9FA1FF\", \"#FFB399\", \"#FFCDC9\"], \"axisOptions\": {\"shortenYAxisNumbers\": 1}, \"height\": 280}",
  "docstatus": 0,
  "doctype": "Dashboard Chart",
  "filters_json": "{}",

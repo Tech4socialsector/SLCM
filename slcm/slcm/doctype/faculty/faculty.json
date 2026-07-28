@@ -10,6 +10,8 @@
   "first_name",
   "last_name",
   "email",
+  "official_email_id",
+  "auto_create_user",
   "phone",
   "department",
   "designation",
@@ -64,6 +66,23 @@
    "reqd": 1
   },
   {
+   "description": "Institutional email (e.g. Google Workspace account) used for portal login. Separate from the Email field above, which may be a personal contact address. Google OAuth sign-in is matched against this field.",
+   "fieldname": "official_email_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Official Email ID",
+   "options": "Email",
+   "unique": 1
+  },
+  {
+   "default": "0",
+   "description": "When checked (and saved by a System Manager), a Frappe User account is automatically created for the Official Email ID above, with the slcm_Faculty role and Website User access — so this faculty member can sign in to the Faculty Portal via Google immediately, without a separate manual User setup step.",
+   "fieldname": "auto_create_user",
+   "fieldtype": "Check",
+   "label": "Auto Create User"
+  },
+  {
    "fieldname": "phone",
    "fieldtype": "Data",
    "label": "Phone Number",
@@ -99,6 +118,7 @@
    "default": "0",
    "fieldname": "is_hod",
    "fieldtype": "Check",
+   "hidden": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Is HOD"
@@ -160,7 +180,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-10 13:14:19.748321",
+ "modified": "2026-07-24 15:55:34.972501",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Faculty",

@@ -35,7 +35,8 @@ web_include_js = ["/assets/slcm/js/fle_theme.js"]
 # app_include_css = "/assets/slcm/css/slcm.css"
 # app_include_js = "/assets/slcm/js/slcm.js"
 app_include_js = [
-    "/assets/slcm/js/student_workspace_redirect.js"
+    "/assets/slcm/js/student_workspace_redirect.js",
+    "/assets/slcm/js/bulk_email_dialog.js"
 ]
 app_include_css = []
 
@@ -197,9 +198,22 @@ fixtures = [
                 "AAD Rejected Email Template",
                 "Programme Chair Assignment Email Template",
                 "Programme Chair Approval Email Template",
-                "Programme Chair Rejected Email Template"
+                "Programme Chair Rejected Email Template",
+                # Admission Module — Applicant Reminder Emails
+                "Applicant Not Started Application Reminder",
+                "Applicant Draft Application Reminder",
+                "Applicant Fee Payment Pending Reminder",
+                "Applicant Application Rejected"
             ]]
         ]
+    },
+    # --- Admission Reminder Email DocTypes ---
+    {
+        "doctype": "Applicant Reminder Email Configuration",
+        "filters": [["name", "=", "Applicant Reminder Email Configuration"]]
+    },
+    {
+        "doctype": "Applicant Reminder Email Log"
     },
     # --- Student Portal Settings (single doctype — ships with defaults) ---
     {
@@ -430,7 +444,11 @@ before_request = [
     "slcm.admission.portal_application_web_form.slcm_before_request"
 ]
 on_logout = "slcm.utils.auth_routing.handle_logout"
-on_session_creation = ["slcm.utils.auth_routing.enforce_student_google_login"]
+on_session_creation = [
+    "slcm.utils.auth_routing.enforce_faculty_google_login",
+    "slcm.utils.auth_routing.enforce_parent_google_login",
+    "slcm.utils.auth_routing.enforce_student_google_login",
+]
 # after_request = ["slcm.utils.after_request"]
 
 # Job Events
@@ -518,7 +536,12 @@ scheduler_events = {
 		    "slcm.pace.doctype.pace_application.pace_application.send_document_reminders",
 		    "slcm.pace.doctype.pace_application.pace_application.send_correction_reminders",
 		    "slcm.pace.doctype.pace_applicant_fee_assignment.pace_applicant_fee_assignment.send_course_fee_reminders",
-		    "slcm.pace.assignment_logic.check_overdue_verifications"
+		    "slcm.pace.assignment_logic.check_overdue_verifications",
+		    # Admission Module — Applicant Reminder Emails
+		    "slcm.admission.applicant_reminder_emails.send_not_started_reminders",
+		    "slcm.admission.applicant_reminder_emails.send_draft_applicant_reminders",
+		    "slcm.admission.applicant_reminder_emails.send_unpaid_fee_reminders",
+		    "slcm.admission.applicant_reminder_emails.send_admission_fee_reminders"
 		],
 		"daily": [
 		]
@@ -542,7 +565,11 @@ scheduler_events = {
 		# Fee Management — daily automation
 		"slcm.slcm.fee.scheduler.mark_overdue_demands",
 		"slcm.slcm.fee.scheduler.send_due_reminders",
-		"slcm.slcm.fee.scheduler.check_phd_year_transition"
+		"slcm.slcm.fee.scheduler.check_phd_year_transition",
+		# Attendance Condonation — auto-reject applications below the attendance
+		# floor once their Academic Term has ended (see programme_chair_decision,
+		# which no longer checks this at approval time).
+		"slcm.slcm.doctype.student_attendance_condonation.student_attendance_condonation.auto_reject_below_attendance_floor",
 	]
 }
 
