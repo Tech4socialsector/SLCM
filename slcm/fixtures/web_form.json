@@ -5118,7 +5118,6 @@
     "reqd": 0,
     "show_in_filter": 0
    },
-
    {
     "allow_read_on_all_link_options": 0,
     "default": null,
@@ -7580,7 +7579,7 @@
   "meta_description": null,
   "meta_image": null,
   "meta_title": "Application Form",
-  "modified": "2026-07-20 09:58:17.578586",
+  "modified": "2026-07-28 11:52:12.442359",
   "module": "Admission",
   "name": "applicant-form",
   "payment_button_help": null,
@@ -10119,7 +10118,7 @@
     "show_in_filter": 0
    },
    {
-    "allow_read_on_all_link_options": 0,
+    "allow_read_on_all_link_options": 1,
     "default": null,
     "depends_on": "eval:doc.foriegn_national == \"No\" || doc.undergraduate_degree_india == \"Yes\"",
     "description": null,
@@ -10159,7 +10158,7 @@
     "show_in_filter": 0
    },
    {
-    "allow_read_on_all_link_options": 0,
+    "allow_read_on_all_link_options": 1,
     "default": null,
     "depends_on": "eval:doc.foriegn_national == \"No\" || doc.undergraduate_degree_india == \"Yes\"",
     "description": null,
@@ -10199,7 +10198,7 @@
     "show_in_filter": 0
    },
    {
-    "allow_read_on_all_link_options": 0,
+    "allow_read_on_all_link_options": 1,
     "default": null,
     "depends_on": "eval:doc.foriegn_national == \"No\" || doc.undergraduate_degree_india == \"Yes\"",
     "description": null,
