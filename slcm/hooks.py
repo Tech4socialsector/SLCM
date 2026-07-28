@@ -498,6 +498,7 @@ scheduler_events = {
 			# minute (Frappe's finest interval) but only actually polls once
 			# "Poll Interval (seconds)" in RFID SQL Agent Settings has elapsed.
 			"slcm.slcm.rfid_sql_agent.poller.poll_rfid_sql_agent",
+            "slcm.slcm.tasks.check_stuck_bulk_emails"
 		],
 		"*/10 * * * *": [
 			"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist"
