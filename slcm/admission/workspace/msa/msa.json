@@ -211,18 +211,18 @@
    "type": "Link"
   }
  ],
- "modified": "2026-07-28 10:51:33.870015",
+ "modified": "2026-07-28 10:57:38.587525",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "MSA",
  "number_cards": [
   {
-   "label": "Reservation Policy",
-   "number_card_name": "Reservation Policy"
-  },
-  {
    "label": "Shortlisted Merit Lists",
    "number_card_name": "Shortlisted Merit Lists"
+  },
+  {
+   "label": "Reservation Policy",
+   "number_card_name": "Reservation Policy"
   },
   {
    "label": "Merit List",
