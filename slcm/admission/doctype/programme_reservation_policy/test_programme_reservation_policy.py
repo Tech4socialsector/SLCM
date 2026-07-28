@@ -86,10 +86,11 @@ class TestProgrammeReservationPolicy(unittest.TestCase):
             "seats": 6
         })
         html = doc.render_matrix_html()
-        self.assertIn("Main Category", html)
-        self.assertIn("Total Seats", html)
-        self.assertIn("Karnataka (25%)", html)
-        self.assertIn("PWD (5%)", html)
+        self.assertIn("Category", html)
+        self.assertIn("All India Students", html)
+        self.assertIn("Karnataka Students (25% HC)", html)
+        self.assertIn("PWD (5% H)", html)
         self.assertIn("Scheduled Castes (15%)", html)
+        self.assertIn("Total", html)
 
 

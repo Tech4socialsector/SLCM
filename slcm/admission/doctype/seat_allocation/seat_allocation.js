@@ -509,8 +509,8 @@ frappe.ui.form.on("Seat Allocation", {
                                                     <tr>
                                                         <th style="width: 40px; text-align: center;"><input type="checkbox" id="check-all-promotions" checked></th>
                                                         <th style="width: 30%;">${__('Vacant Seat Released By')}</th>
-                                                        <th style="width: 25%;">${__('Promoted Category')}</th>
-                                                        <th style="width: 45%;">${__('Promoted Candidate')}</th>
+                                                        <th style="width: 25%;">${__('Promote Category')}</th>
+                                                        <th style="width: 45%;">${__('Promote Candidate')}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody id="promotions-body">
@@ -566,7 +566,7 @@ frappe.ui.form.on("Seat Allocation", {
                                     `
                                 }
                             ],
-                            primary_action_label: __("Promote Selected"),
+                            primary_action_label: __("Promote"),
                             primary_action(values) {
                                 const selected = [];
                                 $(d.wrapper).find('.promotion-row').each(function () {
