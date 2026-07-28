@@ -28,5 +28,12 @@ frappe.query_reports["Reservation Report"] = {
             "fieldtype": "Link",
             "options": "Programme"
         }
-    ]
+    ],
+    "onload": function(report) {
+        if (report.page && typeof report.page.set_title_sub === "function") {
+            report.page.set_title_sub(
+                __("This Reservation Report displays category-wise candidate counts for applicants who have passed Part A (Entrance Test).")
+            );
+        }
+    }
 };

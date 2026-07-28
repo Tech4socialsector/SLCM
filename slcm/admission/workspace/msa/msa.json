@@ -1,8 +1,8 @@
 {
  "app": "slcm",
  "charts": [],
- "content": "[{\"id\":\"0WcaoNmjBn\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">MSA Overview</span>\",\"col\":12}},{\"id\":\"XyPk7pXOHy\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Reservation Policy\",\"col\":3}},{\"id\":\"MsR5cSvJ6W\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Shortlisted Merit Lists\",\"col\":3}},{\"id\":\"zkHoeRPN0M\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit List\",\"col\":3}},{\"id\":\"2m0Ije2OHl\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Seat Allocation\",\"col\":3}},{\"id\":\"WUc1ICGUOz\",\"type\":\"card\",\"data\":{\"card_name\":\"Merit \",\"col\":4}},{\"id\":\"2nFwcalWX_\",\"type\":\"card\",\"data\":{\"card_name\":\"Seat Allocation\",\"col\":4}},{\"id\":\"Uv0kebi4uV\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"1REulgiGgO\",\"type\":\"card\",\"data\":{\"card_name\":\"Setup\",\"col\":4}},{\"id\":\"vEO09THmKr\",\"type\":\"card\",\"data\":{\"card_name\":\"Logs\",\"col\":4}},{\"id\":\"ue_oanO0PA\",\"type\":\"card\",\"data\":{\"card_name\":\"page\",\"col\":4}}]",
- "creation": "2026-07-25 17:11:13.765402",
+ "content": "[{\"id\":\"0WcaoNmjBn\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">MSA Overview</span>\",\"col\":12}},{\"id\":\"WW2hZilE_E\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Reservation Policy\",\"col\":3}},{\"id\":\"MsR5cSvJ6W\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Shortlisted Merit Lists\",\"col\":3}},{\"id\":\"zkHoeRPN0M\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Merit List\",\"col\":3}},{\"id\":\"2m0Ije2OHl\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Seat Allocation\",\"col\":3}},{\"id\":\"WUc1ICGUOz\",\"type\":\"card\",\"data\":{\"card_name\":\"Merit \",\"col\":4}},{\"id\":\"2nFwcalWX_\",\"type\":\"card\",\"data\":{\"card_name\":\"Seat Allocation\",\"col\":4}},{\"id\":\"Uv0kebi4uV\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}},{\"id\":\"1REulgiGgO\",\"type\":\"card\",\"data\":{\"card_name\":\"Setup\",\"col\":4}},{\"id\":\"vEO09THmKr\",\"type\":\"card\",\"data\":{\"card_name\":\"Logs\",\"col\":4}},{\"id\":\"ue_oanO0PA\",\"type\":\"card\",\"data\":{\"card_name\":\"page\",\"col\":4}}]",
+ "creation": "2026-07-28 09:58:14.450647",
  "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
@@ -14,6 +14,47 @@
  "is_hidden": 0,
  "label": "MSA",
  "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Reports",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Overall Merit Report",
+   "link_count": 0,
+   "link_to": "Overall Merit Report",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student Selection Report",
+   "link_count": 0,
+   "link_to": "Student Selection Report",
+   "link_type": "Report",
+   "onboard": 0,
+   "report_ref_doctype": "Seat Allocation",
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Seat Availability Report",
+   "link_count": 0,
+   "link_to": "Seat Availability Report",
+   "link_type": "Report",
+   "onboard": 0,
+   "report_ref_doctype": "Seat Allocation",
+   "type": "Link"
+  },
   {
    "hidden": 0,
    "is_query_report": 0,
@@ -168,71 +209,20 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Reports",
-   "link_count": 4,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 1,
-   "label": "Reservation Report",
-   "link_count": 0,
-   "link_to": "Reservation Report",
-   "link_type": "Report",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 1,
-   "label": "Overall Merit Report",
-   "link_count": 0,
-   "link_to": "Overall Merit Report",
-   "link_type": "Report",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Student Selection Report",
-   "link_count": 0,
-   "link_to": "Student Selection Report",
-   "link_type": "Report",
-   "onboard": 0,
-   "report_ref_doctype": "Seat Allocation",
-   "type": "Link"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Seat Availability Report",
-   "link_count": 0,
-   "link_to": "Seat Availability Report",
-   "link_type": "Report",
-   "onboard": 0,
-   "report_ref_doctype": "Seat Allocation",
-   "type": "Link"
   }
  ],
- "modified": "2026-07-27 11:07:22.664089",
+ "modified": "2026-07-28 10:51:33.870015",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "MSA",
  "number_cards": [
   {
-   "label": "Shortlisted Merit Lists",
-   "number_card_name": "Shortlisted Merit Lists"
+   "label": "Reservation Policy",
+   "number_card_name": "Reservation Policy"
   },
   {
-   "label": "Reservation Policy",
-   "number_card_name": "Resrvation Policy"
+   "label": "Shortlisted Merit Lists",
+   "number_card_name": "Shortlisted Merit Lists"
   },
   {
    "label": "Merit List",

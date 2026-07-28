@@ -11,7 +11,8 @@ def execute(filters=None):
 
     columns = get_columns()
     data, chart, report_summary = get_data(filters)
-    return columns, data, None, chart, report_summary
+    message = _("This Reservation Report displays category-wise candidate counts for applicants who have passed Part A (Entrance Test).")
+    return columns, data, message, chart, report_summary
 
 def get_columns():
     return [

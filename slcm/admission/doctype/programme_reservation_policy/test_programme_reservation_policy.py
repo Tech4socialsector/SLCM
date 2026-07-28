@@ -61,3 +61,35 @@ class TestProgrammeReservationPolicy(unittest.TestCase):
         })
         fee, label, cat = doc.get_fee_for_category(None)
         self.assertEqual(fee, 1500)
+
+    def test_render_matrix_html(self):
+        doc = frappe.new_doc("Programme Reservation Policy")
+        doc.total_seats = 120
+        doc.append("categories", {
+            "category_name": "Scheduled Castes",
+            "percentage": 15,
+            "seats": 18
+        })
+        doc.append("categories", {
+            "category_name": "General",
+            "percentage": 0,
+            "seats": 49
+        })
+        doc.append("compartmental_reservations", {
+            "category_name": "Karnataka",
+            "percentage": 25,
+            "seats": 30
+        })
+        doc.append("horizontal_reservations", {
+            "category_name": "PWD",
+            "percentage": 5,
+            "seats": 6
+        })
+        html = doc.render_matrix_html()
+        self.assertIn("Main Category", html)
+        self.assertIn("Total Seats", html)
+        self.assertIn("Karnataka (25%)", html)
+        self.assertIn("PWD (5%)", html)
+        self.assertIn("Scheduled Castes (15%)", html)
+
+

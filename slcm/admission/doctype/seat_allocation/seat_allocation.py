@@ -189,11 +189,10 @@ class SeatAllocation(Document):
 
             def get_save_sort_key(x):
                 overall_rnk = flt(getattr(x, "overall_rank", None) or x.get("overall_rank") or 999999)
-                part_b = flt(getattr(x, "nlsat_part_b_score", None) or x.get("nlsat_part_b_score") or 0)
                 return (
                     overall_rnk,
-                    -part_b
                 )
+
 
             self.selection_applicant.sort(key=get_save_sort_key)
             for i, row in enumerate(self.selection_applicant):
@@ -550,12 +549,11 @@ class SeatAllocation(Document):
             from frappe.utils import flt
             status_pri = status_priority.get(x.selection_status, 99)
             overall_rnk = flt(getattr(x, "overall_rank", None) or x.get("overall_rank") or 999999)
-            part_b = flt(getattr(x, "nlsat_part_b_score", None) or x.get("nlsat_part_b_score") or 0)
             return (
                 status_pri,
-                overall_rnk,
-                -part_b
+                overall_rnk
             )
+
 
         sorted_rows = sorted(self.selection_applicant, key=get_allocation_sort_key)
         
@@ -763,8 +761,13 @@ class SeatAllocation(Document):
                 v = None
                 if i < len(recent_vacancies):
                     v = recent_vacancies[i]
-                    vacant_info = f"{v.candidate_name} ({v.selection_status})"
-                
+                    vacant_info = f"{v.candidate_name} ({v.applicant_id}) - Score: {v.total_score or 0}, Rank: {v.overall_rank or 0} ({v.selection_status})"
+                    promoted["vacant_applicant_id"] = v.applicant_id
+                    promoted["vacant_candidate_name"] = v.candidate_name
+                    promoted["vacant_total_score"] = v.total_score
+                    promoted["vacant_overall_rank"] = v.overall_rank
+                    promoted["vacant_selection_status"] = v.selection_status
+
                 promoted["vacant_seat_info"] = vacant_info
                 
                 # Find all eligible candidates for this specific vacancy slot
