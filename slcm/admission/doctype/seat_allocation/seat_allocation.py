@@ -761,8 +761,13 @@ class SeatAllocation(Document):
                 v = None
                 if i < len(recent_vacancies):
                     v = recent_vacancies[i]
-                    vacant_info = f"{v.candidate_name} ({v.selection_status})"
-                
+                    vacant_info = f"{v.candidate_name} ({v.applicant_id}) - Score: {v.total_score or 0}, Rank: {v.overall_rank or 0} ({v.selection_status})"
+                    promoted["vacant_applicant_id"] = v.applicant_id
+                    promoted["vacant_candidate_name"] = v.candidate_name
+                    promoted["vacant_total_score"] = v.total_score
+                    promoted["vacant_overall_rank"] = v.overall_rank
+                    promoted["vacant_selection_status"] = v.selection_status
+
                 promoted["vacant_seat_info"] = vacant_info
                 
                 # Find all eligible candidates for this specific vacancy slot
