@@ -375,8 +375,7 @@ class Applicant(Document):
             and self.status in APPLICATION_SUBMITTED_STATUSES
             and not self.flags.get("in_pdf_generation")
         ):
-            if not self.application_form or not frappe.db.get_value("Applicant", self.name, "application_form"):
-                self.generate_application_pdf()
+            self.generate_application_pdf()
 
         doc_before_save = self.get_doc_before_save()
         old_status = (
@@ -2912,15 +2911,23 @@ def ensure_application_form_pdf_for_applicant(applicant_name):
 
 
 def _clear_application_form_attachment_files(applicant_name):
-    for fn in frappe.get_all(
-        "File",
-        filters={
-            "attached_to_doctype": "Applicant",
-            "attached_to_name": applicant_name,
-            "attached_to_field": "application_form",
-        },
-        pluck="name",
-    ):
+    url = frappe.db.get_value("Applicant", applicant_name, "application_form")
+    file_names = set(
+        frappe.get_all(
+            "File",
+            filters={
+                "attached_to_doctype": "Applicant",
+                "attached_to_name": applicant_name,
+                "attached_to_field": "application_form",
+            },
+            pluck="name",
+        )
+    )
+    if url:
+        for fn in frappe.get_all("File", filters={"file_url": url}, pluck="name"):
+            file_names.add(fn)
+
+    for fn in file_names:
         try:
             frappe.delete_doc("File", fn, force=1, ignore_permissions=True)
         except Exception:
@@ -2945,9 +2952,14 @@ def save_application_form_pdf_to_applicant(applicant_doc, pdf_content):
             "Applicant",
             applicant_doc.name,
             decode=False,
-            is_private=0,
+            is_private=1,
             df="application_form",
         )
+        if file_doc:
+            if not file_doc.is_private or (file_doc.file_url and not file_doc.file_url.startswith("/private")):
+                file_doc.is_private = 1
+                file_doc.save(ignore_permissions=True)
+
         # ``save_file`` creates the File row but does not set the parent Attach field on Applicant.
         if file_doc and getattr(file_doc, "file_url", None):
             frappe.db.set_value(
