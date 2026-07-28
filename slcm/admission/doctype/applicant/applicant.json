@@ -158,6 +158,7 @@
   "program",
   "admission_cycle",
   "user_id",
+  "needs_accommodation",
   "column_break_rynw",
   "admission_year",
   "academic_year",
@@ -1029,6 +1030,12 @@
    "label": "Centre Filled"
   },
   {
+   "fieldname": "needs_accommodation",
+   "fieldtype": "Select",
+   "label": "Needs Accommodation",
+   "options": "\nYes\nNo"
+  },
+  {
    "fieldname": "application_fee_status",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -1323,7 +1330,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-27 17:10:32.947654",
+ "modified": "2026-07-28 15:25:18.888746",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

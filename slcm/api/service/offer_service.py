@@ -310,7 +310,7 @@ class OfferService:
             raise e
 
     @staticmethod
-    def accept_offer(offer_name):
+    def accept_offer(offer_name, needs_accommodation=None):
         """
         Business logic for accepting an offer.
         Validates transition and deadline.
@@ -331,6 +331,9 @@ class OfferService:
             offer.status = "Accepted"
             offer.accepted_on = now_datetime()
             offer.save(ignore_permissions=True)
+
+            if needs_accommodation:
+                frappe.db.set_value("Applicant", offer.applicant, "needs_accommodation", needs_accommodation)
 
             from slcm.admission.utils.notifications import log_communication
             log_communication(
@@ -1179,10 +1182,10 @@ def bulk_update_status(offer_names, action, notes=None):
     return OfferService.bulk_update_status(offer_names, action, notes)
 
 @frappe.whitelist()
-def accept_offer(offer_name):
+def accept_offer(offer_name, needs_accommodation=None):
     # Set a flag so reject_applicant_other_offer knows which offer was just accepted
     frappe.flags.current_offer = offer_name
-    return OfferService.accept_offer(offer_name)
+    return OfferService.accept_offer(offer_name, needs_accommodation)
 
 @frappe.whitelist()
 def reject_applicant_other_offer(applicant, reason):
