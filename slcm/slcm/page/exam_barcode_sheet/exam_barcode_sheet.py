@@ -63,11 +63,16 @@ def get_exam_courses(exam_plan):
 
 
 @frappe.whitelist()
-def generate_barcodes(exam_plan, courses=None):
+def generate_barcodes(exam_plan, courses=None, copies=1):
 	"""
 	Generate 6-digit unique barcodes for all students enrolled in the given
 	courses under the exam plan. Existing barcodes are preserved; only missing
 	students get new ones.
+
+	copies: how many times the same barcode should repeat on the printed sheet
+	(e.g. one per answer booklet). Applied to both new and already-existing
+	barcodes for the selected courses — it never generates additional distinct
+	barcodes for a student.
 
 	courses: JSON list of course names (optional, defaults to all scheduled).
 	"""
@@ -77,6 +82,8 @@ def generate_barcodes(exam_plan, courses=None):
 
 	if isinstance(courses, str):
 		courses = json.loads(courses)
+
+	copies = frappe.utils.cint(copies) or 1
 
 	if not courses:
 		schedules = frappe.db.get_all(
@@ -135,16 +142,19 @@ def generate_barcodes(exam_plan, courses=None):
 
 		# Find which students already have barcodes
 		existing = {
-			r.student
+			r.student: r.name
 			for r in frappe.db.get_all(
 				"Exam Barcode",
 				filters={"exam_plan": exam_plan, "course": course},
-				fields=["student"],
+				fields=["student", "name"],
 			)
 		}
 
 		for st in students:
 			if st["student"] in existing:
+				# Never regenerate a distinct barcode for a student who already
+				# has one — just update how many copies should be printed.
+				frappe.db.set_value("Exam Barcode", existing[st["student"]], "copies", copies)
 				continue
 			doc = frappe.get_doc({
 				"doctype": "Exam Barcode",
@@ -156,6 +166,7 @@ def generate_barcodes(exam_plan, courses=None):
 				"registration_id": st["registration_id"],
 				"section": st["section"],
 				"barcode": _new_barcode(),
+				"copies": copies,
 				"generated_on": now,
 			})
 			doc.insert(ignore_permissions=True)
@@ -298,7 +309,7 @@ def export_attendance_excel(exam_plan, course=None, mode="by_date",
 	barcodes = frappe.db.get_all(
 		"Exam Barcode",
 		filters=bc_filters,
-		fields=["course", "exam_date", "student", "student_name", "registration_id", "section", "barcode"],
+		fields=["course", "exam_date", "student", "student_name", "registration_id", "section", "barcode", "copies"],
 		order_by="registration_id asc",
 	)
 	barcode_map = {}
@@ -443,6 +454,52 @@ def export_attendance_excel(exam_plan, course=None, mode="by_date",
 
 		return row + 2  # blank gap between course blocks
 
+	def _write_label_block(ws, start_row, students):
+		"""
+		Write a plain barcode-label block: Sl.No | Name | ID no. | Sec | Barcode.
+		Each student's row is repeated `copies` times, same barcode every time —
+		meant for printing/pasting one sticker per answer booklet, not for
+		generating additional distinct barcodes.
+		Returns the next free row.
+		"""
+		row = start_row
+		label_headers = ["Sl.No", "Name", "ID no.", "Sec", "Barcode"]
+		for col_idx, header in enumerate(label_headers, 1):
+			c = ws.cell(row=row, column=col_idx, value=header)
+			c.font = _font(11, bold=True)
+			c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+			c.border = border
+			c.fill = header_fill
+		row += 1
+
+		sorted_students = sorted(students, key=lambda x: (x.registration_id or ""))
+		sl = 0
+		for st in sorted_students:
+			for _ in range(max(1, frappe.utils.cint(st.get("copies")) or 1)):
+				sl += 1
+				row_data = [sl, st.student_name or "", st.registration_id or "", st.section or "", st.barcode or ""]
+				for col_idx, val in enumerate(row_data, 1):
+					c = ws.cell(row=row, column=col_idx, value=val)
+					c.font = _font(11)
+					c.border = border
+					if col_idx in (1, 3, 4, 5):
+						_center(c)
+					else:
+						_left(c)
+				row += 1
+
+		return row
+
+	def _label_sheet_name(base, existing_names):
+		name = (base[:23] + " Labels")[:31]
+		# Avoid clashing with an already-used sheet title
+		suffix = 1
+		final = name
+		while final in existing_names:
+			suffix += 1
+			final = (base[: 31 - len(f" Labels{suffix}")] + f" Labels{suffix}")[:31]
+		return final
+
 	# ── Build workbook ────────────────────────────────────────────────────────
 	wb = openpyxl.Workbook()
 	wb.remove(wb.active)
@@ -456,11 +513,16 @@ def export_attendance_excel(exam_plan, course=None, mode="by_date",
 		ws = wb.create_sheet(title=sheet_name)
 		_write_course_block(ws, 1, sched, course_name, students)
 		_set_col_widths(ws)
+
+		label_ws = wb.create_sheet(title=_label_sheet_name(sheet_name, wb.sheetnames))
+		_write_label_block(label_ws, 1, students)
+		_set_col_widths(label_ws)
+
 		safe = sched.course.replace(" ", "_").replace("/", "-")[:30]
 		filename = f"Attendance_{safe}.xlsx"
 
 	elif mode == "by_course":
-		# ── One sheet per course ──────────────────────────────────────────────
+		# ── One sheet per course (+ a matching barcode-labels sheet) ──────────
 		for sched in schedules:
 			course_name = course_name_map.get(sched.course, sched.course)
 			students = barcode_map.get(sched.course, [])
@@ -468,10 +530,14 @@ def export_attendance_excel(exam_plan, course=None, mode="by_date",
 			ws = wb.create_sheet(title=sheet_name)
 			_write_course_block(ws, 1, sched, course_name, students)
 			_set_col_widths(ws)
+
+			label_ws = wb.create_sheet(title=_label_sheet_name(sheet_name, wb.sheetnames))
+			_write_label_block(label_ws, 1, students)
+			_set_col_widths(label_ws)
 		filename = f"Exam_Attendance_ByCourse_{exam_plan.replace(' ', '_')}.xlsx"
 
 	else:
-		# ── By date (default) — one sheet per exam date ───────────────────────
+		# ── By date (default) — one sheet per exam date (+ labels sheet) ──────
 		date_groups = defaultdict(list)
 		for s in schedules:
 			date_groups[s.exam_date].append(s)
@@ -486,11 +552,17 @@ def export_attendance_excel(exam_plan, course=None, mode="by_date",
 			sheet_name = (date_str.replace("/", "-") if date_str else "No Date")[:31]
 			ws = wb.create_sheet(title=sheet_name)
 			current_row = 1
+			date_students = []
 			for sched in date_groups[exam_date]:
 				course_name = course_name_map.get(sched.course, sched.course)
 				students = barcode_map.get(sched.course, [])
 				current_row = _write_course_block(ws, current_row, sched, course_name, students)
+				date_students.extend(students)
 			_set_col_widths(ws)
+
+			label_ws = wb.create_sheet(title=_label_sheet_name(sheet_name, wb.sheetnames))
+			_write_label_block(label_ws, 1, date_students)
+			_set_col_widths(label_ws)
 		filename = f"Exam_Attendance_{exam_plan.replace(' ', '_')}.xlsx"
 
 	buf = io.BytesIO()

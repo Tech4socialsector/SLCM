@@ -15,6 +15,7 @@
   "registration_id",
   "section",
   "barcode",
+  "copies",
   "generated_on"
  ],
  "fields": [
@@ -89,6 +90,15 @@
    "in_list_view": 1,
    "label": "Barcode",
    "reqd": 1
+  },
+  {
+   "default": "1",
+   "description": "Number of times this same barcode should be printed (e.g. one per answer booklet).",
+   "fieldname": "copies",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Copies",
+   "non_negative": 1
   },
   {
    "fieldname": "generated_on",

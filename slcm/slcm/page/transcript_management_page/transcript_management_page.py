@@ -650,45 +650,15 @@ def _get_compact_template_html():
 def download_compact_transcript(student):
     """
     Return a URL for the compact transcript PDF.
-    Requires a Final Transcript Request in Generated/Delivered/Approved state,
-    or an existing Student Transcript of type Final/Interim.
+    Admin-side generation — no Transcript Request/approval needed; staff can
+    generate and download the compact transcript for any student on demand.
+    Reuses an existing Student Transcript (Final, then Interim) if present,
+    otherwise creates one on the fly.
     """
     if not student:
         frappe.throw("Student is required.")
 
-    # Check for an approved/generated Final Transcript Request
-    final_request = frappe.db.get_value(
-        "Transcript Request",
-        {
-            "student": student,
-            "transcript_type": "Final Transcript",
-            "status": ["in", ["Generated", "Delivered", "Approved"]],
-        },
-        ["name", "status", "transcript_doc"],
-        as_dict=True,
-        order_by="creation desc",
-    )
-
-    if not final_request:
-        # Also accept Interim Transcript Request if no Final exists
-        interim_request = frappe.db.get_value(
-            "Transcript Request",
-            {
-                "student": student,
-                "transcript_type": "Interim Transcript",
-                "status": ["in", ["Generated", "Delivered", "Approved"]],
-            },
-            ["name", "status", "transcript_doc"],
-            as_dict=True,
-            order_by="creation desc",
-        )
-        if not interim_request:
-            frappe.throw(
-                "No approved Final or Interim Transcript Request found for this student. "
-                "The student must submit and get a transcript request approved before downloading the compact transcript."
-            )
-
-    # Find or use the linked Student Transcript doc
+    # Find or use an existing Student Transcript
     record = frappe.db.get_value(
         "Student Transcript",
         {"student": student, "transcript_type": "Final"},
@@ -703,15 +673,26 @@ def download_compact_transcript(student):
             as_dict=True,
         )
     if not record:
-        # Create the Student Transcript anchored to the approved request
-        req = final_request or interim_request
+        # No prior request needed — admin can generate directly
+        final_request = frappe.db.get_value(
+            "Transcript Request",
+            {"student": student, "transcript_type": "Final Transcript"},
+            "name",
+            order_by="creation desc",
+        )
+        interim_request = frappe.db.get_value(
+            "Transcript Request",
+            {"student": student, "transcript_type": "Interim Transcript"},
+            "name",
+            order_by="creation desc",
+        )
         doc = frappe.new_doc("Student Transcript")
         doc.student = student
         doc.transcript_type = "Final" if final_request else "Interim"
         doc.status = "Generated"
         doc.generation_date = frappe.utils.today()
         doc.generated_by = frappe.session.user
-        doc.transcript_request = req["name"]
+        doc.transcript_request = final_request or interim_request or None
         doc.insert(ignore_permissions=True)
         frappe.db.commit()
         record = {"name": doc.name, "status": doc.status, "generation_date": doc.generation_date}
