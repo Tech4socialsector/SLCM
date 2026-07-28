@@ -18,10 +18,20 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Reports",
-   "link_count": 3,
+   "link_count": 4,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Reservation Report",
+   "link_count": 0,
+   "link_to": "Reservation Report",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   },
   {
    "hidden": 0,
