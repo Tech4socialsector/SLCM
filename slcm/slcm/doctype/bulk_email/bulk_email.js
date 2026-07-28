@@ -41,9 +41,6 @@ frappe.ui.form.on('Bulk Email', {
                                         args: { bulk_email_name: frm.doc.name }, 
                                         callback: () => {
                                             frm.reload_doc();
-                                            if (typeof slcm !== 'undefined' && slcm.show_bulk_email_progress) {
-                                                slcm.show_bulk_email_progress(frm.doc.name);
-                                            }
                                         }
                                     });
                                 }
