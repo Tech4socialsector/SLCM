@@ -66,10 +66,10 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Fee Type",
-   "options": "Application Fee\nAdmission Fee"
+   "options": "Application Fee\nConfirmation Fee\nAdmission Fee"
   },
   {
-   "depends_on": "eval:doc.fee_type == 'Admission Fee'",
+   "depends_on": "eval:doc.fee_type == 'Admission Fee' || doc.fee_type == 'Confirmation Fee'",
    "fieldname": "offer_letter",
    "fieldtype": "Link",
    "in_standard_filter": 1,

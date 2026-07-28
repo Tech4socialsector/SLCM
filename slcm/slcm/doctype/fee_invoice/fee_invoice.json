@@ -20,6 +20,7 @@
   "applicant_fee_assignment",
   "invoice_date",
   "due_date",
+  "needs_accommodation",
   "status",
   "payment_status",
   "column_break_2",
@@ -158,6 +159,13 @@
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Outstanding Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "needs_accommodation",
+   "fieldtype": "Select",
+   "label": "Needs Accommodation",
+   "options": "Yes\\nNo",
    "read_only": 1
   },
   {
