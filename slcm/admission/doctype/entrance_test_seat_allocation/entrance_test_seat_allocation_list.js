@@ -44,209 +44,366 @@ frappe.listview_settings['Entrance Test Seat Allocation'] = {
         });
     },
     refresh: function (listview) {
-        // Hide "Update Rank" and "Reschedule" only for users with the "Applicant" role
+        // Hide buttons only for users with the "Applicant" role
         // and who are NOT Administrators/System Managers (to ensure admins always have access)
         const is_applicant = frappe.user_roles.includes("Applicant");
         const is_admin = frappe.user_roles.includes("Administrator") || frappe.user_roles.includes("System Manager");
 
         if (!is_applicant || is_admin) {
-            // Update Rank button (only once)
-            if (!listview.page.wrapper.find('.btn-update-rank').length) {
-                const ubtn = listview.page.add_inner_button(__("Update Rank"), function () {
-                    let d = new frappe.ui.Dialog({
-                        title: __("Update Rank"),
-                        fields: [
-                            {
-                                label: __("Academic Year"),
-                                fieldname: "academic_year",
-                                fieldtype: "Link",
-                                options: "Academic Year",
-                                reqd: 1
-                            },
-                            {
-                                label: __("Admission Cycle"),
-                                fieldname: "admission_cycle",
-                                fieldtype: "Link",
-                                options: "Admission Cycle",
-                                reqd: 1
-                            },
-                            {
-                                label: __("Programme Level"),
-                                fieldname: "program_level",
-                                fieldtype: "Select",
-                                options: "Undergraduate\nPostgraduate\nResearch Course",
-                                reqd: 1
-                            },
-                            {
-                                label: __("Programme"),
-                                fieldname: "program",
-                                fieldtype: "Link",
-                                options: "Programme",
-                                depends_on: "eval:doc.program_level"
-                            },
-                            {
-                                label: __("Entrance Test List"),
-                                fieldname: "entrance_test_list",
-                                fieldtype: "Link",
-                                options: "Entrance Test List",
-                                description: __("Optional - limit ranks to this specific entrance test event")
-                            }
-                        ],
-                        primary_action_label: __("Generate"),
-                        primary_action(values) {
-                            // Hide dialog immediately to show progress bar clearly
-                            d.hide();
+            // 1. Update Entrance Test Rank
+            listview.page.add_inner_button(__("Update Entrance Test Rank"), function () {
+                open_update_rank_dialog(listview);
+            }, __("Actions"));
 
-                            frappe.call({
-                                method: "slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.update_ranks_by_category",
-                                args: values,
-                                callback: function (r) {
-                                    if (!r.exc) {
-                                        // Show toast at the top center
-                                        frappe.msgprint({
-                                            message: __("Rank updated successfully for {0} applicants.", [r.message]),
-                                            indicator: 'green',
-                                            alert: true
-                                        });
-                                        listview.refresh();
-                                    }
-                                }
-                            });
-                        }
-                    });
-                    d.set_query("admission_cycle", function () {
-                        return {
-                            filters: {
-                                "status": "Active"
-                            }
-                        };
-                    });
-                    d.set_query("program", function () {
-                        return {
-                            query: "slcm.admission.doctype.entrance_test_generation.entrance_test_generation.get_program_query",
-                            filters: {
-                                "program_level": d.get_value("program_level"),
-                                "admission_cycle": d.get_value("admission_cycle")
-                            }
-                        };
-                    });
-                    d.fields_dict.program_level.df.on_change = () => {
-                        d.set_value("program", "");
-                    };
-                    d.show();
-                });
-                ubtn.addClass('btn-update-rank');
-            }
+            // 2. Publish Result
+            listview.page.add_inner_button(__("Publish Result"), function () {
+                open_publish_result_dialog(listview);
+            }, __("Actions"));
 
-            // Publish Result button (only once)
-            if (!listview.page.wrapper.find('.btn-publish-result').length) {
-                const pbtn = listview.page.add_inner_button(__("Publish Result"), function () {
-                    let pd = new frappe.ui.Dialog({
-                        title: __("Publish Entrance Test Result"),
-                        fields: [
-                            {
-                                label: __("Academic Year"),
-                                fieldname: "academic_year",
-                                fieldtype: "Link",
-                                options: "Academic Year",
-                                reqd: 1
-                            },
-                            {
-                                label: __("Admission Cycle"),
-                                fieldname: "admission_cycle",
-                                fieldtype: "Link",
-                                options: "Admission Cycle",
-                                reqd: 1
-                            },
-                            {
-                                label: __("Programme Level"),
-                                fieldname: "program_level",
-                                fieldtype: "Select",
-                                options: "Undergraduate\nPostgraduate\nResearch Course",
-                                reqd: 1
-                            },
-                            {
-                                label: __("Programme"),
-                                fieldname: "program",
-                                fieldtype: "Link",
-                                options: "Programme",
-                                depends_on: "eval:doc.program_level"
-                            },
-                            {
-                                label: __("Entrance Test List"),
-                                fieldname: "entrance_test_list",
-                                fieldtype: "Link",
-                                options: "Entrance Test List",
-                                description: __("Optional – limit to a specific entrance test event")
-                            }
-                        ],
-                        primary_action_label: __("Publish"),
-                        primary_action(values) {
-                            frappe.confirm(
-                                __("This will mark all matching Entrance Test Seat Allocation records as <b>Result Published</b> and send result emails to all applicants. Do you want to continue?"),
-                                function () {
-                                    pd.hide();
-                                    frappe.call({
-                                        method: "slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.publish_results",
-                                        args: values,
-                                        freeze: true,
-                                        freeze_message: __("Publishing Results..."),
-                                        callback: function (r) {
-                                            if (!r.exc && r.message) {
-                                                frappe.msgprint({
-                                                    title: __("Results Published"),
-                                                    message: __(
-                                                        "<b>{0}</b> records published. <b>{1}</b> notification emails queued.",
-                                                        [r.message.published, r.message.notified]
-                                                    ),
-                                                    indicator: "green"
-                                                });
-                                                listview.refresh();
-                                            }
-                                        }
-                                    });
-                                }
-                            );
-                        }
-                    });
-                    pd.set_query("admission_cycle", function () {
-                        return { filters: { "status": "Active" } };
-                    });
-                    pd.set_query("program", function () {
-                        return {
-                            query: "slcm.admission.doctype.entrance_test_generation.entrance_test_generation.get_program_query",
-                            filters: {
-                                "program_level": pd.get_value("program_level"),
-                                "admission_cycle": pd.get_value("admission_cycle")
-                            }
-                        };
-                    });
-                    pd.fields_dict.program_level.df.on_change = () => {
-                        pd.set_value("program", "");
-                    };
-                    pd.show();
-                });
-                pbtn.addClass('btn-publish-result');
-            }
+            // 3. Export Marks Template
+            listview.page.add_inner_button(__("Export Marks Template"), function () {
+                open_export_marks_dialog_for_list(listview);
+            }, __("Actions"));
 
-            // Export Marks Template button (only once)
-            if (!listview.page.wrapper.find('.btn-export-marks').length) {
-                const ebtn = listview.page.add_button(__("Export Marks Template"), function () {
-                    open_export_marks_dialog_for_list(listview);
-                });
-                ebtn.addClass('btn-export-marks');
-            }
-
-            // Reschedule button (also only once)
-            if (!listview.page.wrapper.find('.btn-reschedule').length) {
-                const rbtn = listview.page.add_button(__('Reschedule'), function () {
-                    open_reschedule_dialog(listview);
-                }, 'btn-primary');
-                rbtn.addClass('btn-reschedule');
-            }
+            // 4. Reschedule
+            listview.page.add_inner_button(__("Reschedule"), function () {
+                open_reschedule_dialog(listview);
+            }, __("Actions"));
         }
     }
 };
+
+/**
+ * Helper to extract filter values from route_options, listview filter_area, or URL query string
+ */
+function get_listview_filter_val(listview, fieldname) {
+    if (frappe.route_options && frappe.route_options[fieldname]) {
+        return frappe.route_options[fieldname];
+    }
+    if (listview && listview.filter_area && typeof listview.filter_area.get_filters === "function") {
+        try {
+            const filters = listview.filter_area.get_filters();
+            for (let f of filters) {
+                if (Array.isArray(f) && f[1] === fieldname) {
+                    return f[3];
+                } else if (f && f.fieldname === fieldname) {
+                    return f.value;
+                }
+            }
+        } catch (e) {}
+    }
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has(fieldname)) {
+            return urlParams.get(fieldname);
+        }
+    } catch (e) {}
+    return "";
+}
+
+/**
+ * Custom Update Rank Dialog for List View
+ */
+function open_update_rank_dialog(listview) {
+    const default_ay = get_listview_filter_val(listview, "academic_year");
+    const default_ac = get_listview_filter_val(listview, "admission_cycle");
+    const default_pl = get_listview_filter_val(listview, "program_level");
+
+    let d = new frappe.ui.Dialog({
+        title: __("Update Entrance Test Rank"),
+        fields: [
+            {
+                label: __("Academic Year"),
+                fieldname: "academic_year",
+                fieldtype: "Link",
+                options: "Academic Year",
+                default: default_ay,
+                reqd: 1,
+                change() { update_dialog_applicant_count(d); }
+            },
+            {
+                label: __("Admission Cycle"),
+                fieldname: "admission_cycle",
+                fieldtype: "Link",
+                options: "Admission Cycle",
+                default: default_ac,
+                reqd: 1,
+                change() { update_dialog_applicant_count(d); }
+            },
+            {
+                label: __("Programme Level"),
+                fieldname: "program_level",
+                fieldtype: "Select",
+                options: "Undergraduate\nPostgraduate\nResearch Course",
+                default: default_pl,
+                reqd: 1,
+                change() {
+                    d.set_value("program", "");
+                    update_dialog_applicant_count(d);
+                }
+            },
+            {
+                label: __("Applicant Type"),
+                fieldname: "applicant_type",
+                fieldtype: "Select",
+                options: "Domestic Applicants\nInternational Applicants\nBoth",
+                default: "Domestic Applicants",
+                reqd: 1,
+                change() { update_dialog_applicant_count(d); }
+            },
+            {
+                label: __("Programme"),
+                fieldname: "program",
+                fieldtype: "Link",
+                options: "Programme",
+                depends_on: "eval:doc.program_level",
+                change() { update_dialog_applicant_count(d); }
+            },
+            {
+                fieldname: "total_applicants_html",
+                fieldtype: "HTML"
+            }
+        ],
+        primary_action_label: __("Generate"),
+        primary_action(values) {
+            d.hide();
+            frappe.show_progress(__("Update Ranking"), 0, 100, __("Calculating scores and ranks..."));
+            frappe.call({
+                method: "slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.update_ranks_by_category",
+                args: values,
+                callback: function (r) {
+                    frappe.show_progress(__("Update Ranking"), 100, 100, __("Completed"));
+                    setTimeout(() => frappe.hide_progress(), 3000);
+                    if (!r.exc) {
+                        frappe.msgprint({
+                            message: __("Rank updated successfully for {0} applicants.", [r.message]),
+                            indicator: 'green',
+                            alert: true
+                        });
+                        listview.refresh();
+                    }
+                },
+                error: function () {
+                    frappe.hide_progress();
+                }
+            });
+        }
+    });
+
+    d.listview = listview;
+
+    d.set_query("admission_cycle", function () {
+        return { filters: { "status": "Active" } };
+    });
+    d.set_query("program", function () {
+        return {
+            query: "slcm.admission.doctype.entrance_test_generation.entrance_test_generation.get_program_query",
+            filters: {
+                "program_level": d.get_value("program_level"),
+                "admission_cycle": d.get_value("admission_cycle")
+            }
+        };
+    });
+
+    d.show();
+
+    if (default_ay || default_ac || default_pl) {
+        d.set_values({
+            academic_year: default_ay,
+            admission_cycle: default_ac,
+            program_level: default_pl,
+            applicant_type: "Domestic Applicants"
+        });
+    }
+
+    ["academic_year", "admission_cycle", "program_level", "applicant_type", "program"].forEach(fn => {
+        if (d.fields_dict[fn] && d.fields_dict[fn].$input) {
+            d.fields_dict[fn].$input.on("change blur input", () => update_dialog_applicant_count(d));
+        }
+    });
+
+    update_dialog_applicant_count(d);
+}
+
+/**
+ * Custom Publish Result Dialog for List View
+ */
+function open_publish_result_dialog(listview) {
+    const default_ay = get_listview_filter_val(listview, "academic_year");
+    const default_ac = get_listview_filter_val(listview, "admission_cycle");
+    const default_pl = get_listview_filter_val(listview, "program_level");
+
+    let pd = new frappe.ui.Dialog({
+        title: __("Publish Entrance Test Result"),
+        fields: [
+            {
+                label: __("Academic Year"),
+                fieldname: "academic_year",
+                fieldtype: "Link",
+                options: "Academic Year",
+                default: default_ay,
+                reqd: 1,
+                change() { update_dialog_applicant_count(pd); }
+            },
+            {
+                label: __("Admission Cycle"),
+                fieldname: "admission_cycle",
+                fieldtype: "Link",
+                options: "Admission Cycle",
+                default: default_ac,
+                reqd: 1,
+                change() { update_dialog_applicant_count(pd); }
+            },
+            {
+                label: __("Programme Level"),
+                fieldname: "program_level",
+                fieldtype: "Select",
+                options: "Undergraduate\nPostgraduate\nResearch Course",
+                default: default_pl,
+                reqd: 1,
+                change() {
+                    pd.set_value("program", "");
+                    update_dialog_applicant_count(pd);
+                }
+            },
+            {
+                label: __("Applicant Type"),
+                fieldname: "applicant_type",
+                fieldtype: "Select",
+                options: "Domestic Applicants\nInternational Applicants\nBoth",
+                default: "Domestic Applicants",
+                reqd: 1,
+                change() { update_dialog_applicant_count(pd); }
+            },
+            {
+                label: __("Programme"),
+                fieldname: "program",
+                fieldtype: "Link",
+                options: "Programme",
+                depends_on: "eval:doc.program_level",
+                change() { update_dialog_applicant_count(pd); }
+            },
+            {
+                fieldname: "total_applicants_html",
+                fieldtype: "HTML"
+            }
+        ],
+        primary_action_label: __("Publish"),
+        primary_action(values) {
+            frappe.confirm(
+                __("This will mark all matching Entrance Test Seat Allocation records as <b>Result Published</b> and send result emails to all applicants. Do you want to continue?"),
+                function () {
+                    pd.hide();
+                    frappe.show_progress(__("Publishing Results"), 0, 100, __("Updating records and queueing emails..."));
+                    frappe.call({
+                        method: "slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.publish_results",
+                        args: values,
+                        callback: function (r) {
+                            frappe.show_progress(__("Publishing Results"), 100, 100, __("Completed"));
+                            setTimeout(() => frappe.hide_progress(), 3000);
+                            if (!r.exc && r.message) {
+                                frappe.msgprint({
+                                    title: __("Results Published"),
+                                    message: __(
+                                        "<b>{0}</b> records published. <b>{1}</b> notification emails queued.",
+                                        [r.message.published, r.message.notified]
+                                    ),
+                                    indicator: "green"
+                                });
+                                listview.refresh();
+                            }
+                        },
+                        error: function () {
+                            frappe.hide_progress();
+                        }
+                    });
+                }
+            );
+        }
+    });
+
+    pd.listview = listview;
+
+    pd.set_query("admission_cycle", function () {
+        return { filters: { "status": "Active" } };
+    });
+    pd.set_query("program", function () {
+        return {
+            query: "slcm.admission.doctype.entrance_test_generation.entrance_test_generation.get_program_query",
+            filters: {
+                "program_level": pd.get_value("program_level"),
+                "admission_cycle": pd.get_value("admission_cycle")
+            }
+        };
+    });
+
+    pd.show();
+
+    if (default_ay || default_ac || default_pl) {
+        pd.set_values({
+            academic_year: default_ay,
+            admission_cycle: default_ac,
+            program_level: default_pl,
+            applicant_type: "Domestic Applicants"
+        });
+    }
+
+    ["academic_year", "admission_cycle", "program_level", "applicant_type", "program"].forEach(fn => {
+        if (pd.fields_dict[fn] && pd.fields_dict[fn].$input) {
+            pd.fields_dict[fn].$input.on("change blur input", () => update_dialog_applicant_count(pd));
+        }
+    });
+
+    update_dialog_applicant_count(pd);
+}
+
+/**
+ * Helper to update the Total Applicants HTML tile in dialogs
+ */
+function update_dialog_applicant_count(d) {
+    const html_field = d.get_field("total_applicants_html");
+    if (!html_field) return;
+
+    let ay = d.get_value("academic_year") || "";
+    let ac = d.get_value("admission_cycle") || "";
+    let pl = d.get_value("program_level") || "";
+    let at = d.get_value("applicant_type") || "Domestic Applicants";
+    let prog = d.get_value("program") || "";
+
+    frappe.call({
+        method: "slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.get_applicant_count",
+        args: {
+            academic_year: ay,
+            admission_cycle: ac,
+            program_level: pl,
+            applicant_type: at,
+            program: prog
+        },
+        callback: function (r) {
+            if (r && r.message) {
+                const total = r.message.total !== undefined ? r.message.total : 0;
+                const attended = r.message.attended !== undefined ? r.message.attended : 0;
+                const absent = r.message.absent !== undefined ? r.message.absent : 0;
+                html_field.$wrapper.html(`
+                    <div style="background-color: #ebf8ff; border: 1px solid #bee3f8; border-radius: 8px; padding: 12px 16px; margin: 12px 0; display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #2b6cb0; font-weight: 600;">Total Applicants</div>
+                            <div style="font-size: 22px; font-weight: 700; color: #2c5282; margin-top: 2px;">${total}</div>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <div style="background: #ffffff; padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e0; font-size: 12px; font-weight: 600; color: #4a5568;">
+                                Attended: <span style="color: #2b6cb0;">${attended}</span>
+                            </div>
+                            <div style="background: #ffffff; padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e0; font-size: 12px; font-weight: 600; color: #4a5568;">
+                                Absent: <span style="color: #e53e3e;">${absent}</span>
+                            </div>
+                        </div>
+                    </div>
+                `);
+            }
+        }
+    });
+}
 
 /**
  * Custom Export Marks Template Dialog for List View

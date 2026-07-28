@@ -60,17 +60,11 @@ def get_context(context):
     # Check if result is published
     context.show_result = (doc.entrance_test_status in ["Attended", "Absent"] and doc.result_published == 1)
 
-    # Reporting time calculation (1 hour before exam)
-    from datetime import timedelta
-    f_date = doc.re_allocation_date if is_rescheduled else doc.allocation_date
-    if f_date:
-        try:
-            rep_dt = f_date - timedelta(hours=1)
-            context.reporting_time = format_datetime(rep_dt, "hh:mm a")
-        except:
-            context.reporting_time = "09:30 AM" # Fallback
-    else:
-        context.reporting_time = "—"
+    # Entrance test times calculation (reporting time is 45 mins before start time)
+    from slcm.admission.utils.portal import get_entrance_test_times
+    test_time_str, rep_time_str = get_entrance_test_times(doc)
+    context.test_time = test_time_str
+    context.reporting_time = rep_time_str
     # Branding & JSON for client-side generation
     campus_branding = {"campus_name": doc.campus or "Institution of Legal Education", "logo": None}
     try:
