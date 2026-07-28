@@ -493,8 +493,8 @@ frappe.ui.form.on("Seat Allocation", {
                                     options: `
                                         <div style="padding: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 15px;">
                                             <p style="margin: 0; color: #475569; font-size: 13px;">
-                                                The following waitlisted candidates are eligible to fill seats released by 
-                                                <b>Expired</b>, <b>Declined</b>, or <b>Withdrawn</b> offers. Select the candidates you wish to promote.
+                                                The following waitlisted candidates are eligible for promotion to seats that became available due to 
+                                                <b>Expired</b>, <b>Declined</b>, or <b>Withdrawn</b> offers. Select one or more candidates to promote.
                                             </p>
                                         </div>
                                     `
@@ -508,9 +508,9 @@ frappe.ui.form.on("Seat Allocation", {
                                                 <thead style="background: #f8fafc; font-size: 12px; color: #475569; position: sticky; top: 0; z-index: 10;">
                                                     <tr>
                                                         <th style="width: 40px; text-align: center;"><input type="checkbox" id="check-all-promotions" checked></th>
-                                                        <th style="width: 50%;">${__('Candidate')}</th>
-                                                        <th>${__('Promoted Category')}</th>
-                                                        <th>${__('Vacancy Filled')}</th>
+                                                        <th style="width: 30%;">${__('Vacant Seat Released By')}</th>
+                                                        <th style="width: 25%;">${__('Promote Category')}</th>
+                                                        <th style="width: 45%;">${__('Promote Candidate')}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody id="promotions-body">
@@ -527,26 +527,35 @@ frappe.ui.form.on("Seat Allocation", {
                                                             <td style="text-align: center; vertical-align: middle;">
                                                                 <input type="checkbox" class="promotion-check" checked>
                                                             </td>
-                                                            <td style="vertical-align: middle;">
-                                                                <select class="form-control candidate-select" style="font-size: 13px; font-weight: 600; color: #1e293b; border-color: #cbd5e1; border-radius: 6px; padding: 6px 12px; width: 100%; max-width: 100%; height: 38px; background-color: #fff; cursor: pointer; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
-                                                                    ${options_html}
-                                                                </select>
-                                                            </td>
+                                                    <td style="vertical-align: middle;">
+                                                        <div style="color: #475569; font-size: 13px;">
+                                                            ${p.vacant_candidate_name ?
+                                                                `<div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                                                    <span style="background: #fef2f2; color: #ef4444; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase;">Replaces</span> 
+                                                                    <span style="font-weight: 600; color: #1e293b;">${p.vacant_candidate_name}</span> 
+                                                                    <span style="color: #475569; font-size: 12px; font-weight: 500;">(${p.vacant_applicant_id}) - Score: ${p.vacant_total_score || 0}, Rank: ${p.vacant_overall_rank || 0}</span> 
+                                                                    <span style="color: #94a3b8; font-size: 11px;">(${p.vacant_selection_status})</span>
+                                                                 </div>` :
+                                                                (p.vacant_seat_info && p.vacant_seat_info.includes('(') ?
+                                                                    `<div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                                                        <span style="background: #fef2f2; color: #ef4444; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase;">Replaces</span> 
+                                                                        <span style="font-weight: 500;">${p.vacant_seat_info.substring(0, p.vacant_seat_info.lastIndexOf('(')).trim()}</span> 
+                                                                        <span style="color: #94a3b8; font-size: 11px;">${p.vacant_seat_info.substring(p.vacant_seat_info.lastIndexOf('('))}</span>
+                                                                     </div>` :
+                                                                    `<span style="color: #10b981; font-weight: 500;">${p.vacant_seat_info || __('Available Seat')}</span>`
+                                                                )
+                                                            }
+                                                        </div>
+                                                    </td>
                                                             <td style="vertical-align: middle;">
                                                                 <span style="background: #e0f2fe; color: #0284c7; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap;">
                                                                     ${p.allocated_category}
                                                                 </span>
                                                             </td>
                                                             <td style="vertical-align: middle;">
-                                                                <div style="color: #475569; font-size: 13px;">
-                                                                    ${p.vacant_seat_info.includes('(') ?
-                                                `<div style="display: flex; align-items: center; gap: 6px;">
-                                                                            <span style="background: #fef2f2; color: #ef4444; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase;">Replaces</span> 
-                                                                            <span style="font-weight: 500;">${p.vacant_seat_info.split('(')[0].trim()}</span> 
-                                                                            <span style="color: #94a3b8; font-size: 11px;">(${p.vacant_seat_info.split('(')[1]}</span>
-                                                                         </div>` :
-                                                `<span style="color: #10b981; font-weight: 500;">${p.vacant_seat_info}</span>`}
-                                                                </div>
+                                                                <select class="form-control candidate-select" style="font-size: 13px; font-weight: 600; color: #1e293b; border-color: #cbd5e1; border-radius: 6px; padding: 6px 12px; width: 100%; max-width: 100%; height: 38px; background-color: #fff; cursor: pointer; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+                                                                    ${options_html}
+                                                                </select>
                                                             </td>
                                                         </tr>
                                                         `;
@@ -557,7 +566,7 @@ frappe.ui.form.on("Seat Allocation", {
                                     `
                                 }
                             ],
-                            primary_action_label: __("Promote Selected"),
+                            primary_action_label: __("Promote"),
                             primary_action(values) {
                                 const selected = [];
                                 $(d.wrapper).find('.promotion-row').each(function () {
