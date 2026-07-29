@@ -595,7 +595,6 @@ class PACEApplication(Document):
             
         if self.status in ["Submitted", "Completed"]:
             address_parts = [
-                self.address_line_1,
                 self.city,
                 self.district,
                 self.state,
