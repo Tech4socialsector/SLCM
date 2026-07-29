@@ -259,7 +259,11 @@ class OfferService:
             foriegn_national = frappe.db.get_value("Applicant", applicant, "foriegn_national")
             is_foreign = foriegn_national == "Yes"
             fee_data = FeeService._calculate_and_freeze_fees(fee_structure_name, is_foreign=is_foreign)
-            offer.payable_amount = fee_data.get("total_payable")
+            
+            if fee_data.get("is_confirmation_fee_applicable"):
+                offer.payable_amount = fee_data.get("confirmation_fee_amount")
+            else:
+                offer.payable_amount = fee_data.get("total_payable")
             
             # Ensure Fetch From doesn't overwrite our resolved campus and cycle 
             # if they differ from the applicant's default preferences
@@ -776,13 +780,16 @@ class OfferService:
         if tpl.get("email_account"):
             sender = frappe.db.get_value("Email Account", tpl.email_account, "email_id")
 
-        frappe.sendmail(
-            sender=sender,
-            recipients=[applicant_email],
-            subject=subject,
-            message=message,
-            attachments=attachments
-        )
+        try:
+            frappe.sendmail(
+                sender=sender,
+                recipients=[applicant_email],
+                subject=subject,
+                message=message,
+                attachments=attachments
+            )
+        except Exception as e:
+            frappe.log_error(f"Failed to send offer email to {applicant_email}: {str(e)}", "Offer Email Error")
 
         # Log offer communication
         from slcm.admission.utils.notifications import log_communication
@@ -859,7 +866,23 @@ class OfferService:
             offer_doc.rendered_content = html_content
 
             # Generate PDF
-            pdf_content = frappe.get_print("Offer Letter", offer_doc.name, print_format, as_pdf=True)
+            # Workaround for wkhtmltopdf HostNotFoundError/deadlock on single-threaded dev servers
+            original_host_name = frappe.conf.get("host_name")
+            try:
+                if getattr(frappe.local, "request", None):
+                    from urllib.parse import urlparse
+                    parsed = urlparse(frappe.request.host_url)
+                    port = parsed.port or (443 if parsed.scheme == 'https' else 80)
+                    frappe.conf.host_name = f"{parsed.scheme}://127.0.0.1:{port}"
+                else:
+                    frappe.conf.host_name = "http://127.0.0.1:8000"
+                
+                pdf_content = frappe.get_print("Offer Letter", offer_doc.name, print_format, as_pdf=True)
+            finally:
+                if original_host_name is not None:
+                    frappe.conf.host_name = original_host_name
+                elif "host_name" in frappe.conf:
+                    del frappe.conf.host_name
             
             if not pdf_content:
                 frappe.log_error(f"PDF Generation returned empty content for {offer_doc.name}", "PDF Generation Warning")
@@ -1208,12 +1231,12 @@ def expire_offers():
 def get_online_payment_url(offer_name, gateway=None):
     return OfferService.get_online_payment_url(offer_name, gateway)
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def create_offer_razorpay_order(offer_name):
     from slcm.api.service.fee_service import FeeService
     return FeeService.create_offer_razorpay_order(offer_name)
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def verify_offer_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, offer_name):
     from slcm.api.service.fee_service import FeeService
     return FeeService.verify_offer_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, offer_name)

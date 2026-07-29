@@ -30,10 +30,10 @@ def get_offer_payable_amount(offer):
 	afa = frappe.db.get_value(
 		"Applicant Fee Assignment",
 		{"offer_letter": offer.name, "docstatus": ["!=", 2]},
-		["final_payable_amount", "scholarship_applied", "scholarship_amount"],
+		["final_payable_amount"],
 		as_dict=True,
 	)
-	if afa and afa.scholarship_applied and flt(afa.scholarship_amount) > 0:
+	if afa and afa.final_payable_amount is not None:
 		actual = flt(afa.final_payable_amount)
 	return actual
 

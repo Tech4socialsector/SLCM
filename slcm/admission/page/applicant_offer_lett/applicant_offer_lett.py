@@ -74,21 +74,30 @@ def get_offer_details(offer_name=None):
 
     # First, try to fetch components from Applicant Fee Assignment (AFA)
     afa = frappe.db.get_value("Applicant Fee Assignment",
-        {"offer_letter": offer_id, "fee_type": "Admission Fee", "docstatus": ["!=", 2]},
-        ["name", "final_payable_amount", "scholarship_amount", "scholarship_applied", "total_amount"],
+        {"offer_letter": offer_id, "fee_type": ["in", ["Admission Fee", "Confirmation Fee"]], "docstatus": ["!=", 2]},
+        ["name", "final_payable_amount", "scholarship_amount", "scholarship_applied", "total_amount", "fee_type", "confirmation_fee"],
         as_dict=True)
 
     if afa:
-        afa_components = frappe.get_all("Applicant Fee Component Child",
-            filters={"parent": afa.name, "parenttype": "Applicant Fee Assignment"},
-            fields=["component_name", "fee_component", "total_amount", "amount"],
-            ignore_permissions=True
-        )
-        for comp in afa_components:
+        if afa.final_payable_amount is not None:
+            offer_dict["payable_amount"] = afa.final_payable_amount
+            
+        if afa.fee_type == "Confirmation Fee":
             fee_data.append({
-                "component": comp.component_name or comp.fee_component,
-                "amount": comp.total_amount or comp.amount
+                "component": "Confirmation Fee",
+                "amount": afa.confirmation_fee or afa.total_amount
             })
+        else:
+            afa_components = frappe.get_all("Applicant Fee Component Child",
+                filters={"parent": afa.name, "parenttype": "Applicant Fee Assignment"},
+                fields=["component_name", "fee_component", "total_amount", "amount"],
+                ignore_permissions=True
+            )
+            for comp in afa_components:
+                fee_data.append({
+                    "component": comp.component_name or comp.fee_component,
+                    "amount": comp.total_amount or comp.amount
+                })
 
     # If AFA doesn't have components or doesn't exist, fallback to Fee Structure
     if not fee_data and fee_structure:
@@ -99,16 +108,23 @@ def get_offer_details(offer_name=None):
 
         parentfield = "fee_components_for_indian" if applicant_nationality.strip().lower() == "indian" else "fee_components_for_foreign"
 
-        fs_components = frappe.get_all("Fee Component Child",
-            filters={"parent": fee_structure, "parenttype": "Fee Structure", "parentfield": parentfield},
-            fields=["component_name", "fee_component", "total_amount", "amount"],
-            ignore_permissions=True
-        )
-        for comp in fs_components:
+        fs_doc = frappe.get_doc("Fee Structure", fee_structure)
+        if fs_doc.is_confirmation_fee_applicable:
             fee_data.append({
-                "component": comp.component_name or comp.fee_component,
-                "amount": comp.total_amount or comp.amount
+                "component": "Confirmation Fee",
+                "amount": fs_doc.confirmation_fee_amount
             })
+        else:
+            fs_components = frappe.get_all("Fee Component Child",
+                filters={"parent": fee_structure, "parenttype": "Fee Structure", "parentfield": parentfield},
+                fields=["component_name", "fee_component", "total_amount", "amount"],
+                ignore_permissions=True
+            )
+            for comp in fs_components:
+                fee_data.append({
+                    "component": comp.component_name or comp.fee_component,
+                    "amount": comp.total_amount or comp.amount
+                })
 
     # Check if Fee is paid: AFA status Paid/Converted, or Payment Request for this offer is Paid
     fee_paid = frappe.db.get_value("Applicant Fee Assignment",

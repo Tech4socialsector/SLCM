@@ -892,6 +892,10 @@ _pc.mission_text) or '' %}
 	                                            {{ _("View Application") }}
 	                                        </a>
 	                                    </div>
+                                        <div class="payment-warning-box">
+                                            <span class="material-symbols-outlined pwb-icon">error</span>
+                                            <div class="pwb-text">{{ _("Please wait for the scholarship decision before paying your fees to ensure any approved benefits are deducted.") }}</div>
+                                        </div>
 	                                `;
 	                            } else if (sa.status === 'Approved') {
 	                                const benefit = parseFloat(sa.calculated_benefit || 0);
@@ -899,52 +903,53 @@ _pc.mission_text) or '' %}
 	                                const discount_percent = (benefit && original) ? Math.round((benefit / original) * 100) : 0;
 	                                return `
 	                                    <div class="scholarship-nudge-card approved">
-	                                        <div class="sn-header" style="margin-bottom: 4px;">
-	                                            <div class="sn-icon-wrap"><span class="material-symbols-outlined">school</span></div>
-	                                            <div class="sn-title" style="margin: 0;">{{ _("Scholarship Approved") }}</div>
-	                                        </div>
-	                                        <ul style="margin: 0 0 12px 36px; padding-left: 16px; color: var(--text-2); font-size: 12px; font-weight: 500; line-height: 1.6; list-style-type: disc !important;">
-	                                            <li style="display: list-item !important; list-style-type: disc !important;">{{ _("Discount") }}: ${discount_percent}% (${format_currency(benefit, currency)})</li>
-	                                            <li style="display: list-item !important; list-style-type: disc !important; font-weight: 600; color: var(--text-1); margin-top: 4px;">{{ _("Updated Fee") }}: ${format_currency(offer.payable_amount, currency)}</li>
-	                                        </ul>
-	                                    </div>
-	                                `;
-	                            } else if (sa.status === 'Rejected') {
-	                                return `
-	                                    <div class="scholarship-nudge-card rejected">
-	                                        <div class="sn-header">
-	                                            <div class="sn-icon-wrap"><span class="material-symbols-outlined">cancel</span></div>
-	                                            <div>
-	                                                <div class="sn-title">{{ _("Scholarship Application Unsuccessful") }}</div>
-	                                                <div class="sn-subtitle">{{ _("Your application was not approved. You can proceed with the standard fee payment.") }}</div>
-	                                            </div>
-	                                        </div>
-	                                    </div>
-	                                `;
-	                            }
-	                        } else if (data.available_scholarships_count > 0) {
-	                            const count_num = data.available_scholarships_count;
-	                            const num_words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
-	                            const count_word_lower = num_words[count_num] || count_num.toString();
-	                            return `
-	                                <div class="scholarship-nudge-card">
-	                                    <div class="sn-header" style="margin-bottom: 4px;">
-	                                        <div class="sn-icon-wrap"><span class="material-symbols-outlined">school</span></div>
-	                                        <div class="sn-title" style="margin: 0;">{{ _("Scholarship Opportunities") }}</div>
-	                                    </div>
-	                                    <ul style="margin: 0 0 12px 36px; padding-left: 16px; color: var(--text-2); font-size: 12px; font-weight: 500; line-height: 1.6; list-style-type: disc !important;">
+                                        <div class="sn-header">
+                                            <div class="sn-icon-wrap"><span class="material-symbols-outlined">check_circle</span></div>
+                                            <div>
+                                                <div class="sn-title" style="margin: 0;">{{ _("Scholarship Approved") }}</div>
+                                            </div>
+                                        </div>
+                                        <ul class="sn-subtitle pl-4 mb-0">
+                                            <li style="display: list-item !important; list-style-type: disc !important;">{{ _("Benefit of") }} <strong>${format_currency(sa.calculated_benefit, data.currency)}</strong> {{ _("has been applied.") }}</li>
+                                        </ul>
+                                    </div>`;
+                                } else if (sa.status === 'Rejected') {
+                                    return `
+                                    <div class="scholarship-nudge-card rejected">
+                                        <div class="sn-header">
+                                            <div class="sn-icon-wrap"><span class="material-symbols-outlined">cancel</span></div>
+                                            <div>
+                                                <div class="sn-title">{{ _("Scholarship Application Unsuccessful") }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="sn-subtitle mt-1">{{ _("You can still proceed with your admission by paying the standard fee.") }}</div>
+                                    </div>`;
+                                }
+                            } else if (data.available_scholarships_count > 0) {
+                                const count_num = data.available_scholarships_count;
+                                const numberWords = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+                                const count_word = count_num <= 10 ? numberWords[count_num] : count_num.toString();
+                                const count_word_lower = count_word;
+                                
+                                return `
+                                <div class="scholarship-nudge-card">
+                                    <div class="sn-header">
+                                        <div class="sn-icon-wrap"><span class="material-symbols-outlined">school</span></div>
+                                        <div>
+                                            <div class="sn-title" style="margin: 0;">{{ _("Scholarship Opportunities") }}</div>
+                                        </div>
+                                    </div>
+                                    <ul class="sn-subtitle pl-4 mb-2">
                                         <li style="display: list-item !important; list-style-type: disc !important;">{{ _("You are eligible to apply for") }} <strong>${count_word_lower}</strong> {{ _("scholarship") }}${count_num > 1 ? 's' : ''}.</li>
-                                        <li style="display: list-item !important; list-style-type: disc !important; font-weight:600; color:var(--text-1); margin-top: 4px;">{{ _("Apply now to reduce your course fee before payment.") }}</li>
                                     </ul>
-	                                    <a href="/merit-and-scholarship/scholarships" class="btn-sn-apply">
-	                                        {{ _("Apply for Scholarship") }}
-	                                        <span class="material-symbols-outlined" style="font-size: 16px; margin-left: 4px;">arrow_forward</span>
-	                                    </a>
-	                                </div>
-	                            `;
-	                        }
-	                        return '';
-	                    })()}
+                                    <a href="/merit-and-scholarship/scholarships" class="btn-sn-apply">
+                                        {{ _("Apply Now") }}
+                                    </a>
+                                </div>
+                                `;
+                            }
+                            return '';
+                        })()}
 
 	<div class="ui-card">
 	                        <span class="ui-card-label">{{ _("Fee Details") }}</span>

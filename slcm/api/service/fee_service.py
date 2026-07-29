@@ -113,7 +113,9 @@ class FeeService:
             "breakdown": breakdown,
             "components": components,
             "payment_gateway": fs_doc.payment_gateway,
-            "online_payment": fs_doc.online_payment
+            "online_payment": fs_doc.online_payment,
+            "is_confirmation_fee_applicable": fs_doc.is_confirmation_fee_applicable,
+            "confirmation_fee_amount": fs_doc.confirmation_fee_amount
         }
 
     @staticmethod

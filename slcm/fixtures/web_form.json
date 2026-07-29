@@ -7590,7 +7590,7 @@
   "role": null,
   "route": "admission/application-form",
   "show_attachments": 0,
-  "show_list": 1,
+  "show_list": 0,
   "show_sidebar": 0,
   "success_message": "Thank you for your interest! Your application has been submitted successfully and is now in our system. Our team will carefully review your details to see if they align with our current needs. We appreciate the time you took to apply and will reach out via email if we decide to move forward with the next steps.",
   "success_title": "Application Submitted Successfully",

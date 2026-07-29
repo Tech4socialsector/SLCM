@@ -21,6 +21,11 @@ class ScholarshipApplication(Document):
 		if not self.status:
 			self.status = "Submitted"
 
+		if self.admission_cycle:
+			enable_scholarship = frappe.db.get_value("Admission Cycle", self.admission_cycle, "enable_scholarship")
+			if not enable_scholarship:
+				frappe.throw(frappe._("Scholarships are not enabled for this admission cycle."))
+
 		# Auto-populate Reviewed By and Approval Date when approved
 		if self.status == "Approved":
 			if not self.reviewed_by:
@@ -534,6 +539,10 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 	frappe.log_error(f"Found applicant {applicant.name}", "Scholarship Application Debug")
 
 	# Server side validation
+	enable_scholarship = frappe.db.get_value("Admission Cycle", applicant.admission_cycle, "enable_scholarship")
+	if not enable_scholarship:
+		frappe.throw(frappe._("Scholarship applications are not currently enabled for this admission cycle."))
+
 	if not family_income:
 		frappe.throw(frappe._("Annual Family Income is mandatory."))
 	
