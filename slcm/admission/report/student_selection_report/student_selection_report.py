@@ -10,7 +10,8 @@ def execute(filters=None):
     columns = get_columns()
     data = get_data(filters)
     chart = get_chart_data(columns, data, filters)
-    return columns, data, None, chart
+    summary = get_report_summary(data, filters)
+    return columns, data, None, chart, summary
 
 def get_columns():
     return [
@@ -277,16 +278,36 @@ def get_data(filters):
     return frappe.db.sql(sql, params, as_dict=True)
 
 def get_chart_data(columns, data, filters):
-    if not data:
-        return None
-
     status_counts = {}
-    for d in data:
+    for d in (data or []):
         status = d.get("selection_status") or "N/A"
         status_counts[status] = status_counts.get(status, 0) + 1
 
+    sel_status_filter = filters.get("selection_status") if filters else None
+    if not sel_status_filter or sel_status_filter == "Vacant":
+        vacant = get_vacant_seats(filters or {})
+        if vacant > 0 or sel_status_filter == "Vacant":
+            status_counts["Vacant"] = vacant
+
+    if not status_counts:
+        return None
+
     labels = sorted(status_counts.keys())
     values = [status_counts[l] for l in labels]
+
+    color_map = {
+        "Selected": "#28c76f",
+        "Offer Issued": "#28c76f",
+        "Offer Accepted": "#28c76f",
+        "Accepted": "#28c76f",
+        "Fee Paid": "#28c76f",
+        "Shortlisted": "#28c76f",
+        "Waitlisted": "#ffa00a",
+        "Rejected": "#ff5858",
+        "Vacant": "#808080"
+    }
+
+    colors = [color_map.get(l, "#708090") for l in labels]
 
     return {
         "data": {
@@ -294,6 +315,139 @@ def get_chart_data(columns, data, filters):
             "datasets": [{"name": "Status Count", "values": values}]
         },
         "type": "pie",
-        "colors": ["#ffa00a", "#1fb5ad", "#ff5858"]
+        "colors": colors
     }
+
+def get_report_summary(data, filters):
+    selected = 0
+    waitlisted = 0
+    rejected = 0
+    for d in (data or []):
+        st = d.get("selection_status")
+        if st in ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid", "Shortlisted"]:
+            selected += 1
+        elif st == "Waitlisted":
+            waitlisted += 1
+        elif st == "Rejected":
+            rejected += 1
+
+    vacant = get_vacant_seats(filters or {})
+
+    return [
+        {"label": _("Selected"), "value": selected, "indicator": "Green"},
+        {"label": _("Waitlisted"), "value": waitlisted, "indicator": "Orange"},
+        {"label": _("Rejected"), "value": rejected, "indicator": "Red"},
+        {"label": _("Vacant Seats"), "value": vacant, "indicator": "Gray" if vacant == 0 else "Blue"}
+    ]
+
+def get_vacant_seats(filters):
+    sa_filters = {"docstatus": ["<", 2]}
+    if filters.get("admission_cycle"):
+        sa_filters["admission_cycle"] = filters.get("admission_cycle")
+    elif filters.get("admission_year"):
+        cycles = frappe.get_all("Admission Cycle", filters={"admission_year": filters.get("admission_year")}, pluck="name")
+        if not cycles:
+            return 0
+        sa_filters["admission_cycle"] = ["in", cycles]
+        
+    if filters.get("campus"):
+        sa_filters["campus"] = filters.get("campus")
+
+    raw_allocations = frappe.get_all("Seat Allocation", 
+        filters=sa_filters, 
+        fields=["name", "campus", "admission_cycle", "program_level", "program", "status", "modified"],
+        order_by="modified desc"
+    )
+
+    if raw_allocations:
+        dedup_map = {}
+        status_priority = {"Published": 2, "Allocated": 1, "Draft": 0}
+        for sa in raw_allocations:
+            key = (sa.campus, sa.admission_cycle, sa.program_level, sa.get("program"))
+            existing = dedup_map.get(key)
+            curr_prio = status_priority.get(sa.status, -1)
+            prev_prio = status_priority.get(existing.status, -1) if existing else -1
+            if not existing or curr_prio > prev_prio:
+                dedup_map[key] = sa
+
+        target_sas = list(dedup_map.values())
+        if filters.get("program"):
+            target_sas = [sa for sa in target_sas if sa.get("program") == filters.get("program")]
+
+        sa_names = [sa.name for sa in target_sas]
+        if sa_names:
+            cat_filter = filters.get("shortlisted_category") or filters.get("vertical_category")
+            if cat_filter:
+                vacant_count = frappe.db.sql("""
+                    SELECT COALESCE(SUM(vacant_seats), 0)
+                    FROM `tabSeat Allocation Category Summary`
+                    WHERE parent IN %(sa_names)s 
+                      AND (category = %(cat)s OR category = CONCAT('Karnataka (', %(cat)s, ')') OR category = CONCAT('Karnataka ', %(cat)s))
+                """, {"sa_names": sa_names, "cat": cat_filter})[0][0]
+            else:
+                vertical_cats = frappe.get_all("Admission Category", filters={"reservation_type": "Vertical"}, pluck="name")
+                if not vertical_cats:
+                    vertical_cats = ["General", "SC", "ST", "OBC-NCL", "EWS"]
+                vacant_count = frappe.db.sql("""
+                    SELECT COALESCE(SUM(vacant_seats), 0)
+                    FROM `tabSeat Allocation Category Summary`
+                    WHERE parent IN %(sa_names)s AND category IN %(cats)s
+                """, {"sa_names": sa_names, "cats": vertical_cats})[0][0]
+
+            return int(vacant_count or 0)
+
+    # Fallback to Shortlisting Merit List
+    sp_filters = {"docstatus": ["<", 2]}
+    if filters.get("admission_cycle"):
+        sp_filters["admission_cycle"] = filters.get("admission_cycle")
+    elif filters.get("admission_year"):
+        cycles = frappe.get_all("Admission Cycle", filters={"admission_year": filters.get("admission_year")}, pluck="name")
+        if not cycles:
+            return 0
+        sp_filters["admission_cycle"] = ["in", cycles]
+
+    if filters.get("campus"):
+        sp_filters["campus"] = filters.get("campus")
+
+    raw_sp = frappe.get_all("Shortlisting Merit List",
+        filters=sp_filters,
+        fields=["name", "campus", "admission_cycle", "program_level", "program", "status", "modified"],
+        order_by="modified desc"
+    )
+
+    if raw_sp:
+        sp_dedup = {}
+        for sp in raw_sp:
+            key = (sp.campus, sp.admission_cycle, sp.program_level, sp.get("program"))
+            if key not in sp_dedup:
+                sp_dedup[key] = sp
+
+        target_sps = list(sp_dedup.values())
+        if filters.get("program"):
+            target_sps = [sp for sp in target_sps if sp.get("program") == filters.get("program")]
+
+        sp_names = [sp.name for sp in target_sps]
+        if sp_names:
+            cat_filter = filters.get("shortlisted_category") or filters.get("vertical_category")
+            if cat_filter:
+                vacant_count = frappe.db.sql("""
+                    SELECT COALESCE(SUM(vacant_seats), 0)
+                    FROM `tabShortlisting Category Summary`
+                    WHERE parent IN %(sp_names)s 
+                      AND (category = %(cat)s OR category = CONCAT('Karnataka (', %(cat)s, ')') OR category = CONCAT('Karnataka ', %(cat)s))
+                """, {"sp_names": sp_names, "cat": cat_filter})[0][0]
+            else:
+                vertical_cats = frappe.get_all("Admission Category", filters={"reservation_type": "Vertical"}, pluck="name")
+                if not vertical_cats:
+                    vertical_cats = ["General", "SC", "ST", "OBC-NCL", "EWS"]
+                vacant_count = frappe.db.sql("""
+                    SELECT COALESCE(SUM(vacant_seats), 0)
+                    FROM `tabShortlisting Category Summary`
+                    WHERE parent IN %(sp_names)s AND category IN %(cats)s
+                """, {"sp_names": sp_names, "cats": vertical_cats})[0][0]
+
+            return int(vacant_count or 0)
+
+    return 0
+
 
