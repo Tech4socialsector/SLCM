@@ -96,6 +96,9 @@ class ApplicantFeeAssignment(Document):
 		self.total_amount = base_total
 		if self.fee_type == "Application Fee":
 			self.application_fee = base_total
+		elif self.fee_type == "Confirmation Fee":
+			self.total_amount = flt(self.confirmation_fee)
+			base_total = flt(self.confirmation_fee)
 
 		self.final_payable_amount = max(0, base_total - flt(self.scholarship_amount))
 
@@ -105,7 +108,7 @@ class ApplicantFeeAssignment(Document):
 				frappe.throw(frappe._("Status cannot be set to 'Converted' manually. Please use the 'Convert to Student' action."))
 
 	def before_submit(self):
-		if not self.fee_components:
+		if not self.fee_components and self.fee_type != "Confirmation Fee":
 			frappe.throw(frappe._("At least one Fee Component row is required."))
 
 		for row in self.fee_components:

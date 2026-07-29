@@ -162,23 +162,7 @@ class FeeService:
 
         if fs_doc.is_confirmation_fee_applicable:
             assignment.fee_type = "Confirmation Fee"
-            
-            # Ensure the Fee Component exists
-            if not frappe.db.exists("Fee Component", "Confirmation Fee"):
-                frappe.get_doc({
-                    "doctype": "Fee Component",
-                    "fee_component": "Confirmation Fee",
-                    "component_name": "Confirmation Fee"
-                }).insert(ignore_permissions=True)
-
-            assignment.append("fee_components", {
-                "fee_component": "Confirmation Fee",
-                "component_name": "Confirmation Fee",
-                "amount": fs_doc.confirmation_fee_amount,
-                "is_taxable": 0,
-                "tax_amount": 0,
-                "total_amount": fs_doc.confirmation_fee_amount
-            })
+            assignment.confirmation_fee = fs_doc.confirmation_fee_amount
         else:
             assignment.fee_type = "Admission Fee"
             # Copy fee rows
