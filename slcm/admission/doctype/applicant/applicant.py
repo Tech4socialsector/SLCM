@@ -887,9 +887,15 @@ class Applicant(Document):
         if email_template and email_template.get("email_account"):
             sender = frappe.db.get_value("Email Account", email_template.get("email_account"), "email_id") or email_template.get("email_account")
 
+        cc_list = []
+        if email_template and email_template.get("cc"):
+            cc_val = email_template.get("cc")
+            cc_list = [c.strip() for c in cc_val.replace(";", ",").split(",") if c.strip()]
+
         frappe.sendmail(
             recipients=[recipient],
             sender=sender,
+            cc=cc_list if cc_list else None,
             subject=email_subject,
             message=html_body,
             attachments=attachments,

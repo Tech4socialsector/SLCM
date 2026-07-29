@@ -22,10 +22,8 @@
   "application_start_date",
   "application_end_date",
   "section_break_jwca",
-  "email_template",
   "process_completed_message",
   "column_break_njek",
-  "application_form_template",
   "section_break_programs",
   "programs",
   "section_break_stages",
@@ -34,10 +32,10 @@
   "enable_multiple_rounds",
   "section_break_remarks",
   "remarks",
-  "amended_from",
   "tab_2_tab",
   "section_break_fzif",
-  "entrance_test_details"
+  "entrance_test_details",
+  "amended_from"
  ],
  "fields": [
   {
@@ -177,22 +175,8 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "email_template",
-   "fieldtype": "Link",
-   "label": "Application Submitted Email Template",
-   "options": "Email Template",
-   "reqd": 1
-  },
-  {
    "fieldname": "column_break_njek",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "application_form_template",
-   "fieldtype": "Link",
-   "label": "Application Form Template",
-   "options": "Print Format",
-   "reqd": 1
   },
   {
    "fieldname": "amended_from",
@@ -270,7 +254,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-16 10:01:17.615858",
+ "modified": "2026-07-29 13:44:44.630437",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",
