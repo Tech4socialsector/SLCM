@@ -810,22 +810,8 @@ def _populate_category_lists(doc):
                 if cat in horiz_types:
                     counts[cat] = len([x for x in sorted_applicants if getattr(x, status_field, "") != "Rejected" and _has_trait(x.applicant_id, cat, is_shortlist)])
                 else:
-                    counts[cat] = len([x for x in sorted_applicants if getattr(x, status_field, "") != "Rejected" and getattr(x, "vertical_category", "") == cat and not any(_has_trait(x.applicant_id, c_name, is_shortlist) for c_name in comp_types)])
+                    counts[cat] = len([x for x in sorted_applicants if getattr(x, status_field, "") != "Rejected" and getattr(x, "vertical_category", "") == cat])
         
-        # Adjust category_mapping so main vertical categories display All India seats alone (excluding compartmental sub-quotas)
-        for v_cat_name in list(category_mapping.keys()):
-            if v_cat_name in horiz_types or any(v_cat_name.startswith(c) for c in comp_types):
-                continue
-            c_seats_sum = 0
-            c_req_sum = 0
-            for c_name in comp_types:
-                comp_key = f"{c_name} {v_cat_name}"
-                if comp_key in category_mapping:
-                    c_seats_sum += category_mapping[comp_key].get("seats", 0)
-                    c_req_sum += category_mapping[comp_key].get("required", 0)
-            category_mapping[v_cat_name]["seats"] = max(0, category_mapping[v_cat_name]["seats"] - c_seats_sum)
-            category_mapping[v_cat_name]["required"] = max(0, category_mapping[v_cat_name]["required"] - c_req_sum)
-
         for cat in ordered_cats:
             info = category_mapping.get(cat, {"seats": 0, "required": 0})
             req_val = info["required"]
@@ -1292,48 +1278,24 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                     row["actually_rejected"] = get_rejected_count(cat)
                 doc.append(summary_table, row)
 
-            # 1. Main Vertical Categories (All India / Unreserved Seats alone)
+            # 1. Main Vertical Categories
             for v_cat in ordered_cats:
                 v_info = vertical_targets[v_cat]
-                
-                comp_orig_sum = sum(t["original_seats"] for (cc, vc), t in compartmental_targets.items() if vc == v_cat)
-                comp_req_sum = sum(t["seats"] for (cc, vc), t in compartmental_targets.items() if vc == v_cat)
-
-                open_orig = max(0, v_info.get("original_seats", 0) - comp_orig_sum)
-                open_req = max(0, v_info["seats"] - comp_req_sum)
-
-                open_filled = len([
-                    a for a in allocated_list 
-                    if a.vertical_category == v_cat 
-                    and not any(_has_trait(a.applicant_id, cc) for cc in comp_types)
-                ])
-
-                open_w_filled = v_info.get("waitlist_filled", 0)
-                open_w_req = v_info.get("waitlist_seats", 0)
-
-                append_sum(v_cat, open_orig, open_req, open_filled, open_w_filled, open_w_req)
+                append_sum(v_cat, v_info.get("original_seats", 0), v_info["seats"], v_info["filled"], 
+                           v_info.get("waitlist_filled", 0) + v_info.get("compartmentalized_waitlist_filled", 0), 
+                           v_info.get("waitlist_seats", 0) + v_info.get("compartmentalized_waitlist_seats", 0))
                 
             # 2. Horizontal (PWD, Women, etc.)
             for h_info in ordered_h_cats:
                 h_cat = h_info["name"]
                 h_filled = len([a for a in allocated_list if _has_trait(a.applicant_id, h_cat)])
-                h_w_filled = len([a for a in applicants_list if getattr(a, status_field, "") == "Waitlisted" and _has_trait(a.applicant_id, h_cat)])
-                h_w_req = h_info.get("waitlist_seats", 0)
-                append_sum(h_cat, h_info.get("original_seats", 0), h_info["seats"], h_filled, h_w_filled, h_w_req)
+                append_sum(h_cat, h_info.get("original_seats", 0), h_info["seats"], h_filled)
             
-            # 3. Compartmental Breakdown (Karnataka Categories alone)
+            # 3. Compartmental Breakdown
             for (comp_cat, v_cat), target in compartmental_targets.items():
                 if target["original_seats"] > 0:
-                    comp_filled = len([
-                        a for a in allocated_list 
-                        if a.vertical_category == v_cat 
-                        and _has_trait(a.applicant_id, comp_cat)
-                    ])
-                    v_info = vertical_targets.get(v_cat, {})
-                    comp_w_filled = v_info.get("compartmentalized_waitlist_filled", 0)
-                    comp_w_req = v_info.get("compartmentalized_waitlist_seats", 0)
-
-                    append_sum(f"{comp_cat} ({v_cat})", target["original_seats"], target["seats"], comp_filled, comp_w_filled, comp_w_req)
+                    filled_in_v = len([a for a in allocated_list if a.vertical_category == v_cat and _has_trait(a.applicant_id, comp_cat)])
+                    append_sum(f"{comp_cat} ({v_cat})", target["original_seats"], target["seats"], filled_in_v)
             
             # 4. Compartmental (Common)
             for comp_row in policy.compartmental_reservations:
