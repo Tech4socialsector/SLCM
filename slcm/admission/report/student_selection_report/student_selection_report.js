@@ -41,7 +41,7 @@ frappe.query_reports["Student Selection Report"] = {
             "fieldname": "selection_status",
             "label": __("Selection Status"),
             "fieldtype": "Select",
-            "options": "\nShortlisted\nSelected\nWaitlisted\nRejected\nOffer Issued\nOffer Accepted\nAccepted\nFee Paid"
+            "options": "\nShortlisted\nSelected\nWaitlisted\nRejected\nOffer Issued\nOffer Accepted\nAccepted\nFee Paid\nVacant"
         }
     ]
 };
