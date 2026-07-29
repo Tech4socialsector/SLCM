@@ -106,12 +106,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link href="https://fonts.googleapis.com/css2?family=Times+New+Roman:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&display=swap" rel="stylesheet">
 <meta charset="UTF-8"/>
 <style>
     @page { size: A4; margin: 10mm; }
     html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
-    body { font-family: 'Times New Roman', Times, serif; font-size: 15px; color: #000;line-height: 1.2;}
+    body { font-family: 'Merriweather', serif; font-size: 15px; color: #000;line-height: 1.2;}
     
     .card-page { width: 100%; border: 1.5px solid #000; background: #fff; overflow: hidden; margin-bottom: 12px;}
     
@@ -205,7 +205,14 @@
             <tr><td class="lb">Reporting Time</td><td class="vl">: {{ reporting_time }}</td></tr>
             <tr>
                 <td class="lb">Test Centre Name &<br>Address</td>
-                <td class="vl" colspan="2" style="padding:2px !important">: {{ centre_full|safe }}</td>
+                <td class="vl" colspan="2" style="padding:2px !important;">
+                    <table style="width:100%; border-collapse:collapse; border:none;">
+                        <tr>
+                            <td style="width:12px; vertical-align:top; border:none; padding:0 !important; font-size:13px; color:#000;">:</td>
+                            <td style="vertical-align:top; border:none; padding:0 !important; font-size:13px; color:#000;">{{ centre_full|safe }}</td>
+                        </tr>
+                    </table>
+                </td>
             </tr>
         </table>
     </div>
@@ -239,9 +246,9 @@
             <tr><td class="mk">b.</td><td>Candidates should carry a Government-issued photo ID card or a photo ID issued by a recognised educational institution. The ID card will be checked at the time of entry into the centre.</td></tr>
             <tr><td class="mk">c.</td><td>Candidates who arrive at the test centre beyond {{ late_time }} will not be permitted entry.</td></tr>
             <tr><td class="mk">d.</td><td>Once the test commences, Candidates will not be permitted to leave the examination hall until the test is completed, and all the Question Booklets and OMR response sheets have been collected by the invigilator/s.</td></tr>
-        </table>
+        </table> 
 
-        <div class="sec-head">3. Permitted Items</div>
+        <div class="sec-head">3. Permitted  Items</div>
         <table class="list-tbl">
             <tr><td class="mk">a.</td><td>Candidates will only be permitted to carry the following inside the Test Centre:</td></tr>
         </table>
