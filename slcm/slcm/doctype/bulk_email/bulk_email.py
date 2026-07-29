@@ -1,6 +1,7 @@
 import frappe
 from frappe.model.document import Document
 import json
+import socket
 
 class BulkEmail(Document):
     pass
@@ -92,169 +93,69 @@ def create_and_queue(reference_doctype, recipient_names, sender_email_account, s
     doc.insert(ignore_permissions=True)
     frappe.db.commit()
     
-    frappe.enqueue("slcm.slcm.doctype.bulk_email.bulk_email.process_bulk_email", queue="short", bulk_email_name=doc.name)
+    frappe.enqueue("slcm.slcm.doctype.bulk_email.bulk_email.process_bulk_email", queue="short", timeout=600, bulk_email_name=doc.name)
     
     return doc.name
 
 
+BATCH_SIZE = 20
+
 def process_bulk_email(bulk_email_name):
     doc = frappe.get_doc("Bulk Email", bulk_email_name)
-    try:
+
+    if doc.status == "Queued":
         doc.db_set("status", "In Progress")
-        doc.db_set("server_response", f"Job started at {frappe.utils.now()}\n")
+        doc.db_set("server_response", (doc.server_response or "") + f"\nJob started at {frappe.utils.now()}")
         frappe.db.commit()
-        
-        _send_emails(doc, is_resend=False)
+
+    original_timeout = socket.getdefaulttimeout()
+    socket.setdefaulttimeout(30)  # seconds — no single socket op waits longer
+
+    try:
+        pending_rows = [r for r in doc.recipients if r.status == "Queued"]
+        batch = pending_rows[:BATCH_SIZE]
+
+        for row in batch:
+            if _is_stop_requested(bulk_email_name):
+                doc.reload()
+                doc.db_set("status", "Stopped")
+                doc.db_set("stop_requested", 0)
+                sent_so_far = len([r for r in doc.recipients if r.status == "Sent"])
+                remaining_count = len([r for r in doc.recipients if r.status == "Queued"])
+                doc.db_set("server_response",
+                    (doc.server_response or "") +
+                    f"\nStopped by request at {frappe.utils.now()}. "
+                    f"{sent_so_far} sent, {remaining_count} still queued.")
+                frappe.db.commit()
+                return  # do NOT re-enqueue the next batch
+            
+            _process_single_recipient(doc, row, bulk_email_name)
+
+        doc.reload()
+        still_queued = any(r.status == "Queued" for r in doc.recipients)
+
+        if still_queued:
+            frappe.enqueue(
+                method="slcm.slcm.doctype.bulk_email.bulk_email.process_bulk_email",
+                queue="short",
+                timeout=600,
+                bulk_email_name=bulk_email_name
+            )
+        else:
+            _finalize_job(doc, bulk_email_name)
+
     except Exception:
         doc.db_set("status", "Error")
         doc.db_set("server_response", (doc.server_response or "") + f"\nJOB CRASHED at {frappe.utils.now()}:\n" + frappe.get_traceback())
         frappe.db.commit()
         frappe.log_error(title=f"Bulk Email {bulk_email_name} job failed", message=frappe.get_traceback())
-        frappe.publish_realtime("bulk_email_complete", {
-            "bulk_email": bulk_email_name, 
-            "status": "Error", 
-            "crashed": True
-        }, user=doc.triggered_by)
+        frappe.publish_realtime("bulk_email_complete", {"bulk_email": bulk_email_name, "status": "Error", "crashed": True}, user=doc.triggered_by)
+    finally:
+        socket.setdefaulttimeout(original_timeout)
 
-
-@frappe.whitelist()
-def resend_failed(bulk_email_name):
-    doc = frappe.get_doc("Bulk Email", bulk_email_name)
-    if doc.status not in ("Partial", "Error"):
-        frappe.throw("Can only resend failed recipients for Partial or Error status.")
-        
-    doc.db_set("status", "In Progress")
-    frappe.db.commit()
-    
-    frappe.enqueue("slcm.slcm.doctype.bulk_email.bulk_email.process_resend", queue="short", bulk_email_name=bulk_email_name)
-
-
-def process_resend(bulk_email_name):
-    doc = frappe.get_doc("Bulk Email", bulk_email_name)
-    try:
-        doc.db_set("status", "In Progress")
-        doc.db_set("server_response", (doc.server_response or "") + f"\nResend job started at {frappe.utils.now()}\n")
-        frappe.db.commit()
-        
-        _send_emails(doc, is_resend=True)
-    except Exception:
-        doc.db_set("status", "Error")
-        doc.db_set("server_response", (doc.server_response or "") + f"\nJOB CRASHED at {frappe.utils.now()}:\n" + frappe.get_traceback())
-        frappe.db.commit()
-        frappe.log_error(title=f"Bulk Email {bulk_email_name} resend job failed", message=frappe.get_traceback())
-        frappe.publish_realtime("bulk_email_complete", {
-            "bulk_email": bulk_email_name, 
-            "status": "Error", 
-            "crashed": True
-        }, user=doc.triggered_by)
-
-
-def _send_emails(doc, is_resend=False):
-    sent = doc.sent_count or 0
-    failed = doc.failed_count or 0
-    
-    if is_resend:
-        # Reset failed count since we will try them again
-        failed = 0
-        for row in doc.recipients:
-            if row.status == "Failed":
-                row.db_set("status", "Queued")
-        frappe.db.commit()
-        # Recalculate failed count based on what was previously failed but now is pending? 
-        # Actually it's easier to just recalculate at the end.
-    
-    for row in doc.recipients:
-        if row.status == "Queued":
-            try:
-                recipient_doc = frappe.get_doc(doc.reference_doctype, row.recipient_reference)
-                context = recipient_doc.as_dict()
-                rendered_subject = frappe.render_template(doc.subject, context)
-                rendered_message = frappe.render_template(
-                    doc.message_html if doc.use_html else doc.message, context)
-            except Exception:
-                row.status = "Failed"
-                row.error_message = "Template rendering failed:\n" + frappe.get_traceback()
-                row.db_update()
-                frappe.db.commit()
-                frappe.publish_realtime("bulk_email_row_update", {
-                    "bulk_email": doc.name,
-                    "row_name": row.name,
-                    "recipient_reference": row.recipient_reference,
-                    "status": "Failed",
-                    "error_message": row.error_message
-                }, user=doc.triggered_by)
-                failed += 1
-                doc.db_set("failed_count", failed)
-                frappe.db.commit()
-                
-                frappe.publish_realtime("bulk_email_progress", {
-                    "bulk_email": doc.name,
-                    "sent": sent,
-                    "failed": failed,
-                    "total": doc.total_recipients
-                }, user=doc.triggered_by)
-                continue  # skip to next recipient, do not attempt send
-
-            row.status = "Sending"
-            row.db_update()
-            frappe.db.commit()
-            frappe.publish_realtime("bulk_email_row_update", {
-                "bulk_email": doc.name,
-                "row_name": row.name,
-                "recipient_reference": row.recipient_reference,
-                "status": "Sending"
-            }, user=doc.triggered_by)
-
-            try:
-                attachments = []
-                if doc.attachment:
-                    file_doc = frappe.get_doc("File", {"file_url": doc.attachment})
-                    attachments.append({
-                        "fname": file_doc.file_name,
-                        "fcontent": file_doc.get_content()
-                    })
-
-                sender_account_doc = frappe.get_doc("Email Account", doc.sender_email_account)
-                sender_email = sender_account_doc.email_id
-                
-                frappe.sendmail(
-                    recipients=[row.email],
-                    sender=sender_email,
-                    subject=rendered_subject,
-                    message=rendered_message,
-                    cc=doc.cc,
-                    bcc=doc.bcc,
-                    attachments=attachments if attachments else None,
-                    now=True
-                )
-                row.status = "Sent"
-                row.error_message = None
-                sent += 1
-            except Exception as e:
-                row.status = "Failed"
-                row.error_message = "Send failed:\n" + frappe.get_traceback()
-                failed += 1
-                
-            row.db_update()
-            doc.db_set("sent_count", sent)
-            doc.db_set("failed_count", failed)
-            frappe.db.commit()
-            
-            frappe.publish_realtime("bulk_email_row_update", {
-                "bulk_email": doc.name,
-                "row_name": row.name,
-                "recipient_reference": row.recipient_reference,
-                "status": row.status,
-                "error_message": row.error_message if row.status == "Failed" else None
-            }, user=doc.triggered_by)
-            
-            frappe.publish_realtime("bulk_email_progress", {
-                "bulk_email": doc.name,
-                "sent": sent,
-                "failed": failed,
-                "total": doc.total_recipients
-            }, user=doc.triggered_by)
-            
+def _finalize_job(doc, bulk_email_name):
+    sent = len([r for r in doc.recipients if r.status == "Sent"])
+    failed = len([r for r in doc.recipients if r.status == "Failed"])
     doc.db_set("sent_count", sent)
     doc.db_set("failed_count", failed)
     
@@ -268,14 +169,162 @@ def _send_emails(doc, is_resend=False):
         final_status = "Partial"
         
     doc.db_set("status", final_status)
-    doc.db_set("server_response", (doc.server_response or "") + f"Job completed at {frappe.utils.now()}. Sent: {sent}, Failed: {failed}.\n")
+    doc.db_set("server_response", (doc.server_response or "") + f"\nJob completed at {frappe.utils.now()}. Sent: {sent}, Failed: {failed}.")
+    frappe.db.commit()
+    frappe.publish_realtime("bulk_email_complete", {"bulk_email": bulk_email_name, "sent": sent, "failed": failed, "total": doc.total_recipients, "status": final_status}, user=doc.triggered_by)
+
+
+@frappe.whitelist()
+def is_job_active(bulk_email_name):
+    """Returns True if the job appears genuinely still running 
+    (heartbeat within the last 90 seconds)."""
+    last_beat = frappe.db.get_value("Bulk Email", bulk_email_name, 
+        "last_heartbeat")
+    if not last_beat:
+        return False
+    return (frappe.utils.now_datetime() - last_beat).total_seconds() < 90
+
+@frappe.whitelist()
+def resume_sending(bulk_email_name):
+    doc = frappe.get_doc("Bulk Email", bulk_email_name)
+
+    if doc.status == "Success":
+        frappe.throw("This Bulk Email already completed successfully.")
+
+    if is_job_active(bulk_email_name):
+        frappe.throw("This job appears to still be actively sending "
+            "(recent activity detected). Please wait a moment and "
+            "refresh before resuming.")
+
+    # Reset anything not yet confirmed Sent so it gets picked up again
+    reset_count = 0
+    for row in doc.recipients:
+        if row.status in ("Failed", "Sending"):
+            row.status = "Queued"
+            row.error_message = None
+            row.db_update()
+            reset_count += 1
+    frappe.db.commit()
+
+    doc.reload()
+    doc.db_set("status", "In Progress")
+    doc.db_set("stop_requested", 0)
+    doc.db_set("server_response",
+        (doc.server_response or "") +
+        f"\nManually resumed by {frappe.session.user} at "
+        f"{frappe.utils.now()}. {reset_count} recipient(s) reset "
+        f"for retry.")
+    frappe.db.commit()
+
+    frappe.enqueue(
+        method="slcm.slcm.doctype.bulk_email.bulk_email.process_bulk_email",
+        queue="short", timeout=600, bulk_email_name=bulk_email_name
+    )
+
+@frappe.whitelist()
+def request_stop(bulk_email_name):
+    frappe.db.set_value("Bulk Email", bulk_email_name, "stop_requested", 1)
+    frappe.db.commit()
+
+def _is_stop_requested(bulk_email_name):
+    return frappe.db.get_value("Bulk Email", bulk_email_name, "stop_requested")
+
+def _process_single_recipient(doc, row, bulk_email_name):
+    frappe.db.set_value("Bulk Email", bulk_email_name, 
+        "last_heartbeat", frappe.utils.now_datetime(), 
+        update_modified=False)
+    frappe.db.commit()
+
+    try:
+        recipient_doc = frappe.get_doc(doc.reference_doctype, row.recipient_reference)
+        context = recipient_doc.as_dict()
+        rendered_subject = frappe.render_template(doc.subject, context)
+        rendered_message = frappe.render_template(
+            doc.message_html if doc.use_html else doc.message, context)
+    except Exception:
+        row.status = "Failed"
+        row.error_message = "Template rendering failed:\n" + frappe.get_traceback()
+        row.db_update()
+        frappe.db.commit()
+        frappe.publish_realtime("bulk_email_row_update", {
+            "bulk_email": bulk_email_name,
+            "row_name": row.name,
+            "recipient_reference": row.recipient_reference,
+            "status": "Failed",
+            "error_message": row.error_message
+        }, user=doc.triggered_by)
+        
+        doc.reload()
+        sent = len([r for r in doc.recipients if r.status == "Sent"])
+        failed = len([r for r in doc.recipients if r.status == "Failed"])
+        doc.db_set("failed_count", failed)
+        frappe.publish_realtime("bulk_email_progress", {
+            "bulk_email": bulk_email_name,
+            "sent": sent,
+            "failed": failed,
+            "total": doc.total_recipients
+        }, user=doc.triggered_by)
+        return
+
+    row.status = "Sending"
+    row.db_update()
+    frappe.db.commit()
+    frappe.publish_realtime("bulk_email_row_update", {
+        "bulk_email": bulk_email_name,
+        "row_name": row.name,
+        "recipient_reference": row.recipient_reference,
+        "status": "Sending"
+    }, user=doc.triggered_by)
+
+    try:
+        attachments = []
+        if doc.attachment:
+            file_doc = frappe.get_doc("File", {"file_url": doc.attachment})
+            attachments.append({
+                "fname": file_doc.file_name,
+                "fcontent": file_doc.get_content()
+            })
+
+        sender_account_doc = frappe.get_doc("Email Account", doc.sender_email_account)
+        sender_email = sender_account_doc.email_id
+        
+        frappe.sendmail(
+            recipients=[row.email],
+            sender=sender_email,
+            subject=rendered_subject,
+            message=rendered_message,
+            cc=doc.cc,
+            bcc=doc.bcc,
+            attachments=attachments if attachments else None,
+            now=True
+        )
+        row.status = "Sent"
+        row.error_message = None
+    except Exception as e:
+        row.status = "Failed"
+        row.error_message = "Send failed:\n" + frappe.get_traceback()
+        
+    row.db_update()
+    
+    doc.reload()
+    sent = len([r for r in doc.recipients if r.status == "Sent"])
+    failed = len([r for r in doc.recipients if r.status == "Failed"])
+    doc.db_set("sent_count", sent)
+    doc.db_set("failed_count", failed)
     frappe.db.commit()
     
-    frappe.publish_realtime("bulk_email_complete", {
-        "bulk_email": doc.name,
+    frappe.publish_realtime("bulk_email_row_update", {
+        "bulk_email": bulk_email_name,
+        "row_name": row.name,
+        "recipient_reference": row.recipient_reference,
+        "status": row.status,
+        "error_message": row.error_message if row.status == "Failed" else None
+    }, user=doc.triggered_by)
+    
+    frappe.publish_realtime("bulk_email_progress", {
+        "bulk_email": bulk_email_name,
         "sent": sent,
         "failed": failed,
-        "total": doc.total_recipients,
-        "status": final_status
+        "total": doc.total_recipients
     }, user=doc.triggered_by)
 

@@ -155,20 +155,43 @@ class FeeService:
         assignment.academic_year = offer.academic_year or frappe.db.get_value("Applicant", offer.applicant, "academic_year")
         assignment.admission_cycle = admission_cycle
         assignment.assignment_date = frappe.utils.today()
+        
+        fs_doc = frappe.get_doc("Fee Structure", offer.fee_structure)
 
-        # Copy fee rows
-        for row in fee_data.get("components", []):
-            if (row.get("fee_component") or "").lower() == "scholarship":
-                continue
+        if fs_doc.is_confirmation_fee_applicable:
+            assignment.fee_type = "Confirmation Fee"
+            
+            # Ensure the Fee Component exists
+            if not frappe.db.exists("Fee Component", "Confirmation Fee"):
+                frappe.get_doc({
+                    "doctype": "Fee Component",
+                    "fee_component": "Confirmation Fee",
+                    "component_name": "Confirmation Fee"
+                }).insert(ignore_permissions=True)
+
             assignment.append("fee_components", {
-                "fee_component": row.get("fee_component"),
-                "component_name": row.get("component_name"),
-                "amount": row.get("amount"),
-                "is_taxable": row.get("is_taxable"),
-                "tax_rate": row.get("tax_rate"),
-                "tax_amount": row.get("tax_amount"),
-                "total_amount": row.get("total_amount")
+                "fee_component": "Confirmation Fee",
+                "component_name": "Confirmation Fee",
+                "amount": fs_doc.confirmation_fee_amount,
+                "is_taxable": 0,
+                "tax_amount": 0,
+                "total_amount": fs_doc.confirmation_fee_amount
             })
+        else:
+            assignment.fee_type = "Admission Fee"
+            # Copy fee rows
+            for row in fee_data.get("components", []):
+                if (row.get("fee_component") or "").lower() == "scholarship":
+                    continue
+                assignment.append("fee_components", {
+                    "fee_component": row.get("fee_component"),
+                    "component_name": row.get("component_name"),
+                    "amount": row.get("amount"),
+                    "is_taxable": row.get("is_taxable"),
+                    "tax_rate": row.get("tax_rate"),
+                    "tax_amount": row.get("tax_amount"),
+                    "total_amount": row.get("total_amount")
+                })
 
         # Store scholarship in the dedicated field (no Fee Component record needed)
         assignment.scholarship_amount = total_scholarship

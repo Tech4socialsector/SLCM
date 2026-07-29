@@ -533,6 +533,13 @@ def create_scholarship_application(scheme, family_income, income_certificate_dat
 
 	frappe.log_error(f"Found applicant {applicant.name}", "Scholarship Application Debug")
 
+	# Server side validation
+	if not family_income:
+		frappe.throw(frappe._("Annual Family Income is mandatory."))
+	
+	if not income_certificate_data or not income_certificate_name:
+		frappe.throw(frappe._("Income Certificate is mandatory."))
+
 	# Handle file uploads
 	income_cert_url = None
 	if income_certificate_data and income_certificate_name:
