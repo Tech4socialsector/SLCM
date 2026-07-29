@@ -7,6 +7,68 @@ from slcm.admission.utils.institution import is_multi_campus_enabled
 _CUSTOM_PORTAL_FORM_TYPES = frozenset({"Custom From", "Custom Form"})
 
 
+def parse_time_or_timedelta(val):
+	if not val:
+		return None
+	from datetime import datetime, timedelta, time
+	if isinstance(val, timedelta):
+		total_seconds = int(val.total_seconds())
+		hours = total_seconds // 3600
+		minutes = (total_seconds % 3600) // 60
+		seconds = total_seconds % 60
+		return time(hours, minutes, seconds)
+	if isinstance(val, time):
+		return val
+	if isinstance(val, str):
+		val_str = val.strip()
+		for fmt in ("%H:%M:%S", "%H:%M", "%I:%M %p", "%I:%M:%S %p"):
+			try:
+				return datetime.strptime(val_str, fmt).time()
+			except ValueError:
+				pass
+	return None
+
+
+def get_entrance_test_times(et_doc):
+	"""
+	Calculates entrance test start time and reporting time (45 minutes before start time).
+	Returns (et_test_time, et_reporting_time) as formatted strings (e.g. '09:34 AM', '08:49 AM').
+	"""
+	if not et_doc:
+		return "—", "—"
+
+	from datetime import datetime, timedelta
+
+	is_rescheduled = (getattr(et_doc, "is_rescheduled", 0) == 1 or getattr(et_doc, "entrance_test_status", None) == "Rescheduled")
+	f_test = getattr(et_doc, "re_entrance_test_name", None) or getattr(et_doc, "re_entrance_test_list", None) if is_rescheduled else (getattr(et_doc, "entrance_test_name", None) or getattr(et_doc, "entrance_test_list", None))
+
+	start_val = getattr(et_doc, "start_time", None)
+	end_val = getattr(et_doc, "end_time", None)
+
+	if not start_val and getattr(et_doc, "admission_cycle", None) and f_test:
+		filters = {"parent": et_doc.admission_cycle, "entrance_test_name": f_test}
+		if getattr(et_doc, "program_level", None):
+			filters["programme_level"] = et_doc.program_level
+		test_details = frappe.db.get_value("Entrance Test Details", filters, ["start_time", "end_time"], as_dict=True)
+		if not test_details and getattr(et_doc, "program_level", None):
+			test_details = frappe.db.get_value("Entrance Test Details", {"parent": et_doc.admission_cycle, "entrance_test_name": f_test}, ["start_time", "end_time"], as_dict=True)
+		if test_details:
+			start_val = test_details.start_time
+			if not end_val:
+				end_val = test_details.end_time
+
+	start_t = parse_time_or_timedelta(start_val)
+	if start_t:
+		today_dt = datetime.combine(datetime.today(), start_t)
+		test_time_str = today_dt.strftime("%I:%M %p")
+		rep_dt = today_dt - timedelta(minutes=45)
+		rep_time_str = rep_dt.strftime("%I:%M %p")
+		return test_time_str, rep_time_str
+
+	return "—", "—"
+
+
+
 def admission_cycle_uses_applicant_web_form(cycle_name: str | None) -> bool:
 	"""
 	True → Frappe Web Form (/applicant-form/...).

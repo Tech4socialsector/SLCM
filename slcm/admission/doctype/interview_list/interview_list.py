@@ -239,9 +239,15 @@ def _send_interviewer_allocation_email(staff_member, interview_list_name, interv
         if template.get("email_account"):
             sender = frappe.db.get_value("Email Account", template.get("email_account"), "email_id") or template.get("email_account")
 
+        cc_list = []
+        if template.get("cc"):
+            cc_field_value = template.get("cc")
+            cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
+
         frappe.sendmail(
             recipients=[staff.email],
             sender=sender,
+            cc=cc_list if cc_list else None,
             subject=subject,
             message=message_body,
             now=False

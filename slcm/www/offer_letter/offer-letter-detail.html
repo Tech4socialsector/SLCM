@@ -647,6 +647,37 @@ _pc.mission_text) or '' %}
 					</div>
 				</div>
 			</div>
+			
+			<!-- Accept Offer Modal -->
+			<div id="accept-offer-modal" class="custom-modal">
+				<div class="custom-modal-content">
+					<div class="custom-modal-header">
+						<h4>{{ _("Accept Offer") }}</h4>
+						<span class="close-modal" onclick="$('#accept-offer-modal').fadeOut(200);">&times;</span>
+					</div>
+					<div class="custom-modal-body p-4">
+						<div class="mb-4">
+							<p class="text-muted" style="margin-bottom: 20px;">{{ _("Are you sure you want to accept this admission offer? By accepting, you agree to the university's terms and conditions. Please note: all other active offers will be automatically rejected.") }}</p>
+                            
+                            <div style="margin-top: 20px; text-align: left;">
+                                <label for="accommodation_pref" style="font-weight: 600; font-size: 14px; color: var(--text-2);">{{ _("Do you require accommodation?") }}</label>
+                                <select id="accommodation_pref" class="form-control mt-2" style="border-radius: 8px; border: 1px solid var(--border); padding: 8px; width: 100%;">
+                                    <option value="No">{{ _("No") }}</option>
+                                    <option value="Yes">{{ _("Yes") }}</option>
+                                </select>
+                            </div>
+						</div>
+						<div class="d-flex gap-3" style="gap: 12px">
+							<button class="btn btn-secondary flex-grow-1 py-2" style="border-radius: 10px" onclick="$('#accept-offer-modal').fadeOut(200);">
+								{{ _("Cancel") }}
+							</button>
+							<button class="btn btn-primary flex-grow-1 py-2" style="border-radius: 10px; background-color: var(--primary)" onclick="execute_acceptance()">
+								{{ _("Confirm") }}
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
 
 			<!-- Success Modal -->
 			<div id="success-modal" class="custom-modal">
@@ -1047,9 +1078,7 @@ _pc.mission_text) or '' %}
 	    }
 
 	    function handle_accept() {
-	        showConfirm("{{ _('Are you sure you want to accept this admission offer? By accepting, you agree to the university\'s terms and conditions. Please note: all other active offers will be automatically rejected.') }}", function () {
-	            execute_acceptance();
-	        });
+	        $('#accept-offer-modal').fadeIn(200);
 	    }
 
 	    function handle_reject() {
@@ -1080,9 +1109,15 @@ _pc.mission_text) or '' %}
 	    }
 
 	    async function execute_acceptance() {
+            $('#accept-offer-modal').fadeOut(200);
 	        show_processing("{{ _('Processing Acceptance...') }}");
+            const needs_accommodation = $('#accommodation_pref').val();
+            
 	        try {
-	            const r = await apiFetch('slcm.api.service.offer_service.accept_offer', { offer_name: cur_offer_data.offer.name });
+	            const r = await apiFetch('slcm.api.service.offer_service.accept_offer', { 
+                    offer_name: cur_offer_data.offer.name,
+                    needs_accommodation: needs_accommodation 
+                });
 	            if (r) {
 	                await apiFetch('slcm.api.service.offer_service.reject_applicant_other_offer', {
 	                    applicant: cur_offer_data.offer.applicant,

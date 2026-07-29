@@ -13,6 +13,8 @@
   "email_template",
   "column_break_1",
   "status",
+  "stop_requested",
+  "last_heartbeat",
   "server_response",
   "triggered_by",
   "triggered_on",
@@ -64,8 +66,22 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Queued\nIn Progress\nSuccess\nPartial\nError",
+   "options": "Queued\nIn Progress\nStopped\nSuccess\nPartial\nError",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "stop_requested",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Stop Requested",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_heartbeat",
+   "fieldtype": "Datetime",
+   "hidden": 1,
+   "label": "Last Heartbeat"
   },
   {
    "fieldname": "server_response",

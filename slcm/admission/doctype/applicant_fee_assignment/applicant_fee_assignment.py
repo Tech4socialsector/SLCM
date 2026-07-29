@@ -17,9 +17,10 @@ class ApplicantFeeAssignment(Document):
 		self.validate_status_change()
 
 	def validate_reference(self):
-		"""Require either offer_letter (Admission Fee) or applicant for Application Fee."""
+		"""Require either offer_letter (Admission/Confirmation Fee) or applicant for Application Fee."""
 		if self.offer_letter:
-			self.fee_type = "Admission Fee"
+			if not self.fee_type or self.fee_type not in ["Admission Fee", "Confirmation Fee"]:
+				self.fee_type = "Admission Fee"
 		else:
 			self.fee_type = "Application Fee"
 			if self.applicant:
@@ -114,7 +115,7 @@ class ApplicantFeeAssignment(Document):
 						row.component_name or row.fee_component
 					)
 				)
-			if self.fee_type == "Admission Fee" and flt(row.amount) <= 0:
+			if self.fee_type in ["Admission Fee", "Confirmation Fee"] and flt(row.amount) <= 0:
 				frappe.throw(
 					frappe._("Amount for {0} must be positive.").format(
 						row.component_name or row.fee_component
@@ -152,8 +153,8 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
 def create_invoice(docname):
 	doc = frappe.get_doc("Applicant Fee Assignment", docname)
 
-	if doc.fee_type == "Application Fee":
-		frappe.throw(frappe._("Create Invoice is only for Admission Fee assignments. Application Fee does not create Fee Invoice."))
+	if doc.fee_type not in ["Admission Fee", "Confirmation Fee"]:
+		frappe.throw(frappe._("Create Invoice is only for Admission/Confirmation Fee assignments."))
 
 	if doc.status == "Converted":
 		frappe.throw(frappe._("This assignment has already been converted to a student."))
@@ -253,6 +254,69 @@ def create_invoice(docname):
 	# NOTE: User role swap (Applicant → Student) is handled inside
 	# convert_applicant_to_student() called in step 1 above.
 
+	# ── 5. Create Fee Invoice for Confirmation Fee ───────────────────────────
+	if doc.fee_type == "Confirmation Fee":
+		try:
+			from slcm.api.service.fee_service import FeeService
+			fs_doc = frappe.get_doc("Fee Structure", offer_fee_structure)
+			is_foreign = frappe.db.get_value("Applicant", doc.applicant, "foriegn_national") == "Yes"
+			fee_data = FeeService._calculate_and_freeze_fees(offer_fee_structure, is_foreign=is_foreign)
+			
+			fi = frappe.new_doc("Fee Invoice")
+			fi.student = student_name
+			fi.program = doc.program
+			fi.academic_year = doc.academic_year
+			fi.academic_term = frappe.db.get_value("Student Master", student_name, "academic_term")
+			fi.applicant_fee_assignment = doc.name
+			fi.invoice_date = frappe.utils.today()
+			fi.due_date = frappe.utils.add_days(frappe.utils.today(), 15)
+			fi.needs_accommodation = frappe.db.get_value("Applicant", doc.applicant, "needs_accommodation")
+			
+			deducted_amount = 0
+			if fs_doc.is_confirmation_fee_applicable and fs_doc.deduct_confirmation_fee:
+				deducted_amount = fs_doc.confirmation_fee_amount
+				
+			total_from_components = 0
+			for row in fee_data.get("components", []):
+				if (row.get("fee_component") or "").lower() == "scholarship":
+					continue
+				fi.append("fee_components", {
+					"fee_component": row.get("fee_component"),
+					"component_name": row.get("component_name"),
+					"amount": row.get("amount"),
+					"is_taxable": row.get("is_taxable"),
+					"tax_rate": row.get("tax_rate"),
+					"tax_amount": row.get("tax_amount"),
+					"total_amount": row.get("total_amount")
+				})
+				total_from_components += flt(row.get("total_amount") or row.get("amount"))
+			
+			if deducted_amount > 0:
+				if not frappe.db.exists("Fee Component", "Confirmation Fee Deduction"):
+					frappe.get_doc({
+						"doctype": "Fee Component",
+						"fee_component": "Confirmation Fee Deduction",
+						"component_name": "Confirmation Fee Deduction"
+					}).insert(ignore_permissions=True)
+				
+				fi.append("fee_components", {
+					"fee_component": "Confirmation Fee Deduction",
+					"component_name": "Confirmation Fee Deduction",
+					"amount": -deducted_amount,
+					"is_taxable": 0,
+					"tax_amount": 0,
+					"total_amount": -deducted_amount
+				})
+			
+			fi.scholarship_amount = flt(doc.scholarship_amount)
+			fi.insert(ignore_permissions=True)
+			
+		except Exception as invoice_err:
+			frappe.log_error(
+				message=frappe.get_traceback(),
+				title=f"Fee Invoice Creation Failed | Student: {student_name}"
+			)
+
 	return student_name
 
 
@@ -284,11 +348,11 @@ def bulk_convert_to_student(assignments):
 		if not afa:
 			skipped.append({"assignment": name, "reason": frappe._("Not found")})
 			continue
-		if afa.fee_type != "Admission Fee" or afa.docstatus != 1:
+		if afa.fee_type not in ["Admission Fee", "Confirmation Fee"] or afa.docstatus != 1:
 			skipped.append(
 				{
 					"assignment": name,
-					"reason": frappe._("Must be submitted Admission Fee assignment."),
+					"reason": frappe._("Must be submitted Admission/Confirmation Fee assignment."),
 				}
 			)
 			continue

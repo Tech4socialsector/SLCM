@@ -23,23 +23,47 @@ frappe.ui.form.on('Bulk Email', {
     },
 
     refresh: function(frm) {
-        if (['Partial', 'Error'].includes(frm.doc.status) && frm.doc.failed_count > 0) {
-            frm.add_custom_button(__('Resend Failed Recipients'), function() {
-                frappe.call({
-                    method: 'slcm.slcm.doctype.bulk_email.bulk_email.resend_failed',
-                    args: {
-                        bulk_email_name: frm.doc.name
-                    },
-                    callback: function(r) {
-                        if (!r.exc) {
-                            frm.reload_doc();
-                            if (typeof slcm !== 'undefined' && slcm.show_bulk_email_progress) {
-                                slcm.show_bulk_email_progress(frm.doc.name);
-                            }
+        let has_pending_rows = (frm.doc.recipients || []).some(r => ['Queued', 'Failed', 'Sending'].includes(r.status));
+        if (['Error', 'Partial', 'Stopped', 'In Progress'].includes(frm.doc.status) && has_pending_rows) {
+            frm.add_custom_button(__('Resume Sending'), function() {
+                frappe.call({ 
+                    method: 'slcm.slcm.doctype.bulk_email.bulk_email.is_job_active', 
+                    args: { bulk_email_name: frm.doc.name }, 
+                    callback: (r) => {
+                        if (r.message) {
+                            frappe.msgprint(__("This job still appears to be actively sending. Please wait a moment and try again."));
+                        } else {
+                            frappe.confirm(
+                                __("Resume sending to all remaining recipients?"),
+                                () => {
+                                    frappe.call({ 
+                                        method: 'slcm.slcm.doctype.bulk_email.bulk_email.resume_sending', 
+                                        args: { bulk_email_name: frm.doc.name }, 
+                                        callback: () => {
+                                            frm.reload_doc();
+                                        }
+                                    });
+                                }
+                            );
                         }
                     }
                 });
-            });
+            }).addClass('btn-primary');
+        }
+
+        if (frm.doc.status === 'In Progress') {
+            frm.add_custom_button(__('Stop Sending'), function() {
+                frappe.call({
+                    method: 'slcm.slcm.doctype.bulk_email.bulk_email.request_stop',
+                    args: { bulk_email_name: frm.doc.name },
+                    callback: function(r) {
+                        if (!r.exc) {
+                            frappe.msgprint(__('Stop requested. The job will pause after the current recipient.'));
+                            setTimeout(() => frm.reload_doc(), 2000);
+                        }
+                    }
+                });
+            }).addClass('btn-danger');
         }
 
         if (['Queued', 'In Progress'].includes(frm.doc.status)) {
