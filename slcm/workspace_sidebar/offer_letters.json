@@ -9,12 +9,12 @@
   {
    "child": 0,
    "collapsible": 1,
-   "icon": "chart-bar",
+   "icon": "file-check",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Workspace",
-   "link_to": "Offer Letters",
-   "link_type": "Workspace",
+   "label": "Offer letter",
+   "link_to": "Offer Letter",
+   "link_type": "DocType",
    "open_in_new_tab": 0,
    "show_arrow": 0,
    "type": "Link"
@@ -27,19 +27,6 @@
    "keep_closed": 0,
    "label": "Seat allocation",
    "link_to": "Seat Allocation",
-   "link_type": "DocType",
-   "open_in_new_tab": 0,
-   "show_arrow": 0,
-   "type": "Link"
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
-   "icon": "file-check",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Offer letter",
-   "link_to": "Offer Letter",
    "link_type": "DocType",
    "open_in_new_tab": 0,
    "show_arrow": 0,
@@ -161,11 +148,11 @@
    "type": "Link"
   }
  ],
- "modified": "2026-07-03 16:06:01.696963",
+ "modified": "2026-07-28 17:20:26.956200",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letters",
  "owner": "Administrator",
- "standard": 1,
+ "standard": 0,
  "title": "Offer Letters"
 }
