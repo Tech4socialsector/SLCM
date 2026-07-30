@@ -176,7 +176,12 @@ def _update_applicant_status_for_entrance_test_status(applicant_name, entrance_t
             title="Applicant Status Sync Skipped",
         )
         return
-    frappe.db.set_value("Applicant", applicant_name, "status", new_status)
+    app_doc = frappe.get_doc("Applicant", applicant_name)
+    if app_doc.status != new_status:
+        old_status = app_doc.status
+        app_doc.status = new_status
+        app_doc.flags.old_status = old_status
+        app_doc.save(ignore_permissions=True)
     frappe.clear_document_cache("Applicant", applicant_name)
     # Notify clients so the Applicant form can auto-refresh if open
     frappe.publish_realtime(
@@ -700,6 +705,30 @@ def _send_reschedule_email(doc, email):
             cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
         
         if message_body:
+            attachments = []
+            if not getattr(doc, "is_international_applicant", 0):
+                card_field = "re_admit_card_download" if doc.is_rescheduled else "admit_card_download"
+                if not getattr(doc, card_field, None):
+                    try:
+                        from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
+                        generate_and_store_admit_card(doc, is_rescheduled=bool(doc.is_rescheduled))
+                        doc.reload()
+                    except Exception:
+                        pass
+
+                card_url = getattr(doc, card_field, None)
+                if card_url:
+                    try:
+                        file_name = frappe.db.get_value("File", {"file_url": card_url}, "name")
+                        if file_name:
+                            file_doc = frappe.get_doc("File", file_name)
+                            attachments.append({
+                                "fname": file_doc.file_name,
+                                "fcontent": file_doc.get_content()
+                            })
+                    except Exception:
+                        pass
+
             try:
                 # Use now=False to queue the email.
                 sender = None
@@ -712,6 +741,7 @@ def _send_reschedule_email(doc, email):
                     cc=cc_list,
                     subject=subject,
                     message=message_body,
+                    attachments=attachments,
                     reference_doctype="Entrance Test Seat Allocation",
                     reference_name=doc.name,
                     now=False
@@ -918,15 +948,26 @@ def _send_automated_center_change_email(allocation, email):
         
         if message_body:
             attachments = []
-            if allocation.admit_card_download:
-                try:
-                    file_doc = frappe.get_doc("File", {"file_url": allocation.admit_card_download})
-                    attachments.append({
-                        "fname": file_doc.file_name,
-                        "fcontent": file_doc.get_content()
-                    })
-                except Exception:
-                    pass
+            if not getattr(allocation, "is_international_applicant", 0):
+                if not getattr(allocation, "admit_card_download", None):
+                    try:
+                        from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
+                        generate_and_store_admit_card(allocation, is_rescheduled=False)
+                        allocation.reload()
+                    except Exception:
+                        pass
+
+                if getattr(allocation, "admit_card_download", None):
+                    try:
+                        file_name = frappe.db.get_value("File", {"file_url": allocation.admit_card_download}, "name")
+                        if file_name:
+                            file_doc = frappe.get_doc("File", file_name)
+                            attachments.append({
+                                "fname": file_doc.file_name,
+                                "fcontent": file_doc.get_content()
+                            })
+                    except Exception:
+                        pass
 
             try:
                 sender = None

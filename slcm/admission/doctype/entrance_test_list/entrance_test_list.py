@@ -112,7 +112,6 @@ class EntranceTestList(Document):
                 allocation.admission_cycle       = self.admission_cycle
                 allocation.campus                = self.campus
                 allocation.program_level         = self.program_level
-                allocation.entrance_test_name    = entrance_test_name
 
                 allocation.applicant             = app.applicant_id
                 allocation.candidate_name        = app.candidate_name
@@ -122,15 +121,50 @@ class EntranceTestList(Document):
                 allocation.entrance_test         = getattr(app, "entrance_test", 0)
                 allocation.intereview            = getattr(app, "intereview", 0)
                 allocation.exempts_entrance_test = getattr(app, "exempts_entrance_test", 0)
-                allocation.exempts_interview    = getattr(app, "exempts_interview", 0)
+                allocation.exempts_interview     = getattr(app, "exempts_interview", 0)
                 allocation.allocation_status      = "Not Allocated"
                 allocation.entrance_test_status   = "Scheduled"
             
-            if entrance_test_name:
-                allocation.entrance_test_name = entrance_test_name
+            # Dynamically resolve Entrance Test details from Admission Cycle configuration
+            cycle_name = self.admission_cycle
+            program_name = getattr(app, "program", None)
+            program_level_name = self.program_level
 
-            if allocation_date:
+            app_doc = None
+            if getattr(app, "applicant_id", None):
+                try:
+                    app_doc = frappe.get_doc("Applicant", app.applicant_id)
+                    if not cycle_name:
+                        cycle_name = app_doc.admission_cycle
+                    if not program_name:
+                        program_name = app_doc.program
+                    if not program_level_name:
+                        program_level_name = app_doc.program_level
+                except Exception:
+                    pass
+
+            test_cfg = _resolve_entrance_test_details_from_cycle(cycle_name, program_name, program_level_name)
+
+            resolved_test_name = test_cfg.get("entrance_test_name") or entrance_test_name
+            resolved_test_date = test_cfg.get("entrance_test_date") or allocation_date
+            resolved_start_time = test_cfg.get("start_time")
+            resolved_end_time = test_cfg.get("end_time")
+
+            if resolved_test_name:
+                allocation.entrance_test_name = resolved_test_name
+
+            if resolved_test_date:
+                if resolved_start_time:
+                    allocation.allocation_date = f"{resolved_test_date} {resolved_start_time}"
+                else:
+                    allocation.allocation_date = str(resolved_test_date)
+            elif allocation_date:
                 allocation.allocation_date = allocation_date
+
+            if resolved_start_time:
+                allocation.start_time = resolved_start_time
+            if resolved_end_time:
+                allocation.end_time = resolved_end_time
 
             allocation.set("assigned_preferences", [])
             for idx, pdoc in enumerate(provider_list, start=1):
@@ -224,6 +258,10 @@ def _send_allocation_email(allocation, email):
             cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
         
         if message_body:
+            attachments = []
+            # Note: For manual entrance test allocation, applicants have not yet chosen their test centre.
+            # Therefore, admit cards are not attached at this stage; admit cards are generated once the applicant confirms their centre.
+
             try:
                 # Use now=False to queue the email.
                 sender = None
@@ -236,6 +274,7 @@ def _send_allocation_email(allocation, email):
                     cc=cc_list,
                     subject=subject,
                     message=message_body,
+                    attachments=attachments,
                     reference_doctype="Entrance Test Seat Allocation",
                     reference_name=allocation.name,
                     now=False
@@ -512,3 +551,40 @@ def _send_allocation_notification(allocation, email):
         except Exception:
             # Silently fail for individual notification logs if one user has issues, but log it
             frappe.log_error(message=frappe.get_traceback(), title=f"Allocation Notification Failed: {allocation.name}")
+
+
+def _resolve_entrance_test_details_from_cycle(cycle_name, program=None, program_level=None):
+    """
+    Dynamically fetch Entrance Test Details from Admission Cycle based on:
+    1) exact programme match
+    2) programme_level match
+    3) fallback to first row in child table
+    """
+    if not cycle_name:
+        return {}
+
+    rows = frappe.get_all(
+        "Entrance Test Details",
+        filters={"parent": cycle_name, "parenttype": "Admission Cycle"},
+        fields=["programme", "programme_level", "entrance_test_name", "entrance_test_date", "start_time", "end_time", "idx"],
+        order_by="idx asc",
+    )
+    if not rows:
+        return {}
+
+    if program:
+        for row in rows:
+            if (row.get("programme") or "").strip() == (program or "").strip() and row.get("entrance_test_name"):
+                return row
+
+    if program_level:
+        for row in rows:
+            if (row.get("programme_level") or "").strip() == (program_level or "").strip() and row.get("entrance_test_name"):
+                return row
+
+    for row in rows:
+        if row.get("entrance_test_name"):
+            return row
+
+    return {}
+

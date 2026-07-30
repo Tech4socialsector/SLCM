@@ -17,9 +17,25 @@ from slcm.admission.utils.regulatory import log_audit_trail
 APPLICATION_SUBMITTED_STATUSES = frozenset(
     {
         "Submitted",
-        "Interview Excempted",
+        "Completed",
+        "Entrance Test Scheduled",
+        "Entrance Test Allocated",
         "Entrance Test Exempted",
+        "Entrance Test Completed",
+        "Interview Scheduled",
+        "Interview Exempted",
+        "Interview Excempted",
+        "Interview Completed",
+        "Exempted Entrance Test And Interview",
         "Excempted Entrance Test And Interview",
+        "Merit Selected",
+        "Merit Waitlisted",
+        "Merit Published",
+        "Seat Selected",
+        "Seat Waitlisted",
+        "Offer Issued",
+        "Offer Accepted",
+        "Enrolled",
     }
 )
 
@@ -369,11 +385,12 @@ class Applicant(Document):
             frappe.db.set_value(self.doctype, self.name, "user_id", self.email, update_modified=False)
         self.sync_user_profile()
 
-        # Generate the application PDF when the status is submitted
+        # Generate the application PDF when the status is submitted and form is missing
         if (
             self.name
             and self.status in APPLICATION_SUBMITTED_STATUSES
             and not self.flags.get("in_pdf_generation")
+            and not frappe.db.get_value("Applicant", self.name, "application_form")
         ):
             self.generate_application_pdf()
 
@@ -384,9 +401,9 @@ class Applicant(Document):
             else self.flags.get("old_status")
         )
         just_submitted = (
-            old_status == "Draft"
+            (not old_status or old_status == "Draft" or old_status not in APPLICATION_SUBMITTED_STATUSES)
             and self.status in APPLICATION_SUBMITTED_STATUSES
-            and self.has_value_changed("status")
+            and (self.is_new() or self.has_value_changed("status"))
         )
 
         if just_submitted:
@@ -863,9 +880,9 @@ class Applicant(Document):
 
         # ── PDF generation & storage in application_form field ────────────────
         try:
-            pdf_content = self.generate_application_pdf()
-            if not pdf_content:
-                pdf_content = read_stored_application_form_pdf(self.name)
+            pdf_content = read_stored_application_form_pdf(self.name)
+            if not pdf_content and not self.flags.get("in_pdf_generation"):
+                pdf_content = self.generate_application_pdf()
             
             attachments = []
             if pdf_content:
@@ -3480,21 +3497,16 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
             "assigned_to_name": allocation.candidate_name
         }, update_modified=False)
 
-    # Store admit card file immediately after auto-allocation.
-    # (Manual allocation already does this inside Entrance Test List flow.)
+    # Store admit card file immediately after auto-allocation for domestic applicants.
     try:
         if not getattr(allocation, "admit_card_download", None):
-            frappe.enqueue(
-                "slcm.admission.doctype.entrance_test_list.entrance_test_list.generate_and_store_admit_card",
-                allocation=allocation.name,
-                is_rescheduled=False,
-                queue="long",
-                enqueue_after_commit=True
-            )
+            from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
+            generate_and_store_admit_card(allocation, is_rescheduled=False)
+            allocation.reload()
     except Exception:
         frappe.log_error(
             frappe.get_traceback(),
-            f"Auto admit card generation queuing failed for auto allocation {allocation.name}",
+            f"Auto admit card generation failed for auto allocation {allocation.name}",
         )
 
     # Keep Entrance Test List child table in sync for operational visibility.
@@ -3804,6 +3816,28 @@ def _send_automated_entrance_test_allocation_email(allocation, email):
             cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
 
         if message_body:
+            attachments = []
+            if not getattr(allocation, "is_international_applicant", 0):
+                if not getattr(allocation, "admit_card_download", None):
+                    try:
+                        from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
+                        generate_and_store_admit_card(allocation, is_rescheduled=False)
+                        allocation.reload()
+                    except Exception:
+                        frappe.log_error(traceback.format_exc(), f"Admit card generation failed for {allocation.name}")
+
+                if getattr(allocation, "admit_card_download", None):
+                    try:
+                        file_name = frappe.db.get_value("File", {"file_url": allocation.admit_card_download}, "name")
+                        if file_name:
+                            file_doc = frappe.get_doc("File", file_name)
+                            attachments.append({
+                                "fname": file_doc.file_name,
+                                "fcontent": file_doc.get_content()
+                            })
+                    except Exception:
+                        frappe.log_error(traceback.format_exc(), f"Failed to attach Admit Card for {allocation.name}")
+
             sender = None
             if template.get("email_account"):
                 sender = frappe.db.get_value("Email Account", template.get("email_account"), "email_id") or template.get("email_account")
@@ -3814,6 +3848,7 @@ def _send_automated_entrance_test_allocation_email(allocation, email):
                 cc=cc_list,
                 subject=subject,
                 message=message_body,
+                attachments=attachments,
                 reference_doctype="Entrance Test Seat Allocation",
                 reference_name=allocation.name,
                 now=False,

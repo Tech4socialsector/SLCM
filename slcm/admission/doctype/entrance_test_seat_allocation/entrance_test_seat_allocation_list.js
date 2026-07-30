@@ -532,34 +532,48 @@ function open_reschedule_dialog(listview) {
     });
 }
 
-// Build provider checkboxes HTML (same style as entrance_test_list.js)
+// Build provider checkboxes HTML (3-column grid style with search)
 function _build_provider_html(providers) {
     if (!providers.length) {
         return '<p class="text-muted" style="padding:10px 0;">No providers match the selected campus.</p>';
     }
     const items = providers.map(p => `
-        <label style="display:flex; align-items:flex-start; gap:8px; padding:8px 12px;
-                       border:1px solid #d1d8dd; border-radius:4px; cursor:pointer;
-                       margin-bottom:6px; background:#fff; transition:background 0.15s;
-                       flex: 1 1 calc(50% - 6px);">
+        <label class="provider-card"
+               data-center-name="${(p.center_name || p.name).toLowerCase()}"
+               data-center-address="${(p.center_address || '').toLowerCase()}"
+               style="display:flex; align-items:flex-start; gap:10px; padding:10px 12px;
+                      border:1.5px solid #cbd5e1; border-radius:8px; cursor:pointer;
+                      background:#ffffff; transition: all 0.15s ease; margin:0; box-shadow:0 1px 2px rgba(0,0,0,0.04);
+                      position:relative; min-height:64px; box-sizing:border-box;">
             <input type="checkbox" class="provider-checkbox"
                    data-name="${p.name}"
                    data-campus="${p.campus || ''}"
-                   style="width:16px; height:16px; cursor:pointer; margin-top:3px; flex-shrink:0;">
-            <span>
-                <b>${p.center_name || p.name}</b>
-                <span style="color:#6c757d; font-size:11px; margin-left:6px;">(${p.name})</span>
-                ${p.center_address ? `<br><small style="color:#888;">${p.center_address}</small>` : ''}
-                ${p.campus ? `<br><small style="color:#aaa;">Campus: ${p.campus}</small>` : ''}
+                   style="width:16px; height:16px; cursor:pointer; margin-top:2px; flex-shrink:0;">
+            <span style="line-height:1.4; flex:1; overflow:hidden;">
+                <span style="display:block; font-weight:700; font-size:13px; color:#1e293b; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="${p.center_name || p.name}">
+                    ${p.center_name || p.name}
+                </span>
+                ${p.center_address
+            ? `<span style="display:block; font-size:11px; color:#64748b; margin-top:2px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;" title="${p.center_address}">
+                           📍 ${p.center_address}
+                       </span>`
+            : `<span style="display:block; font-size:11px; color:#94a3b8; margin-top:2px; font-style:italic;">No address provided</span>`
+        }
             </span>
         </label>
     `).join('');
 
     return `
-        <div id="provider-sel-count" style="font-size:12px; color:#6c757d; margin-bottom:8px;">
-            0 provider(s) selected
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div id="provider-sel-count" style="font-size:12px; color:#6c757d; font-weight:500;">
+                0 provider(s) selected
+            </div>
+            <div style="position:relative; width:220px;">
+                <input type="text" id="reschedule-center-search" placeholder="${__("🔍 Search centre...")}" 
+                       style="width:100%; padding:5px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; outline:none; background:#ffffff;">
+            </div>
         </div>
-        <div id="provider-list" style="display:flex; flex-wrap:wrap; gap:6px; max-height:190px; overflow-y:auto; padding:2px;">
+        <div id="provider-list" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; max-height:200px; overflow-y:auto; padding:6px; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc;">
             ${items}
         </div>
     `;
@@ -727,10 +741,41 @@ function _show_reschedule_dialog(listview, all_providers) {
         };
     });
 
-    // ── Provider checkbox count (event delegation on wrapper) ──────────────────
+    // ── Center search filtering ───────────────────────────────────────────────
+    d.$wrapper.on("input keyup search", "#reschedule-center-search", function () {
+        const q = $(this).val().toLowerCase().trim();
+        d.$wrapper.find(".provider-card").each(function () {
+            const name = $(this).attr("data-center-name") || "";
+            const addr = $(this).attr("data-center-address") || "";
+            if (!q || name.includes(q) || addr.includes(q)) {
+                $(this).css("display", "flex");
+            } else {
+                $(this).css("display", "none");
+            }
+        });
+    });
+
+    // ── Provider checkbox count & card highlight ──────────────────────────────
     d.$wrapper.on('change', '.provider-checkbox', function () {
         const n = d.$wrapper.find('.provider-checkbox:checked').length;
         d.$wrapper.find('#provider-sel-count').text(`${n} provider(s) selected`);
+
+        d.$wrapper.find(".provider-card").each(function () {
+            const $chk = $(this).find(".provider-checkbox");
+            if ($chk.is(":checked")) {
+                $(this).css({
+                    "border-color": "#2da44e",
+                    "background-color": "#f0fdf4",
+                    "box-shadow": "0 2px 6px rgba(45,164,78,0.15)"
+                });
+            } else {
+                $(this).css({
+                    "border-color": "#cbd5e1",
+                    "background-color": "#ffffff",
+                    "box-shadow": "0 1px 2px rgba(0,0,0,0.04)"
+                });
+            }
+        });
     });
 
     // ── Min-date restriction: block past dates on New Allocation Date ──────────

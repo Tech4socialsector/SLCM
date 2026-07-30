@@ -203,7 +203,8 @@ fixtures = [
                 "Applicant Not Started Application Reminder",
                 "Applicant Draft Application Reminder",
                 "Applicant Fee Payment Pending Reminder",
-                "Applicant Application Rejected"
+                "Applicant Application Rejected",
+                "Admission Fee Pending Reminder"
             ]]
         ]
     },
