@@ -1025,7 +1025,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                 deficit = target_info["seats"] - len(comp_in_v)
                 
                 if deficit > 0:
-                    potential_in = [u for u in unallocated if _has_trait(u.applicant_id, comp_cat)]
+                    potential_in = [u for u in unallocated if _has_trait(u.applicant_id, comp_cat) and _check_percentile_eligibility(u, vertical_targets, horizontal_targets)]
                     # Filter potential by category if not General
                     if v_cat != "General":
                         potential_in = [u for u in potential_in if v_cat in get_applicant_categories(u.applicant_id)]
@@ -1047,7 +1047,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                     # Recalculate deficit after attempting to fill with available Karnataka candidates
                     comp_in_v = [a for a in allocated_list if a.vertical_category == v_cat and _has_trait(a.applicant_id, comp_cat)]
                     remaining_deficit = target_info["seats"] - len(comp_in_v)
-                    if remaining_deficit > 0 and not (is_shortlist_phase and multiplier == 0):
+                    revert_unfilled = getattr(policy, "revert_unfilled_compartmental_seats", False)
+                    if remaining_deficit > 0 and not revert_unfilled and not (is_shortlist_phase and multiplier == 0):
                         # Identify All-India candidates in this category that are currently allocated
                         eligible_out = [a for a in allocated_list if a.vertical_category == v_cat and not _has_trait(a.applicant_id, comp_cat)]
                         max_ai_allowed = v_info["seats"] - target_info["seats"]
@@ -1129,28 +1130,23 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
         if not is_shortlist_phase:
             tie_candidates_to_assign = []
             for v_cat in ordered_cats:
-                # Find all candidates allocated to this category
+                v_info = vertical_targets[v_cat]
                 v_allocated = [x for x in allocated_list if x.vertical_category == v_cat]
                 if not v_allocated:
                     continue
-                # Find the maximum (lowest merit) overall rank among candidates allocated to this category
                 ranks_in_v = [getattr(x, "overall_rank", None) or (x.get("overall_rank") if isinstance(x, dict) else None) for x in v_allocated]
                 ranks_in_v = [r for r in ranks_in_v if r is not None]
                 if not ranks_in_v:
                     continue
                 max_rank = max(ranks_in_v)
                 
-                # Check for unallocated candidates who have the exact same overall rank as max_rank and are eligible
+                # Check for unallocated candidates with the exact same overall_rank at cutoff
                 for u in unallocated:
                     u_rank = getattr(u, "overall_rank", None) or (u.get("overall_rank") if isinstance(u, dict) else None)
                     if u_rank is not None and u_rank == max_rank:
-
-                        tie_candidates_to_assign.append((u, v_cat))
-
-                        # Check eligibility for v_cat
                         actual_v = (
                             getattr(u, "actual_category", None)
-                            or (getattr(u, "vertical_category", None))
+                            or getattr(u, "vertical_category", None)
                             or "General"
                         )
                         if not actual_v or actual_v.strip() == "":
@@ -1158,15 +1154,21 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                             actual_v = v_traits[0] if v_traits else "General"
                             
                         if v_cat == "General" or actual_v == v_cat:
-                            tie_candidates_to_assign.append((u, v_cat))
-
-
-
-            print(f"DEBUG After Phase 3.6: allocated_list={[(x.applicant_id, getattr(x, 'vertical_category', '')) for x in allocated_list]}")
-            # Assign seats to tie candidates
+                            # Only allocate tie candidate if seat quota has space OR candidate fulfills an unfulfilled sub-quota
+                            has_unfilled_subquota = False
+                            for comp_row in policy.compartmental_reservations:
+                                comp_cat = comp_row.category_name
+                                target_info = compartmental_targets.get((comp_cat, v_cat))
+                                if target_info and target_info["seats"] > 0:
+                                    comp_in_v = [a for a in allocated_list if a.vertical_category == v_cat and _has_trait(a.applicant_id, comp_cat)]
+                                    if len(comp_in_v) < target_info["seats"] and _has_trait(u.applicant_id, comp_cat):
+                                        has_unfilled_subquota = True
+                                        break
+                            
+                            if v_info["filled"] < v_info["seats"] or has_unfilled_subquota:
+                                tie_candidates_to_assign.append((u, v_cat))
 
             for tie_cand, v_cat in tie_candidates_to_assign:
-
                 if tie_cand in unallocated:
                     alloc_type = "Open" if v_cat == "General" else "Reserved"
                     _assign_seat_to_applicant(
