@@ -591,7 +591,7 @@ _pc.mission_text) or '' %}
 			<div id="payment-modal" class="custom-modal">
 				<div class="custom-modal-content">
 					<div class="custom-modal-header">
-						<h4>{{ _("Admission Fee Payment") }}</h4>
+						<h4>{{ _("Fee Payment") }}</h4>
 						<span class="close-modal" onclick="close_payment_modal()">&times;</span>
 					</div>
 					<div class="custom-modal-body" id="payment-modal-body">
@@ -961,7 +961,7 @@ _pc.mission_text) or '' %}
 	                        `).join('')}
 
 	                        <div class="fee-row total">
-	                            <span>{{ _("Admission Fee") }}</span>
+	                            <span>{{ _("Total Fee") }}</span>
 	                            <span>${format_currency(offer.payable_amount, currency)}</span>
 	                        </div>
 	                    </div>
@@ -1170,7 +1170,7 @@ _pc.mission_text) or '' %}
 	        let fee_html = `
 	            <div class="text-center mb-4">
 	                <div style="font-size: 2.5rem; font-weight: 800; color: var(--primary);">${format_currency(offer.payable_amount, currency)}</div>
-	                <div class="text-muted small font-weight-bold" style="letter-spacing: 0.05em;">{{ _("Total Admission Fee") }}</div>
+	                <div class="text-muted small font-weight-bold" style="letter-spacing: 0.05em;">{{ _("Total Fee") }}</div>
 	            </div>
 
 	            <div class="mt-4 pt-2">

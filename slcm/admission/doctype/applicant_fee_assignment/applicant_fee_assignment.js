@@ -1,5 +1,10 @@
 
 frappe.ui.form.on('Applicant Fee Assignment', {
+    confirmation_fee: function(frm) {
+        if (frm.doc.fee_type === 'Confirmation Fee') {
+            frm.set_value('total_amount', frm.doc.confirmation_fee);
+        }
+    },
     after_save: function (frm) {
         if (frm.doc.fee_type === 'Application Fee') {
             frm.reload_doc();
@@ -26,8 +31,8 @@ frappe.ui.form.on('Applicant Fee Assignment', {
             }, __('Actions'));
         }
 
-        if (frm.doc.docstatus === 1 && ["Partially Paid", "Paid"].includes(frm.doc.status) && frm.doc.fee_type === "Admission Fee") {
-            frm.add_custom_button(__('Convert to Student'), function () {
+        if (frm.doc.docstatus === 1 && ["Partially Paid", "Paid"].includes(frm.doc.status) && (frm.doc.fee_type === "Admission Fee" || frm.doc.fee_type === "Confirmation Fee")) {
+            const student_btn = frm.add_custom_button(__('Convert to Student'), function () {
                 frappe.confirm(__('This action will create a Student Master. Continue?'),
                     function () {
                         frappe.call({
@@ -47,7 +52,13 @@ frappe.ui.form.on('Applicant Fee Assignment', {
                             }
                         });
                     });
-            }).addClass('btn-primary');
+            });
+            student_btn.css({
+                "background-color": "#1a3c6e",
+                "color":            "#fff",
+                "border-color":     "#1a3c6e",
+                "font-weight":      "600",
+            });
         }
 
 
@@ -181,6 +192,10 @@ function calculate_row_total(frm, cdt, cdn) {
 }
 
 function calculate_grand_total(frm) {
+    if (frm.doc.fee_type === 'Confirmation Fee') {
+        frm.set_value('total_amount', flt(frm.doc.confirmation_fee));
+        return;
+    }
     let total = 0;
     (frm.doc.fee_components || []).forEach(row => {
         total += flt(row.total_amount);

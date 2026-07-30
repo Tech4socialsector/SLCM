@@ -21,7 +21,7 @@ frappe.listview_settings['Applicant Fee Assignment'] = {
 			}
 		});
 
-		listview.page.add_inner_button(__("Convert to Student"), function () {
+		const student_btn = listview.page.add_inner_button(__("Convert to Student"), function () {
 			new frappe.ui.form.MultiSelectDialog({
 				doctype: "Applicant Fee Assignment",
 				target: listview,
@@ -33,7 +33,7 @@ frappe.listview_settings['Applicant Fee Assignment'] = {
 					return {
 						filters: {
 							docstatus: 1,
-							fee_type: "Admission Fee",
+							fee_type: ["in", ["Admission Fee", "Confirmation Fee"]],
 							status: ["in", ["Partially Paid", "Paid"]],
 						},
 					};
@@ -174,5 +174,11 @@ frappe.listview_settings['Applicant Fee Assignment'] = {
 				},
 			});
 		});
+		student_btn.css({
+                "background-color": "#1a3c6e",
+                "color":            "#fff",
+                "border-color":     "#1a3c6e",
+                "font-weight":      "600",
+            });
 	},
 };

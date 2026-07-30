@@ -84,6 +84,12 @@ class ApplicantFeeAssignment(Document):
 		Scholarship is deducted only for Application Fee assignments.
 		Mirrors ``application_fee`` from the grid total for Application Fee type.
 		"""
+		if self.fee_type == "Confirmation Fee":
+			base_total = flt(self.confirmation_fee)
+			self.total_amount = base_total
+			self.final_payable_amount = max(0, base_total - flt(self.scholarship_amount))
+			return
+
 		base_total = 0
 		for row in self.fee_components:
 			if row.is_taxable:
@@ -105,7 +111,7 @@ class ApplicantFeeAssignment(Document):
 				frappe.throw(frappe._("Status cannot be set to 'Converted' manually. Please use the 'Convert to Student' action."))
 
 	def before_submit(self):
-		if not self.fee_components:
+		if not self.fee_components and self.fee_type != "Confirmation Fee":
 			frappe.throw(frappe._("At least one Fee Component row is required."))
 
 		for row in self.fee_components:

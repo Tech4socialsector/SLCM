@@ -61,7 +61,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "Admission Fee",
    "fieldname": "fee_type",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -168,14 +167,13 @@
   },
   {
    "fieldname": "fee_components_section",
-   "fieldtype": "Section Break",
-   "label": "Fee Components"
+   "fieldtype": "Section Break"
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:doc.fee_type == \"Admission Fee\"",
    "fieldname": "fee_components",
    "fieldtype": "Table",
-   "in_standard_filter": 1,
    "label": "Fee Components",
    "options": "Applicant Fee Component Child"
   },
@@ -218,7 +216,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-29 17:24:03.163275",
+ "modified": "2026-07-30 14:42:15.742455",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Fee Assignment",
