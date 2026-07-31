@@ -5225,10 +5225,8 @@ function setupCityStateFilter() {
 		function stateQueryFn() {
 			var eff = effCountry();
 			return {
-				or_filters: [
-					['State', 'country', '=', eff],
-					['State', 'name', '=', 'Other']
-				]
+				query: 'slcm.admission.web_form.applicant_form.applicant_form.state_query',
+				filters: { country: eff }
 			};
 		}
 
@@ -5237,12 +5235,9 @@ function setupCityStateFilter() {
 			if (!st) {
 				return { filters: [['name', '=', '__slcm_no_state__']] };
 			}
-			var eff = effCountry();
 			return {
-				or_filters: [
-					['state', '=', st],
-					['name', '=', 'Other']
-				]
+				query: 'slcm.admission.web_form.applicant_form.applicant_form.city_query',
+				filters: { state: st }
 			};
 		}
 
