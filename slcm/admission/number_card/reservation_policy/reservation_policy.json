@@ -1,6 +1,6 @@
 {
  "aggregate_function_based_on": "",
- "creation": "2026-05-15 14:24:32.502935",
+ "creation": "2026-07-28 10:57:05.205654",
  "currency": "",
  "docstatus": 0,
  "doctype": "Number Card",
@@ -11,8 +11,8 @@
  "idx": 0,
  "is_public": 1,
  "is_standard": 1,
- "label": "Reservation Policy",
- "modified": "2026-05-15 14:25:03.502467",
+ "label": "Reservation Policy ",
+ "modified": "2026-07-28 10:57:09.960722",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Reservation Policy",

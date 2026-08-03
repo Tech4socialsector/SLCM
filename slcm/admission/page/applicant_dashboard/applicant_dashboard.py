@@ -124,7 +124,8 @@ def get_completion_percentage(applicant):
         "candidate_name", "email", "mobile_number",
         "date_of_birth", "gender", "correspondence_address",
         "class_x_percentage", "class_xii_percentage",
-        "first_preference", "declaration_undertaking",
+        "first_preference", "authorisation_information", 
+        "agreement_to_communications", "agreement_withdrawal_conditions",
         "id_proof", "candidate_photo"
     ]
     filled = sum(1 for f in fields if getattr(applicant, f, None))

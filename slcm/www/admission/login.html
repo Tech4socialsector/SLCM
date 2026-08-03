@@ -494,24 +494,6 @@ src="https://www.facebook.com/tr?id=1279045953496223&ev=PageView&noscript=1"
   });
 </script>
 
-<!-- Event snippet for Submit lead form conversion page when someone clicks on the chosen link or button. -->
-<script>
-function gtag_report_conversion(url) {
-  var callback = function () {
-    if (typeof(url) != 'undefined') {
-      window.location = url;
-    }
-  };
-  gtag('event', 'conversion', {
-      'send_to': 'AW-11282568347/ABOjCPXCgNQcEJup-YMq',
-      'value': 1.0,
-      'currency': 'INR',
-      'event_callback': callback
-  });
-  return false;
-}
-</script>
-
 
 </head>
 <body>
@@ -1336,16 +1318,23 @@ function applyVerificationResult(status) {
   }
 }
 
+// TFSS team added this code from here...
+var _lpRegInFlight = false;
+// ...to here (TFSS team)
+
 async function doRegister() {
   // TFSS team added this code from here...
-  var lpRegBtnGuard = document.getElementById('lp-reg-btn');
-  if (lpRegBtnGuard && lpRegBtnGuard.disabled) return;
+  if (_lpRegInFlight) return;
   // ...to here (TFSS team)
 
   if (!lpValidate([
     { id: 'reg-name',   type: 'name',   msg: 'Please enter your full name.' },
     { id: 'reg-email',  type: 'email',  msg: 'Please enter a valid email address.' }
   ], 'register')) return;
+
+  // TFSS team added this code from here...
+  _lpRegInFlight = true;
+  // ...to here (TFSS team)
 
   /* Signup Restriction: Skip for now
   if (EMAIL_VERIFICATION_STATUS !== 'domain_valid') {
@@ -1381,7 +1370,6 @@ async function doRegister() {
     if (success) {
       // TFSS team added this code from here...
       if (typeof fbq === 'function') fbq('track', 'CompleteRegistration');
-      if (typeof gtag_report_conversion === 'function') gtag_report_conversion();
       // ...to here (TFSS team)
       document.getElementById('reg-name').value = '';
       document.getElementById('reg-email').value = '';
@@ -1391,6 +1379,9 @@ async function doRegister() {
     lpNotify('Connection error. Please try again.', 'danger', 'register');
   } finally {
     btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Register';
+    // TFSS team added this code from here...
+    _lpRegInFlight = false;
+    // ...to here (TFSS team)
   }
 }
 

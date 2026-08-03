@@ -334,7 +334,12 @@ frappe.ui.form.on("Applicant", {
         }
 
         // Declaration must be accepted when submitting
-        if (frm.doc.status === "Submitted" && !frm.doc.declaration_undertaking) {
+        const has_declaration = frm.doc.declaration_undertaking || (
+            frm.doc.authorisation_information &&
+            frm.doc.agreement_to_communications &&
+            frm.doc.agreement_withdrawal_conditions
+        );
+        if (frm.doc.status === "Submitted" && !has_declaration) {
             errors.push(__("You must accept the Declaration & Undertaking before submitting."));
         }
 
@@ -352,6 +357,19 @@ frappe.ui.form.on("Applicant", {
                 message: errors.join("<br>")
             });
             frappe.validated = false;
+        }
+    },
+
+    before_save: function (frm) {
+        frm._previous_status = frm.doc ? frm.doc.status : null;
+    },
+
+    after_save: function (frm) {
+        if (frm.doc.status === "Submitted" && frm._previous_status === "Draft") {
+            frappe.show_alert({
+                message: __("Application Submitted email sent to the applicant successfully."),
+                indicator: "green"
+            }, 5);
         }
     },
 
@@ -377,16 +395,7 @@ frappe.ui.form.on("Applicant", {
         frm.toggle_reqd("percentage", !!frm.doc.national_test_name);
     },
 
-    // ── DECLARATION UNDERTAKING ──────────────
-    declaration_undertaking: function (frm) {
-        if (!frm.doc.declaration_undertaking) {
-            frappe.msgprint({
-                title: __("Declaration Required"),
-                indicator: "orange",
-                message: __("You must accept the Declaration & Undertaking to submit.")
-            });
-        }
-    },
+
 
     // ── HSC PERCENTAGE ───────────────────────
     hsc_percentage: function (frm) {

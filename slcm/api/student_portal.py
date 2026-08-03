@@ -77,11 +77,6 @@ def submit_fa_mfa_application(
         if not val:
             frappe.throw(f"{label} is required.")
 
-    # Check global setting
-    settings = frappe.get_single("Examination Settings")
-    if not settings.allow_fa_mfa:
-        frappe.throw("FA/MFA Applications are currently disabled by the administration.")
-
     # Prevent duplicate
     existing = frappe.db.exists(
         "FA MFA Application",
@@ -188,22 +183,10 @@ def submit_condonation_application(
             f"(ID: {existing})."
         )
 
-    # Attendance eligibility check
-    summary = frappe.db.get_value(
-        "Attendance Summary",
-        {"student": student, "course_offering": course_offering},
-        ["attendance_percentage", "minimum_required_percentage"],
-        as_dict=True,
-    )
-    if summary:
-        min_cond_pct = flt(getattr(settings, "condonation_min_percentage", 66) or 66)
-        att_pct = flt(summary.attendance_percentage)
-        if att_pct < min_cond_pct:
-            frappe.throw(
-                f"Your attendance ({att_pct:.1f}%) is below the minimum required "
-                f"({min_cond_pct:.0f}%) to apply for condonation. "
-                "Please contact your Faculty Advisor."
-            )
+    # Attendance percentage is intentionally NOT checked here — students may
+    # apply for condonation anytime. The minimum-percentage floor is only
+    # enforced at final (Programme Chair) approval, closer to end-of-trimester
+    # attendance figures. See StudentAttendanceCondonation.programme_chair_decision.
 
     doc = frappe.new_doc("Student Attendance Condonation")
     doc.student = student
@@ -1743,6 +1726,27 @@ def initiate_re_exam_registration(exam_plan, course):
     return {"name": doc.name, "message": fee_msg}
 
 
+def check_improvement_cgpa_eligibility(student_name, exam_plan):
+    """Throw unless the student's published Cumulative GPA for this exam plan
+    is below Examination Settings.max_cgpa_for_improvement. Enforced
+    server-side here (not just hidden in the UI) since this is the actual
+    gate on who may register/pay for an Improvement Exam."""
+    cgpa = frappe.db.get_value(
+        "Student Result Publish",
+        {"student": student_name, "exam_plan": exam_plan, "is_published": 1},
+        "cumulative_gpa",
+    )
+    if not cgpa:
+        frappe.throw("Your result for this exam plan must be published before you can apply for Improvement Exam.")
+
+    max_cgpa = flt(frappe.db.get_single_value("Examination Settings", "max_cgpa_for_improvement") or 3.0)
+    if flt(cgpa) >= max_cgpa:
+        frappe.throw(
+            f"Improvement Exam is only open to students with a CGPA below {max_cgpa:g}. "
+            f"Your current CGPA is {flt(cgpa):g}."
+        )
+
+
 @frappe.whitelist()
 def initiate_improvement_exam_registration(exam_plan, course):
     """Create or retrieve an Improvement Exam Registration for free/counter-payment flow."""
@@ -1757,6 +1761,8 @@ def initiate_improvement_exam_registration(exam_plan, course):
     )
     if not student_name:
         frappe.throw("No student record found for this account.")
+
+    check_improvement_cgpa_eligibility(student_name, exam_plan)
 
     setting = frappe.db.get_value(
         "Improvement Exam Course Setting",

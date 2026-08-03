@@ -1337,10 +1337,14 @@ function applyVerificationResult(status) {
   }
 }
 
+// TFSS team added this code from here...
+var _lpRegInFlight = false;
+// ...to here (TFSS team)
+
 async function doRegister() {
   // TFSS team added this code from here...
-  var lpRegBtnGuard = document.getElementById('lp-reg-btn');
-  if (lpRegBtnGuard && lpRegBtnGuard.disabled) return;
+  if (_lpRegInFlight) return;
+  _lpRegInFlight = true;
   // ...to here (TFSS team)
 
   if (!lpValidate([
@@ -1547,7 +1551,7 @@ function initDatePager() {
     var btns = pager.querySelector('.card-pager-btns');
     if (btns) btns.style.display = 'none';
     var info = document.getElementById('date-pager-info');
-    if (info) info.textContent = items.length + ' date' + (items.length === 1 ? '' : 's');
+    if (info) info.textContent = '';
   }
 }
 
@@ -1564,7 +1568,7 @@ function renderDatePage(items) {
     if (totalPages > 1) {
       info.textContent = 'Page ' + (_datePage + 1) + ' / ' + totalPages;
     } else {
-      info.textContent = total + ' date' + (total === 1 ? '' : 's');
+      info.textContent = '';
     }
   }
   var prev = document.getElementById('date-prev');

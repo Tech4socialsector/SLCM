@@ -180,16 +180,18 @@ frappe.listview_settings['PACE Application'] = {
 		});
 
 		listview.page.add_inner_button(__("Send Email"), function () {
-			const checked_items = listview.get_checked_items();
-			if (!checked_items || checked_items.length === 0) {
+			let docnames = listview.get_checked_items(true);
+			if (!docnames || docnames.length === 0) {
 				frappe.msgprint(__("Please select at least one application."));
 				return;
 			}
-			const docnames = checked_items.map(i => i.name);
+			if (typeof docnames[0] !== 'string') {
+				docnames = docnames.map(i => i.name);
+			}
 			if (typeof slcm !== 'undefined' && slcm.show_bulk_email_dialog) {
 				slcm.show_bulk_email_dialog("PACE Application", docnames, listview);
 			} else {
-				frappe.msgprint(__("Bulk email module not loaded properly. Please refresh the page."));
+				frappe.msgprint(__("	 email module not loaded properly. Please refresh the page."));
 			}
 		});
 	}

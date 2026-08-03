@@ -18,6 +18,11 @@ class TestEntranceTestMarksImportExport(IntegrationTestCase):
     def setUp(self):
         super().setUp()
         frappe.flags.ignore_links = True
+        
+        # Mock global search updates to avoid Redis connection errors in test environment
+        from frappe.model import document as doc_mod
+        self._orig_update_global_search = doc_mod.update_global_search
+        doc_mod.update_global_search = lambda *args, **kwargs: None
 
         self.app_no_1 = "APP-TEST-EXP-001"
         self.app_no_2 = "APP-TEST-EXP-002"
@@ -83,12 +88,19 @@ class TestEntranceTestMarksImportExport(IntegrationTestCase):
             self.alloc2 = doc2
         else:
             self.alloc2 = frappe.get_doc("Entrance Test Seat Allocation", {"applicant": self.app_no_2})
+        frappe.db.set_value("Entrance Test Seat Allocation", self.alloc2.name, "shortlisted_status", "No")
+
+
 
     def tearDown(self):
         super().tearDown()
         frappe.flags.ignore_links = False
         frappe.flags.ignore_mandatory = False
         frappe.db.delete("Entrance Test Seat Allocation", {"applicant": ["in", [self.app_no_1, self.app_no_2]]})
+        
+        # Restore global search updates
+        from frappe.model import document as doc_mod
+        doc_mod.update_global_search = self._orig_update_global_search
 
     def test_export_template_columns(self):
         """Test exporting marks template returns exact 10 columns."""

@@ -158,11 +158,15 @@
   "program",
   "admission_cycle",
   "user_id",
+  "needs_accommodation",
   "column_break_rynw",
   "admission_year",
   "academic_year",
   "application_type",
   "campus",
+  "last_draft_reminder_sent",
+  "last_fee_reminder_sent",
+  "last_admission_fee_reminder_sent_on",
   "section_break_portal",
   "center_filled",
   "application_fee_status",
@@ -1026,6 +1030,12 @@
    "label": "Centre Filled"
   },
   {
+   "fieldname": "needs_accommodation",
+   "fieldtype": "Select",
+   "label": "Needs Accommodation",
+   "options": "\nYes\nNo"
+  },
+  {
    "fieldname": "application_fee_status",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -1043,8 +1053,7 @@
    "description": "PDF snapshot generated when the application is first submitted. Bulk download uses this file for speed when present.",
    "fieldname": "application_form",
    "fieldtype": "Attach",
-   "label": "Application Form (PDF)",
-   "read_only": 1
+   "label": "Application Form (PDF)"
   },
   {
    "depends_on": "eval:doc.application_fee_status=='Waived'",
@@ -1271,6 +1280,21 @@
   {
    "fieldname": "section_break_zsrj",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "last_draft_reminder_sent",
+   "fieldtype": "Datetime",
+   "label": "Last Draft Reminder Sent"
+  },
+  {
+   "fieldname": "last_fee_reminder_sent",
+   "fieldtype": "Datetime",
+   "label": "Last Fee Reminder Sent"
+  },
+  {
+   "fieldname": "last_admission_fee_reminder_sent_on",
+   "fieldtype": "Datetime",
+   "label": "Last Admission Fee Reminder Sent On"
   }
  ],
  "grid_page_length": 50,
@@ -1306,7 +1330,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-20 22:44:34.812111",
+ "modified": "2026-07-28 15:25:18.888746",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

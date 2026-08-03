@@ -74,3 +74,18 @@ class TestTiebreakLogic:
         assert ranks["APP-08"] == 3
         assert ranks["APP-09"] == 3
         assert ranks["APP-10"] == 3
+
+    def test_no_dob_or_applicant_id_tiebreak(self):
+        # Candidates with different DOBs and different Applicant IDs but identical scores get exact same rank
+        c1 = generate_candidate("APP-999", part_a=50, part_b=50, dob="2005-12-31")
+        c2 = generate_candidate("APP-001", part_a=50, part_b=50, dob="1990-01-01")
+        c1.total_score = 100
+        c2.total_score = 100
+
+        candidates = [c1, c2]
+        _rank_applicants(candidates, use_advanced_ranking=True, processing_stage="Final Allotment Ranking")
+
+        # Both candidates must receive rank 1
+        assert candidates[0].overall_rank == 1
+        assert candidates[1].overall_rank == 1
+

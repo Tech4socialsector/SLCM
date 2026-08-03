@@ -15,6 +15,34 @@ def _is_unrestricted(roles):
 	return bool(roles & _FULL_ACCESS_ROLES) or "slcm_Programme Chair" in roles
 
 
+@frappe.whitelist()
+def get_student_filter_options(txt=None):
+	"""Options for the Student filter dropdown, labelled "Name (ID)" instead
+	of just the bare Student Master name — Student Master's title_field
+	(first_name) alone isn't enough to tell same-named students apart."""
+	or_filters = {}
+	if txt:
+		like = f"%{txt}%"
+		or_filters = {
+			"name": ["like", like],
+			"first_name": ["like", like],
+			"last_name": ["like", like],
+			"registration_id": ["like", like],
+		}
+
+	students = frappe.get_all(
+		"Student Master",
+		or_filters=or_filters,
+		fields=["name", "first_name", "last_name", "registration_id"],
+		order_by="first_name asc, last_name asc",
+		limit=20,
+	)
+	return [{
+		"value": s.name,
+		"label": f"{' '.join(filter(None, [s.first_name, s.last_name])) or s.name} ({s.registration_id or s.name})",
+	} for s in students]
+
+
 def _eligibility_for(percentage, min_pct):
 	return "Eligible" if percentage >= min_pct else "Not Eligible"
 
@@ -117,7 +145,7 @@ def _resolve_offerings_and_roster(academic_year=None, term=None, programme=None,
 
 	roster = frappe.db.sql(f"""
 		SELECT sec.course_offering, se.student, se.section, s.first_name, s.last_name,
-			s.registration_id
+			s.registration_id, s.passport_size_photo
 		FROM `tabStudent Enrollment` se
 		JOIN `tabStudent Enrollment Course` sec ON sec.parent = se.name
 		JOIN `tabStudent Master` s ON s.name = se.student
@@ -268,6 +296,7 @@ def get_data(academic_year=None, term=None, programme=None, course=None, batch=N
 			"student": r.student,
 			"student_id": r.registration_id or r.student,
 			"student_name": " ".join(filter(None, [r.first_name, r.last_name])) or r.student,
+			"student_image": r.passport_size_photo,
 			"course_offering": r.course_offering,
 			"course": course_title_by_offering.get(r.course_offering),
 			"section": section_value,
@@ -339,6 +368,7 @@ def get_monthly_matrix(academic_year=None, term=None, programme=None, course=Non
 		for r in roster
 	}
 	student_id_by_id = {r.student: r.registration_id or r.student for r in roster}
+	student_image_by_id = {r.student: r.passport_size_photo for r in roster}
 
 	conducted = frappe.db.sql("""
 		SELECT course_offering, DATE_FORMAT(session_date, '%%Y-%%m') as ym,
@@ -398,6 +428,7 @@ def get_monthly_matrix(academic_year=None, term=None, programme=None, course=Non
 			"student": student,
 			"student_id": student_id_by_id.get(student, student),
 			"student_name": student_name_by_id.get(student, student),
+			"student_image": student_image_by_id.get(student),
 			"months": month_data,
 		})
 
@@ -433,6 +464,7 @@ def get_weekly_matrix(academic_year=None, term=None, programme=None, course=None
 		for r in roster
 	}
 	student_id_by_id = {r.student: r.registration_id or r.student for r in roster}
+	student_image_by_id = {r.student: r.passport_size_photo for r in roster}
 
 	# WEEKDAY() is 0=Monday..6=Sunday, so subtracting it from the date always
 	# lands on that date's Monday regardless of MySQL's default week-start.
@@ -496,6 +528,7 @@ def get_weekly_matrix(academic_year=None, term=None, programme=None, course=None
 			"student": student,
 			"student_id": student_id_by_id.get(student, student),
 			"student_name": student_name_by_id.get(student, student),
+			"student_image": student_image_by_id.get(student),
 			"weeks": week_data,
 		})
 
@@ -547,6 +580,7 @@ def get_daily_matrix(academic_year=None, term=None, programme=None, course=None,
 		for r in roster
 	}
 	student_id_by_id = {r.student: r.registration_id or r.student for r in roster}
+	student_image_by_id = {r.student: r.passport_size_photo for r in roster}
 
 	sessions = frappe.db.sql("""
 		SELECT name, course_offering, session_date, COALESCE(duration_hours, 0) as duration_hours
@@ -603,6 +637,7 @@ def get_daily_matrix(academic_year=None, term=None, programme=None, course=None,
 			"student": student,
 			"student_id": student_id_by_id.get(student, student),
 			"student_name": student_name_by_id.get(student, student),
+			"student_image": student_image_by_id.get(student),
 			"days": day_cells,
 		})
 
