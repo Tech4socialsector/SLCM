@@ -1,0 +1,45 @@
+{
+ "cards": [
+  {
+   "card": "Test Allocated Applicants"
+  },
+  {
+   "card": "Test Scheduled"
+  },
+  {
+   "card": "Test Attended"
+  },
+  {
+   "card": "Test Absent"
+  },
+  {
+   "card": "Part - A Shortlisted"
+  },
+  {
+   "card": "Part - A Rejected"
+  },
+  {
+   "card": "Test Pass"
+  },
+  {
+   "card": "Test Fail"
+  }
+ ],
+ "charts": [
+  {
+   "width": "Half"
+  }
+ ],
+ "creation": "2026-08-03 10:54:45.687555",
+ "dashboard_name": "Entrance Test Dashboard",
+ "docstatus": 0,
+ "doctype": "Dashboard",
+ "idx": 0,
+ "is_default": 0,
+ "is_standard": 1,
+ "modified": "2026-08-03 12:16:23.465159",
+ "modified_by": "Administrator",
+ "module": "Admission",
+ "name": "Entrance Test Dashboard",
+ "owner": "Administrator"
+}
