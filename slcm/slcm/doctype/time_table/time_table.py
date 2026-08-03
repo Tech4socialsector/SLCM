@@ -719,6 +719,24 @@ def find_sessions(programme=None, section=None, schedule_date=None):
         limit_page_length=100,
     )
 
+    # `course` is a plain Data field, not a Link - on rows where it was set
+    # from a Course record it holds the Course's hashed `name` (e.g.
+    # "dkmt49uui9") rather than a readable title, so resolve it to
+    # course_name where possible. Rows where `course` was typed in directly
+    # (no matching Course record) keep showing as-is.
+    course_ids = {s.course for s in sessions if s.course}
+    course_name_by_id = {}
+    if course_ids:
+        course_name_by_id = {
+            c.name: c.course_name
+            for c in frappe.get_all(
+                "Course", filters={"name": ["in", list(course_ids)]}, fields=["name", "course_name"]
+            )
+        }
+    for s in sessions:
+        if s.course in course_name_by_id:
+            s.course = course_name_by_id[s.course]
+
     return {"sessions": sessions}
 
 
