@@ -896,9 +896,13 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
             "admission_cycle": doc.admission_cycle,
             "program": program
         }, "name")
-        
+
         if not policy_name:
-            continue
+            frappe.throw(
+                f"No Programme Reservation Policy found for Program '{program}' in Admission Cycle '{doc.admission_cycle}'. "
+                f"Please create and configure a Programme Reservation Policy for this program first.",
+                title="Missing Reservation Policy"
+            )
         policy = frappe.get_doc("Programme Reservation Policy", policy_name)
 
         mult_val = policy.get("shortlisting_multiplier")
@@ -1591,10 +1595,15 @@ def execute_part_a_shortlisting(doc):
             "admission_cycle": doc.admission_cycle,
             "program": doc.program
         }, "name")
-        if policy_name:
-            policy = frappe.get_doc("Programme Reservation Policy", policy_name)
-            mult_val = policy.get("shortlisting_multiplier")
-            multiplier = 1.0 if mult_val is None else float(mult_val)
+        if not policy_name:
+            frappe.throw(
+                f"No Programme Reservation Policy found for Program '{doc.program}' in Admission Cycle '{doc.admission_cycle}'. "
+                f"Please create and configure a Programme Reservation Policy for this program first.",
+                title="Missing Reservation Policy"
+            )
+        policy = frappe.get_doc("Programme Reservation Policy", policy_name)
+        mult_val = policy.get("shortlisting_multiplier")
+        multiplier = 1.0 if mult_val is None else float(mult_val)
 
     # Determine dynamic compartmental category name
     comp_cat = "Karnataka"
@@ -1687,6 +1696,27 @@ def execute_part_a_shortlisting(doc):
 
     for _prog_applicants in grouped_by_prog.values():
         _calculate_and_sync_percentiles(_prog_applicants, is_shortlist=True)
+
+    # 4c. Filter by minimum percentile eligibility threshold from Programme Reservation Policy
+    vertical_targets_pct = {}
+    horizontal_targets_pct = {}
+    if policy:
+        for v in policy.categories:
+            v_cat_name = v.category_name or "General"
+            vertical_targets_pct[v_cat_name] = {"min_percentile": v.min_percentile}
+        for h in policy.horizontal_reservations:
+            horizontal_targets_pct[h.category_name] = {"min_percentile": h.min_percentile}
+
+        percentile_eligible = []
+        for app in eligible_applicants:
+            if _check_percentile_eligibility(app, vertical_targets_pct, horizontal_targets_pct):
+                percentile_eligible.append(app)
+            else:
+                setattr(app, status_field, "Rejected")
+                app.allocation_type = "Not Allocated"
+                if hasattr(app, "remarks"):
+                    app.remarks = "Did not meet minimum percentile threshold"
+        eligible_applicants = percentile_eligible
 
     targets = {
         "PWD": 30,
