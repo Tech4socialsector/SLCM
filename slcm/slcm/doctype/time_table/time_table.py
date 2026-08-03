@@ -845,7 +845,10 @@ def update_event(args, field_map):
     
     args = frappe._dict(args)
     field_map = frappe._dict(field_map)
-    
+
+    if args.doctype != "Time Table":
+        frappe.throw(frappe._("This endpoint can only update Time Table records."), frappe.PermissionError)
+
     # Get the document
     doc = frappe.get_doc(args.doctype, args.name)
     
