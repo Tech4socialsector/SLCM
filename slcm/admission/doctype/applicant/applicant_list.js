@@ -97,7 +97,7 @@ frappe.listview_settings['Applicant'] = {
 				get_query: function () {
 					return {
 						filters: {
-							status: "Fee Paid",
+							status: "Confirmation Fee Paid",
 						},
 					};
 				},

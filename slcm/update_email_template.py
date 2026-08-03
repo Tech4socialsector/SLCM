@@ -82,7 +82,7 @@ def update_template():
             </table>
 
             <!-- STATUS MESSAGE -->
-            {% if doc.selection_status == "Fee Paid" %}
+            {% if doc.selection_status in ["Confirmation Fee Paid", "Full Fee Paid"] %}
             <table width="100%" cellpadding="0" cellspacing="0"
                    style="background:#f0fdf4;border-left:4px solid #22c55e;border-radius:0 6px 6px 0;margin-bottom:28px;">
               <tr><td style="padding:16px 20px;">

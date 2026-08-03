@@ -750,7 +750,7 @@ _pc.mission_text) or '' %}
 
 	    async function fetch_offer_details(offer_name) {
 	        try {
-	            const data = await apiFetch('slcm.admission.page.applicant_offer_lett.applicant_offer_lett.get_offer_details', { offer_name: offer_name });
+	            const data = await apiFetch('slcm.api.service.offer_service.get_offer_details', { offer_name: offer_name });
 	            if (data && !data.error) {
 	                cur_offer_data = data;
 	                render_offer_detail(data);
@@ -1015,7 +1015,7 @@ _pc.mission_text) or '' %}
 	                            </button>
 	                        ` : ''}
 
-	                        ${offer.status === 'Payment Completed' || is_fee_paid || (applicant && applicant.status === 'Fee Paid') ? `
+	                        ${offer.status === 'Payment Completed' || is_fee_paid || (applicant && ['Confirmation Fee Paid', 'Full Fee Paid'].includes(applicant.status)) ? `
 	                            <button class="btn btn-pay" style="width: auto; margin: 0; padding: 10px 24px;" title="Download Receipt" onclick="handle_download_receipt()">
 	                                <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">receipt</span> {{ _("Download Receipt") }}
 	                            </button>
@@ -1132,7 +1132,7 @@ _pc.mission_text) or '' %}
 	                // Re-fetch offer details so UI updates immediately: Accepted status (hides Reject button)
 	                // and fee breakdown with scholarship applied, without requiring a manual refresh.
 	                const offer_name = cur_offer_data.offer.name;
-	                const fresh = await apiFetch('slcm.admission.page.applicant_offer_lett.applicant_offer_lett.get_offer_details', { offer_name: offer_name });
+	                const fresh = await apiFetch('slcm.api.service.offer_service.get_offer_details', { offer_name: offer_name });
 	                if (fresh && !fresh.error) {
 	                    cur_offer_data = fresh;
 	                    render_offer_detail(fresh);

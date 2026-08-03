@@ -3116,7 +3116,7 @@ def bulk_convert_applicants_to_student(applicants=None):
             skipped.append({"applicant": an, "reason": _("Applicant not found.")})
             continue
         st = frappe.db.get_value("Applicant", an, "status")
-        if st != "Fee Paid":
+        if st not in ["Confirmation Fee Paid", "Full Fee Paid"]:
             skipped.append(
                 {
                     "applicant": an,

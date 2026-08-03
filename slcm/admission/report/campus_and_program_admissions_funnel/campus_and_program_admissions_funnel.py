@@ -49,15 +49,15 @@ def get_data(filters):
 
     # Comprehensive groupings for statuses
     all_submitted = list(status_map.keys())
-    all_selected = ["Selected", "Merit Selected", "Seat Selected", "Offer Issued", "Offer Accepted", "Offer Declined", "Offer Expired", "Fee Paid", "Accepted", "Enrolled"]
+    all_selected = ["Selected", "Merit Selected", "Seat Selected", "Offer Issued", "Offer Accepted", "Offer Declined", "Offer Expired", "Confirmation Fee Paid", "Full Fee Paid", "Accepted", "Enrolled"]
     all_waitlisted = ["Waitlisted", "Merit Waitlisted", "Seat Waitlisted"]
     all_rejected = ["Rejected", "Entrance Test Rejected", "Interview Rejected", "Merit Rejected", "Seat Rejected"]
     all_withdrawn = ["Withdrawn"]
-    all_offered = ["Offer Issued", "Offer Accepted", "Offer Declined", "Offer Expired", "Fee Paid", "Accepted", "Enrolled"]
-    all_accepted = ["Offer Accepted", "Fee Paid", "Accepted", "Enrolled"]
+    all_offered = ["Offer Issued", "Offer Accepted", "Offer Declined", "Offer Expired", "Confirmation Fee Paid", "Full Fee Paid", "Accepted", "Enrolled"]
+    all_accepted = ["Offer Accepted", "Confirmation Fee Paid", "Full Fee Paid", "Accepted", "Enrolled"]
     all_declined = ["Offer Declined"]
     all_expired = ["Offer Expired"]
-    all_fee_paid = ["Fee Paid", "Enrolled"]
+    all_fee_paid = ["Confirmation Fee Paid", "Full Fee Paid", "Accepted", "Enrolled"]
 
     # Define all stages for the report
     report_stages = [
@@ -70,7 +70,7 @@ def get_data(filters):
         {"label": _("Accepted"), "statuses": all_accepted, "parent": _("Offered")},
         {"label": _("Declined"), "statuses": all_declined, "parent": _("Offered")},
         {"label": _("Expired"), "statuses": all_expired, "parent": _("Offered")},
-        {"label": _("Fee Paid"), "statuses": all_fee_paid, "parent": _("Accepted")}
+        {"label": _("Confirmation Fee Paid"), "statuses": all_fee_paid, "parent": _("Accepted")}
     ]
 
     # Calculate counts for each report stage

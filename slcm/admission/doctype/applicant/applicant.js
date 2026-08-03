@@ -173,7 +173,7 @@ frappe.ui.form.on("Applicant", {
         frm.toggle_reqd("percentage", !!frm.doc.national_test_name);
 
         // ── Convert to Student (single record) ───────────────────────────────────
-        // Visible only when the applicant has status "Fee Paid".
+        // Visible only when the applicant has status "Confirmation Fee Paid" or "Full Fee Paid".
         // Calls the unified API (slcm.api.service.applicant_to_student.convert_applicant_to_student).
         // For the full AFA flow (Fee Invoice + Enrollment), use the "Convert to Student" button
         // on the Applicant Fee Assignment form instead.

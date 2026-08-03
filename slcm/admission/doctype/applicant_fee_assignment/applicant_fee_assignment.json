@@ -207,7 +207,7 @@
   },
   {
    "allow_on_submit": 1,
-   "depends_on": "eval:doc.fee_type == \"Confirmation Fee\"",
+   "depends_on": "eval:doc.fee_type != \"Application Fee\"",
    "fieldname": "confirmation_fee",
    "fieldtype": "Currency",
    "label": "Confirmation Fee",
@@ -216,7 +216,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-30 14:42:15.742455",
+ "modified": "2026-08-03 15:06:22.318820",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Fee Assignment",

@@ -276,7 +276,7 @@ frappe.pages["applicant-results"].on_page_load = function (wrapper) {
 
         const sel_color = {
             "Selected": "#2e7d32", "Offer Issued": "#1565c0",
-            "Accepted": "#1b5e20", "Fee Paid": "#00695c"
+            "Accepted": "#1b5e20", "Confirmation Fee Paid": "#00695c", "Full Fee Paid": "#00695c"
         }[seat.selection_status] || "#2e7d32";
 
         return `

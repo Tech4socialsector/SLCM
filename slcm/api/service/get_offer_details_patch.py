@@ -2,7 +2,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_offer_details(offer_name=None):
     """
     Fetches details of a specific offer letter or the latest active one.
@@ -26,7 +26,6 @@ def get_offer_details(offer_name=None):
         if not is_admin:
             check_filters["email"] = user
 
-        # Use get_all with ignore_permissions to check existence for website users
         exists = frappe.get_all("Offer Letter", filters=check_filters, limit=1, ignore_permissions=True)
         if not exists:
             return {"error": _("Offer Letter {0} not found or you don't have permission to view it.").format(offer_name)}
@@ -51,8 +50,6 @@ def get_offer_details(offer_name=None):
             return {"error": _("No active admission offer found for your account at this time.")}
         offer_id = offers[0].name
 
-
-    # If get_doc fails due to permission, we'll fetch fields manually with ignore_permissions
     try:
         offer_doc = frappe.get_doc("Offer Letter", offer_id)
         offer_dict = offer_doc.as_dict()
@@ -60,7 +57,6 @@ def get_offer_details(offer_name=None):
         target_applicant = offer_doc.applicant
         fee_structure = offer_doc.fee_structure
     except frappe.PermissionError:
-        # Fallback for website users with restricted desk access
         offer_fields = frappe.get_all("Offer Letter", filters={"name": offer_id}, fields=["*"], limit=1, ignore_permissions=True)
         if not offer_fields:
             return {"error": _("Access Denied")}
@@ -69,14 +65,21 @@ def get_offer_details(offer_name=None):
         target_applicant = offer_dict.get("applicant")
         fee_structure = offer_dict.get("fee_structure")
 
-    # Get Live Fee Details
     fee_data = []
 
-    # First, try to fetch components from Applicant Fee Assignment (AFA)
+    # First, try to fetch pending components from Applicant Fee Assignment (AFA)
     afa = frappe.db.get_value("Applicant Fee Assignment",
-        {"offer_letter": offer_id, "fee_type": ["in", ["Admission Fee", "Confirmation Fee"]], "docstatus": ["!=", 2]},
+        {"offer_letter": offer_id, "fee_type": ["in", ["Admission Fee", "Confirmation Fee"]], "status": "Assigned", "docstatus": ["!=", 2]},
         ["name", "final_payable_amount", "scholarship_amount", "scholarship_applied", "total_amount", "fee_type", "confirmation_fee"],
+        order_by="creation desc",
         as_dict=True)
+
+    if not afa:
+        afa = frappe.db.get_value("Applicant Fee Assignment",
+            {"offer_letter": offer_id, "fee_type": ["in", ["Admission Fee", "Confirmation Fee"]], "docstatus": ["!=", 2]},
+            ["name", "final_payable_amount", "scholarship_amount", "scholarship_applied", "total_amount", "fee_type", "confirmation_fee"],
+            order_by="creation desc",
+            as_dict=True)
 
     if afa:
         if afa.final_payable_amount is not None:
@@ -99,9 +102,7 @@ def get_offer_details(offer_name=None):
                     "amount": comp.total_amount or comp.amount
                 })
 
-    # If AFA doesn't have components or doesn't exist, fallback to Fee Structure
     if not fee_data and fee_structure:
-        # Determine nationality for parentfield
         applicant_nationality = "Indian"
         if target_applicant:
             applicant_nationality = frappe.db.get_value("Applicant", target_applicant, "nationality") or "Indian"
@@ -126,28 +127,26 @@ def get_offer_details(offer_name=None):
                     "amount": comp.total_amount or comp.amount
                 })
 
-    # Check if Fee is paid: AFA status Paid/Converted, or Payment Request for this offer is Paid
-    fee_paid = frappe.db.get_value("Applicant Fee Assignment",
-        {"offer_letter": offer_id, "status": ["in", ["Paid", "Converted"]]}, "name")
+    fee_paid = (offer_dict.get("status") == "Payment Completed")
     if not fee_paid:
-        fee_paid = frappe.db.get_value("Payment Request",
-            {"reference_doctype": "Offer Letter", "reference_name": offer_id, "status": "Paid"}, "name")
+        is_admission_paid = frappe.db.get_value("Applicant Fee Assignment",
+            {"offer_letter": offer_id, "fee_type": "Admission Fee", "status": ["in", ["Paid", "Converted"]]}, "name")
+        if is_admission_paid:
+            fee_paid = True
 
-    # Scholarship Amount: prefer live total from Scholarship Application (most accurate)
     applicant_id = target_applicant
     admission_cycle = offer_dict.get("admission_cycle") or frappe.db.get_value("Applicant", applicant_id, "admission_cycle")
-    live_scholarship = frappe.db.sql("""
+    live_scholarship_query = frappe.db.sql("""
         SELECT SUM(calculated_benefit)
         FROM `tabScholarship Application`
         WHERE applicant_id = %s AND admission_cycle = %s AND status = 'Approved'
-    """, (applicant_id, admission_cycle))[0][0] or 0
+    """, (applicant_id, admission_cycle))
+    live_scholarship = live_scholarship_query[0][0] if live_scholarship_query and live_scholarship_query[0] else 0
     scholarship_amount = flt(live_scholarship)
     offer_dict["scholarship_amount"] = scholarship_amount
 
-    # Get Online Payment Enabled flag
     online_payment_enabled = frappe.db.get_value("Fee Structure", fee_structure, "online_payment") if fee_structure else False
 
-    # --- Scholarship: Get latest application status and benefit ---
     scholarship_data = None
     latest_sa = frappe.get_all("Scholarship Application",
         filters={"applicant_id": applicant_id, "admission_cycle": admission_cycle, "docstatus": ["!=", 2]},
@@ -157,23 +156,18 @@ def get_offer_details(offer_name=None):
     )
     if latest_sa:
         scholarship_data = latest_sa[0]
-        # Status normalization for frontend
         if scholarship_data.status == "Submitted":
-            scholarship_data.status = "Submitted" # Under Review
+            scholarship_data.status = "Submitted"
 
-    # --- Scholarship: Override payable_amount with scholarship-adjusted amount ---
     applied_scholarship = 0
     if afa and afa.scholarship_applied and flt(afa.scholarship_amount) > 0:
-        # Show the scholarship-reduced amount as the payable amount
         offer_dict["payable_amount"] = flt(afa.final_payable_amount)
         applied_scholarship = flt(afa.scholarship_amount)
     elif scholarship_data and scholarship_data.status == "Approved":
-        # Fallback: if AFA not created yet, show potential reduced amount in portal
         benefit = flt(scholarship_data.calculated_benefit)
         offer_dict["payable_amount"] = max(0, flt(offer_dict["payable_amount"]) - benefit)
         applied_scholarship = benefit
 
-    # Append scholarship deduction row to fee breakdown if applicable
     if applied_scholarship > 0:
         fee_data.append({
             "component": "Scholarship Benefit",
@@ -181,13 +175,11 @@ def get_offer_details(offer_name=None):
             "is_discount": True
         })
 
-    # Get Applicant data safely
     applicant_data = frappe.get_all("Applicant", filters={"name": target_applicant}, fields=["*"], limit=1, ignore_permissions=True)
     applicant_dict = applicant_data[0] if applicant_data else {}
     if applicant_dict and not applicant_dict.get("candidate_photo"):
         applicant_dict["candidate_photo"] = frappe.db.get_value("User", frappe.session.user, "user_image")
 
-    # Fetch cancellation info
     cancellation = frappe.get_all("Admission Cancellation", 
         filters={"offer": offer_id}, 
         fields=["name", "status"], 
@@ -199,7 +191,6 @@ def get_offer_details(offer_name=None):
         "cancellation_status": cancellation[0].status if cancellation else ""
     }
 
-    # Calculate available scholarships
     from slcm.admission.utils.scholarship_availability import get_available_scholarships_for_dashboard
     available_scholarships_count = 0
     enable_scholarship = frappe.db.get_value("Admission Cycle", admission_cycle, "enable_scholarship")
@@ -229,5 +220,3 @@ def get_offer_details(offer_name=None):
         "available_scholarships_count": available_scholarships_count,
         "scholarship_application": scholarship_data
     }
-
-

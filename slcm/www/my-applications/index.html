@@ -3299,7 +3299,7 @@ or _app.current_stage)) or _status %}
             Application Fee
           </span>
           <div class="qs-fee-value-row">
-            {% if fee_payment_status in ['Paid','Success','Completed','Fee Paid'] %}
+            {% if fee_payment_status in ['Paid','Success','Completed','Confirmation Fee Paid','Full Fee Paid'] %}
             <span class="qs-value success">{{ fee_payment_status }}</span>
             {% if fee_receipt_ready and app_name_param %}
             <a href="/api/method/slcm.admission.web_form.applicant_form.applicant_form.download_portal_application_fee_receipt?applicant_name={{ app_name_param | urlencode }}"
