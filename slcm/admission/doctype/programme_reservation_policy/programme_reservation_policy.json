@@ -30,6 +30,7 @@
   "compartmental_reservations",
   "nlsat_config_section",
   "shortlisting_multiplier",
+  "apply_percentile_cutoff_for_shortlisting",
   "section_break_matrices",
   "btn_generate_matrices",
   "matrix_preview",
@@ -218,6 +219,13 @@
    "fieldtype": "Float",
    "label": "Shortlisting Merit List Ratio",
    "precision": "0"
+  },
+  {
+   "default": "0",
+   "description": "If checked, minimum percentile cutoffs will also apply during Part A Shortlisting. If unchecked, percentile cutoffs are only enforced during final Seat Allocation.",
+   "fieldname": "apply_percentile_cutoff_for_shortlisting",
+   "fieldtype": "Check",
+   "label": "Apply Percentile Cutoff for Shortlisting"
   },
   {
    "fieldname": "international_seats",

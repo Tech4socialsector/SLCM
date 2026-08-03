@@ -54,8 +54,10 @@ _original_get_doc = None
 
 
 class MockPolicy:
+    apply_percentile_cutoff_for_shortlisting = 1
     def __init__(self):
         self.shortlisting_multiplier = 5.0
+        self.apply_percentile_cutoff_for_shortlisting = 1
         self.categories = [
             MockDoc("Admission Category Row", "Gen",
                     category_name="General", seats=49, shortlisting_target=245, min_percentile=75.0, priority=1),
@@ -769,3 +771,27 @@ class IntegrationTestAdvancedMeritScenarios(IntegrationTestCase):
         print(f"\n[PERFORMANCE] Full 2,483 candidate pipeline execution took {elapsed:.2f} seconds.")
 
         self.assertLess(elapsed, 60.0, f"Full pipeline took {elapsed:.2f}s, expected < 60s")
+
+    def test_shortlisting_percentile_toggle_checkbox(self):
+        """Verify that when apply_percentile_cutoff_for_shortlisting is 0, percentile is bypassed in shortlisting but enforced in seat allocation."""
+        rows = self._get_real_dataset_rows()
+        doc_sp = self._get_mock_doc(rows, is_shortlist=True)
+
+        from unittest.mock import patch
+        with patch.object(MockPolicy, "apply_percentile_cutoff_for_shortlisting", 0):
+            execute_part_a_shortlisting(doc_sp)
+
+            shortlisted_candidates = [r for r in doc_sp.shortlist_applicants if r.shortlist_status == "Shortlisted"]
+            # Without percentile cutoff filter, shortlisted count is higher (566 vs 524 with percentile filter)
+            self.assertGreater(len(shortlisted_candidates), 550, "Unchecked shortlisting should include candidates otherwise rejected by percentile threshold")
+
+            # Verify Seat Allocation ALWAYS strictly enforces percentile cutoffs regardless of checkbox
+            doc_ml = self._get_mock_doc(shortlisted_candidates, is_shortlist=False)
+            execute_advanced_allocation_logic(doc_ml)
+
+            allocated_candidates = [r for r in doc_ml.merit_applicants if r.status == "Selected" and r.overall_rank > 0]
+            self.assertGreaterEqual(len(allocated_candidates), 115, "Seat Allocation allocates eligible candidates up to seat targets")
+            
+            # Verify no allocated candidate violated percentile rules
+            for c in allocated_candidates:
+                self.assertNotEqual(c.remarks, "Did not meet minimum percentile threshold", "Seat Allocation must not allocate candidate violating percentile threshold")

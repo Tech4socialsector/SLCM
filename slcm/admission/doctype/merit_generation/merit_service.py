@@ -984,6 +984,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                 pb_val = app.get("interview_score") or app.get("et_part_b_total_marks_scored") or app.get("nlsat_part_b_score")
             part_b_score = float(pb_val or 0)
 
+            apply_pct_shortlisting = bool(getattr(policy, "apply_percentile_cutoff_for_shortlisting", 0)) if policy else False
+
             if not is_shortlist_phase and (part_b_not_appeared or part_b_score <= 0):
                 setattr(app, status_field, "Rejected")
                 app.allocation_type = "Not Allocated"
@@ -991,6 +993,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                     app.remarks = "Rejected: did not appear for Part B"
                 else:
                     app.remarks = "Rejected: Part B marks are 0 or negative"
+            elif is_shortlist_phase and not apply_pct_shortlisting:
+                eligible_applicants.append(app)
             elif _check_percentile_eligibility(app, vertical_targets, horizontal_targets):
                 eligible_applicants.append(app)
             else:
@@ -1697,10 +1701,11 @@ def execute_part_a_shortlisting(doc):
     for _prog_applicants in grouped_by_prog.values():
         _calculate_and_sync_percentiles(_prog_applicants, is_shortlist=True)
 
-    # 4c. Filter by minimum percentile eligibility threshold from Programme Reservation Policy
-    vertical_targets_pct = {}
-    horizontal_targets_pct = {}
-    if policy:
+    # 4c. Filter by minimum percentile eligibility threshold from Programme Reservation Policy (if enabled)
+    apply_pct_shortlisting = bool(getattr(policy, "apply_percentile_cutoff_for_shortlisting", 0)) if policy else False
+    if policy and apply_pct_shortlisting:
+        vertical_targets_pct = {}
+        horizontal_targets_pct = {}
         for v in policy.categories:
             v_cat_name = v.category_name or "General"
             vertical_targets_pct[v_cat_name] = {"min_percentile": v.min_percentile}

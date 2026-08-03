@@ -1182,7 +1182,7 @@ def get_results_notification_context(doc):
         campus_address = ", ".join([p for p in parts if p])
 
     if not campus_address:
-        campus_address = "National Law School of India University, Gnana Bharathi Main Rd, Opp NAAC, Teachers Colony, Nagarbhavi, Bengaluru, Karnataka – 560072"
+        campus_address = "National Law School of India University, Gnana Bharathi Main Rd, Opp NAAC, Teachers Colony, Nagarabhavi, Bengaluru, Karnataka – 560072"
 
     phone_number = (getattr(campus_doc, "phone_number", None) if campus_doc else None) or "+91-080 23010000"
     email_addr = (getattr(campus_doc, "email", None) if campus_doc else None) or "registrar@nls.ac.in"
