@@ -153,15 +153,19 @@
   {
    "group": "Students",
    "link_doctype": "Student Enrollment",
-   "link_fieldname": "cohort"
+   "link_fieldname": "program"
   },
   {
    "group": "Academics",
    "link_doctype": "Course Offering",
-   "link_fieldname": "cohort"
+   "link_fieldname": "course_title"
+  },
+  {
+   "link_doctype": "Student Master",
+   "link_fieldname": "batch"
   }
  ],
- "modified": "2026-07-30 11:37:46.523278",
+ "modified": "2026-08-03 17:23:59.711255",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Batch",
