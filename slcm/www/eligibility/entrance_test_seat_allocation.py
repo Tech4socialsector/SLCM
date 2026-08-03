@@ -16,19 +16,19 @@ def get_context(context):
         context.no_record = True
         return context
 
-    # Get Seat Allocation record
-    allocation = frappe.get_all("Entrance Test Seat Allocation", 
-        filters={"applicant": applicant_name},
-        fields=["*"],
-        order_by="creation desc",
-        limit=1
+    # Get Seat Allocation record name directly without wasted full field query
+    allocation_name = frappe.db.get_value(
+        "Entrance Test Seat Allocation", 
+        {"applicant": applicant_name},
+        "name",
+        order_by="creation desc"
     )
 
-    if not allocation:
+    if not allocation_name:
         context.no_record = True
         return context
 
-    doc = frappe.get_doc("Entrance Test Seat Allocation", allocation[0].name)
+    doc = frappe.get_doc("Entrance Test Seat Allocation", allocation_name)
     context.doc = doc
     
     # Check if rescheduled
@@ -101,10 +101,6 @@ def save_provider(allocation_name, selected_provider, is_rescheduled=False):
     if not alloc_data:
         frappe.throw(_("Entrance Test Seat Allocation record not found."), frappe.DoesNotExistError)
 
-    # Authorized if:
-    # 1. Applicant name matches
-    # 2. Email matches (case-insensitive)
-    # 3. User is System Manager or Entrance Test Admin
     is_authorized = False
     
     if applicant_name and alloc_data.applicant == applicant_name:
@@ -113,7 +109,7 @@ def save_provider(allocation_name, selected_provider, is_rescheduled=False):
         is_authorized = True
     else:
         user_roles = frappe.get_roles(user)
-        if any(role in user_roles for role in ["System Manager", "Entrance Test Admin"]):
+        if any(role in user_roles for role in ["System Manager", "Entrance Test Admin", "Exam Cell"]):
             is_authorized = True
 
     if not is_authorized:
@@ -121,7 +117,6 @@ def save_provider(allocation_name, selected_provider, is_rescheduled=False):
     
     # Validation
     doc = frappe.get_doc("Entrance Test Seat Allocation", allocation_name)
-    # Cast is_rescheduled to safe boolean if stringified
     if isinstance(is_rescheduled, str):
         is_rescheduled = is_rescheduled.lower() == "true"
 
@@ -134,11 +129,35 @@ def save_provider(allocation_name, selected_provider, is_rescheduled=False):
     else:
         return confirm_applicant_preference(allocation_name, selected_provider)
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def download_admit_card(allocation_name):
     """
     Downloads the Admit Card PDF generated from the 'Admit Card' Print Format.
+    Requires authentication and ownership verification.
     """
+    user = frappe.session.user
+    if user == "Guest":
+        frappe.throw(_("Please login to proceed"), frappe.PermissionError)
+
+    applicant_name = frappe.db.get_value("Applicant", {"email": user}, "name")
+    alloc_data = frappe.db.get_value("Entrance Test Seat Allocation", allocation_name, ["applicant", "email"], as_dict=True)
+    
+    if not alloc_data:
+        frappe.throw(_("Entrance Test Seat Allocation record not found."), frappe.DoesNotExistError)
+
+    is_authorized = False
+    if applicant_name and alloc_data.applicant == applicant_name:
+        is_authorized = True
+    elif alloc_data.email and alloc_data.email.strip().lower() == user.strip().lower():
+        is_authorized = True
+    else:
+        user_roles = frappe.get_roles(user)
+        if any(role in user_roles for role in ["System Manager", "Entrance Test Admin", "Exam Cell"]):
+            is_authorized = True
+
+    if not is_authorized:
+        frappe.throw(_("You are not authorized to access this admit card."), frappe.PermissionError)
+
     doc = frappe.get_doc("Entrance Test Seat Allocation", allocation_name)
     
     is_rescheduled = (doc.is_rescheduled == 1 or doc.entrance_test_status == "Rescheduled")
@@ -159,7 +178,6 @@ def download_admit_card(allocation_name):
 def get_admit_card_html(doc, is_rescheduled):
     """
     Strictly fetches the Admit Card HTML using the 'Admit Card' Print Format from Desk.
-    No hardcoded HTML remains here.
     """
     print_format_name = "Admit Card"
     
