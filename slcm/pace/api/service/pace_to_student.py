@@ -182,6 +182,7 @@ def convert_pace_to_student(pace_app_name):
     """
     Whitelist API to convert PACE Application to Student Master.
     """
+    _validate_pace_conversion_role()
     if not frappe.db.exists("PACE Application", pace_app_name):
         frappe.throw(_("PACE Application {0} not found.").format(pace_app_name))
         
@@ -255,6 +256,7 @@ def bulk_convert_pace_to_student(pace_apps):
     Expects a list of application names.
     Returns a report dict with success, errors, and skipped.
     """
+    _validate_pace_conversion_role()
     if isinstance(pace_apps, str):
         pace_apps = frappe.parse_json(pace_apps)
         
@@ -282,6 +284,7 @@ def bulk_convert_pace_fee_assignments_to_student(assignments):
     Expects a list of Fee Assignment names.
     Returns a report dict.
     """
+    _validate_pace_conversion_role()
     if isinstance(assignments, str):
         assignments = frappe.parse_json(assignments)
         
@@ -324,3 +327,24 @@ def bulk_convert_pace_fee_assignments_to_student(assignments):
             report["errors"].append({"applicant": assignment_name, "error": str(e)})
             
     return report
+
+
+def _validate_pace_conversion_role():
+    user = frappe.session.user
+    if user == "Administrator" or getattr(frappe.flags, "in_test", False):
+        return
+
+    admin_roles = {
+        "PACE Admission Manager",
+        "Admission Admin",
+        "Academic Manager",
+        "System Manager",
+    }
+    user_roles = set(frappe.get_roles(user))
+    if not admin_roles.intersection(user_roles):
+        frappe.throw(_("Not authorized to convert PACE applications to Student."), frappe.PermissionError)
+
+    if not frappe.has_permission("Student Master", "create", user=user):
+        frappe.throw(_("Insufficient permission to create Student Master records."), frappe.PermissionError)
+
+
