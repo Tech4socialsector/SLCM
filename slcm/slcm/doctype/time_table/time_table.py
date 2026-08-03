@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -16,6 +17,7 @@ class TimeTable(Document):
         self.validate_repeat_settings()
         self.check_holiday_conflict()
         self.check_conflicts()
+        self.check_venue_conflict()
         self.calculate_duration()
 
     def check_holiday_conflict(self):
@@ -110,6 +112,35 @@ class TimeTable(Document):
                         alert=True,
                     )
 
+    def check_venue_conflict(self):
+        """Block double-booking a Venue Master for overlapping times on the
+        same date. Venue used to be a Link to Venue Booking, which had its own
+        availability check; now that venue links directly to Venue Master
+        (which has no such check of its own), Time Table must guard against
+        double-booking itself."""
+        if not self.schedule_date or not self.from_time or not self.to_time or not self.venue:
+            return
+
+        conflicts = frappe.get_all(
+            "Time Table",
+            filters={
+                "name": ["!=", self.name],
+                "venue": self.venue,
+                "schedule_date": self.schedule_date,
+                "docstatus": ["<", 2],
+            },
+            fields=["name", "from_time", "to_time", "course"],
+        )
+
+        for conflict in conflicts:
+            if self.times_overlap(self.from_time, self.to_time, conflict.from_time, conflict.to_time):
+                frappe.throw(
+                    _("Venue {0} is already booked for {1} from {2} to {3} on {4}.").format(
+                        self.venue, conflict.course, conflict.from_time, conflict.to_time, self.schedule_date
+                    ),
+                    title=_("Venue Conflict"),
+                )
+
     def times_overlap(self, start1, end1, start2, end2):
         """Check if two time ranges overlap"""
         return to_timedelta(start1) < to_timedelta(end2) and to_timedelta(end1) > to_timedelta(start2)
@@ -139,11 +170,6 @@ class TimeTable(Document):
         if exists:
             return
 
-        # Fetch Room from Venue Booking if venue is selected
-        room_name = None
-        if self.venue:
-            room_name = frappe.db.get_value("Venue Booking", self.venue, "room")
-
         based_on = self.based_on or "Time Table"
 
         doc = frappe.get_doc({
@@ -155,7 +181,6 @@ class TimeTable(Document):
             "course_offering": self.course_offering,
             "course": self.course,
             "instructor": self.instructor,
-            "room": room_name,
             "session_date": self.schedule_date,
             "session_start_time": self.from_time,
             "session_end_time": self.to_time,
@@ -208,11 +233,6 @@ class TimeTable(Document):
             )
             return
 
-        # Fetch Room from Venue Booking if venue is selected
-        room_name = None
-        if self.venue:
-            room_name = frappe.db.get_value("Venue Booking", self.venue, "room")
-
         # Calculate duration in hours
         duration_hours = 0
         if self.from_time and self.to_time:
@@ -231,7 +251,6 @@ class TimeTable(Document):
         session.session_end_time = self.to_time
         session.duration_hours = round(duration_hours, 2)
         session.instructor = self.instructor
-        session.room = room_name
         session.course = self.course
         session.course_offering = self.course_offering
         session.based_on = based_on
@@ -305,6 +324,25 @@ class TimeTable(Document):
                 for row in existing:
                     existing_by_date.setdefault(getdate(row.schedule_date), []).append(row)
 
+            # Same batch pre-check for venue double-booking as above for the
+            # instructor, so a venue clash on one date in the range is skipped
+            # up front instead of blowing up mid-loop via check_venue_conflict()
+            # inside new_schedule.insert() below.
+            venue_conflicts_by_date = {}
+            if self.venue:
+                venue_existing = frappe.get_all(
+                    "Time Table",
+                    filters={
+                        "name": ["!=", self.name],
+                        "venue": self.venue,
+                        "schedule_date": ["between", [current_date.date(), end_date.date()]],
+                        "docstatus": ["<", 2],
+                    },
+                    fields=["name", "schedule_date", "from_time", "to_time", "course"],
+                )
+                for row in venue_existing:
+                    venue_conflicts_by_date.setdefault(getdate(row.schedule_date), []).append(row)
+
             # First, collect all schedules to create and check for conflicts
             while current_date <= end_date:
                 date_only = current_date.date()
@@ -327,6 +365,18 @@ class TimeTable(Document):
                             f"Skipping schedule on {date_only} due to conflict with {conflict.name}"
                         )
                         break
+
+                if not has_conflict:
+                    for conflict in venue_conflicts_by_date.get(date_only, []):
+                        if self.times_overlap(
+                            self.from_time, self.to_time, conflict.from_time, conflict.to_time
+                        ):
+                            has_conflict = True
+                            conflict_count += 1
+                            frappe.logger().warning(
+                                f"Skipping schedule on {date_only} due to venue conflict with {conflict.name}"
+                            )
+                            break
 
                 if not has_conflict:
                     schedules_to_create.append(current_date.strftime("%Y-%m-%d"))
@@ -401,18 +451,6 @@ def get_timetable_data(term=None, course=None, start_date=None, end_date=None):
         order_by="schedule_date, from_time",
     )
 
-    # Time Table has no "room" field of its own - room lives on the
-    # linked Venue Booking, so resolve it in one bulk lookup.
-    venue_names = {s.venue for s in schedules if s.venue}
-    room_by_venue = {}
-    if venue_names:
-        room_by_venue = {
-            v.name: v.room
-            for v in frappe.get_all(
-                "Venue Booking", filters={"name": ["in", list(venue_names)]}, fields=["name", "room"]
-            )
-        }
-
     # Format for calendar
     events = []
     for schedule in schedules:
@@ -425,7 +463,6 @@ def get_timetable_data(term=None, course=None, start_date=None, end_date=None):
             "extendedProps": {
                 "course": schedule.course,
                 "instructor": schedule.instructor,
-                "room": room_by_venue.get(schedule.venue),
                 "venue": schedule.venue,
                 "class_configuration": schedule.class_configuration,
             }
@@ -513,18 +550,8 @@ def get_events(start, end, filters=None):
     # Execute
     data = frappe.db.sql(query, condition_values, as_dict=True)
 
-    # Bulk-resolve display-friendly names for venue and instructor so the
-    # click popover doesn't show raw IDs.
-    venue_names = {d.venue for d in data if d.venue}
-    room_by_venue = {}
-    if venue_names:
-        room_by_venue = {
-            v.name: v.room
-            for v in frappe.get_all(
-                "Venue Booking", filters={"name": ["in", list(venue_names)]}, fields=["name", "room"]
-            )
-        }
-
+    # Bulk-resolve display-friendly names for instructor so the click
+    # popover doesn't show raw IDs.
     instructor_names = {d.instructor for d in data if d.instructor}
     faculty_name_by_id = {}
     if instructor_names:
@@ -546,7 +573,6 @@ def get_events(start, end, filters=None):
         end_dt = f"{d.schedule_date} {d.to_time}"
 
         instructor_label = faculty_name_by_id.get(d.instructor) or d.instructor
-        room_label = room_by_venue.get(d.venue)
 
         title = d.title
         if not title:
@@ -571,7 +597,6 @@ def get_events(start, end, filters=None):
                 "office_hours_group": d.office_hours_group,
                 "instructor": instructor_label,
                 "venue": d.venue,
-                "room": room_label,
                 "from_time": str(d.from_time) if d.from_time else None,
                 "to_time": str(d.to_time) if d.to_time else None,
                 "duration_hours": d.duration_hours,
@@ -629,6 +654,179 @@ def get_institutional_calendar_events(start, end):
             },
         })
     return events
+
+
+@frappe.whitelist()
+def get_future_occurrences(time_table_name):
+    """Return this schedule and its sibling occurrences (same recurring series)
+    dated today or later, for the 'apply to future occurrences' confirmation."""
+    from frappe.utils import getdate, nowdate
+
+    doc = frappe.get_doc("Time Table", time_table_name)
+    series_root = doc.parent_schedule or doc.name
+
+    # Series = the root itself plus every child pointing at it.
+    series_names = [series_root] + [
+        d.name
+        for d in frappe.get_all("Time Table", filters={"parent_schedule": series_root}, fields=["name"])
+    ]
+
+    future = frappe.get_all(
+        "Time Table",
+        filters={
+            "name": ["in", series_names],
+            "schedule_date": [">=", nowdate()],
+            "docstatus": ["<", 2],
+        },
+        fields=["name", "schedule_date", "venue", "from_time", "to_time"],
+        order_by="schedule_date",
+    )
+
+    return {
+        "count": len(future),
+        "occurrences": future,
+    }
+
+
+def _parse_updates(updates):
+    import json
+
+    if isinstance(updates, str):
+        updates = json.loads(updates)
+
+    allowed_fields = {"venue", "from_time", "to_time", "instructor", "color"}
+    updates = {k: v for k, v in updates.items() if k in allowed_fields}
+    if not updates:
+        frappe.throw(_("No updatable fields were provided."))
+    return updates
+
+
+def _apply_updates_to_rows(names, updates):
+    """Validate `updates` against every named Time Table row (without saving),
+    then persist only if every row passed. Time Table.validate() already runs
+    check_conflicts(), check_holiday_conflict() and validate_time() - reuse it
+    instead of duplicating that logic here. Returns the saved docs.
+
+    Raises (via frappe.throw) with the full list of conflicts if any row fails
+    validation, so the caller sees every problem at once instead of one at a
+    time, and nothing is written to the database in that case.
+    """
+    if not names:
+        frappe.throw(_("No occurrences were found to update."))
+
+    errors = []
+    docs_to_save = []
+    for name in names:
+        row_doc = frappe.get_doc("Time Table", name)
+        for field, value in updates.items():
+            row_doc.set(field, value)
+        try:
+            row_doc.run_method("validate")
+        except Exception as e:
+            errors.append(f"{row_doc.schedule_date} ({row_doc.name}): {e}")
+            continue
+        docs_to_save.append(row_doc)
+
+    if errors:
+        frappe.throw(
+            _("Could not apply the change to all occurrences due to conflicts:<br>{0}").format(
+                "<br>".join(frappe.utils.escape_html(e) for e in errors)
+            ),
+            title=_("Update Blocked"),
+        )
+
+    # All-or-nothing: if a save unexpectedly fails here (e.g. another user
+    # booked the venue in the gap between validation and here), roll back
+    # whatever this loop already wrote instead of leaving a half-updated set.
+    try:
+        for row_doc in docs_to_save:
+            row_doc.save(ignore_permissions=True)
+    except Exception:
+        frappe.db.rollback()
+        raise
+
+    frappe.db.commit()
+    return docs_to_save
+
+
+@frappe.whitelist()
+def bulk_update_future_occurrences(time_table_name, updates):
+    """Apply a set of field changes (e.g. venue, from_time, to_time) to this
+    Time Table occurrence and every future occurrence in the same recurring
+    series (schedule_date >= today). Past occurrences are never touched, so
+    historical attendance/venue records stay accurate.
+
+    `updates` is a dict of {fieldname: value} restricted to a safe allowlist.
+    Venue changes are conflict-checked against Venue Booking availability for
+    every affected date before anything is written; if any date conflicts,
+    nothing is saved and the caller gets back the list of conflicting dates.
+    """
+    from frappe.utils import nowdate
+
+    updates = _parse_updates(updates)
+
+    doc = frappe.get_doc("Time Table", time_table_name)
+    series_root = doc.parent_schedule or doc.name
+
+    series_names = [series_root] + [
+        d.name
+        for d in frappe.get_all("Time Table", filters={"parent_schedule": series_root}, fields=["name"])
+    ]
+
+    future_rows = frappe.get_all(
+        "Time Table",
+        filters={
+            "name": ["in", series_names],
+            "schedule_date": [">=", nowdate()],
+            "docstatus": ["<", 2],
+        },
+        fields=["name"],
+        order_by="schedule_date",
+    )
+
+    if not future_rows:
+        frappe.throw(_("No current or future occurrences found to update."))
+
+    docs_to_save = _apply_updates_to_rows([r.name for r in future_rows], updates)
+
+    return {
+        "updated_count": len(docs_to_save),
+        "updated_names": [d.name for d in docs_to_save],
+    }
+
+
+@frappe.whitelist()
+def bulk_update_selected_occurrences(names, updates):
+    """List-view bulk action: apply a set of field changes (venue, time, ...)
+    to exactly the Time Table rows the user checked - no series/date inference,
+    since the checkboxes already say precisely which rows are in scope. Reuses
+    the same validate-then-save-all-or-nothing logic as the future-occurrences
+    action above.
+    """
+    import json
+
+    if isinstance(names, str):
+        names = json.loads(names)
+    names = list(dict.fromkeys(names))  # de-dupe, preserve order
+
+    updates = _parse_updates(updates)
+
+    existing = frappe.get_all(
+        "Time Table",
+        filters={"name": ["in", names], "docstatus": ["<", 2]},
+        fields=["name"],
+        order_by="schedule_date",
+    )
+    valid_names = [r.name for r in existing]
+
+    skipped = len(names) - len(valid_names)
+    docs_to_save = _apply_updates_to_rows(valid_names, updates)
+
+    return {
+        "updated_count": len(docs_to_save),
+        "updated_names": [d.name for d in docs_to_save],
+        "skipped_count": skipped,
+    }
 
 
 @frappe.whitelist()
