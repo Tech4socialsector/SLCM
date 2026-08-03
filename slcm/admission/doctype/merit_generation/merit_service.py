@@ -194,25 +194,35 @@ def _rank_applicants(applicant_rows, use_advanced_ranking=False, processing_stag
         return (score1 == score2) and (part_b1 == part_b2)
 
     # Separate rankable vs rejected candidates.
-    # Reject only if candidate did NOT appear for Part B (part_b_not_appeared=True).
-    # Candidates who appeared but scored 0 are still ranked (matched Excel behaviour).
+    # Reject candidate if candidate did NOT appear for Part B (part_b_not_appeared=True)
+    # OR scored 0 or negative marks in Part B (part_b_score <= 0).
     rankable_applicants = []
     rejected_applicants = []
 
     for row in applicant_rows:
-        # part_b_not_appeared is set during Final Allotment Ranking build phase to True
-        # when the ETSA shortlisted_status != 'Shortlisted' (i.e. candidate never took Part B)
         part_b_not_appeared = getattr(row, "part_b_not_appeared", False) or (row.get("part_b_not_appeared") if isinstance(row, dict) else False)
+        
+        pb_val = getattr(row, "interview_score", None)
+        if pb_val is None:
+            pb_val = getattr(row, "et_part_b_total_marks_scored", None)
+        if pb_val is None:
+            pb_val = getattr(row, "nlsat_part_b_score", None)
+        if pb_val is None and isinstance(row, dict):
+            pb_val = row.get("interview_score") or row.get("et_part_b_total_marks_scored") or row.get("nlsat_part_b_score")
+        part_b_score = float(pb_val or 0)
         
         status_val = getattr(row, "status", None) or getattr(row, "selection_status", None) or getattr(row, "shortlist_status", None) or ""
         
-        if processing_stage == "Final Allotment Ranking" and part_b_not_appeared:
+        if processing_stage in ["Final Allotment Ranking", "Part B Ranking"] and (part_b_not_appeared or part_b_score <= 0):
             setattr(row, "status", "Rejected")
             if hasattr(row, "shortlist_status"): setattr(row, "shortlist_status", "Rejected")
             if hasattr(row, "selection_status"): setattr(row, "selection_status", "Rejected")
             row.allocation_type = "Not Allocated"
             if hasattr(row, "remarks"):
-                row.remarks = "Rejected: did not appear for Part B"
+                if part_b_not_appeared:
+                    row.remarks = "Rejected: did not appear for Part B"
+                else:
+                    row.remarks = "Rejected: Part B marks are 0 or negative"
             rejected_applicants.append(row)
         elif status_val == "Rejected":
             rejected_applicants.append(row)
@@ -480,8 +490,8 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
             status = "Selected"
         else:
             total_score = part_a + part_b
-            # Reject only if candidate never appeared for Part B; score of 0 is valid
-            status = "Rejected" if app.get("part_b_not_appeared") else "Selected"
+            # Reject if candidate did not appear for Part B OR scored 0 or negative marks in Part B
+            status = "Rejected" if (app.get("part_b_not_appeared") or part_b <= 0) else "Selected"
 
         verticals, horizontals, compartmental = _get_categorized_traits(app.applicant_id)
         primary_cat = verticals[0] if verticals else "General"
@@ -956,16 +966,27 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                 "priority": h.priority or 99
             }
 
-        # 2. Filter by Part B appearance & Percentile Eligibility.
-        # Reject only candidates who did NOT appear for Part B (part_b_not_appeared=True).
-        # Candidates who appeared but scored 0 are still eligible for allocation.
+        # 2. Filter by Part B appearance & score (0 or minus marks are rejected in final allocation).
         eligible_applicants = []
         for app in applicants:
             part_b_not_appeared = getattr(app, "part_b_not_appeared", False) or (app.get("part_b_not_appeared") if isinstance(app, dict) else False)
-            if not is_shortlist_phase and part_b_not_appeared:
+            
+            pb_val = getattr(app, "interview_score", None)
+            if pb_val is None:
+                pb_val = getattr(app, "et_part_b_total_marks_scored", None)
+            if pb_val is None:
+                pb_val = getattr(app, "nlsat_part_b_score", None)
+            if pb_val is None and isinstance(app, dict):
+                pb_val = app.get("interview_score") or app.get("et_part_b_total_marks_scored") or app.get("nlsat_part_b_score")
+            part_b_score = float(pb_val or 0)
+
+            if not is_shortlist_phase and (part_b_not_appeared or part_b_score <= 0):
                 setattr(app, status_field, "Rejected")
                 app.allocation_type = "Not Allocated"
-                app.remarks = "Rejected: did not appear for Part B"
+                if part_b_not_appeared:
+                    app.remarks = "Rejected: did not appear for Part B"
+                else:
+                    app.remarks = "Rejected: Part B marks are 0 or negative"
             elif _check_percentile_eligibility(app, vertical_targets, horizontal_targets):
                 eligible_applicants.append(app)
             else:
@@ -1040,7 +1061,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                             out_cand = eligible_out[0]
                             comp_candidates = [a for a in unallocated if _has_trait(a.applicant_id, comp_cat) and _check_percentile_eligibility(a, vertical_targets, horizontal_targets)]
                             # Recursive Displacement: Save out_cand in their reserved category if possible
-                            _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies)
+                            disp_reason = f"Displaced from {v_cat} category to accommodate {comp_cat} sub-quota candidate ({in_cand.candidate_name or in_cand.applicant_id})"
+                            _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies, reason=disp_reason)
                             _assign_seat_to_applicant(in_cand, v_cat, "Open" if v_cat == "General" else "Reserved", allocated_list, unallocated, v_info, status_field)
                             deficit -= 1
 
@@ -1058,15 +1080,14 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                             # We need to displace excess_ai of them so these seats remain vacant
                             to_displace = eligible_out[:excess_ai]
                             for out_cand in to_displace:
-                                _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies)
+                                disp_reason = f"Displaced from {v_cat} category as All-India quota limit was reached for unfilled {comp_cat} seats"
+                                _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies, reason=disp_reason)
                         
                         # Store the vacancy count
                         karnataka_vacancies[v_cat] = remaining_deficit
 
         # --- PHASE 3: HORIZONTAL RESERVATION (e.g., PWD & Women) ---
         _publish_allocation_progress(doc, 93, "Applying horizontal reservations (Women & PWD quotas)...")
-
-
 
         ordered_h_cats = sorted(horizontal_targets.values(), key=lambda x: x["priority"])
         for h_info in ordered_h_cats:
@@ -1078,6 +1099,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
             
             if deficit > 0:
                 potential = [u for u in unallocated if _has_trait(u.applicant_id, h_cat)]
+                potential.sort(key=lambda x: (x.overall_rank or 999999))
                 for in_cand in potential:
                     if deficit <= 0: break
                     
@@ -1094,7 +1116,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                         eligible_out.sort(key=lambda x: -(x.overall_rank or 999999))
                         out_cand = eligible_out[0]
                         
-                        _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies)
+                        disp_reason = f"Displaced from {v_belong} category to accommodate {h_cat} horizontal reservation candidate ({in_cand.candidate_name or in_cand.applicant_id})"
+                        _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies, reason=disp_reason)
                         _assign_seat_to_applicant(in_cand, v_belong, "Open" if v_belong == "General" else "Reserved", allocated_list, unallocated, vertical_targets[v_belong], status_field)
                         deficit -= 1
 
@@ -1325,15 +1348,27 @@ def _check_percentile_eligibility(app, vertical_targets, horizontal_targets=None
     
     # 1. Base Vertical Threshold
     if primary_cat in vertical_targets:
-        thresholds.append(float(vertical_targets[primary_cat].get("min_percentile") or 0))
+        v_min = vertical_targets[primary_cat].get("min_percentile")
+        if v_min is not None and v_min != "":
+            val = float(v_min)
+            if val > 0:
+                thresholds.append(val)
     
     # 2. Horizontal Overrides (e.g., PWD)
+    # Only consider horizontal cutoff if min_percentile is explicitly configured AND > 0
+    # (or if h_cat is PWD, apply PWD cutoff if non-zero)
     if horizontal_targets:
         for h_cat, h_info in horizontal_targets.items():
             if _has_trait(app.applicant_id, h_cat):
-                thresholds.append(float(h_info.get("min_percentile") or 0))
+                h_min = h_info.get("min_percentile")
+                if h_min is not None and h_min != "":
+                    val = float(h_min)
+                    if val > 0:
+                        thresholds.append(val)
+                elif h_cat == "PWD":
+                    thresholds.append(40.0)
     
-    # Rule: If multiple thresholds apply (e.g. SC + PWD), the most lenient (minimum) applies
+    # Rule: If multiple thresholds apply (e.g. General 75% + PWD 40%), the most lenient (minimum) applies
     threshold = min(thresholds) if thresholds else 0
         
     percentile = float(getattr(app, "percentile_score", 0) or 0)
@@ -1344,7 +1379,7 @@ def _check_percentile_eligibility(app, vertical_targets, horizontal_targets=None
             
     return percentile >= threshold
 
-def _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies=None):
+def _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies=None, reason=None):
     """
     Displaces a candidate from their current seat.
     If they belong to a reserved category, attempts to re-allocate them to that category pool.
@@ -1364,6 +1399,11 @@ def _execute_recursive_displacement(out_cand, allocated_list, unallocated, verti
     out_cand.allocation_type = "Not Allocated"
     out_cand.vertical_category = ""
     
+    if reason:
+        out_cand.remarks = reason
+    elif not getattr(out_cand, "remarks", None):
+        out_cand.remarks = f"Displaced from {prev_v or 'allocated seat'} due to quota adjustment"
+
     # 2. Fall-back to Reserved Category if they were in General
     # Only fall back if they were displaced from a DIFFERENT category (e.g., General -> SC).
     if actual_v_cat != "General" and actual_v_cat != prev_v:
@@ -1372,6 +1412,7 @@ def _execute_recursive_displacement(out_cand, allocated_list, unallocated, verti
             kv_count = (karnataka_vacancies or {}).get(actual_v_cat, 0)
             if v_info["filled"] < (v_info["seats"] - kv_count):
                 _assign_seat_to_applicant(out_cand, actual_v_cat, "Reserved", allocated_list, unallocated, v_info, status_field)
+                out_cand.remarks = f"Re-allocated to {actual_v_cat} reserved seat after displacement from General category"
             else:
                 # Pool full, try to displace lowest in THEIR category
                 candidates_in_v = [a for a in allocated_list if a.vertical_category == actual_v_cat]
@@ -1389,9 +1430,9 @@ def _execute_recursive_displacement(out_cand, allocated_list, unallocated, verti
                     
                     if (out_cand.overall_rank or 999999) < (lowest_cand.overall_rank or 999999):
                         _execute_candidate_displacement(out_cand, lowest_cand, allocated_list, unallocated, status_field)
-                        # Attempt to recursively displace the candidate we just pushed out, 
-                        # in case they have somewhere else to go (though usually they don't if they were in their own category)
-                        _execute_recursive_displacement(lowest_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies)
+                        out_cand.remarks = f"Re-allocated to {actual_v_cat} reserved seat after displacement from General category"
+                        disp_reason = f"Displaced from {actual_v_cat} reserved category by higher merit candidate ({out_cand.candidate_name or out_cand.applicant_id}) returning from General list"
+                        _execute_recursive_displacement(lowest_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies, reason=disp_reason)
 
 def _assign_seat_to_applicant(app, vertical_cat, alloc_type, allocated_list, unallocated, v_info, status_field):
     status_value = "Selected"
@@ -1723,7 +1764,8 @@ def execute_part_a_shortlisting(doc):
             # Find and displace the lowest ranked non-Karnataka candidate in general_shortlist
             for idx in range(len(general_shortlist) - 1, -1, -1):
                 if not general_shortlist[idx].is_karnataka:
-                    general_shortlist.pop(idx)
+                    displaced_cand = general_shortlist.pop(idx)
+                    displaced_cand.remarks = f"Displaced from General shortlist to accommodate Karnataka sub-quota candidate ({kar_cand.candidate_name or kar_cand.applicant_id})"
                     general_shortlist.append(kar_cand)
                     break
 
@@ -1736,14 +1778,14 @@ def execute_part_a_shortlisting(doc):
             removed_count = 0
             for idx in range(len(general_shortlist) - 1, -1, -1):
                 if not general_shortlist[idx].is_karnataka:
-                    general_shortlist.pop(idx)
+                    displaced_cand = general_shortlist.pop(idx)
+                    displaced_cand.remarks = "Displaced from General shortlist as All-India quota limit was reached for unfilled Karnataka seats"
                     removed_count += 1
                     if removed_count == excess_ai:
                         break
 
     targets["General"]["total"] = len(general_shortlist)
 
-    # 7. Reserved category shortlisting
     # 7. Reserved category shortlisting
     reserved_rules = []
     for v_cat_name in vertical_cats:
@@ -1782,7 +1824,8 @@ def execute_part_a_shortlisting(doc):
                 # Find and displace the lowest ranked non-Karnataka candidate in cat_shortlist
                 for idx in range(len(cat_shortlist) - 1, -1, -1):
                     if not cat_shortlist[idx].is_karnataka:
-                        cat_shortlist.pop(idx)
+                        displaced_cand = cat_shortlist.pop(idx)
+                        displaced_cand.remarks = f"Displaced from {cat} shortlist to accommodate Karnataka sub-quota candidate ({kar_cand.candidate_name or kar_cand.applicant_id})"
                         cat_shortlist.append(kar_cand)
                         break
 
@@ -1794,7 +1837,8 @@ def execute_part_a_shortlisting(doc):
             removed_count = 0
             for idx in range(len(cat_shortlist) - 1, -1, -1):
                 if not cat_shortlist[idx].is_karnataka:
-                    cat_shortlist.pop(idx)
+                    displaced_cand = cat_shortlist.pop(idx)
+                    displaced_cand.remarks = f"Displaced from {cat} shortlist as All-India quota limit was reached for unfilled Karnataka seats"
                     removed_count += 1
                     if removed_count == excess_ai:
                         break
@@ -1827,6 +1871,7 @@ def execute_part_a_shortlisting(doc):
                 
                 if len(target_list) < target_total:
                     target_list.append(displaced_cand)
+                    displaced_cand.remarks = f"Shortlisted in {v_cat} reserved pool after displacement from General shortlist"
                     selected_set.add(displaced_cand.applicant_id)
                 else:
                     displaceable = [
@@ -1842,7 +1887,9 @@ def execute_part_a_shortlisting(doc):
                         lowest_idx, lowest_in_r = max(displaceable, key=lambda pair: (pair[1].shortlist_rank or 999999))
                         if (displaced_cand.shortlist_rank or 0) < (lowest_in_r.shortlist_rank or 999999):
                             target_list.pop(lowest_idx)
+                            lowest_in_r.remarks = f"Displaced from {v_cat} shortlist by higher merit candidate ({displaced_cand.candidate_name or displaced_cand.applicant_id}) returning from General list"
                             target_list.append(displaced_cand)
+                            displaced_cand.remarks = f"Shortlisted in {v_cat} reserved pool after displacement from General shortlist"
                             selected_set.remove(lowest_in_r.applicant_id)
                             selected_set.add(displaced_cand.applicant_id)
     
@@ -1863,6 +1910,7 @@ def execute_part_a_shortlisting(doc):
             if same_compartment:
                 lowest_idx, lowest_cand = max(same_compartment, key=lambda pair: (pair[1].shortlist_rank or 999999))
                 shortlist.pop(lowest_idx)
+                lowest_cand.remarks = f"Displaced from {cat} shortlist to accommodate PWD horizontal reservation candidate ({pwd_cand.candidate_name or pwd_cand.applicant_id})"
                 shortlist.append(pwd_cand)
                 accommodate_displaced_candidate(lowest_cand, cat)
                 selected_set.add(pwd_cand.applicant_id)
@@ -1877,6 +1925,7 @@ def execute_part_a_shortlisting(doc):
                 if same_cat:
                     lowest_idx, lowest_cand = max(same_cat, key=lambda pair: (pair[1].shortlist_rank or 999999))
                     shortlist.pop(lowest_idx)
+                    lowest_cand.remarks = f"Displaced from {cat} shortlist to accommodate PWD horizontal reservation candidate ({pwd_cand.candidate_name or pwd_cand.applicant_id})"
                     shortlist.append(pwd_cand)
                     accommodate_displaced_candidate(lowest_cand, cat)
                     selected_set.add(pwd_cand.applicant_id)
@@ -2036,6 +2085,8 @@ def execute_part_a_shortlisting(doc):
             row.vertical_category = ""
             row.allocation_type = "Not Allocated"
             setattr(row, status_field, "Rejected")
+            if hasattr(row, "remarks") and not row.remarks:
+                row.remarks = "Not shortlisted: Exceeded category quota limit / cutoff rank"
             row.compartmentalized_category = ""
             row.horizontal_categories = ""
             display_field = "allocated_category" if hasattr(row, "allocated_category") else "shortlist_category"
