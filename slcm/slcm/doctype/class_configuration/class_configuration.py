@@ -103,6 +103,7 @@ def bulk_add_students_from_file(file_url):
     result = {"success": False, "matched": [], "unmatched_rows": [], "error": None}
     try:
         file_doc = frappe.get_doc("File", {"file_url": file_url})
+        file_doc.check_permission("read")
         file_path = file_doc.get_full_path()
 
         with open(file_path, "r", encoding="utf-8-sig") as f:

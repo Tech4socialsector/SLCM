@@ -11,6 +11,7 @@ import io
 @frappe.whitelist()
 def get_rfid_summary():
     """Full page load — stats + unlinked cards + linked cards + live feed."""
+    frappe.only_for("System Manager")
 
     stats = frappe.db.sql("""
         SELECT
@@ -93,6 +94,7 @@ def get_rfid_summary():
 @frappe.whitelist()
 def get_live_feed(since_swipe_time=None):
     """Incremental refresh every 30 s — only new logs + updated stats."""
+    frappe.only_for("System Manager")
 
     stats = frappe.db.sql("""
         SELECT

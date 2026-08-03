@@ -46,6 +46,10 @@ def get_office_hours_for_course(course_offering, faculty=None):
 	return frappe.get_all(
 		"Office Hours Session",
 		filters=filters,
-		fields=["*"],
+		fields=[
+			"name", "course_offering", "course", "course_type", "faculty",
+			"session_date", "start_time", "end_time", "duration_hours",
+			"location", "session_status", "total_students_attended",
+		],
 		order_by="session_date desc"
 	)

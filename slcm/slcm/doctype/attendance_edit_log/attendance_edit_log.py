@@ -53,7 +53,10 @@ def get_attendance_edit_history(attendance_record):
 	entries = frappe.get_all(
 		"Attendance Edit Entry",
 		filters={"parent": log_name, "parenttype": "Attendance Edit Log"},
-		fields=["*"],
+		fields=[
+			"field_changed", "old_value", "new_value",
+			"edit_reason", "edited_by", "edit_timestamp",
+		],
 		order_by="edit_timestamp desc"
 	)
 	return entries

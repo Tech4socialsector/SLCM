@@ -1636,12 +1636,17 @@ def upload_student_ids_bulk(file_url):
     each matched Student Master row. Matches on the hidden Row Key column
     (column A, the Student Master document name) so edits to the other
     display columns don't break matching."""
+    user_roles = frappe.get_roles()
+    if "System Manager" not in user_roles and frappe.session.user != "Administrator":
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
+
     try:
         import openpyxl
     except ImportError:
         frappe.throw(_("openpyxl is not installed. Run: bench pip install openpyxl"))
 
     file_doc = frappe.get_doc("File", {"file_url": file_url})
+    file_doc.check_permission("read")
     wb = openpyxl.load_workbook(file_doc.get_full_path(), data_only=True)
     ws = wb.active
 
@@ -1785,12 +1790,17 @@ def upload_sections_bulk(file_url):
     so every row's outcome is visible, including validation errors, with no
     row failing silently.
     """
+    user_roles = frappe.get_roles()
+    if "System Manager" not in user_roles and frappe.session.user != "Administrator":
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
+
     try:
         import openpyxl
     except ImportError:
         frappe.throw(_("openpyxl is not installed. Run: bench pip install openpyxl"))
 
     file_doc = frappe.get_doc("File", {"file_url": file_url})
+    file_doc.check_permission("read")
     wb = openpyxl.load_workbook(file_doc.get_full_path(), data_only=True)
     ws = wb.active
 
