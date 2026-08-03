@@ -31,6 +31,7 @@ class FeeNotification(Document):
 	@frappe.whitelist()
 	def publish(self):
 		"""Publish the notification — makes it ready for demand generation."""
+		self.check_permission("write")
 		if self.status == "Published":
 			frappe.throw(_("This Fee Notification is already published."))
 
@@ -49,6 +50,7 @@ class FeeNotification(Document):
 	@frappe.whitelist()
 	def generate_demands(self):
 		"""Enqueue the annual demand generation as a background job."""
+		self.check_permission("write")
 		if self.status != "Published":
 			frappe.throw(_("Please publish this Fee Notification before generating demands."))
 

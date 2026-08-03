@@ -26,26 +26,33 @@ def handle_razorpay_webhook():
 	# Read raw body ONCE — frappe.request.get_data() returns empty bytes on second call
 	raw_data = frappe.request.get_data()
 
-	# 1. Verify webhook signature
+	# 1. Verify webhook signature — fail closed: a webhook that isn't
+	#    configured with a secret must be rejected, never trusted.
 	settings = frappe.get_single("Razorpay Settings")
 	webhook_secret = settings.get_password("webhook_secret")
 
-	if webhook_secret:
-		razorpay_signature = frappe.get_request_header("X-Razorpay-Signature")
+	if not webhook_secret:
+		frappe.log_error(
+			title="Razorpay Webhook: secret not configured",
+			message="Rejected an incoming webhook because Razorpay Settings.webhook_secret is not set."
+		)
+		frappe.throw(_("Webhook is not configured"), frappe.PermissionError)
 
-		if not razorpay_signature:
-			frappe.throw(_("Missing Razorpay Signature Header"), frappe.PermissionError)
+	razorpay_signature = frappe.get_request_header("X-Razorpay-Signature")
 
-		secret_bytes = webhook_secret.encode("utf-8") if isinstance(webhook_secret, str) else webhook_secret
+	if not razorpay_signature:
+		frappe.throw(_("Missing Razorpay Signature Header"), frappe.PermissionError)
 
-		expected_signature = hmac.new(
-			secret_bytes,
-			raw_data,
-			hashlib.sha256
-		).hexdigest()
+	secret_bytes = webhook_secret.encode("utf-8") if isinstance(webhook_secret, str) else webhook_secret
 
-		if not hmac.compare_digest(razorpay_signature, expected_signature):
-			frappe.throw(_("Invalid Webhook Signature"), frappe.PermissionError)
+	expected_signature = hmac.new(
+		secret_bytes,
+		raw_data,
+		hashlib.sha256
+	).hexdigest()
+
+	if not hmac.compare_digest(razorpay_signature, expected_signature):
+		frappe.throw(_("Invalid Webhook Signature"), frappe.PermissionError)
 
 	# 2. Parse JSON
 	try:

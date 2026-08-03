@@ -31,6 +31,7 @@ import json as _json
 
 @frappe.whitelist()
 def get_filter_options(filter_name, txt=""):
+    frappe.only_for("System Manager")
     txt = (txt or "").strip().lower()
 
     if filter_name == "academic_year":

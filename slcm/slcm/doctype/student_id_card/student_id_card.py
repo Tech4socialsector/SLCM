@@ -258,7 +258,7 @@ class StudentIDCard(Document):
 		fname = f"{self.name}-QR.png"
 		buffer = io.BytesIO()
 		img.save(buffer, format="PNG")
-		saved_file = save_file(fname, buffer.getvalue(), self.doctype, self.name, is_private=0)
+		saved_file = save_file(fname, buffer.getvalue(), self.doctype, self.name, is_private=1)
 		self.qr_code_image = saved_file.file_url
 
 	def generate_qr_code_string(self):
@@ -626,7 +626,7 @@ class StudentIDCard(Document):
 			with open(output_path, "rb") as f:
 				img_content = f.read()
 
-			saved_file = save_file(output_filename, img_content, self.doctype, self.name, is_private=0)
+			saved_file = save_file(output_filename, img_content, self.doctype, self.name, is_private=1)
 			self.db_set(fieldname, saved_file.file_url)
 
 		except Exception as e:
@@ -711,7 +711,7 @@ class StudentIDCard(Document):
 			with open(output_path, "rb") as f:
 				img_content = f.read()
 
-			saved_file = save_file(output_filename, img_content, self.doctype, self.name, is_private=0)
+			saved_file = save_file(output_filename, img_content, self.doctype, self.name, is_private=1)
 			self.db_set(fieldname, saved_file.file_url)
 
 		except Exception as e:
@@ -840,7 +840,7 @@ class StudentIDCard(Document):
 	def save_image(self, image, filename, fieldname):
 		img_io = io.BytesIO()
 		image.save(img_io, format="PNG", dpi=(300, 300))
-		saved_file = save_file(filename, img_io.getvalue(), self.doctype, self.name, is_private=0)
+		saved_file = save_file(filename, img_io.getvalue(), self.doctype, self.name, is_private=1)
 		self.db_set(fieldname, saved_file.file_url)
 
 
