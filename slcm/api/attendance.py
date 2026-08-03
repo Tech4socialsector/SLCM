@@ -6,11 +6,15 @@ from slcm.slcm.doctype.attendance_log.process_attendance_logs import get_student
 # test the git ruleset
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def create_attendance_log():
 	"""
 	Secure API to receive RFID attendance data and store it in Attendance Log
-	Authentication: API Key (Device-based)
+	Authentication: devices must authenticate as the User linked to their
+	RFID Device record (standard Frappe API key/secret token auth) — see
+	`api_user` on the RFID Device doctype. Unregistered/inactive/mismatched
+	devices are rejected outright; only unrecognised RFID *cards* swiped by
+	an authenticated device are still logged (for reconciliation).
 	REAL-TIME PROCESSING: Attendance is created immediately after log creation
 	"""
 
@@ -22,7 +26,7 @@ def create_attendance_log():
 	# --------------------------------------------------
 	# 2. Validate required fields
 	# --------------------------------------------------
-	required_fields = ["rfid_uid"]
+	required_fields = ["rfid_uid", "device_id"]
 	for field in required_fields:
 		if not data.get(field):
 			frappe.throw(
@@ -35,6 +39,35 @@ def create_attendance_log():
 	swipe_time = data.get("swipe_time") or now_datetime()
 	source = data.get("source") or "RFID"
 	location = data.get("location")
+
+	# --------------------------------------------------
+	# 0. Device authentication — reject unregistered, inactive, or
+	#    mismatched devices before touching any data.
+	# --------------------------------------------------
+	device = frappe.db.get_value(
+		"RFID Device",
+		device_id,
+		["name", "is_active", "location", "api_user"],
+		as_dict=True
+	)
+
+	if not device or not device.get("is_active"):
+		frappe.log_error(
+			title=f"Unauthorized Device: {device_id}",
+			message=f"Device {device_id} attempted to submit attendance but is not registered or is inactive."
+		)
+		frappe.throw(_("Device is not registered or is inactive"), frappe.PermissionError)
+
+	if device.get("api_user") and frappe.session.user != device.get("api_user"):
+		frappe.log_error(
+			title=f"Device/API user mismatch: {device_id}",
+			message=f"Device {device_id} is linked to {device.get('api_user')} but request authenticated as {frappe.session.user}."
+		)
+		frappe.throw(_("Device is not authorized to submit attendance"), frappe.PermissionError)
+
+	frappe.db.set_value("RFID Device", device_id, "last_seen", now_datetime())
+	if not location and device.get("location"):
+		location = device.get("location")
 
 	# --------------------------------------------------
 	# 3. Duplicate protection (Anti-Flood)
@@ -77,37 +110,8 @@ def create_attendance_log():
 		)
 
 	# --------------------------------------------------
-	# 5. Device Validation (if device_id provided)
-	# --------------------------------------------------
-	if device_id:
-		device = frappe.db.get_value(
-			"RFID Device",
-			device_id,
-			["name", "is_active", "location"],
-			as_dict=True
-		)
-
-		if not device or not device.get("is_active"):
-			if match_status == "Pending":
-				match_status = "Unmatched - No Device Mapping"
-			if not device:
-				frappe.log_error(
-					title=f"Unauthorized Device: {device_id}",
-					message=f"Device {device_id} attempted to submit attendance but is not registered."
-				)
-			else:
-				frappe.log_error(
-					title=f"Inactive Device: {device_id}",
-					message=f"Device {device_id} attempted to submit attendance while inactive."
-				)
-		else:
-			# Update last_seen timestamp for the device
-			frappe.db.set_value("RFID Device", device_id, "last_seen", now_datetime())
-			if not location and device.get("location"):
-				location = device.get("location")
-
-	# --------------------------------------------------
-	# 6. Create Attendance Log — always, regardless of match outcome
+	# 6. Create Attendance Log — always, regardless of card-match outcome
+	#    (device identity was already authenticated above)
 	# --------------------------------------------------
 	enrollment_context = get_student_enrollment_context(student.get("name"))
 

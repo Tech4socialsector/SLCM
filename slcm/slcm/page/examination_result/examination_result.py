@@ -2,6 +2,17 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
+
+EXAMINATION_RESULT_ROLES = {"System Manager", "Academics User"}
+
+
+def _check_access():
+	"""The desk Page is restricted to System Manager/Academics User, but that
+	only gates the UI — every whitelisted RPC method underneath must enforce
+	the same role itself, since it's directly callable via /api/method/."""
+	if not EXAMINATION_RESULT_ROLES & set(frappe.get_roles()):
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -119,6 +130,7 @@ def _visibility_map(exam_plan):
 @frappe.whitelist()
 def get_exam_plans(search=None):
 	"""Return all exam plans for the term selector."""
+	_check_access()
 	filters = {}
 	if search:
 		filters["exam_name"] = ["like", f"%{search}%"]
@@ -136,6 +148,7 @@ def get_courses_for_result(exam_plan, search=""):
 	Return all courses with their result-access settings for the given exam plan.
 	Mirrors the Access Results table in the UI.
 	"""
+	_check_access()
 	if not exam_plan:
 		frappe.throw("Exam Plan is required.")
 
@@ -214,6 +227,7 @@ def save_access_settings(exam_plan, courses, settings):
 	           relative_grading_access, mask_student_info,
 	           generate_grade_report, moderation_policy_access
 	"""
+	_check_access()
 	import json
 
 	if isinstance(courses, str):
@@ -253,6 +267,7 @@ def assign_evaluator(exam_plan, courses, evaluators):
 	             evaluator_email is auto-fetched from the Faculty record when evaluator_type
 	             is 'Custom'; pass it explicitly when available.
 	"""
+	_check_access()
 	import json
 
 	if isinstance(courses, str):
@@ -312,6 +327,7 @@ def remove_evaluator(exam_plan, course, evaluator_name):
 	For Class Faculty rows with no name, pass evaluator_name='' and
 	evaluator_type='Class Faculty' — removes the first Class Faculty row.
 	"""
+	_check_access()
 	name = frappe.db.get_value(
 		"Access Result Settings",
 		{"exam_plan": exam_plan, "course": course},
@@ -353,6 +369,7 @@ def save_exam_visibility(exam_plan, courses, exam_types):
 	exam_types – JSON list of Exam Assessment Type names (the Link field value),
 	             e.g. ["End Term Exam", "Mid-Term Exam"]
 	"""
+	_check_access()
 	import json
 
 	if isinstance(courses, str):
@@ -386,6 +403,7 @@ def get_faculty_list(search=""):
 	Return Faculty records for the Assign Evaluator custom search box.
 	evaluator_name is a Link to Faculty, so we search the Faculty doctype.
 	"""
+	_check_access()
 	filters = {}
 	if search:
 		filters["faculty_name"] = ["like", f"%{search}%"]
@@ -407,6 +425,7 @@ def get_exam_types(search=""):
 	Returns: [{ name, type_name, assessment_type }, ...]
 	         where `name` is the Link value to store in visible_exams.exam_type.
 	"""
+	_check_access()
 	filters = {"is_active": 1}
 	if search:
 		filters["type_name"] = ["like", f"%{search}%"]
@@ -426,6 +445,7 @@ def course_link_query(doctype, txt, searchfield, start, page_len, filters):
 	only courses actually offered under the selected Programme/Trimester show
 	up (Course itself no longer carries a Programme).
 	"""
+	_check_access()
 	filters = frappe.parse_json(filters) if isinstance(filters, str) else (filters or {})
 	programme = filters.get("programme")
 	trimester = filters.get("trimester")
@@ -461,6 +481,7 @@ def trimester_link_query(doctype, txt, searchfield, start, page_len, filters):
 	"""Standard Link-field query for Academic Term, scoped to terms that
 	actually have a Course Offering under the selected Programme.
 	"""
+	_check_access()
 	filters = frappe.parse_json(filters) if isinstance(filters, str) else (filters or {})
 	programme = filters.get("programme")
 	params = {"txt": f"%{txt}%", "start": int(start or 0), "page_len": int(page_len or 20)}
@@ -493,6 +514,7 @@ def trimester_link_query(doctype, txt, searchfield, start, page_len, filters):
 @frappe.whitelist()
 def get_programmes(search="", exam_plan=None):
 	"""Return programmes for the Course Results page programme filter."""
+	_check_access()
 	if exam_plan:
 		search_clause = "AND p.name LIKE %(search)s" if search else ""
 		return frappe.db.sql(
@@ -524,6 +546,7 @@ def get_programmes(search="", exam_plan=None):
 @frappe.whitelist()
 def get_courses_by_programme(programme, exam_plan=None, search=""):
 	"""Return courses in a programme, optionally filtered by exam plan."""
+	_check_access()
 	if exam_plan:
 		search_clause = "AND c.course_name LIKE %(search)s" if search else ""
 		return frappe.db.sql(
@@ -614,6 +637,7 @@ def _get_reexam_columns(evaluation_schema):
 @frappe.whitelist()
 def get_course_info(course, exam_plan=None):
 	"""Return full course info for the Course Results page."""
+	_check_access()
 	course_doc = frappe.db.get_value(
 		"Course", course,
 		["course_name", "course_code", "credit_value"],
@@ -725,6 +749,7 @@ def get_course_students_paged(course, exam_plan="", search="", page=1, page_leng
                                inst_batches="", inst_course_types="",
                                grade_filter="", pass_filter=""):
 	"""Return paginated students from Student Course Marks for a course."""
+	_check_access()
 	import json
 	page        = int(page)
 	page_length = int(page_length)
@@ -864,6 +889,7 @@ def get_course_students_paged(course, exam_plan="", search="", page=1, page_leng
 @frappe.whitelist()
 def get_institutional_filter_options(course):
 	"""Return distinct programme, batch_year, and course_type values for students in this course."""
+	_check_access()
 	assignment = frappe.db.sql(
 		"""
 		SELECT csa.exam_plan
@@ -907,6 +933,7 @@ def get_institutional_filter_options(course):
 def sync_students_from_enrollment(course):
 	"""Create Student Course Marks records for all students enrolled in this course via Student Enrollment."""
 	# Get the active exam plan and evaluation schema for the course
+	_check_access()
 	assignment = frappe.db.sql(
 		"""
 		SELECT csa.exam_plan, csa.evaluation_schema
@@ -981,6 +1008,7 @@ def sync_students_from_enrollment(course):
 def sync_students_from_class_config(course, class_config, course_type):
 	"""Create Student Course Marks records for all students in the given Class Configuration."""
 	# Validate the class config belongs to this course
+	_check_access()
 	cc_course, cc_course_offering = frappe.db.get_value(
 		"Class Configuration", class_config, ["course", "course_offering"]
 	)
@@ -1074,11 +1102,11 @@ def sync_students_from_class_config(course, class_config, course_type):
 @frappe.whitelist()
 def get_student_hover_info(student, course):
 	"""Return student profile + section for the hover popup."""
+	_check_access()
 	sm = frappe.db.get_value(
 		"Student Master", student,
 		["registration_id", "first_name", "last_name",
-		 "official_email_id", "email", "programme",
-		 "current_term", "intake", "programme_of_study"],
+		 "programme", "current_term", "intake", "programme_of_study"],
 		as_dict=True,
 	)
 	if not sm:
@@ -1106,7 +1134,6 @@ def get_student_hover_info(student, course):
 	return {
 		"student_name":    " ".join(filter(None, [sm.first_name, sm.last_name])),
 		"registration_id": sm.registration_id or student,
-		"email":           sm.official_email_id or sm.email or "",
 		"programme":       sm.programme_of_study or "",
 		"batch":           batch_name,
 		"current_term":    sm.current_term or "",
@@ -1118,6 +1145,7 @@ def get_student_hover_info(student, course):
 @frappe.whitelist()
 def get_marks_for_students(course, exam_plan, student_ids):
 	"""Return marks data keyed by student → {entries: {comp|atype → marks}, totals, status fields}."""
+	_check_access()
 	import json as _json
 	if isinstance(student_ids, str):
 		student_ids = _json.loads(student_ids)
@@ -1274,6 +1302,7 @@ def get_marks_for_students(course, exam_plan, student_ids):
 @frappe.whitelist()
 def save_improvement_marks(course, exam_plan, student, improvement_marks):
 	"""Save improvement marks for a student and auto-compute improvement grade."""
+	_check_access()
 	scm_name = frappe.db.get_value(
 		"Student Course Marks",
 		{"course": course, "exam_plan": exam_plan, "student": student},
@@ -1343,6 +1372,7 @@ def save_improvement_marks(course, exam_plan, student, improvement_marks):
 @frappe.whitelist()
 def get_course_overview(exam_plan, course):
 	"""Return course info panel data for the Course Results page."""
+	_check_access()
 	course_doc = frappe.db.get_value(
 		"Course",
 		course,
@@ -1402,6 +1432,7 @@ def get_course_students_with_marks(exam_plan, course, search="", page=1, page_le
 	Return paginated students enrolled in the course via Class Configuration,
 	along with placeholder marks structure per exam type.
 	"""
+	_check_access()
 	page        = int(page)
 	page_length = int(page_length)
 	offset      = (page - 1) * page_length
@@ -1476,12 +1507,13 @@ def get_course_students_with_marks(exam_plan, course, search="", page=1, page_le
 @frappe.whitelist()
 def get_student_profile(student):
 	"""Return detailed student info for hover popup on Course Results page."""
+	_check_access()
 	sm = frappe.db.get_value(
 		"Student Master",
 		student,
-		["registration_id", "first_name", "last_name", "email", "official_email_id",
-		 "programme", "batch_year", "intake", "student_status", "account_status",
-		 "phone", "programme_of_study"],
+		["registration_id", "first_name", "last_name",
+		 "programme", "batch_year", "intake", "student_status",
+		 "programme_of_study"],
 		as_dict=True,
 	)
 	if not sm:
@@ -1497,6 +1529,7 @@ def get_student_profile(student):
 @frappe.whitelist()
 def get_calc_settings(evaluation_schema):
 	"""Return calculation settings for the evaluation schema."""
+	_check_access()
 	doc = frappe.db.get_value(
 		"Evaluation Schema",
 		evaluation_schema,
@@ -1513,6 +1546,7 @@ def get_calc_settings(evaluation_schema):
 @frappe.whitelist()
 def save_calc_settings(evaluation_schema, calc_higher_revaluation, calc_higher_makeup, calc_higher_reexam):
 	"""Save calculation settings to the evaluation schema."""
+	_check_access()
 	doc = frappe.get_doc("Evaluation Schema", evaluation_schema)
 	doc.calc_higher_revaluation = int(calc_higher_revaluation)
 	doc.calc_higher_makeup      = int(calc_higher_makeup)
@@ -1525,6 +1559,7 @@ def save_calc_settings(evaluation_schema, calc_higher_revaluation, calc_higher_m
 @frappe.whitelist()
 def get_evaluation_schema_details(name):
 	"""Return full evaluation schema for the popup view."""
+	_check_access()
 	doc = frappe.get_doc("Evaluation Schema", name)
 
 	components = []
@@ -1572,6 +1607,7 @@ def get_evaluation_schema_details(name):
 @frappe.whitelist()
 def get_grading_schema_details(name):
 	"""Return full grading schema for the popup view."""
+	_check_access()
 	doc = frappe.get_doc("Grading Schema", name)
 
 	grades = []
@@ -1601,6 +1637,7 @@ def get_grading_schema_details(name):
 @frappe.whitelist()
 def get_result_summary(exam_plan):
 	"""Return high-level counts for the result settings dashboard."""
+	_check_access()
 	total      = frappe.db.count("Course", {})
 	configured = frappe.db.count("Access Result Settings", {"exam_plan": exam_plan})
 	locked     = frappe.db.count("Access Result Settings", {"exam_plan": exam_plan, "status": "LOCKED"})
@@ -1617,6 +1654,7 @@ def get_result_summary(exam_plan):
 @frappe.whitelist()
 def download_grade_sample(course, exam_plan, include_students=1):
 	"""Generate a sample Excel file for bulk grade upload."""
+	_check_access()
 	import io
 	try:
 		import openpyxl
@@ -1683,6 +1721,7 @@ def download_grade_sample(course, exam_plan, include_students=1):
 @frappe.whitelist()
 def bulk_upload_grades(course, exam_plan, file_url):
 	"""Process uploaded Excel file and update grades in Student Course Marks."""
+	_check_access()
 	import io
 	try:
 		import openpyxl
@@ -1691,6 +1730,7 @@ def bulk_upload_grades(course, exam_plan, file_url):
 
 	# Fetch the file
 	file_doc = frappe.get_doc("File", {"file_url": file_url})
+	file_doc.check_permission("read")
 	file_path = file_doc.get_full_path()
 
 	wb = openpyxl.load_workbook(file_path, data_only=True)
@@ -1798,6 +1838,7 @@ def _get_or_create_scm(course, exam_plan, student):
 @frappe.whitelist()
 def save_student_remark(course, exam_plan, student, remark):
 	"""Save a remark on a Student Course Marks record."""
+	_check_access()
 	scm_name = _get_or_create_scm(course, exam_plan, student)
 	frappe.db.set_value("Student Course Marks", scm_name, "remark", remark)
 	frappe.db.commit()
@@ -1809,6 +1850,7 @@ def save_student_remark(course, exam_plan, student, remark):
 @frappe.whitelist()
 def save_status(course, exam_plan, student, field, value):
 	"""Save/update a status field on a Student Course Marks record."""
+	_check_access()
 	VALID_FIELDS = {"enrollment_status", "attendance_status", "fairness_status", "mfa", "grade", "updated_grade"}
 	if field not in VALID_FIELDS:
 		frappe.throw(f"Invalid field: {field}")
@@ -1824,6 +1866,7 @@ def save_status(course, exam_plan, student, field, value):
 @frappe.whitelist()
 def save_marks(course, exam_plan, student, component, assessment_type, marks_field, value):
 	"""Save/update a single marks entry for a student assessment. Returns updated total and grade."""
+	_check_access()
 	VALID_FIELDS = {"marks", "revaluation_marks"}
 	if marks_field not in VALID_FIELDS:
 		frappe.throw(f"Invalid marks_field: {marks_field}")
@@ -2108,6 +2151,7 @@ def auto_generate_grades(course, exam_plan, student_ids):
 		dict mapping student_id → {total, grade, updated_final_marks, updated_grade}
 		for every student that was successfully recalculated.
 	"""
+	_check_access()
 	import json as _json
 
 	if isinstance(student_ids, str):
@@ -2149,6 +2193,7 @@ def auto_generate_grades(course, exam_plan, student_ids):
 @frappe.whitelist()
 def toggle_lock(course, exam_plan):
 	"""Toggle LOCKED / UNLOCKED status on the Access Result Settings record."""
+	_check_access()
 	doc        = _get_or_create_access(exam_plan, course)
 	new_status = "UNLOCKED" if doc.status == "LOCKED" else "LOCKED"
 	frappe.db.set_value("Access Result Settings", doc.name, "status", new_status)
@@ -2161,6 +2206,7 @@ def toggle_lock(course, exam_plan):
 @frappe.whitelist()
 def export_marks_excel(course, exam_plan):
 	"""Export component-wise marks to Excel. Returns file_url for download."""
+	_check_access()
 	import io
 	try:
 		import openpyxl
@@ -2524,6 +2570,7 @@ def export_marks_excel(course, exam_plan):
 @frappe.whitelist()
 def import_marks_excel(course, exam_plan, file_url):
 	"""Import component-wise marks from Excel. Returns {updated, errors}."""
+	_check_access()
 	import io
 	try:
 		import openpyxl
@@ -2531,6 +2578,7 @@ def import_marks_excel(course, exam_plan, file_url):
 		frappe.throw("openpyxl is required. Run: bench pip install openpyxl")
 
 	file_doc  = frappe.get_doc("File", {"file_url": file_url})
+	file_doc.check_permission("read")
 	file_path = file_doc.get_full_path()
 
 	wb = openpyxl.load_workbook(file_path, data_only=True)
@@ -2707,6 +2755,7 @@ def import_marks_excel(course, exam_plan, file_url):
 @frappe.whitelist()
 def export_reexam_template(course, exam_plan):
 	"""Generate an Excel template for re-exam marks with student details (Registration ID, Name, Email)."""
+	_check_access()
 	try:
 		import openpyxl
 		from openpyxl.styles import Font, Alignment, PatternFill
@@ -2800,6 +2849,7 @@ def export_reexam_template(course, exam_plan):
 @frappe.whitelist()
 def import_reexam_marks_excel(course, exam_plan, file_url):
 	"""Import re-exam marks from Excel. Updates the updated_final_marks field in Student Course Marks."""
+	_check_access()
 	try:
 		import openpyxl
 	except ImportError:
@@ -2963,6 +3013,7 @@ def _recalculate_grade_for_reexam(scm_name, final_marks, course, exam_plan):
 def get_course_statistics(course, exam_plan):
 	"""Return pass/fail counts, grade distribution, avg marks, and topper for a course."""
 	# Fetch ALL students (including those without marks yet) for total/graded/not_graded counts
+	_check_access()
 	rows = frappe.db.sql(
 		"""
 		SELECT scm.grade, scm.total_marks,
@@ -3039,6 +3090,7 @@ def setup_repeat_exam_marks(student, course, source_exam_plan, target_exam_plan)
 	target exam plan, copying the evaluation/grade schema from the source.
 	Used when enrolling a student for their 2nd+ arrear attempt.
 	"""
+	_check_access()
 	if not all([student, course, source_exam_plan, target_exam_plan]):
 		frappe.throw("student, course, source_exam_plan and target_exam_plan are all required.")
 
@@ -3102,6 +3154,7 @@ def get_arrear_students_for_course(exam_plan, course):
 	at least one Re Exam Registration — i.e., they already sat a re-exam but
 	still need another attempt (2nd+ arrear).
 	"""
+	_check_access()
 	if not exam_plan or not course:
 		return []
 
@@ -3160,6 +3213,7 @@ def get_arrear_students_for_course(exam_plan, course):
 @frappe.whitelist()
 def send_results_email(course, exam_plan):
 	"""Queue result emails to all students in the course/exam_plan."""
+	_check_access()
 	rows = frappe.db.sql(
 		"""
 		SELECT scm.student, scm.total_marks, scm.grade,
@@ -3218,6 +3272,7 @@ def search_students_for_add(course, exam_plan, search="", programme="", batch=""
 	"""Return students NOT yet in Student Course Marks for this course+exam_plan.
 	Used by the Add Student dialog to search from existing Student Master records.
 	"""
+	_check_access()
 	if not course or not exam_plan:
 		return []
 
@@ -3269,6 +3324,7 @@ def search_students_for_add(course, exam_plan, search="", programme="", batch=""
 @frappe.whitelist()
 def add_students_to_course(course, exam_plan, students):
 	"""Create Student Course Marks records for the given list of student names."""
+	_check_access()
 	import json as _json
 	if isinstance(students, str):
 		students = _json.loads(students)
@@ -3317,6 +3373,7 @@ def add_students_to_course(course, exam_plan, students):
 @frappe.whitelist()
 def add_students_by_registration_ids(course, exam_plan, registration_ids):
 	"""Create Student Course Marks for students looked up by registration_id (CSV upload flow)."""
+	_check_access()
 	import json as _json
 	if isinstance(registration_ids, str):
 		registration_ids = _json.loads(registration_ids)
@@ -3372,6 +3429,7 @@ def add_students_by_registration_ids(course, exam_plan, registration_ids):
 @frappe.whitelist()
 def remove_student_from_course(course, exam_plan, student):
 	"""Delete the Student Course Marks record for a manually-added student."""
+	_check_access()
 	if not course or not exam_plan or not student:
 		frappe.throw("course, exam_plan and student are required.")
 	name = frappe.db.get_value(

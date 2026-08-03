@@ -3,7 +3,18 @@
 
 import frappe
 import json
+from frappe import _
 from frappe.utils import now_datetime
+
+PUBLISH_RESULT_ROLES = {"System Manager", "Academics User"}
+
+
+def _check_access():
+	"""This page is restricted at the desk UI level, but the whitelisted RPCs
+	are directly callable via /api/method/, so mutating actions must enforce
+	the same role themselves."""
+	if not PUBLISH_RESULT_ROLES & set(frappe.get_roles()):
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
 
 
 @frappe.whitelist()
@@ -269,6 +280,7 @@ def get_publish_students(exam_plan, search="", page=1, page_length=20,
 @frappe.whitelist()
 def toggle_publish(exam_plan, student, publish):
 	"""Toggle publish status for a single student."""
+	_check_access()
 	if not exam_plan or not student:
 		return False
 
@@ -318,6 +330,7 @@ def toggle_publish(exam_plan, student, publish):
 @frappe.whitelist()
 def bulk_publish(exam_plan, students, publish):
 	"""Bulk publish or unpublish a list of students."""
+	_check_access()
 	if not exam_plan or not students:
 		return 0
 
@@ -339,6 +352,7 @@ def send_bulk_publish_email(exam_plan, email_template, search="", status_filter=
 	"""Enqueue a background job emailing every student currently matching the
 	Publish Results filters (same filter semantics as get_publish_students,
 	just without pagination) using the chosen Email Template."""
+	_check_access()
 	if not exam_plan:
 		frappe.throw("Select an Exam Plan first.")
 	if not email_template or not frappe.db.exists("Email Template", email_template):

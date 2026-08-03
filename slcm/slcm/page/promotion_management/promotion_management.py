@@ -329,6 +329,7 @@ def fetch_students(program, academic_year, from_year, policy_name=None):
 	Fetch students for filters and optionally evaluate against a policy.
 	If no policy_name, all students are returned as 'Promoted' (no criteria active).
 	"""
+	frappe.has_permission("Student Promotion", "read", throw=True)
 	students = _get_students_raw(program, academic_year, from_year)
 
 	if not students:
@@ -481,6 +482,7 @@ def confirm_promotion(program, academic_year, from_year, to_year, policy_name=No
 @frappe.whitelist()
 def get_saved_results_by_filters(program, academic_year, from_year, to_year):
 	"""Return existing saved Student Promotion records for these filters."""
+	frappe.has_permission("Student Promotion", "read", throw=True)
 	policy_name = frappe.db.get_value(
 		"Promotion Policy",
 		{"program": program, "academic_year": academic_year,
@@ -525,6 +527,7 @@ def download_promotion_list(policy_name, list_type):
 	Download Excel for:
 	  list_type = 'promoted' | 'not_promoted' | 'conditional' | 'all'
 	"""
+	frappe.has_permission("Student Promotion", "read", throw=True)
 	import io
 	try:
 		import openpyxl
@@ -668,6 +671,7 @@ def download_formatted_promotion_list(program, academic_year, university_name=No
 	  - Term-wise failed/shortage courses as columns
 	  - Improvement courses column for re-admitted students
 	"""
+	frappe.has_permission("Student Promotion", "read", throw=True)
 	import io
 	try:
 		import openpyxl

@@ -17,7 +17,102 @@ frappe.ui.form.on('Time Table', {
                 };
                 frappe.set_route('Form', 'Student Attendance Tool');
             });
+
+            // Only meaningful for recurring series (this doc is either the
+            // parent of a series or one of its generated children).
+            if (frm.doc.parent_schedule || frm.doc.repeat_frequency !== 'Never') {
+                frm.add_custom_button(__('Apply Changes to Future Occurrences'), function () {
+                    frm.events.show_apply_future_dialog(frm);
+                }, __('Actions'));
+            }
         }
+    },
+
+    show_apply_future_dialog: function (frm) {
+        if (frm.is_dirty()) {
+            frappe.msgprint({
+                title: __('Save First'),
+                message: __('Please save this occurrence before applying changes to future occurrences.'),
+                indicator: 'orange'
+            });
+            return;
+        }
+
+        frappe.call({
+            method: 'slcm.slcm.doctype.time_table.time_table.get_future_occurrences',
+            args: { time_table_name: frm.doc.name },
+            freeze: true,
+            callback: function (r) {
+                const info = r.message || { count: 0, occurrences: [] };
+                if (!info.count) {
+                    frappe.msgprint(__('No current or future occurrences found in this series.'));
+                    return;
+                }
+
+                const dialog = new frappe.ui.Dialog({
+                    title: __('Apply to Future Occurrences'),
+                    fields: [
+                        {
+                            fieldtype: 'HTML',
+                            options: `<p>${__('This will update')} <b>${info.count}</b> ${__('occurrence(s) — today and every future date in this series. Past dates are left untouched.')}</p>`
+                        },
+                        {
+                            fieldname: 'venue',
+                            fieldtype: 'Link',
+                            options: 'Venue Master',
+                            label: __('New Venue'),
+                            default: frm.doc.venue
+                        },
+                        {
+                            fieldname: 'from_time',
+                            fieldtype: 'Time',
+                            label: __('New From Time'),
+                            default: frm.doc.from_time
+                        },
+                        {
+                            fieldname: 'to_time',
+                            fieldtype: 'Time',
+                            label: __('New To Time'),
+                            default: frm.doc.to_time
+                        }
+                    ],
+                    primary_action_label: __('Apply'),
+                    primary_action: function (values) {
+                        const updates = {};
+                        if (values.venue && values.venue !== frm.doc.venue) updates.venue = values.venue;
+                        if (values.from_time && values.from_time !== frm.doc.from_time) updates.from_time = values.from_time;
+                        if (values.to_time && values.to_time !== frm.doc.to_time) updates.to_time = values.to_time;
+
+                        if (!Object.keys(updates).length) {
+                            frappe.msgprint(__('No changes were made.'));
+                            return;
+                        }
+
+                        frappe.call({
+                            method: 'slcm.slcm.doctype.time_table.time_table.bulk_update_future_occurrences',
+                            args: {
+                                time_table_name: frm.doc.name,
+                                updates: updates
+                            },
+                            freeze: true,
+                            freeze_message: __('Checking for conflicts and updating...'),
+                            callback: function (res) {
+                                if (res.message) {
+                                    dialog.hide();
+                                    frappe.show_alert({
+                                        message: __('Updated {0} occurrence(s)', [res.message.updated_count]),
+                                        indicator: 'green'
+                                    }, 5);
+                                    frm.reload_doc();
+                                }
+                            }
+                        });
+                    }
+                });
+
+                dialog.show();
+            }
+        });
     },
 
     class_configuration: function (frm) {
