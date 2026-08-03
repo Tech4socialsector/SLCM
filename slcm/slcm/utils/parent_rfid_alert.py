@@ -172,5 +172,7 @@ def _send_alerts(student, parents, last_swipe, settings):
 
 @frappe.whitelist()
 def trigger_absence_alerts_manually():
+    if "System Manager" not in frappe.get_roles() and frappe.session.user != "Administrator":
+        frappe.throw(frappe._("Not permitted"), frappe.PermissionError)
     check_and_send_absence_alerts()
     return {"status": "success", "message": "Parent RFID absence alert check completed"}

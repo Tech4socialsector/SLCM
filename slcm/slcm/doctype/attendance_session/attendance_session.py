@@ -10,6 +10,16 @@ from slcm.slcm.utils.attendance_calculator import calculate_student_attendance
 DEFAULT_RFID_ACTIVE_WINDOW_MINUTES = 10
 
 
+def _check_instructor_or_admin(session_doc):
+	"""Only the assigned instructor (or System Manager) may act on a session."""
+	user = frappe.session.user
+	if "System Manager" in frappe.get_roles(user):
+		return
+	instructor_user = frappe.db.get_value("Faculty", session_doc.instructor, "user_id") if session_doc.instructor else None
+	if not instructor_user or instructor_user != user:
+		frappe.throw(_("Only the assigned instructor can perform this action."), frappe.PermissionError)
+
+
 def get_rfid_active_window_minutes():
 	"""RFID activation window is configurable via Attendance Settings; falls back to the default if unset."""
 	minutes = frappe.db.get_single_value("Attendance Settings", "rfid_active_window_minutes")
@@ -251,12 +261,8 @@ def activate_rfid(session_name):
 	does not require activation, so a missed activation never blocks
 	attendance capture; it only affects what faculty sees in the portal."""
 	session = frappe.get_doc("Attendance Session", session_name)
-
+	_check_instructor_or_admin(session)
 	user = frappe.session.user
-	if session.instructor:
-		instructor_user = frappe.db.get_value("Faculty", session.instructor, "user_id")
-		if instructor_user and instructor_user != user and "System Manager" not in frappe.get_roles(user):
-			frappe.throw(_("Only the assigned instructor can activate RFID for this session."))
 
 	if session.rfid_activation_time:
 		frappe.throw(_("RFID has already been activated for this session."))
@@ -277,6 +283,7 @@ def activate_rfid(session_name):
 def mark_session_conducted(session_name):
 	"""Mark a session as conducted"""
 	session = frappe.get_doc("Attendance Session", session_name)
+	_check_instructor_or_admin(session)
 	session.session_status = "Conducted"
 	session.save()
 	return session
@@ -308,6 +315,7 @@ def get_pending_sessions(instructor=None, course_offering=None):
 def fetch_students_for_session(session_name):
 	"""Fetch enrolled students and create attendance records for a session"""
 	session_doc = frappe.get_doc("Attendance Session", session_name)
+	_check_instructor_or_admin(session_doc)
 	before_count = frappe.db.count("Student Attendance", {"attendance_session": session_name})
 	session_doc.create_student_attendance_records()
 	after_count = frappe.db.count("Student Attendance", {"attendance_session": session_name})
@@ -326,6 +334,8 @@ def update_attendance_summary_realtime(session_name, course_offering, duration_h
 		# Verify the session exists
 		if not frappe.db.exists("Attendance Session", session_name):
 			return {"success": False, "message": "Attendance Session not found"}
+
+		_check_instructor_or_admin(frappe.get_doc("Attendance Session", session_name))
 
 		# Trigger attendance recalculation for all students in this course offering
 		from slcm.slcm.utils.attendance_calculator import calculate_student_attendance

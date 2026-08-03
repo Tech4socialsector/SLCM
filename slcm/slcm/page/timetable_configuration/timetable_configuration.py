@@ -55,7 +55,10 @@ def get_class_list_template(programme=None):
 def upload_timetable_csv(csv_data):
     """Upload timetable from CSV"""
     import json
-    
+
+    if "System Manager" not in frappe.get_roles() and frappe.session.user != "Administrator":
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
+
     if isinstance(csv_data, str):
         csv_data = json.loads(csv_data)
     

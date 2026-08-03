@@ -263,7 +263,7 @@ def unpublish_results(exam_plan):
 @frappe.whitelist()
 def recalculate_cgpa(student):
 	"""Recalculate and update CGPA for a student from all their published results."""
-	if not frappe.has_permission("Student Master", "write"):
+	if not frappe.has_permission("Student Master", "write", doc=student):
 		frappe.throw("Not permitted.")
 
 	cgpa, cpct = _calculate_cgpa(student)

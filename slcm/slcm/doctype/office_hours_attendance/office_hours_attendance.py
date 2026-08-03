@@ -56,14 +56,21 @@ class OfficeHoursAttendance(Document):
 @frappe.whitelist()
 def get_student_office_hours_attendance(student, course_offering=None):
 	"""Get office hours attendance for a student"""
+	if not frappe.has_permission("Student Master", "read", doc=student):
+		frappe.throw(frappe._("Not permitted"), frappe.PermissionError)
+
 	filters = {"student": student}
-	
+
 	if course_offering:
 		filters["course_offering"] = course_offering
-	
+
 	return frappe.get_all(
 		"Office Hours Attendance",
 		filters=filters,
-		fields=["*"],
+		fields=[
+			"name", "office_hours_session", "student", "student_name",
+			"course_offering", "attendance_date", "check_in_time",
+			"check_out_time", "duration_hours", "source", "remarks",
+		],
 		order_by="attendance_date desc"
 	)

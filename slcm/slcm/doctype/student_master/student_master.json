@@ -39,7 +39,7 @@
   "section_update_log",
   "tab_program_mapping",
   "program_mapping_section",
-  "programme",
+  "batch",
   "academic_year",
   "academic_term",
   "programme_of_study",
@@ -486,12 +486,6 @@
    "fieldname": "program_mapping_section",
    "fieldtype": "Section Break",
    "label": "Programme & Academic Mapping"
-  },
-  {
-   "fieldname": "programme",
-   "fieldtype": "Link",
-   "label": "Batch",
-   "options": "Batch"
   },
   {
    "fieldname": "current_year",
@@ -1603,11 +1597,17 @@
    "fieldtype": "Data",
    "label": "Concentration",
    "length": 100
+  },
+  {
+   "fieldname": "batch",
+   "fieldtype": "Link",
+   "label": "Batch",
+   "options": "Batch"
   }
  ],
  "image_field": "passport_size_photo",
  "links": [],
- "modified": "2026-08-03 16:40:38.965494",
+ "modified": "2026-08-03 17:23:05.817168",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",
