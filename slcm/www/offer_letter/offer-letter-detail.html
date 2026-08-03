@@ -762,7 +762,7 @@ _pc.mission_text) or '' %}
 	        }
 	    }
 
-	    function start_expiry_timer(deadline_str) {
+	    function start_expiry_timer(deadline_str, original_label) {
 	        if (!deadline_str) return;
 
 	        const timer_el = $('#expiry-timer-display');
@@ -789,12 +789,20 @@ _pc.mission_text) or '' %}
 
 	            if (distance > 24 * 60 * 60 * 1000) {
 	                // More than 24 hours - show date only
-	                label_el.text({{ _("Offer Expiry Date") | tojson }});
+	                if (original_label) {
+	                    label_el.html(original_label + ' <span class="material-symbols-outlined" style="color: var(--secondary); font-size: 18px;">event</span>');
+	                } else {
+	                    label_el.html('{{ _("Expiry Date") }} <span class="material-symbols-outlined" style="color: var(--secondary); font-size: 18px;">event</span>');
+	                }
 	                timer_el.text(format_date_dd_mm_yyyy(deadline_str));
 	                timer_el.next().hide(); // Hide the redundant deadline line
 	            } else {
 	                // 24 hours or less - show timer
-	                label_el.text({{ _("Offer Expiry Timer") | tojson }});
+	                if (original_label) {
+	                    label_el.html(original_label + ' (Ends Soon) <span class="material-symbols-outlined" style="color: var(--secondary); font-size: 18px;">event</span>');
+	                } else {
+	                    label_el.html('{{ _("Ends Soon") }} <span class="material-symbols-outlined" style="color: var(--secondary); font-size: 18px;">event</span>');
+	                }
 	                timer_el.next().show();
 
 	                const hours = Math.floor(distance / (1000 * 60 * 60));
@@ -857,21 +865,43 @@ _pc.mission_text) or '' %}
                             ` : `<div style="position: absolute; bottom: 20px; right: 24px; width: 48px; height: 48px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 20px; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><i class="fa fa-user"></i></div>`}
 	                    </div>
 
-	                    ${offer.payment_deadline && (offer.status === 'Issued' || offer.status === 'Accepted') ? `
-	                        <div class="ui-card" style="background: var(--card-bg); border: 1px solid var(--border); position: relative; overflow: hidden;">
-	                            <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--secondary);"></div>
-	                            <span class="ui-card-label" style="display: flex; justify-content: space-between; align-items: center;">
-	                                {{ _("Offer Expiry") }}
-	                                <span class="material-symbols-outlined" style="color: var(--secondary); font-size: 18px;">event</span>
-	                            </span>
-	                            <div id="expiry-timer-display" style="color: var(--text-1); font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-	                                -- : -- : --
-	                            </div>
-	                            <div style="color: var(--text-3); font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
-	                                <span class="material-symbols-outlined" style="font-size: 16px;">calendar_today</span> {{ _("Deadline") }}: <span style="color: var(--text-1);">${format_date_dd_mm_yyyy(offer.payment_deadline)}</span>
-	                            </div>
-	                        </div>
-	                    ` : ''}
+	                    ${(() => {
+                            let deadline_date = null;
+                            let deadline_label = '';
+                            if (offer.status === 'Issued' && offer.offer_acceptance_deadline) {
+                                deadline_date = offer.offer_acceptance_deadline;
+                                deadline_label = 'Offer Expiry';
+                            } else if (offer.status === 'Accepted' && offer.confirmation_fee_deadline) {
+                                deadline_date = offer.confirmation_fee_deadline;
+                                deadline_label = 'Confirmation Fee Expiry';
+                            } else if (offer.status === 'Confirmation Fee Paid' && offer.payment_deadline) {
+                                deadline_date = offer.payment_deadline;
+                                deadline_label = 'Admission Fee Expiry';
+                            } else if ((offer.status === 'Issued' || offer.status === 'Accepted') && offer.payment_deadline) {
+                                // Fallback
+                                deadline_date = offer.payment_deadline;
+                                deadline_label = 'Expiry Date';
+                            }
+
+                            if (deadline_date) {
+                                return `
+                                <div class="ui-card" style="background: var(--card-bg); border: 1px solid var(--border); position: relative; overflow: hidden;">
+                                    <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--secondary);"></div>
+                                    <span class="ui-card-label" style="display: flex; justify-content: space-between; align-items: center;">
+                                        ${deadline_label}
+                                        <span class="material-symbols-outlined" style="color: var(--secondary); font-size: 18px;">event</span>
+                                    </span>
+                                    <div id="expiry-timer-display" data-deadline="${deadline_date}" data-label="${deadline_label}" style="color: var(--text-1); font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                        -- : -- : --
+                                    </div>
+                                    <div style="color: var(--text-3); font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
+                                        <span class="material-symbols-outlined" style="font-size: 16px;">calendar_today</span> {{ _("Deadline") }}: <span style="color: var(--text-1);">${format_date_dd_mm_yyyy(deadline_date)}</span>
+                                    </div>
+                                </div>
+                                `;
+                            }
+                            return '';
+                        })()}
 
 
 	${(() => {
@@ -1008,14 +1038,28 @@ _pc.mission_text) or '' %}
 	                            </button>
 	                        ` : ''}
 
-	                        ${(offer.status === 'Accepted' && !is_fee_paid && online_payment_enabled) || (offer.status === 'Issued') ? `
-	                            <button class="btn btn-pay" style="width: auto; margin: 0; padding: 10px 24px; background: var(--primary);" onclick="handle_primary_action()" ${data.scholarship_application && data.scholarship_application.status === 'Submitted' ? 'disabled style="opacity: 0.6; cursor: not-allowed;"' : ''}>
-	                                <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">payment</span>
-	                                ${offer.status === 'Issued' ? '{{ _("Accept & Pay Fee") }}' : '{{ _("Pay Fee") }}'}
+	                        ${offer.status === 'Issued' ? `
+	                            <button class="btn btn-pay" style="width: auto; margin: 0; padding: 10px 24px; background: var(--primary);" onclick="handle_primary_action()">
+	                                <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">check_circle</span>
+	                                {{ _("Accept Offer") }}
 	                            </button>
 	                        ` : ''}
 
-	                        ${offer.status === 'Payment Completed' || is_fee_paid || (applicant && ['Confirmation Fee Paid', 'Full Fee Paid'].includes(applicant.status)) ? `
+	                        ${offer.status === 'Accepted' && online_payment_enabled ? `
+	                            <button class="btn btn-pay" style="width: auto; margin: 0; padding: 10px 24px; background: var(--primary);" onclick="handle_primary_action()" ${data.scholarship_application && data.scholarship_application.status === 'Submitted' ? 'disabled style="opacity: 0.6; cursor: not-allowed;"' : ''}>
+	                                <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">payment</span>
+	                                {{ _("Pay Confirmation Fee") }}
+	                            </button>
+	                        ` : ''}
+
+	                        ${offer.status === 'Confirmation Fee Paid' && online_payment_enabled ? `
+	                            <button class="btn btn-pay" style="width: auto; margin: 0; padding: 10px 24px; background: var(--primary);" onclick="handle_primary_action()">
+	                                <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">payment</span>
+	                                {{ _("Pay Admission Fee") }}
+	                            </button>
+	                        ` : ''}
+
+	                        ${['Payment Completed', 'Full Fee Paid'].includes(offer.status) || is_fee_paid || (applicant && ['Confirmation Fee Paid', 'Full Fee Paid'].includes(applicant.status)) ? `
 	                            <button class="btn btn-pay" style="width: auto; margin: 0; padding: 10px 24px;" title="Download Receipt" onclick="handle_download_receipt()">
 	                                <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">receipt</span> {{ _("Download Receipt") }}
 	                            </button>
@@ -1060,8 +1104,9 @@ _pc.mission_text) or '' %}
 	            }
 	        }
 	        
-	        if (offer.payment_deadline && (offer.status === 'Issued' || offer.status === 'Accepted')) {
-	            start_expiry_timer(offer.payment_deadline);
+	        const timer_element = document.getElementById('expiry-timer-display');
+	        if (timer_element) {
+	            start_expiry_timer(timer_element.dataset.deadline, timer_element.dataset.label);
 	        }
 	    }
 

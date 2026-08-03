@@ -25,11 +25,14 @@
   "accepted_on",
   "offer_configrationn",
   "fee_structure",
+  "edit_reason",
   "column_break_hdcy",
   "notification_receiver",
+  "offer_acceptance_deadline",
+  "confirmation_fee_deadline",
   "payment_deadline",
   "status",
-  "edit_reason",
+  "needs_accommodation",
   "connections_tab"
  ],
  "fields": [
@@ -107,10 +110,19 @@
    "fieldtype": "Column Break"
   },
   {
-   "fetch_from": "fee_structure.valid_until",
+   "fieldname": "offer_acceptance_deadline",
+   "fieldtype": "Date",
+   "label": "Offer Acceptance Deadline"
+  },
+  {
+   "fieldname": "confirmation_fee_deadline",
+   "fieldtype": "Date",
+   "label": "Confirmation Fee Deadline"
+  },
+  {
    "fieldname": "payment_deadline",
    "fieldtype": "Date",
-   "label": "Payment Deadline"
+   "label": "Full Fee Deadline"
   },
   {
    "fieldname": "offer_configrationn",
@@ -128,8 +140,13 @@
   {
    "fieldname": "edit_reason",
    "fieldtype": "Small Text",
-   "label": "Edit Reason",
-   "read_only": 1
+   "label": "Edit Reason"
+  },
+  {
+   "fieldname": "needs_accommodation",
+   "fieldtype": "Select",
+   "label": "Needs Accommodation",
+   "options": "\nYes\nNo"
   },
   {
    "fetch_from": "applicant.academic_year",
@@ -181,7 +198,7 @@
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Offer Status",
-   "options": "Draft\nIssued\nAccepted\nPayment Completed\nRejected\nExpired\nWithdrawn"
+   "options": "Draft\nIssued\nAccepted\nConfirmation Fee Paid\nFull Fee Paid\nRejected\nExpired\nWithdrawn"
   },
   {
    "fieldname": "connections_tab",
@@ -210,7 +227,7 @@
    "link_fieldname": "offer_letter"
   }
  ],
- "modified": "2026-07-30 14:29:55.544859",
+ "modified": "2026-08-03 17:10:14.889400",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letter",

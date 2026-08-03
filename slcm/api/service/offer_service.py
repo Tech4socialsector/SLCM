@@ -252,8 +252,13 @@ class OfferService:
 
             offer.fee_structure = fee_structure_name
             
-            # Set validity/deadline from Fee Structure
-            offer.payment_deadline = FeeService._calculate_deadline(fee_structure_name)
+            # Set deadlines
+            offer.offer_acceptance_deadline = config.due_date
+            
+            fee_doc = frappe.get_cached_doc("Fee Structure", fee_structure_name)
+            if fee_doc:
+                offer.confirmation_fee_deadline = fee_doc.due_date_for_confirmation_fee
+                offer.payment_deadline = fee_doc.valid_until
             
             # Freeze Fees from Fee Structure
             foriegn_national = frappe.db.get_value("Applicant", applicant, "foriegn_national")
@@ -325,15 +330,24 @@ class OfferService:
             throw(_("Only 'Issued' or 'Accepted' offers can be processed. Current status: {0}").format(offer.status))
 
         # Reject expired-by-deadline for both Issued and Accepted (idempotent re-calls / race with scheduler)
-        if offer.payment_deadline and getdate(offer.payment_deadline) < getdate(now_datetime()):
+        if offer.status == "Issued":
+            deadline = offer.offer_acceptance_deadline
+            deadline_label = "offer acceptance deadline"
+        else:
+            deadline = offer.confirmation_fee_deadline
+            deadline_label = "confirmation fee deadline"
+
+        if deadline and getdate(deadline) < getdate(now_datetime()):
             throw(
-                _("This offer is no longer valid: the payment deadline ({0}) has passed. You cannot accept or proceed with this offer.")
-                .format(offer.payment_deadline)
+                _("This offer is no longer valid: the {0} ({1}) has passed. You cannot proceed.")
+                .format(deadline_label, deadline)
             )
 
         if offer.status == "Issued":
             offer.status = "Accepted"
             offer.accepted_on = now_datetime()
+            if needs_accommodation:
+                offer.needs_accommodation = needs_accommodation
             offer.save(ignore_permissions=True)
 
             if needs_accommodation:
@@ -1068,12 +1082,12 @@ class OfferService:
                 ol.name,
                 app.candidate_name as applicant_name,
                 ol.program,
-                ol.payment_deadline
+                ol.offer_acceptance_deadline as payment_deadline
             FROM `tabOffer Letter` ol
             JOIN `tabApplicant` app ON ol.applicant = app.name
             WHERE ol.status = 'Issued'
-              AND (ol.payment_deadline >= CURDATE() OR ol.payment_deadline IS NULL)
-            ORDER BY ol.payment_deadline ASC
+              AND (ol.offer_acceptance_deadline >= CURDATE() OR ol.offer_acceptance_deadline IS NULL)
+            ORDER BY ol.offer_acceptance_deadline ASC
         """, as_dict=1)
         return offers
 

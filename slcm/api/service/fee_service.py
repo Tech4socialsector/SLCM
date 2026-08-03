@@ -231,8 +231,10 @@ class FeeService:
                 no_child_table_fields=False
             ))
             next_assignment.fee_type = "Admission Fee"
-            next_assignment.confirmation_fee = 0
+            next_assignment.confirmation_fee = assignment.confirmation_fee or assignment.total_amount
             next_assignment.status = "Assigned"
+            
+            needs_accommodation = offer_doc.needs_accommodation == "Yes"
             
             # Copy fee rows
             next_assignment.fee_components = []
@@ -240,6 +242,12 @@ class FeeService:
             for row in fee_data.get("components", []):
                 if (row.get("fee_component") or "").lower() == "scholarship":
                     continue
+                
+                if not needs_accommodation:
+                    is_acc = frappe.db.get_value("Fee Component", row.get("fee_component"), "is_accommodation_fee")
+                    if is_acc:
+                        continue
+                        
                 next_assignment.append("fee_components", {
                     "fee_component": row.get("fee_component"),
                     "component_name": row.get("component_name"),
@@ -416,8 +424,10 @@ class FeeService:
                 no_child_table_fields=False
             ))
             next_assignment.fee_type = "Admission Fee"
-            next_assignment.confirmation_fee = 0
+            next_assignment.confirmation_fee = old_assignment.confirmation_fee or old_assignment.total_amount
             next_assignment.status = "Assigned"
+            
+            needs_accommodation = offer_doc.needs_accommodation == "Yes"
             
             # Copy fee rows
             next_assignment.fee_components = []
@@ -425,6 +435,12 @@ class FeeService:
             for row in fee_data.get("components", []):
                 if (row.get("fee_component") or "").lower() == "scholarship":
                     continue
+                    
+                if not needs_accommodation:
+                    is_acc = frappe.db.get_value("Fee Component", row.get("fee_component"), "is_accommodation_fee")
+                    if is_acc:
+                        continue
+                        
                 next_assignment.append("fee_components", {
                     "fee_component": row.get("fee_component"),
                     "component_name": row.get("component_name"),

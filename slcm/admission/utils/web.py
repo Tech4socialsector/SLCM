@@ -684,7 +684,8 @@ def get_offer_list(limit_start=0, limit_page_length=10):
     # Fetch offers
     fields = [
         "name", "program", "issued_on", "status", 
-        "payment_deadline", "payable_amount", "campus", "applicant",
+        "payment_deadline", "offer_acceptance_deadline", "confirmation_fee_deadline", 
+        "payable_amount", "campus", "applicant",
         "academic_year", "admission_cycle"
     ]
     

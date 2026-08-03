@@ -11,6 +11,7 @@
   "component_type",
   "column_break_1",
   "amount",
+  "is_accommodation_fee",
   "is_taxable",
   "tax_rate",
   "description"
@@ -41,6 +42,12 @@
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Default Amount"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_accommodation_fee",
+   "fieldtype": "Check",
+   "label": "Is Accommodation Fee"
   },
   {
    "default": "0",

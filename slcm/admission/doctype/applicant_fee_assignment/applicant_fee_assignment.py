@@ -103,7 +103,7 @@ class ApplicantFeeAssignment(Document):
 		if self.fee_type == "Application Fee":
 			self.application_fee = base_total
 
-		self.final_payable_amount = max(0, base_total - flt(self.scholarship_amount))
+		self.final_payable_amount = max(0, base_total - flt(self.scholarship_amount) - flt(self.confirmation_fee))
 
 	def validate_status_change(self):
 		if self.status == "Converted":
