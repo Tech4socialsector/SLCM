@@ -279,8 +279,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Application Number",
-   "reqd": 1
+   "label": "Application Number"
   },
   {
    "fieldname": "admission_sequence",
@@ -539,8 +538,7 @@
   {
    "fieldname": "dob",
    "fieldtype": "Date",
-   "label": "Date of Birth",
-   "reqd": 1
+   "label": "Date of Birth"
   },
   {
    "fieldname": "gender",
@@ -636,8 +634,7 @@
    "fieldname": "phone",
    "fieldtype": "Data",
    "label": "Phone",
-   "length": 20,
-   "reqd": 1
+   "length": 20
   },
   {
    "fieldname": "alternate_phone",
@@ -1028,8 +1025,7 @@
    "description": "Latest image",
    "fieldname": "passport_size_photo",
    "fieldtype": "Attach Image",
-   "label": "Passport size photo",
-   "reqd": 1
+   "label": "Passport size photo"
   },
   {
    "fieldname": "pwd_certificate",
