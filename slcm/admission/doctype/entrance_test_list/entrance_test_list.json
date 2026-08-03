@@ -8,10 +8,12 @@
   "academic_year",
   "campus",
   "admission_cycle",
+  "column_break_hvlg",
   "program_level",
   "program",
   "generated_on",
   "status",
+  "section_break_rfvo",
   "entrance_test_applicant"
  ],
  "fields": [
@@ -62,12 +64,20 @@
    "fieldtype": "Table",
    "label": "Entrance Test Applicant",
    "options": "Entrance Test Applicant"
+  },
+  {
+   "fieldname": "column_break_hvlg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_rfvo",
+   "fieldtype": "Section Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-26 14:44:44.023730",
+ "modified": "2026-08-03 14:07:06.747881",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test List",

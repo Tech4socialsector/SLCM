@@ -37,8 +37,7 @@ def get_columns() -> list[dict]:
 		{
 			"label": _("Entrance Test Provider"),
 			"fieldname": "entrance_test_provider",
-			"fieldtype": "Link",
-			"options": "Entrance Test Provider",
+			"fieldtype": "Data",
 			"width": 180,
 		},
 		{
@@ -108,7 +107,11 @@ def get_data(filters: dict) -> list[dict]:
 	]
 	values = {}
 
-	if provider_filter:
+	if filters.get("is_international_applicant") or filters.get("show_international_applicant"):
+		conditions.append(
+			"(is_international_applicant = 1 OR entrance_test_provider = 'International Applicant' OR entrance_test_provider IS NULL OR entrance_test_provider = '')"
+		)
+	elif provider_filter:
 		conditions.append(
 			"(entrance_test_provider = %(provider)s OR re_entrance_test_provider = %(provider)s)"
 		)
@@ -121,6 +124,10 @@ def get_data(filters: dict) -> list[dict]:
 	if filters.get("admission_cycle"):
 		conditions.append("admission_cycle = %(admission_cycle)s")
 		values["admission_cycle"] = filters.get("admission_cycle")
+
+	if filters.get("campus"):
+		conditions.append("campus = %(campus)s")
+		values["campus"] = filters.get("campus")
 
 	if filters.get("program_level"):
 		conditions.append("program_level = %(program_level)s")
@@ -143,8 +150,20 @@ def get_data(filters: dict) -> list[dict]:
 	records = frappe.db.sql(
 		f"""
 		SELECT
-			IF(is_rescheduled = 1 AND re_entrance_test_provider IS NOT NULL AND re_entrance_test_provider != '', re_entrance_test_provider, entrance_test_provider) as entrance_test_provider,
-			IF(is_rescheduled = 1 AND re_center_name IS NOT NULL AND re_center_name != '', re_center_name, center_name) as center_name,
+			IFNULL(
+				NULLIF(
+					IF(is_rescheduled = 1 AND re_entrance_test_provider IS NOT NULL AND re_entrance_test_provider != '', re_entrance_test_provider, entrance_test_provider),
+					''
+				),
+				'International Applicant'
+			) as entrance_test_provider,
+			IFNULL(
+				NULLIF(
+					IF(is_rescheduled = 1 AND re_center_name IS NOT NULL AND re_center_name != '', re_center_name, center_name),
+					''
+				),
+				'International Applicant'
+			) as center_name,
 			IF(is_rescheduled = 1 AND re_entrance_test_name IS NOT NULL AND re_entrance_test_name != '', re_entrance_test_name, entrance_test_name) as entrance_test_name,
 			program,
 			academic_year,
@@ -152,13 +171,7 @@ def get_data(filters: dict) -> list[dict]:
 			COUNT(name) as rejected_count
 		FROM `tabEntrance Test Seat Allocation`
 		WHERE {where_clause}
-		GROUP BY
-			entrance_test_provider,
-			center_name,
-			entrance_test_name,
-			program,
-			academic_year,
-			admission_cycle
+		GROUP BY 1, 2, 3, 4, 5, 6
 		ORDER BY rejected_count DESC
 		""",
 		values,

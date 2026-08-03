@@ -237,6 +237,7 @@
   {
    "fieldname": "center_name",
    "fieldtype": "Data",
+   "in_standard_filter": 1,
    "label": "Centre Name"
   },
   {
@@ -628,7 +629,7 @@
  "image_field": "profile",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-27 11:01:49.276409",
+ "modified": "2026-08-03 14:24:14.642812",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",

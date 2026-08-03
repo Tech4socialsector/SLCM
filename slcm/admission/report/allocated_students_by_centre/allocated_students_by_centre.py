@@ -24,9 +24,9 @@ def execute(filters: dict | None = None):
 	]
 
 	message = (
-		_("Allocated applicant counts by programme.")
+		_("Allocated student counts grouped by test centre.")
 		if data
-		else _("No allocated applicants found.")
+		else _("No allocated students found.")
 	)
 
 	return columns, data, message, None, summary
@@ -35,25 +35,16 @@ def execute(filters: dict | None = None):
 def get_columns() -> list[dict]:
 	return [
 		{
-			"label": _("Programme"),
-			"fieldname": "program",
-			"fieldtype": "Link",
-			"options": "Programme",
-			"width": 250,
+			"label": _("Entrance Test Provider"),
+			"fieldname": "entrance_test_provider",
+			"fieldtype": "Data",
+			"width": 220,
 		},
 		{
-			"label": _("Academic Year"),
-			"fieldname": "academic_year",
-			"fieldtype": "Link",
-			"options": "Academic Year",
-			"width": 150,
-		},
-		{
-			"label": _("Admission Cycle"),
-			"fieldname": "admission_cycle",
-			"fieldtype": "Link",
-			"options": "Admission Cycle",
-			"width": 150,
+			"label": _("Centre Name"),
+			"fieldname": "center_name",
+			"fieldtype": "Data",
+			"width": 220,
 		},
 		{
 			"label": _("Allocated Count"),
@@ -128,13 +119,24 @@ def get_data(filters: dict) -> list[dict]:
 	records = frappe.db.sql(
 		f"""
 		SELECT
-			program,
-			academic_year,
-			admission_cycle,
+			IFNULL(
+				NULLIF(
+					IF(is_rescheduled = 1 AND re_entrance_test_provider IS NOT NULL AND re_entrance_test_provider != '', re_entrance_test_provider, entrance_test_provider),
+					''
+				),
+				'International Applicant'
+			) as entrance_test_provider,
+			IFNULL(
+				NULLIF(
+					IF(is_rescheduled = 1 AND re_center_name IS NOT NULL AND re_center_name != '', re_center_name, center_name),
+					''
+				),
+				'International Applicant'
+			) as center_name,
 			COUNT(name) as allocated_count
 		FROM `tabEntrance Test Seat Allocation`
 		WHERE {where_clause}
-		GROUP BY program, academic_year, admission_cycle
+		GROUP BY 1, 2
 		ORDER BY allocated_count DESC
 		""",
 		values,
