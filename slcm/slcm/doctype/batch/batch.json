@@ -22,13 +22,13 @@
   "term_year",
   "total_enrolled_count",
   "status",
-  "section"
+  "section",
+  "programme_name"
  ],
  "fields": [
   {
    "fieldname": "program",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Programme",
    "options": "Programme",
@@ -113,7 +113,6 @@
   {
    "fieldname": "batch_name",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Batch name",
    "reqd": 1,
@@ -122,7 +121,6 @@
   {
    "fieldname": "batch_code",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Batch code",
    "unique": 1
@@ -130,7 +128,6 @@
   {
    "fieldname": "total_enrolled_count",
    "fieldtype": "Int",
-   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Total enrolled count"
   },
@@ -139,6 +136,17 @@
    "fieldname": "level_of_study",
    "fieldtype": "Data",
    "label": "Level of study"
+  },
+  {
+   "fetch_from": "program.program_name",
+   "fieldname": "programme_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Programme Name",
+   "options": "Programme Master",
+   "read_only": 1,
+   "reqd": 1
   }
  ],
  "links": [
@@ -153,7 +161,7 @@
    "link_fieldname": "cohort"
   }
  ],
- "modified": "2026-07-08 23:53:09.381213",
+ "modified": "2026-07-30 11:37:46.523278",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Batch",
