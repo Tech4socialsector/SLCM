@@ -688,13 +688,98 @@ def get_future_occurrences(time_table_name):
     }
 
 
+@frappe.whitelist()
+def find_sessions(programme=None, section=None, schedule_date=None):
+    """List Time Table sessions, optionally narrowed by Programme, Section
+    and/or Date (used by the list-view 'Update Venue / Time' dialog so it can
+    be opened without pre-checking any row, and browsed/filtered from there).
+
+    All filters are optional and Section in particular is often blank on real
+    records (Time Table only fetches it from course_offering.section, and many
+    rows only have class_configuration set, not course_offering) - filtering
+    on it unconditionally would silently hide otherwise-matching sessions, so
+    it's applied only when the caller actually provided a value.
+    """
+    filters = {"docstatus": ["<", 2]}
+    if programme:
+        filters["programme"] = programme
+    if section:
+        filters["section"] = section
+    if schedule_date:
+        filters["schedule_date"] = schedule_date
+
+    sessions = frappe.get_all(
+        "Time Table",
+        filters=filters,
+        # Only the columns the dialog's session table actually renders -
+        # avoid pulling instructor/course_offering/etc. into the response
+        # just because they exist on the doctype.
+        fields=["name", "course", "programme", "section", "schedule_date", "from_time", "to_time", "venue"],
+        order_by="schedule_date desc, from_time",
+        limit_page_length=100,
+    )
+
+    return {"sessions": sessions}
+
+
+@frappe.whitelist()
+def get_sessions_roster(time_table_names):
+    """Combined student roster across one or more Time Table sessions, shown
+    for confirmation before applying a venue/time change to all of them.
+    Resolved via each session's linked Class Configuration's own `students`
+    child table rather than Student Enrollment by section, since Time Table's
+    `section` field is frequently blank while `class_configuration` is
+    reliably set. Multiple sessions sharing the same class_configuration
+    (e.g. several dates of the same recurring class) are de-duplicated."""
+    import json
+
+    if isinstance(time_table_names, str):
+        time_table_names = json.loads(time_table_names)
+    time_table_names = list(dict.fromkeys(time_table_names))  # de-dupe, preserve order
+
+    if not time_table_names:
+        return {"students": []}
+
+    class_configurations = {
+        row.class_configuration
+        for row in frappe.get_all(
+            "Time Table",
+            filters={"name": ["in", time_table_names]},
+            fields=["class_configuration"],
+        )
+        if row.class_configuration
+    }
+
+    if not class_configurations:
+        return {"students": []}
+
+    students = frappe.get_all(
+        "Class Student",
+        filters={"parent": ["in", list(class_configurations)], "parenttype": "Class Configuration"},
+        fields=["student", "student_name"],
+        order_by="student_name",
+    )
+
+    # A student enrolled in more than one of the selected classes would
+    # otherwise appear once per class - keep one row per student.
+    seen = set()
+    unique_students = []
+    for s in students:
+        if s.student in seen:
+            continue
+        seen.add(s.student)
+        unique_students.append(s)
+
+    return {"students": unique_students}
+
+
 def _parse_updates(updates):
     import json
 
     if isinstance(updates, str):
         updates = json.loads(updates)
 
-    allowed_fields = {"venue", "from_time", "to_time", "instructor", "color"}
+    allowed_fields = {"venue", "from_time", "to_time", "schedule_date", "instructor", "color"}
     updates = {k: v for k, v in updates.items() if k in allowed_fields}
     if not updates:
         frappe.throw(_("No updatable fields were provided."))
