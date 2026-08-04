@@ -830,6 +830,9 @@ def check_eligibility(applicant_name):
     if not applicant_name:
         return {"status": "Incomplete", "message": ""}
 
+    if not _portal_can_access_applicant(applicant_name):
+        return {"status": "Error", "message": _("Not permitted.")}
+
     doc = frappe.get_doc("Applicant", applicant_name)
 
     if not all([doc.program, doc.campus, doc.admission_cycle, doc.academic_year]):
