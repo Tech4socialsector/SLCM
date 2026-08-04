@@ -61,7 +61,7 @@ class RefundRequest(Document):
 		# We need to find the specific row in the Seat Allocation child table
 		seat_row = frappe.db.get_value("Seat Selection Applicant", {
 			"applicant_id": self.applicant,
-			"selection_status": ["in", ["Selected", "Offer Issued", "Offer Accepted", "Fee Paid", "Accepted"]]
+			"selection_status": ["in", ["Selected", "Offer Issued", "Offer Accepted", "Confirmation Fee Paid", "Full Fee Paid", "Accepted"]]
 		}, "name")
 
 		if seat_row:

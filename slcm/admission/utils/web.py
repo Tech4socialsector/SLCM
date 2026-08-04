@@ -684,7 +684,8 @@ def get_offer_list(limit_start=0, limit_page_length=10):
     # Fetch offers
     fields = [
         "name", "program", "issued_on", "status", 
-        "payment_deadline", "payable_amount", "campus", "applicant",
+        "payment_deadline", "offer_acceptance_deadline", "confirmation_fee_deadline", 
+        "payable_amount", "campus", "applicant",
         "academic_year", "admission_cycle"
     ]
     
@@ -721,12 +722,14 @@ def get_offer_list(limit_start=0, limit_page_length=10):
             
         # Fetch scholarship info from Applicant Fee Assignment
         afa = frappe.db.get_value("Applicant Fee Assignment", 
-            {"offer_letter": offer.name, "fee_type": "Admission Fee", "docstatus": ["!=", 2]}, 
+            {"offer_letter": offer.name, "fee_type": ["in", ["Admission Fee", "Confirmation Fee"]], "docstatus": ["!=", 2]}, 
             ["scholarship_amount", "final_payable_amount"], as_dict=True)
         
         if afa:
             offer.scholarship_amount = afa.scholarship_amount or 0
-            offer.final_payable_amount = afa.final_payable_amount or offer.payable_amount
+            offer.final_payable_amount = afa.final_payable_amount if afa.final_payable_amount is not None else offer.payable_amount
+            # Ensure the list view also reflects the true total amount if we have an assignment
+            offer.payable_amount = offer.final_payable_amount
         else:
             offer.scholarship_amount = 0
             offer.final_payable_amount = offer.payable_amount

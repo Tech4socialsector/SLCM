@@ -87,7 +87,7 @@ frappe.listview_settings['Applicant'] = {
 			}
 		});
 
-		listview.page.add_inner_button(__("Convert to Student"), function () {
+		const student_btn = listview.page.add_inner_button(__("Convert to Student"), function () {
 			new frappe.ui.form.MultiSelectDialog({
 				doctype: "Applicant",
 				target: listview,
@@ -97,7 +97,7 @@ frappe.listview_settings['Applicant'] = {
 				get_query: function () {
 					return {
 						filters: {
-							status: "Fee Paid",
+							status: "Confirmation Fee Paid",
 						},
 					};
 				},
@@ -247,6 +247,12 @@ frappe.listview_settings['Applicant'] = {
 				},
 			});
 		});
+		student_btn.css({
+                "background-color": "#1a3c6e",
+                "color":            "#fff",
+                "border-color":     "#1a3c6e",
+                "font-weight":      "600",
+            });
 	},
 	refresh: function (listview) {
 		// Bulk ZIP: server zips cached Application Form PDFs when present; missing PDFs are rendered then.

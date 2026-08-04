@@ -124,7 +124,7 @@ class SeatAllocation(Document):
         self.total_rejected = 0
         
         rejection_statuses = ["Rejected", "Offer Declined", "Offer Expired", "Withdrawn"]
-        selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid", "Payment Completed", "Enrolled", "Seat Selected"]
+        selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Enrolled", "Seat Selected"]
         
         for row in (self.selection_applicant or []):
             if row.selection_status in selection_statuses:
@@ -369,7 +369,7 @@ class SeatAllocation(Document):
             if p.program not in policy_map or p.campus == self.campus:
                 policy_map[p.program] = p.name
         
-        filled_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Fee Paid", "Accepted"]
+        filled_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Confirmation Fee Paid", "Full Fee Paid", "Accepted"]
 
         # 3. Process each policy found
         for prog, policy_name in policy_map.items():
@@ -532,7 +532,7 @@ class SeatAllocation(Document):
         self.total_waitlisted = 0
         self.total_rejected = 0
         
-        selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid", "Payment Completed", "Enrolled", "Seat Selected"]
+        selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Enrolled", "Seat Selected"]
         
         for row in self.selection_applicant:
             if row.selection_status in selection_statuses:
@@ -617,7 +617,7 @@ class SeatAllocation(Document):
         
         # Define statuses
         vacant_statuses = ["Offer Declined", "Offer Expired", "Withdrawn"]
-        selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Fee Paid", "Accepted", "Payment Completed", "Enrolled", "Seat Selected"]
+        selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Enrolled", "Seat Selected"]
         waitlist_statuses = ["Waitlisted"]
         
         for program in programs:

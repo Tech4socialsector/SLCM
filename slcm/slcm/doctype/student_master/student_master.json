@@ -91,6 +91,7 @@
   "parents",
   "tab_residence",
   "residence_section",
+  "needs_accommodation",
   "is_hosteller",
   "hostel",
   "hostel_room",
@@ -1607,6 +1608,12 @@
    "fieldtype": "Data",
    "label": "Concentration",
    "length": 100
+  },
+  {
+   "fieldname": "needs_accommodation",
+   "fieldtype": "Select",
+   "label": "Needs Accommodation",
+   "options": "Yes\nNo"
   }
  ],
  "image_field": "passport_size_photo",

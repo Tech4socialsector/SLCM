@@ -101,9 +101,12 @@ class FeeService:
                 "total_amount": component.total_amount
             })
 
-        total_payable = fs_doc.get("total_amount_for_foreign") if is_foreign else fs_doc.get("total_amount_for_indian")
-        if total_payable is None or total_payable == "":
-            total_payable = fs_doc.total_amount_for_indian
+        if fs_doc.is_confirmation_fee_applicable:
+            total_payable = fs_doc.confirmation_fee_amount
+        else:
+            total_payable = fs_doc.get("total_amount_for_foreign") if is_foreign else fs_doc.get("total_amount_for_indian")
+            if total_payable is None or total_payable == "":
+                total_payable = fs_doc.total_amount_for_indian
 
         return {
             "base_fee": base_fee, 
@@ -113,7 +116,9 @@ class FeeService:
             "breakdown": breakdown,
             "components": components,
             "payment_gateway": fs_doc.payment_gateway,
-            "online_payment": fs_doc.online_payment
+            "online_payment": fs_doc.online_payment,
+            "is_confirmation_fee_applicable": fs_doc.is_confirmation_fee_applicable,
+            "confirmation_fee_amount": fs_doc.confirmation_fee_amount
         }
 
     @staticmethod
@@ -124,7 +129,8 @@ class FeeService:
         - Fetches total approved scholarship from Scholarship Application
           and stores it in scholarship_amount field directly.
         """
-        if frappe.db.exists("Applicant Fee Assignment", {"offer_letter": offer.name, "status": ["!=", "Cancelled"]}):
+        if frappe.db.exists("Applicant Fee Assignment", {"offer_letter": offer.name, "fee_type": ["in", ["Admission Fee", "Confirmation Fee"]], "status": ["!=", "Cancelled"], "docstatus": ["!=", 2]}):
+            # Check if there is already an active assignment
             return
 
         foriegn_national = frappe.db.get_value("Applicant", offer.applicant, "foriegn_national")
@@ -160,23 +166,7 @@ class FeeService:
 
         if fs_doc.is_confirmation_fee_applicable:
             assignment.fee_type = "Confirmation Fee"
-            
-            # Ensure the Fee Component exists
-            if not frappe.db.exists("Fee Component", "Confirmation Fee"):
-                frappe.get_doc({
-                    "doctype": "Fee Component",
-                    "fee_component": "Confirmation Fee",
-                    "component_name": "Confirmation Fee"
-                }).insert(ignore_permissions=True)
-
-            assignment.append("fee_components", {
-                "fee_component": "Confirmation Fee",
-                "component_name": "Confirmation Fee",
-                "amount": fs_doc.confirmation_fee_amount,
-                "is_taxable": 0,
-                "tax_amount": 0,
-                "total_amount": fs_doc.confirmation_fee_amount
-            })
+            assignment.confirmation_fee = fs_doc.confirmation_fee_amount
         else:
             assignment.fee_type = "Admission Fee"
             # Copy fee rows
@@ -216,7 +206,7 @@ class FeeService:
             throw(_("Payment has already been recorded for this offer ({0}).").format(offer_name))
 
         assignment_name = frappe.db.get_value("Applicant Fee Assignment", 
-            {"offer_letter": offer_name, "status": ["!=", "Cancelled"]}, "name")
+            {"offer_letter": offer_name, "status": "Assigned", "docstatus": ["!=", 2]}, "name", order_by="creation desc")
         
         if not assignment_name:
             if offer_doc.status != "Accepted":
@@ -229,22 +219,49 @@ class FeeService:
         assignment = frappe.get_doc("Applicant Fee Assignment", assignment_name)
         assignment.db_set("status", "Paid")
         
-        # Update Offer Letter status directly
-        offer_doc.status = "Payment Completed"
-        offer_doc.db_set("status", "Payment Completed")
-
-        # Sync Payment Request if it exists
-        # For manual payments, we check if "Manual Payment" gateway exists, otherwise use a generic label
-        gateway = "Manual Payment" if payment_mode != "Online" else (frappe.db.get_value("Fee Structure", offer_doc.fee_structure, "payment_gateway") or "Online")
-        
-        if gateway == "Manual Payment" and not frappe.db.exists("Payment Gateway", "Manual Payment"):
-            gateway = None # Don't set non-existent link
-            
-        FeeService._update_payment_request(offer_doc, gateway, reference_number or "N/A", "Paid", payment_id=reference_number)
-
         from slcm.api.service.offer_service import OfferService
-        OfferService.update_applicant_status(assignment.applicant, status="Fee Paid")
-        OfferService.sync_seat_allocation_status(offer_doc, status="Fee Paid")
+        
+        is_confirmation = (assignment.fee_type == "Confirmation Fee")
+        if is_confirmation:
+            OfferService.update_applicant_status(assignment.applicant, status="Confirmation Fee Paid")
+            # Generate the next assignment for Full Fee
+            next_assignment = frappe.new_doc("Applicant Fee Assignment")
+            next_assignment.update(assignment.as_dict(
+                no_default_fields=True, 
+                no_child_table_fields=False
+            ))
+            next_assignment.fee_type = "Admission Fee"
+            next_assignment.confirmation_fee = assignment.confirmation_fee or assignment.total_amount
+            next_assignment.status = "Assigned"
+            
+            needs_accommodation = offer_doc.needs_accommodation == "Yes"
+            
+            # Copy fee rows
+            next_assignment.fee_components = []
+            fee_data = FeeService._calculate_and_freeze_fees(offer_doc.fee_structure, is_foreign=frappe.db.get_value("Applicant", assignment.applicant, "foriegn_national") == "Yes")
+            for row in fee_data.get("components", []):
+                if (row.get("fee_component") or "").lower() == "scholarship":
+                    continue
+                
+                if not needs_accommodation:
+                    is_acc = frappe.db.get_value("Fee Component", row.get("fee_component"), "is_accommodation_fee")
+                    if is_acc:
+                        continue
+                        
+                next_assignment.append("fee_components", {
+                    "fee_component": row.get("fee_component"),
+                    "component_name": row.get("component_name"),
+                    "amount": row.get("amount"),
+                    "is_taxable": row.get("is_taxable"),
+                    "tax_rate": row.get("tax_rate"),
+                    "tax_amount": row.get("tax_amount"),
+                    "total_amount": row.get("total_amount")
+                })
+            next_assignment.insert(ignore_permissions=True)
+            next_assignment.submit()
+        else:
+            # Leave Offer Letter status as is (Accepted) for Admission Fee
+            OfferService.update_applicant_status(assignment.applicant, status="Full Fee Paid")
 
         from slcm.admission.utils.notifications import log_communication
         log_communication(
@@ -384,22 +401,66 @@ class FeeService:
     def complete_offer_payment(offer_doc, razorpay_payment_id, razorpay_order_id, gateway, response_data=None):
         """Idempotently records payment for the offer letter fee."""
 
-        # 1. Update Offer Status
-        if offer_doc.status != "Payment Completed":
-            offer_doc.on_payment_authorized("Completed")
-            offer_doc.db_set("seat_locked", 1)
-            offer_doc.db_set("status", "Payment Completed")
+        # Determine which fee was just paid by finding the pending assignment
+        assignment_name = frappe.db.get_value("Applicant Fee Assignment", 
+            {"offer_letter": offer_doc.name, "status": "Assigned", "docstatus": ["!=", 2]}, 
+            "name", order_by="creation desc")
+            
+        is_confirmation = False
+        if assignment_name:
+            frappe.db.set_value("Applicant Fee Assignment", assignment_name, "status", "Paid")
+            fee_type = frappe.db.get_value("Applicant Fee Assignment", assignment_name, "fee_type")
+            is_confirmation = (fee_type == "Confirmation Fee")
+
+        from slcm.api.service.offer_service import OfferService
+        if is_confirmation:
+            OfferService.update_applicant_status(offer_doc.applicant, status="Confirmation Fee Paid")
+            
+            # Generate the next assignment for Full Fee
+            next_assignment = frappe.new_doc("Applicant Fee Assignment")
+            old_assignment = frappe.get_doc("Applicant Fee Assignment", assignment_name)
+            next_assignment.update(old_assignment.as_dict(
+                no_default_fields=True, 
+                no_child_table_fields=False
+            ))
+            next_assignment.fee_type = "Admission Fee"
+            next_assignment.confirmation_fee = old_assignment.confirmation_fee or old_assignment.total_amount
+            next_assignment.status = "Assigned"
+            
+            needs_accommodation = offer_doc.needs_accommodation == "Yes"
+            
+            # Copy fee rows
+            next_assignment.fee_components = []
+            fee_data = FeeService._calculate_and_freeze_fees(offer_doc.fee_structure, is_foreign=frappe.db.get_value("Applicant", offer_doc.applicant, "foriegn_national") == "Yes")
+            for row in fee_data.get("components", []):
+                if (row.get("fee_component") or "").lower() == "scholarship":
+                    continue
+                    
+                if not needs_accommodation:
+                    is_acc = frappe.db.get_value("Fee Component", row.get("fee_component"), "is_accommodation_fee")
+                    if is_acc:
+                        continue
+                        
+                next_assignment.append("fee_components", {
+                    "fee_component": row.get("fee_component"),
+                    "component_name": row.get("component_name"),
+                    "amount": row.get("amount"),
+                    "is_taxable": row.get("is_taxable"),
+                    "tax_rate": row.get("tax_rate"),
+                    "tax_amount": row.get("tax_amount"),
+                    "total_amount": row.get("total_amount")
+                })
+            next_assignment.insert(ignore_permissions=True)
+            next_assignment.submit()
+        else:
+            # Leave Offer Status as is (Accepted)
+            OfferService.update_applicant_status(offer_doc.applicant, status="Full Fee Paid")
             
         # 2. Update Payment Request
         FeeService._update_payment_request(
             offer_doc, gateway, razorpay_order_id, "Paid", razorpay_payment_id,
             response_data=response_data or {"payment_id": razorpay_payment_id, "order_id": razorpay_order_id}
         )
-        
-        # 3. Trigger Seat Lock Sync
-        from slcm.api.service.offer_service import OfferService
-        OfferService.sync_seat_allocation_status(offer_doc, "Fee Paid")
-        OfferService.update_applicant_status(offer_doc.applicant, status="Fee Paid")
         
         # 4. Generate Receipt (with safety)
         try:

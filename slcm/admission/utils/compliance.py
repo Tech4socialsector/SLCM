@@ -305,7 +305,7 @@ def audit_export(from_date=None, to_date=None, reference_doctype=None, cycle=Non
         logs = frappe.get_all(
             "Admission Audit Log",
             filters=filters,
-            fields=["*"],
+            fields=["name", "action", "reference_doctype", "reference_name", "performed_by", "old_value", "new_value", "creation", "reason"],
             order_by="creation desc"
         )
         return {

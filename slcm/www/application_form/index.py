@@ -1169,7 +1169,7 @@ def upload_applicant_file(doctype="Applicant", docname=None, is_private=0, field
 
     docname = docname or frappe.form_dict.get("docname") or frappe.form_dict.get("doc_name")
     doctype = (doctype or frappe.form_dict.get("doctype") or "Applicant").strip()
-    is_private = int(frappe.form_dict.get("is_private", is_private) or 0)
+    is_private = 1  # Security Fix: Force all applicant uploads to be private
     fieldname = fieldname or frappe.form_dict.get("fieldname") or ""
 
     if doctype != "Applicant" or not docname:

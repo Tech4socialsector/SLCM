@@ -672,7 +672,7 @@ def get_context(context):
             context.offer_name = _off_name or ""
 
             # Withdrawal depends on an active Offer Letter and being in Enrolled/Fee Paid status
-            if context.offer_name and applicant.status in ["Enrolled", "Fee Paid"]:
+            if context.offer_name and applicant.status in ["Enrolled", "Confirmation Fee Paid", "Full Fee Paid"]:
                 context.show_withdraw_button = True
                 
                 # 1. Try finding Student-linked Fee Payment
@@ -983,10 +983,11 @@ def get_context(context):
         "Waitlisted":       {"color": "#7c3aed", "bg": "#ede9fe"},
         "Offer Issued":     {"color": "#0369a1", "bg": "#e0f2fe"},
         "Offer Accepted":   {"color": "#065f46", "bg": "#d1fae5"},
-        "Offer Declined":   {"color": "#991b1b", "bg": "#fee2e2"},
-        "Rejected":         {"color": "#991b1b", "bg": "#fee2e2"},
-        "Selected":         {"color": "#065f46", "bg": "#d1fae5"},
-        "Fee Paid":         {"color": "#065f46", "bg": "#d1fae5"},
+        "Offer Declined":   {"color": "#9f1239", "bg": "#ffe4e6"},
+        "Offer Expired":    {"color": "#9f1239", "bg": "#ffe4e6"},
+        "Confirmation Fee Paid": {"color": "#065f46", "bg": "#d1fae5"},
+        "Full Fee Paid":    {"color": "#065f46", "bg": "#d1fae5"},
+        "Enrolled":         {"color": "#065f46", "bg": "#d1fae5"},
     }
 
     _user = frappe.session.user
@@ -1016,7 +1017,7 @@ def get_context(context):
             "status": ["in", ["Accepted", "Payment Completed"]]
         }, "name")
         
-        if status in ["Enrolled", "Fee Paid"] and _offer_name:
+        if status in ["Enrolled", "Confirmation Fee Paid", "Full Fee Paid"] and _offer_name:
             _show_withdraw_button = True
             student_name = frappe.db.get_value("Student Master", {"application_number": app_doc.name}, "name")
             if student_name:

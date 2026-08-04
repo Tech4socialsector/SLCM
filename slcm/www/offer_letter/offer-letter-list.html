@@ -483,14 +483,35 @@
                 </div>
             </div>
 
-            ${offer.payment_deadline && (offer.status === 'Issued' || offer.status === 'Accepted') ? `
-                <div class="valid-until">
-                    <span class="valid-label">Valid Until</span>
-                    <span class="valid-value offer-timer" data-deadline="${offer.payment_deadline}">
-                        ${format_date_dd_mm_yyyy(offer.payment_deadline)}
-                    </span>
-                </div>
-            ` : ''}
+            ${(() => {
+                let deadline_date = null;
+                let deadline_label = '';
+                if (offer.status === 'Issued' && offer.offer_acceptance_deadline) {
+                    deadline_date = offer.offer_acceptance_deadline;
+                    deadline_label = 'Offer Expiry';
+                } else if (offer.status === 'Accepted' && offer.confirmation_fee_deadline) {
+                    deadline_date = offer.confirmation_fee_deadline;
+                    deadline_label = 'Confirmation Fee Expiry';
+                } else if (offer.status === 'Confirmation Fee Paid' && offer.payment_deadline) {
+                    deadline_date = offer.payment_deadline;
+                    deadline_label = 'Admission Fee Expiry';
+                } else if ((offer.status === 'Issued' || offer.status === 'Accepted') && offer.payment_deadline) {
+                    deadline_date = offer.payment_deadline;
+                    deadline_label = 'Valid Until';
+                }
+                
+                if (deadline_date) {
+                    return `
+                        <div class="valid-until">
+                            <span class="valid-label">${deadline_label}</span>
+                            <span class="valid-value offer-timer" data-deadline="${deadline_date}">
+                                ${format_date_dd_mm_yyyy(deadline_date)}
+                            </span>
+                        </div>
+                    `;
+                }
+                return '';
+            })()}
 
         </div>
 
