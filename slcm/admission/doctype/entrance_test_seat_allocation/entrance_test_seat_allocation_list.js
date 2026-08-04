@@ -580,6 +580,90 @@ function _build_provider_html(providers) {
 }
 
 function _show_reschedule_dialog(listview, all_providers) {
+    let applicants = [];
+    const selected_applicant_names = new Set();
+    let applicant_current_page = 1;
+    const applicant_page_size = 10;
+    let applicant_filters = {
+        applicant_id: "",
+        candidate_name: "",
+        programme: "",
+        pwd_only: false
+    };
+
+    function get_filtered_applicants() {
+        return applicants.filter(a => {
+            const id_match = !applicant_filters.applicant_id || (a.applicant || "").toLowerCase().includes(applicant_filters.applicant_id);
+            const name_match = !applicant_filters.candidate_name || (a.candidate_name || "").toLowerCase().includes(applicant_filters.candidate_name);
+            const prog_match = !applicant_filters.programme || (a.program || "").toLowerCase().includes(applicant_filters.programme);
+            let pwd_match = true;
+            if (applicant_filters.pwd_only) {
+                pwd_match = (a.pwd == 1 || (a.pwd || "").toString().toLowerCase() === "yes");
+            }
+            return id_match && name_match && prog_match && pwd_match;
+        });
+    }
+
+    function render_applicant_page() {
+        const filtered = get_filtered_applicants();
+        const total_pages = Math.ceil(filtered.length / applicant_page_size) || 1;
+        if (applicant_current_page > total_pages) applicant_current_page = total_pages;
+        if (applicant_current_page < 1) applicant_current_page = 1;
+
+        const start = (applicant_current_page - 1) * applicant_page_size;
+        const page_applicants = filtered.slice(start, start + applicant_page_size);
+
+        if (!page_applicants.length) {
+            d.$wrapper.find("#reschedule-applicant-table-body").html(`
+                <tr>
+                    <td colspan="5" style="text-align:center; padding:25px; color:#94a3b8; font-size:13px;">
+                        No applicants match the filter criteria.
+                    </td>
+                </tr>
+            `);
+        } else {
+            const rows_html = page_applicants.map((row, p_idx) => {
+                const global_idx = start + p_idx + 1;
+                const is_checked = selected_applicant_names.has(row.name);
+                return `
+                    <tr data-name="${row.name}">
+                        <td style="text-align:center; width:40px; vertical-align:middle;">
+                            <input type="checkbox" class="applicant-checkbox" 
+                                   data-name="${row.name}" ${is_checked ? 'checked' : ''}>
+                        </td>
+                        <td style="text-align:center; width:60px; color:#64748b; font-size:12px; vertical-align:middle;">${global_idx}</td>
+                        <td style="vertical-align:middle;">${row.applicant || "-"}</td>
+                        <td style="vertical-align:middle;">
+                            <b>${row.candidate_name || "Unknown"}</b>
+                            ${(row.pwd == 1 || (row.pwd || "").toString().toLowerCase() === "yes") ? `<span style="font-size:10px; background:#fef3c7; color:#92400e; padding:1px 5px; border-radius:4px; margin-left:4px; border:1px solid #fde68a; font-weight:700;">♿ PWD</span>` : ''}
+                        </td>
+                        <td style="vertical-align:middle;">${row.program || "-"}</td>
+                    </tr>
+                `;
+            }).join("");
+
+            d.$wrapper.find("#reschedule-applicant-table-body").html(rows_html);
+        }
+
+        d.$wrapper.find("#applicant-page-info").text(`Page ${applicant_current_page} of ${total_pages}`);
+        d.$wrapper.find("#applicant-prev-btn").prop("disabled", applicant_current_page <= 1);
+        d.$wrapper.find("#applicant-next-btn").prop("disabled", applicant_current_page >= total_pages);
+
+        update_applicant_counts(filtered.length);
+    }
+
+    function update_applicant_counts(filtered_length) {
+        const sel_count = selected_applicant_names.size;
+        const total_count = applicants.length;
+        if (filtered_length !== undefined && filtered_length !== total_count) {
+            d.$wrapper.find("#sel-count").text(`${sel_count} of ${total_count} selected (Filtered: ${filtered_length})`);
+        } else {
+            d.$wrapper.find("#sel-count").text(`${sel_count} of ${total_count} selected`);
+        }
+        const all_selected = total_count > 0 && sel_count === total_count;
+        d.$wrapper.find("#select-all-chk").prop("checked", all_selected);
+    }
+
     let d = new frappe.ui.Dialog({
         title: __('Reschedule Entrance Test'),
         size: 'extra-large',
@@ -591,7 +675,7 @@ function _show_reschedule_dialog(listview, all_providers) {
                 fieldname: 'program_level',
                 fieldtype: 'Select',
                 options: 'Undergraduate\nPostgraduate\nResearch Course',
-                on_change: () => fetch_absent_applicants(d)
+                on_change: () => fetch_absent_applicants()
             },
             { fieldtype: 'Column Break' },
             {
@@ -599,7 +683,7 @@ function _show_reschedule_dialog(listview, all_providers) {
                 fieldname: 'academic_year',
                 fieldtype: 'Link',
                 options: 'Academic Year',
-                on_change: () => fetch_absent_applicants(d)
+                on_change: () => fetch_absent_applicants()
             },
             { fieldtype: 'Column Break' },
             {
@@ -608,7 +692,7 @@ function _show_reschedule_dialog(listview, all_providers) {
                 fieldtype: 'Link',
                 options: 'Campus',
                 on_change: () => {
-                    fetch_absent_applicants(d);
+                    fetch_absent_applicants();
                     _filter_providers_by_campus(d, all_providers);
                 }
             },
@@ -618,7 +702,7 @@ function _show_reschedule_dialog(listview, all_providers) {
                 fieldname: 'admission_cycle',
                 fieldtype: 'Link',
                 options: 'Admission Cycle',
-                on_change: () => fetch_absent_applicants(d)
+                on_change: () => fetch_absent_applicants()
             },
 
             // ── Providers (pre-built HTML) ─────────────────────────────────────
@@ -673,10 +757,7 @@ function _show_reschedule_dialog(listview, all_providers) {
         ],
         primary_action_label: __('Reschedule'),
         primary_action(values) {
-            const selected_applicants = [];
-            d.$wrapper.find('.applicant-checkbox:checked').each(function () {
-                selected_applicants.push($(this).data('name'));
-            });
+            const selected_applicants = Array.from(selected_applicant_names);
             const selected_providers = [];
             d.$wrapper.find('.provider-checkbox:checked').each(function () {
                 selected_providers.push($(this).data('name'));
@@ -804,13 +885,163 @@ function _show_reschedule_dialog(listview, all_providers) {
     // ── Auto-select logic ──────────────────────────────────────────────────────
     d.fields_dict.auto_select_count.$input.on('input', function () {
         const val = parseInt($(this).val()) || 0;
-        d.$wrapper.find('.applicant-checkbox').prop('checked', false);
-        d.$wrapper.find('.applicant-checkbox').slice(0, val).prop('checked', true);
-        update_selected_count(d);
+        selected_applicant_names.clear();
+        for (let i = 0; i < Math.min(val, applicants.length); i++) {
+            selected_applicant_names.add(applicants[i].name);
+        }
+        applicant_current_page = 1;
+        render_applicant_page();
+    });
+
+    // ── Applicant Filtering & Pagination Events ────────────────────────────────
+    d.$wrapper.on("input", "#filter-applicant-id", function () {
+        applicant_filters.applicant_id = $(this).val().toLowerCase().trim();
+        applicant_current_page = 1;
+        render_applicant_page();
+    });
+    d.$wrapper.on("input", "#filter-candidate-name", function () {
+        applicant_filters.candidate_name = $(this).val().toLowerCase().trim();
+        applicant_current_page = 1;
+        render_applicant_page();
+    });
+    d.$wrapper.on("input", "#filter-programme", function () {
+        applicant_filters.programme = $(this).val().toLowerCase().trim();
+        applicant_current_page = 1;
+        render_applicant_page();
+    });
+    d.$wrapper.on("change", "#pwd-applicant-filter-chk", function () {
+        applicant_filters.pwd_only = this.checked;
+        applicant_current_page = 1;
+        render_applicant_page();
+    });
+    d.$wrapper.on("click", "#applicant-clear-all-btn", function () {
+        selected_applicant_names.clear();
+        render_applicant_page();
+    });
+    d.$wrapper.on("click", "#applicant-prev-btn", function () {
+        if (applicant_current_page > 1) {
+            applicant_current_page--;
+            render_applicant_page();
+        }
+    });
+    d.$wrapper.on("click", "#applicant-next-btn", function () {
+        const filtered = get_filtered_applicants();
+        const total_pages = Math.ceil(filtered.length / applicant_page_size) || 1;
+        if (applicant_current_page < total_pages) {
+            applicant_current_page++;
+            render_applicant_page();
+        }
+    });
+    d.$wrapper.on("change", ".applicant-checkbox", function () {
+        const name = $(this).data("name");
+        if (this.checked) {
+            selected_applicant_names.add(name);
+        } else {
+            selected_applicant_names.delete(name);
+        }
+        update_applicant_counts(get_filtered_applicants().length);
+    });
+    d.$wrapper.on("change", "#select-all-chk", function () {
+        const filtered = get_filtered_applicants();
+        if (this.checked) {
+            filtered.forEach(a => selected_applicant_names.add(a.name));
+        } else {
+            filtered.forEach(a => selected_applicant_names.delete(a.name));
+        }
+        render_applicant_page();
     });
 
     // ── Initial applicant fetch ────────────────────────────────────────────────
-    fetch_absent_applicants(d);
+    function fetch_absent_applicants() {
+        const filters = {
+            entrance_test_status: 'Absent',
+            is_rescheduled: 0
+        };
+
+        if (d.get_value('program_level')) filters.program_level = d.get_value('program_level');
+        if (d.get_value('academic_year')) filters.academic_year = d.get_value('academic_year');
+        if (d.get_value('campus')) filters.campus = d.get_value('campus');
+        if (d.get_value('admission_cycle')) filters.admission_cycle = d.get_value('admission_cycle');
+
+        frappe.call({
+            method: 'frappe.client.get_list',
+            args: {
+                doctype: 'Entrance Test Seat Allocation',
+                filters: filters,
+                fields: ['name', 'candidate_name', 'applicant', 'program', 'pwd'],
+                limit_page_length: 0
+            },
+            callback: function (r) {
+                applicants = r.message || [];
+                selected_applicant_names.clear();
+                applicant_current_page = 1;
+
+                let html = `
+                    <div style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <div style="display:flex; gap:12px; align-items:center;">
+                            <label style="font-weight:600; cursor:pointer; margin:0; display:flex; align-items:center; font-size:13px;">
+                                <input type="checkbox" id="select-all-chk" style="width:15px; height:15px; cursor:pointer; margin-right:6px;">
+                                Select All
+                            </label>
+                            <label style="font-weight:600; cursor:pointer; margin:0; display:flex; align-items:center; font-size:13px; margin-left:12px;" title="Filter PWD Applicants">
+                                <input type="checkbox" id="pwd-applicant-filter-chk" style="width:15px; height:15px; cursor:pointer; margin-right:6px;" ${applicant_filters.pwd_only ? 'checked' : ''}>
+                                ♿ PWD
+                            </label>
+                            <button type="button" id="applicant-clear-all-btn" class="btn btn-xs btn-default" style="font-size:11px; padding:2px 8px; border-radius:4px;">
+                                Clear All
+                            </button>
+                            <span id="sel-count" style="color:#6c757d; font-size:12px; font-weight:500;">
+                                0 of ${applicants.length} selected
+                            </span>
+                        </div>
+                        <div id="applicant-pagination" style="display:flex; align-items:center; gap:8px; font-size:12px;">
+                            <button type="button" id="applicant-prev-btn" class="btn btn-xs btn-default" style="padding:2px 8px; font-size:11px;">
+                                &laquo; Prev
+                            </button>
+                            <span id="applicant-page-info" style="font-weight:600; color:#475569;">Page 1 of 1</span>
+                            <button type="button" id="applicant-next-btn" class="btn btn-xs btn-default" style="padding:2px 8px; font-size:11px;">
+                                Next &raquo;
+                            </button>
+                        </div>
+                    </div>
+                    <div style="border:1px solid #d1d8dd; border-radius:8px; overflow:hidden; background:#ffffff;">
+                        <table class="table table-bordered table-hover" style="margin:0; font-size:13px; width:100%;">
+                            <thead style="background:#f8fafc;">
+                                <tr>
+                                    <th style="width:40px; text-align:center; vertical-align:middle; padding:8px 4px;"></th>
+                                    <th style="width:60px; text-align:center; color:#3b82f6; vertical-align:middle; padding:8px 4px; font-weight:600;">No.</th>
+                                    <th style="width:25%; color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Applicant ID</th>
+                                    <th style="width:35%; color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Candidate Name</th>
+                                    <th style="color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Programme</th>
+                                </tr>
+                                <tr style="background:#f1f5f9;">
+                                    <th style="padding:4px 6px; text-align:center;"></th>
+                                    <th style="padding:4px 6px; text-align:center;"></th>
+                                    <th style="padding:4px 6px;">
+                                        <input type="text" id="filter-applicant-id" placeholder="${__("Filter ID...")}" value="${applicant_filters.applicant_id}"
+                                               style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; font-weight:normal; outline:none; background:#ffffff; box-shadow:inset 0 1px 2px rgba(0,0,0,0.03);">
+                                    </th>
+                                    <th style="padding:4px 6px;">
+                                        <input type="text" id="filter-candidate-name" placeholder="${__("Filter Name...")}" value="${applicant_filters.candidate_name}"
+                                               style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; font-weight:normal; outline:none; background:#ffffff; box-shadow:inset 0 1px 2px rgba(0,0,0,0.03);">
+                                    </th>
+                                    <th style="padding:4px 6px;">
+                                        <input type="text" id="filter-programme" placeholder="${__("Filter Programme...")}" value="${applicant_filters.programme}"
+                                               style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; font-weight:normal; outline:none; background:#ffffff; box-shadow:inset 0 1px 2px rgba(0,0,0,0.03);">
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="reschedule-applicant-table-body"></tbody>
+                        </table>
+                    </div>`;
+                
+                d.get_field('applicants_html').$wrapper.html(html);
+                render_applicant_page();
+            }
+        });
+    }
+
+    fetch_absent_applicants();
 }
 
 // Re-render provider list filtered by campus (no extra API call needed)
@@ -822,90 +1053,4 @@ function _filter_providers_by_campus(d, all_providers) {
         const n = d.$wrapper.find('.provider-checkbox:checked').length;
         d.$wrapper.find('#provider-sel-count').text(`${n} provider(s) selected`);
     });
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-//  fetch_absent_applicants
-// ──────────────────────────────────────────────────────────────────────────────
-function fetch_absent_applicants(d) {
-    const filters = {
-        entrance_test_status: 'Absent',
-        is_rescheduled: 0
-    };
-
-    if (d.get_value('program_level')) filters.program_level = d.get_value('program_level');
-    if (d.get_value('academic_year')) filters.academic_year = d.get_value('academic_year');
-    if (d.get_value('campus')) filters.campus = d.get_value('campus');
-    if (d.get_value('admission_cycle')) filters.admission_cycle = d.get_value('admission_cycle');
-
-    frappe.call({
-        method: 'frappe.client.get_list',
-        args: {
-            doctype: 'Entrance Test Seat Allocation',
-            filters: filters,
-            fields: ['name', 'candidate_name', 'applicant', 'program'],
-            limit_page_length: 50
-        },
-        callback: function (r) {
-            const applicants = r.message || [];
-            let html = `
-                <div style="margin-bottom:10px; display:flex; gap:12px; align-items:center;">
-                    <label style="font-weight:600; cursor:pointer; margin:0; display:flex; align-items:center;">
-                        <input type="checkbox" id="select-all-applicants">
-                        <span style="margin-left:8px;">Select All</span>
-                    </label>
-                    <span id="selected-count" style="color:#6c757d; font-size:12px;">0 of ${applicants.length} selected</span>
-                </div>
-                <div style="max-height:250px; overflow-y:auto; border:1px solid #d1d8dd; border-radius:4px;">
-                    <table class="table table-bordered table-hover" style="margin:0; font-size:13px;">
-                        <thead style="position:sticky; top:0; background:#f4f5f6; z-index:1;">
-                            <tr>
-                                <th style="width:40px;"></th>
-                                <th>Candidate Name</th>
-                                <th>Applicant ID</th>
-                                <th>Programme</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
-
-            if (applicants.length) {
-                applicants.forEach(app => {
-                    html += `
-                        <tr>
-                            <td style="text-align:center;">
-                                <input type="checkbox" class="applicant-checkbox" data-name="${app.name}">
-                            </td>
-                            <td><b>${app.candidate_name || '-'}</b></td>
-                            <td>${app.applicant || '-'}</td>
-                            <td>${app.program || '-'}</td>
-                        </tr>`;
-                });
-            } else {
-                html += '<tr><td colspan="5" style="text-align:center; color:#aab;">No absent applicants found.</td></tr>';
-            }
-
-            html += '</tbody></table></div>';
-            d.get_field('applicants_html').$wrapper.html(html);
-
-            // Select All
-            d.$wrapper.find('#select-all-applicants').on('change', function () {
-                d.$wrapper.find('.applicant-checkbox').prop('checked', this.checked);
-                update_selected_count(d, applicants.length);
-            });
-
-            // Individual
-            d.$wrapper.on('change', '.applicant-checkbox', function () {
-                update_selected_count(d, applicants.length);
-            });
-
-            update_selected_count(d, applicants.length);
-        }
-    });
-}
-
-function update_selected_count(d, total) {
-    const n = d.$wrapper.find('.applicant-checkbox:checked').length;
-    const t = total !== undefined ? total : d.$wrapper.find('.applicant-checkbox').length;
-    d.$wrapper.find('#selected-count').text(`${n} of ${t} selected`);
-    d.$wrapper.find('#select-all-applicants').prop('checked', t > 0 && n === t);
 }

@@ -512,6 +512,121 @@ class EntranceTestList(Document):
             "pwd_applicants": pwd_applicants
         }
 
+    @frappe.whitelist()
+    def get_next_preference_applicants(self):
+        applicants = []
+        for row in self.entrance_test_applicant:
+            if row.allocation_status == "Not Allocated" and row.applicant_id:
+                app_doc = frappe.get_all("Applicant", filters={"name": row.applicant_id}, fields=["first_preference", "second_preference", "third_preference"], limit=1)
+                if not app_doc:
+                    continue
+                app_doc = app_doc[0]
+                current_city = self.entrance_test_city
+                
+                next_city = None
+                preference_step = ""
+                
+                if current_city == app_doc.first_preference and app_doc.second_preference:
+                    next_city = app_doc.second_preference
+                    preference_step = "Preference 2"
+                elif current_city == app_doc.second_preference and app_doc.third_preference:
+                    next_city = app_doc.third_preference
+                    preference_step = "Preference 3"
+                
+                if next_city:
+                    applicants.append({
+                        "name": row.name,
+                        "applicant_id": row.applicant_id,
+                        "candidate_name": row.candidate_name,
+                        "program": row.program,
+                        "previous_preference": current_city,
+                        "next_preference": next_city,
+                        "preference_step": preference_step
+                    })
+        return applicants
+
+    @frappe.whitelist()
+    def generate_next_preference_lists(self, selected_applicants):
+        if isinstance(selected_applicants, str):
+            selected_applicants = json.loads(selected_applicants)
+        
+        # Group selected applicants by next_preference city
+        city_applicants = {}
+        for row_name in selected_applicants:
+            row = frappe.get_doc("Entrance Test Applicant", row_name)
+            app_doc = frappe.get_all("Applicant", filters={"name": row.applicant_id}, fields=["first_preference", "second_preference", "third_preference"], limit=1)
+            if not app_doc:
+                continue
+            app_doc = app_doc[0]
+            current_city = self.entrance_test_city
+            
+            next_city = None
+            if current_city == app_doc.first_preference and app_doc.second_preference:
+                next_city = app_doc.second_preference
+            elif current_city == app_doc.second_preference and app_doc.third_preference:
+                next_city = app_doc.third_preference
+                
+            if next_city:
+                if next_city not in city_applicants:
+                    city_applicants[next_city] = []
+                city_applicants[next_city].append(row)
+        
+        from frappe.utils import now
+        created_lists = []
+        for city, rows in city_applicants.items():
+            existing = frappe.get_all("Entrance Test List", filters={
+                "academic_year": self.academic_year,
+                "admission_cycle": self.admission_cycle,
+                "program_level": self.program_level,
+                "program": self.program,
+                "entrance_test_city": city
+            }, limit=1)
+            
+            if existing:
+                new_list = frappe.get_doc("Entrance Test List", existing[0].name)
+            else:
+                new_list = frappe.new_doc("Entrance Test List")
+                new_list.academic_year = self.academic_year
+                new_list.admission_cycle = self.admission_cycle
+                new_list.program_level = self.program_level
+                new_list.program = self.program
+                new_list.entrance_test_city = city
+                new_list.campus = self.campus
+                new_list.status = "Generated"
+                new_list.generated_on = now()
+                new_list.save()
+            
+            # Add rows to the new list
+            for row in rows:
+                exists = False
+                for existing_row in new_list.entrance_test_applicant:
+                    if existing_row.applicant_id == row.applicant_id:
+                        exists = True
+                        break
+                if not exists:
+                    new_list.append("entrance_test_applicant", {
+                        "applicant_id": row.applicant_id,
+                        "candidate_name": row.candidate_name,
+                        "program": row.program,
+                        "program_level": row.program_level,
+                        "email": row.email,
+                        "gender": row.gender,
+                        "pwd": row.pwd,
+                        "entrance_test": row.entrance_test,
+                        "intereview": row.intereview,
+                        "exempts_entrance_test": row.exempts_entrance_test,
+                        "exempts_interview": row.exempts_interview,
+                        "allocation_status": "Not Allocated"
+                    })
+            new_list.save()
+            created_lists.append(new_list.name)
+            
+            # Update original rows to Converted
+            for row in rows:
+                frappe.db.set_value("Entrance Test Applicant", row.name, "allocation_status", "Converted")
+        
+        return created_lists
+
 
 def _send_allocation_email(allocation, email, allocation_type=None):
     """Send a formal Entrance Test Centre Selection / Allocation email to the applicant."""

@@ -10,13 +10,17 @@ frappe.ui.form.on("Entrance Test List", {
             frm.add_custom_button(__("Allocate Seats"), function () {
                 open_allocation_dialog(frm);
             }, __("Actions"));
+            
+            frm.add_custom_button(__("Generate Preference"), function () {
+                open_generate_preference_dialog(frm);
+            }, __("Actions"));
         }
     }
 });
 
 function open_allocation_dialog(frm) {
     const all_applicants = frm.doc.entrance_test_applicant || [];
-    const applicants = all_applicants.filter(a => a.allocation_status !== "Allocated");
+    const applicants = all_applicants.filter(a => a.allocation_status === "Not Allocated");
 
     if (!applicants.length) {
         const total = all_applicants.length;
@@ -29,7 +33,7 @@ function open_allocation_dialog(frm) {
         } else {
             frappe.msgprint({
                 title: __("Allocation Already Completed"),
-                message: __("All <b>{0}</b> applicants in this list have already been successfully allocated seats. <br><br>The system has verified that there are no pending students left for seat allocation in this list. If you need to allocate new students, please add them to this list or generate a new one.", [total]),
+                message: __("All <b>{0}</b> applicants in this list have already been successfully allocated seats or converted to their next preference. <br><br>The system has verified that there are no pending students left for seat allocation in this list. If you need to allocate new students, please add them to this list or generate a new one.", [total]),
                 indicator: "blue"
             });
         }
@@ -1097,6 +1101,258 @@ function _execute_allocation(frm, parent_dialog, selected_providers, selected_ap
                 parent_dialog.hide();
                 frm.reload_doc();
             }
+        }
+    });
+}
+
+function open_generate_preference_dialog(frm) {
+    frappe.call({
+        method: "get_next_preference_applicants",
+        doc: frm.doc,
+        callback: function (r) {
+            const applicants = r.message || [];
+            if (!applicants.length) {
+                frappe.msgprint({
+                    title: __("No Applicants Found"),
+                    message: __("There are no 'Not Allocated' applicants with a next preference city."),
+                    indicator: "orange"
+                });
+                return;
+            }
+
+            let applicant_filters = { applicant_id: "", candidate_name: "", next_preference: "" };
+            let selected_applicant_names = new Set();
+            applicants.forEach(app => selected_applicant_names.add(app.name));
+
+            function get_filtered_applicants() {
+                return applicants.filter(a => {
+                    const id_match = !applicant_filters.applicant_id || (a.applicant_id || "").toLowerCase().includes(applicant_filters.applicant_id);
+                    const name_match = !applicant_filters.candidate_name || (a.candidate_name || "").toLowerCase().includes(applicant_filters.candidate_name);
+                    const pref_match = !applicant_filters.next_preference || (a.next_preference || "").toLowerCase().includes(applicant_filters.next_preference);
+                    return id_match && name_match && pref_match;
+                });
+            }
+
+            function render_applicant_table() {
+                const filtered = get_filtered_applicants();
+                let rows_html = "";
+                
+                if (!filtered.length) {
+                    rows_html = `
+                        <tr>
+                            <td colspan="6" style="text-align:center; padding:25px; color:#94a3b8; font-size:13px;">
+                                No applicants match the filter criteria.
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    rows_html = filtered.map(app => {
+                        const is_checked = selected_applicant_names.has(app.name);
+                        return `
+                            <tr>
+                                <td style="text-align:center; vertical-align:middle; width:40px;">
+                                    <input type="checkbox" class="pref2-chk" data-name="${app.name}" ${is_checked ? 'checked' : ''}>
+                                </td>
+                                <td style="vertical-align:middle;">${app.applicant_id}</td>
+                                <td style="vertical-align:middle;"><b>${app.candidate_name}</b></td>
+                                <td style="vertical-align:middle;">${app.previous_preference || "-"}</td>
+                                <td style="vertical-align:middle;"><span style="color:#2da44e; font-weight:600;">${app.next_preference}</span></td>
+                                <td style="vertical-align:middle;"><span class="badge badge-info">${app.preference_step}</span></td>
+                            </tr>
+                        `;
+                    }).join("");
+                }
+                
+                d.$wrapper.find("#generate-applicant-table-body").html(rows_html);
+                
+                const sel_count = selected_applicant_names.size;
+                const total_count = applicants.length;
+                if (filtered.length !== total_count) {
+                    d.$wrapper.find("#sel-count").text(`${sel_count} of ${total_count} selected (Filtered: ${filtered.length})`);
+                } else {
+                    d.$wrapper.find("#sel-count").text(`${sel_count} of ${total_count} selected`);
+                }
+                d.$wrapper.find("#pref2-select-all").prop("checked", total_count > 0 && sel_count === total_count);
+            }
+
+            let d = new frappe.ui.Dialog({
+                title: __("Generate Preference"),
+                size: "large",
+                fields: [
+                    {
+                        fieldtype: "HTML",
+                        fieldname: "applicants_html"
+                    }
+                ],
+                primary_action_label: __("Generate"),
+                primary_action(values) {
+                    d.get_primary_btn().prop("disabled", true);
+                    const selected = Array.from(selected_applicant_names);
+                    
+                    if (!selected.length) {
+                        frappe.msgprint(__("Please select at least one applicant."));
+                        d.get_primary_btn().prop("disabled", false);
+                        return;
+                    }
+
+                    frappe.call({
+                        method: "generate_next_preference_lists",
+                        doc: frm.doc,
+                        args: {
+                            selected_applicants: selected
+                        },
+                        callback: function (res) {
+                            d.hide();
+                            
+                            // Success toast logic
+                            if (!document.getElementById("etg-toast-style")) {
+                                const style = document.createElement("style");
+                                style.id = "etg-toast-style";
+                                style.innerHTML = `
+                                    @keyframes etgSlideDown {
+                                        from { opacity: 0; transform: translateX(-50%) translateY(-30px); }
+                                        to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+                                    }
+                                    @keyframes etgSlideUp {
+                                        from { opacity: 1; transform: translateX(-50%) translateY(0); }
+                                        to   { opacity: 0; transform: translateX(-50%) translateY(-30px); }
+                                    }
+                                `;
+                                document.head.appendChild(style);
+                            }
+
+                            const existingToast = document.getElementById("etl-success-toast");
+                            if (existingToast) existingToast.remove();
+
+                            const toast = document.createElement("div");
+                            toast.id = "etl-success-toast";
+                            toast.style.cssText = `
+                                position: fixed; top: 20px; left: 50%; z-index: 999999;
+                                background: #ffffff; border: 1.5px solid #2da44e; border-left: 5px solid #2da44e;
+                                border-radius: 10px; padding: 14px 20px; min-width: 400px;
+                                box-shadow: 0 8px 30px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10);
+                                display: flex; align-items: flex-start; gap: 12px;
+                                font-family: inherit; animation: etgSlideDown 0.35s cubic-bezier(.4,0,.2,1) forwards;
+                            `;
+                            toast.innerHTML = `
+                                <div style="flex-shrink:0; width:36px; height:36px; background:#eafbee;
+                                            border-radius:50%; display:flex; align-items:center;
+                                            justify-content:center; font-size:18px;">✅</div>
+                                <div style="flex:1;">
+                                    <div style="font-weight:700; font-size:14px; color:#1a7f37; margin-bottom:3px;">
+                                        Preference Generation Summary
+                                    </div>
+                                    <div style="font-size:13px; color:#333;">
+                                        Successfully generated Entrance Test Lists for <b>${selected.length}</b> applicant(s) for their next preference.
+                                    </div>
+                                </div>
+                                <span id="etl-success-toast-close"
+                                      style="cursor:pointer; color:#aaa; font-size:18px; line-height:1;
+                                             padding:0 4px; align-self:flex-start; flex-shrink:0;"
+                                      title="Dismiss">✕</span>
+                            `;
+                            document.body.appendChild(toast);
+
+                            const dismissSuccessToast = () => {
+                                toast.style.animation = "etgSlideUp 0.35s cubic-bezier(.4,0,.2,1) forwards";
+                                setTimeout(() => toast.remove(), 350);
+                            };
+                            document.getElementById("etl-success-toast-close").addEventListener("click", dismissSuccessToast);
+                            setTimeout(dismissSuccessToast, 6000);
+
+                            frm.reload_doc();
+                        }
+                    });
+                }
+            });
+
+            let html = `
+                <div style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                    <div style="display:flex; gap:12px; align-items:center;">
+                        <label style="font-weight:600; cursor:pointer; margin:0; display:flex; align-items:center; font-size:13px;">
+                            <input type="checkbox" id="pref2-select-all" style="width:15px; height:15px; cursor:pointer; margin-right:6px;" checked>
+                            Select All
+                        </label>
+                        <span id="sel-count" style="color:#6c757d; font-size:12px; font-weight:500;">
+                            ${applicants.length} of ${applicants.length} selected
+                        </span>
+                    </div>
+                </div>
+                <div style="border:1px solid #d1d8dd; border-radius:8px; overflow:hidden; background:#ffffff;">
+                    <table class="table table-bordered table-hover" style="margin:0; font-size:13px; width:100%;">
+                        <thead style="background:#f8fafc;">
+                            <tr>
+                                <th style="width:40px; text-align:center; vertical-align:middle; padding:8px 4px;"></th>
+                                <th style="color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Applicant ID</th>
+                                <th style="color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Candidate Name</th>
+                                <th style="color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Previous Preference</th>
+                                <th style="color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Next Preference (City)</th>
+                                <th style="color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Preference Step</th>
+                            </tr>
+                            <tr style="background:#f1f5f9;">
+                                <th style="padding:4px 6px; text-align:center;"></th>
+                                <th style="padding:4px 6px;">
+                                    <input type="text" id="filter-gen-applicant-id" placeholder="${__("Filter ID...")}"
+                                           style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; outline:none; background:#ffffff; box-shadow:inset 0 1px 2px rgba(0,0,0,0.03);">
+                                </th>
+                                <th style="padding:4px 6px;">
+                                    <input type="text" id="filter-gen-candidate-name" placeholder="${__("Filter Name...")}"
+                                           style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; outline:none; background:#ffffff; box-shadow:inset 0 1px 2px rgba(0,0,0,0.03);">
+                                </th>
+                                <th style="padding:4px 6px; text-align:center;"></th>
+                                <th style="padding:4px 6px;">
+                                    <input type="text" id="filter-gen-next-pref" placeholder="${__("Filter Next City...")}"
+                                           style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; outline:none; background:#ffffff; box-shadow:inset 0 1px 2px rgba(0,0,0,0.03);">
+                                </th>
+                                <th style="padding:4px 6px; text-align:center;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="generate-applicant-table-body"></tbody>
+                    </table>
+                </div>
+            `;
+            d.fields_dict.applicants_html.$wrapper.html(html);
+
+            d.$wrapper.on("input", "#filter-gen-applicant-id", function () {
+                applicant_filters.applicant_id = $(this).val().toLowerCase().trim();
+                render_applicant_table();
+            });
+            d.$wrapper.on("input", "#filter-gen-candidate-name", function () {
+                applicant_filters.candidate_name = $(this).val().toLowerCase().trim();
+                render_applicant_table();
+            });
+            d.$wrapper.on("input", "#filter-gen-next-pref", function () {
+                applicant_filters.next_preference = $(this).val().toLowerCase().trim();
+                render_applicant_table();
+            });
+
+            d.$wrapper.on("change", ".pref2-chk", function () {
+                const name = $(this).data("name");
+                if (this.checked) selected_applicant_names.add(name);
+                else selected_applicant_names.delete(name);
+                
+                const filtered = get_filtered_applicants();
+                const sel_count = selected_applicant_names.size;
+                if (filtered.length !== applicants.length) {
+                    d.$wrapper.find("#sel-count").text(`${sel_count} of ${applicants.length} selected (Filtered: ${filtered.length})`);
+                } else {
+                    d.$wrapper.find("#sel-count").text(`${sel_count} of ${applicants.length} selected`);
+                }
+                d.$wrapper.find("#pref2-select-all").prop("checked", applicants.length > 0 && sel_count === applicants.length);
+            });
+
+            d.$wrapper.on("change", "#pref2-select-all", function () {
+                const filtered = get_filtered_applicants();
+                if (this.checked) {
+                    filtered.forEach(a => selected_applicant_names.add(a.name));
+                } else {
+                    filtered.forEach(a => selected_applicant_names.delete(a.name));
+                }
+                render_applicant_table();
+            });
+
+            render_applicant_table();
+            d.show();
         }
     });
 }
