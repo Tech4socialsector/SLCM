@@ -1499,7 +1499,8 @@ def get_offer_details(offer_name=None):
             "is_discount": True
         })
 
-    applicant_data = frappe.get_all("Applicant", filters={"name": target_applicant}, fields=["*"], limit=1, ignore_permissions=True)
+    applicant_fields = ["name", "candidate_name", "program", "campus", "admission_cycle", "email", "status", "candidate_photo"]
+    applicant_data = frappe.get_all("Applicant", filters={"name": target_applicant}, fields=applicant_fields, limit=1, ignore_permissions=True)
     applicant_dict = applicant_data[0] if applicant_data else {}
     if applicant_dict and not applicant_dict.get("candidate_photo"):
         applicant_dict["candidate_photo"] = frappe.db.get_value("User", frappe.session.user, "user_image")
