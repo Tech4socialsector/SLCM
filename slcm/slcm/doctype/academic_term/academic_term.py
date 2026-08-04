@@ -6,4 +6,5 @@ from frappe.model.document import Document
 
 
 class AcademicTerm(Document):
-	pass
+	def autoname(self):
+		self.name = f"{self.term_name} - {self.academic_year}"

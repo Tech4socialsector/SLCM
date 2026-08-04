@@ -490,7 +490,7 @@
   {
    "fieldname": "current_year",
    "fieldtype": "Data",
-   "label": "Current Year",
+   "label": "Current Term",
    "length": 10
   },
   {
@@ -1267,14 +1267,14 @@
    "fieldtype": "Column Break"
   },
   {
-   "fetch_from": "programme.academic_year",
+   "fetch_from": "batch.academic_year",
    "fieldname": "academic_year",
    "fieldtype": "Data",
    "label": "Academic year",
    "length": 15
   },
   {
-   "fetch_from": "programme.academic_term",
+   "fetch_from": "batch.academic_term",
    "fieldname": "academic_term",
    "fieldtype": "Data",
    "label": "Academic Term",
@@ -1282,7 +1282,7 @@
   },
   {
    "depends_on": "eval:doc.admission_type != 'PACE'",
-   "fetch_from": "programme.program",
+   "fetch_from": "batch.program",
    "fieldname": "programme_of_study",
    "fieldtype": "Link",
    "label": "Programme Of Study",
@@ -1296,7 +1296,7 @@
    "options": "PACE Programme"
   },
   {
-   "fetch_from": "programme.level_of_study",
+   "fetch_from": "batch.level_of_study",
    "fieldname": "level_of_study",
    "fieldtype": "Data",
    "label": "Level Of Study",
@@ -1607,7 +1607,7 @@
  ],
  "image_field": "passport_size_photo",
  "links": [],
- "modified": "2026-08-03 17:23:05.817168",
+ "modified": "2026-08-04 15:36:05.187232",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",
