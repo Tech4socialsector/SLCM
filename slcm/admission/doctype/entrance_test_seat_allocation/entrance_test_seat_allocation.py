@@ -852,3 +852,117 @@ def get_applicant_count(academic_year=None, admission_cycle=None, program_level=
     }
 
 
+
+@frappe.whitelist()
+def reject_and_allocate_applicants(applicants, providers):
+    if isinstance(applicants, str):
+        applicants = json.loads(applicants)
+    if isinstance(providers, str):
+        providers = json.loads(providers)
+
+    if not applicants:
+        frappe.throw("No applicants selected.")
+    if not providers:
+        frappe.throw("No providers selected.")
+
+    # Validate providers
+    provider_docs = []
+    for pname in providers:
+        pdoc = frappe.get_doc("Entrance Test Provider", pname)
+        if not pdoc.active:
+            frappe.throw(f"Provider '{pname}' is not active.")
+        if pdoc.available_capacity <= 0:
+            frappe.throw(f"Provider '{pname}' has no available capacity.")
+        provider_docs.append(pdoc)
+
+    count = 0
+    total = len(applicants)
+    try:
+        from slcm.admission.doctype.entrance_test_list.entrance_test_list import _send_allocation_email, _send_allocation_notification
+    except ImportError:
+        _send_allocation_email = None
+
+    for i, name in enumerate(applicants):
+        percent = (float(i + 1) / total * 100)
+        frappe.publish_progress(
+            percent, 
+            title=_("Rejecting and Allocating..."), 
+            description=f"Processing {i + 1} of {total}"
+        )
+
+        doc = frappe.get_doc("Entrance Test Seat Allocation", name)
+
+        # 1. Update the existing record directly (no new record creation)
+        old_provider = doc.entrance_test_provider
+        
+        # Revert old provider capacity if one existed
+        if old_provider:
+            try:
+                old_pdoc = frappe.get_doc("Entrance Test Provider", old_provider)
+                frappe.db.set_value("Entrance Test Provider", old_provider, "available_capacity", old_pdoc.available_capacity + 1)
+            except Exception:
+                pass
+
+        doc.allocation_status = "Allocated"
+        doc.entrance_test_status = "Scheduled"
+        doc.result_status = ""
+        doc.result_published = 0
+        doc.part_a_total_marks_scored = 0
+        doc.part_b_total_marks_scored = 0
+        doc.total_marks_secured_in_part_a_b = 0
+        doc.percentile = 0
+        doc.entrance_test_rank = 0
+        doc.part_a_all_india_rank = 0
+        doc.part_b_all_india_rank = 0
+        doc.admit_card_generated = 0
+        doc.admit_card_download = None
+        doc.admit_card_number = None
+        doc.entrance_test_result_card = None
+
+        # Assign first provider (direct allocation)
+        pdoc = provider_docs[0]
+        doc.entrance_test_provider = pdoc.name
+        doc.center_name = pdoc.center_name
+        doc.center_address = pdoc.center_address
+
+        doc.set("assigned_preferences", [])
+        for idx, p in enumerate(provider_docs, start=1):
+            doc.append("assigned_preferences", {
+                "provider": p.name,
+                "center_name": p.center_name,
+                "center_address": p.center_address,
+                "preference_order": idx
+            })
+
+        doc.save(ignore_permissions=True)
+
+        # 2. Decrement capacity for the chosen provider
+        new_avail = max(0, pdoc.available_capacity - 1)
+        frappe.db.set_value("Entrance Test Provider", pdoc.name, "available_capacity", new_avail)
+        pdoc.available_capacity = new_avail
+
+        # 4. Email trigger (like entrance test list)
+        email = doc.email or ""
+        if not email and doc.applicant:
+            try:
+                email = frappe.db.get_value("Applicant", doc.applicant, "email") or ""
+            except Exception:
+                pass
+
+        if email and _send_allocation_email:
+            try:
+                _send_allocation_email(doc, email)
+                try:
+                    _send_allocation_notification(doc, email)
+                except Exception:
+                    pass
+            except Exception:
+                frappe.log_error(traceback.format_exc(), f"Reject and Allocate Email Failed: {doc.name}")
+
+        if i % 10 == 0:
+            frappe.db.commit()
+
+        count += 1
+
+    frappe.db.commit()
+    return count

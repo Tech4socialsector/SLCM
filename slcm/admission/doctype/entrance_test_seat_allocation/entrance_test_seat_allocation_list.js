@@ -69,6 +69,11 @@ frappe.listview_settings['Entrance Test Seat Allocation'] = {
             listview.page.add_inner_button(__("Reschedule"), function () {
                 open_reschedule_dialog(listview);
             }, __("Actions"));
+
+            // 5. Reject and Allocate Centre
+            listview.page.add_inner_button(__("Reject and Allocate Centre"), function () {
+                open_reject_and_allocate_dialog(listview);
+            }, __("Actions"));
         }
     }
 };
@@ -1053,4 +1058,570 @@ function _filter_providers_by_campus(d, all_providers) {
         const n = d.$wrapper.find('.provider-checkbox:checked').length;
         d.$wrapper.find('#provider-sel-count').text(`${n} provider(s) selected`);
     });
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+//  Reject and Allocate Centre Dialog
+// ──────────────────────────────────────────────────────────────────────────────
+function open_reject_and_allocate_dialog(listview) {
+    frappe.call({
+        method: 'frappe.client.get_list',
+        args: {
+            doctype: 'Entrance Test Provider',
+            filters: { active: 1, available_capacity: [">", 0] },
+            fields: ['name', 'center_name', 'center_address', 'campus', 'provider_type'],
+            limit_page_length: 200
+        },
+        callback: function (r) {
+            const all_providers = r.message || [];
+            if (!all_providers.length) {
+                frappe.msgprint({ title: __('No Available Providers'), message: __('No active Entrance Test Providers with available seats found.'), indicator: 'orange' });
+                return;
+            }
+            _show_reject_and_allocate_dialog(listview, all_providers);
+        }
+    });
+}
+
+function _show_reject_and_allocate_dialog(listview, all_providers) {
+    let applicants = [];
+    const selected_applicant_names = new Set();
+    const selected_provider_names = new Set();
+
+    let search_center_query = "";
+    let center_pwd_only = false;
+    let center_current_page = 1;
+    const center_page_size = 9;
+
+    let applicant_current_page = 1;
+    const applicant_page_size = 10;
+    let applicant_filters = { applicant_id: "", candidate_name: "", programme: "", pwd_only: false };
+
+    function get_filtered_providers() {
+        let list = all_providers;
+        const selected_city = d ? d.get_value("entrance_test_city") : "";
+        if (selected_city) {
+            list = list.filter(p => p.city === selected_city);
+        }
+        if (center_pwd_only) {
+            list = list.filter(p => p.pwd_accessible == 1 || p.pwd_accessible === "1");
+        }
+        if (!search_center_query) return list;
+        const q = search_center_query.toLowerCase().trim();
+        return list.filter(p => {
+            const name = (p.center_name || p.name).toLowerCase();
+            const addr = (p.center_address || "").toLowerCase();
+            return name.includes(q) || addr.includes(q);
+        });
+    }
+
+    function render_center_page() {
+        if(!d || !d.$wrapper) return;
+        const filtered = get_filtered_providers();
+        const total_pages = Math.ceil(filtered.length / center_page_size) || 1;
+        if (center_current_page > total_pages) center_current_page = total_pages;
+        if (center_current_page < 1) center_current_page = 1;
+
+        const start = (center_current_page - 1) * center_page_size;
+        const page_providers = filtered.slice(start, start + center_page_size);
+
+        const $wrapper = d.$wrapper;
+
+        if (!page_providers.length) {
+            $wrapper.find("#provider-list").html(`
+                <div style="grid-column: 1 / -1; padding:20px; text-align:center; color:#94a3b8; font-size:13px;">
+                    No centres match your criteria.
+                </div>
+            `);
+        } else {
+            const html = page_providers.map(p => {
+                const is_checked = selected_provider_names.has(p.name);
+                const border_col = is_checked ? "#2da44e" : "#cbd5e1";
+                const bg_col = is_checked ? "#f0fdf4" : "#ffffff";
+                const box_shadow = is_checked ? "0 2px 6px rgba(45,164,78,0.15)" : "0 1px 2px rgba(0,0,0,0.04)";
+
+                return `
+                    <label class="provider-card" data-name="${p.name}"
+                           style="display:flex; align-items:flex-start; gap:10px; padding:10px 12px;
+                                  border:1.5px solid ${border_col}; border-radius:8px; cursor:pointer;
+                                  background:${bg_col}; transition: all 0.15s ease; margin:0; box-shadow:${box_shadow};
+                                  position:relative; min-height:64px; box-sizing:border-box;">
+                        <input type="checkbox" class="provider-checkbox"
+                               data-name="${p.name}"
+                               ${is_checked ? 'checked' : ''}
+                               style="width:16px; height:16px; cursor:pointer; margin-top:2px; flex-shrink:0;">
+                        <span style="line-height:1.4; flex:1; overflow:hidden;">
+                            <span style="display:block; font-weight:700; font-size:13px; color:#1e293b; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="${p.center_name || p.name}">
+                                ${p.center_name || p.name}
+                                ${(p.pwd_accessible == 1 || p.pwd_accessible === "1") ? `<span style="font-size:10px; background:#dbeafe; color:#1e40af; padding:1px 5px; border-radius:4px; margin-left:4px; font-weight:600;">♿ PWD</span>` : ''}
+                            </span>
+                            ${p.center_address
+                        ? `<span style="display:block; font-size:11px; color:#64748b; margin-top:2px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;" title="${p.center_address}">
+                                       ${p.center_address}
+                                   </span>`
+                        : `<span style="display:block; font-size:11px; color:#94a3b8; margin-top:2px; font-style:italic;">No address provided</span>`
+                    }
+                        </span>
+                    </label>
+                `;
+            }).join("");
+            $wrapper.find("#provider-list").html(html);
+        }
+
+        $wrapper.find("#center-page-info").text(`Page ${center_current_page} of ${total_pages}`);
+        $wrapper.find("#center-prev-btn").prop("disabled", center_current_page <= 1);
+        $wrapper.find("#center-next-btn").prop("disabled", center_current_page >= total_pages);
+
+        update_center_counts();
+    }
+
+    function update_center_counts() {
+        if(!d || !d.$wrapper) return;
+        const sel_count = selected_provider_names.size;
+        const total_count = all_providers.length;
+        const filtered_count = get_filtered_providers().length;
+        if (center_pwd_only || search_center_query || d.get_value("entrance_test_city")) {
+            d.$wrapper.find("#provider-sel-count").text(`Centres: ${filtered_count} of ${total_count} | ${sel_count} selected`);
+        } else {
+            d.$wrapper.find("#provider-sel-count").text(`Total Centres: ${total_count} | ${sel_count} selected`);
+        }
+        const all_selected = filtered_count > 0 && sel_count === filtered_count;
+        d.$wrapper.find("#center-select-all-chk").prop("checked", all_selected);
+    }
+
+    function get_filtered_applicants() {
+        return applicants.filter(a => {
+            const id_match = !applicant_filters.applicant_id || (a.applicant || "").toLowerCase().includes(applicant_filters.applicant_id);
+            const name_match = !applicant_filters.candidate_name || (a.candidate_name || "").toLowerCase().includes(applicant_filters.candidate_name);
+            const prog_match = !applicant_filters.programme || (a.program || "").toLowerCase().includes(applicant_filters.programme);
+            let pwd_match = true;
+            if (applicant_filters.pwd_only) {
+                pwd_match = (a.pwd == 1 || (a.pwd || "").toString().toLowerCase() === "yes");
+            }
+            return id_match && name_match && prog_match && pwd_match;
+        });
+    }
+
+    function render_applicant_page() {
+        if(!d || !d.$wrapper) return;
+        const filtered = get_filtered_applicants();
+        const total_pages = Math.ceil(filtered.length / applicant_page_size) || 1;
+        if (applicant_current_page > total_pages) applicant_current_page = total_pages;
+        if (applicant_current_page < 1) applicant_current_page = 1;
+
+        const start = (applicant_current_page - 1) * applicant_page_size;
+        const page_applicants = filtered.slice(start, start + applicant_page_size);
+
+        if (!page_applicants.length) {
+            d.$wrapper.find("#rej-applicant-table-body").html(`<tr><td colspan="6" style="text-align:center; padding:25px; color:#94a3b8; font-size:13px;">No applicants match the filter criteria.</td></tr>`);
+        } else {
+            const rows_html = page_applicants.map((row, p_idx) => {
+                const global_idx = start + p_idx + 1;
+                const is_checked = selected_applicant_names.has(row.name);
+                return `
+                    <tr data-name="${row.name}">
+                        <td style="text-align:center; width:40px; vertical-align:middle;">
+                            <input type="checkbox" class="applicant-checkbox" data-name="${row.name}" ${is_checked ? 'checked' : ''}>
+                        </td>
+                        <td style="text-align:center; width:60px; color:#64748b; font-size:12px; vertical-align:middle;">${global_idx}</td>
+                        <td style="vertical-align:middle;">${row.applicant || "-"}</td>
+                        <td style="vertical-align:middle;">
+                            <b>${row.candidate_name || "Unknown"}</b>
+                            ${(row.pwd == 1 || (row.pwd || "").toString().toLowerCase() === "yes") ? `<span style="font-size:10px; background:#fef3c7; color:#92400e; padding:1px 5px; border-radius:4px; margin-left:4px; border:1px solid #fde68a; font-weight:700;">♿ PWD</span>` : ''}
+                        </td>
+                        <td style="vertical-align:middle;">${row.program || "-"}</td>
+                        <td style="vertical-align:middle;">${row.center_name || "-"}</td>
+                    </tr>
+                `;
+            }).join("");
+            d.$wrapper.find("#rej-applicant-table-body").html(rows_html);
+        }
+        d.$wrapper.find("#applicant-page-info").text(`Page ${applicant_current_page} of ${total_pages}`);
+        d.$wrapper.find("#applicant-prev-btn").prop("disabled", applicant_current_page <= 1);
+        d.$wrapper.find("#applicant-next-btn").prop("disabled", applicant_current_page >= total_pages);
+        update_applicant_counts(filtered.length);
+    }
+
+    function update_applicant_counts(filtered_length) {
+        if(!d || !d.$wrapper) return;
+        const sel_count = selected_applicant_names.size;
+        const total_count = applicants.length;
+        if (filtered_length !== undefined && filtered_length !== total_count) {
+            d.$wrapper.find("#sel-count").text(`${sel_count} of ${total_count} selected (Filtered: ${filtered_length})`);
+        } else {
+            d.$wrapper.find("#sel-count").text(`${sel_count} of ${total_count} selected`);
+        }
+        const all_selected = total_count > 0 && sel_count === total_count;
+        d.$wrapper.find("#select-all-chk").prop("checked", all_selected);
+    }
+
+    function update_allocation_type_ui() {
+        if(!d || !d.$wrapper) return;
+        const alloc_type = d.get_value("allocation_type");
+        if (alloc_type === "Allocate Directly") {
+            d.$wrapper.find("#center-pwd-filter-chk").prop("disabled", false);
+            d.$wrapper.find("#center-search-input").prop("disabled", false);
+            d.$wrapper.find(".provider-checkbox").prop("disabled", false);
+        } else {
+            // Allow Applicant Selection
+            // They can still select preferences if they want, but usually it's just letting applicant pick
+        }
+    }
+
+    let d = new frappe.ui.Dialog({
+        title: __('Reject and Allocate Centre'),
+        size: 'extra-large',
+        fields: [
+            { fieldtype: 'Section Break', label: __('Filters for Applicants') },
+            {
+                label: __('Allocation Status'),
+                fieldname: 'filter_allocation_status',
+                fieldtype: 'Select',
+                options: '\nNot Allocated\nPreferences Assigned\nAllocated\nReallocated\nCancelled\nRejected',
+                on_change: () => fetch_applicants()
+            },
+            { fieldtype: 'Column Break' },
+            {
+                label: __('Entrance Test Status'),
+                fieldname: 'filter_entrance_test_status',
+                fieldtype: 'Select',
+                options: '\nAttended\nAbsent\nRescheduled\nNot Scheduled\nScheduled',
+                on_change: () => fetch_applicants()
+            },
+            { fieldtype: 'Column Break' },
+            {
+                label: __('Centre Name'),
+                fieldname: 'filter_center_name',
+                fieldtype: 'Data',
+                on_change: () => fetch_applicants()
+            },
+            { fieldtype: 'Section Break' },
+            {
+                label: __("Allocate Type"),
+                fieldname: "allocation_type",
+                fieldtype: "Select",
+                options: ["Allocate Directly", "Allow Applicant Selection"],
+                default: "Allocate Directly",
+                reqd: 1,
+                onchange: function() {
+                    update_allocation_type_ui();
+                }
+            },
+            { fieldtype: "Column Break" },
+            {
+                label: __("Entrance Test City"),
+                fieldname: "entrance_test_city",
+                fieldtype: "Link",
+                options: "City",
+                onchange: function() {
+                    center_current_page = 1;
+                    render_center_page();
+                }
+            },
+            { fieldtype: "Section Break" },
+            {
+                fieldtype: "HTML",
+                fieldname: "provider_section_label",
+                options: `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+                        <div style="font-weight:600; font-size:13px; color:#333;">
+                            ${__("Select Entrance Test Centres")}
+                            <span style="font-weight:400; font-size:11px; color:#888; margin-left:8px;">
+                                — Select one or more centres as preferences for applicants
+                            </span>
+                        </div>
+                        <div style="position:relative; width:240px;">
+                            <input type="text" id="center-search-input" placeholder="${__("🔍 Search centre...")}" 
+                                   style="width:100%; padding:6px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; outline:none; background:#ffffff; transition:border 0.15s;">
+                        </div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; background:#f1f5f9; padding:6px 12px; border-radius:6px; font-size:12px;">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <label style="margin:0; font-weight:600; cursor:pointer; display:flex; align-items:center; color:#334155;">
+                                <input type="checkbox" id="center-select-all-chk" style="width:15px; height:15px; cursor:pointer; margin-right:6px;">
+                                Select All Centres
+                            </label>
+                            <label style="margin:0; font-weight:600; cursor:pointer; display:flex; align-items:center; color:#334155; margin-left:12px;" title="Filter PWD Accessible Centres">
+                                <input type="checkbox" id="center-pwd-filter-chk" style="width:15px; height:15px; cursor:pointer; margin-right:6px;">
+                                ♿ PWD
+                            </label>
+                            <button type="button" id="center-clear-all-btn" class="btn btn-xs btn-default" style="font-size:11px; padding:2px 8px; border-radius:4px;">
+                                Clear All
+                            </button>
+                        </div>
+                        <div id="provider-sel-count" style="color:#475569; font-weight:600; font-size:12px;">
+                            Total Centres: ${all_providers.length} | 0 selected
+                        </div>
+                    </div>
+                `
+            },
+            {
+                fieldtype: "HTML",
+                fieldname: "provider_checkboxes",
+                options: `
+                    <div id="provider-list" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; min-height:150px; padding:6px; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc;">
+                    </div>
+                    <div style="display:flex; justify-content:flex-end; align-items:center; margin-top:8px;">
+                        <div id="center-pagination" style="display:flex; align-items:center; gap:8px; font-size:12px;">
+                            <button type="button" id="center-prev-btn" class="btn btn-xs btn-default" style="padding:2px 8px; font-size:11px;">
+                                &laquo; Prev
+                            </button>
+                            <span id="center-page-info" style="font-weight:600; color:#475569;">Page 1 of 1</span>
+                            <button type="button" id="center-next-btn" class="btn btn-xs btn-default" style="padding:2px 8px; font-size:11px;">
+                                Next &raquo;
+                            </button>
+                        </div>
+                    </div>
+                `
+            },
+            { fieldtype: 'Section Break', label: __('Select Applicants') },
+            {
+                label: __("Auto-select (Enter Number)"),
+                fieldname: "auto_select_count",
+                fieldtype: "Int",
+                description: __("Enter count to automatically select first N unallocated students")
+            },
+            { fieldtype: "Section Break" },
+            { fieldtype: 'HTML', fieldname: 'applicants_html' }
+        ],
+        primary_action_label: __('Reject and Allocate'),
+        primary_action(values) {
+            const selected_applicants = Array.from(selected_applicant_names);
+            const selected_providers_array = Array.from(selected_provider_names);
+
+            if (!selected_applicants.length) {
+                frappe.msgprint(__('Please select at least one applicant.'));
+                return;
+            }
+            if (values.allocation_type === "Allocate Directly" && !selected_providers_array.length) {
+                frappe.msgprint(__('Please select at least one provider (test centre).'));
+                return;
+            }
+
+            const confirm_dialog = new frappe.ui.Dialog({
+                title: __('Confirm Re-allocation'),
+                size: "large",
+                fields: [
+                    {
+                        fieldtype: "HTML",
+                        fieldname: "confirm_html",
+                        options: `
+                            <div style="background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:10px; padding:14px 18px; margin-bottom:16px;">
+                                <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                                    <span style="font-size:15px; font-weight:700; color:#1e293b;">
+                                        Confirm Re-allocation Process
+                                    </span>
+                                    <span style="font-size:11px; background:#e0e7ff; color:#3730a3; padding:2px 8px; border-radius:4px; font-weight:600; margin-left:auto;">
+                                        ${values.allocation_type}
+                                    </span>
+                                </div>
+                                <div style="display:flex; gap:24px; flex-wrap:wrap; font-size:13px; color:#334155;">
+                                    <div>
+                                        <span style="font-weight:600;">Total Applicants Selected:</span>
+                                        <span style="font-weight:700; color:#1e40af; font-size:14px; margin-left:4px;">${selected_applicants.length}</span>
+                                    </div>
+                                    <div>
+                                        <span style="font-weight:600;">Centres Selected:</span>
+                                        <span style="font-weight:700; color:#6d28d9; font-size:14px; margin-left:4px;">${selected_providers_array.length}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="background:#fff7ed; border:1px solid #ffedd5; padding:10px 14px; border-radius:8px; font-size:12px; color:#9a3412;">
+                                <b>Note:</b> This will update the existing allocation records to reflect the new centre(s). The old centre capacity will be restored.
+                            </div>
+                        `
+                    }
+                ],
+                primary_action_label: __('Confirm & Re-allocate'),
+                primary_action: function () {
+                    confirm_dialog.hide();
+                    frappe.call({
+                        method: 'slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.reject_and_allocate_applicants',
+                        args: {
+                            applicants: selected_applicants,
+                            providers: selected_providers_array
+                        },
+                        freeze: true,
+                        freeze_message: __('Re-allocating...'),
+                        callback: function (r) {
+                            if (!r.exc) {
+                                d.hide();
+                                listview.refresh();
+                                frappe.show_alert({ message: __('Successfully re-allocated {0} applicants.', [selected_applicants.length]), indicator: 'green' });
+                            }
+                        }
+                    });
+                },
+                secondary_action_label: __("Cancel"),
+                secondary_action: function () {
+                    confirm_dialog.hide();
+                }
+            });
+            confirm_dialog.show();
+        }
+    });
+
+    d.show();
+
+    // Initial render for providers
+    render_center_page();
+
+    // Provider events
+    d.$wrapper.on("input", "#center-search-input", function () {
+        search_center_query = $(this).val();
+        center_current_page = 1;
+        render_center_page();
+    });
+
+    d.$wrapper.on("change", "#center-pwd-filter-chk", function () {
+        center_pwd_only = this.checked;
+        center_current_page = 1;
+        render_center_page();
+    });
+
+    d.$wrapper.on("click", "#center-clear-all-btn", function () {
+        selected_provider_names.clear();
+        render_center_page();
+    });
+
+    d.$wrapper.on("click", "#center-prev-btn", function () {
+        if (center_current_page > 1) {
+            center_current_page--;
+            render_center_page();
+        }
+    });
+
+    d.$wrapper.on("click", "#center-next-btn", function () {
+        const filtered = get_filtered_providers();
+        const total_pages = Math.ceil(filtered.length / center_page_size) || 1;
+        if (center_current_page < total_pages) {
+            center_current_page++;
+            render_center_page();
+        }
+    });
+
+    d.$wrapper.on("change", ".provider-checkbox", function () {
+        const name = $(this).data("name");
+        if (this.checked) {
+            selected_provider_names.add(name);
+        } else {
+            selected_provider_names.delete(name);
+        }
+        render_center_page(); // re-render to update selected styling
+    });
+
+    d.$wrapper.on("change", "#center-select-all-chk", function () {
+        const filtered = get_filtered_providers();
+        if (this.checked) {
+            filtered.forEach(p => selected_provider_names.add(p.name));
+        } else {
+            filtered.forEach(p => selected_provider_names.delete(p.name));
+        }
+        render_center_page();
+    });
+
+
+    // Applicant Events
+    d.$wrapper.on("input", "#filter-applicant-id", function () { applicant_filters.applicant_id = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
+    d.$wrapper.on("input", "#filter-candidate-name", function () { applicant_filters.candidate_name = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
+    d.$wrapper.on("input", "#filter-programme", function () { applicant_filters.programme = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
+    d.$wrapper.on("change", "#pwd-applicant-filter-chk", function () { applicant_filters.pwd_only = this.checked; applicant_current_page = 1; render_applicant_page(); });
+    d.$wrapper.on("click", "#applicant-clear-all-btn", function () { selected_applicant_names.clear(); render_applicant_page(); });
+    d.$wrapper.on("click", "#applicant-prev-btn", function () { if (applicant_current_page > 1) { applicant_current_page--; render_applicant_page(); } });
+    d.$wrapper.on("click", "#applicant-next-btn", function () { const filtered = get_filtered_applicants(); const total_pages = Math.ceil(filtered.length / applicant_page_size) || 1; if (applicant_current_page < total_pages) { applicant_current_page++; render_applicant_page(); } });
+    d.$wrapper.on("change", ".applicant-checkbox", function () { const name = $(this).data("name"); if (this.checked) selected_applicant_names.add(name); else selected_applicant_names.delete(name); update_applicant_counts(get_filtered_applicants().length); });
+    d.$wrapper.on("change", "#select-all-chk", function () { const filtered = get_filtered_applicants(); if (this.checked) filtered.forEach(a => selected_applicant_names.add(a.name)); else filtered.forEach(a => selected_applicant_names.delete(a.name)); render_applicant_page(); });
+
+    // Handle auto select count
+    d.fields_dict.auto_select_count.df.onchange = function() {
+        const count = d.get_value("auto_select_count");
+        if (count > 0) {
+            const filtered = get_filtered_applicants();
+            selected_applicant_names.clear();
+            for (let i = 0; i < Math.min(count, filtered.length); i++) {
+                selected_applicant_names.add(filtered[i].name);
+            }
+            render_applicant_page();
+        }
+    };
+
+    function fetch_applicants() {
+        const filters = {};
+        if (d.get_value('filter_allocation_status')) filters.allocation_status = d.get_value('filter_allocation_status');
+        if (d.get_value('filter_entrance_test_status')) filters.entrance_test_status = d.get_value('filter_entrance_test_status');
+        if (d.get_value('filter_center_name')) filters.center_name = ["like", `%${d.get_value('filter_center_name')}%`];
+
+        frappe.call({
+            method: 'frappe.client.get_list',
+            args: {
+                doctype: 'Entrance Test Seat Allocation',
+                filters: filters,
+                fields: ['name', 'candidate_name', 'applicant', 'program', 'pwd', 'center_name'],
+                limit_page_length: 0
+            },
+            callback: function (r) {
+                applicants = r.message || [];
+                selected_applicant_names.clear();
+                applicant_current_page = 1;
+
+                let html = `
+                    <div style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <div style="display:flex; gap:12px; align-items:center;">
+                            <label style="font-weight:600; cursor:pointer; margin:0; display:flex; align-items:center; font-size:13px;">
+                                <input type="checkbox" id="select-all-chk" style="width:15px; height:15px; cursor:pointer; margin-right:6px;">
+                                Select All Applicants
+                            </label>
+                            <label style="font-weight:600; cursor:pointer; margin:0; display:flex; align-items:center; font-size:13px; margin-left:12px;">
+                                <input type="checkbox" id="pwd-applicant-filter-chk" style="width:15px; height:15px; cursor:pointer; margin-right:6px;" ${applicant_filters.pwd_only ? 'checked' : ''}>
+                                ♿ PWD
+                            </label>
+                            <button type="button" id="applicant-clear-all-btn" class="btn btn-xs btn-default" style="font-size:11px; padding:2px 8px; border-radius:4px;">Clear All</button>
+                            <span id="sel-count" style="color:#6c757d; font-size:12px; font-weight:500;">0 of ${applicants.length} selected</span>
+                        </div>
+                        <div id="applicant-pagination" style="display:flex; align-items:center; gap:8px; font-size:12px;">
+                            <button type="button" id="applicant-prev-btn" class="btn btn-xs btn-default" style="padding:2px 8px; font-size:11px;">&laquo; Prev</button>
+                            <span id="applicant-page-info" style="font-weight:600; color:#475569;">Page 1 of 1</span>
+                            <button type="button" id="applicant-next-btn" class="btn btn-xs btn-default" style="padding:2px 8px; font-size:11px;">Next &raquo;</button>
+                        </div>
+                    </div>
+                    <div style="border:1px solid #d1d8dd; border-radius:8px; overflow:hidden; background:#ffffff;">
+                        <table class="table table-bordered table-hover" style="margin:0; font-size:13px; width:100%;">
+                            <thead style="background:#f8fafc;">
+                                <tr>
+                                    <th style="width:40px; text-align:center; vertical-align:middle; padding:8px 4px;"></th>
+                                    <th style="width:60px; text-align:center; color:#3b82f6; vertical-align:middle; padding:8px 4px; font-weight:600;">No.</th>
+                                    <th style="width:20%; color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Applicant ID</th>
+                                    <th style="width:25%; color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Candidate Name</th>
+                                    <th style="color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Programme</th>
+                                    <th style="color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Old Centre Name</th>
+                                </tr>
+                                <tr style="background:#f1f5f9;">
+                                    <th style="padding:4px 6px; text-align:center;"></th>
+                                    <th style="padding:4px 6px; text-align:center;"></th>
+                                    <th style="padding:4px 6px;">
+                                        <input type="text" id="filter-applicant-id" placeholder="${__("Filter ID...")}" value="${applicant_filters.applicant_id}"
+                                               style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; outline:none; background:#ffffff;">
+                                    </th>
+                                    <th style="padding:4px 6px;">
+                                        <input type="text" id="filter-candidate-name" placeholder="${__("Filter Name...")}" value="${applicant_filters.candidate_name}"
+                                               style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; outline:none; background:#ffffff;">
+                                    </th>
+                                    <th style="padding:4px 6px;">
+                                        <input type="text" id="filter-programme" placeholder="${__("Filter Programme...")}" value="${applicant_filters.programme}"
+                                               style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; outline:none; background:#ffffff;">
+                                    </th>
+                                    <th style="padding:4px 6px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="rej-applicant-table-body"></tbody>
+                        </table>
+                    </div>`;
+                
+                d.get_field('applicants_html').$wrapper.html(html);
+                render_applicant_page();
+            }
+        });
+    }
+
+    fetch_applicants();
 }
