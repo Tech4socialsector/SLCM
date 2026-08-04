@@ -867,21 +867,11 @@ def get_context(context):
                 except: pass
                 context.et_campus_branding = campus_branding
 
-                # Reporting time calculation (1 hour before exam)
-                from datetime import timedelta
-                f_date = et_doc.re_allocation_date if context.et_is_rescheduled else et_doc.allocation_date
-                if f_date:
-                    try:
-                        # Assuming f_date is a datetime object or can be parsed
-                        if isinstance(f_date, str):
-                            from frappe.utils import get_datetime
-                            f_date = get_datetime(f_date)
-                        rep_dt = f_date - timedelta(hours=1)
-                        context.et_reporting_time = frappe.utils.format_datetime(rep_dt, "hh:mm a")
-                    except:
-                        context.et_reporting_time = "09:30 AM" # Fallback
-                else:
-                    context.et_reporting_time = "—"
+                # Reporting time & Test time calculation (45 minutes before start time)
+                from slcm.admission.utils.portal import get_entrance_test_times
+                test_time_str, rep_time_str = get_entrance_test_times(et_doc)
+                context.et_test_time = test_time_str
+                context.et_reporting_time = rep_time_str
         except Exception: pass
 
         # Interview details

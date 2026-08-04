@@ -176,7 +176,12 @@ def _update_applicant_status_for_entrance_test_status(applicant_name, entrance_t
             title="Applicant Status Sync Skipped",
         )
         return
-    frappe.db.set_value("Applicant", applicant_name, "status", new_status)
+    app_doc = frappe.get_doc("Applicant", applicant_name)
+    if app_doc.status != new_status:
+        old_status = app_doc.status
+        app_doc.status = new_status
+        app_doc.flags.old_status = old_status
+        app_doc.save(ignore_permissions=True)
     frappe.clear_document_cache("Applicant", applicant_name)
     # Notify clients so the Applicant form can auto-refresh if open
     frappe.publish_realtime(
@@ -289,11 +294,11 @@ def bulk_download_all_records(names):
 
 
 @frappe.whitelist()
-def update_ranks_by_category(academic_year, admission_cycle, program_level, entrance_test_list=None, program=None):
+def update_ranks_by_category(academic_year, admission_cycle, program_level, entrance_test_list=None, program=None, applicant_type=None):
     """
     Ranks applicants based on total_marks_secured_in_part_a_b for a given batch and sends result emails.
     Filters: Academic Year, Admission Cycle, Program Level.
-    Optional: entrance_test_list, program
+    Optional: entrance_test_list, program, applicant_type
     """
     if not (academic_year and admission_cycle and program_level):
         frappe.throw("Academic Year, Admission Cycle, and Program Level are required for ranking.")
@@ -309,6 +314,10 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
         attended_filters["program"] = program
     if entrance_test_list:
         attended_filters["entrance_test_list"] = entrance_test_list
+    if applicant_type == "Domestic Applicants":
+        attended_filters["is_international_applicant"] = 0
+    elif applicant_type == "International Applicants":
+        attended_filters["is_international_applicant"] = 1
 
     attended_records = frappe.get_all("Entrance Test Seat Allocation",
         filters=attended_filters,
@@ -354,6 +363,8 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
             }
         return results
 
+    frappe.publish_progress(10, title=_("Update Ranking"), description=_("Calculating scores and percentiles..."))
+
     # 1.1 Perform ranking passes
     part_a_data = calculate_ranks_and_percentiles(attended_records, "part_a_total_marks_scored")
     part_b_data = calculate_ranks_and_percentiles(attended_records, "part_b_total_marks_scored")
@@ -373,10 +384,12 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
             "percentile": percentile
         }, update_modified=False)
 
-        if i % 50 == 0 or i == total_attended:
-            frappe.db.commit()
-            percent = (i / total_attended) * 100
-            frappe.publish_progress(percent, title=_("Update Ranking"), description=f"Ranked {i} of {total_attended}")
+        percent = 10 + int((i / total_attended) * 90)
+        frappe.publish_progress(
+            percent,
+            title=_("Update Ranking"),
+            description=_("Ranked {0} of {1}").format(i, total_attended)
+        )
 
     frappe.db.commit()
 
@@ -398,7 +411,7 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
 
 
 @frappe.whitelist()
-def publish_results(academic_year, admission_cycle, program_level, program=None, entrance_test_list=None):
+def publish_results(academic_year, admission_cycle, program_level, program=None, entrance_test_list=None, applicant_type=None):
     """
     Sets result_published = 1 for all Entrance Test Seat Allocation records
     matching the given filters (Attended applicants) in bulk.
@@ -417,6 +430,10 @@ def publish_results(academic_year, admission_cycle, program_level, program=None,
         filters["program"] = program
     if entrance_test_list:
         filters["entrance_test_list"] = entrance_test_list
+    if applicant_type == "Domestic Applicants":
+        filters["is_international_applicant"] = 0
+    elif applicant_type == "International Applicants":
+        filters["is_international_applicant"] = 1
 
     records = frappe.get_all(
         "Entrance Test Seat Allocation",
@@ -688,6 +705,30 @@ def _send_reschedule_email(doc, email):
             cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
         
         if message_body:
+            attachments = []
+            if not getattr(doc, "is_international_applicant", 0):
+                card_field = "re_admit_card_download" if doc.is_rescheduled else "admit_card_download"
+                if not getattr(doc, card_field, None):
+                    try:
+                        from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
+                        generate_and_store_admit_card(doc, is_rescheduled=bool(doc.is_rescheduled))
+                        doc.reload()
+                    except Exception:
+                        pass
+
+                card_url = getattr(doc, card_field, None)
+                if card_url:
+                    try:
+                        file_name = frappe.db.get_value("File", {"file_url": card_url}, "name")
+                        if file_name:
+                            file_doc = frappe.get_doc("File", file_name)
+                            attachments.append({
+                                "fname": file_doc.file_name,
+                                "fcontent": file_doc.get_content()
+                            })
+                    except Exception:
+                        pass
+
             try:
                 # Use now=False to queue the email.
                 sender = None
@@ -700,6 +741,7 @@ def _send_reschedule_email(doc, email):
                     cc=cc_list,
                     subject=subject,
                     message=message_body,
+                    attachments=attachments,
                     reference_doctype="Entrance Test Seat Allocation",
                     reference_name=doc.name,
                     now=False
@@ -906,15 +948,26 @@ def _send_automated_center_change_email(allocation, email):
         
         if message_body:
             attachments = []
-            if allocation.admit_card_download:
-                try:
-                    file_doc = frappe.get_doc("File", {"file_url": allocation.admit_card_download})
-                    attachments.append({
-                        "fname": file_doc.file_name,
-                        "fcontent": file_doc.get_content()
-                    })
-                except Exception:
-                    pass
+            if not getattr(allocation, "is_international_applicant", 0):
+                if not getattr(allocation, "admit_card_download", None):
+                    try:
+                        from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
+                        generate_and_store_admit_card(allocation, is_rescheduled=False)
+                        allocation.reload()
+                    except Exception:
+                        pass
+
+                if getattr(allocation, "admit_card_download", None):
+                    try:
+                        file_name = frappe.db.get_value("File", {"file_url": allocation.admit_card_download}, "name")
+                        if file_name:
+                            file_doc = frappe.get_doc("File", file_name)
+                            attachments.append({
+                                "fname": file_doc.file_name,
+                                "fcontent": file_doc.get_content()
+                            })
+                    except Exception:
+                        pass
 
             try:
                 sender = None
@@ -937,4 +990,43 @@ def _send_automated_center_change_email(allocation, email):
 
     except Exception:
         frappe.log_error(message=traceback.format_exc(), title=f"Centre Change Email Failed: {allocation.name}")
+
+
+@frappe.whitelist()
+def get_applicant_count(academic_year=None, admission_cycle=None, program_level=None, applicant_type=None, program=None):
+    """
+    Returns total, attended, and absent applicant counts for Entrance Test Seat Allocation
+    matching the dialog filters.
+    """
+    filters = {}
+    if academic_year:
+        filters["academic_year"] = academic_year
+    if admission_cycle:
+        filters["admission_cycle"] = admission_cycle
+    if program_level:
+        filters["program_level"] = program_level
+    if program:
+        filters["program"] = program
+
+    if applicant_type == "Domestic Applicants":
+        filters["is_international_applicant"] = 0
+    elif applicant_type == "International Applicants":
+        filters["is_international_applicant"] = 1
+
+    total = frappe.db.count("Entrance Test Seat Allocation", filters=filters)
+
+    filters_attended = filters.copy()
+    filters_attended["entrance_test_status"] = "Attended"
+    attended = frappe.db.count("Entrance Test Seat Allocation", filters=filters_attended)
+
+    filters_absent = filters.copy()
+    filters_absent["entrance_test_status"] = "Absent"
+    absent = frappe.db.count("Entrance Test Seat Allocation", filters=filters_absent)
+
+    return {
+        "total": total,
+        "attended": attended,
+        "absent": absent
+    }
+
 

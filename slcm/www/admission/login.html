@@ -494,24 +494,6 @@ src="https://www.facebook.com/tr?id=1279045953496223&ev=PageView&noscript=1"
   });
 </script>
 
-<!-- Event snippet for Submit lead form conversion page when someone clicks on the chosen link or button. -->
-<script>
-function gtag_report_conversion(url) {
-  var callback = function () {
-    if (typeof(url) != 'undefined') {
-      window.location = url;
-    }
-  };
-  gtag('event', 'conversion', {
-      'send_to': 'AW-11282568347/ABOjCPXCgNQcEJup-YMq',
-      'value': 1.0,
-      'currency': 'INR',
-      'event_callback': callback
-  });
-  return false;
-}
-</script>
-
 
 </head>
 <body>
@@ -1388,7 +1370,6 @@ async function doRegister() {
     if (success) {
       // TFSS team added this code from here...
       if (typeof fbq === 'function') fbq('track', 'CompleteRegistration');
-      if (typeof gtag_report_conversion === 'function') gtag_report_conversion();
       // ...to here (TFSS team)
       document.getElementById('reg-name').value = '';
       document.getElementById('reg-email').value = '';

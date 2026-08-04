@@ -83,19 +83,21 @@
    "fieldname": "required_cgpa",
    "fieldtype": "Float",
    "label": "Required cgpa",
-   "options": "Marks / CGPA"
+   "options": "Marks / CGPA",
+   "precision": "1"
   },
   {
    "fieldname": "required_percentage",
    "fieldtype": "Percent",
    "label": "Required percentage",
-   "precision": "2"
+   "precision": "1"
   },
   {
    "depends_on": "eval:doc.qualification_level == 'XII'",
    "fieldname": "sslc_percentage",
    "fieldtype": "Percent",
-   "label": "SSLC Percentage"
+   "label": "SSLC Percentage",
+   "precision": "1"
   },
   {
    "fieldname": "hsc_group",
@@ -111,7 +113,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-01 14:36:30.710144",
+ "modified": "2026-07-30 11:06:47.070404",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule",

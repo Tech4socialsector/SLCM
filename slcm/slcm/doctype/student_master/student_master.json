@@ -1348,7 +1348,7 @@
   },
   {
    "fieldname": "id_validity",
-   "fieldtype": "Date",
+   "fieldtype": "Data",
    "label": "ID Validity"
   },
   {
@@ -1618,7 +1618,7 @@
  ],
  "image_field": "passport_size_photo",
  "links": [],
- "modified": "2026-07-30 15:08:02.134628",
+ "modified": "2026-07-30 13:49:44.830097",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",

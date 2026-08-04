@@ -16,19 +16,19 @@ def get_context(context):
         context.no_record = True
         return context
 
-    # Get Seat Allocation record
-    allocation = frappe.get_all("Entrance Test Seat Allocation", 
-        filters={"applicant": applicant_name},
-        fields=["*"],
-        order_by="creation desc",
-        limit=1
+    # Get Seat Allocation record name directly without wasted full field query
+    allocation_name = frappe.db.get_value(
+        "Entrance Test Seat Allocation", 
+        {"applicant": applicant_name},
+        "name",
+        order_by="creation desc"
     )
 
-    if not allocation:
+    if not allocation_name:
         context.no_record = True
         return context
 
-    doc = frappe.get_doc("Entrance Test Seat Allocation", allocation[0].name)
+    doc = frappe.get_doc("Entrance Test Seat Allocation", allocation_name)
     context.doc = doc
     
     # Check if rescheduled
@@ -60,17 +60,11 @@ def get_context(context):
     # Check if result is published
     context.show_result = (doc.entrance_test_status in ["Attended", "Absent"] and doc.result_published == 1)
 
-    # Reporting time calculation (1 hour before exam)
-    from datetime import timedelta
-    f_date = doc.re_allocation_date if is_rescheduled else doc.allocation_date
-    if f_date:
-        try:
-            rep_dt = f_date - timedelta(hours=1)
-            context.reporting_time = format_datetime(rep_dt, "hh:mm a")
-        except:
-            context.reporting_time = "09:30 AM" # Fallback
-    else:
-        context.reporting_time = "—"
+    # Entrance test times calculation (reporting time is 45 mins before start time)
+    from slcm.admission.utils.portal import get_entrance_test_times
+    test_time_str, rep_time_str = get_entrance_test_times(doc)
+    context.test_time = test_time_str
+    context.reporting_time = rep_time_str
     # Branding & JSON for client-side generation
     campus_branding = {"campus_name": doc.campus or "Institution of Legal Education", "logo": None}
     try:
@@ -107,10 +101,6 @@ def save_provider(allocation_name, selected_provider, is_rescheduled=False):
     if not alloc_data:
         frappe.throw(_("Entrance Test Seat Allocation record not found."), frappe.DoesNotExistError)
 
-    # Authorized if:
-    # 1. Applicant name matches
-    # 2. Email matches (case-insensitive)
-    # 3. User is System Manager or Entrance Test Admin
     is_authorized = False
     
     if applicant_name and alloc_data.applicant == applicant_name:
@@ -119,7 +109,7 @@ def save_provider(allocation_name, selected_provider, is_rescheduled=False):
         is_authorized = True
     else:
         user_roles = frappe.get_roles(user)
-        if any(role in user_roles for role in ["System Manager", "Entrance Test Admin"]):
+        if any(role in user_roles for role in ["System Manager", "Entrance Test Admin", "Exam Cell"]):
             is_authorized = True
 
     if not is_authorized:
@@ -127,7 +117,6 @@ def save_provider(allocation_name, selected_provider, is_rescheduled=False):
     
     # Validation
     doc = frappe.get_doc("Entrance Test Seat Allocation", allocation_name)
-    # Cast is_rescheduled to safe boolean if stringified
     if isinstance(is_rescheduled, str):
         is_rescheduled = is_rescheduled.lower() == "true"
 
@@ -140,11 +129,35 @@ def save_provider(allocation_name, selected_provider, is_rescheduled=False):
     else:
         return confirm_applicant_preference(allocation_name, selected_provider)
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def download_admit_card(allocation_name):
     """
     Downloads the Admit Card PDF generated from the 'Admit Card' Print Format.
+    Requires authentication and ownership verification.
     """
+    user = frappe.session.user
+    if user == "Guest":
+        frappe.throw(_("Please login to proceed"), frappe.PermissionError)
+
+    applicant_name = frappe.db.get_value("Applicant", {"email": user}, "name")
+    alloc_data = frappe.db.get_value("Entrance Test Seat Allocation", allocation_name, ["applicant", "email"], as_dict=True)
+    
+    if not alloc_data:
+        frappe.throw(_("Entrance Test Seat Allocation record not found."), frappe.DoesNotExistError)
+
+    is_authorized = False
+    if applicant_name and alloc_data.applicant == applicant_name:
+        is_authorized = True
+    elif alloc_data.email and alloc_data.email.strip().lower() == user.strip().lower():
+        is_authorized = True
+    else:
+        user_roles = frappe.get_roles(user)
+        if any(role in user_roles for role in ["System Manager", "Entrance Test Admin", "Exam Cell"]):
+            is_authorized = True
+
+    if not is_authorized:
+        frappe.throw(_("You are not authorized to access this admit card."), frappe.PermissionError)
+
     doc = frappe.get_doc("Entrance Test Seat Allocation", allocation_name)
     
     is_rescheduled = (doc.is_rescheduled == 1 or doc.entrance_test_status == "Rescheduled")
@@ -162,23 +175,47 @@ def download_admit_card(allocation_name):
     else:
         frappe.throw(_("Admit Card generation failed. Please ensure the 'Admit Card' Print Format is created in the Desk."))
 
+def ensure_admit_card_print_format():
+    if not frappe.db.exists("Print Format", "Admit Card"):
+        pf_path = frappe.get_app_path("slcm", "admission", "print_format", "admit_card", "admit_card.json")
+        if os.path.exists(pf_path):
+            import json
+            with open(pf_path, "r", encoding="utf-8") as f:
+                pf_data = json.load(f)
+                pf_doc = frappe.new_doc("Print Format")
+                pf_doc.update(pf_data)
+                pf_doc.insert(ignore_permissions=True)
+                frappe.db.commit()
+
 def get_admit_card_html(doc, is_rescheduled):
     """
-    Strictly fetches the Admit Card HTML using the 'Admit Card' Print Format from Desk.
-    No hardcoded HTML remains here.
+    Fetches the Admit Card HTML using the 'Admit Card' Print Format from Desk or direct template fallback.
     """
+    ensure_admit_card_print_format()
     print_format_name = "Admit Card"
     
-    if not frappe.db.exists("Print Format", print_format_name):
-        frappe.throw(
-            _("Print Format 'Admit Card' not found. Please create it in the Desk and paste the code from sample_admit_card.html."),
-            title=_("Configuration Missing")
+    try:
+        return frappe.get_print(
+            doc.doctype, 
+            doc.name, 
+            print_format_name, 
+            as_pdf=False, 
+            no_letterhead=True
+        )
+    except Exception as e:
+        frappe.log_error(
+            message=traceback.format_exc(),
+            title=f"get_print failed for Admit Card {getattr(doc, 'name', '')}"
         )
 
-    return frappe.get_print(
-        doc.doctype, 
-        doc.name, 
-        print_format_name, 
-        as_pdf=False, 
-        no_letterhead=True
-    )
+    pf_path = frappe.get_app_path("slcm", "admission", "print_format", "admit_card", "admit_card.json")
+    if os.path.exists(pf_path):
+        import json
+        with open(pf_path, "r", encoding="utf-8") as f:
+            pf_json = json.load(f)
+            html_template = pf_json.get("html")
+            if html_template:
+                from slcm.admission.utils.jinja import get_file_b64
+                return frappe.render_template(html_template, {"doc": doc, "get_file_b64": get_file_b64})
+
+    frappe.throw(_("Admit Card Print Format could not be loaded."))

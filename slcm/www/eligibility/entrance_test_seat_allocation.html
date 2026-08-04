@@ -382,7 +382,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="data-label">Test Time</div>
-                                    <div class="data-value">{{ frappe.utils.format_datetime(doc.re_allocation_date if is_rescheduled else doc.allocation_date, "hh:mm a") if (doc.re_allocation_date if is_rescheduled else doc.allocation_date) else '—' }}</div>
+                                    <div class="data-value">{{ test_time or '—' }}</div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="data-label">Test Mode</div>
@@ -407,9 +407,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="data-label">Exam Time</div>
-                                    <div class="data-value">{{ frappe.utils.format_datetime(doc.re_allocation_date if
-                                        is_rescheduled else doc.allocation_date, "hh:mm a") if (doc.re_allocation_date
-                                        if is_rescheduled else doc.allocation_date) else '—' }}</div>
+                                    <div class="data-value">{{ test_time or '—' }}</div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="data-label">Reporting Time</div>

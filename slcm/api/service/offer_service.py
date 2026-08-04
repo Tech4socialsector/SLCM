@@ -838,16 +838,19 @@ class OfferService:
         if tpl.get("email_account"):
             sender = frappe.db.get_value("Email Account", tpl.email_account, "email_id")
 
-        try:
-            frappe.sendmail(
-                sender=sender,
-                recipients=[applicant_email],
-                subject=subject,
-                message=message,
-                attachments=attachments
-            )
-        except Exception as e:
-            frappe.log_error(f"Failed to send offer email to {applicant_email}: {str(e)}", "Offer Email Error")
+        cc_list = []
+        if tpl.get("cc"):
+            cc_val = tpl.get("cc")
+            cc_list = [c.strip() for c in cc_val.replace(";", ",").split(",") if c.strip()]
+
+        frappe.sendmail(
+            sender=sender,
+            recipients=[applicant_email],
+            cc=cc_list if cc_list else None,
+            subject=subject,
+            message=message,
+            attachments=attachments
+        )
 
         # Log offer communication
         from slcm.admission.utils.notifications import log_communication
@@ -1177,13 +1180,19 @@ class OfferService:
                 if send_email and offer.applicant:
                     applicant_email = frappe.db.get_value("Applicant", offer.applicant, "email")
                     if applicant_email:
+                        cc_list = []
+                        if tpl.get("cc"):
+                            cc_val = tpl.get("cc")
+                            cc_list = [c.strip() for c in cc_val.replace(";", ",").split(",") if c.strip()]
+
                         frappe.sendmail(
                             recipients=[applicant_email],
                             subject=subject,
                             message=final_message,
                             reference_doctype="Offer Letter",
                             reference_name=offer.name,
-                            sender=actual_sender
+                            sender=actual_sender,
+                            cc=cc_list if cc_list else None
                         )
                     else:
                         raise ValueError(_("Applicant has no email address."))

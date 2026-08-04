@@ -646,7 +646,7 @@
    "fieldtype": "Link",
    "label": "First Preference",
    "mandatory_depends_on": "eval:doc.foriegn_national == \"No\" || doc.undergraduate_degree_india == \"Yes\"",
-   "options": "Entrance Test Provider"
+   "options": "Entrance Test City"
   },
   {
    "depends_on": "eval:doc.foriegn_national == \"No\" || doc.undergraduate_degree_india == \"Yes\"",
@@ -654,7 +654,7 @@
    "fieldtype": "Link",
    "label": "Second Preference",
    "mandatory_depends_on": "eval:doc.foriegn_national == \"No\" || doc.undergraduate_degree_india == \"Yes\"",
-   "options": "Entrance Test Provider"
+   "options": "Entrance Test City"
   },
   {
    "depends_on": "eval:doc.foriegn_national == \"No\" || doc.undergraduate_degree_india == \"Yes\"",
@@ -663,7 +663,7 @@
    "label": "Third Preference",
    "mandatory_depends_on": "eval:doc.foriegn_national == \"No\" || doc.undergraduate_degree_india == \"Yes\"",
    "not_nullable": 1,
-   "options": "Entrance Test Provider"
+   "options": "Entrance Test City"
   },
   {
    "fieldname": "other_information_tab",

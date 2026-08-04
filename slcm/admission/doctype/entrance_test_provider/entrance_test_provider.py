@@ -7,29 +7,72 @@ from frappe.model.document import Document
 
 class EntranceTestProvider(Document):
 	def validate(self):
+		self.validate_duplicate_programmes()
 		self.calculate_capacity()
+
+	def validate_duplicate_programmes(self):
+		if hasattr(self, "programme_capacity") and self.programme_capacity:
+			seen = set()
+			for row in self.programme_capacity:
+				if row.program:
+					if row.program in seen:
+						frappe.throw(
+							frappe._("Programme '{0}' has been selected more than once.").format(row.program)
+						)
+					seen.add(row.program)
 
 	def calculate_capacity(self):
 		"""
-		Re-calculates all room and global capacities to ensure data integrity.
+		Re-calculates global and per-programme capacities based on programme_capacity child table.
 		"""
-		total_cap = 0
-		total_reserved = 0
-		total_available = 0
+		if hasattr(self, "programme_capacity") and self.programme_capacity:
+			for row in self.programme_capacity:
+				cap = row.capacity or 0
+				res = row.reserved_seats or 0
+				row.available_capacity = max(0, cap - res)
 
-		for room in self.provider_room:
-			# Calculate room available capacity
-			room.room_available_capacity = (room.room_capacity or 0) - (room.room_reserved_seats or 0)
-			
-			# Accumulate totals
-			total_cap += (room.room_capacity or 0)
-			total_reserved += (room.room_reserved_seats or 0)
-			total_available += (room.room_available_capacity or 0)
+			total_cap = sum((row.capacity or 0) for row in self.programme_capacity)
+			total_res = sum((row.reserved_seats or 0) for row in self.programme_capacity)
+			self.total_capacity = total_cap
+			self.reserved_seats = total_res
+			self.available_capacity = max(0, total_cap - total_res)
 
-		# Set main fields
-		self.total_capacity = total_cap
-		self.reserved_seats = total_reserved
-		self.available_capacity = total_available
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def get_active_cycle_programs(doctype, txt, searchfield, start, page_len, filters):
+	"""
+	Returns only programmes offered in active Admission Cycles.
+	"""
+	active_cycles = frappe.db.get_all("Admission Cycle", filters={"status": "Active"}, pluck="name")
+	
+	if not active_cycles:
+		# Fallback to all admission cycles if no cycle is explicitly marked 'Active'
+		active_cycles = frappe.db.get_all("Admission Cycle", pluck="name")
+
+	if not active_cycles:
+		return frappe.db.sql("""
+			SELECT name, program_name
+			FROM `tabProgramme`
+			WHERE (name LIKE %(txt)s OR program_name LIKE %(txt)s)
+			ORDER BY name ASC
+			LIMIT %(page_len)s OFFSET %(start)s
+		""", {"txt": f"%{txt}%", "page_len": int(page_len), "start": int(start)})
+
+	escaped_cycles = ", ".join(frappe.db.escape(c) for c in active_cycles)
+	return frappe.db.sql(f"""
+		SELECT DISTINCT p.name, p.program_name
+		FROM `tabProgramme` p
+		INNER JOIN `tabAdmission Cycle Program` acp ON acp.program = p.name
+		WHERE acp.parent IN ({escaped_cycles})
+		  AND (p.name LIKE %(txt)s OR p.program_name LIKE %(txt)s)
+		ORDER BY p.name ASC
+		LIMIT %(page_len)s OFFSET %(start)s
+	""", {
+		"txt": f"%{txt}%",
+		"page_len": int(page_len),
+		"start": int(start)
+	})
 
 
 @frappe.whitelist()

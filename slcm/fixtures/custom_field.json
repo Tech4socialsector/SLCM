@@ -6430,6 +6430,7 @@
   "width": null
  },
  {
+  "doctype": "Custom Field",
   "dt": "User",
   "fieldname": "last_applicant_reminder_sent",
   "fieldtype": "Datetime",
