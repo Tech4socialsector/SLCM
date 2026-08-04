@@ -1344,16 +1344,13 @@ var _lpRegInFlight = false;
 async function doRegister() {
   // TFSS team added this code from here...
   if (_lpRegInFlight) return;
+  _lpRegInFlight = true;
   // ...to here (TFSS team)
 
   if (!lpValidate([
     { id: 'reg-name',   type: 'name',   msg: 'Please enter your full name.' },
     { id: 'reg-email',  type: 'email',  msg: 'Please enter a valid email address.' }
   ], 'register')) return;
-
-  // TFSS team added this code from here...
-  _lpRegInFlight = true;
-  // ...to here (TFSS team)
 
   /* Signup Restriction: Skip for now
   if (EMAIL_VERIFICATION_STATUS !== 'domain_valid') {
@@ -1399,9 +1396,6 @@ async function doRegister() {
     lpNotify('Connection error. Please try again.', 'danger', 'register');
   } finally {
     btn.disabled = false; spin.style.display = 'none'; label.textContent = 'Register';
-    // TFSS team added this code from here...
-    _lpRegInFlight = false;
-    // ...to here (TFSS team)
   }
 }
 
@@ -1557,7 +1551,7 @@ function initDatePager() {
     var btns = pager.querySelector('.card-pager-btns');
     if (btns) btns.style.display = 'none';
     var info = document.getElementById('date-pager-info');
-    if (info) info.textContent = items.length + ' date' + (items.length === 1 ? '' : 's');
+    if (info) info.textContent = '';
   }
 }
 
@@ -1574,7 +1568,7 @@ function renderDatePage(items) {
     if (totalPages > 1) {
       info.textContent = 'Page ' + (_datePage + 1) + ' / ' + totalPages;
     } else {
-      info.textContent = total + ' date' + (total === 1 ? '' : 's');
+      info.textContent = '';
     }
   }
   var prev = document.getElementById('date-prev');

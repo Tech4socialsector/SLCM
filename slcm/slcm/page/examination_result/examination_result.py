@@ -1127,7 +1127,7 @@ def get_marks_for_students(course, exam_plan, student_ids):
 	# Fetch header-level data (totals, grade, status fields)
 	header_rows = frappe.db.sql(
 		"""
-		SELECT scm.student, scm.total_marks, scm.grade,
+		SELECT scm.student, scm.course_offering, scm.total_marks, scm.grade,
 		       scm.status, scm.enrollment_status, scm.attendance_status,
 		       scm.mfa, scm.fairness_status, scm.consider_for_sgpa, scm.remark,
 		       scm.updated_final_marks, scm.updated_grade,
@@ -1141,6 +1141,23 @@ def get_marks_for_students(course, exam_plan, student_ids):
 		{"course": course, "exam_plan": exam_plan, "students": tuple(student_ids)},
 		as_dict=True,
 	)
+
+	# Attendance shortage: computed from Attendance Summary (which is itself
+	# evaluated against Attendance Settings.minimum_attendance_percentage) —
+	# not from a manually-picked status — so the Grade column can show "AS"
+	# whenever a student's real attendance falls below the configured minimum.
+	shortage_students = set()
+	course_offerings = {row["course_offering"] for row in header_rows if row.get("course_offering")}
+	if course_offerings:
+		att_rows = frappe.db.get_all(
+			"Attendance Summary",
+			filters={
+				"student": ["in", list(student_ids)],
+				"course_offering": ["in", list(course_offerings)],
+			},
+			fields=["student", "eligible_for_exam"],
+		)
+		shortage_students = {r.student for r in att_rows if not r.eligible_for_exam}
 
 	# Fetch Approved FA MFA Applications for this course
 	fa_mfa_apps = frappe.db.sql(
@@ -1205,6 +1222,7 @@ def get_marks_for_students(course, exam_plan, student_ids):
 			"status":              row["status"] or "",
 			"enrollment_status":   row["enrollment_status"] or "",
 			"attendance_status":   row["attendance_status"] or "",
+			"attendance_shortage": s in shortage_students,
 			"mfa":                 "Yes" if s in approved_fa_mfa_students else (row.get("mfa") or "No"),
 			"fairness_status":     row["fairness_status"] or "",
 			"consider_for_sgpa":   int(row["consider_for_sgpa"] or 0),
@@ -1239,6 +1257,7 @@ def get_marks_for_students(course, exam_plan, student_ids):
 		if s not in result:
 			result[s] = {"total": None, "grade": "",
 			             "status": "", "enrollment_status": "", "attendance_status": "",
+			             "attendance_shortage": s in shortage_students,
 			             "mfa": "Yes" if s in approved_fa_mfa_students else "No",
 			             "fairness_status": "", "consider_for_sgpa": 1, "remark": "",
 			             "updated_final_marks": None, "updated_grade": "", "re_exam_grade": "",

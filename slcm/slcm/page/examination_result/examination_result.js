@@ -2164,29 +2164,29 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			});
 
 			var mfaStr    = sm.mfa === 'Yes' ? ' <sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '';
-			var asStr     = sm.attendance_status === 'Attendance Shortage'
-				? ' <sup class="er2-ann-badge er2-as-badge">AS</sup>' : '';
 			var arrearStr = (sm.arrear_marker && sm.mfa !== 'Yes')
 				? ' <sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm.arrear_marker) + '</sup>' : '';
 
-			// Grade section
-			var gradeVal   = isAbsent ? 'Ab' : (sm.grade || '');
+			// Grade section — attendance shortage (computed from Attendance
+			// Summary against Attendance Settings.minimum_attendance_percentage)
+			// replaces the grade entirely with "AS" instead of just annotating it.
+			var isAS       = !isAbsent && (!!sm.attendance_shortage || sm.attendance_status === 'Attendance Shortage');
+			var gradeVal   = isAbsent ? 'Ab' : (isAS ? 'AS' : (sm.grade || ''));
 			var isFailed   = gradeVal && (S.failed_grades || []).indexOf(gradeVal) !== -1;
-			var gradeColor = isFailed ? '#dc2626' : '#059669';
-			var gradeBorderColor = isFailed ? '#fca5a5' : '#a7f3d0';
+			var gradeColor = isAS ? '#b45309' : (isFailed ? '#dc2626' : '#059669');
+			var gradeBorderColor = isAS ? '#fde68a' : (isFailed ? '#fca5a5' : '#a7f3d0');
 			cells += '<td style="font-weight:700;" class="er2-total-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + total + '</td>';
 			if (canEdit) {
 				cells += '<td style="padding:4px 6px;" class="er2-grade-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' +
 					'<span style="white-space:nowrap;">' +
 					'<input type="text" class="er2-grade-input" data-student="' + frappe.utils.escape_html(s.student) + '" ' +
-					'value="' + frappe.utils.escape_html(gradeVal) + '" placeholder="—" ' +
-					'style="width:60px;height:26px;border:1.5px solid ' + gradeBorderColor + ';border-radius:6px;padding:0 6px;font-size:12px;font-weight:700;text-align:center;outline:none;color:' + gradeColor + ';">' +
+					'value="' + frappe.utils.escape_html(gradeVal) + '" placeholder="—" ' + (isAS ? 'readonly title="Grade withheld — attendance below the required minimum (see Attendance Settings)"' : '') + ' ' +
+					'style="width:60px;height:26px;border:1.5px solid ' + gradeBorderColor + ';border-radius:6px;padding:0 6px;font-size:12px;font-weight:700;text-align:center;outline:none;color:' + gradeColor + ';' + (isAS ? 'background:#fffbeb;' : '') + '">' +
 					(sm.mfa === 'Yes' ? '<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '') +
-					(sm.attendance_status === 'Attendance Shortage' ? '<sup class="er2-ann-badge er2-as-badge">AS</sup>' : '') +
 					(sm.arrear_marker && sm.mfa !== 'Yes' ? '<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm.arrear_marker) + '</sup>' : '') +
 					'</span></td>';
 			} else {
-				cells += '<td style="font-weight:700;color:' + gradeColor + ';" class="er2-grade-cell" data-student="' + frappe.utils.escape_html(s.student) + '">' + frappe.utils.escape_html(gradeVal || '—') + mfaStr + asStr + arrearStr + '</td>';
+				cells += '<td style="font-weight:700;color:' + gradeColor + ';" class="er2-grade-cell" data-student="' + frappe.utils.escape_html(s.student) + '" title="' + (isAS ? 'Grade withheld — attendance below the required minimum' : '') + '">' + frappe.utils.escape_html(gradeVal || '—') + mfaStr + arrearStr + '</td>';
 			}
 
 			// Overall Status (Fairness Status removed from display)
@@ -2291,20 +2291,21 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 
 			// Updated Final Result
 			var ufmVal  = sm.updated_final_marks != null ? parseFloat(sm.updated_final_marks).toFixed(2) : '—';
-			// Fallback: if updated_grade not set yet, show regular grade
-			var ugRaw   = sm.updated_grade || sm.grade || '';
+			// Fallback: if updated_grade not set yet, show regular grade;
+			// attendance shortage replaces it outright with "AS" (see Grade column).
+			var ugRaw   = isAS ? 'AS' : (sm.updated_grade || sm.grade || '');
 			var ugVal   = ugRaw || '—';
 			cells += '<td style="font-weight:700;text-align:center;" class="er2-ufm-cell" data-student="' + stu_ug + '">' + frappe.utils.escape_html(ufmVal) + '</td>';
 			if (canEdit) {
 				cells += '<td style="padding:4px 6px;text-align:center;" class="er2-ug-cell" data-student="' + stu_ug + '">' +
 					'<span style="white-space:nowrap;">' +
 					'<input type="text" class="er2-ug-input" data-student="' + stu_ug + '" ' +
-					'value="' + frappe.utils.escape_html(ugRaw) + '" placeholder="—" ' +
-					'style="width:60px;height:26px;border:1.5px solid #c7d2fe;border-radius:6px;padding:0 6px;font-size:12px;font-weight:700;text-align:center;outline:none;color:#3730a3;">' +
-					mfaStr + asStr + arrearStr + impStr +
+					'value="' + frappe.utils.escape_html(ugRaw) + '" placeholder="—" ' + (isAS ? 'readonly' : '') + ' ' +
+					'style="width:60px;height:26px;border:1.5px solid #c7d2fe;border-radius:6px;padding:0 6px;font-size:12px;font-weight:700;text-align:center;outline:none;color:#3730a3;' + (isAS ? 'background:#fffbeb;' : '') + '">' +
+					mfaStr + arrearStr + impStr +
 					'</span></td>';
 			} else {
-				cells += '<td style="font-weight:700;color:#3730a3;text-align:center;" class="er2-ug-cell" data-student="' + stu_ug + '">' + frappe.utils.escape_html(ugVal) + mfaStr + asStr + arrearStr + impStr + '</td>';
+				cells += '<td style="font-weight:700;color:#3730a3;text-align:center;" class="er2-ug-cell" data-student="' + stu_ug + '">' + frappe.utils.escape_html(ugVal) + mfaStr + arrearStr + impStr + '</td>';
 			}
 
 			rows += '<tr class="er2-mrow" data-student="' + frappe.utils.escape_html(s.student) + '">' + cells + '</tr>';
@@ -2390,38 +2391,40 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 								var ug = r.message.updated_grade;
 								var sm_ref    = S.marks[student] || {};
 								var isMFA2    = sm_ref.mfa === 'Yes';
-								var isAS2     = sm_ref.attendance_status === 'Attendance Shortage';
+								var isAS2     = !!sm_ref.attendance_shortage || sm_ref.attendance_status === 'Attendance Shortage';
 								var mStr      = isMFA2 ? ' <sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '';
-								var aStr      = isAS2  ? ' <sup class="er2-ann-badge er2-as-badge">AS</sup>'  : '';
 								var arrStr    = sm_ref.arrear_marker
 									? ' <sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm_ref.arrear_marker) + '</sup>' : '';
+								// Attendance shortage replaces the grade text itself with "AS"
+								// (rather than annotating it) — see render_marks_table().
+								var gradeDisp = isAS2 ? 'AS' : (grade || '');
 								// Update in-place
 								$mtable.find('.er2-total-cell[data-student="' + student + '"]')
 									.text(total != null ? parseFloat(total).toFixed(2) : '—');
 								var $gc = $mtable.find('.er2-grade-cell[data-student="' + student + '"]');
 								var $gi = $gc.find('.er2-grade-input');
 								if ($gi.length) {
-									$gi.val(grade || '');
+									$gi.val(gradeDisp);
+									$gi.prop('readonly', isAS2);
 									$gc.find('sup').remove();
 									if (isMFA2) $gi.after('<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>');
-									if (isAS2)  $gi.after('<sup class="er2-ann-badge er2-as-badge">AS</sup>');
 									if (sm_ref.arrear_marker) $gi.after('<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm_ref.arrear_marker) + '</sup>');
 								} else {
-									$gc.html(frappe.utils.escape_html(grade || '—') + mStr + aStr + arrStr);
+									$gc.html(frappe.utils.escape_html(gradeDisp || '—') + mStr + arrStr);
 								}
 								$mtable.find('.er2-ufm-cell[data-student="' + student + '"]')
 									.text(ufm != null ? parseFloat(ufm).toFixed(2) : '—');
 								var $ugCell  = $mtable.find('.er2-ug-cell[data-student="' + student + '"]');
 								var $ugInput = $ugCell.find('.er2-ug-input');
-								var ugDisp   = ug || (S.marks[student] && S.marks[student].grade) || '';
+								var ugDisp   = isAS2 ? 'AS' : (ug || (S.marks[student] && S.marks[student].grade) || '');
 								if ($ugInput.length) {
-									if (ugDisp) $ugInput.val(ugDisp);
+									$ugInput.val(ugDisp);
+									$ugInput.prop('readonly', isAS2);
 									$ugCell.find('sup').remove();
 									if (isMFA2) $ugInput.after('<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>');
-									if (isAS2)  $ugInput.after('<sup class="er2-ann-badge er2-as-badge">AS</sup>');
 									if (sm_ref.arrear_marker) $ugInput.after('<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm_ref.arrear_marker) + '</sup>');
 								} else {
-									$ugCell.html(frappe.utils.escape_html(ugDisp || '—') + mStr + aStr + arrStr);
+									$ugCell.html(frappe.utils.escape_html(ugDisp || '—') + mStr + arrStr);
 								}
 								var rxGrade = r.message.re_exam_grade;
 								$mtable.find('.er2-rxg-cell[data-student="' + student + '"] .er2-rxg-box')
@@ -2489,26 +2492,28 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 							render_marks_table();
 						} else if (field === 'mfa') {
 							var isMFA  = S.marks[student].mfa === 'Yes';
-							var isAS   = S.marks[student].attendance_status === 'Attendance Shortage';
+							var isAS   = !!S.marks[student].attendance_shortage || S.marks[student].attendance_status === 'Attendance Shortage';
 							var arrMk  = S.marks[student].arrear_marker || '';
 							var mStr   = isMFA  ? ' <sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '';
-							var aStr   = isAS   ? ' <sup class="er2-ann-badge er2-as-badge">AS</sup>'  : '';
 							var arStr  = arrMk  ? ' <sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(arrMk) + '</sup>' : '';
-							var tg    = S.marks[student].grade || '—';
-							var ug    = S.marks[student].updated_grade || '—';
+							var tg    = isAS ? 'AS' : (S.marks[student].grade || '—');
+							var ug    = isAS ? 'AS' : (S.marks[student].updated_grade || '—');
 							var $gc2  = $tr.find('.er2-grade-cell');
 							var $gi2  = $gc2.find('.er2-grade-input');
 							if ($gi2.length) {
+								$gi2.val(tg);
+								$gi2.prop('readonly', isAS);
 								$gc2.find('sup').remove();
 								if (isMFA) $gi2.after('<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>');
-								if (isAS)  $gi2.after('<sup class="er2-ann-badge er2-as-badge">AS</sup>');
 								if (arrMk) $gi2.after('<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(arrMk) + '</sup>');
 							} else {
-								$gc2.html(frappe.utils.escape_html(tg) + mStr + aStr + arStr);
+								$gc2.html(frappe.utils.escape_html(tg) + mStr + arStr);
 							}
 							var $ugC = $tr.find('.er2-ug-cell');
 							var $ugI = $ugC.find('.er2-ug-input');
 							if ($ugI.length) {
+								$ugI.val(ug);
+								$ugI.prop('readonly', isAS);
 								$ugC.find('sup').remove();
 								if (isMFA) $ugI.after('<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>');
 								if (arrMk) $ugI.after('<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(arrMk) + '</sup>');

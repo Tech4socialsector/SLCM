@@ -228,7 +228,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-06-08 14:50:27.271753",
+ "modified": "2026-07-30 13:47:07.973171",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Reminder Email Configuration",
@@ -246,7 +246,8 @@
   },
   {
    "read": 1,
-   "role": "PACE Admission Manager"
+   "role": "PACE Admission Manager",
+   "write": 1
   }
  ],
  "quick_entry": 1,

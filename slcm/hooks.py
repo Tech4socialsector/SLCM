@@ -1,6 +1,6 @@
 app_name = "slcm"
 app_title = "SLCM"
-page_js = {"dashboard-view": ["public/js/pace_dashboard_filters.js", "public/js/document_verifier_filters.js", "public/js/admission_dashboard_filters.js"]}
+page_js = {"dashboard-view": ["public/js/pace_dashboard_filters.js", "public/js/document_verifier_filters.js", "public/js/admission_dashboard_filters.js", "public/js/entrance_test_dashboard_filters.js"]}
 
 
 required_apps = ["payments"]
@@ -205,7 +205,8 @@ fixtures = [
                 "Applicant Not Started Application Reminder",
                 "Applicant Draft Application Reminder",
                 "Applicant Fee Payment Pending Reminder",
-                "Applicant Application Rejected"
+                "Applicant Application Rejected",
+                "Admission Fee Pending Reminder"
             ]]
         ]
     },
@@ -517,6 +518,7 @@ scheduler_events = {
 			# minute (Frappe's finest interval) but only actually polls once
 			# "Poll Interval (seconds)" in RFID SQL Agent Settings has elapsed.
 			"slcm.slcm.rfid_sql_agent.poller.poll_rfid_sql_agent",
+            "slcm.slcm.tasks.check_stuck_bulk_emails"
 		],
 		"*/10 * * * *": [
 			"slcm.admission.doctype.waitlist_rule.waitlist_promotion.run_scheduled_waitlist"

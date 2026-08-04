@@ -2,6 +2,7 @@
  "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
+ "autoname": "field:city_name",
  "creation": "2026-03-10 19:14:32.376390",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -42,10 +43,11 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-31 16:54:35.273895",
+ "modified": "2026-07-30 10:23:57.424180",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "City",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {

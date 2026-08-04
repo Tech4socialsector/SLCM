@@ -237,9 +237,7 @@
   "final_category_rank",
   "final_rank_category",
   "final_horizontal",
-  "where_did_you_hear_about_the_programme",
-  "pwd_required_test",
-  "scribe_allotment"
+  "where_did_you_hear_about_the_programme"
  ],
  "fields": [
   {
@@ -793,32 +791,33 @@
    "fieldtype": "Data",
    "label": "Year of Completion (Class X)",
    "length": 10,
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.admission_type != \"PACE\""
   },
   {
    "fieldname": "class_x_percentage",
    "fieldtype": "Float",
    "label": "Percentage/CGPA obtained (Class X)",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.admission_type != \"PACE\""
   },
   {
    "fieldname": "class_x_school",
    "fieldtype": "Data",
    "label": "School/College/University (Class X)",
    "length": 140,
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.admission_type != \"PACE\""
   },
   {
    "fieldname": "class_x_board",
    "fieldtype": "Data",
    "label": "Board (Class X)",
    "length": 100,
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.admission_type != \"PACE\""
   },
   {
    "fieldname": "class_x_max_cgpa",
    "fieldtype": "Float",
-   "label": "If CGPA, maximum CGPA (Class X)"
+   "label": "If CGPA, maximum CGPA (Class X)",
+   "mandatory_depends_on": "eval:doc.admission_type != \"PACE\""
   },
   {
    "fieldname": "column_break_academics_1",
@@ -834,39 +833,40 @@
    "fieldtype": "Data",
    "label": "Name of Examination (Class XII/Equivalent - as per marksheet)",
    "length": 140,
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.admission_type != \"PACE\""
   },
   {
    "fieldname": "class_xii_completion_year",
    "fieldtype": "Data",
    "label": "Year of Completion (Class XII/Equivalent)",
    "length": 10,
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.admission_type != \"PACE\""
   },
   {
    "fieldname": "class_xii_school",
    "fieldtype": "Data",
    "label": "School/College/University (Class XII/Equivalent)",
    "length": 140,
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.admission_type != \"PACE\""
   },
   {
    "fieldname": "class_xii_board",
    "fieldtype": "Data",
    "label": "Board (Class XII/Equivalent)",
    "length": 100,
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.admission_type != \"PACE\""
   },
   {
    "fieldname": "class_xii_percentage",
    "fieldtype": "Float",
    "label": "Percentage/CGPA obtained (Class XII/Equivalent)",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.admission_type != \"PACE\""
   },
   {
    "fieldname": "class_xii_max_cgpa",
    "fieldtype": "Float",
-   "label": "If CGPA, maximum CGPA (Class XII/Equivalent)"
+   "label": "If CGPA, maximum CGPA (Class XII/Equivalent)",
+   "mandatory_depends_on": "eval:doc.admission_type != \"PACE\""
   },
   {
    "fieldname": "tab_account",
@@ -1057,13 +1057,13 @@
    "fieldname": "std_x_marksheet",
    "fieldtype": "Attach",
    "label": "STD X Marksheet",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.admission_type != \"PACE\""
   },
   {
    "fieldname": "class_xii_marksheet",
    "fieldtype": "Attach",
    "label": "Class XII Marksheet/Equivalent (Max 5MB - png, jpeg, jpg, pdf)",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.admission_type != \"PACE\""
   },
   {
    "fieldname": "transfer_certificate",
@@ -1347,7 +1347,7 @@
   },
   {
    "fieldname": "id_validity",
-   "fieldtype": "Date",
+   "fieldtype": "Data",
    "label": "ID Validity"
   },
   {
@@ -1611,7 +1611,7 @@
  ],
  "image_field": "passport_size_photo",
  "links": [],
- "modified": "2026-07-23 10:40:44.483834",
+ "modified": "2026-07-30 13:49:44.830097",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Master",

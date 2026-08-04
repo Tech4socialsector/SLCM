@@ -158,6 +158,7 @@
   "program",
   "admission_cycle",
   "user_id",
+  "needs_accommodation",
   "column_break_rynw",
   "admission_year",
   "academic_year",
@@ -645,7 +646,7 @@
    "fieldtype": "Link",
    "label": "First Preference",
    "mandatory_depends_on": "eval:doc.foriegn_national == \"No\" || doc.undergraduate_degree_india == \"Yes\"",
-   "options": "Entrance Test Provider"
+   "options": "Entrance Test City"
   },
   {
    "depends_on": "eval:doc.foriegn_national == \"No\" || doc.undergraduate_degree_india == \"Yes\"",
@@ -653,7 +654,7 @@
    "fieldtype": "Link",
    "label": "Second Preference",
    "mandatory_depends_on": "eval:doc.foriegn_national == \"No\" || doc.undergraduate_degree_india == \"Yes\"",
-   "options": "Entrance Test Provider"
+   "options": "Entrance Test City"
   },
   {
    "depends_on": "eval:doc.foriegn_national == \"No\" || doc.undergraduate_degree_india == \"Yes\"",
@@ -662,7 +663,7 @@
    "label": "Third Preference",
    "mandatory_depends_on": "eval:doc.foriegn_national == \"No\" || doc.undergraduate_degree_india == \"Yes\"",
    "not_nullable": 1,
-   "options": "Entrance Test Provider"
+   "options": "Entrance Test City"
   },
   {
    "fieldname": "other_information_tab",
@@ -1029,6 +1030,12 @@
    "label": "Centre Filled"
   },
   {
+   "fieldname": "needs_accommodation",
+   "fieldtype": "Select",
+   "label": "Needs Accommodation",
+   "options": "\nYes\nNo"
+  },
+  {
    "fieldname": "application_fee_status",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -1323,7 +1330,7 @@
   }
  ],
  "make_attachments_public": 1,
- "modified": "2026-07-27 17:10:32.947654",
+ "modified": "2026-07-28 15:25:18.888746",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant",

@@ -3732,7 +3732,7 @@ or _app.current_stage)) or _status %}
             </div>
             <div class="et-tile-content">
               <div class="et-tile-label">Test Time</div>
-              <div class="et-tile-value">{{ frappe.utils.get_datetime(et_doc.re_allocation_date if et_is_rescheduled else et_doc.allocation_date).strftime('%I:%M %p') }}</div>
+              <div class="et-tile-value">{{ et_test_time or '—' }}</div>
             </div>
           </div>
         </div>
