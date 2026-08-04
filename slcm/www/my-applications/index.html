@@ -102,6 +102,17 @@
     }
   }
 
+  @keyframes toastFadeIn {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -18px);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  }
+
   @keyframes pulse-ring {
 
     0%,
@@ -2409,7 +2420,7 @@
 
   .prof-toast {
     position: fixed;
-    bottom: 24px;
+    top: 24px;
     left: 50%;
     transform: translateX(-50%);
     background: var(--text-1);
@@ -2421,7 +2432,7 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, .2);
     z-index: 9999;
     display: none;
-    animation: fadeUp .2s ease-out;
+    animation: toastFadeIn .2s ease-out;
   }
 
   .prof-toast.show {
@@ -4896,7 +4907,8 @@ LIST / DASHBOARD VIEW
           applicantId: '{{ et_doc.applicant if et_doc else "" }}',
           entranceTestList: '{{ et_doc.entrance_test_list if et_doc else "" }}',
           allocationName: '{{ et_doc.name if et_doc else "" }}',
-          isRescheduled: {{ 'true' if et_is_rescheduled else 'false' }}
+          isRescheduled: {{ 'true' if et_is_rescheduled else 'false' }},
+          isPwd: {{ 'true' if et_is_pwd else 'false' }}
         };
 
         dropdown.addEventListener('change', async function () {
@@ -4912,7 +4924,15 @@ LIST / DASHBOARD VIEW
             });
             var pinfo = (message || []).find(function (p) { return p.entrance_test_provider === selected.provider; });
             if (pinfo && pinfo.is_full) {
-              alert((selected.center_name || selected.provider) + ' is currently full.');
+              var centerName = selected.center_name || selected.provider;
+              var msg = "Your chosen centre (" + centerName + ") is currently at full capacity. Please choose another available centre.";
+              if (typeof showProfToast === 'function') {
+                showProfToast(msg, true);
+              } else if (typeof showToast === 'function') {
+                showToast(msg, 'error');
+              } else {
+                alert(msg);
+              }
               dropdown.value = '';
               centerDetails.style.display = 'none';
               btnSave.textContent = 'Confirm allocation';
@@ -4951,6 +4971,27 @@ LIST / DASHBOARD VIEW
         if (btnSave) {
           btnSave.addEventListener('click', async function () {
             var selectedText = (dropdown.options[dropdown.selectedIndex] && dropdown.options[dropdown.selectedIndex].text) || dropdown.value;
+            var selected = etData.preferences.find(function (p) { return p.provider === dropdown.value; });
+
+            if (etData.isPwd && selected && !selected.pwd_accessible) {
+              var pwdCentres = etData.preferences.filter(function(p) { return p.pwd_accessible; });
+              var msg = "As a PWD applicant, you must select a centre that provides PWD facilities.";
+              if (pwdCentres.length > 0) {
+                var names = pwdCentres.map(function(c) { return c.center_name || c.provider; }).join(", ");
+                msg += " Available PWD accessible centre(s): " + names;
+              } else {
+                msg += " No PWD accessible centres are currently assigned to you.";
+              }
+              if (typeof showProfToast === 'function') {
+                showProfToast(msg, true);
+              } else if (typeof showToast === 'function') {
+                showToast(msg, 'error');
+              } else {
+                alert(msg);
+              }
+              return;
+            }
+
             if (!(await showConfirmModal({ title: 'Confirm allocation', message: 'Confirm allocation at ' + selectedText + '? This choice cannot be changed.' }))) return;
             btnSave.disabled = true;
             btnSave.textContent = 'Processing...';
@@ -5118,10 +5159,42 @@ LIST / DASHBOARD VIEW
   }
   function showProfToast(msg, isErr) {
     var t = document.getElementById('profToast');
-    if (!t) return;
-    t.textContent = msg;
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'profToast';
+      t.className = 'prof-toast';
+      document.body.appendChild(t);
+    }
+    
+    t.innerHTML = '';
+    var flex = document.createElement('div');
+    flex.style.display = 'flex';
+    flex.style.alignItems = 'center';
+    flex.style.justifyContent = 'space-between';
+    flex.style.gap = '16px';
+
+    var textSpan = document.createElement('span');
+    textSpan.textContent = msg;
+    flex.appendChild(textSpan);
+
+    var closeBtn = document.createElement('span');
+    closeBtn.innerHTML = '&times;';
+    closeBtn.style.cursor = 'pointer';
+    closeBtn.style.fontWeight = 'bold';
+    closeBtn.style.fontSize = '20px';
+    closeBtn.style.lineHeight = '1';
+    closeBtn.style.opacity = '0.8';
+    closeBtn.title = 'Close';
+    closeBtn.onclick = function() { t.className = 'prof-toast'; };
+    closeBtn.onmouseover = function() { this.style.opacity = '1'; };
+    closeBtn.onmouseout = function() { this.style.opacity = '0.8'; };
+    flex.appendChild(closeBtn);
+
+    t.appendChild(flex);
+
     t.className = 'prof-toast show' + (isErr ? ' error' : '');
-    setTimeout(function () { t.className = 'prof-toast'; }, 3000);
+    if (t.toastTimer) clearTimeout(t.toastTimer);
+    t.toastTimer = setTimeout(function () { t.className = 'prof-toast'; }, 8000);
   }
   window.saveProfile = async function () {
     var btn = document.getElementById('saveBtn');

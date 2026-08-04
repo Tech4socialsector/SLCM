@@ -48,6 +48,40 @@ class EntranceTestList(Document):
         else:
             self.name = frappe.generate_hash(self.doctype, 6)
 
+    def validate(self):
+        """Sync applicant details on save to ensure data integrity, especially for manually added rows."""
+        if self.entrance_test_applicant:
+            app_ids = [row.applicant_id for row in self.entrance_test_applicant if row.applicant_id]
+            if app_ids:
+                apps = frappe.get_all("Applicant", 
+                    filters={"name": ["in", app_ids]},
+                    fields=["name", "candidate_name", "program", "program_level", "email", "gender", "pwd", "entrance_test", "intereview"]
+                )
+                app_map = {a.name: a for a in apps}
+                
+                ees = frappe.get_all("Eligibility Evaluation",
+                    filters={"applicant_name": ["in", app_ids]},
+                    fields=["applicant_name", "exempts_entrance_test", "exempts_interview"]
+                )
+                ee_map = {e.applicant_name: e for e in ees}
+
+                for row in self.entrance_test_applicant:
+                    if row.applicant_id and row.applicant_id in app_map:
+                        a = app_map[row.applicant_id]
+                        row.candidate_name = a.candidate_name
+                        row.program = a.program
+                        row.program_level = a.program_level
+                        row.email = a.email
+                        row.gender = a.gender
+                        row.pwd = 1 if str(a.pwd or "").strip().lower() == "yes" else 0
+                        row.entrance_test = a.entrance_test
+                        row.intereview = a.intereview
+                        
+                        ee = ee_map.get(row.applicant_id)
+                        if ee:
+                            row.exempts_entrance_test = ee.exempts_entrance_test
+                            row.exempts_interview = ee.exempts_interview
+
     @frappe.whitelist()
     @frappe.whitelist()
     def allocate_seats(self, providers, selected_applicants, allocation_date=None, entrance_test_name=None, allocation_type=None):
@@ -292,7 +326,7 @@ class EntranceTestList(Document):
 
             if email:
                 try:
-                    _send_allocation_email(allocation, email)
+                    _send_allocation_email(allocation, email, allocation_type)
                     _send_allocation_notification(allocation, email)
                 except Exception:
                     frappe.log_error(
@@ -315,11 +349,180 @@ class EntranceTestList(Document):
             "unallocated": unallocated_list
         }
 
+    @frappe.whitelist()
+    def check_seat_availability(self, providers, selected_applicants, allocation_type=None):
+        """
+        Checks seat availability across selected centres for the selected applicants.
+        Returns a detailed breakdown by programme and centre for confirmation before allocation.
+        Also detects PWD applicants and checks if centres have PWD accessibility.
+        """
+        if isinstance(providers, str):
+            providers = json.loads(providers)
+        if isinstance(selected_applicants, str):
+            selected_applicants = json.loads(selected_applicants)
 
-def _send_allocation_email(allocation, email):
+        if not providers or not selected_applicants:
+            return {"can_allocate": False, "error": "No providers or applicants selected."}
+
+        if not allocation_type:
+            allocation_type = "Allow Applicant Selection"
+
+        # Build applicant map from child table
+        applicant_map = {app.name: app for app in self.entrance_test_applicant}
+
+        # Count applicants by programme and track PWD applicants
+        programme_counts = {}
+        programme_pwd_counts = {}
+        total_selected = 0
+        total_pwd = 0
+        pwd_applicants = []
+
+        for app_name in selected_applicants:
+            app = applicant_map.get(app_name)
+            if not app:
+                continue
+            if getattr(app, "allocation_status", "") == "Allocated":
+                continue
+            total_selected += 1
+            prog = getattr(app, "program", None) or "Unspecified"
+            programme_counts[prog] = programme_counts.get(prog, 0) + 1
+
+            # Check PWD status
+            app_pwd = 0
+            if getattr(app, "pwd", 0) == 1:
+                app_pwd = 1
+            elif getattr(app, "applicant_id", None):
+                try:
+                    pwd_val = frappe.db.get_value("Applicant", app.applicant_id, "pwd") or ""
+                    if str(pwd_val).strip().lower() == "yes":
+                        app_pwd = 1
+                except Exception:
+                    pass
+
+            if app_pwd:
+                total_pwd += 1
+                programme_pwd_counts[prog] = programme_pwd_counts.get(prog, 0) + 1
+                pwd_applicants.append({
+                    "name": app.candidate_name or "Unknown",
+                    "applicant_id": app.applicant_id or app_name,
+                    "programme": prog
+                })
+
+        if total_selected == 0:
+            return {"can_allocate": False, "error": "No unallocated applicants found in selection."}
+
+        # Get provider details with capacity
+        centre_details = []
+        total_available = 0
+        has_pwd_centre = False
+
+        for pname in providers:
+            try:
+                pdoc = frappe.get_doc("Entrance Test Provider", pname)
+            except Exception:
+                continue
+
+            avail = pdoc.available_capacity or 0
+            total_available += avail
+
+            is_pwd_accessible = getattr(pdoc, "pwd_accessible", 0) == 1
+            if is_pwd_accessible:
+                has_pwd_centre = True
+
+            centre_prog_caps = {}
+            if hasattr(pdoc, "programme_capacity") and pdoc.programme_capacity:
+                for row in pdoc.programme_capacity:
+                    prog_avail = max(0, (row.capacity or 0) - (row.reserved_seats or 0))
+                    centre_prog_caps[row.program] = {
+                        "capacity": row.capacity or 0,
+                        "reserved": row.reserved_seats or 0,
+                        "available": prog_avail
+                    }
+
+            centre_details.append({
+                "provider": pname,
+                "center_name": pdoc.center_name or pname,
+                "total_capacity": pdoc.total_capacity or 0,
+                "reserved_seats": pdoc.reserved_seats or 0,
+                "available_capacity": avail,
+                "pwd_accessible": 1 if is_pwd_accessible else 0,
+                "programme_capacities": centre_prog_caps
+            })
+
+        # Build programme-wise breakdown
+        programme_breakdown = []
+        has_shortage = False
+        for prog, count in sorted(programme_counts.items()):
+            # Sum available capacity for this programme across all centres
+            prog_total_available = 0
+            centre_avails = []
+            for cd in centre_details:
+                prog_caps = cd["programme_capacities"]
+                if prog in prog_caps:
+                    prog_total_available += prog_caps[prog]["available"]
+                    centre_avails.append({
+                        "center_name": cd["center_name"],
+                        "available": prog_caps[prog]["available"],
+                        "capacity": prog_caps[prog]["capacity"],
+                        "reserved": prog_caps[prog]["reserved"]
+                    })
+                else:
+                    # If centre has no programme-specific capacity, use overall
+                    centre_avails.append({
+                        "center_name": cd["center_name"],
+                        "available": cd["available_capacity"],
+                        "capacity": cd["total_capacity"],
+                        "reserved": cd["reserved_seats"]
+                    })
+                    prog_total_available += cd["available_capacity"]
+
+            shortage = max(0, count - prog_total_available)
+            if shortage > 0:
+                has_shortage = True
+
+            programme_breakdown.append({
+                "programme": prog,
+                "applicant_count": count,
+                "pwd_count": programme_pwd_counts.get(prog, 0),
+                "total_available": prog_total_available,
+                "shortage": shortage,
+                "sufficient": shortage == 0,
+                "centre_details": centre_avails
+            })
+
+        # Effective available = sum of programme-level availability for selected programmes
+        effective_total_available = sum(p["total_available"] for p in programme_breakdown)
+
+        # PWD conflict detection
+        pwd_conflict = total_pwd > 0 and not has_pwd_centre
+
+        return {
+            "can_allocate": True,
+            "allocation_type": allocation_type,
+            "total_selected": total_selected,
+            "total_available_seats": total_available,
+            "effective_total_available": effective_total_available,
+            "overall_sufficient": effective_total_available >= total_selected,
+            "has_programme_shortage": has_shortage,
+            "programme_breakdown": programme_breakdown,
+            "centre_details": centre_details,
+            "total_pwd": total_pwd,
+            "has_pwd_centre": has_pwd_centre,
+            "pwd_conflict": pwd_conflict,
+            "pwd_applicants": pwd_applicants
+        }
+
+
+def _send_allocation_email(allocation, email, allocation_type=None):
     """Send a formal Entrance Test Centre Selection / Allocation email to the applicant."""
     try:
-        template_name = "Entrance Test Allocation"
+        if allocation_type == "Allocate Directly":
+            template_name = "Automated Entrance Test Allocation"
+            attach_admit_card = True
+        else:
+            template_name = "Entrance Test Allocation"
+            attach_admit_card = False
+
         if not frappe.db.exists("Email Template", template_name):
             frappe.log_error(f"Email Template '{template_name}' not found.", "Email Sending Error")
             return
@@ -354,7 +557,7 @@ def _send_allocation_email(allocation, email):
         
         if message_body:
             attachments = []
-            if allocation.allocation_status == "Allocated" and getattr(allocation, "admit_card_download", None):
+            if attach_admit_card and allocation.allocation_status == "Allocated" and getattr(allocation, "admit_card_download", None):
                 attachments.append({
                     "file_url": allocation.admit_card_download
                 })
@@ -413,7 +616,7 @@ def get_applicant_preferences(applicant_id, entrance_test_list):
             "center_name": p.center_name,
             "center_address": p.center_address,
             "preference_order": p.preference_order,
-            "is_full": _get_remaining_capacity(p.provider) <= 0,
+            "is_full": _get_remaining_capacity(p.provider, allocation.program) <= 0,
             "allocation_status": getattr(allocation, status_field),
             "seat_number": getattr(allocation, seat_field),
             "room_name": getattr(allocation, room_field)
@@ -532,10 +735,14 @@ def confirm_rescheduled_preference(allocation_name, selected_provider):
     }
 
 
-def _get_remaining_capacity(provider_name):
-    """Total remaining seats for a provider."""
+def _get_remaining_capacity(provider_name, program=None):
+    """Total remaining seats for a provider, or specific programme if specified."""
     try:
         provider = frappe.get_doc("Entrance Test Provider", provider_name)
+        if program and provider.get("programme_capacity"):
+            for r in provider.programme_capacity:
+                if r.program == program:
+                    return r.available_capacity if r.available_capacity is not None else max(0, (r.capacity or 0) - (r.reserved_seats or 0))
         return max(0, (provider.available_capacity or 0))
     except Exception:
         return 0
