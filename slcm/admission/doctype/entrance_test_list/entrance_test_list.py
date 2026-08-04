@@ -49,12 +49,20 @@ class EntranceTestList(Document):
             self.name = frappe.generate_hash(self.doctype, 6)
 
     @frappe.whitelist()
-    def allocate_seats(self, providers, selected_applicants, allocation_date=None, entrance_test_name=None):
+    @frappe.whitelist()
+    def allocate_seats(self, providers, selected_applicants, allocation_date=None, entrance_test_name=None, allocation_type=None):
         """
         Logic:
-          - Creates ONE Entrance Test Seat Allocation record per applicant.
-          - Stores all selected providers in the 'assigned_preferences' child table.
-          - Marks child record as 'Allocated' in entrance_test_applicant.
+          - If allocation_type == "Allocate Directly":
+              - Directly allocates seat to selected entrance test centre.
+              - Decrements available capacity & updates reserved seats.
+              - Generates Admit Card PDF immediately.
+              - Sends email WITH Admit Card attached.
+          - If allocation_type == "Allow Applicant Selection":
+              - Stores selected centres in assigned_preferences child table.
+              - Keeps allocation_status as 'Not Allocated'.
+              - Sends email notifying applicant to select preference on portal.
+              - Admit card generated later when applicant confirms preference on portal.
         """
         frappe.reload_doc("admission", "doctype", "entrance_test_preference_assigned")
         frappe.reload_doc("admission", "doctype", "entrance_test_seat_allocation")
@@ -70,6 +78,9 @@ class EntranceTestList(Document):
         if not selected_applicants:
             frappe.throw("No applicants selected.")
 
+        if not allocation_type:
+            allocation_type = "Allow Applicant Selection"
+
         provider_list = []
         for pname in providers:
             pdoc = frappe.get_doc("Entrance Test Provider", pname)
@@ -80,6 +91,7 @@ class EntranceTestList(Document):
         applicant_map = {app.name: app for app in self.entrance_test_applicant}
 
         created_count = 0
+        unallocated_list = []
         total_applicants = len(selected_applicants)
 
         for i, app_name in enumerate(selected_applicants):
@@ -87,7 +99,6 @@ class EntranceTestList(Document):
             frappe.publish_progress(
                 float(i + 1) / total_applicants * 100, 
                 title=_("Allocating Entrance Test Seats..."),
- 
                 description=f"Processing {i + 1} of {total_applicants}"
             )
 
@@ -97,6 +108,29 @@ class EntranceTestList(Document):
 
             if getattr(app, "allocation_status", "") == "Allocated":
                 continue
+
+            cycle_name = self.admission_cycle
+            program_name = getattr(app, "program", None)
+            program_level_name = self.program_level
+
+            app_doc = None
+            app_pwd = 0
+            if getattr(app, "pwd", 0) == 1:
+                app_pwd = 1
+
+            if getattr(app, "applicant_id", None):
+                try:
+                    app_doc = frappe.get_doc("Applicant", app.applicant_id)
+                    if not cycle_name:
+                        cycle_name = app_doc.admission_cycle
+                    if not program_name:
+                        program_name = app_doc.program
+                    if not program_level_name:
+                        program_level_name = app_doc.program_level
+                    if (getattr(app_doc, "pwd", "") or "").strip().lower() == "yes":
+                        app_pwd = 1
+                except Exception:
+                    pass
 
             existing_allocation = frappe.db.get_value("Entrance Test Seat Allocation", {
                 "entrance_test_list": self.name,
@@ -118,6 +152,7 @@ class EntranceTestList(Document):
                 allocation.program               = app.program
                 allocation.email                 = app.email
                 allocation.gender                = app.gender
+                allocation.pwd                   = app_pwd
                 allocation.entrance_test         = getattr(app, "entrance_test", 0)
                 allocation.intereview            = getattr(app, "intereview", 0)
                 allocation.exempts_entrance_test = getattr(app, "exempts_entrance_test", 0)
@@ -125,23 +160,7 @@ class EntranceTestList(Document):
                 allocation.allocation_status      = "Not Allocated"
                 allocation.entrance_test_status   = "Scheduled"
             
-            # Dynamically resolve Entrance Test details from Admission Cycle configuration
-            cycle_name = self.admission_cycle
-            program_name = getattr(app, "program", None)
-            program_level_name = self.program_level
-
-            app_doc = None
-            if getattr(app, "applicant_id", None):
-                try:
-                    app_doc = frappe.get_doc("Applicant", app.applicant_id)
-                    if not cycle_name:
-                        cycle_name = app_doc.admission_cycle
-                    if not program_name:
-                        program_name = app_doc.program
-                    if not program_level_name:
-                        program_level_name = app_doc.program_level
-                except Exception:
-                    pass
+            allocation.pwd = app_pwd
 
             test_cfg = _resolve_entrance_test_details_from_cycle(cycle_name, program_name, program_level_name)
 
@@ -186,7 +205,81 @@ class EntranceTestList(Document):
                 except Exception:
                     pass
 
-            allocation.save(ignore_permissions=True)
+            if allocation_type == "Allocate Directly":
+                sel_provider = None
+                failure_reason = None
+
+                for pdoc in provider_list:
+                    # Check PWD facility
+                    if app_pwd and not getattr(pdoc, "pwd_accessible", 0):
+                        failure_reason = f"Centre '{pdoc.center_name}' does not have facility to accommodate PWD students."
+                        continue
+
+                    # Check total capacity
+                    avail = pdoc.available_capacity or 0
+                    if avail <= 0:
+                        failure_reason = f"Centre '{pdoc.center_name}' has no available capacity."
+                        continue
+
+                    # Check programme capacity if defined
+                    prog_capacity_ok = True
+                    if hasattr(pdoc, "programme_capacity") and pdoc.programme_capacity and allocation.program:
+                        for r in pdoc.programme_capacity:
+                            if r.program == allocation.program:
+                                if (r.available_capacity or 0) <= 0:
+                                    prog_capacity_ok = False
+                                    failure_reason = f"Centre '{pdoc.center_name}' has no available capacity for programme '{allocation.program}'."
+                                break
+
+                    if not prog_capacity_ok:
+                        continue
+
+                    sel_provider = pdoc
+                    break
+
+                if not sel_provider:
+                    unallocated_list.append({
+                        "name": app.candidate_name or "Unknown",
+                        "applicant_id": app.applicant_id or app_name,
+                        "reason": failure_reason or "Selected centre is not available or full."
+                    })
+                    continue
+
+                if hasattr(sel_provider, "programme_capacity") and sel_provider.programme_capacity and allocation.program:
+                    for r in sel_provider.programme_capacity:
+                        if r.program == allocation.program:
+                            r.reserved_seats = (r.reserved_seats or 0) + 1
+                            r.available_capacity = max(0, (r.capacity or 0) - r.reserved_seats)
+                            break
+
+                sel_provider.reserved_seats = (sel_provider.reserved_seats or 0) + 1
+                sel_provider.calculate_capacity()
+                sel_provider.save(ignore_permissions=True)
+
+                seat_number = f"{(sel_provider.reserved_seats):02d}"
+                allocation.entrance_test_provider = sel_provider.name
+                allocation.center_name            = sel_provider.center_name
+                allocation.center_address         = sel_provider.center_address
+                allocation.seat_number            = seat_number
+                allocation.allocation_status      = "Allocated"
+                allocation.allocated_by           = frappe.session.user
+                allocation.save(ignore_permissions=True)
+
+                # Generate Admit Card PDF immediately for direct allocation
+                generate_and_store_admit_card(allocation, is_rescheduled=False)
+            else:
+                if app_pwd:
+                    has_pwd_center = any(getattr(pdoc, "pwd_accessible", 0) for pdoc in provider_list)
+                    if not has_pwd_center:
+                        unallocated_list.append({
+                            "name": app.candidate_name or "Unknown",
+                            "applicant_id": app.applicant_id or app_name,
+                            "reason": "None of the selected centres have PWD accessibility facility."
+                        })
+                        continue
+
+                allocation.allocation_status = "Not Allocated"
+                allocation.save(ignore_permissions=True)
 
             email = allocation.email or ""
             if not email and allocation.applicant:
@@ -210,18 +303,21 @@ class EntranceTestList(Document):
             app.allocation_status = "Allocated"
             created_count += 1
             
-            # Commit periodically or after each to update progress and UI
+            # Commit periodically
             if i % 5 == 0:
                 frappe.db.commit()
 
         self.save(ignore_permissions=True)
         frappe.db.commit()
 
-        return created_count
+        return {
+            "allocated_count": created_count,
+            "unallocated": unallocated_list
+        }
 
 
 def _send_allocation_email(allocation, email):
-    """Send a formal Entrance Test Centre Selection email to the applicant."""
+    """Send a formal Entrance Test Centre Selection / Allocation email to the applicant."""
     try:
         template_name = "Entrance Test Allocation"
         if not frappe.db.exists("Email Template", template_name):
@@ -254,13 +350,14 @@ def _send_allocation_email(allocation, email):
         cc_list = []
         cc_field_value = template.get("cc")
         if cc_field_value:
-            # Split by comma or semicolon, strip whitespace, and filter out empties
             cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
         
         if message_body:
             attachments = []
-            # Note: For manual entrance test allocation, applicants have not yet chosen their test centre.
-            # Therefore, admit cards are not attached at this stage; admit cards are generated once the applicant confirms their centre.
+            if allocation.allocation_status == "Allocated" and getattr(allocation, "admit_card_download", None):
+                attachments.append({
+                    "file_url": allocation.admit_card_download
+                })
 
             try:
                 # Use now=False to queue the email.
@@ -334,41 +431,38 @@ def confirm_applicant_preference(allocation_name, selected_provider):
 
     provider = frappe.get_doc("Entrance Test Provider", selected_provider)
 
-    assigned_room = None
-    new_reserved  = None
-    seat_number   = None
-
-    for room in provider.provider_room:
-        if not getattr(room, "active", 1):
-            continue
-        capacity = room.room_capacity or 0
-        reserved = room.room_reserved_seats or 0
-        if (capacity - reserved) > 0:
-            assigned_room = room
-            new_reserved  = reserved + 1
-            seat_number   = f"{new_reserved:02d}"
-            break
-
-    if not assigned_room:
+    avail = (provider.available_capacity or 0)
+    if avail <= 0:
         frappe.throw(
             f"Sorry, '{provider.center_name}' is now full. "
             "Please choose another preference center."
         )
 
+    # Check and update specific Programme Capacity row if present
+    if hasattr(provider, "programme_capacity") and provider.programme_capacity and allocation.program:
+        for r in provider.programme_capacity:
+            if r.program == allocation.program:
+                r_avail = r.available_capacity if r.available_capacity is not None else max(0, (r.capacity or 0) - (r.reserved_seats or 0))
+                if r_avail <= 0:
+                    frappe.throw(
+                        f"Sorry, '{provider.center_name}' has no available capacity for programme '{allocation.program}'."
+                    )
+                r.reserved_seats = (r.reserved_seats or 0) + 1
+                r.available_capacity = max(0, (r.capacity or 0) - r.reserved_seats)
+                break
+
+    new_reserved = (provider.reserved_seats or 0) + 1
+    seat_number  = f"{new_reserved:02d}"
+
     allocation.entrance_test_provider = selected_provider
     allocation.center_name            = provider.center_name
     allocation.center_address         = provider.center_address
-    allocation.room_code              = assigned_room.room_code
-    allocation.room_name              = assigned_room.room_name
-    allocation.building               = assigned_room.building
-    allocation.floor                  = assigned_room.floor
     allocation.seat_number            = seat_number
     allocation.allocation_status      = "Allocated"
     allocation.allocated_by           = frappe.session.user
     allocation.save(ignore_permissions=True)
 
-    assigned_room.room_reserved_seats     = new_reserved
-    assigned_room.room_available_capacity = (assigned_room.room_capacity or 0) - new_reserved
+    provider.calculate_capacity()
     provider.save(ignore_permissions=True)
 
     frappe.db.commit()
@@ -377,7 +471,7 @@ def confirm_applicant_preference(allocation_name, selected_provider):
 
     return {
         "seat_number":    seat_number,
-        "room_name":      assigned_room.room_name,
+        "room_name":      "",
         "center_name":    provider.center_name,
         "center_address": provider.center_address,
     }
@@ -392,41 +486,38 @@ def confirm_rescheduled_preference(allocation_name, selected_provider):
 
     provider = frappe.get_doc("Entrance Test Provider", selected_provider)
 
-    assigned_room = None
-    new_reserved  = None
-    seat_number   = None
-
-    for room in provider.provider_room:
-        if not getattr(room, "active", 1):
-            continue
-        capacity = room.room_capacity or 0
-        reserved = room.room_reserved_seats or 0
-        if (capacity - reserved) > 0:
-            assigned_room = room
-            new_reserved  = reserved + 1
-            seat_number   = f"{new_reserved:02d}"
-            break
-
-    if not assigned_room:
+    avail = (provider.available_capacity or 0)
+    if avail <= 0:
         frappe.throw(
             f"Sorry, '{provider.center_name}' is now full. "
             "Please choose another preference center."
         )
 
+    # Check and update specific Programme Capacity row if present
+    if hasattr(provider, "programme_capacity") and provider.programme_capacity and allocation.program:
+        for r in provider.programme_capacity:
+            if r.program == allocation.program:
+                r_avail = r.available_capacity if r.available_capacity is not None else max(0, (r.capacity or 0) - (r.reserved_seats or 0))
+                if r_avail <= 0:
+                    frappe.throw(
+                        f"Sorry, '{provider.center_name}' has no available capacity for programme '{allocation.program}'."
+                    )
+                r.reserved_seats = (r.reserved_seats or 0) + 1
+                r.available_capacity = max(0, (r.capacity or 0) - r.reserved_seats)
+                break
+
+    new_reserved = (provider.reserved_seats or 0) + 1
+    seat_number  = f"{new_reserved:02d}"
+
     allocation.re_entrance_test_provider = selected_provider
     allocation.re_center_name            = provider.center_name
     allocation.re_center_address         = provider.center_address
-    allocation.re_room_code              = assigned_room.room_code
-    allocation.re_room_name              = assigned_room.room_name
-    allocation.re_building               = assigned_room.building
-    allocation.re_floor                  = assigned_room.floor
     allocation.re_seat_number            = seat_number
     allocation.re_allocation_status      = "Allocated"
     allocation.re_allocated_by           = frappe.session.user
     allocation.save(ignore_permissions=True)
 
-    assigned_room.room_reserved_seats     = new_reserved
-    assigned_room.room_available_capacity = (assigned_room.room_capacity or 0) - new_reserved
+    provider.calculate_capacity()
     provider.save(ignore_permissions=True)
 
     frappe.db.commit()
@@ -435,24 +526,17 @@ def confirm_rescheduled_preference(allocation_name, selected_provider):
 
     return {
         "seat_number":    seat_number,
-        "room_name":      assigned_room.room_name,
+        "room_name":      "",
         "center_name":    provider.center_name,
         "center_address": provider.center_address,
     }
 
 
 def _get_remaining_capacity(provider_name):
-    """Total remaining seats across all active rooms for a provider."""
+    """Total remaining seats for a provider."""
     try:
         provider = frappe.get_doc("Entrance Test Provider", provider_name)
-        total = 0
-        for room in provider.provider_room:
-            if not getattr(room, "active", 1):
-                continue
-            capacity = room.room_capacity or 0
-            reserved = room.room_reserved_seats or 0
-            total   += max(0, capacity - reserved)
-        return total
+        return max(0, (provider.available_capacity or 0))
     except Exception:
         return 0
 

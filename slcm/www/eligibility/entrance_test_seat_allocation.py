@@ -175,22 +175,47 @@ def download_admit_card(allocation_name):
     else:
         frappe.throw(_("Admit Card generation failed. Please ensure the 'Admit Card' Print Format is created in the Desk."))
 
+def ensure_admit_card_print_format():
+    if not frappe.db.exists("Print Format", "Admit Card"):
+        pf_path = frappe.get_app_path("slcm", "admission", "print_format", "admit_card", "admit_card.json")
+        if os.path.exists(pf_path):
+            import json
+            with open(pf_path, "r", encoding="utf-8") as f:
+                pf_data = json.load(f)
+                pf_doc = frappe.new_doc("Print Format")
+                pf_doc.update(pf_data)
+                pf_doc.insert(ignore_permissions=True)
+                frappe.db.commit()
+
 def get_admit_card_html(doc, is_rescheduled):
     """
-    Strictly fetches the Admit Card HTML using the 'Admit Card' Print Format from Desk.
+    Fetches the Admit Card HTML using the 'Admit Card' Print Format from Desk or direct template fallback.
     """
+    ensure_admit_card_print_format()
     print_format_name = "Admit Card"
     
-    if not frappe.db.exists("Print Format", print_format_name):
-        frappe.throw(
-            _("Print Format 'Admit Card' not found. Please create it in the Desk and paste the code from sample_admit_card.html."),
-            title=_("Configuration Missing")
+    try:
+        return frappe.get_print(
+            doc.doctype, 
+            doc.name, 
+            print_format_name, 
+            as_pdf=False, 
+            no_letterhead=True
+        )
+    except Exception as e:
+        frappe.log_error(
+            message=traceback.format_exc(),
+            title=f"get_print failed for Admit Card {getattr(doc, 'name', '')}"
         )
 
-    return frappe.get_print(
-        doc.doctype, 
-        doc.name, 
-        print_format_name, 
-        as_pdf=False, 
-        no_letterhead=True
-    )
+    pf_path = frappe.get_app_path("slcm", "admission", "print_format", "admit_card", "admit_card.json")
+    if os.path.exists(pf_path):
+        import json
+        with open(pf_path, "r", encoding="utf-8") as f:
+            pf_json = json.load(f)
+            html_template = pf_json.get("html")
+            if html_template:
+                from slcm.admission.utils.jinja import get_file_b64
+                return frappe.render_template(html_template, {"doc": doc, "get_file_b64": get_file_b64})
+
+    frappe.throw(_("Admit Card Print Format could not be loaded."))

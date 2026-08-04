@@ -36,25 +36,32 @@ function open_allocation_dialog(frm) {
         return;
     }
 
-    // Fetch all active Entrance Test Providers with available capacity for this campus
+    // Fetch all active Entrance Test Providers with available capacity for this city (or campus fallback)
+    const provider_filters = { 
+        active: 1, 
+        available_capacity: [">", 0]
+    };
+    if (frm.doc.entrance_test_city) {
+        provider_filters.city = frm.doc.entrance_test_city;
+    } else if (frm.doc.campus) {
+        provider_filters.campus = frm.doc.campus;
+    }
+
     frappe.call({
         method: "frappe.client.get_list",
         args: {
             doctype: "Entrance Test Provider",
-            filters: { 
-                active: 1, 
-                campus: frm.doc.campus,
-                available_capacity: [">", 0]
-            },
-            fields: ["name", "center_name", "center_address", "provider_type"],
+            filters: provider_filters,
+            fields: ["name", "center_name", "center_address", "provider_type", "city", "pwd_accessible"],
             limit_page_length: 100
         },
         callback: function (r) {
             const providers = r.message || [];
             if (!providers.length) {
+                const target_label = frm.doc.entrance_test_city ? __("city '{0}'", [frm.doc.entrance_test_city]) : __("campus '{0}'", [frm.doc.campus]);
                 frappe.msgprint({
                     title: __("No Available Providers"),
-                    message: __("No active Entrance Test Providers with available seats found for this campus."),
+                    message: __("No active Entrance Test Providers with available seats found for {0}.", [target_label]),
                     indicator: "orange"
                 });
                 return;
@@ -69,6 +76,7 @@ function _show_allocation_dialog(frm, applicants, providers) {
     const selected_applicant_names = new Set();
 
     let search_center_query = "";
+    let center_pwd_only = false;
     let center_current_page = 1;
     const center_page_size = 9;
 
@@ -76,9 +84,13 @@ function _show_allocation_dialog(frm, applicants, providers) {
     const applicant_page_size = 10;
 
     function get_filtered_providers() {
-        if (!search_center_query) return providers;
+        let list = providers;
+        if (center_pwd_only) {
+            list = list.filter(p => p.pwd_accessible == 1);
+        }
+        if (!search_center_query) return list;
         const q = search_center_query.toLowerCase().trim();
-        return providers.filter(p => {
+        return list.filter(p => {
             const name = (p.center_name || p.name).toLowerCase();
             const addr = (p.center_address || "").toLowerCase();
             return name.includes(q) || addr.includes(q);
@@ -89,6 +101,37 @@ function _show_allocation_dialog(frm, applicants, providers) {
         title: __("Allocate Seats"),
         size: "extra-large",
         fields: [
+            {
+                label: __("Allocate Type"),
+                fieldname: "allocation_type",
+                fieldtype: "Select",
+                options: [
+                    "Allocate Directly",
+                    "Allow Applicant Selection"
+                ],
+                default: "Allocate Directly",
+                reqd: 1,
+                onchange: function() {
+                    update_allocation_type_ui();
+                }
+            },
+            {
+                fieldtype: "Column Break"
+            },
+            {
+                label: __("Entrance Test City"),
+                fieldname: "entrance_test_city",
+                fieldtype: "Link",
+                options: "Entrance Test City",
+                default: frm.doc.entrance_test_city || "",
+                onchange: function() {
+                    const selected_city = d.get_value("entrance_test_city");
+                    fetch_and_render_providers(selected_city);
+                }
+            },
+            {
+                fieldtype: "Section Break"
+            },
             {
                 fieldtype: "HTML",
                 fieldname: "provider_section_label",
@@ -110,6 +153,10 @@ function _show_allocation_dialog(frm, applicants, providers) {
                             <label style="margin:0; font-weight:600; cursor:pointer; display:flex; align-items:center; color:#334155;">
                                 <input type="checkbox" id="center-select-all-chk" style="width:15px; height:15px; cursor:pointer; margin-right:6px;">
                                 Select All Centres
+                            </label>
+                            <label style="margin:0; font-weight:600; cursor:pointer; display:flex; align-items:center; color:#334155; margin-left:12px;" title="Filter PWD Accessible Centres">
+                                <input type="checkbox" id="center-pwd-filter-chk" style="width:15px; height:15px; cursor:pointer; margin-right:6px;">
+                                ♿ PWD
                             </label>
                             <button type="button" id="center-clear-all-btn" class="btn btn-xs btn-default" style="font-size:11px; padding:2px 8px; border-radius:4px;">
                                 Clear All
@@ -216,8 +263,15 @@ function _show_allocation_dialog(frm, applicants, providers) {
         ],
         primary_action_label: __("Allocate Seats"),
         primary_action(values) {
+            const allocation_type = values.allocation_type || "Allocate Directly";
+
             if (!selected_provider_names.size) {
                 frappe.msgprint(__("Please select at least one Entrance Test Provider."));
+                return;
+            }
+
+            if (allocation_type === "Allocate Directly" && selected_provider_names.size > 1) {
+                frappe.msgprint(__("For 'Allocate Directly', please select only one Entrance Test Centre."));
                 return;
             }
 
@@ -234,12 +288,24 @@ function _show_allocation_dialog(frm, applicants, providers) {
                 doc: frm.doc,
                 args: {
                     providers: selected_providers,
-                    selected_applicants: selected_applicants
+                    selected_applicants: selected_applicants,
+                    allocation_type: allocation_type
                 },
                 freeze: true,
                 freeze_message: __("Allocating Seats..."),
                 callback: function (r) {
                     if (!r.exc) {
+                        let res = r.message;
+                        let count = 0;
+                        let unallocated = [];
+
+                        if (typeof res === "object" && res !== null) {
+                            count = res.allocated_count || 0;
+                            unallocated = res.unallocated || [];
+                        } else {
+                            count = res || 0;
+                        }
+
                         if (!document.getElementById("etg-toast-style")) {
                             const style = document.createElement("style");
                             style.id = "etg-toast-style";
@@ -259,7 +325,25 @@ function _show_allocation_dialog(frm, applicants, providers) {
                         const existingToast = document.getElementById("etl-success-toast");
                         if (existingToast) existingToast.remove();
 
-                        const count = r.message || 0;
+                        const border_color = unallocated.length > 0 ? "#eab308" : "#2da44e";
+                        const icon_bg = unallocated.length > 0 ? "#fef9c3" : "#eafbee";
+                        const icon_text = unallocated.length > 0 ? "⚠️" : "✅";
+                        const header_color = unallocated.length > 0 ? "#854d0e" : "#1a7f37";
+
+                        let unallocated_html = "";
+                        if (unallocated.length > 0) {
+                            unallocated_html = `
+                                <div style="margin-top:10px; padding-top:8px; border-top:1px solid #fef08a; font-size:12px; color:#713f12;">
+                                    <div style="font-weight:700; margin-bottom:4px;">
+                                        The following applicant(s) could not be allocated:
+                                    </div>
+                                    <ul style="margin:0 0 0 16px; padding:0; list-style-type:disc;">
+                                        ${unallocated.map(u => `<li style="margin-bottom:3px;"><b>${u.name}</b> (${u.applicant_id}): ${u.reason}</li>`).join("")}
+                                    </ul>
+                                </div>
+                            `;
+                        }
+
                         const toast = document.createElement("div");
                         toast.id = "etl-success-toast";
                         toast.style.cssText = `
@@ -268,13 +352,13 @@ function _show_allocation_dialog(frm, applicants, providers) {
                             left: 50%;
                             z-index: 999999;
                             background: #ffffff;
-                            border: 1.5px solid #2da44e;
-                            border-left: 5px solid #2da44e;
+                            border: 1.5px solid ${border_color};
+                            border-left: 5px solid ${border_color};
                             border-radius: 10px;
                             padding: 14px 20px;
-                            min-width: 360px;
-                            max-width: 500px;
-                            box-shadow: 0 8px 30px rgba(45,164,78,0.18), 0 2px 8px rgba(0,0,0,0.10);
+                            min-width: 400px;
+                            max-width: 600px;
+                            box-shadow: 0 8px 30px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10);
                             display: flex;
                             align-items: flex-start;
                             gap: 12px;
@@ -282,16 +366,17 @@ function _show_allocation_dialog(frm, applicants, providers) {
                             animation: etgSlideDown 0.35s cubic-bezier(.4,0,.2,1) forwards;
                         `;
                         toast.innerHTML = `
-                            <div style="flex-shrink:0; width:36px; height:36px; background:#eafbee;
+                            <div style="flex-shrink:0; width:36px; height:36px; background:${icon_bg};
                                         border-radius:50%; display:flex; align-items:center;
-                                        justify-content:center; font-size:18px;">✅</div>
+                                        justify-content:center; font-size:18px;">${icon_text}</div>
                             <div style="flex:1;">
-                                <div style="font-weight:700; font-size:14px; color:#1a7f37; margin-bottom:3px;">
-                                    Allocation Successfully Completed.
+                                <div style="font-weight:700; font-size:14px; color:${header_color}; margin-bottom:3px;">
+                                    Allocation Process Summary
                                 </div>
                                 <div style="font-size:13px; color:#333;">
-                                    The entrance test allocation process has been completed successfully for ${count} applicants.
+                                    Successfully allocated seats for <b>${count}</b> applicant(s).
                                 </div>
+                                ${unallocated_html}
                             </div>
                             <span id="etl-success-toast-close"
                                   style="cursor:pointer; color:#aaa; font-size:18px; line-height:1;
@@ -305,7 +390,7 @@ function _show_allocation_dialog(frm, applicants, providers) {
                             setTimeout(() => toast.remove(), 350);
                         };
                         document.getElementById("etl-success-toast-close").addEventListener("click", dismissSuccessToast);
-                        setTimeout(dismissSuccessToast, 6000);
+                        setTimeout(dismissSuccessToast, unallocated.length > 0 ? 12000 : 6000);
 
                         d.hide();
                         frm.reload_doc();
@@ -354,6 +439,7 @@ function _show_allocation_dialog(frm, applicants, providers) {
                         <span style="line-height:1.4; flex:1; overflow:hidden;">
                             <span style="display:block; font-weight:700; font-size:13px; color:#1e293b; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="${p.center_name || p.name}">
                                 ${p.center_name || p.name}
+                                ${p.pwd_accessible ? `<span style="font-size:10px; background:#dbeafe; color:#1e40af; padding:1px 5px; border-radius:4px; margin-left:4px; font-weight:600;">♿ PWD</span>` : ''}
                             </span>
                             ${p.center_address
                         ? `<span style="display:block; font-size:11px; color:#64748b; margin-top:2px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;" title="${p.center_address}">
@@ -378,8 +464,13 @@ function _show_allocation_dialog(frm, applicants, providers) {
     function update_center_counts() {
         const sel_count = selected_provider_names.size;
         const total_count = providers.length;
-        $wrapper.find("#provider-sel-count").text(`Total Centres: ${total_count} | ${sel_count} selected`);
-        const all_selected = total_count > 0 && sel_count === total_count;
+        const filtered_count = get_filtered_providers().length;
+        if (center_pwd_only || search_center_query) {
+            $wrapper.find("#provider-sel-count").text(`Centres: ${filtered_count} of ${total_count} | ${sel_count} selected`);
+        } else {
+            $wrapper.find("#provider-sel-count").text(`Total Centres: ${total_count} | ${sel_count} selected`);
+        }
+        const all_selected = filtered_count > 0 && sel_count === filtered_count;
         $wrapper.find("#center-select-all-chk").prop("checked", all_selected);
     }
 
@@ -427,7 +518,10 @@ function _show_allocation_dialog(frm, applicants, providers) {
                         </td>
                         <td style="text-align:center; width:60px; color:#64748b; font-size:12px; vertical-align:middle;">${global_idx}</td>
                         <td style="vertical-align:middle;">${row.applicant_id || "-"}</td>
-                        <td style="vertical-align:middle;"><b>${row.candidate_name || "Unknown"}</b></td>
+                        <td style="vertical-align:middle;">
+                            <b>${row.candidate_name || "Unknown"}</b>
+                            ${(row.pwd == 1 || (row.pwd || "").toString().toLowerCase() === "yes") ? `<span style="font-size:10px; background:#fef3c7; color:#92400e; padding:1px 5px; border-radius:4px; margin-left:4px; border:1px solid #fde68a; font-weight:700;">♿ PWD</span>` : ''}
+                        </td>
                         <td style="vertical-align:middle;">${row.program || "-"}</td>
                     </tr>
                 `;
@@ -455,9 +549,55 @@ function _show_allocation_dialog(frm, applicants, providers) {
         $wrapper.find("#select-all-chk").prop("checked", all_selected);
     }
 
+    function update_allocation_type_ui() {
+        const alloc_type = d ? d.get_value("allocation_type") : "Allocate Directly";
+        if (alloc_type === "Allocate Directly") {
+            if (selected_provider_names.size > 1) {
+                const first = Array.from(selected_provider_names)[0];
+                selected_provider_names.clear();
+                selected_provider_names.add(first);
+            }
+            $wrapper.find("#center-select-all-chk").prop("disabled", true).prop("checked", false);
+            $wrapper.find("#center-select-all-chk").closest("label").css("opacity", "0.4").css("pointer-events", "none");
+        } else {
+            $wrapper.find("#center-select-all-chk").prop("disabled", false);
+            $wrapper.find("#center-select-all-chk").closest("label").css("opacity", "1.0").css("pointer-events", "auto");
+        }
+        render_center_page();
+    }
+
+    function fetch_and_render_providers(city_name) {
+        const provider_filters = { 
+            active: 1, 
+            available_capacity: [">", 0]
+        };
+        if (city_name) {
+            provider_filters.city = city_name;
+        } else if (frm.doc.campus) {
+            provider_filters.campus = frm.doc.campus;
+        }
+
+        frappe.call({
+            method: "frappe.client.get_list",
+            args: {
+                doctype: "Entrance Test Provider",
+                filters: provider_filters,
+                fields: ["name", "center_name", "center_address", "provider_type", "city", "pwd_accessible"],
+                limit_page_length: 100
+            },
+            callback: function (r) {
+                providers = r.message || [];
+                selected_provider_names.clear();
+                center_current_page = 1;
+                update_allocation_type_ui();
+            }
+        });
+    }
+
     // Initial renders
     render_center_page();
     render_applicant_page();
+    update_allocation_type_ui();
 
     // Event Bindings
     $wrapper.find("#center-search-input").on("input keyup search", function () {
@@ -466,28 +606,46 @@ function _show_allocation_dialog(frm, applicants, providers) {
         render_center_page();
     });
 
+    $wrapper.find("#center-pwd-filter-chk").on("change", function () {
+        center_pwd_only = this.checked;
+        center_current_page = 1;
+        render_center_page();
+    });
+
     $wrapper.on("change", ".provider-checkbox", function () {
         const name = $(this).attr("data-name");
-        if (this.checked) {
-            selected_provider_names.add(name);
+        const alloc_type = d ? d.get_value("allocation_type") : "Allocate Directly";
+
+        if (alloc_type === "Allocate Directly") {
+            if (this.checked) {
+                selected_provider_names.clear();
+                selected_provider_names.add(name);
+            } else {
+                selected_provider_names.delete(name);
+            }
+            render_center_page();
         } else {
-            selected_provider_names.delete(name);
+            if (this.checked) {
+                selected_provider_names.add(name);
+            } else {
+                selected_provider_names.delete(name);
+            }
+            const $card = $(this).closest(".provider-card");
+            if (this.checked) {
+                $card.css({
+                    "border-color": "#2da44e",
+                    "background-color": "#f0fdf4",
+                    "box-shadow": "0 2px 6px rgba(45,164,78,0.15)"
+                });
+            } else {
+                $card.css({
+                    "border-color": "#cbd5e1",
+                    "background-color": "#ffffff",
+                    "box-shadow": "0 1px 2px rgba(0,0,0,0.04)"
+                });
+            }
+            update_center_counts();
         }
-        const $card = $(this).closest(".provider-card");
-        if (this.checked) {
-            $card.css({
-                "border-color": "#2da44e",
-                "background-color": "#f0fdf4",
-                "box-shadow": "0 2px 6px rgba(45,164,78,0.15)"
-            });
-        } else {
-            $card.css({
-                "border-color": "#cbd5e1",
-                "background-color": "#ffffff",
-                "box-shadow": "0 1px 2px rgba(0,0,0,0.04)"
-            });
-        }
-        update_center_counts();
     });
 
     $wrapper.find("#center-select-all-chk").on("change", function () {

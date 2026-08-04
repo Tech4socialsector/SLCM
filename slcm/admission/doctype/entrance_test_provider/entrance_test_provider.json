@@ -11,7 +11,9 @@
   "provider_type",
   "column_break_qjww",
   "campus",
+  "city",
   "active",
+  "pwd_accessible",
   "section_break_contact",
   "contact_person",
   "contact_number",
@@ -21,7 +23,7 @@
   "section_break_infra",
   "column_break_snpz",
   "center_name",
-  "provider_room",
+  "programme_capacity",
   "total_capacity",
   "reserved_seats",
   "available_capacity",
@@ -62,11 +64,27 @@
    "reqd": 1
   },
   {
+   "fieldname": "city",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "City",
+   "options": "Entrance Test City",
+   "reqd": 1
+  },
+  {
    "default": "0",
    "fieldname": "active",
    "fieldtype": "Check",
    "in_standard_filter": 1,
    "label": "Active"
+  },
+  {
+   "default": "0",
+   "fieldname": "pwd_accessible",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "PWD-accessible"
   },
   {
    "fieldname": "section_break_contact",
@@ -128,11 +146,10 @@
    "label": "Available Capacity"
   },
   {
-   "fieldname": "provider_room",
+   "fieldname": "programme_capacity",
    "fieldtype": "Table",
-   "label": "Provider Room",
-   "options": "Provider Room",
-   "reqd": 1
+   "label": "Programme Capacity",
+   "options": "Programme Capacity"
   },
   {
    "fieldname": "user",
@@ -164,7 +181,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-30 16:18:57.393040",
+ "modified": "2026-08-03 17:23:00.000000",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Provider",

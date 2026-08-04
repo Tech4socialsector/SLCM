@@ -54,6 +54,7 @@ class EntranceTestGeneration(Document):
                 app.candidate_name,
                 app.email,
                 app.gender,
+                app.pwd,
                 app.program,
                 app.program_level,
                 app.entrance_test,
@@ -150,6 +151,7 @@ class EntranceTestGeneration(Document):
                 "program_level": app.program_level,
                 "email": app.email,
                 "gender": app.gender,
+                "pwd": 1 if (getattr(app, "pwd", None) or "").strip().lower() == "yes" else 0,
                 "entrance_test": app.entrance_test,
                 "intereview": app.intereview,
                 "exempts_entrance_test": 0,  # These students are NOT exempt from entrance test

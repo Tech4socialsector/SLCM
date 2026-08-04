@@ -22,6 +22,7 @@
   "column_break_okdo",
   "email",
   "gender",
+  "pwd",
   "date_of_birth",
   "category",
   "section_break_hynq",
@@ -187,6 +188,15 @@
    "in_standard_filter": 1,
    "label": "Gender",
    "options": "Male\nFemale\nOthers"
+  },
+  {
+   "default": "0",
+   "fieldname": "pwd",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "PWD",
+   "read_only": 1
   },
   {
    "default": "0",

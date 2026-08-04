@@ -12,6 +12,7 @@
   "program_level",
   "email",
   "gender",
+  "pwd",
   "exempts_entrance_test",
   "exempts_interview",
   "entrance_test",
@@ -63,6 +64,15 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Gender"
+  },
+  {
+   "default": "0",
+   "fieldname": "pwd",
+   "fieldtype": "Check",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "label": "PWD",
+   "read_only": 1
   },
   {
    "default": "0",
