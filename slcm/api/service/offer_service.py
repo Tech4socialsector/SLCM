@@ -110,7 +110,7 @@ class OfferService:
         return admission_year
 
     @staticmethod
-    @frappe.whitelist(allow_guest=True)
+    @frappe.whitelist()
     def generate_offer(applicant, campus, program, cycle, admission_year=None):
         """
         Main entry point for generating an offer letter.
@@ -1259,7 +1259,7 @@ class OfferService:
 def extended_fee_deadline():
     return OfferService.extended_fee_deadline()
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def generate_offer(applicant, campus, program, cycle, admission_year=None):
     return OfferService.generate_offer(applicant, campus, program, cycle, admission_year)
 
@@ -1380,7 +1380,8 @@ def get_offer_details(offer_name=None):
         target_applicant = offer_doc.applicant
         fee_structure = offer_doc.fee_structure
     except frappe.PermissionError:
-        offer_fields = frappe.get_all("Offer Letter", filters={"name": offer_id}, fields=["*"], limit=1, ignore_permissions=True)
+        safe_fields = ["name", "applicant", "candidate_name", "program", "status", "rendered_content", "fee_structure", "offer_deadline", "confirmation_fee_due_date", "full_fee_due_date", "campus", "admission_cycle"]
+        offer_fields = frappe.get_all("Offer Letter", filters={"name": offer_id}, fields=safe_fields, limit=1, ignore_permissions=True)
         if not offer_fields:
             return {"error": _("Access Denied")}
         offer_dict = offer_fields[0]
