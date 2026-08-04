@@ -25,6 +25,7 @@
    "fieldtype": "Link",
    "in_filter": 1,
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Applicant ID",
    "options": "Applicant"
   },
@@ -34,6 +35,7 @@
    "fieldtype": "Data",
    "in_filter": 1,
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Candidate Name"
   },
   {
@@ -41,6 +43,7 @@
    "fieldtype": "Link",
    "in_filter": 1,
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Programme",
    "options": "Programme"
   },
@@ -49,6 +52,7 @@
    "fieldtype": "Select",
    "in_filter": 1,
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Programme Level",
    "options": "Undergraduate\nPostgraduate\nResearch Course"
   },
@@ -57,12 +61,14 @@
    "fieldtype": "Data",
    "in_filter": 1,
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Email"
   },
   {
    "fieldname": "gender",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Gender"
   },
   {
@@ -71,6 +77,7 @@
    "fieldtype": "Check",
    "in_filter": 1,
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "PWD",
    "read_only": 1
   },
@@ -79,6 +86,7 @@
    "fieldname": "exempts_entrance_test",
    "fieldtype": "Check",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Exempts Entrance Test",
    "read_only": 1
   },
@@ -87,6 +95,7 @@
    "fieldname": "exempts_interview",
    "fieldtype": "Check",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Exempts Interview",
    "read_only": 1
   },
@@ -94,7 +103,9 @@
    "default": "0",
    "fieldname": "entrance_test",
    "fieldtype": "Check",
+   "in_filter": 1,
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Entrance Test",
    "read_only": 1
   },
@@ -120,14 +131,13 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-07-30 16:32:00.000000",
+ "modified": "2026-08-04 20:04:15.335310",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Applicant",
  "owner": "Administrator",
  "permissions": [],
  "row_format": "Dynamic",
- "rows_threshold_for_grid_search": 0,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

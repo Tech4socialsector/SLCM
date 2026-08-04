@@ -3538,40 +3538,6 @@ def _try_allocate_provider_seat_atomic(provider_name):
     if not provider_rows:
         return None
 
-    # Check for freed seats in Available Exam Center Seats first
-    available_seats = frappe.db.sql(
-        """
-        SELECT name, room_code, room_name, building, floor, seat_number, center_name
-        FROM `tabAvailable Exam Center Seats`
-        WHERE entrance_test_provider = %s AND status = 'Available'
-        ORDER BY creation ASC
-        LIMIT 1
-        FOR UPDATE
-        """,
-        provider_name,
-        as_dict=True,
-    )
-
-    if available_seats:
-        available_seat = available_seats[0]
-        seat_number = available_seat.get("seat_number")
-        
-        # We don't increment room_reserved_seats because the physical seat is still "reserved", we just swap the owner.
-        frappe.db.set_value("Available Exam Center Seats", available_seat.name, {
-            "status": "Occupied"
-        }, update_modified=False)
-        
-        return {
-            "provider": provider_name,
-            "center_name": available_seat.get("center_name"),
-            "center_address": provider_rows[0].get("center_address"),
-            "room_code": available_seat.get("room_code"),
-            "room_name": available_seat.get("room_name"),
-            "building": available_seat.get("building"),
-            "floor": available_seat.get("floor"),
-            "seat_number": seat_number,
-            "aecs_name": available_seat.name
-        }
         
     room_rows = frappe.db.sql(
         """

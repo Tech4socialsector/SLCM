@@ -210,6 +210,10 @@ function _show_allocation_dialog(frm, applicants, providers) {
                                 <input type="checkbox" id="select-all-chk" style="width:15px; height:15px; cursor:pointer; margin-right:6px;">
                                 Select All Applicants
                             </label>
+                            <label style="font-weight:600; cursor:pointer; margin:0; display:flex; align-items:center; font-size:13px; margin-left:12px;" title="Filter PWD Applicants">
+                                <input type="checkbox" id="pwd-applicant-filter-chk" style="width:15px; height:15px; cursor:pointer; margin-right:6px;">
+                                ♿ PWD
+                            </label>
                             <button type="button" id="applicant-clear-all-btn" class="btn btn-xs btn-default" style="font-size:11px; padding:2px 8px; border-radius:4px;">
                                 Clear All
                             </button>
@@ -388,7 +392,8 @@ function _show_allocation_dialog(frm, applicants, providers) {
     let applicant_filters = {
         applicant_id: "",
         candidate_name: "",
-        programme: ""
+        programme: "",
+        pwd_only: false
     };
 
     function get_filtered_applicants() {
@@ -396,7 +401,13 @@ function _show_allocation_dialog(frm, applicants, providers) {
             const id_match = !applicant_filters.applicant_id || (a.applicant_id || "").toLowerCase().includes(applicant_filters.applicant_id);
             const name_match = !applicant_filters.candidate_name || (a.candidate_name || "").toLowerCase().includes(applicant_filters.candidate_name);
             const prog_match = !applicant_filters.programme || (a.program || "").toLowerCase().includes(applicant_filters.programme);
-            return id_match && name_match && prog_match;
+            
+            let pwd_match = true;
+            if (applicant_filters.pwd_only) {
+                pwd_match = (a.pwd == 1 || (a.pwd || "").toString().toLowerCase() === "yes");
+            }
+            
+            return id_match && name_match && prog_match && pwd_match;
         });
     }
 
@@ -588,6 +599,12 @@ function _show_allocation_dialog(frm, applicants, providers) {
             center_current_page++;
             render_center_page();
         }
+    });
+
+    $wrapper.find("#pwd-applicant-filter-chk").on("change", function () {
+        applicant_filters.pwd_only = this.checked;
+        applicant_current_page = 1;
+        render_applicant_page();
     });
 
     $wrapper.on("input keyup search", "#filter-applicant-id, #filter-candidate-name, #filter-programme", function () {
