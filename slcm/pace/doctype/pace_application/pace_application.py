@@ -1083,7 +1083,7 @@ def bulk_download_all_records(names):
             zip_buffer.getvalue(),
             "PACE Application",
             names[0],
-            is_private=0
+            is_private=1
         )
     finally:
         # Restore the original functions
