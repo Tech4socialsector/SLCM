@@ -70,7 +70,7 @@ class MockPolicy:
         ]
         self.horizontal_reservations = [
             MockDoc("Horizontal Reservation Row", "PWD",
-                    category_name="PWD", percentage=5.0, shortlisting_target=30, min_percentile=0.0),
+                    category_name="PWD", percentage=5.0, shortlisting_target=30, min_percentile=40.0),
             MockDoc("Horizontal Reservation Row", "Women",
                     category_name="Women", percentage=30.0, shortlisting_target=180, min_percentile=0.0),
         ]

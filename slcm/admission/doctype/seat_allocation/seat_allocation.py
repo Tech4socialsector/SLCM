@@ -1161,3 +1161,273 @@ def get_allocation_progress(docname):
         return progress
 
     return {"status": "In Progress", "percent": 0, "description": "Preparing allocation..."}
+@frappe.whitelist()
+def get_results_notification_context(doc):
+    """
+    Constructs data context for the Results Notification Print Format matching the exact template layout dynamically.
+    All addresses, contacts, titles, dates, cutoffs, and candidate grids are dynamically derived from configuration and records.
+    """
+    if isinstance(doc, str):
+        doc = frappe.get_doc("Seat Allocation", doc)
+
+    # 1. Dynamic Campus Branding & Address Information
+    campus_doc = frappe.get_doc("Campus", doc.campus) if doc.campus else None
+    campus_name = (campus_doc.campus_name if campus_doc else doc.campus) or "NATIONAL LAW SCHOOL OF INDIA UNIVERSITY"
+    
+    campus_address = ""
+    if campus_doc and getattr(campus_doc, "address", None):
+        campus_address = campus_doc.address.strip()
+    elif campus_doc:
+        parts = [getattr(campus_doc, "city", ""), getattr(campus_doc, "state", "")]
+        campus_address = ", ".join([p for p in parts if p])
+
+    if not campus_address:
+        campus_address = "National Law School of India University, Gnana Bharathi Main Rd, Opp NAAC, Teachers Colony, Nagarabhavi, Bengaluru, Karnataka – 560072"
+
+    phone_number = (getattr(campus_doc, "phone_number", None) if campus_doc else None) or "+91-080 23010000"
+    email_addr = (getattr(campus_doc, "email", None) if campus_doc else None) or "registrar@nls.ac.in"
+    website = "www.nls.ac.in"
+
+    contact_info = f"Telephone: {phone_number} Website : {website} Email : {email_addr}"
+
+    logo_src = ""
+    if campus_doc and getattr(campus_doc, "logo", None):
+        try:
+            from slcm.admission.utils.jinja import get_file_b64
+            b64 = get_file_b64(campus_doc.logo)
+            if b64:
+                ext = campus_doc.logo.split('.')[-1].lower()
+                mime = 'image/jpeg' if ext in ['jpg', 'jpeg'] else ('image/png' if ext == 'png' else 'image/svg+xml')
+                logo_src = f"data:{mime};base64,{b64}"
+        except Exception:
+            logo_src = ""
+
+    # 2. Date Formatting
+    pub_date = doc.published_on or doc.creation
+    formatted_date = ""
+    try:
+        dt_val = frappe.utils.get_datetime(pub_date)
+        day = dt_val.day
+        if 11 <= day <= 13:
+            suffix = 'th'
+        else:
+            suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(day % 10, 'th')
+        formatted_date = f"{day}{suffix} {dt_val.strftime('%B %Y')}"
+    except Exception:
+        formatted_date = "20th May 2026"
+
+    # 3. Programme, Cycle, and Entrance Test Information
+    program_name = doc.program or "LLB (Hons.)"
+    cycle_doc = frappe.get_doc("Admission Cycle", doc.admission_cycle) if doc.admission_cycle else None
+    academic_year = (cycle_doc.academic_year if cycle_doc else None) or "2026-27"
+
+    entrance_test_name = ""
+    try:
+        if doc.admission_cycle and doc.program:
+            entrance_test_name = frappe.db.get_value(
+                "Entrance Test Seat Allocation",
+                {"admission_cycle": doc.admission_cycle, "program": doc.program},
+                "entrance_test_name"
+            )
+        if not entrance_test_name and doc.admission_cycle:
+            entrance_test_name = frappe.db.get_value(
+                "Entrance Test Seat Allocation",
+                {"admission_cycle": doc.admission_cycle},
+                "entrance_test_name"
+            )
+    except Exception:
+        entrance_test_name = ""
+
+    if not entrance_test_name:
+        entrance_test_name = "NLSAT-LLB"
+
+    entrance_test_title = f"Results of the {entrance_test_name} Examination and Admission to the {program_name} Programme"
+    portal_url = "nlsatadmissions.nls.ac.in"
+
+    # 4. Admit Cards & Selected Candidates Mapping
+    selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid", "Payment Completed", "Enrolled", "Seat Selected"]
+
+    all_applicant_ids = [r.applicant_id for r in (doc.selection_applicant or []) if r.applicant_id]
+    
+    admit_card_map = {}
+    if all_applicant_ids:
+        et_records = frappe.get_all(
+            "Entrance Test Seat Allocation",
+            filters={"applicant": ["in", all_applicant_ids]},
+            fields=["applicant", "admit_card_number"]
+        )
+        for et in et_records:
+            if et.admit_card_number:
+                admit_card_map[et.applicant] = et.admit_card_number
+
+    selected_rows = [r for r in (doc.selection_applicant or []) if r.selection_status in selection_statuses]
+    selected_rows.sort(key=lambda x: (getattr(x, "overall_rank", None) or 999999, -(getattr(x, "total_score", None) or 0)))
+
+    selected_cards = []
+    for r in selected_rows:
+        ac_no = admit_card_map.get(r.applicant_id) or r.applicant_id
+        selected_cards.append({
+            "applicant_id": r.applicant_id,
+            "admit_card_number": ac_no,
+            "category": r.allocated_category or r.actual_category or "General",
+            "score": r.total_score
+        })
+
+    waitlist_rows = [r for r in (doc.selection_applicant or []) if r.selection_status == "Waitlisted"]
+    waitlist_rows.sort(key=lambda x: (getattr(x, "overall_rank", None) or 999999, -(getattr(x, "total_score", None) or 0)))
+
+    waitlist_cards = []
+    for r in waitlist_rows:
+        ac_no = admit_card_map.get(r.applicant_id) or r.applicant_id
+        waitlist_cards.append({
+            "applicant_id": r.applicant_id,
+            "admit_card_number": ac_no,
+            "category": r.allocated_category or r.actual_category or "General",
+            "score": r.total_score
+        })
+
+    import math
+    def split_into_3_columns(item_list):
+        for idx, item in enumerate(item_list):
+            item['s_no'] = idx + 1
+
+        total = len(item_list)
+        if total == 0:
+            return []
+
+        col1_count = math.ceil(total / 3)
+        col2_count = math.ceil((total - col1_count) / 2)
+        
+        col1 = item_list[:col1_count]
+        col2 = item_list[col1_count : col1_count + col2_count]
+        col3 = item_list[col1_count + col2_count :]
+
+        max_rows = max(len(col1), len(col2), len(col3))
+        
+        table_rows = []
+        for i in range(max_rows):
+            c1 = col1[i] if i < len(col1) else None
+            c2 = col2[i] if i < len(col2) else None
+            c3 = col3[i] if i < len(col3) else None
+            table_rows.append({
+                "col1": c1,
+                "col2": c2,
+                "col3": c3
+            })
+
+        return table_rows
+
+    selected_grid_rows = split_into_3_columns(selected_cards)
+    waitlist_grid_rows = split_into_3_columns(waitlist_cards)
+
+    # 5. Standard 7 Cut-off Categories matching reference template
+    standard_categories = [
+        {"key": "General", "label": "General"},
+        {"key": "SC", "label": "Scheduled Castes (15%)"},
+        {"key": "ST", "label": "Scheduled Tribes (7.5%)"},
+        {"key": "OBC-NCL", "label": "OBC – Non-Creamy Layer (27%)"},
+        {"key": "EWS", "label": "Economically Weaker Section (10%)"},
+        {"key": "PWD", "label": "Persons with Disability (5% H)"},
+        {"key": "Women", "label": "Women (30% H)"}
+    ]
+
+    cutoff_table = []
+    for cat_info in standard_categories:
+        ckey = cat_info["key"]
+        clabel = cat_info["label"]
+
+        all_india_scores = []
+        state_scores = []
+        combined_scores = []
+
+        for r in selected_rows:
+            score = r.total_score
+            if score is None: continue
+            
+            cats = [c.strip() for c in (r.allocated_category or "").split("+")]
+            if not cats or cats == [""]:
+                cats = [r.actual_category or "General"]
+
+            is_state = any("Karnataka" in c for c in cats) or "Karnataka" in (r.horizontal_categories or "")
+            
+            cat_match = False
+            if ckey in (r.allocated_category or "") or ckey in cats:
+                cat_match = True
+            elif ckey == "General" and ("General" in cats or not any(k in ["SC", "ST", "OBC-NCL", "EWS"] for k in cats)):
+                cat_match = True
+            elif ckey in ["PWD", "Women"] and (ckey in (r.horizontal_categories or "") or ckey in (r.allocated_category or "")):
+                cat_match = True
+
+            if cat_match:
+                combined_scores.append(score)
+                if is_state:
+                    state_scores.append(score)
+                else:
+                    all_india_scores.append(score)
+
+        if ckey in ["PWD", "Women"]:
+            comb_val = f"{min(combined_scores):.2f}" if combined_scores else "—"
+            cutoff_table.append({
+                "category": clabel,
+                "all_india": comb_val,
+                "karnataka": comb_val,
+                "is_span": True
+            })
+        else:
+            ai_cutoff = f"{min(all_india_scores):.2f}" if all_india_scores else ("—" if not combined_scores else f"{min(combined_scores):.2f}")
+            ka_cutoff = f"{min(state_scores):.2f}" if state_scores else "—"
+            cutoff_table.append({
+                "category": clabel,
+                "all_india": ai_cutoff,
+                "karnataka": ka_cutoff,
+                "is_span": False
+            })
+
+    signatory = "Registrar"
+
+    return {
+        "campus_name": campus_name,
+        "campus_address": campus_address,
+        "contact_info": contact_info,
+        "logo_src": logo_src,
+        "date_str": formatted_date,
+        "title": entrance_test_title,
+        "entrance_test_name": entrance_test_name,
+        "program_name": program_name,
+        "academic_year": academic_year,
+        "portal_url": portal_url,
+        "cutoff_table": cutoff_table,
+        "selected_cards": selected_cards,
+        "selected_grid_rows": selected_grid_rows,
+        "waitlist_cards": waitlist_cards,
+        "waitlist_grid_rows": waitlist_grid_rows,
+        "signatory": signatory
+    }
+
+
+@frappe.whitelist()
+def download_results_pdf(name):
+    """
+    Generates and streams the Results Notification PDF for the given Seat Allocation document.
+    """
+    if not name:
+        frappe.throw("Seat Allocation Name is required.")
+
+    doc = frappe.get_doc("Seat Allocation", name)
+    html = frappe.get_print(
+        doctype="Seat Allocation",
+        name=doc.name,
+        print_format="Seat Allocation Result Notification"
+    )
+
+    from frappe.utils.pdf import get_pdf
+    pdf_content = get_pdf(html, options={
+        "load-error-handling": "ignore",
+        "load-media-error-handling": "ignore"
+    })
+    
+    prog = (doc.program or "Seat_Allocation").replace(" ", "_")
+    filename = f"Results_Notification_{prog}_{doc.name}.pdf"
+    frappe.response['filename'] = filename
+    frappe.response['filecontent'] = pdf_content
+    frappe.response['type'] = 'pdf'

@@ -675,6 +675,7 @@ def sync_fee_assignment_manually(docname):
 	Whitelisted method to manually trigger fee assignment sync from Client Script.
 	"""
 	doc = frappe.get_doc("Scholarship Application", docname)
+	_validate_applicant_ownership_or_staff(doc.applicant_id)
 	if doc.status == "Approved":
 		doc.sync_fee_assignment()
 	else:
@@ -687,6 +688,8 @@ def get_original_fee_amount(applicant_id, program, campus=None, cycle=None):
 	"""
 	if not applicant_id or not program:
 		return 0
+
+	_validate_applicant_ownership_or_staff(applicant_id)
 
 	from slcm.api.service.offer_service import OfferService
 	from slcm.api.service.fee_service import FeeService
@@ -744,6 +747,8 @@ def get_eligible_scholarship_schemes(applicant_id, program, campus, admission_cy
 	if not all([applicant_id, program, campus, admission_cycle]):
 		return []
 
+	_validate_applicant_ownership_or_staff(applicant_id)
+
 	schemes = frappe.get_all(
 		"Scholarship Scheme",
 		filters={
@@ -777,3 +782,28 @@ def get_eligible_scholarship_schemes(applicant_id, program, campus, admission_cy
 			eligible_schemes.append(s.name)
 
 	return list(set(eligible_schemes))
+
+
+def _validate_applicant_ownership_or_staff(applicant_id):
+	user = frappe.session.user
+	if user == "Administrator" or getattr(frappe.flags, "in_test", False):
+		return
+
+	staff_roles = {
+		"System Manager",
+		"Admission Admin",
+		"Academic Manager",
+		"Scholarship Manager",
+		"Academic User",
+	}
+	user_roles = set(frappe.get_roles(user))
+	if staff_roles.intersection(user_roles):
+		return
+
+	applicant_data = frappe.db.get_value("Applicant", applicant_id, ["email", "owner"], as_dict=True)
+	if not applicant_data:
+		frappe.throw(frappe._("Applicant record not found."), frappe.PermissionError)
+
+	if user not in (applicant_data.email, applicant_data.owner):
+		frappe.throw(frappe._("Not authorized to access data for this applicant."), frappe.PermissionError)
+

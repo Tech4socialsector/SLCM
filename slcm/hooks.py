@@ -72,8 +72,10 @@ jinja = {
 		"slcm.slcm.doctype.parent_portal_settings.parent_portal_settings.get_parent_portal_settings",
 		"slcm.admission.utils.portal.get_portal_website_branding",
 		"slcm.admission.utils.portal.get_typography_style_block",
+		"slcm.admission.doctype.seat_allocation.seat_allocation.get_results_notification_context",
 	],
 }
+
 
 # Fixtures – exported to JSON and committed to git so every developer/server gets them
 fixtures = [
@@ -324,7 +326,7 @@ fixtures = [
     # --- Transcript Print Format ---
     {
         "doctype": "Print Format",
-        "filters": [["name", "=", "Student Transcript"]]
+        "filters": [["name", "in", ["Student Transcript", "Seat Allocation Result Notification"]]]
     },
     {
         "doctype": "Venue Type",
