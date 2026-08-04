@@ -223,6 +223,7 @@ class FeeService:
         
         is_confirmation = (assignment.fee_type == "Confirmation Fee")
         if is_confirmation:
+            frappe.db.set_value("Offer Letter", offer_name, "status", "Confirmation Fee Paid")
             OfferService.update_applicant_status(assignment.applicant, status="Confirmation Fee Paid")
             # Generate the next assignment for Full Fee
             next_assignment = frappe.new_doc("Applicant Fee Assignment")
@@ -235,6 +236,7 @@ class FeeService:
             next_assignment.status = "Assigned"
             
             needs_accommodation = offer_doc.needs_accommodation == "Yes"
+            next_assignment.accommodation_fee = 1 if needs_accommodation else 0
             
             # Copy fee rows
             next_assignment.fee_components = []
@@ -260,7 +262,7 @@ class FeeService:
             next_assignment.insert(ignore_permissions=True)
             next_assignment.submit()
         else:
-            # Leave Offer Letter status as is (Accepted) for Admission Fee
+            frappe.db.set_value("Offer Letter", offer_name, "status", "Full Fee Paid")
             OfferService.update_applicant_status(assignment.applicant, status="Full Fee Paid")
 
         from slcm.admission.utils.notifications import log_communication
@@ -414,6 +416,7 @@ class FeeService:
 
         from slcm.api.service.offer_service import OfferService
         if is_confirmation:
+            frappe.db.set_value("Offer Letter", offer_doc.name, "status", "Confirmation Fee Paid")
             OfferService.update_applicant_status(offer_doc.applicant, status="Confirmation Fee Paid")
             
             # Generate the next assignment for Full Fee
@@ -428,6 +431,7 @@ class FeeService:
             next_assignment.status = "Assigned"
             
             needs_accommodation = offer_doc.needs_accommodation == "Yes"
+            next_assignment.accommodation_fee = 1 if needs_accommodation else 0
             
             # Copy fee rows
             next_assignment.fee_components = []
@@ -453,7 +457,7 @@ class FeeService:
             next_assignment.insert(ignore_permissions=True)
             next_assignment.submit()
         else:
-            # Leave Offer Status as is (Accepted)
+            frappe.db.set_value("Offer Letter", offer_doc.name, "status", "Full Fee Paid")
             OfferService.update_applicant_status(offer_doc.applicant, status="Full Fee Paid")
             
         # 2. Update Payment Request
@@ -705,27 +709,34 @@ class FeeService:
             if existing:
                 return existing
 
-            # 1. Fetch components directly
-            foriegn_national = frappe.db.get_value("Applicant", offer_doc.applicant, "foriegn_national")
-            is_foreign = foriegn_national == "Yes"
-            fee_data = FeeService._calculate_and_freeze_fees(offer_doc.fee_structure, is_foreign=is_foreign)
+            # 1. Fetch the most recently paid assignment for this offer
+            assignment_name = frappe.db.get_value(
+                "Applicant Fee Assignment",
+                {"offer_letter": offer_doc.name, "status": "Paid", "docstatus": ["<", 2]},
+                "name",
+                order_by="modified desc"
+            )
             
-            total_payable = fee_data.get("total_payable")
-            components = fee_data.get("components") or []
+            if not assignment_name:
+                frappe.log_error("No Paid assignment found for receipt generation.", "Receipt Generation")
+                return None
+                
+            afa = frappe.get_doc("Applicant Fee Assignment", assignment_name)
 
             # 2. Create Receipt
             receipt = frappe.new_doc("Applicant Payment Receipt")
             receipt.applicant = offer_doc.applicant
             receipt.offer_letter = offer_doc.name
             receipt.program = offer_doc.program
+            receipt.fee_type = afa.fee_type
+            receipt.assignment = afa.name
 
             receipt.academic_year = offer_doc.academic_year
             receipt.campus = offer_doc.campus
             receipt.payment_date = frappe.utils.today()
             receipt.transaction_id = transaction_id
             receipt.payment_mode = payment_mode
-            # Temporarily set; will recompute from components (including scholarship) below
-            receipt.total_amount = total_payable
+            receipt.total_amount = afa.total_amount
             receipt.currency = frappe.defaults.get_global_default("currency") or "INR"
 
             # Manual Details
@@ -744,52 +755,25 @@ class FeeService:
             from frappe.utils import flt as _flt
             
             # If scholarship is applied on the Applicant Fee Assignment
-            try:
-                afa = frappe.db.get_value(
-                    "Applicant Fee Assignment",
-                    {"offer_letter": offer_doc.name, "docstatus": ["!=", 2]},
-                    ["scholarship_applied", "scholarship_amount"],
-                    as_dict=True,
-                )
-            except Exception:
-                afa = None
+            receipt.scholarship_applied = afa.scholarship_applied
+            receipt.scholarship_amount = _flt(afa.scholarship_amount)
 
-            # Append all components and then recompute the total from their amounts
-            total_from_components = 0
-            for comp in components:
-                # Use total_amount if available, fallback to amount
-                comp_total = _flt(comp.get("total_amount", 0)) or _flt(comp.get("amount", 0))
-                total_from_components += comp_total
-
-                receipt.append("fee_components", {
-                    "fee_component": comp.get("fee_component"),
-                    "component_name": comp.get("component_name"),
-                    "amount": comp.get("amount"),
-                    "is_taxable": comp.get("is_taxable"),
-                    "tax_rate": comp.get("tax_rate"),
-                    "tax_amount": comp.get("tax_amount"),
-                    "total_amount": comp.get("total_amount")
-                })
-
-            # Store scholarship in dedicated header fields (no Fee Component record needed)
-            receipt.scholarship_applied = 0
-            receipt.scholarship_amount = 0
-            
-            if afa and afa.scholarship_applied:
-                receipt.scholarship_applied = 1
-                receipt.scholarship_amount = _flt(afa.scholarship_amount)
-
-            # Ensure health header amounts reflect the breakdown
-            receipt.total_amount = total_from_components
-            final_payable = frappe.db.get_value(
-                "Applicant Fee Assignment",
-                {"offer_letter": offer_doc.name, "docstatus": ["!=", 2]},
-                "final_payable_amount",
-            )
-            if final_payable:
-                receipt.net_amount = _flt(final_payable)
+            if afa.fee_type == "Confirmation Fee":
+                receipt.confirmation_fee = afa.confirmation_fee or afa.total_amount
             else:
-                receipt.net_amount = receipt.total_amount - receipt.scholarship_amount
+                for comp in afa.get("fee_components", []):
+                    receipt.append("fee_components", {
+                        "fee_component": comp.fee_component,
+                        "component_name": comp.component_name,
+                        "amount": comp.amount,
+                        "is_taxable": comp.is_taxable,
+                        "tax_rate": comp.tax_rate,
+                        "tax_amount": comp.tax_amount,
+                        "total_amount": comp.total_amount
+                    })
+
+            # Ensure header amounts reflect the breakdown
+            receipt.net_amount = _flt(afa.final_payable_amount) if afa.final_payable_amount else receipt.total_amount - receipt.scholarship_amount
 
             tpl = FeeService._resolve_payment_receipt_print_format(
                 offer_doc.applicant, getattr(offer_doc, "campus", None)

@@ -28,7 +28,7 @@ frappe.ui.form.on('Applicant Fee Assignment', {
                         }
                     }
                 });
-            }, __('Actions'));
+            },);
         }
 
         if (frm.doc.docstatus === 1 && ["Partially Paid", "Paid"].includes(frm.doc.status) && (frm.doc.fee_type === "Admission Fee" || frm.doc.fee_type === "Confirmation Fee")) {
@@ -147,7 +147,7 @@ frappe.ui.form.on('Applicant Fee Assignment', {
                     }
                 });
                 d.show();
-            }, __('Actions'));
+            },);
         }
 
         // ── Filter Scholarship Application ──────────────────────────────────────

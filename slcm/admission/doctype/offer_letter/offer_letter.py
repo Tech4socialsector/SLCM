@@ -179,8 +179,8 @@ class OfferLetter(Document):
     def enforce_lock_override(self, fieldname):
         """Validates if the user has permission to override a locked field."""
 
-        if "System Manager" not in frappe.get_roles():
-            throw(_("Modification of '{0}' is locked after the offer is Issued. Only System Managers can override.").format(
+        if not frappe.has_permission("Offer Letter", "write", doc=self):
+            throw(_("Modification of '{0}' is locked after the offer is Issued. You need Write permission to override.").format(
                 self.meta.get_label(fieldname)
             ))
 
