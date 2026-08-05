@@ -3346,6 +3346,18 @@ or _app.current_stage)) or _status %}
                 Pay now
               </a>
               {% endif %}
+              
+              {% if all_receipts %}
+                {% for r in all_receipts %}
+                  <a href="/api/method/frappe.utils.print_format.download_pdf?doctype=Applicant+Payment+Receipt&name={{ r.name }}&format=Applicant+Payment+Receipt&no_letterhead=0&letterhead=No+Letterhead&settings=%7B%7D&_lang=en" 
+                     target="_blank" rel="noopener noreferrer" class="btn-qs-offer" 
+                     style="background: #e0e7ff; color: #4338ca; border-color: #c7d2fe; padding: 6px 12px; margin-left: 5px;"
+                     title="Download {{ r.fee_type or 'Fee' }} Receipt">
+                    <span class="material-symbols-outlined" style="font-size: 14px; margin-right: 4px; vertical-align: middle;">receipt</span>
+                    {{ r.fee_type or 'Fee' }} Receipt
+                  </a>
+                {% endfor %}
+              {% endif %}
           </span>
         </div>
         {% endif %}

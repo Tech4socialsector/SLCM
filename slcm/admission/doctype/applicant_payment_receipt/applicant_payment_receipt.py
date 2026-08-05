@@ -13,8 +13,8 @@ class ApplicantPaymentReceipt(Document):
 	def validate(self):
 		self.set_notification_receiver()
 
-	def on_submit(self):
-		"""Automated generation and attachment of PDF on submission."""
+	def after_insert(self):
+		"""Automated generation and attachment of PDF on creation."""
 		self.generate_and_attach_pdf()
 
 	def generate_and_attach_pdf(self):
