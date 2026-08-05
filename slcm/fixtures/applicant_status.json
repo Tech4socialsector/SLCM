@@ -2,6 +2,26 @@
  {
   "docstatus": 0,
   "doctype": "Applicant Status",
+  "modified": "2026-08-03 10:08:03.431474",
+  "name": "Confirmation Fee Paid",
+  "next_step_note": null,
+  "stage_type": "Admission Fee",
+  "status": "Confirmation Fee Paid",
+  "status_type": "Active"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
+  "modified": "2026-08-03 10:42:00.253184",
+  "name": "Full Fee Paid",
+  "next_step_note": null,
+  "stage_type": "Admission Fee",
+  "status": "Full Fee Paid",
+  "status_type": "Completed"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Status",
   "modified": "2026-03-30 12:29:14.369703",
   "name": "Entrance Test Excempted",
   "next_step_note": null,

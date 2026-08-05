@@ -786,6 +786,10 @@ _pc.mission_text) or '' %}
 	                clearInterval(x);
 	                timer_el.text("{{ _('EXPIRED') }}");
 	                timer_el.css('color', '#feb2b2');
+	                $('button[onclick="handle_primary_action()"], button[onclick="handle_reject()"]')
+	                    .prop('disabled', true)
+	                    .css({'opacity': '0.5', 'cursor': 'not-allowed'})
+	                    .attr('title', '{{ _("Deadline passed") }}');
 	                return;
 	            }
 
