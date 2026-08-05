@@ -210,12 +210,12 @@ class StudentMaster(Document):
         Runs on before_insert. Skips if fee data is already provided (e.g. from
         the admission pipeline). Records the assignment in the history table.
         """
-        if not self.programme:
+        if not self.batch:
             return
         if self.fee_structure or flt(self.total_program_fee):
             return
 
-        program = _resolve_program(self.programme)
+        program = _resolve_program(self.batch)
         if not program:
             return
 
@@ -320,10 +320,10 @@ def _sync_single_student_fee(student_name):
     """Check and update the fee structure for one student. Returns True if updated."""
     student = frappe.get_doc("Student Master", student_name)
 
-    if not student.programme:
+    if not student.batch:
         return False
 
-    program = _resolve_program(student.programme)
+    program = _resolve_program(student.batch)
     if not program:
         return False
 
@@ -379,7 +379,7 @@ def sync_fee_structures_for_program(program):
     students = frappe.get_all(
         "Student Master",
         filters={"student_status": "Active"},
-        fields=["name", "programme"],
+        fields=["name", "batch"],
         limit=0,
     )
 
@@ -387,9 +387,9 @@ def sync_fee_structures_for_program(program):
     errors  = 0
 
     for s in students:
-        if not s.programme:
+        if not s.batch:
             continue
-        resolved = _resolve_program(s.programme)
+        resolved = _resolve_program(s.batch)
         if resolved != program:
             continue
 
@@ -549,19 +549,19 @@ def validate_new_enrollment(student_id):
             ),
         }
 
-    if not student.programme:
+    if not student.batch:
         return {"allowed": False, "message": "Programme (Cohort) is not set in Student Master."}
 
     existing_enrollment = frappe.db.exists(
         "Student Enrollment",
-        {"student": student.name, "batch": student.programme, "docstatus": ["<", 2]},
+        {"student": student.name, "batch": student.batch, "docstatus": ["<", 2]},
     )
 
     if existing_enrollment:
         return {
             "allowed": False,
             "message": (
-                f"Student is already enrolled in this Cohort ({student.programme}). "
+                f"Student is already enrolled in this Batch ({student.batch}). "
                 f"Enrollment ID: {existing_enrollment}"
             ),
         }
@@ -599,8 +599,8 @@ def bulk_student_enrollment(students):
                 "student_name": " ".join(filter(None, [
                     student.first_name, student.middle_name, student.last_name
                 ])),
-                "batch":         student.programme,
-                "batch_year_ref": frappe.db.get_value("Batch", student.programme, "section") or "",
+                "batch":         student.batch,
+                "batch_year_ref": frappe.db.get_value("Batch", student.batch, "section") or "",
                 "academic_year": student.academic_year,
                 "status":        "Enrolled",
                 "enrollment_date": frappe.utils.today(),
@@ -639,7 +639,7 @@ def _validate_transition_requirements(student, new_status):
             ).format(student.fee_payment_status))
 
     elif new_status == "Pending Print & Scan":
-        required_fields = ["first_name", "last_name", "dob", "gender", "email", "phone", "programme", "programme_of_study"]
+        required_fields = ["first_name", "last_name", "dob", "gender", "email", "phone", "batch", "programme_of_study"]
         missing = [f for f in required_fields if not student.get(f)]
         if missing:
             labels = [frappe.get_meta("Student Master").get_label(f) for f in missing]
@@ -839,11 +839,11 @@ def get_academic_progress(student_name, enrollment_name=None):
     sm = frappe.db.get_value(
         "Student Master",
         student_name,
-        ["programme", "current_year", "academic_term", "current_cgpa", "attendance_status",
+        ["batch", "current_year", "academic_term", "current_cgpa", "attendance_status",
          "first_name", "last_name"],
         as_dict=True,
     )
-    batch_year = frappe.db.get_value("Batch", sm.programme, "section") if sm.programme else ""
+    batch_year = frappe.db.get_value("Batch", sm.batch, "section") if sm.batch else ""
 
     # ── Enrollment: a specific one if requested, else the current one ───────
     if enrollment_name:
@@ -1492,7 +1492,7 @@ def get_batch_filter_options():
         label = f"{display_name} ({b.get('academic_year') or ''})".strip()
         options.append({
             "batch":            b["name"],
-            "programme":        b.get("program"),
+            "batch":        b.get("program"),
             "programme_label":  label,
             "academic_year":    b.get("academic_year") or "",
             "term_name":        b.get("academic_term") or "",
@@ -1524,7 +1524,7 @@ def preview_student_ids(batches):
 
     students = frappe.get_all(
         "Student Master",
-        filters={"programme": ["in", batches]},
+        filters={"batch": ["in", batches]},
         fields=["name", "first_name", "last_name", "academic_year", "registration_id"],
     )
     if not students:
@@ -1580,21 +1580,21 @@ def download_student_id_bulk_template(batches=None):
 
     filters = {}
     if batches:
-        filters["programme"] = ["in", batches]
+        filters["batch"] = ["in", batches]
 
     students = frappe.get_all(
         "Student Master",
         filters=filters,
         fields=[
             "name", "first_name", "last_name",
-            "academic_year", "academic_term", "programme", "registration_id",
+            "academic_year", "academic_term", "batch", "registration_id",
         ],
         order_by="first_name asc, last_name asc",
     )
     if not students:
         frappe.throw(_("No students found for the selected filters."))
 
-    batch_names = {s["programme"] for s in students if s.get("programme")}
+    batch_names = {s["batch"] for s in students if s.get("batch")}
     batch_rows = frappe.get_all(
         "Batch",
         filters={"name": ["in", list(batch_names)]},
@@ -1624,14 +1624,14 @@ def download_student_id_bulk_template(batches=None):
 
     for s in students:
         student_name = f"{s.get('first_name') or ''} {s.get('last_name') or ''}".strip()
-        batch = batch_info.get(s.get("programme")) or {}
+        batch = batch_info.get(s.get("batch")) or {}
         ws.append([
             s["name"],
             student_name,
             programme_code.get(batch.get("program")) or "",
             s.get("academic_year") or "",
             s.get("academic_term") or "",
-            batch.get("batch_name") or s.get("programme") or "",
+            batch.get("batch_name") or s.get("batch") or "",
             s.get("registration_id") or "",
         ])
 
@@ -1705,7 +1705,7 @@ def download_section_bulk_template(batches=None):
 
     filters = {}
     if batches:
-        filters["programme"] = ["in", batches]
+        filters["batch"] = ["in", batches]
 
     students = frappe.get_all(
         "Student Master",
@@ -1719,7 +1719,7 @@ def download_section_bulk_template(batches=None):
     if not students:
         frappe.throw(_("No students found for the selected filters."))
 
-    batch_names = {s["programme"] for s in students if s.get("programme")}
+    batch_names = {s["batch"] for s in students if s.get("batch")}
     batch_rows = frappe.get_all(
         "Batch",
         filters={"name": ["in", list(batch_names)]},
@@ -1749,13 +1749,13 @@ def download_section_bulk_template(batches=None):
 
     for s in students:
         student_name = f"{s.get('first_name') or ''} {s.get('last_name') or ''}".strip()
-        batch = batch_info.get(s.get("programme")) or {}
+        batch = batch_info.get(s.get("batch")) or {}
         ws.append([
             s["name"],
             student_name,
             programme_code.get(batch.get("program")) or "",
             s.get("academic_year") or "",
-            batch.get("batch_name") or s.get("programme") or "",
+            batch.get("batch_name") or s.get("batch") or "",
             s.get("section") or "",
         ])
 
