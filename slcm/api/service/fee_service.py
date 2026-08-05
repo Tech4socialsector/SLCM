@@ -325,6 +325,19 @@ class FeeService:
             if afa.status in ("Paid", "Converted"):
                 frappe.throw(_("Fee for this offer has already been paid or the applicant has been converted. You cannot pay again."))
 
+            if actual_payable <= 0:
+                FeeService.process_fee_payment(
+                    offer.name,
+                    payment_mode="Confirmation Fee Adjustment",
+                    remarks="Fee fully covered by confirmation fee deduction."
+                )
+                return {
+                    "zero_amount": True,
+                    "status": "success",
+                    "message": _("Fee fully covered by confirmation fee payment.")
+                }
+
+
             # Block if a Payment Request for the CURRENT fee amount is already Paid (gateway truth)
             # We filter by creation >= afa.creation to ignore PRs from previous fee stages
             existing_paid_pr = frappe.db.get_value(
@@ -988,6 +1001,160 @@ class FeeService:
 
 
 
+
+    @staticmethod
+    @frappe.whitelist()
+    def create_confirmation_fee_refund(offer_name, refund_percentage):
+        """
+        Creates a Refund Request for the Confirmation Fee payment on an Offer Letter.
+
+        Design decisions:
+        - Full Fee AFA is NOT affected — this is a standalone monetary refund of the
+          confirmation fee payment only.
+        - Duplicate prevention: if an active (non-Rejected / non-Failed) Confirmation Fee
+          Refund Request already exists for this offer, the call raises a user-visible error.
+        - The refund percentage is supplied by the caller (0–100).  100% => Full, else Partial.
+
+        Returns the name of the created Refund Request.
+        """
+        offer = frappe.get_doc("Offer Letter", offer_name)
+
+        # Check Fee Structure refund settings
+        if offer.fee_structure:
+            fs_data = frappe.db.get_value("Fee Structure", offer.fee_structure, ["is_confirmation_fee_refundable", "confirmation_fee_refund_percentage"], as_dict=True)
+            if fs_data:
+                if not fs_data.get("is_confirmation_fee_refundable", False):
+                    frappe.throw(_("Confirmation Fee is configured as non-refundable in the Fee Structure."))
+                fs_pct = flt(fs_data.get("confirmation_fee_refund_percentage"))
+                if fs_pct > 0 and (not refund_percentage or refund_percentage == 100):
+                    refund_percentage = fs_pct
+
+        refund_percentage = flt(refund_percentage)
+        if refund_percentage <= 0 or refund_percentage > 100:
+            frappe.throw(_("Refund percentage must be between 1 and 100."))
+
+        # ── 1. Validate offer is in a fee-paid state ──────────────────────────────
+        if offer.status not in ("Confirmation Fee Paid", "Full Fee Paid"):
+
+            frappe.throw(
+                _("Confirmation Fee refund can only be initiated when the offer status is "
+                  "'Confirmation Fee Paid' or 'Full Fee Paid'. Current status: {0}.").format(offer.status)
+            )
+
+        # ── 2. Duplicate-prevention: block if an active Confirmation Fee RR exists ─
+        existing_rr = frappe.db.sql("""
+            SELECT rr.name
+            FROM `tabRefund Request` rr
+            JOIN `tabApplicant Fee Assignment` afa
+              ON afa.name = rr.applicant_fee_assignment
+            WHERE rr.applicant = %(applicant)s
+              AND afa.offer_letter = %(offer)s
+              AND afa.fee_type = 'Confirmation Fee'
+              AND rr.status NOT IN ('Rejected', 'Failed')
+            LIMIT 1
+        """, {"applicant": offer.applicant, "offer": offer.name}, as_dict=True)
+
+        if existing_rr:
+            frappe.throw(
+                _("A Confirmation Fee Refund Request ({0}) already exists for this offer "
+                  "and is currently active. Please resolve it before raising a new one.").format(
+                    existing_rr[0].name)
+            )
+
+        # ── 3. Find the Confirmation Fee AFA ─────────────────────────────────────
+        conf_afa = frappe.db.get_value(
+            "Applicant Fee Assignment",
+            {
+                "offer_letter": offer.name,
+                "fee_type": "Confirmation Fee",
+                "status": "Paid",
+                "docstatus": ["!=", 2],
+            },
+            ["name", "confirmation_fee", "total_amount", "final_payable_amount", "creation"],
+            as_dict=True,
+            order_by="creation desc",
+        )
+        if not conf_afa:
+            frappe.throw(
+                _("No paid Confirmation Fee assignment found for offer {0}.").format(offer.name)
+            )
+
+        # ── 4. Resolve Payment Receipt & Razorpay Payment ID ────────────────────
+        receipt_name = frappe.db.get_value(
+            "Applicant Payment Receipt",
+            {"offer_letter": offer.name, "fee_type": "Confirmation Fee", "docstatus": ["<", 2]},
+            "name",
+            order_by="creation desc",
+        )
+        # Fallback: any receipt linked to this offer (older data may not have fee_type set)
+        if not receipt_name:
+            receipt_name = frappe.db.get_value(
+                "Applicant Payment Receipt",
+                {"offer_letter": offer.name, "docstatus": ["<", 2]},
+                "name",
+                order_by="creation asc",  # earliest receipt = confirmation fee payment
+            )
+
+        razorpay_payment_id = None
+        amount_paid = flt(conf_afa.final_payable_amount or conf_afa.confirmation_fee or conf_afa.total_amount)
+
+        if receipt_name:
+            receipt = frappe.get_doc("Applicant Payment Receipt", receipt_name)
+            razorpay_payment_id = receipt.transaction_id
+            # Prefer net_amount (post-scholarship) if set, else total_amount
+            if flt(receipt.get("net_amount")) > 0:
+                amount_paid = flt(receipt.net_amount)
+            elif flt(receipt.total_amount) > 0:
+                amount_paid = flt(receipt.total_amount)
+
+        # Final fallback: resolve Razorpay payment ID from the Payment Request
+        if not razorpay_payment_id:
+            pr_name = frappe.db.get_value(
+                "Payment Request",
+                {
+                    "reference_doctype": "Offer Letter",
+                    "reference_name": offer.name,
+                    "status": "Paid",
+                    "docstatus": ["!=", 2],
+                    "creation": [">=", conf_afa.creation],
+                },
+                "name",
+                order_by="creation asc",
+            )
+            if pr_name:
+                pr = frappe.get_doc("Payment Request", pr_name)
+                razorpay_payment_id = pr.transaction_id or getattr(pr, "razorpay_payment_id", None)
+                if not amount_paid:
+                    amount_paid = flt(pr.amount)
+
+        if not amount_paid:
+            frappe.throw(
+                _("Could not determine the Confirmation Fee amount paid for offer {0}.").format(offer.name)
+            )
+
+        # ── 5. Compute refund amount & type ──────────────────────────────────────
+        refund_amount = round(amount_paid * refund_percentage / 100.0, 2)
+        refund_type = "Full" if refund_percentage == 100 else "Partial"
+
+        # ── 6. Create the Refund Request ─────────────────────────────────────────
+        refund = frappe.new_doc("Refund Request")
+        refund.applicant = offer.applicant
+        refund.applicant_fee_assignment = conf_afa.name
+        refund.status = "Under Review"
+        refund.refund_reason = _("Confirmation Fee Refund for Offer {0}").format(offer.name)
+        refund.refund_type = refund_type
+        refund.amount_paid = amount_paid
+        refund.refund_amount = refund_amount
+
+        if receipt_name:
+            refund.applicant_payment_receipt = receipt_name
+        if razorpay_payment_id:
+            refund.razorpay_payment_id = razorpay_payment_id
+
+        refund.insert(ignore_permissions=True)
+
+        frappe.db.commit()
+        return refund.name
 
     @staticmethod
     def cancel_linked_fee_assignment(offer_name, reason=None):
