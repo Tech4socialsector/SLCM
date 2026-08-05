@@ -42,7 +42,7 @@ frappe.query_reports["Primary Program Choice"] = {
 			"fieldname": "status",
 			"label": __("Application Status"),
 			"fieldtype": "Select",
-			"options": "\nSubmitted\nSelected\nWaitlisted\nRejected\nOffer Accepted\nOffer Issued\nOffer Declined\nOffer Expired\nFee Paid\nEnrollment Confirmed"
+			"options": "\nSubmitted\nSelected\nWaitlisted\nRejected\nOffer Accepted\nOffer Issued\nOffer Declined\nOffer Expired\nConfirmation Fee Paid\nFull Fee Paid\nEnrollment Confirmed"
 		}
 	],
 };

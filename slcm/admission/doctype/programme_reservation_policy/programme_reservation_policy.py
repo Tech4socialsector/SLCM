@@ -111,7 +111,7 @@ class ProgrammeReservationPolicy(Document):
             fields=["allocated_category", "selection_status"]
         )
         
-        allocated_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid"]
+        allocated_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Confirmation Fee Paid", "Full Fee Paid"]
         filled_counts = {}
         
         for app in applicants:

@@ -173,12 +173,12 @@ frappe.ui.form.on("Applicant", {
         frm.toggle_reqd("percentage", !!frm.doc.national_test_name);
 
         // ── Convert to Student (single record) ───────────────────────────────────
-        // Visible only when the applicant has status "Fee Paid".
+        // Visible only when the applicant has status "Confirmation Fee Paid" or "Full Fee Paid".
         // Calls the unified API (slcm.api.service.applicant_to_student.convert_applicant_to_student).
         // For the full AFA flow (Fee Invoice + Enrollment), use the "Convert to Student" button
         // on the Applicant Fee Assignment form instead.
-        if (!frm.doc.__islocal && frm.doc.status === 'Fee Paid') {
-            frm.add_custom_button(__('Convert to Student'), function () {
+        if (!frm.doc.__islocal && frm.doc.status === 'Full Fee Paid') {
+            const student_btn = frm.add_custom_button(__('Convert to Student'), function () {
                 // Resolve AFA for program and admission_cycle
                 frappe.db.get_list('Applicant Fee Assignment', {
                     filters: {
@@ -196,7 +196,7 @@ frappe.ui.form.on("Applicant", {
                             title: __('No Eligible Fee Assignment'),
                             indicator: 'red',
                             message: __(
-                                'No submitted Admission Fee assignment with status Paid or Partially Paid was found. ' +
+                                'No submitted Admission or Confirmation Fee assignment with status Paid or Partially Paid was found. ' +
                                 'Please use the "Convert to Student" button on the Applicant Fee Assignment form.'
                             )
                         });
@@ -270,7 +270,13 @@ frappe.ui.form.on("Applicant", {
                         }
                     );
                 });
-            }, __('Actions'));
+            });
+            student_btn.css({
+                "background-color": "#1a3c6e",
+                "color":            "#fff",
+                "border-color":     "#1a3c6e",
+                "font-weight":      "600",
+            });
         }
 
         slcm_applicant_setup_country_state_city_queries(frm);

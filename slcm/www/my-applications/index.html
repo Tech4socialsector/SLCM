@@ -102,6 +102,17 @@
     }
   }
 
+  @keyframes toastFadeIn {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -18px);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  }
+
   @keyframes pulse-ring {
 
     0%,
@@ -125,7 +136,7 @@
   }
 
   .ma-inner {
-    max-width: 1100px; /* Constrained for better readability */
+    max-width: 1500px; /* Constrained for better readability */
     width: 95%;
     margin: 0 auto;
     display: flex;
@@ -878,10 +889,9 @@
 
   .qs-item--offer-letter .qs-value--offer-actions {
     flex-direction: row;
-    flex-wrap: nowrap;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
   }
 
   .qs-item--offer-letter .qs-value--offer-actions .btn-qs-offer {
@@ -911,8 +921,6 @@
     font-size: 12px;
     font-weight: 700;
     text-decoration: none;
-    transition: all 0.2s ease;
-    animation: qs-pulse 2s infinite;
     border: 1px solid transparent;
   }
 
@@ -2409,7 +2417,7 @@
 
   .prof-toast {
     position: fixed;
-    bottom: 24px;
+    top: 24px;
     left: 50%;
     transform: translateX(-50%);
     background: var(--text-1);
@@ -2421,7 +2429,7 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, .2);
     z-index: 9999;
     display: none;
-    animation: fadeUp .2s ease-out;
+    animation: toastFadeIn .2s ease-out;
   }
 
   .prof-toast.show {
@@ -3126,14 +3134,36 @@ or _app.current_stage)) or _status %}
                   <span class="material-symbols-outlined" style="font-size:16px;">cancel_presentation</span>
                   Withdrawal: {{ _cstat }}
                 </div>
-                {% elif show_withdraw_button %}
-              <button onclick="show_cancellation_dialog('{{ offer_name }}', '{{ _appid }}', '{{ selected_app.campus }}', '{{ selected_app.program }}', '{{ payment_receipt or (payment_details.name if payment_details else "") }}')" 
-                class="btn-withdraw-application" title="Withdraw your application and request refund"
-                style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:6px 12px; border-radius:6px; font-weight:600; display:flex; align-items:center; gap:6px; font-size:13px;">
-                <span class="material-symbols-outlined" style="font-size:16px;">logout</span>
-                Withdraw Application
-              </button>
+              {% elif conf_fee_refund_rr %}
+                {% set _rr_colors = {
+                  'Under Review': ('#fef3c7', '#92400e'),
+                  'Approved':     ('#d1fae5', '#065f46'),
+                  'Processing':   ('#dbeafe', '#1e40af'),
+                  'Processed':    ('#f0fdf4', '#166534')
+                } %}
+                {% set _rr_bg  = _rr_colors.get(conf_fee_refund_rr.status, ('#f1f5f9', '#475569'))[0] %}
+                {% set _rr_clr = _rr_colors.get(conf_fee_refund_rr.status, ('#f1f5f9', '#475569'))[1] %}
+                <div class="cancellation-status-badge" style="display:flex; align-items:center; gap:8px; background:{{ _rr_bg }}; color:{{ _rr_clr }}; padding:6px 14px; border-radius:30px; font-size:12px; font-weight:700; border:1px solid {{ _rr_clr }}40;">
+                  <span class="material-symbols-outlined" style="font-size:16px;">autorenew</span>
+                  Conf. Fee Refund: {{ conf_fee_refund_rr.status }}
+                </div>
+              {% elif show_conf_fee_refund_btn %}
+                <button onclick="show_cancellation_dialog('{{ offer_name }}', '{{ _appid }}', '{{ selected_app.campus }}', '{{ selected_app.program }}', '{{ payment_receipt or (payment_details.name if payment_details else "") }}', 'Confirmation Fee')" 
+                  class="btn-withdraw-application" title="Request refund for your Confirmation Fee"
+                  style="background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; padding:6px 12px; border-radius:6px; font-weight:600; display:flex; align-items:center; gap:6px; font-size:13px;">
+                  <span class="material-symbols-outlined" style="font-size:16px;">currency_rupee</span>
+                  Refund Confirmation Fee
+                </button>
+              {% elif show_withdraw_button %}
+                <button onclick="show_cancellation_dialog('{{ offer_name }}', '{{ _appid }}', '{{ selected_app.campus }}', '{{ selected_app.program }}', '{{ payment_receipt or (payment_details.name if payment_details else "") }}', 'Full Fee')" 
+                  class="btn-withdraw-application" title="Withdraw your application and request refund"
+                  style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:6px 12px; border-radius:6px; font-weight:600; display:flex; align-items:center; gap:6px; font-size:13px;">
+                  <span class="material-symbols-outlined" style="font-size:16px;">logout</span>
+                  Withdraw Application
+                </button>
               {% endif %}
+
+
 
               {% if selected_app.status == 'Submitted' and selected_app.application_fee_status != 'Paid' and selected_app.application_fee_status != 'Waived' %}
               <a href="{{ applicant_portal_open_url or '#' }}" class="btn-edit-application"
@@ -3299,7 +3329,7 @@ or _app.current_stage)) or _status %}
             Application Fee
           </span>
           <div class="qs-fee-value-row">
-            {% if fee_payment_status in ['Paid','Success','Completed','Fee Paid'] %}
+            {% if fee_payment_status in ['Paid','Success','Completed','Confirmation Fee Paid','Full Fee Paid'] %}
             <span class="qs-value success">{{ fee_payment_status }}</span>
             {% if fee_receipt_ready and app_name_param %}
             <a href="/api/method/slcm.admission.web_form.applicant_form.applicant_form.download_portal_application_fee_receipt?applicant_name={{ app_name_param | urlencode }}"
@@ -3326,6 +3356,8 @@ or _app.current_stage)) or _status %}
               {% set _display_status = status %}
               {% if status == 'Issued' %}{% set _display_status = 'Offer Issued' %}
               {% elif status == 'Accepted' %}{% set _display_status = 'Offer Accepted' %}
+              {% elif status == 'Confirmation Fee Paid' %}{% set _display_status = 'Confirmation Fee Paid' %}
+              {% elif status == 'Full Fee Paid' %}{% set _display_status = 'Full Fee Paid' %}
               {% elif status == 'Payment Completed' %}{% set _display_status = 'Offer Accepted' %}
               {% elif status == 'Expired' %}{% set _display_status = 'Offer Expired' %}
               {% elif status == 'Rejected' %}{% set _display_status = 'Offer Declined' %}
@@ -3333,7 +3365,7 @@ or _app.current_stage)) or _status %}
               {% endif %}
 
               {% set _obg, _oclr, _orgb = ('#e0f2fe', '#0369a1', '3, 105, 161') if status == 'Issued' 
-                             else (('#d1fae5', '#065f46', '6, 95, 70') if status in ['Accepted', 'Payment Completed'] 
+                             else (('#d1fae5', '#065f46', '6, 95, 70') if status in ['Accepted', 'Confirmation Fee Paid', 'Full Fee Paid', 'Payment Completed'] 
                              else (('#fef3c7', '#92400e', '146, 64, 14') if status == 'Expired' 
                              else ('#fee2e2', '#991b1b', '153, 27, 27'))) %}
               
@@ -3346,6 +3378,21 @@ or _app.current_stage)) or _status %}
                 Pay now
               </a>
               {% endif %}
+              
+              {% if all_receipts %}
+                {% for r in all_receipts %}
+                  <a href="/api/method/frappe.utils.print_format.download_pdf?doctype=Applicant+Payment+Receipt&name={{ r.name }}&format=Applicant+Payment+Receipt&no_letterhead=0&letterhead=No+Letterhead&settings=%7B%7D&_lang=en" 
+                     target="_blank" rel="noopener noreferrer" class="btn-qs-offer" 
+                     style="background: #e0e7ff; color: #4338ca; border-color: #c7d2fe; padding: 6px 12px; animation: none;"
+                     title="Download {{ r.fee_type or 'Fee' }} Receipt">
+                    <span class="material-symbols-outlined" style="font-size: 14px; margin-right: 4px; vertical-align: middle;">receipt</span>
+                    {{ r.fee_type or 'Fee' }} Receipt
+                  </a>
+                {% endfor %}
+              {% endif %}
+
+
+
           </span>
         </div>
         {% endif %}
@@ -3353,6 +3400,7 @@ or _app.current_stage)) or _status %}
 
 
     </div><!-- end app-summary-card -->
+
 
 
     {% if cancellation_details %}
@@ -3407,46 +3455,76 @@ or _app.current_stage)) or _status %}
           
           <!-- Column 1: Status -->
           <div style="display: flex; flex-direction: column; gap: 16px;">
-            <div style="display: flex; align-items: center; gap: 8px; color: {{ status_color }}; font-weight: 700; font-size: 12px; text-transform: none; letter-spacing: 0.05em;">
-              <span class="material-symbols-outlined" style="font-size: 18px;">track_changes</span>
-              Request Status
-            </div>
-            
-            <div style="background: white; padding: 16px; border-radius: 14px; border: 1px solid {{ card_border }}; box-shadow: 0 2px 6px rgba(0,0,0,0.02); flex: 1; display: flex; flex-direction: column; justify-content: center;">
-              <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div>
-                  <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Process Status</div>
-                  <div style="font-size: 18px; font-weight: 800; color: {{ status_color }}; display: flex; align-items: center; gap: 6px;">
-                    <span class="material-symbols-outlined" style="font-size: 20px;">{{ status_icon }}</span>
-                    {{ display_status }}
-                  </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; color: {{ status_color }}; font-weight: 700; font-size: 13px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="material-symbols-outlined" style="font-size: 20px;">track_changes</span>
+                  {{ _('Withdrawal & Refund Request Status') }}
                 </div>
-                <div style="text-align: right;">
-                  <div style="font-size: 10px; font-weight: 500; color: #64748b; text-transform: none; margin-bottom: 2px;">Requested On</div>
-                  <div style="font-size: 11px; font-weight: 600; color: #475569;">{{ frappe.utils.get_datetime(cancellation_details.requested_on).strftime("%d-%m-%Y %I:%M:%S %p") if cancellation_details.requested_on else "—" }}</div>
+                <div style="font-size: 12px; font-weight: 600; color: #64748b;">
+                  {{ _('Requested On') }}: {{ frappe.utils.get_datetime(cancellation_details.requested_on).strftime("%d-%m-%Y %I:%M %p") if cancellation_details.requested_on else "—" }}
                 </div>
               </div>
 
-              {% if cancellation_details.refund_amount %}
-              <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed {{ card_border }}; display: flex; justify-content: space-between; align-items: flex-end;">
-                <div>
-                  <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Refund Amount</div>
-                  <div style="font-size: 18px; font-weight: 800; color: #334155; display: flex; align-items: baseline; gap: 8px;">
-                    {{ frappe.format(cancellation_details.refund_amount, "Currency", cancellation_details.currency or "INR") }}
-                    {% if cancellation_details.amount_paid %}
-                      {% set percentage = (cancellation_details.refund_amount / cancellation_details.amount_paid * 100)|round(0)|int %}
-                      <span style="font-size: 11px; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 2px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">{{ percentage }}% Refund</span>
-                    {% endif %}
+              {% if cancellation_details.refund_requests and cancellation_details.refund_requests|length > 0 %}
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                  {% for rr in cancellation_details.refund_requests %}
+                    <div style="background: white; padding: 18px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 2px 6px rgba(0,0,0,0.02); transition: all 0.2s;">
+                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px dashed #e2e8f0;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                          <div style="width: 32px; height: 32px; border-radius: 8px; background: #e0f2fe; color: #0369a1; display: flex; align-items: center; justify-content: center;">
+                            <span class="material-symbols-outlined" style="font-size: 18px;">receipt_long</span>
+                          </div>
+                          <div>
+                            <div style="font-size: 14px; font-weight: 800; color: #1e293b;">{{ rr.fee_type or 'Fee Refund' }}</div>
+                            <div style="font-size: 11px; color: #64748b; font-weight: 500;">Request ID: {{ rr.name }}</div>
+                          </div>
+                        </div>
+                        
+                        <span style="font-size: 11px; font-weight: 700; background: {% if rr.status == 'Processed' or rr.status == 'Completed' %}#dcfce7{% elif rr.status == 'Approved' %}#e0f2fe{% else %}#fef3c7{% endif %}; color: {% if rr.status == 'Processed' or rr.status == 'Completed' %}#15803d{% elif rr.status == 'Approved' %}#0369a1{% else %}#b45309{% endif %}; padding: 4px 12px; border-radius: 20px;">
+                          {{ rr.status or 'Under Review' }}
+                        </span>
+                      </div>
+
+                      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 13px;">
+                        <div>
+                          <div style="font-size: 11px; font-weight: 600; color: #64748b;">{{ _('Amount Paid') }}</div>
+                          <div style="font-size: 14px; font-weight: 700; color: #334155; margin-top: 2px;">{{ frappe.format(rr.amount_paid, "Currency", "INR") }}</div>
+                        </div>
+
+                        <div>
+                          <div style="font-size: 11px; font-weight: 600; color: #64748b;">{{ _('Refund Policy %') }}</div>
+                          <div style="font-size: 14px; font-weight: 700; color: #2563eb; margin-top: 2px;">{{ rr.refund_percentage }}%</div>
+                        </div>
+
+                        <div style="text-align: right;">
+                          <div style="font-size: 11px; font-weight: 600; color: #64748b;">{{ _('Refundable Amount') }}</div>
+                          <div style="font-size: 15px; font-weight: 800; color: #059669; margin-top: 2px;">{{ frappe.format(rr.refund_amount, "Currency", "INR") }}</div>
+                        </div>
+                      </div>
+                    </div>
+                  {% endfor %}
+
+                  <!-- Total Refundable Bar -->
+                  <div style="background: #f0fdf4; padding: 14px 18px; border-radius: 14px; border: 1px solid #bbf7d0; display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                    <span style="font-size: 14px; font-weight: 800; color: #166534;">{{ _('Total Refundable Amount') }}:</span>
+                    <span style="font-size: 18px; font-weight: 900; color: #15803d;">{{ frappe.format(cancellation_details.total_refund_amount, "Currency", "INR") }}</span>
                   </div>
                 </div>
-                {% if cancellation_details.refund_date and r_status in ['Processed', 'Completed'] %}
-                <div style="text-align: right;">
-                  <div style="font-size: 10px; font-weight: 600; color: #64748b; text-transform: none; margin-bottom: 2px;">Refunded On</div>
-                  <div style="font-size: 11px; font-weight: 700; color: #1e293b;">{{ frappe.utils.get_datetime(cancellation_details.refund_date).strftime("%d-%m-%Y %I:%M:%S %p") if cancellation_details.refund_date else "—" }}</div>
+              {% else %}
+                <div style="background: white; padding: 16px; border-radius: 14px; border: 1px solid {{ card_border }}; flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                      <div style="font-size: 10px; font-weight: 600; color: #64748b; margin-bottom: 2px;">Process Status</div>
+                      <div style="font-size: 18px; font-weight: 800; color: {{ status_color }}; display: flex; align-items: center; gap: 6px;">
+                        <span class="material-symbols-outlined" style="font-size: 20px;">{{ status_icon }}</span>
+                        {{ display_status }}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                {% endif %}
-              </div>
               {% endif %}
+
+
 
               {% if r_status in ['Processed', 'Completed'] %}
               <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed {{ card_border }}; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500;">
@@ -3454,22 +3532,20 @@ or _app.current_stage)) or _status %}
                 Note: Your money will be credited to your bank account according to bank policy (5 to 7 working days).
               </div>
               {% endif %}
+
+              <!-- Meta Info Footer -->
+              <div style="margin-top: 16px; padding-top: 14px; border-top: 1px dashed {{ card_border }}; display: flex; flex-wrap: wrap; align-items: center; gap: 16px; font-size: 12px; color: #64748b;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span class="material-symbols-outlined" style="font-size: 16px;">id_card</span>
+                  Request ID: <span style="font-weight: 600; color: #334155;">{{ cancellation_details.name }}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span class="material-symbols-outlined" style="font-size: 16px;">contact_support</span>
+                  Need help ? Contact Admissions Office
+                </div>
+              </div>
+
             </div>
-          </div>
-
-
-          
-        </div>
-
-        <!-- Meta Info Footer -->
-        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px dashed {{ card_border }}; display: flex; flex-wrap: wrap; gap: 20px; font-size: 12px; color: #64748b;">
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <span class="material-symbols-outlined" style="font-size: 16px;">id_card</span>
-            Request ID: <span style="font-weight: 600; color: #334155;">{{ cancellation_details.name }}</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 6px;">
-                 <span class="material-symbols-outlined" style="font-size: 16px;">contact_support</span>
-                 Need help ? Contact Admissions Office
           </div>
         </div>
       </div>
@@ -4896,7 +4972,8 @@ LIST / DASHBOARD VIEW
           applicantId: '{{ et_doc.applicant if et_doc else "" }}',
           entranceTestList: '{{ et_doc.entrance_test_list if et_doc else "" }}',
           allocationName: '{{ et_doc.name if et_doc else "" }}',
-          isRescheduled: {{ 'true' if et_is_rescheduled else 'false' }}
+          isRescheduled: {{ 'true' if et_is_rescheduled else 'false' }},
+          isPwd: {{ 'true' if et_is_pwd else 'false' }}
         };
 
         dropdown.addEventListener('change', async function () {
@@ -4912,7 +4989,15 @@ LIST / DASHBOARD VIEW
             });
             var pinfo = (message || []).find(function (p) { return p.entrance_test_provider === selected.provider; });
             if (pinfo && pinfo.is_full) {
-              alert((selected.center_name || selected.provider) + ' is currently full.');
+              var centerName = selected.center_name || selected.provider;
+              var msg = "Your chosen centre (" + centerName + ") is currently at full capacity. Please choose another available centre.";
+              if (typeof showProfToast === 'function') {
+                showProfToast(msg, true);
+              } else if (typeof showToast === 'function') {
+                showToast(msg, 'error');
+              } else {
+                alert(msg);
+              }
               dropdown.value = '';
               centerDetails.style.display = 'none';
               btnSave.textContent = 'Confirm allocation';
@@ -4951,6 +5036,27 @@ LIST / DASHBOARD VIEW
         if (btnSave) {
           btnSave.addEventListener('click', async function () {
             var selectedText = (dropdown.options[dropdown.selectedIndex] && dropdown.options[dropdown.selectedIndex].text) || dropdown.value;
+            var selected = etData.preferences.find(function (p) { return p.provider === dropdown.value; });
+
+            if (etData.isPwd && selected && !selected.pwd_accessible) {
+              var pwdCentres = etData.preferences.filter(function(p) { return p.pwd_accessible; });
+              var msg = "As a PWD applicant, you must select a centre that provides PWD facilities.";
+              if (pwdCentres.length > 0) {
+                var names = pwdCentres.map(function(c) { return c.center_name || c.provider; }).join(", ");
+                msg += " Available PWD accessible centre(s): " + names;
+              } else {
+                msg += " No PWD accessible centres are currently assigned to you.";
+              }
+              if (typeof showProfToast === 'function') {
+                showProfToast(msg, true);
+              } else if (typeof showToast === 'function') {
+                showToast(msg, 'error');
+              } else {
+                alert(msg);
+              }
+              return;
+            }
+
             if (!(await showConfirmModal({ title: 'Confirm allocation', message: 'Confirm allocation at ' + selectedText + '? This choice cannot be changed.' }))) return;
             btnSave.disabled = true;
             btnSave.textContent = 'Processing...';
@@ -5118,10 +5224,42 @@ LIST / DASHBOARD VIEW
   }
   function showProfToast(msg, isErr) {
     var t = document.getElementById('profToast');
-    if (!t) return;
-    t.textContent = msg;
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'profToast';
+      t.className = 'prof-toast';
+      document.body.appendChild(t);
+    }
+    
+    t.innerHTML = '';
+    var flex = document.createElement('div');
+    flex.style.display = 'flex';
+    flex.style.alignItems = 'center';
+    flex.style.justifyContent = 'space-between';
+    flex.style.gap = '16px';
+
+    var textSpan = document.createElement('span');
+    textSpan.textContent = msg;
+    flex.appendChild(textSpan);
+
+    var closeBtn = document.createElement('span');
+    closeBtn.innerHTML = '&times;';
+    closeBtn.style.cursor = 'pointer';
+    closeBtn.style.fontWeight = 'bold';
+    closeBtn.style.fontSize = '20px';
+    closeBtn.style.lineHeight = '1';
+    closeBtn.style.opacity = '0.8';
+    closeBtn.title = 'Close';
+    closeBtn.onclick = function() { t.className = 'prof-toast'; };
+    closeBtn.onmouseover = function() { this.style.opacity = '1'; };
+    closeBtn.onmouseout = function() { this.style.opacity = '0.8'; };
+    flex.appendChild(closeBtn);
+
+    t.appendChild(flex);
+
     t.className = 'prof-toast show' + (isErr ? ' error' : '');
-    setTimeout(function () { t.className = 'prof-toast'; }, 3000);
+    if (t.toastTimer) clearTimeout(t.toastTimer);
+    t.toastTimer = setTimeout(function () { t.className = 'prof-toast'; }, 8000);
   }
   window.saveProfile = async function () {
     var btn = document.getElementById('saveBtn');
@@ -5189,24 +5327,33 @@ LIST / DASHBOARD VIEW
     };
 
     })();
-
-    // --- Withdrawal Logic (Matching Offer Letter Implementation) ---
+    // --- Withdrawal & Refund Modal Logic ---
     document.addEventListener('DOMContentLoaded', function() {
     const modalEl = document.getElementById('cancellationModal');
     if (!modalEl) return;
 
     const cancellationModal = new bootstrap.Modal(modalEl);
 
-    window.show_cancellation_dialog = async function(offer_name, applicant, campus, program, payment_request) {
+    window.show_cancellation_dialog = async function(offer_name, applicant, campus, program, payment_request, stage_type) {
         document.getElementById('modal_offer_name').value = offer_name;
         document.getElementById('modal_applicant').value = applicant;
         document.getElementById('modal_campus').value = campus;
         document.getElementById('modal_program').value = program;
         document.getElementById('modal_payment_request').value = payment_request || '';
 
+        const modalTitle = document.getElementById('cancellationModalLabel');
+        const submitBtn = document.getElementById('modal_submit_btn');
+        if (stage_type === 'Confirmation Fee') {
+            if (modalTitle) modalTitle.textContent = "{{ _('Refund Confirmation Fee') }}";
+            if (submitBtn) submitBtn.textContent = "{{ _('Confirm Refund Request') }}";
+        } else {
+            if (modalTitle) modalTitle.textContent = "{{ _('Withdraw Admission') }}";
+            if (submitBtn) submitBtn.textContent = "{{ _('Confirm Withdrawal') }}";
+        }
+
         // Reset form
         document.getElementById('cancellationForm').reset();
-        document.getElementById('modal_submit_btn').disabled = false;
+        if (submitBtn) submitBtn.disabled = false;
         
         const policyDescDiv = document.getElementById('refundPolicyDescription');
         if (policyDescDiv) {
@@ -5214,7 +5361,15 @@ LIST / DASHBOARD VIEW
             policyDescDiv.innerHTML = '';
         }
 
-        // Fetch and show refund policies
+        const formatCurrency = (amt, curr) => {
+            try {
+                return new Intl.NumberFormat('en-IN', { style: 'currency', currency: curr || 'INR', maximumFractionDigits: 0 }).format(amt);
+            } catch (e) {
+                return (curr || '₹') + amt;
+            }
+        };
+
+        // Fetch and show refund policies & fee breakdown
         try {
             const api_args = {
                 applicant: applicant,
@@ -5227,38 +5382,72 @@ LIST / DASHBOARD VIEW
             const policies = res.policies || [];
             const daysElapsed = res.days_since_payment || 0;
 
-            const policyTableBody = document.getElementById('refundPolicyTableBody');
+            const bdContainer = document.getElementById('modalFeeBreakdown');
             const policyContainer = document.getElementById('refundPolicyContainer');
-            const policySection = document.getElementById('refundPolicySection');
-            const nonRefundableMsg = document.getElementById('nonRefundableMsg');
 
+            const confFeePaid = res.conf_fee_paid || 0;
+            const isConfRefundable = res.is_confirmation_fee_refundable !== undefined ? !!res.is_confirmation_fee_refundable : false;
+            const confFeePct = isConfRefundable ? (res.confirmation_fee_refund_percentage || 0) : 0;
+            const confFeeRefundAmt = confFeePaid * (confFeePct / 100.0);
+            const courseFeePaid = res.course_fee_paid || 0;
+
+            let currentPolicy = null;
             if (policies && policies.length > 0) {
-                let rows = '';
-                
-                // Sort policies by days just in case
                 policies.sort((a, b) => a.days_from_payment - b.days_from_payment);
-
-                const formatCurrency = (amt, curr) => {
-                    try {
-                        return new Intl.NumberFormat('en-IN', { style: 'currency', currency: curr || 'INR', maximumFractionDigits: 0 }).format(amt);
-                    } catch (e) {
-                        return (curr || '₹') + amt;
-                    }
-                };
-
-                // Find the first policy where daysElapsed <= p.days_from_payment
-                let currentPolicy = policies.find(p => daysElapsed <= p.days_from_payment);
-                
-                // If not found, use the last policy as fallback
+                currentPolicy = policies.find(p => daysElapsed <= p.days_from_payment);
                 if (!currentPolicy && policies.length > 0) {
                     currentPolicy = policies[policies.length - 1];
                 }
+            }
 
-                if (currentPolicy) {
+            const coursePolicyPct = (stage_type !== 'Confirmation Fee' && currentPolicy) ? (currentPolicy.refund_percentage || 0) : 0;
+            const courseFeeRefundAmt = courseFeePaid * (coursePolicyPct / 100.0);
+            const totalRefundAmt = confFeeRefundAmt + courseFeeRefundAmt;
+
+            if (bdContainer) {
+                const confFeeRow = document.getElementById('modalBdConfFeeRow');
+                const confRefRow = document.getElementById('modalBdConfRefRow');
+                const confRefLabel = document.getElementById('modalBdConfRefLabel');
+                const confRefAmt = document.getElementById('modalBdConfRefAmt');
+                
+                if (isConfRefundable) {
+                    document.getElementById('modalBdConfFee').textContent = formatCurrency(confFeePaid, res.currency);
+                    if (confFeeRow) confFeeRow.style.setProperty('display', 'flex', 'important');
+                    if (confRefRow) confRefRow.style.setProperty('display', 'flex', 'important');
+                    confRefLabel.textContent = `{{ _('Confirmation Fee Refundable') }} (${confFeePct}%)`;
+                    confRefAmt.textContent = formatCurrency(confFeeRefundAmt, res.currency);
+                } else {
+                    if (confFeeRow) confFeeRow.style.setProperty('display', 'none', 'important');
+                    if (confRefRow) confRefRow.style.setProperty('display', 'none', 'important');
+                }
+
+
+                if (stage_type !== 'Confirmation Fee' && courseFeePaid > 0) {
+                    const courseFeeRow = document.getElementById('modalBdCourseFeeRow');
+                    if (courseFeeRow) courseFeeRow.style.setProperty('display', 'flex', 'important');
+                    document.getElementById('modalBdCourseFee').textContent = formatCurrency(courseFeePaid, res.currency);
+                } else {
+                    const courseFeeRow = document.getElementById('modalBdCourseFeeRow');
+                    if (courseFeeRow) courseFeeRow.style.setProperty('display', 'none', 'important');
+                }
+
+                document.getElementById('modalBdTotalPaid').textContent = formatCurrency(res.amount_paid || confFeePaid, res.currency);
+                document.getElementById('modalBdTotalRefund').textContent = formatCurrency(totalRefundAmt, res.currency);
+                bdContainer.style.display = 'block';
+            }
+
+            if (stage_type === 'Confirmation Fee') {
+                if (policyContainer) policyContainer.style.display = 'none';
+            } else {
+                const policyTableBody = document.getElementById('refundPolicyTableBody');
+                const policySection = document.getElementById('refundPolicySection');
+                const nonRefundableMsg = document.getElementById('nonRefundableMsg');
+
+                if (policies && policies.length > 0 && currentPolicy) {
                     const p = currentPolicy;
-                    const amountHtml = p.amount ? formatCurrency(p.amount, p.currency) : '-';
+                    const amountHtml = formatCurrency(totalRefundAmt, p.currency || res.currency);
 
-                    rows = `
+                    const rows = `
                         <tr style="background-color: #f0fdf4 !important; border-left: 4px solid #22c55e !important;">
                             <td class="px-3 py-2 text-center text-muted" style="vertical-align: middle;">${p.days_from_payment}</td>
                             <td class="px-3 py-2 text-end fw-bold text-primary" style="vertical-align: middle;">${p.refund_percentage}%</td>
@@ -5274,38 +5463,35 @@ LIST / DASHBOARD VIEW
                             policyDescDiv.style.display = 'none';
                         }
                     }
+                    policyTableBody.innerHTML = rows;
+                    if (policySection) policySection.style.display = 'block';
+                    if (nonRefundableMsg) nonRefundableMsg.style.display = 'none';
+                    if (policyContainer) policyContainer.style.display = 'block';
                 } else {
-                    if (policyDescDiv) {
-                        policyDescDiv.style.display = 'none';
-                    }
-                }
-                policyTableBody.innerHTML = rows;
-                if (policySection) policySection.style.display = 'block';
-                if (nonRefundableMsg) nonRefundableMsg.style.display = 'none';
-                if (policyContainer) policyContainer.style.display = 'block';
-            } else {
-                if (policySection) policySection.style.display = 'none';
-                if (nonRefundableMsg) nonRefundableMsg.style.display = 'block';
-                if (policyContainer) policyContainer.style.display = 'block';
-                if (policyDescDiv) {
-                    policyDescDiv.style.display = 'none';
+                    if (policySection) policySection.style.display = 'none';
+                    if (nonRefundableMsg) nonRefundableMsg.style.display = 'block';
+                    if (policyContainer) policyContainer.style.display = 'block';
+                    if (policyDescDiv) policyDescDiv.style.display = 'none';
                 }
             }
+
         } catch (e) {
             console.error("Failed to fetch refund policies:", e);
             const policyContainer = document.getElementById('refundPolicyContainer');
             const policySection = document.getElementById('refundPolicySection');
             const nonRefundableMsg = document.getElementById('nonRefundableMsg');
             
-            if (policyContainer) {
+            if (policyContainer && stage_type !== 'Confirmation Fee') {
                 if (policySection) policySection.style.display = 'none';
                 if (nonRefundableMsg) nonRefundableMsg.style.display = 'block';
                 policyContainer.style.display = 'block';
             }
         }
 
+
         cancellationModal.show();
     };
+
 
     const cForm = document.getElementById('cancellationForm');
     if (cForm) {
@@ -5372,6 +5558,39 @@ LIST / DASHBOARD VIEW
                         </div>
                     </div>
 
+                    <!-- Payment & Refund Summary Card -->
+                    <div id="modalFeeBreakdown" class="p-3 mb-4" style="background: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0; display: none;">
+                        <div class="fw-bold text-dark mb-2" style="font-size: 13.5px; letter-spacing: -0.01em;">{{ _('Payment & Refund Summary') }}</div>
+                        
+                        <div id="modalBdConfFeeRow" class="justify-content-between text-muted mb-1" style="font-size: 13px; display: none !important;">
+                            <span>{{ _('Confirmation Fee Paid') }}:</span>
+                            <span id="modalBdConfFee" class="fw-semibold text-dark">₹0</span>
+                        </div>
+
+
+                        <div id="modalBdConfRefRow" class="justify-content-between text-muted mb-1" style="font-size: 13px; display: none !important;">
+                            <span class="ps-2 text-secondary" style="font-size: 12.5px;"><i class="fa fa-level-up-alt fa-rotate-90 me-1 text-primary"></i> <span id="modalBdConfRefLabel">{{ _('Confirmation Fee Refundable') }}</span>:</span>
+                            <span id="modalBdConfRefAmt" class="fw-bold text-primary" style="font-size: 13px;">₹0</span>
+                        </div>
+
+                        <div id="modalBdCourseFeeRow" class="justify-content-between text-muted mb-1" style="font-size: 13px; display: none !important;">
+                            <span>{{ _('Course / Full Fee Paid') }}:</span>
+                            <span id="modalBdCourseFee" class="fw-semibold text-dark">₹0</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between text-muted pt-2 mt-2" style="border-top: 1px solid #e2e8f0; font-size: 13px;">
+                            <span class="fw-semibold text-dark">{{ _('Total Fee Paid') }}:</span>
+                            <span id="modalBdTotalPaid" class="fw-bold text-dark">₹0</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center pt-2 mt-1" style="border-top: 1px dashed #cbd5e1; font-size: 14px;">
+                            <span class="fw-bold text-dark">{{ _('Total Refundable Amount') }}:</span>
+                            <span id="modalBdTotalRefund" class="fw-extrabold text-success" style="font-size: 16.5px;">₹0</span>
+                        </div>
+                    </div>
+
+
+
                     <!-- Refund Policy Section -->
                     <div id="refundPolicyContainer" class="mb-4" style="display: none;">
                         <div id="refundPolicySection">
@@ -5400,6 +5619,7 @@ LIST / DASHBOARD VIEW
                             </div>
                         </div>
                     </div>
+
 
                     <div class="p-3 mb-4" style="background: #fff7ed; border-radius: 16px; border: 1px solid #ffedd5; display: flex; gap: 12px;">
                         <div class="text-warning-emphasis fw-600" style="line-height: 1.5; color: #9a3412; font-size: 14px;">

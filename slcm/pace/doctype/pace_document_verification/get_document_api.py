@@ -111,6 +111,7 @@ def generate_document_verification(application):
 def finalize_verification(docname):
 	from frappe import _
 	doc = frappe.get_doc("PACE Document Verification", docname)
+	_validate_verifier_or_admin(doc)
 
 	if doc.status in ["Verified", "Returned for Correction"] and False: # Allow re-finalizing if needed during re-upload?
 		# Actually, user's prompt says "Admin clearly sees updated documents. Re-verification is triggered."
@@ -163,6 +164,7 @@ def finalize_verification(docname):
 def reject_application(docname, reason):
 	from frappe import _
 	doc = frappe.get_doc("PACE Document Verification", docname)
+	_validate_verifier_or_admin(doc)
 
 	if not reason:
 		frappe.throw(_("Reason is required to reject the application."))
@@ -185,3 +187,33 @@ def reject_application(docname, reason):
 	app.save(ignore_permissions=True)
 
 	return {"status": "Rejected"}
+
+
+def _validate_verifier_or_admin(doc):
+	user = frappe.session.user
+	if user == "Administrator" or getattr(frappe.flags, "in_test", False):
+		return
+
+	user_roles = set(frappe.get_roles(user))
+	manager_roles = {
+		"PACE Admission Manager",
+		"Admission Admin",
+		"Academic Manager",
+		"System Manager",
+	}
+	verifier_roles = {
+		"Document Verifier",
+		"Faculty",
+		"Guest Faculty",
+	}
+
+	is_manager = bool(manager_roles.intersection(user_roles))
+	is_assigned_verifier = bool(doc.assigned_verifier and doc.assigned_verifier == user and verifier_roles.intersection(user_roles))
+
+	if not (is_manager or is_assigned_verifier):
+		frappe.throw(frappe._("Not authorized to perform document verification actions."), frappe.PermissionError)
+
+	if not frappe.has_permission(doc=doc, ptype="write", user=user):
+		frappe.throw(frappe._("Insufficient write permissions for document verification."), frappe.PermissionError)
+
+

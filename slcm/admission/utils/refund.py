@@ -25,31 +25,37 @@ def get_applicant_refund_policies(applicant):
 	cycle = details.admission_cycle
 	year = details.academic_year
 
-	# 2. Find Fee Structure
-	fee_structure = None
-	
-	# Priority 1: Via Offer Configuration (Cycle + Campus)
-	config_names = frappe.get_all(
-		"Offer Configuration",
-		filters={"admission_cycle": cycle, "campus": campus, "is_active": 1},
-		pluck="name"
+	# Priority 0: Directly from Offer Letter if assigned
+	fee_structure = frappe.db.get_value(
+		"Offer Letter",
+		{"applicant": applicant, "status": ["not in", ["Rejected", "Withdrawn"]]},
+		"fee_structure",
+		order_by="creation desc"
 	)
 
-	matched_fs_names = []
-	for cn in config_names:
-		config_doc = frappe.get_doc("Offer Configuration", cn)
-		for row in config_doc.fee_structure:
-			fs_name = row.fee_structure
-			fs_meta = frappe.db.get_value("Fee Structure", fs_name, ["program", "is_refund_available"], as_dict=1)
-			if fs_meta and fs_meta.program == program:
-				matched_fs_names.append(fs_name)
-				if fs_meta.is_refund_available:
-					# Check for any active policy rows
-					if frappe.db.exists("Fee Structure Refund Policy", {"parent": fs_name, "is_active": 1}):
-						fee_structure = fs_name
-						break
-		if fee_structure:
-			break
+	# Priority 1: Via Offer Configuration (Cycle + Campus)
+	if not fee_structure:
+		config_names = frappe.get_all(
+			"Offer Configuration",
+			filters={"admission_cycle": cycle, "campus": campus, "is_active": 1},
+			pluck="name"
+		)
+
+		matched_fs_names = []
+		for cn in config_names:
+			config_doc = frappe.get_doc("Offer Configuration", cn)
+			for row in config_doc.fee_structure:
+				fs_name = row.fee_structure
+				fs_meta = frappe.db.get_value("Fee Structure", fs_name, ["program", "is_refund_available"], as_dict=1)
+				if fs_meta and fs_meta.program == program:
+					matched_fs_names.append(fs_name)
+					if fs_meta.is_refund_available:
+						# Check for any active policy rows
+						if frappe.db.exists("Fee Structure Refund Policy", {"parent": fs_name, "is_active": 1}):
+							fee_structure = fs_name
+							break
+			if fee_structure:
+				break
 	
 	# Priority 2: Direct lookup by Program + Academic Year (Fallback)
 	if not fee_structure:
@@ -71,18 +77,14 @@ def get_applicant_refund_policies(applicant):
 
 	if not fee_structure:
 		frappe.log_error(f"Refund Utility: No Fee Structure found for {applicant} (Prog: {program}, Campus: {campus}, Cycle: {cycle})", "Refund Error")
-		return {"policies": [], "days_since_payment": 0, "fee_structure": None}
-
-	if not fee_structure:
-		frappe.log_error(f"Refund Utility: No Fee Structure found for {applicant} (Cycle: {cycle}, Campus: {campus}, Program: {program}).", "Refund Error")
-		return {"policies": [], "days_since_payment": 0, "fee_structure": None}
+		return {"policies": [], "days_since_payment": 0, "fee_structure": None, "is_confirmation_fee_refundable": False, "confirmation_fee_refund_percentage": 0.0}
 
 	# 3. Get policies from Fee Structure
 	fs_doc = frappe.get_doc("Fee Structure", fee_structure)
 
 	if not fs_doc.is_refund_available:
 		frappe.log_error(f"Refund Utility: Refund NOT enabled on FS {fee_structure}", "Refund Info")
-		return {"policies": [], "days_since_payment": 0, "fee_structure": fee_structure}
+		return {"policies": [], "days_since_payment": 0, "fee_structure": fee_structure, "is_confirmation_fee_refundable": False, "confirmation_fee_refund_percentage": 0.0}
 
 	# Collect policies
 	policies = []
@@ -115,11 +117,21 @@ def get_applicant_refund_policies(applicant):
 	if last_payment_date:
 		days_since_payment = date_diff(nowdate(), last_payment_date)
 
+	is_conf_applicable = bool(fs_doc.get("is_confirmation_fee_applicable"))
+	is_conf_refundable = bool(fs_doc.get("is_confirmation_fee_refundable"))
+	is_conf_fee_refundable = bool(is_conf_applicable and is_conf_refundable)
+	conf_fee_pct = flt(fs_doc.get("confirmation_fee_refund_percentage") or 0.0) if is_conf_fee_refundable else 0.0
+
 	return {
 		"policies": policies,
 		"days_since_payment": days_since_payment,
-		"fee_structure": fee_structure
+		"fee_structure": fee_structure,
+		"is_confirmation_fee_refundable": is_conf_fee_refundable,
+		"confirmation_fee_refund_percentage": conf_fee_pct
 	}
+
+
+
 
 
 def get_last_payment_date(applicant):

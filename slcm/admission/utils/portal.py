@@ -521,7 +521,7 @@ def api_get_my_application():
     apps = frappe.get_all(
         "Applicant",
         filters={"owner": user, "admission_cycle": active_cycle},
-        fields=["*"],
+        fields=["name", "candidate_name", "program", "campus", "admission_cycle", "status", "application_fee_status", "application_fee_amount", "creation"],
         limit=1
     )
     return apps[0] if apps else None
