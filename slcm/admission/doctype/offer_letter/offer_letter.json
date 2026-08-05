@@ -25,9 +25,8 @@
   "accepted_on",
   "offer_configrationn",
   "fee_structure",
-  "edit_reason",
-  "column_break_hdcy",
   "notification_receiver",
+  "column_break_hdcy",
   "offer_acceptance_deadline",
   "confirmation_fee_deadline",
   "payment_deadline",
@@ -138,11 +137,6 @@
    "label": "Payable Amount"
   },
   {
-   "fieldname": "edit_reason",
-   "fieldtype": "Small Text",
-   "label": "Edit Reason"
-  },
-  {
    "fieldname": "needs_accommodation",
    "fieldtype": "Select",
    "label": "Needs Accommodation",
@@ -227,7 +221,7 @@
    "link_fieldname": "offer_letter"
   }
  ],
- "modified": "2026-08-04 15:50:27.975705",
+ "modified": "2026-08-05 10:53:43.304402",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letter",

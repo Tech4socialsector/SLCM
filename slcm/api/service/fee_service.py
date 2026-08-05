@@ -783,7 +783,6 @@ class FeeService:
 
             receipt.insert(ignore_permissions=True)
             
-            
             return receipt.name
         except Exception as e:
             frappe.log_error(frappe.get_traceback(), "Receipt Generation Failed")

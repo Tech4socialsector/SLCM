@@ -687,20 +687,23 @@ def get_context(context):
 
                 # 2. Fallback to Applicant Payment Receipt
                 if not context.payment_details:
-                    receipt = frappe.get_all("Applicant Payment Receipt",
+                    receipts = frappe.get_all("Applicant Payment Receipt",
                         filters={"offer_letter": context.offer_name, "docstatus": ["<", 2]},
-                        fields=["name", "total_amount as amount", "payment_date"],
-                        order_by="creation desc", limit=1)
-                    if receipt:
-                        context.payment_details = receipt[0]
-                        context.payment_receipt = receipt[0].name
+                        fields=["name", "total_amount as amount", "payment_date", "fee_type"],
+                        order_by="creation desc")
+                    if receipts:
+                        context.payment_details = receipts[0]
+                        context.payment_receipt = receipts[0].name
+                        context.all_receipts = receipts
             else:
                 context.payment_details = None
+                context.all_receipts = []
         else:
             # Don't wipe offer_name — it may already be set from the initial offer
             # letter fetch above and is needed for the quick-status offer button.
             # The withdrawal button is controlled by show_withdraw_button, not offer_name.
             context.payment_details = None
+            context.all_receipts = []
 
         # Combined results
         context.all_results = []

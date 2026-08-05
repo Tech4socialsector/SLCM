@@ -396,22 +396,6 @@ class OfferService:
         if status in status_map:
             status = status_map[status]
 
-        # Prevent downgrading status if already further along the pipeline
-        current_status = frappe.db.get_value("Applicant", applicant, "status")
-        hierarchy = [
-            "Draft", "Submitted", "Under Review", "Shortlisted", "Selected",
-            "Offer Issued", "Offer Accepted", "Confirmation Fee Paid",
-            "Full Fee Paid", "Seat Selected", "Enrolled"
-        ]
-        
-        try:
-            current_idx = hierarchy.index(current_status) if current_status in hierarchy else -1
-            new_idx = hierarchy.index(status) if status in hierarchy else -1
-            if current_idx > new_idx and new_idx != -1:
-                return True # Skip downgrade
-        except Exception:
-            pass
-
         # Use db_set to bypass full validation (validate_eligibility) which may throw 
         # for ineligible applicants during status synchronization.
         frappe.db.set_value("Applicant", applicant, "status", status, update_modified=True)
@@ -1530,6 +1514,11 @@ def get_offer_details(offer_name=None):
             available_scholarships_count = len(available_scholarships)
         except Exception:
             pass
+
+    receipts = frappe.get_all("Applicant Payment Receipt",
+        filters={"offer_letter": offer_id, "docstatus": ["<", 2]},
+        fields=["name", "fee_type"],
+        order_by="creation desc", ignore_permissions=True)
 
     return {
         "offer": offer_dict,

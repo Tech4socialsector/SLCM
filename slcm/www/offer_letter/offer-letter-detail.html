@@ -119,6 +119,8 @@ footer_color=portal_config.footer_color, button_border_radius=portal_config.butt
 	.status-badge-row.issued { background: #fef3c7; color: #b45309; }
 	.status-badge-row.accepted { background: #dcfce7; color: #15803d; }
 	.status-badge-row.payment-completed { background: #dbeafe; color: #1d4ed8; }
+	.status-badge-row.confirmation-fee-paid { background: #e0e7ff; color: #4338ca; }
+	.status-badge-row.full-fee-paid { background: #cffafe; color: #0e7490; }
 	.status-badge-row.rejected { background: #fee2e2; color: #b91c1c; }
 	.status-badge-row.expired { background: #ffedd5; color: #c2410c; }
 	.status-badge-row.withdrawn { background: #fce7f3; color: #be185d; }
@@ -827,6 +829,8 @@ _pc.mission_text) or '' %}
 	            case 'issued': return '<span class="material-symbols-outlined" style="font-size: 18px;">mark_email_unread</span>';
 	            case 'accepted': return '<span class="material-symbols-outlined" style="font-size: 18px;">thumb_up</span>';
 	            case 'payment completed': return '<span class="material-symbols-outlined" style="font-size: 18px;">task_alt</span>';
+	            case 'confirmation fee paid': return '<span class="material-symbols-outlined" style="font-size: 18px;">check_circle</span>';
+	            case 'full fee paid': return '<span class="material-symbols-outlined" style="font-size: 18px;">verified</span>';
 	            case 'rejected': return '<span class="material-symbols-outlined" style="font-size: 18px;">thumb_down</span>';
 	            case 'expired': return '<span class="material-symbols-outlined" style="font-size: 18px;">timer_off</span>';
 	            case 'withdrawn': return '<span class="material-symbols-outlined" style="font-size: 18px;">cancel</span>';
@@ -870,17 +874,17 @@ _pc.mission_text) or '' %}
                             let deadline_label = '';
                             if (offer.status === 'Issued' && offer.offer_acceptance_deadline) {
                                 deadline_date = offer.offer_acceptance_deadline;
-                                deadline_label = 'Offer Expiry';
+                                deadline_label = 'Offer Deadline';
                             } else if (offer.status === 'Accepted' && offer.confirmation_fee_deadline) {
                                 deadline_date = offer.confirmation_fee_deadline;
-                                deadline_label = 'Confirmation Fee Expiry';
+                                deadline_label = 'Confirmation Fee Deadline';
                             } else if (offer.status === 'Confirmation Fee Paid' && offer.payment_deadline) {
                                 deadline_date = offer.payment_deadline;
-                                deadline_label = 'Admission Fee Expiry';
+                                deadline_label = 'Admission Fee Deadline';
                             } else if ((offer.status === 'Issued' || offer.status === 'Accepted') && offer.payment_deadline) {
                                 // Fallback
                                 deadline_date = offer.payment_deadline;
-                                deadline_label = 'Expiry Date';
+                                deadline_label = 'Admission Fee Deadline';
                             }
 
                             if (deadline_date) {
@@ -1059,11 +1063,17 @@ _pc.mission_text) or '' %}
 	                            </button>
 	                        ` : ''}
 
-	                        ${['Payment Completed', 'Full Fee Paid'].includes(offer.status) || is_fee_paid || (applicant && ['Confirmation Fee Paid', 'Full Fee Paid'].includes(applicant.status)) ? `
+	                        ${(data.receipts && data.receipts.length > 0) ? 
+	                            data.receipts.map(r => `
+	                                <button class="btn btn-pay" style="width: auto; margin: 0; margin-bottom: 8px; padding: 10px 24px;" title="Download ${r.fee_type || 'Fee'} Receipt" onclick="window.open('/api/method/frappe.utils.print_format.download_pdf?doctype=Applicant+Payment+Receipt&name=${r.name}&format=Applicant+Payment+Receipt&no_letterhead=0&letterhead=No+Letterhead&settings=%7B%7D&_lang=en', '_blank')">
+	                                    <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">receipt</span> {{ _("Download") }} ${r.fee_type || 'Fee'} {{ _("Receipt") }}
+	                                </button>
+	                            `).join('') 
+	                        : (['Payment Completed', 'Full Fee Paid'].includes(offer.status) || is_fee_paid || (applicant && ['Confirmation Fee Paid', 'Full Fee Paid'].includes(applicant.status)) ? `
 	                            <button class="btn btn-pay" style="width: auto; margin: 0; padding: 10px 24px;" title="Download Receipt" onclick="handle_download_receipt()">
 	                                <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">receipt</span> {{ _("Download Receipt") }}
 	                            </button>
-	                        ` : ''}
+	                        ` : '')}
 	                    </div>
 
 	                    ${(offer.status === 'Accepted' && !is_fee_paid && online_payment_enabled) || (offer.status === 'Issued') ? `
