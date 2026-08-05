@@ -927,6 +927,9 @@ def generate_and_store_admit_card(allocation, is_rescheduled=False, html_content
     if isinstance(allocation, str):
         allocation = frappe.get_doc("Entrance Test Seat Allocation", allocation)
 
+    if getattr(allocation, "is_international_applicant", 0):
+        return None
+
     # Ensure print permissions are bypassed (called from portal under applicant session)
     frappe.flags.ignore_print_permissions = True
 
@@ -1004,11 +1007,18 @@ def _send_allocation_notification(allocation, email):
     if frappe.db.exists("User", email):
         try:
             # Custom Title and Message similar to Merit List
-            message_body = f"""
-                <p>An entrance test seat has been allocated for you in <strong>"{allocation.entrance_test_list}"</strong>.</p>
-                <p>Please check your admission dashboard to view the details and select your preferred center.</p>
-                <p><a href="/merit-and-scholarship/admission_dashboard?panel=applications" style="color: #16a34a; font-weight: bold;">Click here to view details.</a></p>
-            """
+            if allocation.is_international_applicant:
+                message_body = f"""
+                    <p>Your online entrance test has been scheduled.</p>
+                    <p>Please check your admission dashboard to view the details.</p>
+                    <p><a href="/merit-and-scholarship/admission_dashboard?panel=applications" style="color: #16a34a; font-weight: bold;">Click here to view details.</a></p>
+                """
+            else:
+                message_body = f"""
+                    <p>An entrance test seat has been allocated for you in <strong>"{allocation.entrance_test_list}"</strong>.</p>
+                    <p>Please check your admission dashboard to view the details and select your preferred center.</p>
+                    <p><a href="/merit-and-scholarship/admission_dashboard?panel=applications" style="color: #16a34a; font-weight: bold;">Click here to view details.</a></p>
+                """
             
             frappe.get_doc({
                 "doctype": "Notification Log",

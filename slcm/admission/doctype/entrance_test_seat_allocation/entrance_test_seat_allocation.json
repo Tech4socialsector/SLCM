@@ -105,8 +105,9 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Entrance Test List",
+   "mandatory_depends_on": "eval:!doc.is_international_applicant",
    "options": "Entrance Test List",
-   "reqd": 1
+   "read_only": 1
   },
   {
    "fieldname": "academic_year",
@@ -310,12 +311,14 @@
    "default": "0",
    "fieldname": "admit_card_generated",
    "fieldtype": "Check",
-   "label": "Admit Card Generated"
+   "label": "Admit Card Generated",
+   "read_only": 1
   },
   {
    "fieldname": "admit_card_number",
    "fieldtype": "Data",
-   "label": "Admit Card Number"
+   "label": "Admit Card Number",
+   "read_only": 1
   },
   {
    "fieldname": "tab_part_a",
@@ -607,7 +610,7 @@
  "image_field": "profile",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-04 16:30:55.888903",
+ "modified": "2026-08-05 18:29:51.643751",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",

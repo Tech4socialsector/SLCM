@@ -193,8 +193,7 @@
    "default": "0",
    "fieldname": "is_international_applicant",
    "fieldtype": "Check",
-   "label": "Is International Applicant",
-   "read_only": 1
+   "label": "Is International Applicant"
   },
   {
    "fieldname": "section_break_isa_src",
@@ -571,7 +570,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-05 15:44:29.165491",
+ "modified": "2026-08-05 17:10:26.417758",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Seat Allocation",

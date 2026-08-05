@@ -3768,14 +3768,8 @@ def _auto_allocate_international_entrance_test(applicant_doc):
         )
         return
 
-    # Get or create the shared Entrance Test List (same as domestic)
-    entrance_test_list_name = _get_or_create_auto_entrance_test_list(applicant_doc)
-    if not entrance_test_list_name:
-        return
-
-    # Build allocation record — NO center/room/seat fields set
+    # No Entrance Test List created or linked for international applicants.
     allocation = frappe.new_doc("Entrance Test Seat Allocation")
-    allocation.entrance_test_list   = entrance_test_list_name
     allocation.academic_year        = applicant_doc.academic_year
     allocation.admission_cycle      = applicant_doc.admission_cycle
     allocation.campus               = applicant_doc.campus
@@ -3811,34 +3805,6 @@ def _auto_allocate_international_entrance_test(applicant_doc):
 
     allocation.insert(ignore_permissions=True)
 
-    # Keep Entrance Test List child table in sync for operational visibility
-    try:
-        etl = frappe.get_doc("Entrance Test List", entrance_test_list_name)
-        exists_row = any(
-            (row.applicant_id or "").strip() == applicant_doc.name
-            for row in (etl.entrance_test_applicant or [])
-        )
-        if not exists_row:
-            etl.append(
-                "entrance_test_applicant",
-                {
-                    "applicant_id":         applicant_doc.name,
-                    "candidate_name":       applicant_doc.candidate_name,
-                    "program":              applicant_doc.program,
-                    "program_level":        applicant_doc.program_level,
-                    "email":                applicant_doc.email,
-                    "gender":               applicant_doc.gender,
-                    "exempts_entrance_test": cint(getattr(applicant_doc, "exempts_entrance_test", 0)),
-                    "exempts_interview":    cint(getattr(applicant_doc, "exempts_interview", 0)),
-                    "allocation_status":    "Allocated",
-                },
-            )
-            etl.save(ignore_permissions=True)
-    except Exception:
-        frappe.log_error(
-            frappe.get_traceback(),
-            f"International auto allocation list sync failed for Applicant {applicant_doc.name}",
-        )
 
     # Send international-specific email (NO admit card attached)
     try:
