@@ -1069,7 +1069,7 @@ function open_reject_and_allocate_dialog(listview) {
         args: {
             doctype: 'Entrance Test Provider',
             filters: { active: 1, available_capacity: [">", 0] },
-            fields: ['name', 'center_name', 'center_address', 'campus', 'provider_type'],
+            fields: ['name', 'center_name', 'center_address', 'campus', 'provider_type', 'city'],
             limit_page_length: 200
         },
         callback: function (r) {
@@ -1095,7 +1095,7 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
 
     let applicant_current_page = 1;
     const applicant_page_size = 10;
-    let applicant_filters = { applicant_id: "", candidate_name: "", programme: "", pwd_only: false };
+    let applicant_filters = { applicant_id: "", candidate_name: "", programme: "", entrance_test_city: "", old_centre: "", pwd_only: false };
 
     function get_filtered_providers() {
         let list = all_providers;
@@ -1194,11 +1194,13 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
             const id_match = !applicant_filters.applicant_id || (a.applicant || "").toLowerCase().includes(applicant_filters.applicant_id);
             const name_match = !applicant_filters.candidate_name || (a.candidate_name || "").toLowerCase().includes(applicant_filters.candidate_name);
             const prog_match = !applicant_filters.programme || (a.program || "").toLowerCase().includes(applicant_filters.programme);
+            const city_match = !applicant_filters.entrance_test_city || (a.entrance_test_city || "").toLowerCase().includes(applicant_filters.entrance_test_city);
+            const centre_match = !applicant_filters.old_centre || (a.center_name || "").toLowerCase().includes(applicant_filters.old_centre);
             let pwd_match = true;
             if (applicant_filters.pwd_only) {
                 pwd_match = (a.pwd == 1 || (a.pwd || "").toString().toLowerCase() === "yes");
             }
-            return id_match && name_match && prog_match && pwd_match;
+            return id_match && name_match && prog_match && city_match && centre_match && pwd_match;
         });
     }
 
@@ -1230,6 +1232,7 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
                             ${(row.pwd == 1 || (row.pwd || "").toString().toLowerCase() === "yes") ? `<span style="font-size:10px; background:#fef3c7; color:#92400e; padding:1px 5px; border-radius:4px; margin-left:4px; border:1px solid #fde68a; font-weight:700;">♿ PWD</span>` : ''}
                         </td>
                         <td style="vertical-align:middle;">${row.program || "-"}</td>
+                        <td style="vertical-align:middle;">${row.entrance_test_city || "-"}</td>
                         <td style="vertical-align:middle;">${row.center_name || "-"}</td>
                     </tr>
                 `;
@@ -1278,7 +1281,7 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
                 fieldname: 'filter_allocation_status',
                 fieldtype: 'Select',
                 options: '\nNot Allocated\nPreferences Assigned\nAllocated\nReallocated\nCancelled\nRejected',
-                on_change: () => fetch_applicants()
+                onchange: () => fetch_applicants()
             },
             { fieldtype: 'Column Break' },
             {
@@ -1286,15 +1289,9 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
                 fieldname: 'filter_entrance_test_status',
                 fieldtype: 'Select',
                 options: '\nAttended\nAbsent\nRescheduled\nNot Scheduled\nScheduled',
-                on_change: () => fetch_applicants()
+                onchange: () => fetch_applicants()
             },
-            { fieldtype: 'Column Break' },
-            {
-                label: __('Centre Name'),
-                fieldname: 'filter_center_name',
-                fieldtype: 'Data',
-                on_change: () => fetch_applicants()
-            },
+
             { fieldtype: 'Section Break' },
             {
                 label: __("Allocate Type"),
@@ -1312,7 +1309,7 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
                 label: __("Entrance Test City"),
                 fieldname: "entrance_test_city",
                 fieldtype: "Link",
-                options: "City",
+                options: "Entrance Test City",
                 onchange: function() {
                     center_current_page = 1;
                     render_center_page();
@@ -1525,6 +1522,8 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
     d.$wrapper.on("input", "#filter-applicant-id", function () { applicant_filters.applicant_id = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
     d.$wrapper.on("input", "#filter-candidate-name", function () { applicant_filters.candidate_name = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
     d.$wrapper.on("input", "#filter-programme", function () { applicant_filters.programme = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
+    d.$wrapper.on("input", "#filter-entrance-test-city", function () { applicant_filters.entrance_test_city = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
+    d.$wrapper.on("input", "#filter-old-centre", function () { applicant_filters.old_centre = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
     d.$wrapper.on("change", "#pwd-applicant-filter-chk", function () { applicant_filters.pwd_only = this.checked; applicant_current_page = 1; render_applicant_page(); });
     d.$wrapper.on("click", "#applicant-clear-all-btn", function () { selected_applicant_names.clear(); render_applicant_page(); });
     d.$wrapper.on("click", "#applicant-prev-btn", function () { if (applicant_current_page > 1) { applicant_current_page--; render_applicant_page(); } });
@@ -1549,14 +1548,13 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
         const filters = {};
         if (d.get_value('filter_allocation_status')) filters.allocation_status = d.get_value('filter_allocation_status');
         if (d.get_value('filter_entrance_test_status')) filters.entrance_test_status = d.get_value('filter_entrance_test_status');
-        if (d.get_value('filter_center_name')) filters.center_name = ["like", `%${d.get_value('filter_center_name')}%`];
 
         frappe.call({
             method: 'frappe.client.get_list',
             args: {
                 doctype: 'Entrance Test Seat Allocation',
                 filters: filters,
-                fields: ['name', 'candidate_name', 'applicant', 'program', 'pwd', 'center_name'],
+                fields: ['name', 'candidate_name', 'applicant', 'program', 'pwd', 'center_name', 'entrance_test_list.entrance_test_city'],
                 limit_page_length: 0
             },
             callback: function (r) {
@@ -1593,6 +1591,7 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
                                     <th style="width:20%; color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Applicant ID</th>
                                     <th style="width:25%; color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Candidate Name</th>
                                     <th style="color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Programme</th>
+                                    <th style="color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Entrance Test City</th>
                                     <th style="color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Old Centre Name</th>
                                 </tr>
                                 <tr style="background:#f1f5f9;">
@@ -1610,7 +1609,14 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
                                         <input type="text" id="filter-programme" placeholder="${__("Filter Programme...")}" value="${applicant_filters.programme}"
                                                style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; outline:none; background:#ffffff;">
                                     </th>
-                                    <th style="padding:4px 6px;"></th>
+                                    <th style="padding:4px 6px;">
+                                        <input type="text" id="filter-entrance-test-city" placeholder="${__("Filter City...")}" value="${applicant_filters.entrance_test_city || ''}"
+                                               style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; outline:none; background:#ffffff;">
+                                    </th>
+                                    <th style="padding:4px 6px;">
+                                        <input type="text" id="filter-old-centre" placeholder="${__("Filter Old Centre...")}" value="${applicant_filters.old_centre || ''}"
+                                               style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; outline:none; background:#ffffff;">
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody id="rej-applicant-table-body"></tbody>
