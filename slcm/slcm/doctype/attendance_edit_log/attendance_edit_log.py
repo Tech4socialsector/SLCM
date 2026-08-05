@@ -17,6 +17,9 @@ def log_attendance_edit(attendance_record, field_changed, old_value, new_value, 
 	is appended as a row to its edit_entries child table instead of creating
 	a new parent document.
 	"""
+	if not frappe.has_permission("Student Attendance", "write", doc=attendance_record):
+		frappe.throw(frappe._("Not permitted"), frappe.PermissionError)
+
 	existing_name = frappe.db.exists("Attendance Edit Log", {"attendance_record": attendance_record})
 	if existing_name:
 		log = frappe.get_doc("Attendance Edit Log", existing_name)
@@ -46,6 +49,9 @@ def log_attendance_edit(attendance_record, field_changed, old_value, new_value, 
 @frappe.whitelist()
 def get_attendance_edit_history(attendance_record):
 	"""Get all edit entries for an attendance record"""
+	if not frappe.has_permission("Student Attendance", "read", doc=attendance_record):
+		frappe.throw(frappe._("Not permitted"), frappe.PermissionError)
+
 	log_name = frappe.db.exists("Attendance Edit Log", {"attendance_record": attendance_record})
 	if not log_name:
 		return []
@@ -53,7 +59,10 @@ def get_attendance_edit_history(attendance_record):
 	entries = frappe.get_all(
 		"Attendance Edit Entry",
 		filters={"parent": log_name, "parenttype": "Attendance Edit Log"},
-		fields=["*"],
+		fields=[
+			"field_changed", "old_value", "new_value",
+			"edit_reason", "edited_by", "edit_timestamp",
+		],
 		order_by="edit_timestamp desc"
 	)
 	return entries

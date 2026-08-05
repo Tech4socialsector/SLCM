@@ -3,6 +3,16 @@ import frappe
 no_cache = 1
 
 
+def _mask_account(acct):
+    acct = str(acct or "")
+    return ("•••• " + acct[-4:]) if len(acct) > 4 else acct
+
+
+def _mask_ifsc(ifsc):
+    ifsc = str(ifsc or "")
+    return ("••••" + ifsc[-4:]) if len(ifsc) > 4 else ifsc
+
+
 def get_context(context):
     context.no_cache = 1
 
@@ -75,8 +85,8 @@ def get_context(context):
 
             # Bank
             "bank_name":        student.bank_name or "",
-            "bank_account_number": student.bank_account_number or "",
-            "ifsc_code":        student.ifsc_code or "",
+            "bank_account_number": _mask_account(student.bank_account_number),
+            "ifsc_code":        _mask_ifsc(student.ifsc_code),
             "branch_name":      student.branch_name or "",
             "account_holder":   student.account_holder_name or "",
         }

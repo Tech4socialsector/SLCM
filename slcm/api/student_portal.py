@@ -1859,7 +1859,7 @@ def get_rooms_for_type(venue_type):
 
 @frappe.whitelist()
 def submit_venue_booking(
-    event_name, venue_type, room, start_datetime, end_datetime,
+    event_name=None, venue_type=None, room=None, start_datetime=None, end_datetime=None,
     reason=None, expected_attendees=None, attachment=None
 ):
     """Create a Venue Booking on behalf of the logged-in student."""

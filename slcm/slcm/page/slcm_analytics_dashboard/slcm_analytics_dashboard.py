@@ -1846,6 +1846,16 @@ def get_ticketing_analytics(**kwargs):
 	"""Support ticketing metrics from the HD Ticket doctype."""
 	_require_dashboard_access()
 
+	if not frappe.db.table_exists("HD Ticket"):
+		return {
+			"total_tickets": 0, "open_tickets": 0, "resolved_tickets": 0,
+			"closed_tickets": 0, "high_priority": 0, "sla_breached": 0,
+			"avg_first_response_hrs": 0, "avg_resolution_hrs": 0,
+			"resolved_pct": 0, "sla_pct": 0,
+			"status_dist": [], "priority_dist": [], "type_dist": [],
+			"team_dist": [], "sla_dist": [], "monthly_trend": [],
+		}
+
 	# ── Totals by status ─────────────────────────────────────────────────────
 	status_dist = frappe.db.sql(
 		"""
@@ -1955,6 +1965,15 @@ def get_ticketing_analytics(**kwargs):
 def get_rfid_analytics(**kwargs):
 	"""RFID swipe analytics from Attendance Log and Student RFID Card."""
 	_require_dashboard_access()
+
+	if not frappe.db.table_exists("Attendance Log") or not frappe.db.table_exists("Student RFID Card"):
+		return {
+			"total_swipes": 0, "unique_cards": 0, "processed": 0, "unprocessed": 0,
+			"active_devices": 0, "active_days": 0, "total_cards": 0, "active_cards": 0,
+			"today_swipes": 0, "processing_pct": 0,
+			"card_status": [], "location_dist": [], "terminal_dist": [],
+			"processing_dist": [], "hourly_dist": [], "monthly_trend": [],
+		}
 
 	# ── KPI totals ────────────────────────────────────────────────────────────
 	totals = frappe.db.sql(

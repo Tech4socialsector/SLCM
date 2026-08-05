@@ -274,23 +274,6 @@ def _get_student_name():
         name = frappe.db.get_value("Student Master", {"email": user}, "name")
     if not name:
         name = frappe.db.get_value("Student Master", {"official_email_id": user}, "name")
-    if not name:
-        # Fallback: match by User full_name against concatenated student name
-        full_name = frappe.db.get_value("User", user, "full_name") or ""
-        if full_name:
-            rows = frappe.db.get_all(
-                "Student Master",
-                fields=["name", "first_name", "middle_name", "last_name"],
-                ignore_permissions=True,
-            )
-            full_lower = full_name.lower().replace(" ", "")
-            for row in rows:
-                s = " ".join(filter(None, [row.first_name, row.middle_name, row.last_name]))
-                if s.lower().replace(" ", "") == full_lower:
-                    name = row.name
-                    # Auto-repair: link user for next time
-                    frappe.db.set_value("Student Master", name, "user", user, update_modified=False)
-                    break
     return name
 
 

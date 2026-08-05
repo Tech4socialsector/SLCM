@@ -3,6 +3,18 @@
 
 import frappe
 import json
+from frappe import _
+
+RE_EXAM_ROLES = {"System Manager", "Academics User"}
+
+
+def _check_access():
+	"""Admin-only actions (settings, eligibility overrides, marking paid) —
+	this page is restricted at the desk UI level, but the whitelisted RPCs
+	are directly callable via /api/method/, so they must enforce the same
+	role themselves."""
+	if not RE_EXAM_ROLES & set(frappe.get_roles()):
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
 
 
 def _get_course_offering(exam_plan, course):
@@ -92,6 +104,7 @@ def get_re_exam_setting(exam_plan, course):
 
 @frappe.whitelist()
 def save_re_exam_setting(exam_plan, course, re_exam_fee=None, deadline_from=None, deadline_to=None):
+	_check_access()
 	if not exam_plan or not course:
 		frappe.throw("Exam Plan and Course are required.")
 
@@ -362,6 +375,7 @@ def get_student_overrides(exam_plan, course):
 @frappe.whitelist()
 def set_student_re_exam_allowed(exam_plan, course, student, is_allowed, override_reason=""):
 	"""Upsert an override record for a single student."""
+	_check_access()
 	if not exam_plan or not course or not student:
 		frappe.throw("exam_plan, course and student are required.")
 
@@ -437,6 +451,7 @@ def get_re_exam_registrations(exam_plan, course=""):
 @frappe.whitelist()
 def mark_re_exam_paid(registration_name, payment_reference=""):
 	"""Mark a Re Exam Registration as Paid."""
+	_check_access()
 	if not registration_name:
 		frappe.throw("Registration name is required.")
 	doc = frappe.get_doc("Re Exam Registration", registration_name)
@@ -451,6 +466,7 @@ def mark_re_exam_paid(registration_name, payment_reference=""):
 @frappe.whitelist()
 def bulk_save_re_exam_setting(exam_plan, re_exam_fee=None, deadline_from=None, deadline_to=None, courses=None):
 	"""Apply the same fee + deadline to selected (or all) courses under an exam plan."""
+	_check_access()
 	import json as _json
 	if not exam_plan:
 		frappe.throw("Exam Plan is required.")

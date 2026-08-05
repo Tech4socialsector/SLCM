@@ -1,0 +1,189 @@
+{
+ "app": "slcm",
+ "charts": [],
+ "content": "[{\"id\":\"tm-header-1\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Transcript Requests Overview</span>\",\"col\":12}},{\"id\":\"tm-nc-total\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Transcript Requests\",\"col\":2}},{\"id\":\"tm-nc-pending\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Transcript Requests Pending Review\",\"col\":2}},{\"id\":\"tm-nc-approved\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Transcript Requests Approved\",\"col\":2}},{\"id\":\"tm-nc-payment\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Transcript Requests Payment Pending\",\"col\":2}},{\"id\":\"tm-nc-generated\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Transcript Requests Generated\",\"col\":2}},{\"id\":\"tm-nc-rejected\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Transcript Requests Rejected\",\"col\":2}},{\"id\":\"tm-header-2\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Quick Access</span>\",\"col\":12}},{\"id\":\"7Vb4QaabHh\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transcript management page\",\"col\":4}},{\"id\":\"jHCMgCQAee\",\"type\":\"spacer\",\"data\":{\"col\":8}},{\"id\":\"tm-sc-requests\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transcript Request\",\"col\":3}},{\"id\":\"tm-sc-transcripts\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Transcript\",\"col\":3}},{\"id\":\"tm-sc-template\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transcript Template\",\"col\":3}},{\"id\":\"aEs3LgbD06\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Configuration</b></span>\",\"col\":12}},{\"id\":\"tm-sc-settings\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transcript Settings\",\"col\":4}},{\"id\":\"rlwPtCZTR0\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Transcript Fee Settings\",\"col\":4}}]",
+ "creation": "2026-08-05 12:10:23.229179",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "grid",
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "Transcript Management",
+ "link_type": "DocType",
+ "links": [
+  {
+   "dependencies": "",
+   "description": "Student transcript request records",
+   "hidden": 0,
+   "icon": "file-text",
+   "is_query_report": 0,
+   "label": "Transcript Request",
+   "link_count": 0,
+   "link_to": "Transcript Request",
+   "link_type": "DocType",
+   "onboard": 1,
+   "only_for": "",
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "description": "Generated student transcripts",
+   "hidden": 0,
+   "icon": "layers",
+   "is_query_report": 0,
+   "label": "Student Transcript",
+   "link_count": 0,
+   "link_to": "Student Transcript",
+   "link_type": "DocType",
+   "onboard": 1,
+   "only_for": "",
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "description": "Transcript print format templates",
+   "hidden": 0,
+   "icon": "layout",
+   "is_query_report": 0,
+   "label": "Transcript Template",
+   "link_count": 0,
+   "link_to": "Transcript Template",
+   "link_type": "DocType",
+   "onboard": 0,
+   "only_for": "",
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "description": "Fee structure for transcript types",
+   "hidden": 0,
+   "icon": "credit-card",
+   "is_query_report": 0,
+   "label": "Transcript Fee Settings",
+   "link_count": 0,
+   "link_to": "Transcript Fee Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "only_for": "",
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "description": "Assignment rules for transcript requests",
+   "hidden": 0,
+   "icon": "user",
+   "is_query_report": 0,
+   "label": "Transcript Assignment Rule",
+   "link_count": 0,
+   "link_to": "Transcript Assignment Rule",
+   "link_type": "DocType",
+   "onboard": 0,
+   "only_for": "",
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "description": "Global transcript system settings",
+   "hidden": 0,
+   "icon": "settings",
+   "is_query_report": 0,
+   "label": "Transcript Settings",
+   "link_count": 0,
+   "link_to": "Transcript Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "only_for": "",
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-06-16 17:06:15.304835",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Transcript Management",
+ "number_cards": [
+  {
+   "label": "Total Transcript Requests",
+   "number_card_name": "Total Transcript Requests"
+  },
+  {
+   "label": "Transcript Requests Pending Review",
+   "number_card_name": "Transcript Requests Pending Review"
+  },
+  {
+   "label": "Transcript Requests Approved",
+   "number_card_name": "Transcript Requests Approved"
+  },
+  {
+   "label": "Transcript Requests Payment Pending",
+   "number_card_name": "Transcript Requests Payment Pending"
+  },
+  {
+   "label": "Transcript Requests Generated",
+   "number_card_name": "Transcript Requests Generated"
+  },
+  {
+   "label": "Transcript Requests Rejected",
+   "number_card_name": "Transcript Requests Rejected"
+  }
+ ],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 24.0,
+ "shortcuts": [
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "icon": "file-text",
+   "label": "Transcript Request",
+   "link_to": "Transcript Request",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Transcript management page",
+   "link_to": "transcript-management-page",
+   "type": "Page"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Transcript Fee Settings",
+   "link_to": "Transcript Fee Settings",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "icon": "layers",
+   "label": "Student Transcript",
+   "link_to": "Student Transcript",
+   "type": "DocType"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "icon": "layout",
+   "label": "Transcript Template",
+   "link_to": "Transcript Template",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "icon": "settings",
+   "label": "Transcript Settings",
+   "link_to": "Transcript Settings",
+   "type": "DocType"
+  }
+ ],
+ "title": "Transcript Management",
+ "type": "Workspace"
+}

@@ -2851,7 +2851,6 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				// ── Student info section ──
 				var infoHtml =
 					prow('Student ID',   s.registration_id) +
-					prow('Email',        s.email) +
 					prow('Programme',    s.programme) +
 					prow('Batch',        s.batch) +
 					prow('Term',         s.current_term) +
