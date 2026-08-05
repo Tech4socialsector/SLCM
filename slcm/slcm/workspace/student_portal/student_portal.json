@@ -72,7 +72,7 @@
    "doc_view": "List",
    "label": "Student Portal",
    "type": "URL",
-   "url": "http://127.0.0.1:8001/student-portal"
+   "url": "/student-portal"
   },
   {
    "color": "Orange",
