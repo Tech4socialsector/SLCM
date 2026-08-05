@@ -1066,7 +1066,7 @@ _pc.mission_text) or '' %}
 	                        ${(data.receipts && data.receipts.length > 0) ? 
 	                            data.receipts.map(r => `
 	                                <button class="btn btn-pay" style="width: auto; margin: 0; margin-bottom: 8px; padding: 10px 24px;" title="Download ${r.fee_type || 'Fee'} Receipt" onclick="window.open('/api/method/frappe.utils.print_format.download_pdf?doctype=Applicant+Payment+Receipt&name=${r.name}&format=Applicant+Payment+Receipt&no_letterhead=0&letterhead=No+Letterhead&settings=%7B%7D&_lang=en', '_blank')">
-	                                    <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">receipt</span> {{ _("Download") }} ${r.fee_type || 'Fee'} {{ _("Receipt") }}
+	                                    <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">receipt</span> {{ _("") }} ${r.fee_type || 'Fee'} {{ _("Receipt") }}
 	                                </button>
 	                            `).join('') 
 	                        : (['Payment Completed', 'Full Fee Paid'].includes(offer.status) || is_fee_paid || (applicant && ['Confirmation Fee Paid', 'Full Fee Paid'].includes(applicant.status)) ? `
