@@ -1,0 +1,150 @@
+{
+ "app": "slcm",
+ "charts": [],
+ "content": "[{\"id\":\"vb-hdr-overview\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Overview</b></span>\",\"col\":12}},{\"id\":\"vb-nc-total\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Venue Bookings\",\"col\":3}},{\"id\":\"vb-nc-pending\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Pending Venue Bookings\",\"col\":3}},{\"id\":\"vb-nc-approved\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Approved Venue Bookings\",\"col\":3}},{\"id\":\"vb-nc-rejected\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Rejected Venue Bookings\",\"col\":3}},{\"id\":\"vb-nc-cancelled\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Cancelled Venue Bookings\",\"col\":3}},{\"id\":\"vb-nc-rooms\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Total Rooms\",\"col\":3}},{\"id\":\"vb-hdr-quick\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Quick Actions</b></span>\",\"col\":12}},{\"id\":\"vb-sc-new\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"All Venue Booking\",\"col\":4}},{\"id\":\"vb-sc-pending\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Pending Approvals\",\"col\":4}},{\"id\":\"vb-sc-all\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Approved Bookings\",\"col\":4}},{\"id\":\"pjwSLlcS-p\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Rejected Bookings\",\"col\":3}},{\"id\":\"oDMUTPY-J-\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Cancelled Bookings\",\"col\":3}},{\"id\":\"vb-hdr-manage\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Manage by Status</b></span>\",\"col\":12}},{\"id\":\"vb-sc-approved\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Approved Bookings\",\"col\":4}},{\"id\":\"vb-sc-rejected\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Rejected Bookings\",\"col\":4}},{\"id\":\"vb-sc-cancelled\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Cancelled Bookings\",\"col\":4}},{\"id\":\"vb-hdr-config\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Configuration &amp; Scheduling</span>\",\"col\":12}},{\"id\":\"vb-sc-room\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Room Master\",\"col\":3}},{\"id\":\"vb-sc-class\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Time Table\",\"col\":3}},{\"id\":\"vb-sc-availability\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Room Availability Checker\",\"col\":3}},{\"id\":\"vb-hdr-reports\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Reports</span>\",\"col\":12}},{\"id\":\"vb-sc-weekly\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Weekly Venue Booking Report\",\"col\":5}},{\"id\":\"vb-sc-monthly\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Monthly Venue Booking Report\",\"col\":4}}]",
+ "creation": "2026-08-05 12:10:23.262246",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "calendar",
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "Venue Bookings",
+ "links": [],
+ "modified": "2026-05-23 13:17:02.212178",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Venue Bookings",
+ "number_cards": [
+  {
+   "label": "Total Venue Bookings",
+   "number_card_name": "Total Venue Bookings"
+  },
+  {
+   "label": "Pending Venue Bookings",
+   "number_card_name": "Pending Venue Bookings"
+  },
+  {
+   "label": "Approved Venue Bookings",
+   "number_card_name": "Approved Venue Bookings"
+  },
+  {
+   "label": "Rejected Venue Bookings",
+   "number_card_name": "Rejected Venue Bookings"
+  },
+  {
+   "label": "Cancelled Venue Bookings",
+   "number_card_name": "Cancelled Venue Bookings"
+  },
+  {
+   "label": "Total Rooms",
+   "number_card_name": "Total Rooms"
+  }
+ ],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 14.0,
+ "shortcuts": [
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "All Venue Booking",
+   "link_to": "Venue Booking",
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "label": "Pending Approvals",
+   "link_to": "Venue Booking",
+   "stats_filter": "[[\"Venue Booking\",\"status\",\"=\",\"Pending\"]]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Approved Bookings",
+   "link_to": "Venue Booking",
+   "stats_filter": "[[\"Venue Booking\",\"status\",\"=\",\"Approved\"]]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Rejected Bookings",
+   "link_to": "Venue Booking",
+   "stats_filter": "[[\"Venue Booking\",\"status\",\"=\",\"Rejected\"]]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Cancelled Bookings",
+   "link_to": "Venue Booking",
+   "stats_filter": "[[\"Venue Booking\",\"status\",\"=\",\"Cancelled\"]]",
+   "type": "DocType"
+  },
+  {
+   "color": "Purple",
+   "doc_view": "List",
+   "label": "Room Master",
+   "link_to": "Room",
+   "report_ref_doctype": "",
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "Time Table",
+   "link_to": "Time Table",
+   "report_ref_doctype": "",
+   "stats_filter": "[]",
+   "type": "DocType",
+   "url": ""
+  },
+  {
+   "color": "Green",
+   "doc_view": "",
+   "label": "Weekly Venue Booking Report",
+   "link_to": "Weekly Venue Booking Report",
+   "report_ref_doctype": "Venue Booking",
+   "stats_filter": "[]",
+   "type": "Report",
+   "url": ""
+  },
+  {
+   "color": "Green",
+   "doc_view": "",
+   "label": "Room Availability Checker",
+   "link_to": "Room Availability Checker",
+   "report_ref_doctype": "Room",
+   "stats_filter": "[]",
+   "type": "Report",
+   "url": ""
+  },
+  {
+   "color": "Blue",
+   "doc_view": "",
+   "label": "Monthly Venue Booking Report",
+   "link_to": "Monthly Venue Booking Report",
+   "report_ref_doctype": "Venue Booking",
+   "stats_filter": "[]",
+   "type": "Report",
+   "url": ""
+  }
+ ],
+ "title": "Venue Bookings",
+ "type": "Workspace"
+}
