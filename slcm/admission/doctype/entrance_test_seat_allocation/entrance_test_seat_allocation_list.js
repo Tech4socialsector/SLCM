@@ -1068,8 +1068,8 @@ function open_reject_and_allocate_dialog(listview) {
         method: 'frappe.client.get_list',
         args: {
             doctype: 'Entrance Test Provider',
-            filters: { active: 1, available_capacity: [">", 0] },
-            fields: ['name', 'center_name', 'center_address', 'campus', 'provider_type', 'city'],
+            filters: { active: 1 },
+            fields: ['name', 'center_name', 'center_address', 'campus', 'provider_type', 'city', 'pwd_accessible', 'available_capacity'],
             limit_page_length: 200
         },
         callback: function (r) {
@@ -1095,7 +1095,7 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
 
     let applicant_current_page = 1;
     const applicant_page_size = 10;
-    let applicant_filters = { applicant_id: "", candidate_name: "", programme: "", entrance_test_city: "", old_centre: "", pwd_only: false };
+    let applicant_filters = { applicant_id: "", candidate_name: "", programme_level: "", programme: "", entrance_test_city: "", old_centre: "", pwd_only: false };
 
     function get_filtered_providers() {
         let list = all_providers;
@@ -1154,6 +1154,7 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
                             <span style="display:block; font-weight:700; font-size:13px; color:#1e293b; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="${p.center_name || p.name}">
                                 ${p.center_name || p.name}
                                 ${(p.pwd_accessible == 1 || p.pwd_accessible === "1") ? `<span style="font-size:10px; background:#dbeafe; color:#1e40af; padding:1px 5px; border-radius:4px; margin-left:4px; font-weight:600;">♿ PWD</span>` : ''}
+                                <span style="font-size:10px; background:${(p.available_capacity || 0) > 0 ? '#dcfce7' : '#fee2e2'}; color:${(p.available_capacity || 0) > 0 ? '#166534' : '#991b1b'}; padding:1px 5px; border-radius:4px; margin-left:4px; font-weight:600;">available seat: ${p.available_capacity || 0}</span>
                             </span>
                             ${p.center_address
                         ? `<span style="display:block; font-size:11px; color:#64748b; margin-top:2px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;" title="${p.center_address}">
@@ -1193,6 +1194,7 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
         return applicants.filter(a => {
             const id_match = !applicant_filters.applicant_id || (a.applicant || "").toLowerCase().includes(applicant_filters.applicant_id);
             const name_match = !applicant_filters.candidate_name || (a.candidate_name || "").toLowerCase().includes(applicant_filters.candidate_name);
+            const level_match = !applicant_filters.programme_level || (a.program_level || "").toLowerCase().includes(applicant_filters.programme_level);
             const prog_match = !applicant_filters.programme || (a.program || "").toLowerCase().includes(applicant_filters.programme);
             const city_match = !applicant_filters.entrance_test_city || (a.entrance_test_city || "").toLowerCase().includes(applicant_filters.entrance_test_city);
             const centre_match = !applicant_filters.old_centre || (a.center_name || "").toLowerCase().includes(applicant_filters.old_centre);
@@ -1200,7 +1202,7 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
             if (applicant_filters.pwd_only) {
                 pwd_match = (a.pwd == 1 || (a.pwd || "").toString().toLowerCase() === "yes");
             }
-            return id_match && name_match && prog_match && city_match && centre_match && pwd_match;
+            return id_match && name_match && level_match && prog_match && city_match && centre_match && pwd_match;
         });
     }
 
@@ -1231,6 +1233,7 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
                             <b>${row.candidate_name || "Unknown"}</b>
                             ${(row.pwd == 1 || (row.pwd || "").toString().toLowerCase() === "yes") ? `<span style="font-size:10px; background:#fef3c7; color:#92400e; padding:1px 5px; border-radius:4px; margin-left:4px; border:1px solid #fde68a; font-weight:700;">♿ PWD</span>` : ''}
                         </td>
+                        <td style="vertical-align:middle;">${row.program_level || "-"}</td>
                         <td style="vertical-align:middle;">${row.program || "-"}</td>
                         <td style="vertical-align:middle;">${row.entrance_test_city || "-"}</td>
                         <td style="vertical-align:middle;">${row.center_name || "-"}</td>
@@ -1492,6 +1495,7 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
     // Applicant Events
     d.$wrapper.on("input", "#filter-applicant-id", function () { applicant_filters.applicant_id = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
     d.$wrapper.on("input", "#filter-candidate-name", function () { applicant_filters.candidate_name = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
+    d.$wrapper.on("input", "#filter-programme-level", function () { applicant_filters.programme_level = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
     d.$wrapper.on("input", "#filter-programme", function () { applicant_filters.programme = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
     d.$wrapper.on("input", "#filter-entrance-test-city", function () { applicant_filters.entrance_test_city = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
     d.$wrapper.on("input", "#filter-old-centre", function () { applicant_filters.old_centre = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
@@ -1525,7 +1529,7 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
             args: {
                 doctype: 'Entrance Test Seat Allocation',
                 filters: filters,
-                fields: ['name', 'candidate_name', 'applicant', 'program', 'pwd', 'center_name', 'entrance_test_list.entrance_test_city'],
+                fields: ['name', 'candidate_name', 'applicant', 'program_level', 'program', 'pwd', 'center_name', 'entrance_test_list.entrance_test_city'],
                 limit_page_length: 0
             },
             callback: function (r) {
@@ -1561,6 +1565,7 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
                                     <th style="width:60px; text-align:center; color:#3b82f6; vertical-align:middle; padding:8px 4px; font-weight:600;">No.</th>
                                     <th style="width:20%; color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Applicant ID</th>
                                     <th style="width:25%; color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Candidate Name</th>
+                                    <th style="color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Programme Level</th>
                                     <th style="color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Programme</th>
                                     <th style="color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Entrance Test City</th>
                                     <th style="color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Old Centre Name</th>
@@ -1574,6 +1579,10 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
                                     </th>
                                     <th style="padding:4px 6px;">
                                         <input type="text" id="filter-candidate-name" placeholder="${__("Filter Name...")}" value="${applicant_filters.candidate_name}"
+                                               style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; outline:none; background:#ffffff;">
+                                    </th>
+                                    <th style="padding:4px 6px;">
+                                        <input type="text" id="filter-programme-level" placeholder="${__("Filter Level...")}" value="${applicant_filters.programme_level}"
                                                style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; outline:none; background:#ffffff;">
                                     </th>
                                     <th style="padding:4px 6px;">
@@ -1880,7 +1889,8 @@ function _show_reallocation_confirmation(parent_dialog, listview, result, select
                 method: 'slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.reject_and_allocate_applicants',
                 args: {
                     applicants: selected_applicants,
-                    providers: selected_providers
+                    providers: selected_providers,
+                    allocation_type: allocation_type
                 },
                 freeze: true,
                 freeze_message: __('Re-allocating...'),

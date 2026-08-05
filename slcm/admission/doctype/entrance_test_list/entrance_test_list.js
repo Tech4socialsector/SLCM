@@ -244,6 +244,7 @@ function _show_allocation_dialog(frm, applicants, providers) {
                                     <th style="width:60px; text-align:center; color:#3b82f6; vertical-align:middle; padding:8px 4px; font-weight:600;">No.</th>
                                     <th style="width:25%; color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Applicant ID</th>
                                     <th style="width:35%; color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Candidate Name</th>
+                                    <th style="color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Programme Level</th>
                                     <th style="color:#3b82f6; vertical-align:middle; padding:8px 10px; font-weight:600;">Programme</th>
                                 </tr>
                                 <tr style="background:#f1f5f9;">
@@ -255,6 +256,10 @@ function _show_allocation_dialog(frm, applicants, providers) {
                                     </th>
                                     <th style="padding:4px 6px;">
                                         <input type="text" id="filter-candidate-name" placeholder="${__("Filter Name...")}" 
+                                               style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; font-weight:normal; outline:none; background:#ffffff; box-shadow:inset 0 1px 2px rgba(0,0,0,0.03);">
+                                    </th>
+                                    <th style="padding:4px 6px;">
+                                        <input type="text" id="filter-programme-level" placeholder="${__("Filter Level...")}" 
                                                style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; font-weight:normal; outline:none; background:#ffffff; box-shadow:inset 0 1px 2px rgba(0,0,0,0.03);">
                                     </th>
                                     <th style="padding:4px 6px;">
@@ -359,6 +364,7 @@ function _show_allocation_dialog(frm, applicants, providers) {
                             <span style="display:block; font-weight:700; font-size:13px; color:#1e293b; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="${p.center_name || p.name}">
                                 ${p.center_name || p.name}
                                 ${p.pwd_accessible ? `<span style="font-size:10px; background:#dbeafe; color:#1e40af; padding:1px 5px; border-radius:4px; margin-left:4px; font-weight:600;">♿ PWD</span>` : ''}
+                                <span style="font-size:10px; background:${(p.available_capacity || 0) > 0 ? '#dcfce7' : '#fee2e2'}; color:${(p.available_capacity || 0) > 0 ? '#166534' : '#991b1b'}; padding:1px 5px; border-radius:4px; margin-left:4px; font-weight:600;">available seat: ${p.available_capacity || 0}</span>
                             </span>
                             ${p.center_address
                         ? `<span style="display:block; font-size:11px; color:#64748b; margin-top:2px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;" title="${p.center_address}">
@@ -396,6 +402,7 @@ function _show_allocation_dialog(frm, applicants, providers) {
     let applicant_filters = {
         applicant_id: "",
         candidate_name: "",
+        programme_level: "",
         programme: "",
         pwd_only: false
     };
@@ -404,6 +411,7 @@ function _show_allocation_dialog(frm, applicants, providers) {
         return applicants.filter(a => {
             const id_match = !applicant_filters.applicant_id || (a.applicant_id || "").toLowerCase().includes(applicant_filters.applicant_id);
             const name_match = !applicant_filters.candidate_name || (a.candidate_name || "").toLowerCase().includes(applicant_filters.candidate_name);
+            const level_match = !applicant_filters.programme_level || (a.program_level || "").toLowerCase().includes(applicant_filters.programme_level);
             const prog_match = !applicant_filters.programme || (a.program || "").toLowerCase().includes(applicant_filters.programme);
             
             let pwd_match = true;
@@ -411,7 +419,7 @@ function _show_allocation_dialog(frm, applicants, providers) {
                 pwd_match = (a.pwd == 1 || (a.pwd || "").toString().toLowerCase() === "yes");
             }
             
-            return id_match && name_match && prog_match && pwd_match;
+            return id_match && name_match && level_match && prog_match && pwd_match;
         });
     }
 
@@ -448,6 +456,7 @@ function _show_allocation_dialog(frm, applicants, providers) {
                             <b>${row.candidate_name || "Unknown"}</b>
                             ${(row.pwd == 1 || (row.pwd || "").toString().toLowerCase() === "yes") ? `<span style="font-size:10px; background:#fef3c7; color:#92400e; padding:1px 5px; border-radius:4px; margin-left:4px; border:1px solid #fde68a; font-weight:700;">♿ PWD</span>` : ''}
                         </td>
+                        <td style="vertical-align:middle;">${row.program_level || "-"}</td>
                         <td style="vertical-align:middle;">${row.program || "-"}</td>
                     </tr>
                 `;
@@ -494,8 +503,7 @@ function _show_allocation_dialog(frm, applicants, providers) {
 
     function fetch_and_render_providers(city_name) {
         const provider_filters = { 
-            active: 1, 
-            available_capacity: [">", 0]
+            active: 1
         };
         if (city_name) {
             provider_filters.city = city_name;
@@ -508,7 +516,7 @@ function _show_allocation_dialog(frm, applicants, providers) {
             args: {
                 doctype: "Entrance Test Provider",
                 filters: provider_filters,
-                fields: ["name", "center_name", "center_address", "provider_type", "city", "pwd_accessible"],
+                fields: ["name", "center_name", "center_address", "provider_type", "city", "pwd_accessible", "available_capacity"],
                 limit_page_length: 100
             },
             callback: function (r) {
@@ -611,9 +619,10 @@ function _show_allocation_dialog(frm, applicants, providers) {
         render_applicant_page();
     });
 
-    $wrapper.on("input keyup search", "#filter-applicant-id, #filter-candidate-name, #filter-programme", function () {
+    $wrapper.on("input keyup search", "#filter-applicant-id, #filter-candidate-name, #filter-programme-level, #filter-programme", function () {
         applicant_filters.applicant_id = $wrapper.find("#filter-applicant-id").val().toLowerCase().trim();
         applicant_filters.candidate_name = $wrapper.find("#filter-candidate-name").val().toLowerCase().trim();
+        applicant_filters.programme_level = $wrapper.find("#filter-programme-level").val().toLowerCase().trim();
         applicant_filters.programme = $wrapper.find("#filter-programme").val().toLowerCase().trim();
         applicant_current_page = 1;
         render_applicant_page();
@@ -1122,7 +1131,7 @@ function open_generate_preference_dialog(frm) {
 
             let applicant_filters = { applicant_id: "", candidate_name: "", next_preference: "" };
             let selected_applicant_names = new Set();
-            applicants.forEach(app => selected_applicant_names.add(app.name));
+            applicants.filter(a => a.has_next).forEach(app => selected_applicant_names.add(app.name));
 
             function get_filtered_applicants() {
                 return applicants.filter(a => {
@@ -1148,16 +1157,38 @@ function open_generate_preference_dialog(frm) {
                 } else {
                     rows_html = filtered.map(app => {
                         const is_checked = selected_applicant_names.has(app.name);
+                        const has_next = app.has_next;
+                        const is_not_exists = app.preference_step === "Not Exists";
+
+                        // Badge styling
+                        let badge_style = "";
+                        let badge_text = app.preference_step;
+                        if (is_not_exists) {
+                            badge_style = 'background:#fee2e2; color:#dc2626; border:1px solid #fecaca; font-size:11px; padding:2px 8px; border-radius:4px; font-weight:600;';
+                        } else {
+                            badge_style = 'background:#dbeafe; color:#2563eb; border:1px solid #bfdbfe; font-size:11px; padding:2px 8px; border-radius:4px; font-weight:600;';
+                        }
+
+                        // Next preference display
+                        const next_pref_html = has_next
+                            ? `<span style="color:#2da44e; font-weight:600;">${app.next_preference}</span>`
+                            : `<span style="color:#94a3b8; font-style:italic;">N/A</span>`;
+
+                        // Status indicator for Converted applicants
+                        const status_badge = app.allocation_status === "Converted"
+                            ? ` <span style="font-size:10px; background:#f0fdf4; color:#16a34a; padding:1px 5px; border-radius:4px; border:1px solid #bbf7d0; font-weight:600;">Converted</span>`
+                            : "";
+
                         return `
-                            <tr>
+                            <tr style="${is_not_exists ? 'opacity:0.7;' : ''}">
                                 <td style="text-align:center; vertical-align:middle; width:40px;">
-                                    <input type="checkbox" class="pref2-chk" data-name="${app.name}" ${is_checked ? 'checked' : ''}>
+                                    <input type="checkbox" class="pref2-chk" data-name="${app.name}" ${is_checked ? 'checked' : ''} ${!has_next ? 'disabled' : ''}>
                                 </td>
                                 <td style="vertical-align:middle;">${app.applicant_id}</td>
-                                <td style="vertical-align:middle;"><b>${app.candidate_name}</b></td>
+                                <td style="vertical-align:middle;"><b>${app.candidate_name}</b>${status_badge}</td>
                                 <td style="vertical-align:middle;">${app.previous_preference || "-"}</td>
-                                <td style="vertical-align:middle;"><span style="color:#2da44e; font-weight:600;">${app.next_preference}</span></td>
-                                <td style="vertical-align:middle;"><span class="badge badge-info">${app.preference_step}</span></td>
+                                <td style="vertical-align:middle;">${next_pref_html}</td>
+                                <td style="vertical-align:middle;"><span style="${badge_style}">${badge_text}</span></td>
                             </tr>
                         `;
                     }).join("");
@@ -1166,13 +1197,15 @@ function open_generate_preference_dialog(frm) {
                 d.$wrapper.find("#generate-applicant-table-body").html(rows_html);
                 
                 const sel_count = selected_applicant_names.size;
+                const selectable_count = applicants.filter(a => a.has_next).length;
                 const total_count = applicants.length;
+                const filtered_selectable = filtered.filter(a => a.has_next).length;
                 if (filtered.length !== total_count) {
-                    d.$wrapper.find("#sel-count").text(`${sel_count} of ${total_count} selected (Filtered: ${filtered.length})`);
+                    d.$wrapper.find("#sel-count").text(`${sel_count} of ${selectable_count} selectable selected (Filtered: ${filtered.length} of ${total_count})`);
                 } else {
-                    d.$wrapper.find("#sel-count").text(`${sel_count} of ${total_count} selected`);
+                    d.$wrapper.find("#sel-count").text(`${sel_count} of ${selectable_count} selectable selected`);
                 }
-                d.$wrapper.find("#pref2-select-all").prop("checked", total_count > 0 && sel_count === total_count);
+                d.$wrapper.find("#pref2-select-all").prop("checked", selectable_count > 0 && sel_count === selectable_count);
             }
 
             let d = new frappe.ui.Dialog({
@@ -1333,18 +1366,21 @@ function open_generate_preference_dialog(frm) {
                 
                 const filtered = get_filtered_applicants();
                 const sel_count = selected_applicant_names.size;
-                if (filtered.length !== applicants.length) {
-                    d.$wrapper.find("#sel-count").text(`${sel_count} of ${applicants.length} selected (Filtered: ${filtered.length})`);
+                const selectable_count = applicants.filter(a => a.has_next).length;
+                const total_count = applicants.length;
+                
+                if (filtered.length !== total_count) {
+                    d.$wrapper.find("#sel-count").text(`${sel_count} of ${selectable_count} selectable selected (Filtered: ${filtered.length} of ${total_count})`);
                 } else {
-                    d.$wrapper.find("#sel-count").text(`${sel_count} of ${applicants.length} selected`);
+                    d.$wrapper.find("#sel-count").text(`${sel_count} of ${selectable_count} selectable selected`);
                 }
-                d.$wrapper.find("#pref2-select-all").prop("checked", applicants.length > 0 && sel_count === applicants.length);
+                d.$wrapper.find("#pref2-select-all").prop("checked", selectable_count > 0 && sel_count === selectable_count);
             });
 
             d.$wrapper.on("change", "#pref2-select-all", function () {
                 const filtered = get_filtered_applicants();
                 if (this.checked) {
-                    filtered.forEach(a => selected_applicant_names.add(a.name));
+                    filtered.filter(a => a.has_next).forEach(a => selected_applicant_names.add(a.name));
                 } else {
                     filtered.forEach(a => selected_applicant_names.delete(a.name));
                 }

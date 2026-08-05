@@ -516,33 +516,43 @@ class EntranceTestList(Document):
     def get_next_preference_applicants(self):
         applicants = []
         for row in self.entrance_test_applicant:
-            if row.allocation_status == "Not Allocated" and row.applicant_id:
-                app_doc = frappe.get_all("Applicant", filters={"name": row.applicant_id}, fields=["first_preference", "second_preference", "third_preference"], limit=1)
-                if not app_doc:
-                    continue
-                app_doc = app_doc[0]
-                current_city = self.entrance_test_city
-                
-                next_city = None
-                preference_step = ""
-                
-                if current_city == app_doc.first_preference and app_doc.second_preference:
-                    next_city = app_doc.second_preference
-                    preference_step = "Preference 2"
-                elif current_city == app_doc.second_preference and app_doc.third_preference:
-                    next_city = app_doc.third_preference
-                    preference_step = "Preference 3"
-                
-                if next_city:
-                    applicants.append({
-                        "name": row.name,
-                        "applicant_id": row.applicant_id,
-                        "candidate_name": row.candidate_name,
-                        "program": row.program,
-                        "previous_preference": current_city,
-                        "next_preference": next_city,
-                        "preference_step": preference_step
-                    })
+            if not row.applicant_id:
+                continue
+            # Skip applicants already fully allocated or cancelled
+            if row.allocation_status in ("Allocated", "Cancelled", "Rejected"):
+                continue
+
+            app_doc = frappe.get_all("Applicant", filters={"name": row.applicant_id}, fields=["first_preference", "second_preference", "third_preference"], limit=1)
+            if not app_doc:
+                continue
+            app_doc = app_doc[0]
+            current_city = self.entrance_test_city
+            
+            next_city = None
+            preference_step = ""
+            
+            if current_city == app_doc.first_preference and app_doc.second_preference:
+                next_city = app_doc.second_preference
+                preference_step = "Preference 2"
+            elif current_city == app_doc.second_preference and app_doc.third_preference:
+                next_city = app_doc.third_preference
+                preference_step = "Preference 3"
+            
+            # If no next city, mark as "Not Exists"
+            if not next_city:
+                preference_step = "Not Exists"
+
+            applicants.append({
+                "name": row.name,
+                "applicant_id": row.applicant_id,
+                "candidate_name": row.candidate_name,
+                "program": row.program,
+                "allocation_status": row.allocation_status,
+                "previous_preference": current_city,
+                "next_preference": next_city or "",
+                "preference_step": preference_step,
+                "has_next": 1 if next_city else 0
+            })
         return applicants
 
     @frappe.whitelist()
@@ -646,6 +656,9 @@ def _send_allocation_email(allocation, email, allocation_type=None):
         
         doc_dict = allocation.as_dict()
         doc_dict["assigned_preferences"] = [p.as_dict() for p in allocation.assigned_preferences]
+        if getattr(allocation, "is_reallocation", False):
+            doc_dict["is_reallocation"] = True
+            doc_dict["old_center_name"] = getattr(allocation, "old_center_name", "")
         
         args = {
             "doc": doc_dict,
@@ -862,10 +875,65 @@ def _get_remaining_capacity(provider_name, program=None):
     except Exception:
         return 0
 
-@frappe.whitelist()
+
+def _generate_admit_card_number(allocation, is_rescheduled=False):
+    """
+    Generate a structured Admit Card Number in the format:
+    [Programme Code][City Code][Centre Code][Student Sequence Number]
+    Example: 165070...0016
+    - Programme Code: from Programme doctype (program_code field)
+    - City Code: from Entrance Test City doctype (city_code field), linked via Provider's city
+    - Centre Code: from Entrance Test Provider doctype (provider_code field)
+    - Student Sequence: 4-digit zero-padded number starting from 0001, scoped per centre
+    """
+    provider_name = allocation.re_entrance_test_provider if is_rescheduled else allocation.entrance_test_provider
+    program_name = allocation.program
+
+    # 1. Programme Code
+    programme_code = ""
+    if program_name:
+        programme_code = frappe.db.get_value("Programme", program_name, "program_code") or ""
+
+    # 2. City Code & Centre Code from Provider
+    city_code = ""
+    centre_code = ""
+    if provider_name:
+        provider_data = frappe.db.get_value(
+            "Entrance Test Provider", provider_name,
+            ["provider_code", "city"], as_dict=True
+        )
+        if provider_data:
+            centre_code = provider_data.provider_code or ""
+            if provider_data.city:
+                city_code_val = frappe.db.get_value("Entrance Test City", provider_data.city, "city_code")
+                city_code = str(city_code_val) if city_code_val else ""
+
+    # 3. Student Sequence Number (scoped per centre)
+    existing_count = frappe.db.count(
+        "Entrance Test Seat Allocation",
+        filters={
+            "entrance_test_provider": provider_name,
+            "admit_card_number": ["is", "set"],
+            "name": ["!=", allocation.name]
+        }
+    )
+    sequence_number = f"{(existing_count + 1):04d}"
+
+    admit_card_number = f"{programme_code}{city_code}{centre_code}{sequence_number}"
+    return admit_card_number
+
+
 def generate_and_store_admit_card(allocation, is_rescheduled=False, html_content=None):
     if isinstance(allocation, str):
         allocation = frappe.get_doc("Entrance Test Seat Allocation", allocation)
+
+    # Ensure print permissions are bypassed (called from portal under applicant session)
+    frappe.flags.ignore_print_permissions = True
+
+    # Generate the structured admit card number first so it's available in the print format
+    admit_card_number = _generate_admit_card_number(allocation, is_rescheduled)
+    frappe.db.set_value(allocation.doctype, allocation.name, "admit_card_number", admit_card_number)
+    allocation.admit_card_number = admit_card_number
         
     pdf_content = None
     try:
@@ -916,10 +984,9 @@ def generate_and_store_admit_card(allocation, is_rescheduled=False, html_content
     _file.save(ignore_permissions=True)    
     values = {
         field_to_update: _file.file_url,
-        "admit_card_generated": 1
+        "admit_card_generated": 1,
+        "admit_card_number": admit_card_number
     }
-    if not allocation.admit_card_number:
-        values["admit_card_number"] = f"AC-{allocation.name}"
         
     frappe.db.set_value(allocation.doctype, allocation.name, values)
     allocation.update(values)

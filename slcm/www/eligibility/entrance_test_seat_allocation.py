@@ -1,3 +1,4 @@
+import os
 import frappe
 from frappe import _
 from frappe.utils import format_datetime, get_url
@@ -249,6 +250,7 @@ def get_admit_card_html(doc, is_rescheduled):
     print_format_name = "Admit Card"
     
     try:
+        frappe.flags.ignore_print_permissions = True
         return frappe.get_print(
             doc.doctype, 
             doc.name, 

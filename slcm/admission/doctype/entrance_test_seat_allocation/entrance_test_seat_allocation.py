@@ -854,7 +854,7 @@ def get_applicant_count(academic_year=None, admission_cycle=None, program_level=
 
 
 @frappe.whitelist()
-def reject_and_allocate_applicants(applicants, providers):
+def reject_and_allocate_applicants(applicants, providers, allocation_type=None):
     if isinstance(applicants, str):
         applicants = json.loads(applicants)
     if isinstance(providers, str):
@@ -862,18 +862,20 @@ def reject_and_allocate_applicants(applicants, providers):
 
     if not applicants:
         frappe.throw("No applicants selected.")
-    if not providers:
+    if (allocation_type == "Allocate Directly" or not allocation_type) and not providers:
         frappe.throw("No providers selected.")
 
     # Validate providers
     provider_docs = []
-    for pname in providers:
-        pdoc = frappe.get_doc("Entrance Test Provider", pname)
-        if not pdoc.active:
-            frappe.throw(f"Provider '{pname}' is not active.")
-        if pdoc.available_capacity <= 0:
-            frappe.throw(f"Provider '{pname}' has no available capacity.")
-        provider_docs.append(pdoc)
+    if providers:
+        for pname in providers:
+            pdoc = frappe.get_doc("Entrance Test Provider", pname)
+            if not pdoc.active:
+                frappe.throw(f"Provider '{pname}' is not active.")
+            if allocation_type == "Allocate Directly" or not allocation_type:
+                if pdoc.available_capacity <= 0:
+                    frappe.throw(f"Provider '{pname}' has no available capacity.")
+            provider_docs.append(pdoc)
 
     count = 0
     total = len(applicants)
@@ -894,25 +896,51 @@ def reject_and_allocate_applicants(applicants, providers):
 
         # 1. Update the existing record directly (no new record creation)
         old_provider = doc.entrance_test_provider
-        pdoc = provider_docs[0]
-        
-        if old_provider == pdoc.name:
-            continue
+        if allocation_type == "Allocate Directly" or not allocation_type:
+            if not provider_docs:
+                frappe.throw(_("No provider selected for direct allocation."))
+            pdoc = provider_docs[0]
             
-        pdoc.reload()
-        if pdoc.available_capacity <= 0:
-            frappe.throw(_("Not enough available capacity in {0} to allocate {1}.").format(pdoc.center_name, doc.candidate_name))
+            if old_provider == pdoc.name:
+                continue
+                
+            pdoc.reload()
+            if pdoc.available_capacity <= 0:
+                frappe.throw(_("Not enough available capacity in {0} to allocate {1}.").format(pdoc.center_name, doc.candidate_name))
+        else:
+            # Allow applicant selection - we don't strictly need a provider
+            pass
         
         # Revert old provider capacity if one existed
+
         if old_provider:
             try:
                 old_pdoc = frappe.get_doc("Entrance Test Provider", old_provider)
-                frappe.db.set_value("Entrance Test Provider", old_provider, "available_capacity", old_pdoc.available_capacity + 1)
+                updated = False
+                if hasattr(old_pdoc, "programme_capacity") and old_pdoc.programme_capacity and doc.program:
+                    for r in old_pdoc.programme_capacity:
+                        if r.program == doc.program:
+                            r.reserved_seats = max(0, (r.reserved_seats or 0) - 1)
+                            updated = True
+                            break
+                if not updated:
+                    old_pdoc.reserved_seats = max(0, (old_pdoc.reserved_seats or 0) - 1)
+                
+                old_pdoc.calculate_capacity()
+                old_pdoc.save(ignore_permissions=True)
             except Exception:
                 pass
 
-        doc.allocation_status = "Allocated"
-        doc.entrance_test_status = "Scheduled"
+        # Capture the old centre name before modifying
+        old_center_name = doc.center_name or ""
+
+        if allocation_type == "Allocate Directly" or not allocation_type:
+            doc.allocation_status = "Allocated"
+            doc.entrance_test_status = "Scheduled"
+        else:
+            doc.allocation_status = "Not Allocated"
+            doc.entrance_test_status = "Not Scheduled"
+
         doc.result_status = ""
         doc.result_published = 0
         doc.part_a_total_marks_scored = 0
@@ -928,25 +956,46 @@ def reject_and_allocate_applicants(applicants, providers):
         doc.entrance_test_result_card = None
 
         # Assign first provider (direct allocation)
-        doc.entrance_test_provider = pdoc.name
-        doc.center_name = pdoc.center_name
-        doc.center_address = pdoc.center_address
+        if allocation_type == "Allocate Directly" or not allocation_type:
+            doc.entrance_test_provider = pdoc.name
+            doc.center_name = pdoc.center_name
+            doc.center_address = pdoc.center_address
+            
+            # Compute new seat number based on provider's current reserved_seats + 1
+            new_reserved = (pdoc.reserved_seats or 0) + 1
+            doc.seat_number = f"{new_reserved:02d}"
+        else:
+            doc.entrance_test_provider = None
+            doc.center_name = None
+            doc.center_address = None
+            doc.seat_number = None
 
         doc.set("assigned_preferences", [])
-        for idx, p in enumerate(provider_docs, start=1):
-            doc.append("assigned_preferences", {
-                "provider": p.name,
-                "center_name": p.center_name,
-                "center_address": p.center_address,
-                "preference_order": idx
-            })
+        if provider_docs:
+            for idx, p in enumerate(provider_docs, start=1):
+                doc.append("assigned_preferences", {
+                    "provider": p.name,
+                    "center_name": p.center_name,
+                    "center_address": p.center_address,
+                    "preference_order": idx
+                })
 
         doc.save(ignore_permissions=True)
 
-        # 2. Decrement capacity for the chosen provider
-        new_avail = max(0, pdoc.available_capacity - 1)
-        frappe.db.set_value("Entrance Test Provider", pdoc.name, "available_capacity", new_avail)
-        pdoc.available_capacity = new_avail
+        # 2. Decrement capacity for the chosen provider only if Allocated Directly
+        if allocation_type == "Allocate Directly" or not allocation_type:
+            updated = False
+            if hasattr(pdoc, "programme_capacity") and pdoc.programme_capacity and doc.program:
+                for r in pdoc.programme_capacity:
+                    if r.program == doc.program:
+                        r.reserved_seats = (r.reserved_seats or 0) + 1
+                        updated = True
+                        break
+            if not updated:
+                pdoc.reserved_seats = (pdoc.reserved_seats or 0) + 1
+
+            pdoc.calculate_capacity()
+            pdoc.save(ignore_permissions=True)
 
         # 4. Email trigger (like entrance test list)
         email = doc.email or ""
@@ -958,7 +1007,10 @@ def reject_and_allocate_applicants(applicants, providers):
 
         if email and _send_allocation_email:
             try:
-                _send_allocation_email(doc, email)
+                # Attach reallocation flag for Jinja templates
+                doc.is_reallocation = True
+                doc.old_center_name = old_center_name
+                _send_allocation_email(doc, email, allocation_type)
                 try:
                     _send_allocation_notification(doc, email)
                 except Exception:
@@ -985,8 +1037,11 @@ def check_reallocation_seat_availability(providers, selected_applicants, allocat
     if isinstance(selected_applicants, str):
         selected_applicants = json.loads(selected_applicants)
 
-    if not providers or not selected_applicants:
-        return {"can_allocate": False, "error": "No providers or applicants selected."}
+    if not selected_applicants:
+        return {"can_allocate": False, "error": "No applicants selected."}
+    
+    if (allocation_type == "Allocate Directly" or not allocation_type) and not providers:
+        return {"can_allocate": False, "error": "No providers selected."}
 
     if not allocation_type:
         allocation_type = "Allocate Directly"
