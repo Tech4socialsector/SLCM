@@ -1483,6 +1483,13 @@ def get_offer_details(offer_name=None):
             "is_discount": True
         })
 
+    if afa and afa.fee_type == "Admission Fee" and flt(afa.confirmation_fee) > 0:
+        fee_data.append({
+            "component": "Confirmation Fee Paid",
+            "amount": -flt(afa.confirmation_fee),
+            "is_discount": True
+        })
+
     applicant_data = frappe.get_all("Applicant", filters={"name": target_applicant}, fields=["*"], limit=1, ignore_permissions=True)
     applicant_dict = applicant_data[0] if applicant_data else {}
     if applicant_dict and not applicant_dict.get("candidate_photo"):
@@ -1531,5 +1538,6 @@ def get_offer_details(offer_name=None):
         "currency": frappe.defaults.get_global_default("currency") or "INR",
         "cancellation": cancellation_info,
         "available_scholarships_count": available_scholarships_count,
-        "scholarship_application": scholarship_data
+        "scholarship_application": scholarship_data,
+        "receipts": receipts
     }

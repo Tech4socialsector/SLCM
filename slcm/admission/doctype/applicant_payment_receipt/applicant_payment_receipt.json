@@ -29,14 +29,14 @@
   "fee_breakdown_section",
   "fee_components",
   "totals_section",
-  "total_amount",
-  "currency",
-  "scholarship_amount",
-  "scholarship_applied",
   "confirmation_fee",
+  "scholarship_applied",
+  "scholarship_amount",
   "net_amount",
+  "total_amount",
+  "column_break_akrk",
+  "currency",
   "receipt_pdf",
-  "amended_from",
   "notification_receiver"
  ],
  "fields": [
@@ -176,10 +176,10 @@
    "label": "Fee Breakdown"
   },
   {
+   "depends_on": "eval:doc.fee_type == 'Application Fee' || doc.fee_type == 'Admission Fee'",
    "fieldname": "fee_components",
    "fieldtype": "Table",
    "label": "Fee Components",
-   "depends_on": "eval:doc.fee_type == 'Application Fee' || doc.fee_type == 'Admission Fee'",
    "mandatory_depends_on": "eval:doc.fee_type == 'Application Fee' || doc.fee_type == 'Admission Fee'",
    "options": "Applicant Receipt Component"
   },
@@ -215,10 +215,10 @@
    "read_only": 1
   },
   {
+   "depends_on": "eval:doc.fee_type == 'Confirmation Fee'",
    "fieldname": "confirmation_fee",
    "fieldtype": "Currency",
    "label": "Confirmation Fee",
-   "depends_on": "eval:doc.fee_type == 'Confirmation Fee'",
    "read_only": 1
   },
   {
@@ -233,12 +233,6 @@
    "label": "Receipt PDF"
   },
   {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "options": "Applicant Payment Receipt"
-  },
-  {
    "fieldname": "notification_receiver",
    "fieldtype": "Link",
    "hidden": 1,
@@ -251,10 +245,14 @@
    "fieldtype": "Link",
    "label": "Payment Receipt Template",
    "options": "Print Format"
+  },
+  {
+   "fieldname": "column_break_akrk",
+   "fieldtype": "Column Break"
   }
  ],
  "links": [],
- "modified": "2026-07-01 12:02:35.211500",
+ "modified": "2026-08-05 11:15:00.055472",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Payment Receipt",

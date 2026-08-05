@@ -27,11 +27,11 @@ def get_offer_payable_amount(offer):
 	if isinstance(offer, str):
 		offer = frappe.get_doc("Offer Letter", offer)
 	actual = flt(offer.payable_amount)
+	target_fee_type = "Confirmation Fee" if offer.status == "Accepted" else "Admission Fee"
 	afa = frappe.db.get_value(
 		"Applicant Fee Assignment",
-		{"offer_letter": offer.name, "status": "Assigned", "docstatus": ["!=", 2]},
+		{"offer_letter": offer.name, "fee_type": target_fee_type, "status": "Assigned", "docstatus": ["!=", 2]},
 		["final_payable_amount"],
-		order_by="creation desc",
 		as_dict=True,
 	)
 	if afa and afa.final_payable_amount is not None:

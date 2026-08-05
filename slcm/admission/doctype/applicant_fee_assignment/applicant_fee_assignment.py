@@ -159,8 +159,8 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
 def create_invoice(docname):
 	doc = frappe.get_doc("Applicant Fee Assignment", docname)
 
-	if doc.fee_type not in ["Admission Fee", "Confirmation Fee"]:
-		frappe.throw(frappe._("Create Invoice is only for Admission/Confirmation Fee assignments."))
+	if doc.fee_type != "Admission Fee":
+		frappe.throw(frappe._("Conversion to Student is only allowed for the Admission Fee."))
 
 	if doc.status == "Converted":
 		frappe.throw(frappe._("This assignment has already been converted to a student."))
