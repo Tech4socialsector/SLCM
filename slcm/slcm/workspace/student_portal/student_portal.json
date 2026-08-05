@@ -1,0 +1,101 @@
+{
+ "app": "slcm",
+ "charts": [],
+ "content": "[{\"id\":\"sp_p1\",\"type\":\"paragraph\",\"data\":{\"text\":\"Manage the student-facing web portal \u2014 configure portal settings, publish announcements, and oversee leave applications from a single place.\",\"col\":12}},{\"id\":\"sp_sp0\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"sp_sc_settings\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Portal Settings\",\"col\":4}},{\"id\":\"sp_sc_portal\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Portal\",\"col\":3}},{\"id\":\"sp_sc_ann\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Announcement\",\"col\":4}},{\"id\":\"sp_sc_leave\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Student Leave Applications\",\"col\":4}},{\"id\":\"sp_sp1\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"sp_h1\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Portal Management</span>\",\"col\":12}},{\"id\":\"sp_card1\",\"type\":\"card\",\"data\":{\"card_name\":\"Student Portal\",\"col\":4}}]",
+ "creation": "2026-08-05 12:10:23.141503",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "grid",
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "Student Portal",
+ "link_type": "DocType",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student Portal",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student Portal Settings",
+   "link_count": 0,
+   "link_to": "Student Portal Settings",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student Leave Applications",
+   "link_count": 0,
+   "link_to": "Student Leave Applications",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Student Announcement",
+   "link_count": 0,
+   "link_to": "Student Announcement",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-05-07 01:30:31.873158",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Student Portal",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 25.0,
+ "shortcuts": [
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "Student Portal",
+   "type": "URL",
+   "url": "http://127.0.0.1:8001/student-portal"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "label": "Student Announcement",
+   "link_to": "Student Announcement",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "label": "Student Leave Applications",
+   "link_to": "Student Leave Applications",
+   "type": "DocType"
+  },
+  {
+   "color": "Purple",
+   "doc_view": "List",
+   "label": "Student Portal Settings",
+   "link_to": "Student Portal Settings",
+   "type": "DocType"
+  }
+ ],
+ "title": "Student Portal",
+ "type": "Workspace"
+}
