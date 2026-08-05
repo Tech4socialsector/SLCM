@@ -47,6 +47,8 @@
   "late_fee_after_days",
   "section_refund",
   "is_refund_available",
+  "is_confirmation_fee_refundable",
+  "confirmation_fee_refund_percentage",
   "refund_policies",
   "section_components",
   "fee_components_for_indian",
@@ -307,6 +309,22 @@
    "label": "Is Refund Available"
   },
   {
+   "default": "0",
+   "depends_on": "eval:doc.is_refund_available == 1 && doc.is_confirmation_fee_applicable == 1",
+   "fieldname": "is_confirmation_fee_refundable",
+   "fieldtype": "Check",
+   "label": "Is Confirmation Fee Refundable"
+  },
+  {
+   "default": "100",
+   "depends_on": "eval:doc.is_refund_available == 1 && doc.is_confirmation_fee_applicable == 1 && doc.is_confirmation_fee_refundable == 1",
+   "description": "Percentage of Confirmation Fee to refund (e.g. 100 for 100%, 50 for 50%)",
+   "fieldname": "confirmation_fee_refund_percentage",
+   "fieldtype": "Float",
+   "label": "Confirmation Fee Refund Percentage (%)",
+   "precision": "2"
+  },
+  {
    "depends_on": "eval:doc.is_refund_available == 1",
    "fieldname": "refund_policies",
    "fieldtype": "Table",
@@ -356,7 +374,7 @@
   }
  ],
  "links": [],
- "modified": "2026-08-03 11:23:24.348459",
+ "modified": "2026-08-05 15:36:21.836872",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Fee Structure",

@@ -1265,13 +1265,22 @@ _pc.mission_text) or '' %}
 	            const data = await apiFetch('slcm.api.service.offer_service.create_offer_razorpay_order', { offer_name: cur_offer_data.offer.name });
 	            hide_processing();
 	            if (data) {
-	                open_razorpay_modal(data);
+	                if (data.zero_amount) {
+	                    show_success({
+	                        title: "{{ _('Payment Completed!') }}",
+	                        message: data.message || "{{ _('Your fee payment has been recorded successfully.') }}"
+	                    });
+	                    setTimeout(() => window.location.reload(), 1500);
+	                } else {
+	                    open_razorpay_modal(data);
+	                }
 	            }
 	        } catch (e) {
 	            hide_processing();
 	            showToast(e.message, "error");
 	        }
 	    }
+
 
 	    function open_razorpay_modal(data) {
 	        const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || "#1a202c";
