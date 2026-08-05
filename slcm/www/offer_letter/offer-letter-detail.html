@@ -884,7 +884,7 @@ _pc.mission_text) or '' %}
                                 deadline_label = 'Confirmation Fee Deadline';
                             } else if (offer.status === 'Confirmation Fee Paid' && offer.payment_deadline) {
                                 deadline_date = offer.payment_deadline;
-                                deadline_label = 'Admission Fee Deadline';
+                                deadline_label = 'Full Fee Deadline';
                             } else if ((offer.status === 'Issued' || offer.status === 'Accepted') && offer.payment_deadline) {
                                 // Fallback
                                 deadline_date = offer.payment_deadline;
