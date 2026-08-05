@@ -671,6 +671,14 @@ frappe.ui.form.on("Seat Allocation", {
         }
 
         if (!frm.is_new()) {
+            frm.add_custom_button(__("Download Results PDF"), function () {
+                let url = frappe.urllib.get_full_url(
+                    "/api/method/slcm.admission.doctype.seat_allocation.seat_allocation.download_results_pdf?" +
+                    "name=" + encodeURIComponent(frm.doc.name)
+                );
+                window.open(url, '_blank');
+            }, __("Actions"));
+
             frm.add_custom_button(__("Download Allocation"), function () {
                 let url = frappe.urllib.get_full_url(
                     "/api/method/slcm.admission.doctype.seat_allocation.seat_allocation.download_allocation?" +

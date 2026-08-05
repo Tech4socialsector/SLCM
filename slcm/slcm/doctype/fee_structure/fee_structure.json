@@ -22,15 +22,16 @@
   "is_confirmation_fee_applicable",
   "confirmation_fee_amount",
   "deduct_confirmation_fee",
-  "receipt_print_format",
+  "due_date_for_confirmation_fee",
   "total_amount_for_indian",
-  "total_amount_for_foreign",
   "column_break_imnv",
   "online_payment",
   "cash",
   "payment_gateway",
+  "receipt_print_format",
   "valid_from",
   "valid_until",
+  "total_amount_for_foreign",
   "status",
   "section_demand_settings",
   "auto_generate_demand",
@@ -46,6 +47,8 @@
   "late_fee_after_days",
   "section_refund",
   "is_refund_available",
+  "is_confirmation_fee_refundable",
+  "confirmation_fee_refund_percentage",
   "refund_policies",
   "section_components",
   "fee_components_for_indian",
@@ -174,6 +177,7 @@
    "reqd": 1
   },
   {
+   "description": "Deadline for full fee payment",
    "fieldname": "valid_until",
    "fieldtype": "Date",
    "label": "Valid Until"
@@ -211,6 +215,7 @@
    "options": "Round 1\nRound 2\nRound 3\nRound 4"
   },
   {
+   "default": "0",
    "depends_on": "eval:doc.applicable == \"Applicant\"",
    "fieldname": "is_confirmation_fee_applicable",
    "fieldtype": "Check",
@@ -224,10 +229,11 @@
    "mandatory_depends_on": "eval:doc.is_confirmation_fee_applicable == 1"
   },
   {
+   "default": "0",
    "depends_on": "eval:doc.is_confirmation_fee_applicable == 1",
    "fieldname": "deduct_confirmation_fee",
    "fieldtype": "Check",
-   "label": "Deduct Confirmation Fee from Admission Fee"
+   "label": "Deduct Confirmation Fee from Full Fee"
   },
   {
    "default": "0",
@@ -303,6 +309,22 @@
    "label": "Is Refund Available"
   },
   {
+   "default": "0",
+   "depends_on": "eval:doc.is_refund_available == 1 && doc.is_confirmation_fee_applicable == 1",
+   "fieldname": "is_confirmation_fee_refundable",
+   "fieldtype": "Check",
+   "label": "Is Confirmation Fee Refundable"
+  },
+  {
+   "default": "100",
+   "depends_on": "eval:doc.is_refund_available == 1 && doc.is_confirmation_fee_applicable == 1 && doc.is_confirmation_fee_refundable == 1",
+   "description": "Percentage of Confirmation Fee to refund (e.g. 100 for 100%, 50 for 50%)",
+   "fieldname": "confirmation_fee_refund_percentage",
+   "fieldtype": "Float",
+   "label": "Confirmation Fee Refund Percentage (%)",
+   "precision": "2"
+  },
+  {
    "depends_on": "eval:doc.is_refund_available == 1",
    "fieldname": "refund_policies",
    "fieldtype": "Table",
@@ -342,10 +364,17 @@
   {
    "fieldname": "column_break_imnv",
    "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.is_confirmation_fee_applicable == 1",
+   "fieldname": "due_date_for_confirmation_fee",
+   "fieldtype": "Date",
+   "label": "Due Date For Confirmation Fee",
+   "mandatory_depends_on": "eval:doc.is_confirmation_fee_applicable == 1"
   }
  ],
  "links": [],
- "modified": "2026-07-03 15:04:31.657983",
+ "modified": "2026-08-05 15:36:21.836872",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Fee Structure",

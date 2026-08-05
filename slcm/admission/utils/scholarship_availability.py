@@ -6,7 +6,7 @@ def check_selection_stage(applicant_statuses):
     Returns True if the applicant is in a post-selection stage or later.
     This includes merit selection, seat selection, offer, fee payment, and enrolment.
     """
-    post_offer_statuses = {"Offer Issued", "Offer Accepted", "Fee Paid", "Enrolled"}
+    post_offer_statuses = {"Offer Issued", "Offer Accepted", "Confirmation Fee Paid", "Full Fee Paid", "Enrolled"}
     post_selection_statuses = {" Merit Selected", "Merit Selected", "Merit Published", "Seat Selected"} | post_offer_statuses
     
     for s in applicant_statuses:
@@ -29,7 +29,7 @@ def check_offer_stage(applicant_statuses):
     """
     Returns True if the applicant is in a post-offer stage or later.
     """
-    post_offer_statuses = {"Offer Issued", "Offer Accepted", "Fee Paid", "Enrolled"}
+    post_offer_statuses = {"Offer Issued", "Offer Accepted", "Confirmation Fee Paid", "Full Fee Paid", "Enrolled"}
     
     for s in applicant_statuses:
         if not s:
@@ -83,7 +83,7 @@ def check_scholarship_availability(scheme_name, applicant_status, applicant_id=N
             elif active_offer.status == "Accepted":
                 mapped_status = "Offer Accepted"
             elif active_offer.status == "Payment Completed":
-                mapped_status = "Fee Paid"
+                mapped_status = "Confirmation Fee Paid"
                 
             if mapped_status and mapped_status not in applicant_statuses:
                 applicant_statuses.append(mapped_status)
@@ -190,7 +190,7 @@ def get_available_scholarships_for_dashboard(applicant_id, cycle, campus, progra
             elif active_offer.status == "Accepted":
                 mapped_status = "Offer Accepted"
             elif active_offer.status == "Payment Completed":
-                mapped_status = "Fee Paid"
+                mapped_status = "Confirmation Fee Paid"
                 
             if mapped_status and mapped_status not in applicant_statuses:
                 applicant_statuses.append(mapped_status)

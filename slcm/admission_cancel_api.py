@@ -44,32 +44,100 @@ def get_refund_policies(applicant=None, program=None, campus=None, offer=None, p
 				order_by="creation desc"
 			)
 
-	amount_paid = 0
+	conf_fee_paid = 0.0
+	course_fee_paid = 0.0
+
+	offer_name = offer or frappe.db.get_value(
+		"Offer Letter",
+		{"applicant": applicant, "status": ["not in", ["Rejected", "Withdrawn"]]},
+		"name",
+		order_by="creation desc"
+	)
+
+	# 1. Fetch from Applicant Payment Receipt (by offer_letter or applicant)
+	receipt_filters = {"docstatus": ["<", 2]}
+	if offer_name:
+		receipt_filters["offer_letter"] = offer_name
+	else:
+		receipt_filters["applicant"] = applicant
+
+	receipts = frappe.get_all(
+		"Applicant Payment Receipt",
+		filters=receipt_filters,
+		fields=["name", "total_amount", "net_amount", "fee_type", "currency"]
+	)
+
+	if not receipts and offer_name:
+		receipts = frappe.get_all(
+			"Applicant Payment Receipt",
+			filters={"applicant": applicant, "docstatus": ["<", 2]},
+			fields=["name", "total_amount", "net_amount", "fee_type", "currency"]
+		)
+
+	for r in receipts:
+		amt = flt(r.net_amount) if flt(r.get("net_amount")) > 0 else flt(r.total_amount)
+		ft = r.fee_type or ""
+		if "Confirmation" in ft:
+			conf_fee_paid += amt
+		else:
+			course_fee_paid += amt
+
+	# 2. Check Applicant Fee Assignment (if paid)
+	if offer_name:
+		afas = frappe.get_all(
+			"Applicant Fee Assignment",
+			filters={"offer_letter": offer_name, "status": "Paid", "docstatus": ["!=", 2]},
+			fields=["fee_type", "final_payable_amount", "total_amount", "confirmation_fee"]
+		)
+		for afa in afas:
+			amt = flt(afa.final_payable_amount or afa.total_amount or afa.confirmation_fee)
+			ft = afa.fee_type or ""
+			if "Confirmation" in ft and conf_fee_paid == 0:
+				conf_fee_paid += amt
+			elif "Admission" in ft and course_fee_paid == 0:
+				course_fee_paid += amt
+
+	# 3. Check Student Master & Fee Payment (if converted to student)
+	student_name = frappe.db.get_value("Student Master", {"application_number": applicant}, "name")
+	if student_name:
+		fee_payments = frappe.get_all(
+			"Fee Payment",
+			filters={"student": student_name, "status": "Submitted"},
+			pluck="amount"
+		)
+		for fp in fee_payments:
+			course_fee_paid += flt(fp)
+
+
+
+	amount_paid = conf_fee_paid + course_fee_paid
 	currency = "INR"
-	if payment_request:
-		if frappe.db.exists("Applicant Payment Receipt", payment_request):
-			net_amt = frappe.db.get_value("Applicant Payment Receipt", payment_request, "net_amount")
-			amount_paid = flt(net_amt) if flt(net_amt) > 0 else frappe.db.get_value("Applicant Payment Receipt", payment_request, "total_amount")
-			currency = frappe.db.get_value("Applicant Payment Receipt", payment_request, "currency") or "INR"
-		elif frappe.db.exists("Fee Payment", payment_request):
-			amount_paid = frappe.db.get_value("Fee Payment", payment_request, "amount")
-			currency = "INR"
+
+	is_conf_ref = bool(res.get("is_confirmation_fee_refundable", False))
+	conf_pct = flt(res.get("confirmation_fee_refund_percentage") or 0.0) if is_conf_ref else 0.0
+	conf_fee_ref_amt = round(conf_fee_paid * (conf_pct / 100.0), 2)
 
 	for p in policies:
 		desc = frappe.db.get_value("Refund Policy", p.get("policy_name"), "description")
 		p["description"] = desc or ""
-		if amount_paid:
-			p["amount"] = flt(amount_paid) * (flt(p.get("refund_percentage", 0)) / 100.0)
-		else:
-			p["amount"] = 0
+		course_ref_amt = flt(course_fee_paid) * (flt(p.get("refund_percentage", 0)) / 100.0)
+		p["amount"] = round(conf_fee_ref_amt + course_ref_amt, 2)
 		p["currency"] = currency
 
 	return {
 		"policies": policies,
 		"days_since_payment": res.get("days_since_payment") or 0,
+		"conf_fee_paid": conf_fee_paid,
+		"course_fee_paid": course_fee_paid,
 		"amount_paid": amount_paid,
-		"currency": currency
+		"currency": currency,
+		"is_confirmation_fee_refundable": is_conf_ref,
+		"confirmation_fee_refund_percentage": conf_pct
 	}
+
+
+
+
 
 @frappe.whitelist()
 def process_refund(name):
@@ -128,22 +196,28 @@ def process_refund(name):
 	client = razorpay.Client(auth=(settings.api_key, settings.get_password("api_secret")))
 	
 	try:
-		# Double-check if already refunded in Razorpay to prevent "Already refunded" errors
+		# Pre-check: verify available balance on Razorpay payment before attempting refund
 		try:
 			rzp_payment = client.payment.fetch(refund.razorpay_payment_id)
+			rzp_amount = int(rzp_payment.get("amount", 0))
 			amount_to_refund_paise = int(flt(refund.refund_amount) * 100)
 			
-			available_paise = int(rzp_payment.get("amount", 0)) - int(rzp_payment.get("amount_refunded", 0))
-			
-			if available_paise < amount_to_refund_paise:
-				error_msg = _("Insufficient balance in Razorpay payment. Available: {0}, Requested: {1}").format(
-					available_paise / 100.0, refund.refund_amount
-				)
-				refund.db_set("status", "Failed")
-				refund.db_set("failure_message", error_msg)
-				return {"status": "Error", "message": error_msg}
+			# Only block if Razorpay returned a valid non-zero amount AND it is truly insufficient.
+			# If rzp_amount == 0, Razorpay may be in test mode or the payment is not accessible via the
+			# current credentials — skip this pre-check and let the actual refund API call handle it.
+			if rzp_amount > 0:
+				amount_refunded_paise = int(rzp_payment.get("amount_refunded", 0))
+				available_paise = rzp_amount - amount_refunded_paise
+				
+				if available_paise < amount_to_refund_paise:
+					error_msg = _("Insufficient balance in Razorpay payment. Available: {0}, Requested: {1}").format(
+						available_paise / 100.0, refund.refund_amount
+					)
+					refund.db_set("status", "Failed")
+					refund.db_set("failure_message", error_msg)
+					return {"status": "Error", "message": error_msg}
 		except Exception as e:
-			# If fetch fails, we proceed but log it.
+			# If fetch fails, proceed and let the refund call itself surface any errors.
 			frappe.log_error(f"Razorpay Fetch Error before refund: {str(e)}", "Refund Process")
 
 		# Initiate refund via Razorpay API
@@ -374,16 +448,16 @@ def reconcile_refund_status(name):
 		return {"status": "Error", "message": str(e)}
 
 @frappe.whitelist()
-
 def submit_admission_cancellation(**kwargs):
+
 	"""
 	Portal-safe method to submit admission cancellation.
-	Maps fields from the web form to Admission Cancellation DocType.
+	If separate payments exist (Confirmation Fee & Admission Fee), creates
+	separate Admission Cancellation records for each fee payment.
 	"""
 	applicant = kwargs.get("applicant")
 	offer = kwargs.get("offer")
 
-	# Clean up 'None' passed from template/JS
 	if offer in ("None", "", None):
 		offer = frappe.db.get_value("Offer Letter", 
 			{"applicant": applicant, "status": ["not in", ["Rejected", "Withdrawn", "Expired"]]}, 
@@ -392,37 +466,78 @@ def submit_admission_cancellation(**kwargs):
 	if not offer:
 		frappe.throw(_("Could not find an active Offer Letter associated with your application."))
 
-	# Check for existing cancellation
-	existing_cancellation = frappe.db.exists("Admission Cancellation", {
+	# Check for existing active cancellation
+	existing_cancellations = frappe.get_all("Admission Cancellation", {
 		"applicant": applicant,
-		"offer": offer
-	})
+		"status": ["not in", ["Rejected"]]
+	}, "name")
 	
-	if existing_cancellation:
-		frappe.throw(_("A cancellation request for this offer has already been submitted."))
-	
-	doc = frappe.new_doc("Admission Cancellation")
-	doc.applicant = applicant
-	doc.offer = offer
-	
-	pay_ref = kwargs.get("payment_request")
-	if pay_ref:
-		if frappe.db.exists("Fee Payment", pay_ref):
-			doc.payment_request = pay_ref
-		elif frappe.db.exists("Applicant Payment Receipt", pay_ref):
-			doc.applicant_payment_receipt = pay_ref
+	if existing_cancellations:
+		frappe.throw(_("A cancellation request has already been submitted."))
 
-	doc.campus = kwargs.get("campus")
-	doc.program = kwargs.get("program")
-	doc.cancellation_reason_type = kwargs.get("cancellation_reason_type")
-	doc.cancellation_reason = kwargs.get("cancellation_reason")
-	doc.additional_comments = kwargs.get("additional_comments")
-	doc.cancellation_type = "Student"
-	doc.status = "Initiated"
-	doc.requested_by = frappe.session.user
-	doc.requested_on = now_datetime()
+	# Find all active payment receipts for this applicant/offer
+	receipts = frappe.get_all(
+		"Applicant Payment Receipt",
+		filters={"applicant": applicant, "docstatus": ["<", 2]},
+		fields=["name", "fee_type", "total_amount", "net_amount", "transaction_id"],
+		order_by="creation asc"
+	)
 	
-	doc.insert(ignore_permissions=True)
+
+	from slcm.admission.utils.refund import get_applicant_refund_policies
+	res_ref = get_applicant_refund_policies(applicant)
+	is_conf_ref = bool(res_ref.get("is_confirmation_fee_refundable", False))
+
+	# Filter receipts with paid amount > 0
+	valid_receipts = []
+	for r in receipts:
+		amt = flt(r.net_amount) if flt(r.get("net_amount")) > 0 else flt(r.total_amount)
+		if amt > 0:
+			ft = r.fee_type or ""
+			if "Confirmation" in ft and not is_conf_ref:
+				continue
+			valid_receipts.append(r)
+
+
+	created_cancellations = []
+
+	if valid_receipts:
+		# Create a separate Admission Cancellation record per fee payment receipt
+		for r in valid_receipts:
+			doc = frappe.new_doc("Admission Cancellation")
+			doc.applicant = applicant
+			doc.offer = offer
+			doc.applicant_payment_receipt = r.name
+			doc.campus = kwargs.get("campus")
+			doc.program = kwargs.get("program")
+			doc.cancellation_reason_type = kwargs.get("cancellation_reason_type")
+			doc.cancellation_reason = kwargs.get("cancellation_reason")
+			doc.additional_comments = kwargs.get("additional_comments")
+			doc.cancellation_type = "Student"
+			doc.status = "Initiated"
+			doc.requested_by = frappe.session.user
+			doc.requested_on = now_datetime()
+			doc.amount_paid = flt(r.net_amount) if flt(r.get("net_amount")) > 0 else flt(r.total_amount)
+			doc.razorpay_id = r.transaction_id
+			doc.insert(ignore_permissions=True)
+			created_cancellations.append(doc.name)
+	else:
+		# Fallback: create single cancellation record
+		doc = frappe.new_doc("Admission Cancellation")
+		doc.applicant = applicant
+		doc.offer = offer
+		doc.campus = kwargs.get("campus")
+		doc.program = kwargs.get("program")
+		doc.cancellation_reason_type = kwargs.get("cancellation_reason_type")
+		doc.cancellation_reason = kwargs.get("cancellation_reason")
+		doc.additional_comments = kwargs.get("additional_comments")
+		doc.cancellation_type = "Student"
+		doc.status = "Initiated"
+		doc.requested_by = frappe.session.user
+		doc.requested_on = now_datetime()
+		doc.insert(ignore_permissions=True)
+		created_cancellations.append(doc.name)
+
 	frappe.db.commit()
-	
-	return {"status": "Success", "name": doc.name}
+	return {"status": "Success", "names": created_cancellations, "name": created_cancellations[0]}
+

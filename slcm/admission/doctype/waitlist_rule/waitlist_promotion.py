@@ -152,7 +152,7 @@ def _process_single_program_waitlist(seat_alloc, program: str, rule_doc) -> list
     
     # Define active statuses that occupy or want a seat
     # We include people who already have offers to allow them to "slide" to GEN and free up reserved seats
-    selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Fee Paid", "Accepted", "Payment Completed", "Enrolled", "Seat Selected"]
+    selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Enrolled", "Seat Selected"]
     waitlist_statuses = ["Waitlisted"]
     
     # 1. Gather all active candidates for this program

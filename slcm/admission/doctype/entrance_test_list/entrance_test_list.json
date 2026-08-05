@@ -8,10 +8,13 @@
   "academic_year",
   "campus",
   "admission_cycle",
+  "column_break_hvlg",
   "program_level",
   "program",
   "generated_on",
+  "entrance_test_city",
   "status",
+  "section_break_rfvo",
   "entrance_test_applicant"
  ],
  "fields": [
@@ -34,8 +37,17 @@
    "options": "Admission Cycle"
   },
   {
+   "fieldname": "entrance_test_city",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Entrance Test City",
+   "options": "Entrance Test City"
+  },
+  {
    "fieldname": "program_level",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Programme Level",
    "options": "Undergraduate\nPostgraduate\nResearch Course"
   },
@@ -43,8 +55,10 @@
    "depends_on": "program_level",
    "fieldname": "program",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Programme",
-   "options": "Programme"
+   "options": "Programme",
+   "read_only": 1
   },
   {
    "fieldname": "generated_on",
@@ -62,12 +76,20 @@
    "fieldtype": "Table",
    "label": "Entrance Test Applicant",
    "options": "Entrance Test Applicant"
+  },
+  {
+   "fieldname": "column_break_hvlg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_rfvo",
+   "fieldtype": "Section Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-26 14:44:44.023730",
+ "modified": "2026-08-05 14:49:26.834795",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test List",

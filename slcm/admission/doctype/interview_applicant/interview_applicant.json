@@ -22,6 +22,7 @@
   {
    "fieldname": "applicant_id",
    "fieldtype": "Link",
+   "in_filter": 1,
    "in_list_view": 1,
    "label": "Applicant ID",
    "options": "Applicant",
@@ -31,12 +32,14 @@
    "fetch_from": "applicant_id.candidate_name",
    "fieldname": "candidate_name",
    "fieldtype": "Data",
+   "in_filter": 1,
    "in_list_view": 1,
    "label": "Candidate Name"
   },
   {
    "fieldname": "program",
    "fieldtype": "Link",
+   "in_filter": 1,
    "in_list_view": 1,
    "label": "Programme",
    "options": "Programme"
@@ -44,6 +47,7 @@
   {
    "fieldname": "program_level",
    "fieldtype": "Select",
+   "in_filter": 1,
    "in_list_view": 1,
    "label": "Programme Level",
    "options": "Undergraduate\nPostgraduate\nResearch Course"
@@ -51,6 +55,7 @@
   {
    "fieldname": "email",
    "fieldtype": "Data",
+   "in_filter": 1,
    "in_list_view": 1,
    "label": "Email"
   },
@@ -87,6 +92,7 @@
   {
    "fieldname": "source_type",
    "fieldtype": "Select",
+   "in_filter": 1,
    "in_list_view": 1,
    "label": "Source",
    "options": "National Test (Direct)\nEntrance Test\nAcademic Eligibility",
@@ -96,6 +102,7 @@
    "default": "Pending",
    "fieldname": "interview_status",
    "fieldtype": "Select",
+   "in_filter": 1,
    "in_list_view": 1,
    "label": "Interview Status",
    "options": "Pending\nScheduled\nAttended\nAbsent\nSelected\nRejected"
@@ -105,14 +112,14 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-03-26 14:46:59.327230",
+ "modified": "2026-07-30 16:42:00.000000",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Applicant",
  "owner": "Administrator",
  "permissions": [],
  "row_format": "Dynamic",
- "rows_threshold_for_grid_search": 20,
+ "rows_threshold_for_grid_search": 0,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

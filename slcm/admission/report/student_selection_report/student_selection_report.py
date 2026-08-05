@@ -300,7 +300,8 @@ def get_chart_data(columns, data, filters):
         "Offer Issued": "#28c76f",
         "Offer Accepted": "#28c76f",
         "Accepted": "#28c76f",
-        "Fee Paid": "#28c76f",
+        "Confirmation Fee Paid": "#28c76f",
+        "Full Fee Paid": "#28c76f",
         "Shortlisted": "#28c76f",
         "Waitlisted": "#ffa00a",
         "Rejected": "#ff5858",
@@ -324,7 +325,7 @@ def get_report_summary(data, filters):
     rejected = 0
     for d in (data or []):
         st = d.get("selection_status")
-        if st in ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid", "Shortlisted"]:
+        if st in ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Confirmation Fee Paid", "Full Fee Paid", "Shortlisted"]:
             selected += 1
         elif st == "Waitlisted":
             waitlisted += 1

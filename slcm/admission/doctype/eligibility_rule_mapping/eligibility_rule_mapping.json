@@ -9,10 +9,10 @@
   "eligibility_rule_mapping_section",
   "program",
   "rule",
-  "admission_cycle",
-  "campus",
   "applicant_type",
   "column_break_enee",
+  "admission_cycle",
+  "campus",
   "is_active",
   "section_break_uflx",
   "reservation_category"
@@ -53,8 +53,7 @@
    "fieldname": "reservation_category",
    "fieldtype": "Table",
    "label": "Reservation category",
-   "options": "Rule Mapping Category",
-   "reqd": 1
+   "options": "Rule Mapping Category"
   },
   {
    "default": "Domestic Applicants",
@@ -90,7 +89,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-06-19 16:12:10.570831",
+ "modified": "2026-07-30 14:23:46.889442",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule Mapping",

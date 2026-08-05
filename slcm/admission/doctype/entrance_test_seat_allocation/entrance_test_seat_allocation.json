@@ -22,6 +22,7 @@
   "column_break_okdo",
   "email",
   "gender",
+  "pwd",
   "date_of_birth",
   "category",
   "section_break_hynq",
@@ -37,40 +38,35 @@
   "entrance_test_name",
   "entrance_test_provider",
   "assigned_preferences",
+  "column_break_qmed",
   "center_name",
   "center_address",
-  "room_code",
-  "room_name",
-  "building",
-  "floor",
-  "seat_number",
+  "section_break_egoh",
   "allocation_status",
   "allocation_date",
+  "allocated_by",
+  "column_break_yrgm",
   "start_time",
   "end_time",
-  "allocated_by",
   "admit_card_download",
   "tab_9_tab",
   "reschedule_seat_allocation_section",
   "re_entrance_test_name",
   "re_entrance_test_provider",
   "re_assigned_preferences",
+  "column_break_sanb",
   "re_center_name",
   "re_center_address",
-  "re_room_code",
-  "re_room_name",
-  "re_building",
-  "re_floor",
-  "re_seat_number",
-  "re_allocation_status",
-  "re_allocation_date",
-  "re_allocated_by",
-  "re_admit_card_download",
   "section_break_axgb",
-  "is_rescheduled",
-  "reschedule_reason",
+  "re_allocation_date",
+  "re_allocation_status",
   "rescheduled_on",
   "rescheduled_by",
+  "column_break_gtzu",
+  "re_allocated_by",
+  "reschedule_reason",
+  "re_admit_card_download",
+  "is_rescheduled",
   "tab_part_a",
   "entrance_test_status",
   "attendance_marked_on",
@@ -109,8 +105,9 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Entrance Test List",
+   "mandatory_depends_on": "eval:!doc.is_international_applicant",
    "options": "Entrance Test List",
-   "reqd": 1
+   "read_only": 1
   },
   {
    "fieldname": "academic_year",
@@ -190,6 +187,15 @@
   },
   {
    "default": "0",
+   "fieldname": "pwd",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "PWD",
+   "read_only": 1
+  },
+  {
+   "default": "0",
    "fieldname": "exempts_entrance_test",
    "fieldtype": "Check",
    "label": "Exempts Entrance Test",
@@ -237,37 +243,13 @@
   {
    "fieldname": "center_name",
    "fieldtype": "Data",
+   "in_standard_filter": 1,
    "label": "Centre Name"
   },
   {
    "fieldname": "center_address",
    "fieldtype": "Small Text",
    "label": "Centre Address"
-  },
-  {
-   "fieldname": "room_code",
-   "fieldtype": "Data",
-   "label": "Room Code"
-  },
-  {
-   "fieldname": "room_name",
-   "fieldtype": "Data",
-   "label": "Room Name"
-  },
-  {
-   "fieldname": "building",
-   "fieldtype": "Data",
-   "label": "Building"
-  },
-  {
-   "fieldname": "floor",
-   "fieldtype": "Data",
-   "label": "Floor"
-  },
-  {
-   "fieldname": "seat_number",
-   "fieldtype": "Data",
-   "label": "Seat Number"
   },
   {
    "fieldname": "allocation_status",
@@ -293,6 +275,7 @@
   {
    "fieldname": "allocated_by",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Allocated By",
    "options": "User"
   },
@@ -315,6 +298,7 @@
   {
    "fieldname": "rescheduled_by",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Rescheduled By",
    "options": "User"
   },
@@ -327,12 +311,14 @@
    "default": "0",
    "fieldname": "admit_card_generated",
    "fieldtype": "Check",
-   "label": "Admit Card Generated"
+   "label": "Admit Card Generated",
+   "read_only": 1
   },
   {
    "fieldname": "admit_card_number",
    "fieldtype": "Data",
-   "label": "Admit Card Number"
+   "label": "Admit Card Number",
+   "read_only": 1
   },
   {
    "fieldname": "tab_part_a",
@@ -441,31 +427,6 @@
    "label": "Centre Address"
   },
   {
-   "fieldname": "re_room_code",
-   "fieldtype": "Data",
-   "label": "Room Code"
-  },
-  {
-   "fieldname": "re_room_name",
-   "fieldtype": "Data",
-   "label": "Room Name"
-  },
-  {
-   "fieldname": "re_building",
-   "fieldtype": "Data",
-   "label": "Building"
-  },
-  {
-   "fieldname": "re_floor",
-   "fieldtype": "Data",
-   "label": "Floor"
-  },
-  {
-   "fieldname": "re_seat_number",
-   "fieldtype": "Data",
-   "label": "Seat Number"
-  },
-  {
    "fieldname": "re_allocation_status",
    "fieldtype": "Select",
    "label": "Allocation Status",
@@ -479,6 +440,7 @@
   {
    "fieldname": "re_allocated_by",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Allocated By",
    "options": "User"
   },
@@ -622,13 +584,33 @@
   {
    "fieldname": "column_break_vvxb",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_qmed",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_egoh",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_yrgm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_sanb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_gtzu",
+   "fieldtype": "Column Break"
   }
  ],
  "grid_page_length": 50,
  "image_field": "profile",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-27 11:01:49.276409",
+ "modified": "2026-08-05 18:29:51.643751",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",
@@ -664,6 +646,7 @@
   {
    "email": 1,
    "export": 1,
+   "if_owner": 1,
    "print": 1,
    "read": 1,
    "report": 1,

@@ -16,20 +16,19 @@ def get_context(context):
         context.no_record = True
         return context
 
-    # Get Interview Seat Allocation record
-    allocation = frappe.get_all(
+    # Get Interview Seat Allocation record name directly
+    allocation_name = frappe.db.get_value(
         "Interview Seat Allocation",
-        filters={"applicant": applicant_name},
-        fields=["*"],
-        order_by="creation desc",
-        limit=1
+        {"applicant": applicant_name},
+        "name",
+        order_by="creation desc"
     )
 
-    if not allocation:
+    if not allocation_name:
         context.no_record = True
         return context
 
-    doc = frappe.get_doc("Interview Seat Allocation", allocation[0].name)
+    doc = frappe.get_doc("Interview Seat Allocation", allocation_name)
     context.doc = doc
 
     # Determine rescheduled state
@@ -54,11 +53,9 @@ def get_context(context):
         f_date = doc.re_interview_date
         f_time = doc.re_interview_time
         
-        # Calculate reporting time (1 hour before)
         rep_time = "—"
         if f_date and f_time:
             try:
-                # Combine date and time to calculate offset
                 from frappe.utils import get_datetime
                 dt_str = f"{f_date} {f_time}"
                 dt = get_datetime(dt_str)
@@ -81,7 +78,6 @@ def get_context(context):
         f_date = doc.interview_date
         f_time = doc.interview_time
 
-        # Calculate reporting time (1 hour before)
         rep_time = "—"
         if f_date and f_time:
             try:
@@ -143,10 +139,6 @@ def save_attendance_confirmation(allocation_name, confirmation, is_rescheduled=F
     if not alloc_data:
         frappe.throw(_("Interview Seat Allocation record not found."), frappe.DoesNotExistError)
 
-    # Authorized if:
-    # 1. Applicant name matches
-    # 2. Email matches (case-insensitive)
-    # 3. User is System Manager or Entrance Test Admin
     is_authorized = False
     
     if applicant_name and alloc_data.applicant == applicant_name:
@@ -155,7 +147,7 @@ def save_attendance_confirmation(allocation_name, confirmation, is_rescheduled=F
         is_authorized = True
     else:
         user_roles = frappe.get_roles(user)
-        if any(role in user_roles for role in ["System Manager", "Entrance Test Admin"]):
+        if any(role in user_roles for role in ["System Manager", "Entrance Test Admin", "Exam Cell"]):
             is_authorized = True
 
     if not is_authorized:
@@ -198,10 +190,6 @@ def save_feedback(allocation_name, feedback_text):
     if not alloc_data:
         frappe.throw(_("Interview Seat Allocation record not found."), frappe.DoesNotExistError)
 
-    # Authorized if:
-    # 1. Applicant name matches
-    # 2. Email matches (case-insensitive)
-    # 3. User is System Manager or Entrance Test Admin
     is_authorized = False
     
     if applicant_name and alloc_data.applicant == applicant_name:
@@ -210,7 +198,7 @@ def save_feedback(allocation_name, feedback_text):
         is_authorized = True
     else:
         user_roles = frappe.get_roles(user)
-        if any(role in user_roles for role in ["System Manager", "Entrance Test Admin"]):
+        if any(role in user_roles for role in ["System Manager", "Entrance Test Admin", "Exam Cell"]):
             is_authorized = True
 
     if not is_authorized:

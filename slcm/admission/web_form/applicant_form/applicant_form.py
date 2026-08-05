@@ -830,6 +830,9 @@ def check_eligibility(applicant_name):
     if not applicant_name:
         return {"status": "Incomplete", "message": ""}
 
+    if not _portal_can_access_applicant(applicant_name):
+        return {"status": "Error", "message": _("Not permitted.")}
+
     doc = frappe.get_doc("Applicant", applicant_name)
 
     if not all([doc.program, doc.campus, doc.admission_cycle, doc.academic_year]):
@@ -1195,3 +1198,69 @@ def download_portal_application_fee_receipt(applicant_name):
     frappe.local.response.filename = f"{safe}.pdf"
     frappe.local.response.filecontent = pdf
     frappe.local.response.type = "pdf"
+
+@frappe.whitelist(allow_guest=True)
+def state_query(doctype=None, txt=None, searchfield=None, start=0, page_len=20, filters=None, **kwargs):
+    if isinstance(filters, str):
+        import json
+        try:
+            filters = json.loads(filters)
+        except Exception:
+            filters = {}
+    if not filters:
+        filters = {}
+
+    country = filters.get("country") if isinstance(filters, dict) else None
+    if not country:
+        country = frappe.form_dict.get("filters[country]") or frappe.form_dict.get("country")
+
+    cond = ""
+    txt = txt or ""
+    if txt:
+        cond += " and name like %(txt)s"
+    
+    return frappe.db.sql(f"""
+        select name from `tabState`
+        where (country = %(country)s or name = 'Other')
+        {cond}
+        order by name
+        limit %(start)s, %(page_len)s
+    """, {
+        "country": country,
+        "txt": "%" + txt + "%",
+        "start": cint(start),
+        "page_len": cint(page_len)
+    })
+
+@frappe.whitelist(allow_guest=True)
+def city_query(doctype=None, txt=None, searchfield=None, start=0, page_len=20, filters=None, **kwargs):
+    if isinstance(filters, str):
+        import json
+        try:
+            filters = json.loads(filters)
+        except Exception:
+            filters = {}
+    if not filters:
+        filters = {}
+
+    state = filters.get("state") if isinstance(filters, dict) else None
+    if not state:
+        state = frappe.form_dict.get("filters[state]") or frappe.form_dict.get("state")
+
+    cond = ""
+    txt = txt or ""
+    if txt:
+        cond += " and name like %(txt)s"
+    
+    return frappe.db.sql(f"""
+        select name from `tabCity`
+        where (state = %(state)s or name = 'Other')
+        {cond}
+        order by name
+        limit %(start)s, %(page_len)s
+    """, {
+        "state": state,
+        "txt": "%" + txt + "%",
+        "start": cint(start),
+        "page_len": cint(page_len)
+    })

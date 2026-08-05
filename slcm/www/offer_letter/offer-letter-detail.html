@@ -119,6 +119,8 @@ footer_color=portal_config.footer_color, button_border_radius=portal_config.butt
 	.status-badge-row.issued { background: #fef3c7; color: #b45309; }
 	.status-badge-row.accepted { background: #dcfce7; color: #15803d; }
 	.status-badge-row.payment-completed { background: #dbeafe; color: #1d4ed8; }
+	.status-badge-row.confirmation-fee-paid { background: #e0e7ff; color: #4338ca; }
+	.status-badge-row.full-fee-paid { background: #cffafe; color: #0e7490; }
 	.status-badge-row.rejected { background: #fee2e2; color: #b91c1c; }
 	.status-badge-row.expired { background: #ffedd5; color: #c2410c; }
 	.status-badge-row.withdrawn { background: #fce7f3; color: #be185d; }
@@ -591,7 +593,7 @@ _pc.mission_text) or '' %}
 			<div id="payment-modal" class="custom-modal">
 				<div class="custom-modal-content">
 					<div class="custom-modal-header">
-						<h4>{{ _("Admission Fee Payment") }}</h4>
+						<h4>{{ _("Fee Payment") }}</h4>
 						<span class="close-modal" onclick="close_payment_modal()">&times;</span>
 					</div>
 					<div class="custom-modal-body" id="payment-modal-body">
@@ -660,8 +662,8 @@ _pc.mission_text) or '' %}
 							<p class="text-muted" style="margin-bottom: 20px;">{{ _("Are you sure you want to accept this admission offer? By accepting, you agree to the university's terms and conditions. Please note: all other active offers will be automatically rejected.") }}</p>
                             
                             <div style="margin-top: 20px; text-align: left;">
-                                <label for="accommodation_pref" style="font-weight: 600; font-size: 14px; color: var(--text-2);">{{ _("Do you require accommodation?") }}</label>
-                                <select id="accommodation_pref" class="form-control mt-2" style="border-radius: 8px; border: 1px solid var(--border); padding: 8px; width: 100%;">
+                                <label for="accommodation_pref" style="font-weight: 600; font-size: 14px; color: var(--text-2);">{{ _("Do you require accommodation ?") }}</label>
+                                <select id="accommodation_pref" class="mt-2" style="border-radius: 8px; border: 1px solid var(--border); padding: 8px; width: 100%;">
                                     <option value="No">{{ _("No") }}</option>
                                     <option value="Yes">{{ _("Yes") }}</option>
                                 </select>
@@ -750,7 +752,7 @@ _pc.mission_text) or '' %}
 
 	    async function fetch_offer_details(offer_name) {
 	        try {
-	            const data = await apiFetch('slcm.admission.page.applicant_offer_lett.applicant_offer_lett.get_offer_details', { offer_name: offer_name });
+	            const data = await apiFetch('slcm.api.service.offer_service.get_offer_details', { offer_name: offer_name });
 	            if (data && !data.error) {
 	                cur_offer_data = data;
 	                render_offer_detail(data);
@@ -762,7 +764,7 @@ _pc.mission_text) or '' %}
 	        }
 	    }
 
-	    function start_expiry_timer(deadline_str) {
+	    function start_expiry_timer(deadline_str, original_label) {
 	        if (!deadline_str) return;
 
 	        const timer_el = $('#expiry-timer-display');
@@ -784,17 +786,29 @@ _pc.mission_text) or '' %}
 	                clearInterval(x);
 	                timer_el.text("{{ _('EXPIRED') }}");
 	                timer_el.css('color', '#feb2b2');
+	                $('button[onclick="handle_primary_action()"], button[onclick="handle_reject()"]')
+	                    .prop('disabled', true)
+	                    .css({'opacity': '0.5', 'cursor': 'not-allowed'})
+	                    .attr('title', '{{ _("Deadline passed") }}');
 	                return;
 	            }
 
 	            if (distance > 24 * 60 * 60 * 1000) {
 	                // More than 24 hours - show date only
-	                label_el.text({{ _("Offer Expiry Date") | tojson }});
+	                if (original_label) {
+	                    label_el.html(original_label + ' <span class="material-symbols-outlined" style="color: var(--secondary); font-size: 18px;">event</span>');
+	                } else {
+	                    label_el.html('{{ _("Expiry Date") }} <span class="material-symbols-outlined" style="color: var(--secondary); font-size: 18px;">event</span>');
+	                }
 	                timer_el.text(format_date_dd_mm_yyyy(deadline_str));
 	                timer_el.next().hide(); // Hide the redundant deadline line
 	            } else {
 	                // 24 hours or less - show timer
-	                label_el.text({{ _("Offer Expiry Timer") | tojson }});
+	                if (original_label) {
+	                    label_el.html(original_label + ' (Ends Soon) <span class="material-symbols-outlined" style="color: var(--secondary); font-size: 18px;">event</span>');
+	                } else {
+	                    label_el.html('{{ _("Ends Soon") }} <span class="material-symbols-outlined" style="color: var(--secondary); font-size: 18px;">event</span>');
+	                }
 	                timer_el.next().show();
 
 	                const hours = Math.floor(distance / (1000 * 60 * 60));
@@ -819,6 +833,8 @@ _pc.mission_text) or '' %}
 	            case 'issued': return '<span class="material-symbols-outlined" style="font-size: 18px;">mark_email_unread</span>';
 	            case 'accepted': return '<span class="material-symbols-outlined" style="font-size: 18px;">thumb_up</span>';
 	            case 'payment completed': return '<span class="material-symbols-outlined" style="font-size: 18px;">task_alt</span>';
+	            case 'confirmation fee paid': return '<span class="material-symbols-outlined" style="font-size: 18px;">check_circle</span>';
+	            case 'full fee paid': return '<span class="material-symbols-outlined" style="font-size: 18px;">verified</span>';
 	            case 'rejected': return '<span class="material-symbols-outlined" style="font-size: 18px;">thumb_down</span>';
 	            case 'expired': return '<span class="material-symbols-outlined" style="font-size: 18px;">timer_off</span>';
 	            case 'withdrawn': return '<span class="material-symbols-outlined" style="font-size: 18px;">cancel</span>';
@@ -857,21 +873,43 @@ _pc.mission_text) or '' %}
                             ` : `<div style="position: absolute; bottom: 20px; right: 24px; width: 48px; height: 48px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 20px; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><i class="fa fa-user"></i></div>`}
 	                    </div>
 
-	                    ${offer.payment_deadline && (offer.status === 'Issued' || offer.status === 'Accepted') ? `
-	                        <div class="ui-card" style="background: var(--card-bg); border: 1px solid var(--border); position: relative; overflow: hidden;">
-	                            <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--secondary);"></div>
-	                            <span class="ui-card-label" style="display: flex; justify-content: space-between; align-items: center;">
-	                                {{ _("Offer Expiry") }}
-	                                <span class="material-symbols-outlined" style="color: var(--secondary); font-size: 18px;">event</span>
-	                            </span>
-	                            <div id="expiry-timer-display" style="color: var(--text-1); font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-	                                -- : -- : --
-	                            </div>
-	                            <div style="color: var(--text-3); font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
-	                                <span class="material-symbols-outlined" style="font-size: 16px;">calendar_today</span> {{ _("Deadline") }}: <span style="color: var(--text-1);">${format_date_dd_mm_yyyy(offer.payment_deadline)}</span>
-	                            </div>
-	                        </div>
-	                    ` : ''}
+	                    ${(() => {
+                            let deadline_date = null;
+                            let deadline_label = '';
+                            if (offer.status === 'Issued' && offer.offer_acceptance_deadline) {
+                                deadline_date = offer.offer_acceptance_deadline;
+                                deadline_label = 'Offer Deadline';
+                            } else if (offer.status === 'Accepted' && offer.confirmation_fee_deadline) {
+                                deadline_date = offer.confirmation_fee_deadline;
+                                deadline_label = 'Confirmation Fee Deadline';
+                            } else if (offer.status === 'Confirmation Fee Paid' && offer.payment_deadline) {
+                                deadline_date = offer.payment_deadline;
+                                deadline_label = 'Full Fee Deadline';
+                            } else if ((offer.status === 'Issued' || offer.status === 'Accepted') && offer.payment_deadline) {
+                                // Fallback
+                                deadline_date = offer.payment_deadline;
+                                deadline_label = 'Admission Fee Deadline';
+                            }
+
+                            if (deadline_date) {
+                                return `
+                                <div class="ui-card" style="background: var(--card-bg); border: 1px solid var(--border); position: relative; overflow: hidden;">
+                                    <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--secondary);"></div>
+                                    <span class="ui-card-label" style="display: flex; justify-content: space-between; align-items: center;">
+                                        ${deadline_label}
+                                        <span class="material-symbols-outlined" style="color: var(--secondary); font-size: 18px;">event</span>
+                                    </span>
+                                    <div id="expiry-timer-display" data-deadline="${deadline_date}" data-label="${deadline_label}" style="color: var(--text-1); font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                        -- : -- : --
+                                    </div>
+                                    <div style="color: var(--text-3); font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);">
+                                        <span class="material-symbols-outlined" style="font-size: 16px;">calendar_today</span> {{ _("Deadline") }}: <span style="color: var(--text-1);">${format_date_dd_mm_yyyy(deadline_date)}</span>
+                                    </div>
+                                </div>
+                                `;
+                            }
+                            return '';
+                        })()}
 
 
 	${(() => {
@@ -892,6 +930,10 @@ _pc.mission_text) or '' %}
 	                                            {{ _("View Application") }}
 	                                        </a>
 	                                    </div>
+                                        <div class="payment-warning-box">
+                                            <span class="material-symbols-outlined pwb-icon">error</span>
+                                            <div class="pwb-text">{{ _("Please wait for the scholarship decision before paying your fees to ensure any approved benefits are deducted.") }}</div>
+                                        </div>
 	                                `;
 	                            } else if (sa.status === 'Approved') {
 	                                const benefit = parseFloat(sa.calculated_benefit || 0);
@@ -899,52 +941,53 @@ _pc.mission_text) or '' %}
 	                                const discount_percent = (benefit && original) ? Math.round((benefit / original) * 100) : 0;
 	                                return `
 	                                    <div class="scholarship-nudge-card approved">
-	                                        <div class="sn-header" style="margin-bottom: 4px;">
-	                                            <div class="sn-icon-wrap"><span class="material-symbols-outlined">school</span></div>
-	                                            <div class="sn-title" style="margin: 0;">{{ _("Scholarship Approved") }}</div>
-	                                        </div>
-	                                        <ul style="margin: 0 0 12px 36px; padding-left: 16px; color: var(--text-2); font-size: 12px; font-weight: 500; line-height: 1.6; list-style-type: disc !important;">
-	                                            <li style="display: list-item !important; list-style-type: disc !important;">{{ _("Discount") }}: ${discount_percent}% (${format_currency(benefit, currency)})</li>
-	                                            <li style="display: list-item !important; list-style-type: disc !important; font-weight: 600; color: var(--text-1); margin-top: 4px;">{{ _("Updated Fee") }}: ${format_currency(offer.payable_amount, currency)}</li>
-	                                        </ul>
-	                                    </div>
-	                                `;
-	                            } else if (sa.status === 'Rejected') {
-	                                return `
-	                                    <div class="scholarship-nudge-card rejected">
-	                                        <div class="sn-header">
-	                                            <div class="sn-icon-wrap"><span class="material-symbols-outlined">cancel</span></div>
-	                                            <div>
-	                                                <div class="sn-title">{{ _("Scholarship Application Unsuccessful") }}</div>
-	                                                <div class="sn-subtitle">{{ _("Your application was not approved. You can proceed with the standard fee payment.") }}</div>
-	                                            </div>
-	                                        </div>
-	                                    </div>
-	                                `;
-	                            }
-	                        } else if (data.available_scholarships_count > 0) {
-	                            const count_num = data.available_scholarships_count;
-	                            const num_words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
-	                            const count_word_lower = num_words[count_num] || count_num.toString();
-	                            return `
-	                                <div class="scholarship-nudge-card">
-	                                    <div class="sn-header" style="margin-bottom: 4px;">
-	                                        <div class="sn-icon-wrap"><span class="material-symbols-outlined">school</span></div>
-	                                        <div class="sn-title" style="margin: 0;">{{ _("Scholarship Opportunities") }}</div>
-	                                    </div>
-	                                    <ul style="margin: 0 0 12px 36px; padding-left: 16px; color: var(--text-2); font-size: 12px; font-weight: 500; line-height: 1.6; list-style-type: disc !important;">
+                                        <div class="sn-header">
+                                            <div class="sn-icon-wrap"><span class="material-symbols-outlined">check_circle</span></div>
+                                            <div>
+                                                <div class="sn-title" style="margin: 0;">{{ _("Scholarship Approved") }}</div>
+                                            </div>
+                                        </div>
+                                        <ul class="sn-subtitle pl-4 mb-0">
+                                            <li style="display: list-item !important; list-style-type: disc !important;">{{ _("Benefit of") }} <strong>${format_currency(sa.calculated_benefit, data.currency)}</strong> {{ _("has been applied.") }}</li>
+                                        </ul>
+                                    </div>`;
+                                } else if (sa.status === 'Rejected') {
+                                    return `
+                                    <div class="scholarship-nudge-card rejected">
+                                        <div class="sn-header">
+                                            <div class="sn-icon-wrap"><span class="material-symbols-outlined">cancel</span></div>
+                                            <div>
+                                                <div class="sn-title">{{ _("Scholarship Application Unsuccessful") }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="sn-subtitle mt-1">{{ _("You can still proceed with your admission by paying the standard fee.") }}</div>
+                                    </div>`;
+                                }
+                            } else if (data.available_scholarships_count > 0) {
+                                const count_num = data.available_scholarships_count;
+                                const numberWords = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+                                const count_word = count_num <= 10 ? numberWords[count_num] : count_num.toString();
+                                const count_word_lower = count_word;
+                                
+                                return `
+                                <div class="scholarship-nudge-card">
+                                    <div class="sn-header">
+                                        <div class="sn-icon-wrap"><span class="material-symbols-outlined">school</span></div>
+                                        <div>
+                                            <div class="sn-title" style="margin: 0;">{{ _("Scholarship Opportunities") }}</div>
+                                        </div>
+                                    </div>
+                                    <ul class="sn-subtitle pl-4 mb-2">
                                         <li style="display: list-item !important; list-style-type: disc !important;">{{ _("You are eligible to apply for") }} <strong>${count_word_lower}</strong> {{ _("scholarship") }}${count_num > 1 ? 's' : ''}.</li>
-                                        <li style="display: list-item !important; list-style-type: disc !important; font-weight:600; color:var(--text-1); margin-top: 4px;">{{ _("Apply now to reduce your course fee before payment.") }}</li>
                                     </ul>
-	                                    <a href="/merit-and-scholarship/scholarships" class="btn-sn-apply">
-	                                        {{ _("Apply for Scholarship") }}
-	                                        <span class="material-symbols-outlined" style="font-size: 16px; margin-left: 4px;">arrow_forward</span>
-	                                    </a>
-	                                </div>
-	                            `;
-	                        }
-	                        return '';
-	                    })()}
+                                    <a href="/merit-and-scholarship/scholarships" class="btn-sn-apply">
+                                        {{ _("Apply Now") }}
+                                    </a>
+                                </div>
+                                `;
+                            }
+                            return '';
+                        })()}
 
 	<div class="ui-card">
 	                        <span class="ui-card-label">{{ _("Fee Details") }}</span>
@@ -956,7 +999,7 @@ _pc.mission_text) or '' %}
 	                        `).join('')}
 
 	                        <div class="fee-row total">
-	                            <span>{{ _("Admission Fee") }}</span>
+	                            <span>{{ _("Total Fee") }}</span>
 	                            <span>${format_currency(offer.payable_amount, currency)}</span>
 	                        </div>
 	                    </div>
@@ -1003,18 +1046,38 @@ _pc.mission_text) or '' %}
 	                            </button>
 	                        ` : ''}
 
-	                        ${(offer.status === 'Accepted' && !is_fee_paid && online_payment_enabled) || (offer.status === 'Issued') ? `
-	                            <button class="btn btn-pay" style="width: auto; margin: 0; padding: 10px 24px; background: var(--primary);" onclick="handle_primary_action()" ${data.scholarship_application && data.scholarship_application.status === 'Submitted' ? 'disabled style="opacity: 0.6; cursor: not-allowed;"' : ''}>
-	                                <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">payment</span>
-	                                ${offer.status === 'Issued' ? '{{ _("Accept & Pay Fee") }}' : '{{ _("Pay Fee") }}'}
+	                        ${offer.status === 'Issued' ? `
+	                            <button class="btn btn-pay" style="width: auto; margin: 0; padding: 10px 24px; background: var(--primary);" onclick="handle_primary_action()">
+	                                <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">check_circle</span>
+	                                {{ _("Accept Offer") }}
 	                            </button>
 	                        ` : ''}
 
-	                        ${offer.status === 'Payment Completed' || is_fee_paid || (applicant && applicant.status === 'Fee Paid') ? `
+	                        ${offer.status === 'Accepted' && online_payment_enabled ? `
+	                            <button class="btn btn-pay" style="width: auto; margin: 0; padding: 10px 24px; background: var(--primary);" onclick="handle_primary_action()" ${data.scholarship_application && data.scholarship_application.status === 'Submitted' ? 'disabled style="opacity: 0.6; cursor: not-allowed;"' : ''}>
+	                                <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">payment</span>
+	                                {{ _("Pay Confirmation Fee") }}
+	                            </button>
+	                        ` : ''}
+
+	                        ${offer.status === 'Confirmation Fee Paid' && online_payment_enabled ? `
+	                            <button class="btn btn-pay" style="width: auto; margin: 0; padding: 10px 24px; background: var(--primary);" onclick="handle_primary_action()">
+	                                <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">payment</span>
+	                                {{ _("Pay Full Fee") }}
+	                            </button>
+	                        ` : ''}
+
+	                        ${(data.receipts && data.receipts.length > 0) ? 
+	                            data.receipts.map(r => `
+	                                <button class="btn btn-pay" style="width: auto; margin: 0; margin-bottom: 8px; padding: 10px 24px;" title="Download ${r.fee_type || 'Fee'} Receipt" onclick="window.open('/api/method/frappe.utils.print_format.download_pdf?doctype=Applicant+Payment+Receipt&name=${r.name}&format=Applicant+Payment+Receipt&no_letterhead=0&letterhead=No+Letterhead&settings=%7B%7D&_lang=en', '_blank')">
+	                                    <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">receipt</span> {{ _("") }} ${r.fee_type || 'Fee'} {{ _("Receipt") }}
+	                                </button>
+	                            `).join('') 
+	                        : (['Payment Completed', 'Full Fee Paid'].includes(offer.status) || is_fee_paid || (applicant && ['Confirmation Fee Paid', 'Full Fee Paid'].includes(applicant.status)) ? `
 	                            <button class="btn btn-pay" style="width: auto; margin: 0; padding: 10px 24px;" title="Download Receipt" onclick="handle_download_receipt()">
 	                                <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 6px; vertical-align: middle;">receipt</span> {{ _("Download Receipt") }}
 	                            </button>
-	                        ` : ''}
+	                        ` : '')}
 	                    </div>
 
 	                    ${(offer.status === 'Accepted' && !is_fee_paid && online_payment_enabled) || (offer.status === 'Issued') ? `
@@ -1027,18 +1090,11 @@ _pc.mission_text) or '' %}
 	                            </div>
 	                        ` : ''}
 	                    ` : ''}
-
-	                    <div class="ui-card" style="padding: 0;">
-	                        <div class="preview-header px-4 pt-4" style="border-bottom: 1px solid #f1f5f9; padding-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
-	                            <h5 style="margin: 0;"><span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 8px; color: var(--primary);">description</span>{{ _("Offer Letter Preview") }}</h5>
-	                        </div>
-
-	                        <div class="p-4" style="background: #f8fafc; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
-	                            <div class="letter-container" style="box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); background: white; width: 100%; height: 800px;">
-	                                <div class="letter-content" style="width: 100%; height: 100%;">
-	                                    ${rendered_content ? `<iframe id="offer-letter-iframe" style="width: 100%; height: 100%; border: none;"></iframe>` : '<div class="text-center text-muted p-5"><span class="material-symbols-outlined" style="font-size: 48px; color: #cbd5e1; margin-bottom: 16px; display: block;">visibility_off</span><br>{{ _("No preview available") }}</div>'}
-	                                </div>
-	                            </div>
+								
+	                    <div class="letter-container" style="box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); background: white; width: 100%; height: 800px;">
+							<h5 style="margin: 0;"><span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 8px; color: var(--primary);">description</span>{{ _("Offer Letter Preview") }}</h5>
+	                        <div class="letter-content" style="width: 100%; height: 100%;">
+	                            ${rendered_content ? `<iframe id="offer-letter-iframe" style="width: 100%; height: 100%; border: none;"></iframe>` : '<div class="text-center text-muted p-5"><span class="material-symbols-outlined" style="font-size: 48px; color: #cbd5e1; margin-bottom: 16px; display: block;">visibility_off</span><br>{{ _("No preview available") }}</div>'}
 	                        </div>
 	                    </div>
 	                </div>
@@ -1055,8 +1111,9 @@ _pc.mission_text) or '' %}
 	            }
 	        }
 	        
-	        if (offer.payment_deadline && (offer.status === 'Issued' || offer.status === 'Accepted')) {
-	            start_expiry_timer(offer.payment_deadline);
+	        const timer_element = document.getElementById('expiry-timer-display');
+	        if (timer_element) {
+	            start_expiry_timer(timer_element.dataset.deadline, timer_element.dataset.label);
 	        }
 	    }
 
@@ -1127,7 +1184,7 @@ _pc.mission_text) or '' %}
 	                // Re-fetch offer details so UI updates immediately: Accepted status (hides Reject button)
 	                // and fee breakdown with scholarship applied, without requiring a manual refresh.
 	                const offer_name = cur_offer_data.offer.name;
-	                const fresh = await apiFetch('slcm.admission.page.applicant_offer_lett.applicant_offer_lett.get_offer_details', { offer_name: offer_name });
+	                const fresh = await apiFetch('slcm.api.service.offer_service.get_offer_details', { offer_name: offer_name });
 	                if (fresh && !fresh.error) {
 	                    cur_offer_data = fresh;
 	                    render_offer_detail(fresh);
@@ -1165,7 +1222,7 @@ _pc.mission_text) or '' %}
 	        let fee_html = `
 	            <div class="text-center mb-4">
 	                <div style="font-size: 2.5rem; font-weight: 800; color: var(--primary);">${format_currency(offer.payable_amount, currency)}</div>
-	                <div class="text-muted small font-weight-bold" style="letter-spacing: 0.05em;">{{ _("Total Admission Fee") }}</div>
+	                <div class="text-muted small font-weight-bold" style="letter-spacing: 0.05em;">{{ _("Total Fee") }}</div>
 	            </div>
 
 	            <div class="mt-4 pt-2">
@@ -1208,13 +1265,22 @@ _pc.mission_text) or '' %}
 	            const data = await apiFetch('slcm.api.service.offer_service.create_offer_razorpay_order', { offer_name: cur_offer_data.offer.name });
 	            hide_processing();
 	            if (data) {
-	                open_razorpay_modal(data);
+	                if (data.zero_amount) {
+	                    show_success({
+	                        title: "{{ _('Payment Completed!') }}",
+	                        message: data.message || "{{ _('Your fee payment has been recorded successfully.') }}"
+	                    });
+	                    setTimeout(() => window.location.reload(), 1500);
+	                } else {
+	                    open_razorpay_modal(data);
+	                }
 	            }
 	        } catch (e) {
 	            hide_processing();
 	            showToast(e.message, "error");
 	        }
 	    }
+
 
 	    function open_razorpay_modal(data) {
 	        const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || "#1a202c";

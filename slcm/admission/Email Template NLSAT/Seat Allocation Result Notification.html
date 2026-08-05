@@ -106,7 +106,7 @@
               </tr>
             </table>
 
-            {% if doc.selection_status == "Fee Paid" %}
+            {% if doc.selection_status in ["Confirmation Fee Paid", "Full Fee Paid"] %}
             <div style="background-color: #f9f9f9; padding: 20px; border-radius: 4px; margin-bottom: 25px; border: 1px solid #eeeeee;">
                 <p style="margin: 0 0 6px; font-size: 14px; font-weight: 700; color: #166534">✅ Admission Confirmed</p>
                 <p style="margin: 0; font-size: 13px; color: #166534; line-height: 1.7">

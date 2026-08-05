@@ -33,7 +33,7 @@ frappe.query_reports["Campus and Program Admissions Funnel"] = {
             "Offer Accepted": 0,
             "Offer Declined": 0,
             "Offer Expired": 0,
-            "Fee Paid": 0
+            "Confirmation Fee Paid": 0,
         };
 
         result.forEach(row => {
