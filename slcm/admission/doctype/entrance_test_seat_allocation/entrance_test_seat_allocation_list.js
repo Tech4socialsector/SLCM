@@ -1395,66 +1395,37 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
                 return;
             }
 
-            const confirm_dialog = new frappe.ui.Dialog({
-                title: __('Confirm Re-allocation'),
-                size: "large",
-                fields: [
-                    {
-                        fieldtype: "HTML",
-                        fieldname: "confirm_html",
-                        options: `
-                            <div style="background:#f8fafc; border:1.5px solid #cbd5e1; border-radius:10px; padding:14px 18px; margin-bottom:16px;">
-                                <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-                                    <span style="font-size:15px; font-weight:700; color:#1e293b;">
-                                        Confirm Re-allocation Process
-                                    </span>
-                                    <span style="font-size:11px; background:#e0e7ff; color:#3730a3; padding:2px 8px; border-radius:4px; font-weight:600; margin-left:auto;">
-                                        ${values.allocation_type}
-                                    </span>
-                                </div>
-                                <div style="display:flex; gap:24px; flex-wrap:wrap; font-size:13px; color:#334155;">
-                                    <div>
-                                        <span style="font-weight:600;">Total Applicants Selected:</span>
-                                        <span style="font-weight:700; color:#1e40af; font-size:14px; margin-left:4px;">${selected_applicants.length}</span>
-                                    </div>
-                                    <div>
-                                        <span style="font-weight:600;">Centres Selected:</span>
-                                        <span style="font-weight:700; color:#6d28d9; font-size:14px; margin-left:4px;">${selected_providers_array.length}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div style="background:#fff7ed; border:1px solid #ffedd5; padding:10px 14px; border-radius:8px; font-size:12px; color:#9a3412;">
-                                <b>Note:</b> This will update the existing allocation records to reflect the new centre(s). The old centre capacity will be restored.
-                            </div>
-                        `
+            if (values.allocation_type === "Allocate Directly" && selected_providers_array.length) {
+                const selected_provider = all_providers.find(p => p.name === selected_providers_array[0]);
+                if (selected_provider) {
+                    const same_centre_applicants = applicants.filter(a => 
+                        selected_applicant_names.has(a.name) && a.center_name === selected_provider.center_name
+                    );
+                    if (same_centre_applicants.length > 0) {
+                        frappe.show_alert({
+                            message: __('Cannot allocate to the same centre again for some applicants (e.g., {0}).', [same_centre_applicants[0].candidate_name]),
+                            indicator: 'orange'
+                        });
+                        return;
                     }
-                ],
-                primary_action_label: __('Confirm & Re-allocate'),
-                primary_action: function () {
-                    confirm_dialog.hide();
-                    frappe.call({
-                        method: 'slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.reject_and_allocate_applicants',
-                        args: {
-                            applicants: selected_applicants,
-                            providers: selected_providers_array
-                        },
-                        freeze: true,
-                        freeze_message: __('Re-allocating...'),
-                        callback: function (r) {
-                            if (!r.exc) {
-                                d.hide();
-                                listview.refresh();
-                                frappe.show_alert({ message: __('Successfully re-allocated {0} applicants.', [selected_applicants.length]), indicator: 'green' });
-                            }
-                        }
-                    });
+                }
+            }
+
+            frappe.call({
+                method: "slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.check_reallocation_seat_availability",
+                args: {
+                    selected_applicants: selected_applicants,
+                    providers: selected_providers_array,
+                    allocation_type: values.allocation_type
                 },
-                secondary_action_label: __("Cancel"),
-                secondary_action: function () {
-                    confirm_dialog.hide();
+                freeze: true,
+                freeze_message: __("Analyzing Allocation Scenario..."),
+                callback: function (r) {
+                    if (!r.exc && r.message) {
+                        _show_reallocation_confirmation(d, listview, r.message, selected_providers_array, selected_applicants, values.allocation_type);
+                    }
                 }
             });
-            confirm_dialog.show();
         }
     });
 
@@ -1630,4 +1601,334 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
     }
 
     fetch_applicants();
+}
+
+
+function _show_reallocation_confirmation(parent_dialog, listview, result, selected_providers, selected_applicants, allocation_type) {
+    const total = result.total_selected || 0;
+    const total_avail = result.effective_total_available != null ? result.effective_total_available : (result.total_available_seats || 0);
+    const breakdown = result.programme_breakdown || [];
+    const centres = result.centre_details || [];
+    const has_shortage = result.has_programme_shortage || false;
+    const overall_sufficient = result.overall_sufficient || false;
+    const total_pwd = result.total_pwd || 0;
+    const has_pwd_centre = result.has_pwd_centre || false;
+    const pwd_conflict = result.pwd_conflict || false;
+    const pwd_applicants = result.pwd_applicants || [];
+    const is_direct = allocation_type === "Allocate Directly";
+
+    // Build the summary header
+    const has_issues = !overall_sufficient || pwd_conflict;
+    const overall_color = has_issues ? "#dc2626" : "#16a34a";
+    const overall_bg = has_issues ? "#fef2f2" : "#f0fdf4";
+    const overall_border = has_issues ? "#fecaca" : "#bbf7d0";
+    const status_msg = !overall_sufficient ? 'Seat Shortage Detected' : pwd_conflict ? 'PWD Accessibility Conflict Detected' : 'Seats Available — Ready to Allocate';
+
+    let pwd_summary = '';
+    if (total_pwd > 0) {
+        pwd_summary = `
+                <div>
+                    <span style="font-weight:600;">♿ PWD Applicants:</span>
+                    <span style="font-weight:700; color:${pwd_conflict ? '#dc2626' : '#0f766e'}; font-size:14px; margin-left:4px;">${total_pwd}</span>
+                    ${pwd_conflict ? '<span style="font-size:11px; background:#fee2e2; color:#991b1b; padding:2px 6px; border-radius:4px; margin-left:6px; font-weight:600;">No PWD Centre Selected!</span>' : ''}
+                </div>`;
+    }
+
+    // For "Allocate Directly" show the actual centre name; for multi-centre show count
+    let centre_info_html = '';
+    let avail_label = '';
+    if (is_direct && centres.length === 1) {
+        const c = centres[0];
+        const pwd_tag = c.pwd_accessible ? '<span style="font-size:9px; background:#dbeafe; color:#1e40af; padding:1px 5px; border-radius:3px; margin-left:4px; font-weight:600;">♿ PWD</span>' : '';
+        centre_info_html = `
+                <div>
+                    <span style="font-weight:600;">Selected Centre:</span>
+                    <span style="font-weight:700; color:#6d28d9; font-size:13px; margin-left:4px;">${c.center_name}</span>${pwd_tag}
+                </div>`;
+        avail_label = `Available Seats at ${c.center_name}:`;
+    } else {
+        centre_info_html = `
+                <div>
+                    <span style="font-weight:600;">Centres Selected:</span>
+                    <span style="font-weight:700; color:#6d28d9; font-size:14px; margin-left:4px;">${centres.length}</span>
+                </div>`;
+        avail_label = `Total Available Seats (All Centres):`;
+    }
+
+    let summary_html = `
+        <div style="background:${overall_bg}; border:1.5px solid ${overall_border}; border-radius:10px; padding:14px 18px; margin-bottom:16px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                <span style="font-size:15px; font-weight:700; color:${overall_color};">
+                    ${status_msg}
+                </span>
+                <span style="font-size:11px; background:#e0e7ff; color:#3730a3; padding:2px 8px; border-radius:4px; font-weight:600; margin-left:auto;">
+                    ${is_direct ? 'Allocate Directly' : 'Allow Applicant Selection'}
+                </span>
+            </div>
+            <div style="display:flex; gap:24px; flex-wrap:wrap; font-size:13px; color:#334155;">
+                <div>
+                    <span style="font-weight:600;">Total Applicants Selected:</span>
+                    <span style="font-weight:700; color:#1e40af; font-size:14px; margin-left:4px;">${total}</span>
+                </div>
+                <div>
+                    <span style="font-weight:600;">${avail_label}</span>
+                    <span style="font-weight:700; color:${total_avail >= total ? '#16a34a' : '#dc2626'}; font-size:14px; margin-left:4px;">${total_avail}</span>
+                </div>
+                ${centre_info_html}
+                ${pwd_summary}
+            </div>
+        </div>
+    `;
+
+    // Build programme-wise breakdown table
+    let programme_rows = "";
+    breakdown.forEach(prog => {
+        const status_bg = prog.sufficient ? "#dcfce7" : "#fee2e2";
+        const status_color = prog.sufficient ? "#166534" : "#991b1b";
+        const status_text = prog.sufficient ? "Sufficient" : `Shortage: ${prog.shortage}`;
+
+        // Build centre-wise availability cells
+        let centre_cells = "";
+        centres.forEach(cd => {
+            const prog_cd = (prog.centre_details || []).find(c => c.center_name === cd.center_name);
+            if (prog_cd) {
+                const avail_color = prog_cd.available > 0 ? "#16a34a" : "#dc2626";
+                centre_cells += `
+                    <td class="centre-cell-click" data-center-id="${cd.provider}" style="text-align:center; padding:8px 10px; border-bottom:1px solid #e2e8f0; font-size:12px; vertical-align:middle; cursor:pointer;" title="Click to view centre details">
+                        <span style="font-weight:700; color:${avail_color};">${prog_cd.available}</span>
+                        <span style="color:#94a3b8; font-size:10px;"> / ${prog_cd.capacity}</span>
+                    </td>
+                `;
+            } else {
+                centre_cells += `
+                    <td class="centre-cell-click" data-center-id="${cd.provider}" style="text-align:center; padding:8px 10px; border-bottom:1px solid #e2e8f0; font-size:12px; color:#94a3b8; vertical-align:middle; cursor:pointer;" title="Click to view centre details">
+                        —
+                    </td>
+                `;
+            }
+        });
+
+        programme_rows += `
+            <tr>
+                <td style="padding:8px 12px; font-weight:600; color:#1e293b; border-bottom:1px solid #e2e8f0; font-size:13px; vertical-align:middle; white-space:nowrap;">
+                    ${prog.programme}
+                    ${(prog.pwd_count || 0) > 0 ? `<span style="font-size:10px; background:#fef3c7; color:#92400e; padding:1px 5px; border-radius:4px; margin-left:4px; border:1px solid #fde68a; font-weight:700;">♿ ${prog.pwd_count} PWD</span>` : ''}
+                </td>
+                <td style="text-align:center; padding:8px 10px; font-weight:700; color:#1e40af; border-bottom:1px solid #e2e8f0; font-size:14px; vertical-align:middle;">
+                    ${prog.applicant_count}
+                </td>
+                ${centre_cells}
+                <td style="text-align:center; padding:8px 10px; font-weight:700; color:#0f766e; border-bottom:1px solid #e2e8f0; font-size:13px; vertical-align:middle;">
+                    ${prog.total_available}
+                </td>
+                <td style="text-align:center; padding:6px 10px; border-bottom:1px solid #e2e8f0; vertical-align:middle;">
+                    <span style="display:inline-block; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:700; background:${status_bg}; color:${status_color};">
+                        ${status_text}
+                    </span>
+                </td>
+            </tr>
+        `;
+    });
+
+    // Centre column headers
+    let centre_headers = "";
+    centres.forEach(cd => {
+        const pwd_badge = cd.pwd_accessible ? `<span style="font-size:9px; background:#dbeafe; color:#1e40af; padding:1px 4px; border-radius:3px; margin-left:3px;">♿</span>` : "";
+        const name = cd.center_name.length > 18 ? cd.center_name.substring(0, 18) + "…" : cd.center_name;
+        centre_headers += `
+            <th class="centre-cell-click" data-center-id="${cd.provider}" style="text-align:center; padding:10px 8px; font-weight:600; color:#475569; font-size:11px; border-bottom:2px solid #cbd5e1; white-space:nowrap; vertical-align:middle; cursor:pointer;" title="Click to view ${cd.center_name} details">
+                ${name}${pwd_badge}
+                <div style="font-size:10px; color:#94a3b8; font-weight:400; margin-top:2px;">
+                    Avail / Total
+                </div>
+            </th>
+        `;
+    });
+
+    let table_html = `
+        <div style="margin-bottom:12px;">
+            <div style="font-weight:700; font-size:14px; color:#1e293b; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+                Programme-wise Allocation Breakdown
+            </div>
+            <div style="border:1px solid #e2e8f0; border-radius:10px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+                <div style="overflow-x:auto;">
+                    <table style="width:100%; border-collapse:collapse; font-size:13px; min-width:600px;">
+                        <thead>
+                            <tr style="background:linear-gradient(135deg, #f8fafc, #f1f5f9);">
+                                <th style="text-align:left; padding:10px 12px; font-weight:700; color:#1e293b; font-size:12px; border-bottom:2px solid #cbd5e1; vertical-align:middle;">
+                                    Programme
+                                </th>
+                                <th style="text-align:center; padding:10px 8px; font-weight:700; color:#1e40af; font-size:12px; border-bottom:2px solid #cbd5e1; white-space:nowrap; vertical-align:middle;">
+                                    Applicants
+                                </th>
+                                ${centre_headers}
+                                <th style="text-align:center; padding:10px 8px; font-weight:700; color:#0f766e; font-size:12px; border-bottom:2px solid #cbd5e1; white-space:nowrap; vertical-align:middle;">
+                                    Total Avail
+                                </th>
+                                <th style="text-align:center; padding:10px 8px; font-weight:700; color:#475569; font-size:12px; border-bottom:2px solid #cbd5e1; vertical-align:middle;">
+                                    Status
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${programme_rows}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+
+    let centre_summary_html = `
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; margin-top:4px;">
+            <div style="font-weight:600; font-size:12px; color:#475569; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                <span>Centre Summary</span>
+                <span class="show-all-centres" style="display:none; color:#2563eb; cursor:pointer; font-size:11px; font-weight:700; text-decoration:underline;">Show All Centres</span>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    `;
+    centres.forEach(cd => {
+        const avail_pct = cd.total_capacity > 0 ? Math.round((cd.available_capacity / cd.total_capacity) * 100) : 0;
+        const bar_color = avail_pct > 50 ? "#22c55e" : avail_pct > 20 ? "#eab308" : "#ef4444";
+        
+        let prog_details_html = '';
+        if (cd.programme_capacities && Object.keys(cd.programme_capacities).length > 0) {
+            prog_details_html = `<div style="margin-top:8px; border-top:1px dashed #e2e8f0; padding-top:6px;">`;
+            for (const [prog_name, caps] of Object.entries(cd.programme_capacities)) {
+                prog_details_html += `
+                    <div style="display:flex; justify-content:space-between; font-size:10px; color:#475569; margin-bottom:3px;">
+                        <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:75%;" title="${prog_name}">${prog_name}</span>
+                        <span style="font-weight:600;"><span style="color:${caps.available > 0 ? '#16a34a' : '#dc2626'};">${caps.available}</span> <span style="color:#94a3b8; font-weight:400;">/ ${caps.capacity}</span></span>
+                    </div>
+                `;
+            }
+            prog_details_html += `</div>`;
+        }
+
+        centre_summary_html += `
+            <div class="centre-summary-card" data-center-id="${cd.provider}" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:8px 12px; min-width:180px; flex:1;">
+                <div style="font-weight:600; font-size:12px; color:#1e293b; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${cd.center_name}">
+                    ${cd.center_name}
+                    ${cd.pwd_accessible ? '<span style="font-size:9px; background:#dbeafe; color:#1e40af; padding:1px 4px; border-radius:3px; margin-left:3px;">♿ PWD</span>' : '<span style="font-size:9px; background:#fee2e2; color:#991b1b; padding:1px 4px; border-radius:3px; margin-left:3px;">No PWD</span>'}
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:11px; color:#64748b; margin-bottom:3px;">
+                    <span>Overall Avail: <b style="color:${bar_color};">${cd.available_capacity}</b></span>
+                    <span>Total: <b>${cd.total_capacity}</b></span>
+                </div>
+                <div style="height:5px; background:#e2e8f0; border-radius:3px; overflow:hidden;">
+                    <div style="height:100%; width:${avail_pct}%; background:${bar_color}; border-radius:3px; transition:width 0.3s;"></div>
+                </div>
+                ${prog_details_html}
+            </div>
+        `;
+    });
+    centre_summary_html += `</div></div>`;
+
+    // Warning notes
+    let warning_html = "";
+    if (has_shortage) {
+        const shortage_msg = is_direct
+            ? 'Some programmes have more applicants than available seats. These applicants <b>will not be allocated</b> and will appear in the unallocated list.'
+            : 'Some programmes have more applicants than available seats. Applicants will still be assigned preferences, but they may not find available seats when they choose their preferred centre.';
+        warning_html += `
+            <div style="background:#fef3c7; border:1px solid #fde68a; border-radius:8px; padding:10px 14px; margin-top:10px; font-size:12px; color:#92400e;">
+                <b>Seat Shortage:</b> ${shortage_msg}
+            </div>
+        `;
+    }
+    if (pwd_conflict) {
+        let pwd_list_html = pwd_applicants.map(p => `<li><b>${p.name}</b> (${p.applicant_id}) — ${p.programme}</li>`).join('');
+        warning_html += `
+            <div style="background:#fee2e2; border:1px solid #fecaca; border-radius:8px; padding:10px 14px; margin-top:10px; font-size:12px; color:#991b1b;">
+                <b>♿ PWD Conflict:</b> The following <b>${total_pwd}</b> PWD applicant(s) are selected but <b>none of the chosen centres</b> have PWD accessibility:
+                <ul style="margin:6px 0 0 16px; padding:0; list-style-type:disc;">${pwd_list_html}</ul>
+                ${is_direct ? '<div style="margin-top:6px; font-weight:700;">These applicants will NOT be allocated and will appear as unallocated.</div>' : '<div style="margin-top:6px; font-weight:700;">These applicants will still receive preferences but may face accessibility issues.</div>'}
+            </div>
+        `;
+    } else if (total_pwd > 0 && has_pwd_centre) {
+        warning_html += `
+            <div style="background:#dcfce7; border:1px solid #bbf7d0; border-radius:8px; padding:10px 14px; margin-top:10px; font-size:12px; color:#166534;">
+                <b>♿ PWD Status:</b> ${total_pwd} PWD applicant(s) found. PWD-accessible centre(s) are available among the selected centres.
+            </div>
+        `;
+    }
+
+    const dialog_title = is_direct ? __("Confirm Re-allocation — Allocate Directly") : __("Confirm Re-allocation — Allow Applicant Selection");
+    const btn_label = is_direct ? __("Confirm & Re-allocate") : __("Allocate Centre");
+
+    const confirm_dialog = new frappe.ui.Dialog({
+        title: dialog_title,
+        size: "extra-large",
+        fields: [
+            {
+                fieldtype: "HTML",
+                fieldname: "confirmation_content",
+                options: `
+                    <div style="font-family:inherit;">
+                        ${summary_html}
+                        ${table_html}
+                        ${centre_summary_html}
+                        ${warning_html}
+                    </div>
+                `
+            }
+        ],
+        primary_action_label: btn_label,
+        primary_action: function () {
+            confirm_dialog.hide();
+            frappe.call({
+                method: 'slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.reject_and_allocate_applicants',
+                args: {
+                    applicants: selected_applicants,
+                    providers: selected_providers
+                },
+                freeze: true,
+                freeze_message: __('Re-allocating...'),
+                callback: function (r) {
+                    if (!r.exc) {
+                        parent_dialog.hide();
+                        listview.refresh();
+                        frappe.show_alert({ message: __('Successfully re-allocated {0} applicants.', [selected_applicants.length]), indicator: 'green' });
+                    }
+                }
+            });
+        },
+        secondary_action_label: __("Cancel"),
+        secondary_action: function () {
+            confirm_dialog.hide();
+        }
+    });
+
+    confirm_dialog.$wrapper.find(".modal-dialog").css("max-width", "900px");
+    confirm_dialog.show();
+
+    setTimeout(() => {
+        const $wrapper = confirm_dialog.$wrapper;
+        
+        $wrapper.find(".centre-cell-click").on("click", function() {
+            const provider = $(this).attr("data-center-id");
+            if (!provider) return;
+            
+            $wrapper.find(".centre-cell-click").css("background", "transparent");
+            $(this).css("background", "#fef9c3").delay(500).queue(function(next) {
+                $(this).css("background", "transparent");
+                next();
+            });
+
+            $wrapper.find(".centre-summary-card").hide();
+            $wrapper.find(`.centre-summary-card[data-center-id="${provider}"]`).show();
+            
+            $wrapper.find(".show-all-centres").show();
+        });
+
+        $wrapper.find(".show-all-centres").on("click", function() {
+            $wrapper.find(".centre-summary-card").show();
+            $(this).hide();
+        });
+        
+        $wrapper.find(".centre-cell-click").hover(
+            function() { $(this).css("background-color", "#f1f5f9"); },
+            function() { $(this).css("background-color", "transparent"); }
+        );
+    }, 100);
 }

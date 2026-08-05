@@ -894,6 +894,14 @@ def reject_and_allocate_applicants(applicants, providers):
 
         # 1. Update the existing record directly (no new record creation)
         old_provider = doc.entrance_test_provider
+        pdoc = provider_docs[0]
+        
+        if old_provider == pdoc.name:
+            continue
+            
+        pdoc.reload()
+        if pdoc.available_capacity <= 0:
+            frappe.throw(_("Not enough available capacity in {0} to allocate {1}.").format(pdoc.center_name, doc.candidate_name))
         
         # Revert old provider capacity if one existed
         if old_provider:
@@ -920,7 +928,6 @@ def reject_and_allocate_applicants(applicants, providers):
         doc.entrance_test_result_card = None
 
         # Assign first provider (direct allocation)
-        pdoc = provider_docs[0]
         doc.entrance_test_provider = pdoc.name
         doc.center_name = pdoc.center_name
         doc.center_address = pdoc.center_address
@@ -966,3 +973,153 @@ def reject_and_allocate_applicants(applicants, providers):
 
     frappe.db.commit()
     return count
+
+import json
+import frappe
+from frappe import _
+
+@frappe.whitelist()
+def check_reallocation_seat_availability(providers, selected_applicants, allocation_type=None):
+    if isinstance(providers, str):
+        providers = json.loads(providers)
+    if isinstance(selected_applicants, str):
+        selected_applicants = json.loads(selected_applicants)
+
+    if not providers or not selected_applicants:
+        return {"can_allocate": False, "error": "No providers or applicants selected."}
+
+    if not allocation_type:
+        allocation_type = "Allocate Directly"
+
+    programme_counts = {}
+    programme_pwd_counts = {}
+    total_selected = 0
+    total_pwd = 0
+    pwd_applicants = []
+
+    allocations = frappe.get_all("Entrance Test Seat Allocation", 
+                                 filters={"name": ["in", selected_applicants]}, 
+                                 fields=["name", "candidate_name", "applicant", "program", "pwd"])
+
+    for alloc in allocations:
+        total_selected += 1
+        prog = alloc.program or "Unspecified"
+        programme_counts[prog] = programme_counts.get(prog, 0) + 1
+
+        app_pwd = 0
+        if alloc.pwd == 1:
+            app_pwd = 1
+        elif alloc.applicant:
+            try:
+                pwd_val = frappe.db.get_value("Applicant", alloc.applicant, "pwd") or ""
+                if str(pwd_val).strip().lower() == "yes":
+                    app_pwd = 1
+            except Exception:
+                pass
+
+        if app_pwd:
+            total_pwd += 1
+            programme_pwd_counts[prog] = programme_pwd_counts.get(prog, 0) + 1
+            pwd_applicants.append({
+                "name": alloc.candidate_name or "Unknown",
+                "applicant_id": alloc.applicant,
+                "programme": prog
+            })
+
+    if total_selected == 0:
+        return {"can_allocate": False, "error": "No applicants found."}
+
+    centre_details = []
+    total_available = 0
+    has_pwd_centre = False
+
+    for pname in providers:
+        try:
+            pdoc = frappe.get_doc("Entrance Test Provider", pname)
+        except Exception:
+            continue
+
+        avail = pdoc.available_capacity or 0
+        total_available += avail
+
+        is_pwd_accessible = getattr(pdoc, "pwd_accessible", 0) == 1
+        if is_pwd_accessible:
+            has_pwd_centre = True
+
+        centre_prog_caps = {}
+        if hasattr(pdoc, "programme_capacity") and pdoc.programme_capacity:
+            for row in pdoc.programme_capacity:
+                prog_avail = max(0, (row.capacity or 0) - (row.reserved_seats or 0))
+                centre_prog_caps[row.program] = {
+                    "capacity": row.capacity or 0,
+                    "reserved": row.reserved_seats or 0,
+                    "available": prog_avail
+                }
+
+        centre_details.append({
+            "provider": pname,
+            "center_name": pdoc.center_name or pname,
+            "total_capacity": pdoc.total_capacity or 0,
+            "reserved_seats": pdoc.reserved_seats or 0,
+            "available_capacity": avail,
+            "pwd_accessible": 1 if is_pwd_accessible else 0,
+            "programme_capacities": centre_prog_caps
+        })
+
+    programme_breakdown = []
+    has_shortage = False
+    for prog, count in sorted(programme_counts.items()):
+        prog_total_available = 0
+        centre_avails = []
+        for cd in centre_details:
+            prog_caps = cd["programme_capacities"]
+            if prog in prog_caps:
+                prog_total_available += prog_caps[prog]["available"]
+                centre_avails.append({
+                    "center_name": cd["center_name"],
+                    "available": prog_caps[prog]["available"],
+                    "capacity": prog_caps[prog]["capacity"],
+                    "reserved": prog_caps[prog]["reserved"]
+                })
+            else:
+                centre_avails.append({
+                    "center_name": cd["center_name"],
+                    "available": cd["available_capacity"],
+                    "capacity": cd["total_capacity"],
+                    "reserved": cd["reserved_seats"]
+                })
+                prog_total_available += cd["available_capacity"]
+
+        shortage = max(0, count - prog_total_available)
+        if shortage > 0:
+            has_shortage = True
+
+        programme_breakdown.append({
+            "programme": prog,
+            "applicant_count": count,
+            "pwd_count": programme_pwd_counts.get(prog, 0),
+            "total_available": prog_total_available,
+            "shortage": shortage,
+            "sufficient": shortage == 0,
+            "centre_details": centre_avails
+        })
+
+    effective_total_available = sum(p["total_available"] for p in programme_breakdown)
+    pwd_conflict = total_pwd > 0 and not has_pwd_centre
+
+    return {
+        "can_allocate": True,
+        "allocation_type": allocation_type,
+        "total_selected": total_selected,
+        "total_available_seats": total_available,
+        "effective_total_available": effective_total_available,
+        "overall_sufficient": effective_total_available >= total_selected,
+        "has_programme_shortage": has_shortage,
+        "programme_breakdown": programme_breakdown,
+        "centre_details": centre_details,
+        "total_pwd": total_pwd,
+        "has_pwd_centre": has_pwd_centre,
+        "pwd_conflict": pwd_conflict,
+        "pwd_applicants": pwd_applicants
+    }
+
