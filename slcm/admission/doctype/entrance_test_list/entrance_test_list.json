@@ -8,11 +8,11 @@
   "academic_year",
   "campus",
   "admission_cycle",
-  "entrance_test_city",
   "column_break_hvlg",
   "program_level",
   "program",
   "generated_on",
+  "entrance_test_city",
   "status",
   "section_break_rfvo",
   "entrance_test_applicant"
@@ -47,6 +47,7 @@
   {
    "fieldname": "program_level",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Programme Level",
    "options": "Undergraduate\nPostgraduate\nResearch Course"
   },
@@ -54,8 +55,10 @@
    "depends_on": "program_level",
    "fieldname": "program",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Programme",
-   "options": "Programme"
+   "options": "Programme",
+   "read_only": 1
   },
   {
    "fieldname": "generated_on",
@@ -86,7 +89,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-03 16:35:00.000000",
+ "modified": "2026-08-05 14:49:26.834795",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test List",

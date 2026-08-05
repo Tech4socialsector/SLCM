@@ -929,13 +929,16 @@ def get_context(context):
                 context.et_preferences = []
                 prefs = et_doc.re_assigned_preferences if context.et_is_rescheduled else et_doc.assigned_preferences
                 for p in prefs:
-                    loc = frappe.db.get_value("Entrance Test Provider", p.provider, "location")
+                    provider_info = frappe.db.get_value("Entrance Test Provider", p.provider, ["location", "pwd_accessible"], as_dict=True) or {}
                     context.et_preferences.append({
                         "provider": p.provider,
                         "center_name": p.center_name,
                         "center_address": p.center_address,
-                        "location": loc
+                        "location": provider_info.get("location"),
+                        "pwd_accessible": provider_info.get("pwd_accessible")
                     })
+                
+                context.et_is_pwd = getattr(applicant, "pwd", None) == "Yes"
                 
                 # Fetch location for the currently allocated center
                 current_provider = et_doc.re_entrance_test_provider if context.et_is_rescheduled else et_doc.entrance_test_provider
