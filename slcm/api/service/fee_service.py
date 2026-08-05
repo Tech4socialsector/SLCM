@@ -59,7 +59,6 @@ class FeeService:
             if doc.payment_deadline != new_deadline:
                 doc.payment_deadline = new_deadline
                 doc.ignore_lock = True
-                doc.edit_reason = _("Bulk extension due to Fee Structure ({0}) update.").format(fee_structure_name)
                 doc.add_comment("Comment", _("Payment deadline automatically syncronized to {0} due to Fee Structure update.").format(
                     frappe.utils.format_datetime(new_deadline)
                 ))

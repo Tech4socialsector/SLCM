@@ -426,8 +426,6 @@ class OfferService:
             throw(_("Cannot reject offer in status: {0}").format(status))
 
         offer.status = "Rejected"
-        if reason:
-            offer.edit_reason = reason # Passed to the log via model hook
         offer.save(ignore_permissions=True)
 
         from slcm.admission.utils.notifications import log_communication
@@ -496,7 +494,7 @@ class OfferService:
                 # We save each individually to trigger the automated status hook
                 doc = frappe.get_doc("Offer Letter", offer_name)
                 doc.status = "Expired"
-                doc.edit_reason = _("Automatically expired by system scheduler.")
+
                 doc.save(ignore_permissions=True)
                 
                 from slcm.admission.utils.notifications import log_communication
