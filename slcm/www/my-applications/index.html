@@ -3521,27 +3521,24 @@ or _app.current_stage)) or _status %}
                 Note: Your money will be credited to your bank account according to bank policy (5 to 7 working days).
               </div>
               {% endif %}
+
+              <!-- Meta Info Footer -->
+              <div style="margin-top: 16px; padding-top: 14px; border-top: 1px dashed {{ card_border }}; display: flex; flex-wrap: wrap; align-items: center; gap: 16px; font-size: 12px; color: #64748b;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span class="material-symbols-outlined" style="font-size: 16px;">id_card</span>
+                  Request ID: <span style="font-weight: 600; color: #334155;">{{ cancellation_details.name }}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span class="material-symbols-outlined" style="font-size: 16px;">contact_support</span>
+                  Need help ? Contact Admissions Office
+                </div>
+              </div>
+
             </div>
-          </div>
-
-
-          
-        </div>
-
-        <!-- Meta Info Footer -->
-        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px dashed {{ card_border }}; display: flex; flex-wrap: wrap; gap: 20px; font-size: 12px; color: #64748b;">
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <span class="material-symbols-outlined" style="font-size: 16px;">id_card</span>
-            Request ID: <span style="font-weight: 600; color: #334155;">{{ cancellation_details.name }}</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 6px;">
-                 <span class="material-symbols-outlined" style="font-size: 16px;">contact_support</span>
-                 Need help ? Contact Admissions Office
           </div>
         </div>
       </div>
     </div>
-    {% endif %}
 
     <!-- ╔══════════════════════════════════════════════╗
          ║  INTERVIEW CARD                              ║

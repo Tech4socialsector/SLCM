@@ -196,22 +196,28 @@ def process_refund(name):
 	client = razorpay.Client(auth=(settings.api_key, settings.get_password("api_secret")))
 	
 	try:
-		# Double-check if already refunded in Razorpay to prevent "Already refunded" errors
+		# Pre-check: verify available balance on Razorpay payment before attempting refund
 		try:
 			rzp_payment = client.payment.fetch(refund.razorpay_payment_id)
+			rzp_amount = int(rzp_payment.get("amount", 0))
 			amount_to_refund_paise = int(flt(refund.refund_amount) * 100)
 			
-			available_paise = int(rzp_payment.get("amount", 0)) - int(rzp_payment.get("amount_refunded", 0))
-			
-			if available_paise < amount_to_refund_paise:
-				error_msg = _("Insufficient balance in Razorpay payment. Available: {0}, Requested: {1}").format(
-					available_paise / 100.0, refund.refund_amount
-				)
-				refund.db_set("status", "Failed")
-				refund.db_set("failure_message", error_msg)
-				return {"status": "Error", "message": error_msg}
+			# Only block if Razorpay returned a valid non-zero amount AND it is truly insufficient.
+			# If rzp_amount == 0, Razorpay may be in test mode or the payment is not accessible via the
+			# current credentials — skip this pre-check and let the actual refund API call handle it.
+			if rzp_amount > 0:
+				amount_refunded_paise = int(rzp_payment.get("amount_refunded", 0))
+				available_paise = rzp_amount - amount_refunded_paise
+				
+				if available_paise < amount_to_refund_paise:
+					error_msg = _("Insufficient balance in Razorpay payment. Available: {0}, Requested: {1}").format(
+						available_paise / 100.0, refund.refund_amount
+					)
+					refund.db_set("status", "Failed")
+					refund.db_set("failure_message", error_msg)
+					return {"status": "Error", "message": error_msg}
 		except Exception as e:
-			# If fetch fails, we proceed but log it.
+			# If fetch fails, proceed and let the refund call itself surface any errors.
 			frappe.log_error(f"Razorpay Fetch Error before refund: {str(e)}", "Refund Process")
 
 		# Initiate refund via Razorpay API
