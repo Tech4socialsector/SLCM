@@ -33,7 +33,7 @@ frappe.listview_settings['Applicant Fee Assignment'] = {
 					return {
 						filters: {
 							docstatus: 1,
-							fee_type: ["in", ["Admission Fee", "Confirmation Fee"]],
+							fee_type: "Admission Fee",
 							status: ["in", ["Partially Paid", "Paid"]],
 						},
 					};

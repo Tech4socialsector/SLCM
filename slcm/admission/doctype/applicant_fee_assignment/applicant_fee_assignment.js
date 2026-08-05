@@ -31,7 +31,7 @@ frappe.ui.form.on('Applicant Fee Assignment', {
             },);
         }
 
-        if (frm.doc.docstatus === 1 && ["Partially Paid", "Paid"].includes(frm.doc.status) && (frm.doc.fee_type === "Admission Fee" || frm.doc.fee_type === "Confirmation Fee")) {
+        if (frm.doc.docstatus === 1 && ["Partially Paid", "Paid"].includes(frm.doc.status) && frm.doc.fee_type === "Admission Fee") {
             const student_btn = frm.add_custom_button(__('Convert to Student'), function () {
                 frappe.confirm(__('This action will create a Student Master. Continue?'),
                     function () {

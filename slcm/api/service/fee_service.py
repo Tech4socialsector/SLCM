@@ -308,23 +308,39 @@ class FeeService:
             if offer.status == "Payment Completed":
                 frappe.throw(_("Payment has already been completed."))
 
-            # Block if a Payment Request for this offer is already Paid (gateway truth)
+            actual_payable = get_offer_payable_amount(offer)
+
+            target_fee_type = "Confirmation Fee" if offer.status == "Accepted" else "Admission Fee"
+
+            # Fetch the specific Applicant Fee Assignment for this stage
+            afa = frappe.db.get_value(
+                "Applicant Fee Assignment",
+                {"offer_letter": offer.name, "fee_type": target_fee_type, "docstatus": ["!=", 2]},
+                ["name", "status", "creation"],
+                as_dict=True
+            )
+            if not afa:
+                frappe.throw(_("No pending fee assignment found for this offer. Payment has already been completed or the applicant has been converted."))
+            
+            if afa.status in ("Paid", "Converted"):
+                frappe.throw(_("Fee for this offer has already been paid or the applicant has been converted. You cannot pay again."))
+
+            # Block if a Payment Request for the CURRENT fee amount is already Paid (gateway truth)
+            # We filter by creation >= afa.creation to ignore PRs from previous fee stages
             existing_paid_pr = frappe.db.get_value(
                 "Payment Request",
-                {"reference_doctype": "Offer Letter", "reference_name": offer.name, "status": "Paid"},
+                {
+                    "reference_doctype": "Offer Letter", 
+                    "reference_name": offer.name, 
+                    "status": "Paid",
+                    "amount": actual_payable,
+                    "creation": (">=", afa.creation)
+                },
                 "name",
+                order_by="creation desc"
             )
             if existing_paid_pr:
                 frappe.throw(_("Payment has already been completed for this offer. You cannot pay again."))
-
-            # Block if Applicant Fee Assignment for this offer is already Paid or Converted
-            afa_status = frappe.db.get_value(
-                "Applicant Fee Assignment",
-                {"offer_letter": offer.name, "docstatus": ["!=", 2]},
-                "status",
-            )
-            if afa_status in ("Paid", "Converted"):
-                frappe.throw(_("Fee for this offer has already been paid or the applicant has been converted. You cannot pay again."))
             
             if offer.status in ["Rejected", "Expired", "Withdrawn"]:
                 frappe.throw(_("Cannot initiate payment. The offer is currently {0}.").format(offer.status))
@@ -340,8 +356,6 @@ class FeeService:
 
             from payments.utils import get_payment_gateway_controller
             controller = get_payment_gateway_controller(gateway)
-            
-            actual_payable = get_offer_payable_amount(offer)
 
             payment_details = {
                 "amount": actual_payable,
@@ -361,8 +375,10 @@ class FeeService:
                     "reference_doctype": "Offer Letter",
                     "reference_name": offer.name,
                     "docstatus": ["!=", 2],
+                    "creation": (">=", afa.creation)
                 },
                 "name",
+                order_by="creation desc"
             )
             pr = frappe.get_doc("Payment Request", pr_name) if pr_name else None
             if pr:
@@ -834,13 +850,24 @@ class FeeService:
         We find by order_id (transaction_id) to allow multiple attempts per offer.
         """
         # Try to find an existing payment request for this offer first
-        pr_name = frappe.db.get_value("Payment Request", 
-            {
-                "reference_doctype": "Offer Letter", 
-                "reference_name": offer.name,
-                "status": ["!=", "Cancelled"],
-                "docstatus": ["!=", 2]
-            }, "name", order_by="creation desc")
+        target_fee_type = "Confirmation Fee" if offer.status == "Accepted" else "Admission Fee"
+        afa = frappe.db.get_value(
+            "Applicant Fee Assignment",
+            {"offer_letter": offer.name, "fee_type": target_fee_type, "docstatus": ["!=", 2]},
+            ["creation"],
+            as_dict=True
+        )
+        
+        filters = {
+            "reference_doctype": "Offer Letter", 
+            "reference_name": offer.name,
+            "status": ["not in", ["Paid", "Cancelled"]],
+            "docstatus": ["!=", 2]
+        }
+        if afa:
+            filters["creation"] = (">=", afa.creation)
+            
+        pr_name = frappe.db.get_value("Payment Request", filters, "name", order_by="creation desc")
         
         if not pr_name and transaction_id:
              # Fallback to finding by transaction id if specifically provided
@@ -850,12 +877,7 @@ class FeeService:
         if pr_name:
             pr = frappe.get_doc("Payment Request", pr_name)
             
-            # Update amount if scholarship was applied/changed after PR creation
-            afa_amount = frappe.db.get_value("Applicant Fee Assignment", 
-                {"offer_letter": offer.name, "docstatus": ["!=", 2]}, 
-                "final_payable_amount")
-            if afa_amount is not None:
-                pr.db_set("amount", flt(afa_amount))
+            # Removed amount overwrite to prevent corrupting paid PRs
             
             # Update gateway if it's a manual override and it exists
             if gateway:
@@ -871,11 +893,9 @@ class FeeService:
             pr.reference_doctype = "Offer Letter"
             pr.reference_name = offer.name
             
-            # Get actual amount (checking for scholarship)
-            afa_amount = frappe.db.get_value("Applicant Fee Assignment", 
-                {"offer_letter": offer.name, "docstatus": ["!=", 2]}, 
-                "final_payable_amount")
-            pr.amount = flt(afa_amount) if afa_amount is not None else offer.payable_amount
+            # Get actual amount (checking for scholarship and fee type safely)
+            from slcm.api.service.razorpay_utils import get_offer_payable_amount
+            pr.amount = get_offer_payable_amount(offer)
             
             pr.currency = frappe.defaults.get_global_default("currency") or "INR"
             pr.email_to = frappe.db.get_value("Applicant", offer.applicant, "email")
