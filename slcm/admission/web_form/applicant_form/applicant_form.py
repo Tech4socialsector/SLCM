@@ -1215,22 +1215,37 @@ def state_query(doctype=None, txt=None, searchfield=None, start=0, page_len=20, 
         country = frappe.form_dict.get("filters[country]") or frappe.form_dict.get("country")
 
     cond = ""
-    txt = txt or ""
-    if txt:
-        cond += " and name like %(txt)s"
-    
-    return frappe.db.sql(f"""
-        select name from `tabState`
-        where (country = %(country)s or name = 'Other')
-        {cond}
-        order by name
-        limit %(start)s, %(page_len)s
-    """, {
-        "country": country,
-        "txt": "%" + txt + "%",
+    params = {
+        "txt": "%" + (txt or "") + "%",
         "start": cint(start),
         "page_len": cint(page_len)
-    })
+    }
+
+    if country and country.strip():
+        country_clean = country.strip()
+        matched_rows = frappe.db.sql("""
+            select distinct name from `tabState`
+            where (LOWER(country) = LOWER(%(country)s) or name = 'Other')
+            and name like %(txt)s
+            order by (case when name = 'Other' then 1 else 0 end), name
+            limit %(start)s, %(page_len)s
+        """, {
+            "country": country_clean,
+            "txt": "%" + (txt or "") + "%",
+            "start": cint(start),
+            "page_len": cint(page_len)
+        })
+        if matched_rows:
+            return [{"value": r[0], "description": "", "label": r[0]} for r in matched_rows]
+
+    rows = frappe.db.sql(f"""
+        select distinct name from `tabState`
+        where name like %(txt)s
+        order by (case when name = 'Other' then 1 else 0 end), name
+        limit %(start)s, %(page_len)s
+    """, params)
+
+    return [{"value": r[0], "description": "", "label": r[0]} for r in rows]
 
 @frappe.whitelist(allow_guest=True)
 def city_query(doctype=None, txt=None, searchfield=None, start=0, page_len=20, filters=None, **kwargs):
@@ -1248,19 +1263,34 @@ def city_query(doctype=None, txt=None, searchfield=None, start=0, page_len=20, f
         state = frappe.form_dict.get("filters[state]") or frappe.form_dict.get("state")
 
     cond = ""
-    txt = txt or ""
-    if txt:
-        cond += " and name like %(txt)s"
-    
-    return frappe.db.sql(f"""
-        select name from `tabCity`
-        where (state = %(state)s or name = 'Other')
-        {cond}
-        order by name
-        limit %(start)s, %(page_len)s
-    """, {
-        "state": state,
-        "txt": "%" + txt + "%",
+    params = {
+        "txt": "%" + (txt or "") + "%",
         "start": cint(start),
         "page_len": cint(page_len)
-    })
+    }
+
+    if state and state.strip():
+        state_clean = state.strip()
+        matched_rows = frappe.db.sql("""
+            select distinct IFNULL(NULLIF(city_name, ''), name) as display_name from `tabCity`
+            where (LOWER(state) = LOWER(%(state)s) or name = 'Other' or city_name = 'Other')
+            and (city_name like %(txt)s or name like %(txt)s)
+            order by (case when city_name = 'Other' or name = 'Other' then 1 else 0 end), display_name
+            limit %(start)s, %(page_len)s
+        """, {
+            "state": state_clean,
+            "txt": "%" + (txt or "") + "%",
+            "start": cint(start),
+            "page_len": cint(page_len)
+        })
+        if matched_rows:
+            return [{"value": r[0], "description": "", "label": r[0]} for r in matched_rows]
+
+    rows = frappe.db.sql(f"""
+        select distinct IFNULL(NULLIF(city_name, ''), name) as display_name from `tabCity`
+        where (city_name like %(txt)s or name like %(txt)s)
+        order by (case when city_name = 'Other' or name = 'Other' then 1 else 0 end), display_name
+        limit %(start)s, %(page_len)s
+    """, params)
+
+    return [{"value": r[0], "description": "", "label": r[0]} for r in rows]

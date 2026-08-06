@@ -19,9 +19,7 @@ class InterviewSeatAllocation(Document):
 
     def calculate_final_cumulative(self):
         """
-        Auto-calculate only the numeric score fields.
-        Result Status (interview_result_status) and Offered Admission (offered_admission)
-        are purely manual — never auto-set or overwritten by the system.
+        Auto-calculate numeric score fields and determine Result Status based on the 70% threshold rule.
         """
         et_marks = flt(self.et_total_marks_secured_in_part_a_b or 0)
         et_max = flt(self.et_total_marks or 0)
@@ -34,9 +32,17 @@ class InterviewSeatAllocation(Document):
             self.final_percentage = (
                 self.final_cumulative_score / max_marks * 100.0
             ) if max_marks > 0 else 0.0
+
+            if self.final_percentage >= 70.0:
+                self.interview_result_status = "Pass"
+            else:
+                self.interview_result_status = "Fail"
+                self.status = "Rejected"
         elif self.interview_status == "Absent":
             self.final_cumulative_score = 0.0
             self.final_percentage = 0.0
+            self.interview_result_status = "Fail"
+            self.status = "Rejected"
         else:
             self.final_cumulative_score = 0.0
             self.final_percentage = 0.0
