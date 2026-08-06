@@ -194,22 +194,33 @@ def run_generation_main(docname):
             save=False
         )
 
-        # Create or Update Shortlisting Merit List
+        # Soft-archive any existing active Shortlisting Merit List as Superseded before creating new list
         sp_filters = {
             "admission_cycle": doc.admission_cycle,
             "campus": doc.campus,
-            "program_level": program_level
+            "program_level": program_level,
+            "status": ["!=", "Superseded"]
         }
         if doc.program:
             sp_filters["program"] = doc.program
             
         sp_name = frappe.db.get_value("Shortlisting Merit List", sp_filters, "name")
-        
         if sp_name:
-            sp_doc = frappe.get_doc("Shortlisting Merit List", sp_name)
-        else:
-            sp_doc = frappe.new_doc("Shortlisting Merit List")
-            sp_doc.update(sp_filters)
+            existing_sp = frappe.get_doc("Shortlisting Merit List", sp_name)
+            if existing_sp.docstatus == 1:
+                existing_sp.cancel()
+            existing_sp.db_set("status", "Superseded")
+            frappe.db.commit()
+
+        sp_doc = frappe.new_doc("Shortlisting Merit List")
+        create_filters = {
+            "admission_cycle": doc.admission_cycle,
+            "campus": doc.campus,
+            "program_level": program_level
+        }
+        if doc.program:
+            create_filters["program"] = doc.program
+        sp_doc.update(create_filters)
         
         cache_key = f"merit_generation_{doc.admission_cycle}_{doc.campus}_{program_level}_{doc.program or ''}".replace(" ", "_")
         frappe.cache().set_value(cache_key, {

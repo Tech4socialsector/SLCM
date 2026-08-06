@@ -77,7 +77,7 @@
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Draft\nAllocated\nPublished"
+   "options": "Draft\nAllocated\nPublished\nSuperseded"
   },
   {
    "fieldname": "column_break_tgne",
