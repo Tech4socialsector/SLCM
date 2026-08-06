@@ -177,13 +177,13 @@ frappe.ui.form.on("Applicant", {
         // Calls the unified API (slcm.api.service.applicant_to_student.convert_applicant_to_student).
         // For the full AFA flow (Fee Invoice + Enrollment), use the "Convert to Student" button
         // on the Applicant Fee Assignment form instead.
-        if (!frm.doc.__islocal && frm.doc.status === 'Fee Paid') {
+        if (!frm.doc.__islocal && frm.doc.status === 'Full Fee Paid') {
             const student_btn = frm.add_custom_button(__('Convert to Student'), function () {
                 // Resolve AFA for program and admission_cycle
                 frappe.db.get_list('Applicant Fee Assignment', {
                     filters: {
                         applicant: frm.doc.name,
-                        fee_type: ['in', ['Admission Fee', 'Confirmation Fee']],
+                        fee_type: 'Admission Fee',
                         docstatus: 1,
                         status: ['in', ['Paid', 'Partially Paid']]
                     },

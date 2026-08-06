@@ -1,5 +1,7 @@
 import frappe
+from frappe.utils import flt
 from slcm.admission.utils.portal import get_portal_config, is_application_editable
+
 from slcm.admission.doctype.eligibility_result.eligibility_result import get_applicant_data
 from slcm.admission.web_form.applicant_form.applicant_form import (
     _latest_application_fee_receipt_for_portal,
@@ -633,34 +635,69 @@ def get_context(context):
 
         # --- Fetch Payment Details for Cancellation Button ---
         context.payment_details = None
-        context.cancellation_details = frappe.get_all("Admission Cancellation", 
+        cancellations = frappe.get_all("Admission Cancellation", 
             filters={"applicant": applicant.name, "status": ["not in", ["Rejected"]]},
-            fields=["name", "status", "requested_on", "cancellation_reason", "refund_request"],
-            order_by="creation desc",
-            limit=1
+            fields=["name", "status", "requested_on", "cancellation_reason", "refund_request", "applicant_payment_receipt", "amount_paid"],
+            order_by="creation asc"
         )
-        if context.cancellation_details:
-             context.cancellation_details = context.cancellation_details[0]
+        if cancellations:
              context.has_cancellation = True
              
-             # Fetch detailed refund info if available
-             if context.cancellation_details.get("refund_request"):
-                 refund = frappe.db.get_value("Refund Request", 
-                     context.cancellation_details.refund_request, 
-                     ["refund_amount", "amount_paid", "refund_date", "status", "applicant_payment_receipt"], 
-                     as_dict=True
-                 )
-                 if refund:
-                     if refund.get("applicant_payment_receipt"):
-                         refund["currency"] = frappe.db.get_value("Applicant Payment Receipt", 
-                             refund.applicant_payment_receipt, "currency")
-                     
-                     # Rename refund status to avoid confusion with cancellation status
-                     refund["refund_status"] = refund.pop("status")
-                     context.cancellation_details.update(refund)
+             # Fetch all linked Refund Requests for this applicant
+             refund_requests = frappe.get_all(
+                 "Refund Request",
+                 filters={"applicant": applicant.name, "status": ["not in", ["Rejected"]]},
+                 fields=["name", "refund_amount", "amount_paid", "refund_date", "status", "applicant_payment_receipt", "applicant_fee_assignment", "refund_type", "admission_cancellation"],
+                 order_by="creation asc"
+             )
+             
+             from slcm.admission.utils.refund import get_applicant_refund_policies
+             res_ref = get_applicant_refund_policies(applicant.name)
+             is_conf_ref = bool(res_ref.get("is_confirmation_fee_refundable", False))
+             conf_pct = flt(res_ref.get("confirmation_fee_refund_percentage") or 0.0) if is_conf_ref else 0.0
+
+             total_ref = 0.0
+             filtered_refund_requests = []
+             for rr in refund_requests:
+                 fee_type = "Admission Fee"
+                 if rr.get("applicant_fee_assignment"):
+                     fee_type = frappe.db.get_value("Applicant Fee Assignment", rr.applicant_fee_assignment, "fee_type") or fee_type
+                 elif rr.get("applicant_payment_receipt"):
+                     apr_ft = frappe.db.get_value("Applicant Payment Receipt", rr.applicant_payment_receipt, "fee_type")
+                     if apr_ft and "Confirmation" in apr_ft:
+                         fee_type = "Confirmation Fee"
+                 rr["fee_type"] = fee_type
+
+                 amt_p = flt(rr.amount_paid)
+                 if fee_type == "Confirmation Fee":
+                     if not is_conf_ref or conf_pct <= 0:
+                         continue
+                     rr["refund_percentage"] = conf_pct
+                     rr["refund_amount"] = round(amt_p * (conf_pct / 100.0), 2)
+                 else:
+                     amt_r = flt(rr.refund_amount)
+                     rr["refund_percentage"] = round((amt_r / amt_p * 100), 1) if amt_p > 0 else 0
+                 
+                 total_ref += flt(rr["refund_amount"])
+                 filtered_refund_requests.append(rr)
+
+             refund_requests = filtered_refund_requests
+
+
+             first_canc = cancellations[0]
+             context.cancellation_details = {
+                 "name": ", ".join(c.name for c in cancellations),
+                 "cancellations": cancellations,
+                 "status": first_canc.status,
+                 "requested_on": first_canc.requested_on,
+                 "refund_requests": refund_requests,
+                 "total_refund_amount": total_ref,
+                 "refund_amount": total_ref
+             }
         else:
              context.cancellation_details = None
              context.has_cancellation = False
+
         
         # Check for withdrawal/refund eligibility if no existing cancellation request
         context.show_withdraw_button = False
@@ -671,8 +708,10 @@ def get_context(context):
                 "name", order_by="creation desc")
             context.offer_name = _off_name or ""
 
-            # Withdrawal depends on an active Offer Letter and being in Enrolled/Fee Paid status
-            if context.offer_name and applicant.status in ["Enrolled", "Confirmation Fee Paid", "Full Fee Paid"]:
+            _is_full_fee = applicant.status in ["Enrolled", "Full Fee Paid"] or context.status in ["Full Fee Paid", "Payment Completed"]
+
+            # Withdrawal depends on an active Offer Letter and being in Enrolled/Full Fee Paid status
+            if context.offer_name and _is_full_fee:
                 context.show_withdraw_button = True
                 
                 # 1. Try finding Student-linked Fee Payment
@@ -687,20 +726,68 @@ def get_context(context):
 
                 # 2. Fallback to Applicant Payment Receipt
                 if not context.payment_details:
-                    receipt = frappe.get_all("Applicant Payment Receipt",
+                    receipts = frappe.get_all("Applicant Payment Receipt",
                         filters={"offer_letter": context.offer_name, "docstatus": ["<", 2]},
-                        fields=["name", "total_amount as amount", "payment_date"],
-                        order_by="creation desc", limit=1)
-                    if receipt:
-                        context.payment_details = receipt[0]
-                        context.payment_receipt = receipt[0].name
+                        fields=["name", "total_amount as amount", "payment_date", "fee_type"],
+                        order_by="creation desc")
+                    if receipts:
+                        context.payment_details = receipts[0]
+                        context.payment_receipt = receipts[0].name
+                        context.all_receipts = receipts
             else:
                 context.payment_details = None
+                context.all_receipts = []
         else:
-            # Don't wipe offer_name — it may already be set from the initial offer
-            # letter fetch above and is needed for the quick-status offer button.
-            # The withdrawal button is controlled by show_withdraw_button, not offer_name.
             context.payment_details = None
+            context.all_receipts = []
+
+        # --- Confirmation Fee Refund state (for portal header button) ---
+        # Show "Refund Confirmation Fee" button ONLY when status is "Confirmation Fee Paid"
+        # and full fee is NOT paid yet, and no active cancellation/withdrawal or active RR exists.
+        context.show_conf_fee_refund_btn = False
+        context.conf_fee_refund_rr = None   # name of active Confirmation Fee Refund Request
+        try:
+            _is_conf_fee_status = (applicant.status == "Confirmation Fee Paid" or context.status == "Confirmation Fee Paid")
+            _is_full_fee_status = (applicant.status in ["Enrolled", "Full Fee Paid"] or context.status in ["Full Fee Paid", "Payment Completed"])
+            
+            if context.offer_name and _is_conf_fee_status and not _is_full_fee_status and not context.has_cancellation:
+                # Check for an active (non-Rejected / non-Failed) Confirmation Fee RR
+                _existing_cf_rr = frappe.db.sql("""
+                    SELECT rr.name, rr.status, rr.refund_amount
+                    FROM `tabRefund Request` rr
+                    JOIN `tabApplicant Fee Assignment` afa
+                      ON afa.name = rr.applicant_fee_assignment
+                    WHERE rr.applicant = %(applicant)s
+                      AND afa.offer_letter = %(offer)s
+                      AND afa.fee_type = 'Confirmation Fee'
+                      AND rr.status NOT IN ('Rejected', 'Failed')
+                    LIMIT 1
+                """, {"applicant": applicant.name, "offer": context.offer_name}, as_dict=True)
+
+                if _existing_cf_rr:
+                    context.conf_fee_refund_rr = _existing_cf_rr[0]
+                else:
+                    # Only show the refund button if there's a paid Confirmation Fee AFA
+                    _conf_afa_paid = frappe.db.exists(
+                        "Applicant Fee Assignment",
+                        {
+                            "offer_letter": context.offer_name,
+                            "fee_type": "Confirmation Fee",
+                            "status": "Paid",
+                            "docstatus": ["!=", 2],
+                        }
+                    )
+                    if _conf_afa_paid:
+                        # Check if confirmation fee is marked refundable in Fee Structure
+                        from slcm.admission.utils.refund import get_applicant_refund_policies
+                        res_ref = get_applicant_refund_policies(applicant.name)
+                        if res_ref.get("is_confirmation_fee_refundable", False):
+                            context.show_conf_fee_refund_btn = True
+
+        except Exception as _cf_exc:
+            frappe.log_error(str(_cf_exc), "my_applications conf_fee_refund context")
+
+
 
         # Combined results
         context.all_results = []

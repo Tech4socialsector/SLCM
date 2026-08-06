@@ -18,8 +18,7 @@
    "fieldname": "year_of_completion",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Year Of Completion (UG degree)",
-   "reqd": 1
+   "label": "Year Of Completion (UG degree)"
   },
   {
    "description": "Max 5MB - Supported formats png, jpeg, jpg, pdf",
@@ -39,8 +38,7 @@
    "fieldname": "college",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "College / University (UG degree)",
-   "reqd": 1
+   "label": "College / University (UG degree)"
   },
   {
    "fieldname": "ug_program",
@@ -48,23 +46,22 @@
    "ignore_user_permissions": 1,
    "in_list_view": 1,
    "label": "Name of Degree (UG)",
-   "options": "Programme",
-   "reqd": 1
+   "options": "Programme"
   },
   {
    "fieldname": "ug_cgpa",
    "fieldtype": "Percent",
    "in_list_view": 1,
    "label": "CGPA Obtained (UG degree)",
-   "precision": "1",
-   "reqd": 1
+   "non_negative": 1,
+   "precision": "1"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-07-20 21:52:41.781265",
+ "modified": "2026-08-03 16:39:27.278277",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "UG Degree Detail",

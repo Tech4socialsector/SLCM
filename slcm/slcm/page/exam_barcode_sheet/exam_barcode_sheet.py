@@ -2,11 +2,24 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
+
+EXAM_BARCODE_SHEET_ROLES = {"System Manager", "Academics User"}
+
+
+def _check_access():
+	"""This page is restricted at the desk UI level, but the whitelisted RPCs
+	are directly callable via /api/method/, so they must enforce the same
+	role themselves — several of them return full student PII (DOB, blood
+	group, email, phone) or generate/export exam barcodes."""
+	if not EXAM_BARCODE_SHEET_ROLES & set(frappe.get_roles()):
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
 
 
 @frappe.whitelist()
 def get_exam_plans():
 	"""Return list of active exam plans."""
+	_check_access()
 	return frappe.db.get_all(
 		"Exam Plan",
 		filters={"status": "Active"},
@@ -18,6 +31,7 @@ def get_exam_plans():
 @frappe.whitelist()
 def get_exam_courses(exam_plan):
 	"""Return courses scheduled under the given exam plan, with dates and barcode counts."""
+	_check_access()
 	schedules = frappe.db.get_all(
 		"Exam Course Schedule",
 		filters={"parent": exam_plan, "parenttype": "Exam Plan"},
@@ -76,6 +90,7 @@ def generate_barcodes(exam_plan, courses=None, copies=1):
 
 	courses: JSON list of course names (optional, defaults to all scheduled).
 	"""
+	_check_access()
 	import json
 	import random
 	import datetime
@@ -179,6 +194,7 @@ def generate_barcodes(exam_plan, courses=None, copies=1):
 @frappe.whitelist()
 def get_barcodes(exam_plan, course=None):
 	"""Return all barcodes for the exam plan (optionally filtered by course)."""
+	_check_access()
 	filters = {"exam_plan": exam_plan}
 	if course:
 		filters["course"] = course
@@ -197,6 +213,7 @@ def get_course_students(exam_plan, course):
 	Return students for a course with their barcode (if generated).
 	Source: Student Course Marks (same as Examination Result page).
 	"""
+	_check_access()
 	students = _get_students_for_course(course, exam_plan)
 
 	# Existing barcodes
@@ -237,6 +254,7 @@ def export_attendance_excel(exam_plan, course=None, mode="by_date",
 	from_date / to_date:     filter date range (ISO strings); only used in by_date mode.
 	selected_courses (JSON): list of course names; filter for by_course download.
 	"""
+	_check_access()
 	import io, base64, json as _json
 	import openpyxl
 	from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
@@ -575,6 +593,7 @@ def export_attendance_excel(exam_plan, course=None, mode="by_date",
 @frappe.whitelist()
 def get_student_details(student, exam_plan=None, course=None):
 	"""Return full Student Master details plus barcode for the exam context."""
+	_check_access()
 	sm = frappe.get_doc("Student Master", student)
 
 	def _get(*field_names, default=""):

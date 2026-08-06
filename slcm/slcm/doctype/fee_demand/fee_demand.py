@@ -87,6 +87,7 @@ class FeeDemand(Document):
 	@frappe.whitelist()
 	def cancel_demand(self):
 		"""Cancel this demand — only allowed if unpaid."""
+		self.check_permission("write")
 		if self.status == "Paid":
 			frappe.throw(_("Cannot cancel a fully paid Fee Demand."))
 		if flt(self.paid_amount) > 0:

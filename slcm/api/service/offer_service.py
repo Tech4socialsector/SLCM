@@ -396,22 +396,6 @@ class OfferService:
         if status in status_map:
             status = status_map[status]
 
-        # Prevent downgrading status if already further along the pipeline
-        current_status = frappe.db.get_value("Applicant", applicant, "status")
-        hierarchy = [
-            "Draft", "Submitted", "Under Review", "Shortlisted", "Selected",
-            "Offer Issued", "Offer Accepted", "Confirmation Fee Paid",
-            "Full Fee Paid", "Seat Selected", "Enrolled"
-        ]
-        
-        try:
-            current_idx = hierarchy.index(current_status) if current_status in hierarchy else -1
-            new_idx = hierarchy.index(status) if status in hierarchy else -1
-            if current_idx > new_idx and new_idx != -1:
-                return True # Skip downgrade
-        except Exception:
-            pass
-
         # Use db_set to bypass full validation (validate_eligibility) which may throw 
         # for ineligible applicants during status synchronization.
         frappe.db.set_value("Applicant", applicant, "status", status, update_modified=True)
@@ -442,8 +426,6 @@ class OfferService:
             throw(_("Cannot reject offer in status: {0}").format(status))
 
         offer.status = "Rejected"
-        if reason:
-            offer.edit_reason = reason # Passed to the log via model hook
         offer.save(ignore_permissions=True)
 
         from slcm.admission.utils.notifications import log_communication
@@ -472,8 +454,8 @@ class OfferService:
         Note: ``Accepted`` → ``Expired`` must be allowed in ``OfferLetter.validate_status_transition``.
         """
         active_offers = frappe.get_all("Offer Letter", filters={
-            "status": ["in", ["Issued", "Accepted"]]
-        }, fields=["name", "status", "offer_configrationn", "fee_structure"])
+            "status": ["in", ["Issued", "Accepted", "Confirmation Fee Paid"]]
+        }, fields=["name", "status", "offer_acceptance_deadline", "confirmation_fee_deadline", "payment_deadline"])
 
         now_date = frappe.utils.nowdate()
         to_expire = []
@@ -481,25 +463,25 @@ class OfferService:
         for row in active_offers:
             should_expire = False
             if row.status == "Issued":
-                if row.offer_configrationn:
-                    due_date = frappe.db.get_value("Offer Configuration", row.offer_configrationn, "due_date")
-                    if due_date and frappe.utils.getdate(due_date) < frappe.utils.getdate(now_date):
-                        should_expire = True
+                if row.offer_acceptance_deadline and frappe.utils.getdate(row.offer_acceptance_deadline) < frappe.utils.getdate(now_date):
+                    should_expire = True
             elif row.status == "Accepted":
                 # Find pending fee assignment
                 afa = frappe.db.get_value("Applicant Fee Assignment", 
                     {"offer_letter": row.name, "status": "Assigned", "docstatus": ["!=", 2]}, 
                     ["fee_type"], as_dict=1)
                 
-                if afa and row.fee_structure:
+                if afa:
                     if afa.fee_type == "Confirmation Fee":
-                        conf_due_date = frappe.db.get_value("Fee Structure", row.fee_structure, "due_date_for_confirmation_fee")
-                        if conf_due_date and frappe.utils.getdate(conf_due_date) < frappe.utils.getdate(now_date):
+                        if row.confirmation_fee_deadline and frappe.utils.getdate(row.confirmation_fee_deadline) < frappe.utils.getdate(now_date):
                             should_expire = True
                     elif afa.fee_type == "Admission Fee":
-                        valid_until = frappe.db.get_value("Fee Structure", row.fee_structure, "valid_until")
-                        if valid_until and frappe.utils.getdate(valid_until) < frappe.utils.getdate(now_date):
+                        if row.payment_deadline and frappe.utils.getdate(row.payment_deadline) < frappe.utils.getdate(now_date):
                             should_expire = True
+
+            elif row.status == "Confirmation Fee Paid":
+                if row.payment_deadline and frappe.utils.getdate(row.payment_deadline) < frappe.utils.getdate(now_date):
+                    should_expire = True
 
             if should_expire:
                 to_expire.append(row.name)
@@ -512,7 +494,7 @@ class OfferService:
                 # We save each individually to trigger the automated status hook
                 doc = frappe.get_doc("Offer Letter", offer_name)
                 doc.status = "Expired"
-                doc.edit_reason = _("Automatically expired by system scheduler.")
+
                 doc.save(ignore_permissions=True)
                 
                 from slcm.admission.utils.notifications import log_communication
@@ -1499,6 +1481,13 @@ def get_offer_details(offer_name=None):
             "is_discount": True
         })
 
+    if afa and afa.fee_type == "Admission Fee" and flt(afa.confirmation_fee) > 0:
+        fee_data.append({
+            "component": "Confirmation Fee Paid",
+            "amount": -flt(afa.confirmation_fee),
+            "is_discount": True
+        })
+
     applicant_data = frappe.get_all("Applicant", filters={"name": target_applicant}, fields=["*"], limit=1, ignore_permissions=True)
     applicant_dict = applicant_data[0] if applicant_data else {}
     if applicant_dict and not applicant_dict.get("candidate_photo"):
@@ -1531,6 +1520,11 @@ def get_offer_details(offer_name=None):
         except Exception:
             pass
 
+    receipts = frappe.get_all("Applicant Payment Receipt",
+        filters={"offer_letter": offer_id, "docstatus": ["<", 2]},
+        fields=["name", "fee_type"],
+        order_by="creation desc", ignore_permissions=True)
+
     return {
         "offer": offer_dict,
         "applicant": applicant_dict,
@@ -1542,5 +1536,6 @@ def get_offer_details(offer_name=None):
         "currency": frappe.defaults.get_global_default("currency") or "INR",
         "cancellation": cancellation_info,
         "available_scholarships_count": available_scholarships_count,
-        "scholarship_application": scholarship_data
+        "scholarship_application": scholarship_data,
+        "receipts": receipts
     }

@@ -43,6 +43,8 @@ def get_transcript_context(student_id):
     Called from the 'Student Transcript' Jinja print format via:
         get_transcript_context(doc.student)
     """
+    if not frappe.has_permission("Student Master", "read", doc=student_id):
+        frappe.throw(frappe._("Not permitted"), frappe.PermissionError)
 
     # ── 1. Template settings ──────────────────────────────────────────────────
     tmpl_name = frappe.db.get_value("Transcript Template", {"is_default": 1}, "name")
@@ -399,6 +401,9 @@ def get_year_based_transcript_context(student_id):
     Return year-based transcript data with prescribed courses.
     Used for year-based transcript format (I Year, II Year, etc.)
     """
+    if not frappe.has_permission("Student Master", "read", doc=student_id):
+        frappe.throw(frappe._("Not permitted"), frappe.PermissionError)
+
     from collections import defaultdict
 
     # Get transcript settings

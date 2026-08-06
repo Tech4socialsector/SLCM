@@ -1,5 +1,16 @@
 import frappe
 import json as _json
+from frappe import _
+
+IMPROVEMENT_EXAM_ROLES = {"System Manager", "Academics User"}
+
+
+def _check_access():
+    """Admin-only actions (settings, marking paid) — this page is restricted
+    at the desk UI level, but the whitelisted RPCs are directly callable via
+    /api/method/, so they must enforce the same role themselves."""
+    if not IMPROVEMENT_EXAM_ROLES & set(frappe.get_roles()):
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
 
 
 def _get_course_offering(exam_plan, course):
@@ -89,6 +100,7 @@ def get_improvement_setting(exam_plan, course):
 
 @frappe.whitelist()
 def save_improvement_setting(exam_plan, course, improvement_fee=None, registration_limit=None, deadline_from=None, deadline_to=None):
+    _check_access()
     if not exam_plan or not course:
         frappe.throw("Exam Plan and Course are required.")
 
@@ -117,6 +129,7 @@ def save_improvement_setting(exam_plan, course, improvement_fee=None, registrati
 
 @frappe.whitelist()
 def bulk_save_improvement_setting(exam_plan, improvement_fee=None, registration_limit=None, deadline_from=None, deadline_to=None, courses=None):
+    _check_access()
     if not exam_plan:
         frappe.throw("Exam Plan is required.")
 
@@ -277,6 +290,7 @@ def get_improvement_stats(exam_plan, course):
 
 @frappe.whitelist()
 def mark_improvement_paid(registration_name, payment_reference=""):
+    _check_access()
     if not registration_name:
         frappe.throw("Registration name is required.")
     doc = frappe.get_doc("Improvement Exam Registration", registration_name)

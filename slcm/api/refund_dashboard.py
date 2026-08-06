@@ -6,9 +6,9 @@ from frappe.utils import flt, cint, getdate, nowdate, add_months, get_first_day,
 def get_dashboard_data(filters=None):
     if isinstance(filters, str):
         filters = frappe.parse_json(filters)
-    
+
     filters = filters or {}
-    
+
     # We use table aliases for joins: rr = Refund Request, ac = Admission Cancellation
     refund_conditions, refund_values = get_conditions(filters, "request_date", "rr")
     cancellation_conditions, cancellation_values = get_conditions(filters, "requested_on", "ac")
@@ -56,7 +56,7 @@ def get_conditions(filters, date_field, table_alias):
 def get_kpis(refund_conditions, refund_values, cancellation_conditions, cancellation_values):
     # Financial KPIs
     total_refunded = frappe.db.sql(f"""
-        SELECT SUM(rr.refund_amount) 
+        SELECT SUM(rr.refund_amount)
         FROM `tabRefund Request` rr
         JOIN `tabAdmission Cancellation` ac ON rr.admission_cancellation = ac.name
         WHERE rr.status = 'Processed' AND {refund_conditions}
@@ -66,7 +66,7 @@ def get_kpis(refund_conditions, refund_values, cancellation_conditions, cancella
     today_values = dict(refund_values)
     today_values["today_date"] = today
     refunded_today = frappe.db.sql(f"""
-        SELECT SUM(rr.refund_amount) 
+        SELECT SUM(rr.refund_amount)
         FROM `tabRefund Request` rr
         JOIN `tabAdmission Cancellation` ac ON rr.admission_cancellation = ac.name
         WHERE rr.status = 'Processed' AND DATE(rr.refund_date) = %(today_date)s AND {refund_conditions}
@@ -78,7 +78,7 @@ def get_kpis(refund_conditions, refund_values, cancellation_conditions, cancella
     month_values["month_start"] = month_start
     month_values["month_end"] = month_end
     refunded_this_month = frappe.db.sql(f"""
-        SELECT SUM(rr.refund_amount) 
+        SELECT SUM(rr.refund_amount)
         FROM `tabRefund Request` rr
         JOIN `tabAdmission Cancellation` ac ON rr.admission_cancellation = ac.name
         WHERE rr.status = 'Processed' AND DATE(rr.refund_date) BETWEEN %(month_start)s AND %(month_end)s AND {refund_conditions}
@@ -97,7 +97,7 @@ def get_kpis(refund_conditions, refund_values, cancellation_conditions, cancella
 
     # Total cancellations count
     total_cancellations = frappe.db.sql(f"""
-        SELECT COUNT(ac.name) 
+        SELECT COUNT(ac.name)
         FROM `tabAdmission Cancellation` ac
         WHERE {cancellation_conditions}
     """, cancellation_values)[0][0] or 0
