@@ -141,13 +141,17 @@ frappe.ui.form.on("Interview Configuration", {
         }
 
         toggle_ratio_fields(frm);
+        check_programme_settings(frm, false);
     },
 
     // Re-evaluate button visibility on field changes
     academic_year: function (frm) { frm.trigger("refresh"); },
     campus: function (frm) { frm.trigger("refresh"); },
     admission_cycle: function (frm) { frm.trigger("refresh"); },
-    program: function (frm) { frm.trigger("refresh"); },
+    program: function (frm) { 
+        frm.trigger("refresh");
+        check_programme_settings(frm, true);
+    },
     status: function (frm) { frm.trigger("refresh"); },
 
     applicant_type: function (frm) {
@@ -156,7 +160,7 @@ frappe.ui.form.on("Interview Configuration", {
         } else if (frm.doc.applicant_type === "International Applicants") {
             frm.set_value("enter_domestic_ratio", "");
         }
-        toggle_ratio_fields(frm);
+        check_programme_settings(frm, true);
     },
 
     fetch_exempted_applicant: function (frm) {
@@ -169,7 +173,94 @@ function toggle_ratio_fields(frm) {
     let show_international = !frm.doc.fetch_exempted_applicant && (frm.doc.applicant_type === "International Applicants" || frm.doc.applicant_type === "Both");
     let show_exempted = !!frm.doc.fetch_exempted_applicant;
 
+    if (frm.doc.__show_dom_ratio !== undefined) {
+        show_domestic = show_domestic && frm.doc.__show_dom_ratio;
+    }
+    if (frm.doc.__show_int_ratio !== undefined) {
+        show_international = show_international && frm.doc.__show_int_ratio;
+    }
+
     frm.toggle_display("enter_domestic_ratio", show_domestic);
     frm.toggle_display("enter_international_ratio", show_international);
     frm.toggle_display("part_b_score", show_exempted);
+
+    if (!show_domestic && frm.doc.enter_domestic_ratio) {
+        frm.set_value("enter_domestic_ratio", "");
+    }
+    if (!show_international && frm.doc.enter_international_ratio) {
+        frm.set_value("enter_international_ratio", "");
+    }
+}
+
+function check_programme_settings(frm, show_toast = true) {
+    if (!frm.doc.program || frm.doc.program.length === 0) {
+        frm.doc.__show_dom_ratio = true;
+        frm.doc.__show_int_ratio = true;
+        toggle_ratio_fields(frm);
+        return;
+    }
+
+    let program_names = frm.doc.program.map(p => p.program).filter(Boolean);
+    if (program_names.length === 0) {
+        frm.doc.__show_dom_ratio = true;
+        frm.doc.__show_int_ratio = true;
+        toggle_ratio_fields(frm);
+        return;
+    }
+
+    frappe.call({
+        method: "frappe.client.get_list",
+        args: {
+            doctype: "Programme",
+            filters: { "name": ["in", program_names] },
+            fields: ["name", "entrance_test", "intereview", "international_entrance_test", "international_interview"]
+        },
+        callback: function (r) {
+            if (r.message) {
+                let show_dom_ratio = false;
+                let show_int_ratio = false;
+                let missing_msgs = [];
+
+                r.message.forEach(prog => {
+                    // Check for Toast messages if applicant type allows
+                    if (frm.doc.applicant_type === "Both") {
+                        if (prog.intereview == 0 && prog.international_interview == 1) {
+                            missing_msgs.push(`Please Note: For Programme <b>${prog.name}</b>, Domestic applicants do not have an interview stage. We will allocate the interview for International applicants only.`);
+                        } else if (prog.intereview == 1 && prog.international_interview == 0) {
+                            missing_msgs.push(`Please Note: For Programme <b>${prog.name}</b>, International applicants do not have an interview stage. We will allocate the interview for Domestic applicants only.`);
+                        }
+                    } else if (frm.doc.applicant_type === "Domestic Applicants") {
+                        if (prog.intereview == 0) {
+                            missing_msgs.push(`Please Note: For Programme <b>${prog.name}</b>, Domestic applicants do not have an interview stage.`);
+                        }
+                    } else if (frm.doc.applicant_type === "International Applicants") {
+                        if (prog.international_interview == 0) {
+                            missing_msgs.push(`Please Note: For Programme <b>${prog.name}</b>, International applicants do not have an interview stage.`);
+                        }
+                    }
+
+                    // Check for ratios
+                    if (prog.entrance_test == 1 && prog.intereview == 1) {
+                        show_dom_ratio = true;
+                    }
+                    if (prog.international_entrance_test == 1 && prog.international_interview == 1) {
+                        show_int_ratio = true;
+                    }
+                });
+
+                if (show_toast && missing_msgs.length > 0) {
+                    frappe.msgprint({
+                        title: __('Notice'),
+                        indicator: 'orange',
+                        message: missing_msgs.join("<br><br>")
+                    });
+                }
+
+                frm.doc.__show_dom_ratio = show_dom_ratio;
+                frm.doc.__show_int_ratio = show_int_ratio;
+                
+                toggle_ratio_fields(frm);
+            }
+        }
+    });
 }
