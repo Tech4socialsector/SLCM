@@ -153,6 +153,12 @@ class EntranceTestSeatAllocation(Document):
                 from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
                 generate_and_store_admit_card(self, is_rescheduled=is_rescheduled)
 
+        # Generate Result Card when result_published is checked
+        doc_before = self.get_doc_before_save()
+        if self.result_published:
+            if not doc_before or doc_before.result_published != 1:
+                self.generate_result_card()
+
 
 
 def _update_applicant_status_for_entrance_test_status(applicant_name, entrance_test_status):
