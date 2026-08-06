@@ -58,6 +58,7 @@
   {
    "fieldname": "number_of_terms_per_academic_year",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Number of terms per academic year",
    "options": "\n1\n2\n3\n4\n5"
   },
@@ -94,7 +95,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-08 13:04:08.255209",
+ "modified": "2026-08-04 15:11:15.877345",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Academic Term",

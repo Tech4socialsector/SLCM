@@ -428,8 +428,7 @@ def mark_attendance(
 		end_time = None
 		duration = 0
 		instructor = None
-		room = None
-		
+
 		if class_sched and class_sched.from_time and class_sched.to_time:
 			# Calculate duration
 			start_dt = frappe.utils.get_datetime(f"{date} {class_sched.from_time}")
@@ -438,7 +437,6 @@ def mark_attendance(
 			start_time = class_sched.from_time
 			end_time = class_sched.to_time
 			instructor = class_sched.instructor
-			room = frappe.db.get_value("Venue Booking", class_sched.venue, "room") if class_sched.venue else None
 		
 		# Fallback for Office Hours (default 1 hour?)
 		elif based_on == "Office Hours" and office_hours_group:
@@ -468,8 +466,7 @@ def mark_attendance(
 				"duration_hours": duration,
 				"session_type": "Office Hour" if based_on == "Office Hours" else "Lecture",
 				"instructor": instructor,
-				"room": room,
-				"session_status": "Conducted", 
+				"session_status": "Conducted",
 				"attendance_marked": 1
 			})
 			sess_doc.flags.skip_auto_attendance = True
@@ -526,11 +523,7 @@ def mark_attendance(
 				"instructor": _faculty_display_name(
 					schedule.instructor if schedule else class_sched.instructor if class_sched else office_group.instructor if office_group else None
 				),
-				# Time Table has no `room` field of its own — room lives on the linked Venue Booking.
-				"room": schedule.room if schedule else (
-					frappe.db.get_value("Venue Booking", class_sched.venue, "room")
-					if class_sched and class_sched.venue else None
-				),
+				"room": schedule.room if schedule else None,
 				"source": "Manual",
 				"session_type": "Office Hour" if based_on == "Office Hours" else "Lecture",
 			}

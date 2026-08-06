@@ -3,6 +3,17 @@
 
 import frappe
 import json
+from frappe import _
+
+ACCESS_RESULT_SETTINGS_ROLES = {"System Manager", "Academics User"}
+
+
+def _check_access():
+	"""This page is restricted at the desk UI level, but the whitelisted RPCs
+	are directly callable via /api/method/, so mutating actions must enforce
+	the same role themselves."""
+	if not ACCESS_RESULT_SETTINGS_ROLES & set(frappe.get_roles()):
+		frappe.throw(_("Not permitted"), frappe.PermissionError)
 
 
 # ── Shared helpers ────────────────────────────────────────────────────────────
@@ -74,6 +85,7 @@ def save_publish_setting(exam_plan, components, show_total_marks, show_sgpa,
                          hide_sgpa_for_failed, show_egradesheet,
                          no_publish_unpaid, no_publish_no_feedback):
 	"""Save or create the Publish Result Setting for the given exam plan."""
+	_check_access()
 	if not exam_plan:
 		frappe.throw("Exam Plan is required")
 
@@ -198,6 +210,7 @@ def save_access_setting(exam_plan, course, status, view_access, view_deadline,
                         mask_student_info, generate_grade_report,
                         moderation_policy_access, evaluators, visible_exams):
 	"""Save or create an Access Result Settings record for one course."""
+	_check_access()
 	if not exam_plan or not course:
 		frappe.throw("Exam Plan and Course are required")
 

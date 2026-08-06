@@ -841,9 +841,10 @@ def get_payment_status(docname):
         return {}
         
     doc = frappe.get_doc("Foundations for a Legal Education", docname)
-    
-    # Allow if session user is the owner, or if they have System Manager role
-    if frappe.session.user != "Guest" and frappe.session.user != doc.owner:
+
+    # Allow only if the session user is the owner, or has System Manager role.
+    # (Guest can never be the owner, so this also denies unauthenticated access.)
+    if frappe.session.user != doc.owner:
         if "System Manager" not in frappe.get_roles(frappe.session.user):
             return {}
             

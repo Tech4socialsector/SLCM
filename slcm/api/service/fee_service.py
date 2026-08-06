@@ -59,7 +59,6 @@ class FeeService:
             if doc.payment_deadline != new_deadline:
                 doc.payment_deadline = new_deadline
                 doc.ignore_lock = True
-                doc.edit_reason = _("Bulk extension due to Fee Structure ({0}) update.").format(fee_structure_name)
                 doc.add_comment("Comment", _("Payment deadline automatically syncronized to {0} due to Fee Structure update.").format(
                     frappe.utils.format_datetime(new_deadline)
                 ))
@@ -202,15 +201,15 @@ class FeeService:
         offer_doc = frappe.get_doc("Offer Letter", offer_name)
         
         # Security: Prevent duplicate payments
-        if offer_doc.status == "Payment Completed":
+        if offer_doc.status in ["Payment Completed", "Full Fee Paid"]:
             throw(_("Payment has already been recorded for this offer ({0}).").format(offer_name))
 
         assignment_name = frappe.db.get_value("Applicant Fee Assignment", 
             {"offer_letter": offer_name, "status": "Assigned", "docstatus": ["!=", 2]}, "name", order_by="creation desc")
         
         if not assignment_name:
-            if offer_doc.status != "Accepted":
-                throw(_("Offer must be 'Accepted' before paying fees."))
+            if offer_doc.status not in ["Accepted", "Confirmation Fee Paid"]:
+                throw(_("Offer must be 'Accepted' or 'Confirmation Fee Paid' before paying fees."))
             assignment_name = FeeService.create_fee_assignment_from_offer(offer_doc)
         
         if not assignment_name:
@@ -360,6 +359,15 @@ class FeeService:
             
             if offer.status in ["Draft", "Issued"]:
                 frappe.throw(_("Please accept the offer before proceeding to fee payment."))
+
+            # Real-time Deadline Validation
+            now_date = frappe.utils.nowdate()
+            if offer.status == "Accepted":
+                if offer.confirmation_fee_deadline and frappe.utils.getdate(offer.confirmation_fee_deadline) < frappe.utils.getdate(now_date):
+                    frappe.throw(_("Payment blocked: The Confirmation Fee deadline ({0}) has passed.").format(offer.confirmation_fee_deadline))
+            elif offer.status == "Confirmation Fee Paid":
+                if offer.payment_deadline and frappe.utils.getdate(offer.payment_deadline) < frappe.utils.getdate(now_date):
+                    frappe.throw(_("Payment blocked: The Full Fee deadline ({0}) has passed.").format(offer.payment_deadline))
 
             # 2. Get Dynamic Gateway from Fee Structure
             gateway = frappe.db.get_value("Fee Structure", offer.fee_structure, "payment_gateway")

@@ -1,0 +1,53 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Reminder Email Log",
+  "email_account": null,
+  "email_template": "Applicant Application Rejected",
+  "error_log": null,
+  "modified": "2026-07-29 14:26:10.716560",
+  "name": "0dbceeejf6",
+  "recipient": "jenifar.a@azimpremjifoundation.org",
+  "reference_doctype": "User",
+  "reference_name": "jenifar.a@azimpremjifoundation.org",
+  "reminder_type": "Not Started Application Rejected",
+  "sender": null,
+  "sent_at": "2026-07-29 14:26:10.716055",
+  "status": "Sent",
+  "subject": "Regarding Your Application — NLS Admissions"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Reminder Email Log",
+  "email_account": null,
+  "email_template": "Applicant Application Rejected",
+  "error_log": null,
+  "modified": "2026-07-29 14:26:11.018933",
+  "name": "0deidio520",
+  "recipient": "nishanth.a@azimpremjifoundation.org",
+  "reference_doctype": "User",
+  "reference_name": "nishanth.a@azimpremjifoundation.org",
+  "reminder_type": "Not Started Application Rejected",
+  "sender": null,
+  "sent_at": "2026-07-29 14:26:11.018843",
+  "status": "Sent",
+  "subject": "Regarding Your Application — NLS Admissions"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Applicant Reminder Email Log",
+  "email_account": null,
+  "email_template": "Applicant Application Rejected",
+  "error_log": null,
+  "modified": "2026-07-29 14:26:11.187122",
+  "name": "0dfpbkmlce",
+  "recipient": "testapplicant@test.com",
+  "reference_doctype": "User",
+  "reference_name": "testapplicant@test.com",
+  "reminder_type": "Not Started Application Rejected",
+  "sender": null,
+  "sent_at": "2026-07-29 14:26:11.187049",
+  "status": "Sent",
+  "subject": "Regarding Your Application — NLS Admissions"
+ }
+]

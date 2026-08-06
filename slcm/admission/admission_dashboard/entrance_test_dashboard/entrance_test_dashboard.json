@@ -28,11 +28,11 @@
  "charts": [
   {
    "chart": "Allocated Students by Centre",
-   "width": "Half"
+   "width": "Full"
   },
   {
    "chart": "Allocated Students by Programme",
-   "width": "Half"
+   "width": "Full"
   }
  ],
  "creation": "2026-08-03 10:54:45.687555",
@@ -42,7 +42,7 @@
  "idx": 0,
  "is_default": 0,
  "is_standard": 1,
- "modified": "2026-08-03 14:49:32.193565",
+ "modified": "2026-08-05 15:12:23.437015",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Dashboard",

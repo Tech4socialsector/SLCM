@@ -6,6 +6,12 @@ frappe.views.calendar["Time Table"] = {
         title: "title",
         allDay: "allDay",
         color: "color",
+        // get_events() already returns naive local wall-clock times
+        // ("schedule_date from_time"), not UTC - skip Frappe's default
+        // system-tz -> user-tz re-projection or the tile renders at the
+        // wrong time whenever the viewer's personal timezone differs from
+        // System Settings (e.g. class entered as 9:00 AM shows as 2:30 PM).
+        convertToUserTz: 0,
     },
     get_events_method: "slcm.slcm.doctype.time_table.time_table.get_events",
     update_event_method: "slcm.slcm.doctype.time_table.time_table.update_event",
@@ -57,7 +63,7 @@ function show_time_table_event_details(event) {
         ["Course", props.course],
         ["Course Offering", props.course_offering],
         ["Faculty", props.instructor],
-        ["Venue", props.room || props.venue],
+        ["Venue", props.venue],
     ];
 
     if (props.based_on === "Course Schedule" && props.course_schedule) {
@@ -89,5 +95,17 @@ function show_time_table_event_details(event) {
             }
         },
     });
+
+    // "Apply to Future" only makes sense on the full form, where the venue /
+    // time change and its conflict check are visible together with the doc -
+    // keep this popover a quick-view and point users to the form for it.
+    dialog.set_secondary_action_label(__("Open & Edit Future Occurrences"));
+    dialog.set_secondary_action(function () {
+        dialog.hide();
+        if (frappe.model.can_write("Time Table")) {
+            frappe.set_route("Form", "Time Table", event.id);
+        }
+    });
+
     dialog.show();
 }

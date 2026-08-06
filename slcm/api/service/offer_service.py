@@ -426,8 +426,6 @@ class OfferService:
             throw(_("Cannot reject offer in status: {0}").format(status))
 
         offer.status = "Rejected"
-        if reason:
-            offer.edit_reason = reason # Passed to the log via model hook
         offer.save(ignore_permissions=True)
 
         from slcm.admission.utils.notifications import log_communication
@@ -456,8 +454,8 @@ class OfferService:
         Note: ``Accepted`` → ``Expired`` must be allowed in ``OfferLetter.validate_status_transition``.
         """
         active_offers = frappe.get_all("Offer Letter", filters={
-            "status": ["in", ["Issued", "Accepted"]]
-        }, fields=["name", "status", "offer_configrationn", "fee_structure"])
+            "status": ["in", ["Issued", "Accepted", "Confirmation Fee Paid"]]
+        }, fields=["name", "status", "offer_acceptance_deadline", "confirmation_fee_deadline", "payment_deadline"])
 
         now_date = frappe.utils.nowdate()
         to_expire = []
@@ -465,25 +463,25 @@ class OfferService:
         for row in active_offers:
             should_expire = False
             if row.status == "Issued":
-                if row.offer_configrationn:
-                    due_date = frappe.db.get_value("Offer Configuration", row.offer_configrationn, "due_date")
-                    if due_date and frappe.utils.getdate(due_date) < frappe.utils.getdate(now_date):
-                        should_expire = True
+                if row.offer_acceptance_deadline and frappe.utils.getdate(row.offer_acceptance_deadline) < frappe.utils.getdate(now_date):
+                    should_expire = True
             elif row.status == "Accepted":
                 # Find pending fee assignment
                 afa = frappe.db.get_value("Applicant Fee Assignment", 
                     {"offer_letter": row.name, "status": "Assigned", "docstatus": ["!=", 2]}, 
                     ["fee_type"], as_dict=1)
                 
-                if afa and row.fee_structure:
+                if afa:
                     if afa.fee_type == "Confirmation Fee":
-                        conf_due_date = frappe.db.get_value("Fee Structure", row.fee_structure, "due_date_for_confirmation_fee")
-                        if conf_due_date and frappe.utils.getdate(conf_due_date) < frappe.utils.getdate(now_date):
+                        if row.confirmation_fee_deadline and frappe.utils.getdate(row.confirmation_fee_deadline) < frappe.utils.getdate(now_date):
                             should_expire = True
                     elif afa.fee_type == "Admission Fee":
-                        valid_until = frappe.db.get_value("Fee Structure", row.fee_structure, "valid_until")
-                        if valid_until and frappe.utils.getdate(valid_until) < frappe.utils.getdate(now_date):
+                        if row.payment_deadline and frappe.utils.getdate(row.payment_deadline) < frappe.utils.getdate(now_date):
                             should_expire = True
+
+            elif row.status == "Confirmation Fee Paid":
+                if row.payment_deadline and frappe.utils.getdate(row.payment_deadline) < frappe.utils.getdate(now_date):
+                    should_expire = True
 
             if should_expire:
                 to_expire.append(row.name)
@@ -496,7 +494,7 @@ class OfferService:
                 # We save each individually to trigger the automated status hook
                 doc = frappe.get_doc("Offer Letter", offer_name)
                 doc.status = "Expired"
-                doc.edit_reason = _("Automatically expired by system scheduler.")
+
                 doc.save(ignore_permissions=True)
                 
                 from slcm.admission.utils.notifications import log_communication

@@ -3,7 +3,7 @@
  "allow_import": 1,
  "allow_rename": 1,
  "autoname": "naming_series:",
- "creation": "2026-01-27 14:47:00",
+ "creation": "2026-07-27 14:53:48.708859",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -226,7 +226,7 @@
    "fieldname": "venue",
    "fieldtype": "Link",
    "label": "Venue",
-   "options": "Venue Booking",
+   "options": "Venue Master",
    "reqd": 1
   },
   {
@@ -236,7 +236,7 @@
    "label": "Capacity"
   },
   {
-   "fetch_from": "venue.status",
+   "fetch_from": "venue.is_active",
    "fieldname": "status",
    "fieldtype": "Data",
    "label": "Status"
@@ -258,7 +258,7 @@
   }
  ],
  "links": [],
- "modified": "2026-07-24 16:01:21.773671",
+ "modified": "2026-08-03 12:53:19.709187",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Time Table",

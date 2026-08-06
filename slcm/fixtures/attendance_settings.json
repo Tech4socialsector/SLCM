@@ -16,7 +16,19 @@
   "enable_parent_rfid_alert": 0,
   "enable_rfid": 1,
   "include_office_hours_in_attendance": 1,
+  "l1_approval_email_template": null,
+  "l1_assignment_email_template": null,
+  "l1_due_days": 0,
+  "l1_last_assigned_index": 0,
+  "l1_rejected_email_template": null,
+  "l2_approval_email_template": null,
+  "l2_assignment_email_template": null,
+  "l2_due_days": 0,
+  "l2_last_assigned_index": 0,
+  "l2_rejected_email_template": null,
   "late_entry_buffer_minutes": 15,
+  "level_one_authority": [],
+  "level_two_authority": [],
   "minimum_attendance_percentage": 75.0,
   "modified": "2026-06-23 10:40:36.287251",
   "name": "Attendance Settings",
@@ -41,7 +53,7 @@
   "parent_alert_from_time": null,
   "parent_alert_to_time": null,
   "rfid_absence_threshold_hours": 12,
-  "rfid_swipe_mode": "In and Out",
-  "rfid_active_window_minutes": 10
+  "rfid_active_window_minutes": 10,
+  "rfid_swipe_mode": "In and Out"
  }
 ]

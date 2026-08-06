@@ -185,7 +185,7 @@ class IDCardGenerationTool(Document):
 			zip_buffer.getvalue(),
 			self.doctype,
 			self.name,
-			is_private=0,
+			is_private=1,
 		)
 
 		return saved_zip.file_url
@@ -322,7 +322,7 @@ class IDCardGenerationTool(Document):
 			zip_buffer.getvalue(),
 			self.doctype,
 			self.name,
-			is_private=0,
+			is_private=1,
 		)
 
 		return saved_zip.file_url
