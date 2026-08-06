@@ -87,7 +87,7 @@ def _slcm_inject_web_form_module_assets(web_form, context: dict, web_form_module
 
 	try:
 		web_form_module = frappe.get_module(web_form_module_qualname)
-	except Exception:
+	except Exception: 
 		return
 
 	get_ctx = getattr(web_form_module, "get_context", None)
@@ -195,10 +195,10 @@ def patch_web_form_program_link_options_once() -> None:
 
 	_orig = wf_mod.process_link_field
 
-	def _process_link_field(field, web_form_name):
+	def _process_link_field(field, web_form_name, *args, **kwargs):
 		if web_form_name in _APPLICANT_PORTAL_WEB_FORM_NAMES and field.get("options") in ["Programme", "PACE Programme"]:
 			field["allow_read_on_all_link_options"] = 1
-		return _orig(field, web_form_name)
+		return _orig(field, web_form_name, *args, **kwargs)
 
 	wf_mod.process_link_field = _process_link_field
 	_LINK_OPTIONS_PATCHED = True
