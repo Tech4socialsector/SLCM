@@ -49,50 +49,58 @@
     
     .master-tbl { 
         width: 100%; 
-        border-collapse: separate; 
-        border-spacing: 2px;
-        border: 1px solid #000; 
+        table-layout: fixed;
+        border-collapse: collapse; 
+        border: 3px double #000; 
     }
     
     .master-tbl td { 
-        border: 1px solid #000; 
+        border: 3px double #000; 
         padding: 5px 12px; 
         vertical-align: middle;
     }
     
-    .hdr-row td {
-        background-color: #9E1B32 !important; /* Deep Red */
+    .hdr-cell {
+        background-color: #9E1B32 !important;
         color: #fff !important;
-        text-align: center;
-        padding: 15px 10px;
-        position: relative;
+        padding: 0 !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
     
+    .nested-hdr-tbl {
+        width: 100%;
+        border-collapse: collapse;
+        border: none;
+    }
+    
+    .nested-hdr-tbl td {
+        border: none !important;
+        background-color: transparent !important;
+    }
+    
     .logo-box {
-        position: absolute;
-        left: 20px;
-        top: 50%;
-        transform: translateY(-50%);
         background: #fff;
-        padding: 4px;
-        width: 60px;
-        height: 60px;
-        border: 1.5px solid #9E1B32;
+        padding: 5px;
+        width: 70px;
+        height: 70px;
+        border: 3px double #9E1B32;
         text-align: center;
+        margin: 0 auto;
     }
     
     .univ-name {
-        font-size: 20px;
+        font-size: 21px;
         font-weight: normal;
         font-family: "Times New Roman", Times, serif;
-        letter-spacing: 0.5px;
+        white-space: nowrap;
+        letter-spacing: 0px;
+        margin-bottom: 5px;
     }
     
     .univ-sub {
-        font-size: 12px;
-        margin-top: 3px;
+        font-size: 14px;
+        font-family: "Times New Roman", Times, serif;
     }
     
     .title-row td {
@@ -121,11 +129,11 @@
     }
     
     .lbl-col {
-        width: 45%;
+        width: 50%;
     }
     
     .val-col {
-        width: 55%;
+        width: 50%;
     }
 </style>
 </head>
@@ -133,18 +141,31 @@
 
 <div class="result-card">
     <table class="master-tbl">
+        <colgroup>
+            <col style="width: 50%;">
+            <col style="width: 50%;">
+        </colgroup>
         <!-- Header -->
         <tr class="hdr-row">
-            <td colspan="2">
-                <div class="logo-box">
-                    {% if _logo_src %}
-                        <img src="{{ _logo_src }}" style="max-width:100%; max-height:100%; object-fit:contain; margin-top:2px;">
-                    {% else %}
-                        <div style="color:#000; font-size:9px; margin-top:15px;">LOGO</div>
-                    {% endif %}
-                </div>
-                <div class="univ-name" style="color: #ffffff;">NATIONAL LAW SCHOOL OF INDIA UNIVERSITY</div>
-                <div class="univ-sub" style="color: #ffffff;">BENGALURU</div>
+            <td colspan="2" class="hdr-cell">
+                <table class="nested-hdr-tbl">
+                    <tr>
+                        <td style="width: 15%; padding: 10px; text-align: center; vertical-align: middle;">
+                            <div class="logo-box">
+                                {% if _logo_src %}
+                                    <img src="{{ _logo_src }}" style="max-width:100%; max-height:100%; object-fit:contain;">
+                                {% else %}
+                                    <div style="color:#000; font-size:9px; margin-top:20px;">LOGO</div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td style="width: 70%; text-align: center; vertical-align: middle; padding: 15px 0;">
+                            <div class="univ-name" style="color: #ffffff; font-family: 'Times New Roman', Times, serif;">NATIONAL LAW SCHOOL OF INDIA UNIVERSITY</div>
+                            <div class="univ-sub" style="color: #ffffff; font-family: 'Times New Roman', Times, serif;">BENGALURU</div>
+                        </td>
+                        <td style="width: 15%;"></td>
+                    </tr>
+                </table>
             </td>
         </tr>
         
