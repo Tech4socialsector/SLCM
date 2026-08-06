@@ -2,7 +2,7 @@
  "actions": [],
  "allow_rename": 1,
  "autoname": "field:entrance_test_city_name",
- "creation": "2026-08-03 16:30:00.000000",
+ "creation": "2026-08-03 16:30:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -21,7 +21,7 @@
   },
   {
    "fieldname": "city_code",
-   "fieldtype": "Int",
+   "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "City Code"
@@ -30,7 +30,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-03 17:23:00.000000",
+ "modified": "2026-08-06 09:54:10.512643",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test City",
