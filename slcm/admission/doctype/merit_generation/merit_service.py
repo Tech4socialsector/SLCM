@@ -345,14 +345,11 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
             if existing_doc.status == "Published":
                 return existing_doc
 
-            # If status is "Generated" or "Draft", we allow re-generation
+            # If status is "Generated" or "Draft", soft-archive it as 'Superseded' to preserve audit trail
             if existing_doc.docstatus == 1:
                 existing_doc.cancel()
-                frappe.delete_doc("Merit List", existing_doc.name, ignore_permissions=True, force=True)
-                frappe.db.commit()
-            elif existing_doc.docstatus == 0:
-                frappe.delete_doc("Merit List", existing_doc.name, ignore_permissions=True, force=True)
-                frappe.db.commit()
+            existing_doc.db_set("status", "Superseded")
+            frappe.db.commit()
 
 
     # Fetch applicants names
@@ -360,7 +357,8 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
         sp_filters = {
             "admission_cycle": cycle,
             "campus": campus,
-            "program_level": program_level
+            "program_level": program_level,
+            "status": ["!=", "Superseded"]
         }
         if program:
             sp_filters["program"] = program
@@ -433,6 +431,67 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
     }, expires_in_sec=300)
 
     total_applicants = len(applicant_names)
+
+    # Bulk pre-fetch Entrance Test Seat Allocation, Applicant, child tables, and category traits
+    # to eliminate N+1 database queries inside the processing loop.
+    etsa_records = frappe.get_all(
+        "Entrance Test Seat Allocation",
+        filters={"name": ["in", applicant_names]},
+        fields=[
+            "name", "applicant", "candidate_name", "program", "program_level",
+            "part_a_total_marks_scored", "part_b_total_marks_scored",
+            "shortlisted_status", "percentile", "gender"
+        ]
+    ) if applicant_names else []
+    etsa_map = {r.name: r for r in etsa_records}
+
+    applicant_records = frappe.get_all(
+        "Applicant",
+        filters={"name": ["in", applicant_names]},
+        fields=["name", "hsc_percentage", "date_of_birth"]
+    ) if applicant_names else []
+    applicant_map = {r.name: r for r in applicant_records}
+
+    # Pre-fill category cache for _get_categorized_traits
+    from slcm.admission.doctype.seat_allocation.seat_allocation import _CATEGORY_CACHE
+    if applicant_names:
+        cat_rows = frappe.get_all(
+            "Applicant Category",
+            filters={"parent": ["in", applicant_names], "parenttype": "Entrance Test Seat Allocation"},
+            fields=["parent", "category"]
+        )
+        cat_map = defaultdict(list)
+        for r in cat_rows:
+            if r.category:
+                cat_map[r.parent].append(r.category)
+
+        vertical_set = {"SC", "ST", "OBC-NCL", "EWS"}
+        for name in applicant_names:
+            etsa_rec = etsa_map.get(name) or {}
+            raw_cats = cat_map.get(name, [])
+            gender = etsa_rec.get("gender")
+            if gender == "Female" and "Women" not in raw_cats:
+                raw_cats.append("Women")
+
+            normalized = []
+            for c in raw_cats:
+                if not c: continue
+                c_str = str(c).strip()
+                if "Karnataka" in c_str: normalized.append("Karnataka")
+                elif "Women" in c_str or "Female" in c_str: normalized.append("Women")
+                elif "PWD" in c_str or "Person with Disability" in c_str: normalized.append("PWD")
+                elif "OBC" in c_str or "BC" in c_str: normalized.append("OBC-NCL")
+                elif "EWS" in c_str: normalized.append("EWS")
+                elif "ST" in c_str: normalized.append("ST")
+                elif "SC" in c_str: normalized.append("SC")
+                else: normalized.append(c_str)
+
+            final_categories = list(set(normalized))
+            if not any(v in final_categories for v in vertical_set):
+                final_categories.append("General")
+
+            _CATEGORY_CACHE[name] = final_categories
+
     for i, name in enumerate(applicant_names):
         percent = (i + 1) * 80.0 / total_applicants
         description = _("Processing applicant {0} of {1}").format(i + 1, total_applicants)
@@ -443,38 +502,30 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
             "description": description,
             "status": "In Progress"
         }, expires_in_sec=300)
-        # Fetch Entrance Test Seat Allocation and Applicant documents
-        etsa_doc = frappe.get_doc("Entrance Test Seat Allocation", name)
-        applicant_doc = frappe.get_doc("Applicant", name)
-        
-        # Calculate averaged UG and PG CGPA from applicant_doc child tables
+        # Fetch Entrance Test Seat Allocation and Applicant documents (via pre-fetched maps)
+        etsa_doc = etsa_map.get(name) or frappe._dict({"name": name, "applicant": name})
+        applicant_doc = applicant_map.get(name) or {}
+
         ug_avg = 0
-        if applicant_doc.get("ug_degree_details"):
-            scores = [float(r.ug_cgpa or r.percentage_cgpa_obtained or 0) for r in applicant_doc.ug_degree_details]
-            if scores: ug_avg = sum(scores) / len(scores)
-            
         pg_avg = 0
-        if applicant_doc.get("pg_degree_details"):
-            scores = [float(r.pg_cgpa or r.percentagecgpa_obtained or 0) for r in applicant_doc.pg_degree_details]
-            if scores: pg_avg = sum(scores) / len(scores)
-            
+
         # Build local dictionary mimicking Eligibility Result properties
         # part_b_not_appeared: True when candidate was shortlisted for Part A but never appeared
         # for Part B (shortlisted_status on ETSA is not 'Shortlisted').
         # Candidates who appeared and scored 0 are NOT flagged as not_appeared.
-        etsa_part_b_shortlisted = (etsa_doc.shortlisted_status or "") == "Shortlisted"
+        etsa_part_b_shortlisted = (etsa_doc.get("shortlisted_status") or "") == "Shortlisted"
         app = frappe._dict({
-            "applicant_id": etsa_doc.applicant,
-            "candidate_name": etsa_doc.candidate_name,
-            "program": etsa_doc.program,
-            "program_level": etsa_doc.program_level,
+            "applicant_id": etsa_doc.get("applicant") or name,
+            "candidate_name": etsa_doc.get("candidate_name") or "Unknown",
+            "program": etsa_doc.get("program"),
+            "program_level": etsa_doc.get("program_level"),
             "hsc_percentage": applicant_doc.get("hsc_percentage") or 0,
-            "et_part_a_total_marks_scored": etsa_doc.part_a_total_marks_scored or 0,
-            "et_part_b_total_marks_scored": etsa_doc.part_b_total_marks_scored or 0,
+            "et_part_a_total_marks_scored": etsa_doc.get("part_a_total_marks_scored") or 0,
+            "et_part_b_total_marks_scored": etsa_doc.get("part_b_total_marks_scored") or 0,
             "ug_cgpa": ug_avg,
             "pg_cgpa": pg_avg,
             "date_of_birth": applicant_doc.get("date_of_birth"),
-            "percentile_score": etsa_doc.percentile or 0,
+            "percentile_score": etsa_doc.get("percentile") or 0,
             "part_b_not_appeared": processing_stage != "Part A Ranking" and not etsa_part_b_shortlisted
         })
         
