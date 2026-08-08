@@ -65,6 +65,18 @@ class InterviewList(Document):
         if not staff.is_active:
             frappe.throw(f"Staff member '{staff.staff_name}' is not active.")
 
+        if interview_date and interview_time:
+            # Prevent double-booking panel members
+            overlap = frappe.db.sql("""
+                SELECT name FROM `tabInterview Seat Allocation`
+                WHERE interview_staff_member = %s
+                  AND interview_date = %s
+                  AND interview_time = %s
+                  AND interview_status = 'Scheduled'
+            """, (staff_member, interview_date, interview_time))
+            if overlap:
+                frappe.throw(f"Staff member {staff.staff_name} is already booked for an interview on {interview_date} at {interview_time}.")
+
         applicant_map = {row.name: row for row in self.interview_applicant}
 
         created_count = 0

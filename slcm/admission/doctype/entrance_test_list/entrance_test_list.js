@@ -52,12 +52,10 @@ function open_allocation_dialog(frm) {
     }
 
     frappe.call({
-        method: "frappe.client.get_list",
+        method: "slcm.admission.doctype.entrance_test_list.entrance_test_list.get_providers_with_capacity",
         args: {
-            doctype: "Entrance Test Provider",
-            filters: provider_filters,
-            fields: ["name", "center_name", "center_address", "provider_type", "city", "pwd_accessible"],
-            limit_page_length: 100
+            city: frm.doc.entrance_test_city || "",
+            campus: frm.doc.campus || ""
         },
         callback: function (r) {
             const providers = r.message || [];
@@ -65,7 +63,7 @@ function open_allocation_dialog(frm) {
                 const target_label = frm.doc.entrance_test_city ? __("city '{0}'", [frm.doc.entrance_test_city]) : __("campus '{0}'", [frm.doc.campus]);
                 frappe.msgprint({
                     title: __("No Available Providers"),
-                    message: __("No active Entrance Test Providers with available seats found for {0}.", [target_label]),
+                    message: __("No active Entrance Test Providers found for {0}.", [target_label]),
                     indicator: "orange"
                 });
                 return;
@@ -129,8 +127,16 @@ function _show_allocation_dialog(frm, applicants, providers) {
                 options: "Entrance Test City",
                 default: frm.doc.entrance_test_city || "",
                 onchange: function() {
-                    const selected_city = d.get_value("entrance_test_city");
-                    fetch_and_render_providers(selected_city);
+                    fetch_and_render_providers();
+                }
+            },
+            {
+                label: __("Check Available Seats By Programme"),
+                fieldname: "check_available_seats_by_programme",
+                fieldtype: "Link",
+                options: "Programme",
+                onchange: function() {
+                    fetch_and_render_providers();
                 }
             },
             {
@@ -501,23 +507,16 @@ function _show_allocation_dialog(frm, applicants, providers) {
         render_center_page();
     }
 
-    function fetch_and_render_providers(city_name) {
-        const provider_filters = { 
-            active: 1
-        };
-        if (city_name) {
-            provider_filters.city = city_name;
-        } else if (frm.doc.campus) {
-            provider_filters.campus = frm.doc.campus;
-        }
+    function fetch_and_render_providers() {
+        const city_name = d ? d.get_value("entrance_test_city") : frm.doc.entrance_test_city;
+        const prog_name = d ? d.get_value("check_available_seats_by_programme") : "";
 
         frappe.call({
-            method: "frappe.client.get_list",
+            method: "slcm.admission.doctype.entrance_test_list.entrance_test_list.get_providers_with_capacity",
             args: {
-                doctype: "Entrance Test Provider",
-                filters: provider_filters,
-                fields: ["name", "center_name", "center_address", "provider_type", "city", "pwd_accessible", "available_capacity"],
-                limit_page_length: 100
+                city: city_name || "",
+                campus: (!city_name && frm.doc.campus) ? frm.doc.campus : "",
+                programme: prog_name || ""
             },
             callback: function (r) {
                 providers = r.message || [];

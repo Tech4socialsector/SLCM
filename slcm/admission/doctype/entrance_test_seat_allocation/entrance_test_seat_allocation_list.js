@@ -1065,17 +1065,16 @@ function _filter_providers_by_campus(d, all_providers) {
 // ──────────────────────────────────────────────────────────────────────────────
 function open_reject_and_allocate_dialog(listview) {
     frappe.call({
-        method: 'frappe.client.get_list',
+        method: "slcm.admission.doctype.entrance_test_list.entrance_test_list.get_providers_with_capacity",
         args: {
-            doctype: 'Entrance Test Provider',
-            filters: { active: 1 },
-            fields: ['name', 'center_name', 'center_address', 'campus', 'provider_type', 'city', 'pwd_accessible', 'available_capacity'],
-            limit_page_length: 200
+            city: "",
+            campus: "",
+            programme: ""
         },
         callback: function (r) {
             const all_providers = r.message || [];
             if (!all_providers.length) {
-                frappe.msgprint({ title: __('No Available Providers'), message: __('No active Entrance Test Providers with available seats found.'), indicator: 'orange' });
+                frappe.msgprint({ title: __('No Available Providers'), message: __('No active Entrance Test Providers found.'), indicator: 'orange' });
                 return;
             }
             _show_reject_and_allocate_dialog(listview, all_providers);
@@ -1083,7 +1082,8 @@ function open_reject_and_allocate_dialog(listview) {
     });
 }
 
-function _show_reject_and_allocate_dialog(listview, all_providers) {
+function _show_reject_and_allocate_dialog(listview, initial_providers) {
+    let all_providers = initial_providers;
     let applicants = [];
     const selected_applicant_names = new Set();
     const selected_provider_names = new Set();
@@ -1112,6 +1112,27 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
             const name = (p.center_name || p.name).toLowerCase();
             const addr = (p.center_address || "").toLowerCase();
             return name.includes(q) || addr.includes(q);
+        });
+    }
+
+    function fetch_and_render_providers() {
+        const city_name = d ? d.get_value("entrance_test_city") : "";
+        const prog_name = d ? d.get_value("check_available_seats_by_programme") : "";
+
+        frappe.call({
+            method: "slcm.admission.doctype.entrance_test_list.entrance_test_list.get_providers_with_capacity",
+            args: {
+                city: city_name || "",
+                campus: "",
+                programme: prog_name || ""
+            },
+            callback: function (r) {
+                all_providers = r.message || [];
+                selected_provider_names.clear();
+                center_current_page = 1;
+                render_center_page();
+                update_allocation_type_ui();
+            }
         });
     }
 
@@ -1265,20 +1286,28 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
         if(!d || !d.$wrapper) return;
         const alloc_type = d.get_value("allocation_type");
         if (alloc_type === "Allocate Directly") {
+            if (selected_provider_names.size > 1) {
+                const first = Array.from(selected_provider_names)[0];
+                selected_provider_names.clear();
+                selected_provider_names.add(first);
+            }
+            d.$wrapper.find("#center-select-all-chk").prop("disabled", true).prop("checked", false);
+            d.$wrapper.find("#center-select-all-chk").closest("label").css("opacity", "0.4").css("pointer-events", "none");
             d.$wrapper.find("#center-pwd-filter-chk").prop("disabled", false);
             d.$wrapper.find("#center-search-input").prop("disabled", false);
             d.$wrapper.find(".provider-checkbox").prop("disabled", false);
         } else {
-            // Allow Applicant Selection
-            // They can still select preferences if they want, but usually it's just letting applicant pick
+            d.$wrapper.find("#center-select-all-chk").prop("disabled", false);
+            d.$wrapper.find("#center-select-all-chk").closest("label").css("opacity", "1.0").css("pointer-events", "auto");
         }
+        render_center_page();
     }
 
     let d = new frappe.ui.Dialog({
         title: __('Reject and Allocate Centre'),
         size: 'extra-large',
         fields: [
-            { fieldtype: 'Section Break', label: __('Filters for Applicants') },
+            { fieldtype: 'Section Break', label: __('Filters & Allocation Settings') },
             {
                 label: __('Allocation Status'),
                 fieldname: 'filter_allocation_status',
@@ -1286,16 +1315,6 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
                 options: '\nNot Allocated\nPreferences Assigned\nAllocated\nReallocated\nCancelled\nRejected',
                 onchange: () => fetch_applicants()
             },
-            { fieldtype: 'Column Break' },
-            {
-                label: __('Entrance Test Status'),
-                fieldname: 'filter_entrance_test_status',
-                fieldtype: 'Select',
-                options: '\nAttended\nAbsent\nRescheduled\nNot Scheduled\nScheduled',
-                onchange: () => fetch_applicants()
-            },
-
-            { fieldtype: 'Section Break' },
             {
                 label: __("Allocate Type"),
                 fieldname: "allocation_type",
@@ -1307,15 +1326,23 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
                     update_allocation_type_ui();
                 }
             },
-            { fieldtype: "Column Break" },
+            { fieldtype: 'Column Break' },
             {
                 label: __("Entrance Test City"),
                 fieldname: "entrance_test_city",
                 fieldtype: "Link",
                 options: "Entrance Test City",
                 onchange: function() {
-                    center_current_page = 1;
-                    render_center_page();
+                    fetch_and_render_providers();
+                }
+            },
+            {
+                label: __("Check Available Seats By Programme"),
+                fieldname: "check_available_seats_by_programme",
+                fieldtype: "Link",
+                options: "Programme",
+                onchange: function() {
+                    fetch_and_render_providers();
                 }
             },
             { fieldtype: "Section Break" },
@@ -1331,7 +1358,7 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
                             </span>
                         </div>
                         <div style="position:relative; width:240px;">
-                            <input type="text" id="center-search-input" placeholder="${__("🔍 Search centre...")}" 
+                            <input type="text" id="center-search-input" placeholder="${__("🔍 Search Centre")}" 
                                    style="width:100%; padding:6px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; outline:none; background:#ffffff; transition:border 0.15s;">
                         </div>
                     </div>
@@ -1379,7 +1406,7 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
                 label: __("Auto-select (Enter Number)"),
                 fieldname: "auto_select_count",
                 fieldtype: "Int",
-                description: __("Enter count to automatically select first N unallocated students")
+                description: __("Enter count to automatically select first N unallocated applicants")
             },
             { fieldtype: "Section Break" },
             { fieldtype: 'HTML', fieldname: 'applicants_html' }
@@ -1395,6 +1422,11 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
             }
             if (values.allocation_type === "Allocate Directly" && !selected_providers_array.length) {
                 frappe.msgprint(__('Please select at least one provider (test centre).'));
+                return;
+            }
+
+            if (values.allocation_type === "Allocate Directly" && selected_providers_array.length > 1) {
+                frappe.msgprint(__("For 'Allocate Directly', please select only one Entrance Test Centre."));
                 return;
             }
 
@@ -1473,10 +1505,21 @@ function _show_reject_and_allocate_dialog(listview, all_providers) {
 
     d.$wrapper.on("change", ".provider-checkbox", function () {
         const name = $(this).data("name");
-        if (this.checked) {
-            selected_provider_names.add(name);
+        const alloc_type = d.get_value("allocation_type");
+        
+        if (alloc_type === "Allocate Directly") {
+            if (this.checked) {
+                selected_provider_names.clear();
+                selected_provider_names.add(name);
+            } else {
+                selected_provider_names.delete(name);
+            }
         } else {
-            selected_provider_names.delete(name);
+            if (this.checked) {
+                selected_provider_names.add(name);
+            } else {
+                selected_provider_names.delete(name);
+            }
         }
         render_center_page(); // re-render to update selected styling
     });
