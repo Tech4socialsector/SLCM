@@ -1188,12 +1188,12 @@ def lock_expired_drafts():
     # This logic needs to be updated to use Stages or Deadlines instead of cycle.application_end
     pass
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def api_get_stage_progress(applicant=None):
     """Stub for applicant_portal.js"""
     return []
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def api_get_campus_status(applicant=None):
     """Stub for applicant_portal.js"""
     return []

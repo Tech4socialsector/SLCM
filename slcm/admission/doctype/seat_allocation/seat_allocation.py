@@ -521,7 +521,6 @@ class SeatAllocation(Document):
             })
 
         self.save()
-        frappe.db.commit()
 
     def _finish_allocation(self):
         """
@@ -565,7 +564,6 @@ class SeatAllocation(Document):
         self.status = "Allocated"
         self.save()
         self.sync_filled_seats()
-        frappe.db.commit()
 
         if not getattr(self.flags, "is_background", False):
             frappe.msgprint("Seat Allocation phase completed successfully.")
@@ -886,7 +884,6 @@ class SeatAllocation(Document):
                         frappe.log_error(f"Manual Promotion Offer Generation Failed: {str(e)}", "Waitlist Promotion")
                 
                 self.save(ignore_permissions=True)
-                frappe.db.commit()
                 return True
         else:
             from slcm.admission.doctype.waitlist_rule.waitlist_promotion import promote_waitlist_without_rule
@@ -930,9 +927,8 @@ class SeatAllocation(Document):
 
             # Periodically commit to manage resources
             if i % 10 == 0:
-                frappe.db.commit()
+                pass # Removed manual commit to preserve atomicity
 
-        frappe.db.commit()
         frappe.msgprint(frappe._("Seat Allocation has been published successfully, and notification emails have been queued."), indicator="green")
 
     def _send_allocation_notification(self, row, email):
@@ -1035,7 +1031,6 @@ class SeatAllocation(Document):
 
             frappe.db.set_value("Applicant", row.applicant_id, "status", new_status)
 
-        frappe.db.commit()
         frappe.msgprint(frappe._("Seat Allocation has been unpublished and candidate statuses reverted."), indicator="orange")
 
 

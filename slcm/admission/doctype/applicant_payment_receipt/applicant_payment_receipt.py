@@ -12,6 +12,15 @@ from frappe.utils.file_manager import save_file
 class ApplicantPaymentReceipt(Document):
 	def validate(self):
 		self.set_notification_receiver()
+		
+		if self.applicant_fee_assignment and self.currency:
+			demand_currency = frappe.db.get_value("Applicant Fee Assignment", self.applicant_fee_assignment, "currency")
+			if demand_currency and demand_currency != self.currency:
+				frappe.throw(
+					frappe._("Currency mismatch: Payment receipt currency ({0}) does not match the fee assignment currency ({1}).").format(
+						self.currency, demand_currency
+					)
+				)
 
 	def after_insert(self):
 		"""Automated generation and attachment of PDF on creation."""

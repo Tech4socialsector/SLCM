@@ -598,6 +598,9 @@ def convert_applicant_to_student(applicant_name, program, admission_cycle, offer
         frappe.throw(frappe._("Applicant {0} not found.").format(applicant_name))
 
     applicant = frappe.get_doc("Applicant", applicant_name)
+    
+    # Acquire a row-level lock on the Applicant record to serialize concurrent conversion requests
+    frappe.db.sql("SELECT name FROM `tabApplicant` WHERE name = %s FOR UPDATE", applicant_name)
 
     # ── 1. Check if Student Master already exists ──────────────────────────────
     existing_by_app_no = frappe.db.get_value(

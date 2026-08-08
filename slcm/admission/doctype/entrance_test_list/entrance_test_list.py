@@ -1071,3 +1071,32 @@ def _resolve_entrance_test_details_from_cycle(cycle_name, program=None, program_
 
     return {}
 
+
+@frappe.whitelist()
+def get_providers_with_capacity(city=None, campus=None, programme=None):
+    filters = {"active": 1}
+    if city:
+        filters["city"] = city
+    elif campus:
+        filters["campus"] = campus
+        
+    providers = frappe.get_all("Entrance Test Provider", 
+        filters=filters,
+        fields=["name", "center_name", "center_address", "provider_type", "city", "pwd_accessible", "available_capacity", "total_capacity"],
+        limit_page_length=100
+    )
+    
+    for p in providers:
+        if programme:
+            prog_cap = frappe.db.get_value("Programme Capacity", 
+                {"parent": p.name, "parenttype": "Entrance Test Provider", "program": programme},
+                ["capacity", "reserved_seats", "available_capacity"], as_dict=True)
+            if prog_cap:
+                avail = prog_cap.available_capacity if prog_cap.available_capacity is not None else max(0, (prog_cap.capacity or 0) - (prog_cap.reserved_seats or 0))
+                p.available_capacity = avail
+            else:
+                p.available_capacity = 0
+        else:
+            p.available_capacity = p.available_capacity or 0
+            
+    return providers
