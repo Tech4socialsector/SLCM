@@ -98,6 +98,7 @@ class Applicant(Document):
         if self.status in ("Submitted", "Completed"):
             self._validate_national_test_percentage()
             self.validate_eligibility()
+            self.validate_dynamic_conditions()
             if self.evaluation_status == "Ineligible":
                 frappe.throw(
                     _("Submission Not Allowed: Applicant is not eligible."),
@@ -108,6 +109,34 @@ class Applicant(Document):
                 self.status = _get_submission_status(self)
 
         self.update_applicant_stage_flags()
+
+    def validate_dynamic_conditions(self):
+        """Enforce dynamic form conditions on the server side."""
+        if self.status not in ("Submitted", "Completed"):
+            return
+            
+        rules = frappe.get_all("Form Condition Rule", filters={"is_active": 1}, fields=["trigger_field", "condition", "trigger_value", "action", "target_field"])
+        for rule in rules:
+            trigger_val = self.get(rule.trigger_field)
+            if trigger_val is None:
+                continue
+                
+            match = False
+            if rule.condition == "=":
+                match = str(trigger_val) == str(rule.trigger_value)
+            elif rule.condition == "!=":
+                match = str(trigger_val) != str(rule.trigger_value)
+            elif rule.condition == ">":
+                match = flt(trigger_val) > flt(rule.trigger_value)
+            elif rule.condition == "<":
+                match = flt(trigger_val) < flt(rule.trigger_value)
+                
+            if match and rule.action == "Require":
+                if not self.get(rule.target_field):
+                    frappe.throw(
+                        f"Field '{rule.target_field}' is mandatory because '{rule.trigger_field}' meets the condition.",
+                        title="Missing Conditional Mandatory Field"
+                    )
 
     def update_applicant_stage_flags(self):
         """

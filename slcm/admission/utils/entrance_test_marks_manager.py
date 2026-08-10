@@ -382,16 +382,13 @@ def import_entrance_test_marks_file(file_url=None):
                 update_dict["total_marks_secured_in_part_a_b"] = total_sec
                 update_dict["percentage"] = percentage
 
-            # Update DB without modifying modified timestamp so background jobs don't clash
-            frappe.db.set_value("Entrance Test Seat Allocation", alloc_name, update_dict, update_modified=False)
-            
-            # Explicitly invoke recalculate_result_status equivalent
-            if "result_status" in update_dict and current_doc.applicant:
-                try:
-                    from slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation import _update_applicant_status_for_result_status
-                    _update_applicant_status_for_result_status(current_doc.applicant, update_dict["result_status"])
-                except Exception as e:
-                    frappe.log_error(f"Failed to update applicant status for {current_doc.applicant}: {str(e)}")
+            # Load the full document to ensure all validations run
+            doc = frappe.get_doc("Entrance Test Seat Allocation", alloc_name)
+            doc.update(update_dict)
+            if hasattr(doc, "recalculate_result_status"):
+                doc.recalculate_result_status()
+            doc.flags.ignore_permissions = True
+            doc.save()
 
             updated_count += 1
         
