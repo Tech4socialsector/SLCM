@@ -82,9 +82,26 @@ class EntranceTestList(Document):
                             row.exempts_entrance_test = ee.exempts_entrance_test
                             row.exempts_interview = ee.exempts_interview
 
+        self.set_allocation_status()
+
+    def set_allocation_status(self):
+        if not self.entrance_test_applicant:
+            self.allocation_status = "Draft"
+            return
+            
+        allocated_count = sum(1 for row in self.entrance_test_applicant if row.allocation_status in ("Allocated", "Converted"))
+        total_count = len(self.entrance_test_applicant)
+        
+        if allocated_count == 0:
+            self.allocation_status = "Draft"
+        elif allocated_count == total_count:
+            self.allocation_status = "Completed"
+        else:
+            self.allocation_status = "Partially Completed"
+
     @frappe.whitelist()
     @frappe.whitelist()
-    def allocate_seats(self, providers, selected_applicants, allocation_date=None, entrance_test_name=None, allocation_type=None):
+    def allocate_seats(self, providers, selected_applicants, allocation_date=None, entrance_test_name=None, allocation_type=None, send_email=1):
         """
         Logic:
           - If allocation_type == "Allocate Directly":
@@ -354,7 +371,7 @@ class EntranceTestList(Document):
                     except Exception:
                         pass
 
-                if email:
+                if email and frappe.utils.cint(send_email):
                     try:
                         _send_allocation_email(allocation, email, allocation_type)
                         _send_allocation_notification(allocation, email)
@@ -383,6 +400,18 @@ class EntranceTestList(Document):
                     "applicant_id": getattr(app, "applicant_id", app_name) or app_name,
                     "reason": f"System error during allocation: {str(e)}"
                 })
+
+        
+        allocated_count = frappe.db.count("Entrance Test Applicant", {"parent": self.name, "allocation_status": ["in", ("Allocated", "Converted")]})
+        total_len = len(self.entrance_test_applicant) if self.entrance_test_applicant else 0
+        if total_len > 0:
+            if allocated_count == 0:
+                new_status = "Draft"
+            elif allocated_count == total_len:
+                new_status = "Completed"
+            else:
+                new_status = "Partially Completed"
+            frappe.db.set_value("Entrance Test List", self.name, "allocation_status", new_status)
 
         frappe.db.set_value("Entrance Test List", self.name, "modified", frappe.utils.now())
         frappe.db.commit()
@@ -561,8 +590,8 @@ class EntranceTestList(Document):
         for row in self.entrance_test_applicant:
             if not row.applicant_id:
                 continue
-            # Skip applicants already fully allocated or cancelled
-            if row.allocation_status in ("Allocated", "Cancelled", "Rejected"):
+            # Skip applicants already fully allocated, converted to another city, or cancelled
+            if row.allocation_status in ("Allocated", "Converted", "Cancelled", "Rejected"):
                 continue
 
             app_doc = frappe.get_all("Applicant", filters={"name": row.applicant_id}, fields=["first_preference", "second_preference", "third_preference"], limit=1)
@@ -678,6 +707,19 @@ class EntranceTestList(Document):
             for row in rows:
                 frappe.db.set_value("Entrance Test Applicant", row.name, "allocation_status", "Converted")
                 row.allocation_status = "Converted"
+            frappe.db.commit()
+            
+        # Update allocation status for current list
+        allocated_count = frappe.db.count("Entrance Test Applicant", {"parent": self.name, "allocation_status": ["in", ("Allocated", "Converted")]})
+        total_len = len(self.entrance_test_applicant) if self.entrance_test_applicant else 0
+        if total_len > 0:
+            if allocated_count == 0:
+                new_status = "Draft"
+            elif allocated_count == total_len:
+                new_status = "Completed"
+            else:
+                new_status = "Partially Completed"
+            frappe.db.set_value("Entrance Test List", self.name, "allocation_status", new_status)
             frappe.db.commit()
         
         return created_lists

@@ -115,7 +115,11 @@ class Applicant(Document):
         if self.status not in ("Submitted", "Completed"):
             return
             
-        rules = frappe.get_all("Form Condition Rule", filters={"is_active": 1}, fields=["trigger_field", "condition", "trigger_value", "action", "target_field"])
+        filters = {}
+        if frappe.db.has_column("Form Condition Rule", "is_active"):
+            filters["is_active"] = 1
+
+        rules = frappe.get_all("Form Condition Rule", filters=filters, fields=["trigger_field", "condition", "trigger_value", "action", "target_field"])
         for rule in rules:
             trigger_val = self.get(rule.trigger_field)
             if trigger_val is None:
