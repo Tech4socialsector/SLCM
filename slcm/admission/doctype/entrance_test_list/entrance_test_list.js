@@ -274,7 +274,7 @@ function _show_allocation_dialog(frm, applicants, providers) {
                 label: __("Auto-select (Enter Number)"),
                 fieldname: "auto_select_count",
                 fieldtype: "Int",
-                description: __("Enter count to automatically select first N unallocated students")
+                description: __("Enter count to automatically select first N unallocated applicant")
             },
             {
                 fieldtype: "Section Break"
