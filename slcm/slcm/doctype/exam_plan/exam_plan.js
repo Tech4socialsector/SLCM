@@ -524,6 +524,29 @@ function _csm_open(exam_plan, exam_name) {
 	});
 }
 
+/* ── Extract a readable message from a failed frappe.call ─── */
+function _csm_error_message(r) {
+	try {
+		if (r && r._server_messages) {
+			const msgs = JSON.parse(r._server_messages);
+			if (msgs && msgs.length) {
+				const last = JSON.parse(msgs[msgs.length - 1]);
+				return {
+					title: last.title || 'Error',
+					message: last.message || last.title || 'An error occurred.'
+				};
+			}
+		}
+		if (r && r.exception) {
+			const idx = r.exception.indexOf(': ');
+			return { title: 'Error', message: idx !== -1 ? r.exception.slice(idx + 2) : r.exception };
+		}
+	} catch (e) {
+		// fall through to default
+	}
+	return { title: 'Error', message: 'Something went wrong. Please check the browser console for details.' };
+}
+
 /* ── Inline notification (inside overlay) ─────────── */
 function _csm_notify($ov, msg, type) {
 	// type: 'warn' | 'ok' | 'error'
@@ -552,6 +575,11 @@ function _csm_load(exam_plan, search, $ov) {
 			$ov.data('_courses', courses);
 			$ov.find('.csm-chk-all').prop('checked', false);
 			_csm_sort_render($ov);
+		},
+		error: r => {
+			const { title, message } = _csm_error_message(r);
+			$ov.find('.csm-tbody').html(`<tr><td colspan="8" class="csm-empty">Failed to load courses: ${_esc(message)}</td></tr>`);
+			frappe.msgprint({ title, message, indicator: 'red' });
 		}
 	});
 }
@@ -745,6 +773,11 @@ function _csm_show_map_panel(exam_plan, selected, $ov) {
 				_fill_select($bd.find('#csm-eval-select'), _evalAll, '-- Select Evaluation Schema --');
 				const defEval = settings.default_evaluation_schema || '';
 				$bd.find('#csm-eval-select').val(preEval || defEval || '');
+			},
+			error: r => {
+				const { title, message } = _csm_error_message(r);
+				$bd.find('#csm-eval-select').empty().append('<option value="">Failed to load</option>');
+				frappe.msgprint({ title, message, indicator: 'red' });
 			}
 		});
 		frappe.call({
@@ -755,6 +788,11 @@ function _csm_show_map_panel(exam_plan, selected, $ov) {
 				_fill_select($bd.find('#csm-grade-select'), _gradeAll, '-- Select Grade Schema --');
 				const defGrade = settings.default_grade_schema || '';
 				$bd.find('#csm-grade-select').val(preGrade || defGrade || '');
+			},
+			error: r => {
+				const { title, message } = _csm_error_message(r);
+				$bd.find('#csm-grade-select').empty().append('<option value="">Failed to load</option>');
+				frappe.msgprint({ title, message, indicator: 'red' });
 			}
 		});
 	};
@@ -840,10 +878,16 @@ function _csm_show_map_panel(exam_plan, selected, $ov) {
 		frappe.call({
 			method: 'slcm.slcm.doctype.exam_plan.exam_plan_api.save_course_schema',
 			args: { exam_plan, assignments: JSON.stringify(assignments), reason: reason || '' },
+			error: r => {
+				$btn.prop('disabled', false).text('Apply');
+				const { title, message } = _csm_error_message(r);
+				frappe.msgprint({ title, message, indicator: 'red' });
+			},
 			callback: r => {
 				if (r && r.exc) {
 					$btn.prop('disabled', false).text('Apply');
-					frappe.msgprint({ title: 'Error', message: r.exc, indicator: 'red' });
+					const { title, message } = _csm_error_message(r);
+					frappe.msgprint({ title, message, indicator: 'red' });
 					return;
 				}
 				// Update DOM directly (fast path)
@@ -948,10 +992,15 @@ function _csm_show_unmap_panel(exam_plan, selected, $ov) {
 
 		const $btn = $bd.find('.csm-pnl-confirm').prop('disabled', true).text('Removing…');
 
+		const onError = r => {
+			$btn.prop('disabled', false).text('Confirm Unmap');
+			const { title, message } = _csm_error_message(r);
+			frappe.msgprint({ title, message, indicator: 'red' });
+		};
+
 		const done = r => {
 			if (r && r.exc) {
-				$btn.prop('disabled', false).text('Confirm Unmap');
-				frappe.msgprint({ title: 'Error', message: r.exc, indicator: 'red' });
+				onError(r);
 				return;
 			}
 			// Update DOM directly
@@ -977,7 +1026,8 @@ function _csm_show_unmap_panel(exam_plan, selected, $ov) {
 			frappe.call({
 				method: 'slcm.slcm.doctype.exam_plan.exam_plan_api.unmap_course_schema',
 				args: { exam_plan, courses: JSON.stringify(selected) },
-				callback: done
+				callback: done,
+				error: onError
 			});
 		} else {
 			// Partial unmap — null out only the checked field
@@ -990,7 +1040,8 @@ function _csm_show_unmap_panel(exam_plan, selected, $ov) {
 			frappe.call({
 				method: 'slcm.slcm.doctype.exam_plan.exam_plan_api.save_course_schema',
 				args: { exam_plan, assignments: JSON.stringify(assignments) },
-				callback: done
+				callback: done,
+				error: onError
 			});
 		}
 	});
