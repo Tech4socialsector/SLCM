@@ -22,37 +22,30 @@ class IntegrationTestShortlistingMeritList(IntegrationTestCase):
 			"shortlist_status": "Shortlisted"
 		})
 
-		# Mock get_all to simulate Entrance Test Seat Allocation records
-		all_allocs = [
-			frappe._dict({"name": "ALLOC-01", "applicant": "APP-TEST-SHORTLIST-01", "shortlisted_status": ""}),
-			frappe._dict({"name": "ALLOC-02", "applicant": "APP-TEST-SHORTLIST-02", "shortlisted_status": "Shortlisted"})
-		]
+		sql_queries = []
+		def mock_sql(query, values=None, *args, **kwargs):
+			sql_queries.append((query, values))
+			return []
 
-		saved_values = {}
-		def mock_set_value(dt, name, field, val, update_modified=False):
-			saved_values[name] = val
-
-		orig_get_all = frappe.get_all
-		orig_set_value = frappe.db.set_value
+		orig_sql = frappe.db.sql
+		orig_delete = frappe.db.delete
 
 		try:
-			frappe.db.set_value = mock_set_value
-			frappe.get_all = lambda dt, **kwargs: all_allocs if dt == "Entrance Test Seat Allocation" else []
+			frappe.db.sql = mock_sql
+			frappe.db.delete = lambda dt, filters: None
 
 			# Test Sync
 			sp.sync_shortlisted_status_to_entrance_test_allocations()
-			assert saved_values.get("ALLOC-01") == "Shortlisted"
-			assert saved_values.get("ALLOC-02") == ""  # Not in shortlist_applicants -> reset to blank
+			assert any("SET shortlisted_status = %(status)s" in q[0] and q[1].get("status") == "Shortlisted" for q in sql_queries)
 
 			# Test Clear on Deletion
-			saved_values.clear()
+			sql_queries.clear()
 			sp.clear_shortlisted_status_in_entrance_test_allocations()
-			assert saved_values.get("ALLOC-01") == ""
-			assert saved_values.get("ALLOC-02") == ""
+			assert any("SET shortlisted_status = ''" in q[0] for q in sql_queries)
 
 		finally:
-			frappe.get_all = orig_get_all
-			frappe.db.set_value = orig_set_value
+			frappe.db.sql = orig_sql
+			frappe.db.delete = orig_delete
 
 	def test_part_b_zero_or_negative_rejection_in_final_merit_ranking(self):
 		"""

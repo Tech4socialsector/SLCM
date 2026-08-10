@@ -5,18 +5,6 @@ frappe.ui.form.on("Shortlisting Merit List", {
                 start_shortlist_progress_polling(frm);
             }
 
-            frm.add_custom_button(__("Run Shortlisting Merit List Logic"), function () {
-                frappe.call({
-                    method: "execute_shortlisting_logic",
-                    doc: frm.doc,
-                    freeze: true,
-                    callback: function () {
-                        frm.reload_doc();
-                        frappe.show_alert(__("Shortlisting Merit List logic executed successfully."));
-                    }
-                });
-            }, __("Actions"));
-
             frm.add_custom_button(__("Generate Final Admission Merit"), function () {
                 frappe.confirm(__("This will generate the final Merit List (Part A + Part B). Continue?"), function () {
                     frappe.call({
