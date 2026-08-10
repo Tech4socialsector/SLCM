@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:entrance_test_city_name",
  "creation": "2026-08-03 16:30:00",
@@ -30,7 +31,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-06 09:54:10.512643",
+ "modified": "2026-08-07 14:26:04.497883",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test City",
