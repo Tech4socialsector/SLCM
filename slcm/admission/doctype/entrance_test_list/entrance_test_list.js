@@ -1023,7 +1023,7 @@ function _execute_allocation(frm, parent_dialog, selected_providers, selected_ap
                             <span id="etg-counter-text">Processing 0 of ${total_count}</span>
                             <span style="display:flex; align-items:center; gap:4px; font-weight:600; color:#10b981;">
                                 <span style="display:inline-block; width:7px; height:7px; background:#10b981; border-radius:50%; animation: pulse 1.5s infinite;"></span>
-                                Real-Time Database Commits
+                                Please wait...
                             </span>
                         </div>
                     </div>
