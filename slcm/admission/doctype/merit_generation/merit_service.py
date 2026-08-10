@@ -612,6 +612,10 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
             execute_advanced_allocation_logic(merit, is_shortlist_allocation=True)
             _populate_category_lists(merit)
 
+    merit.total_applicants = len(merit.merit_applicants)
+    merit.total_selected = len([a for a in merit.merit_applicants if a.status == "Selected" or getattr(a, "allocation_type", "") in ("Open", "Reserved")])
+    merit.total_rejected = len([a for a in merit.merit_applicants if a.status == "Rejected"])
+
     if save:
         merit.insert()
         frappe.db.commit()
@@ -1105,10 +1109,17 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                 deficit = target_info["seats"] - len(comp_in_v)
                 
                 if deficit > 0:
-                    potential_in = [u for u in unallocated if _has_trait(u.applicant_id, comp_cat) and _check_percentile_eligibility(u, vertical_targets, horizontal_targets)]
-                    # Filter potential by category if not General
-                    if v_cat != "General":
+                    if v_cat == "General":
+                        # For General Karnataka sub-quota, candidates can come from unallocated OR
+                        # from reserved categories in allocated_list (Merit Migration from Reserved to Open Karnataka)
+                        potential_unallocated = [u for u in unallocated if _has_trait(u.applicant_id, comp_cat) and _check_percentile_eligibility(u, vertical_targets, horizontal_targets)]
+                        potential_allocated_reserved = [a for a in allocated_list if a.vertical_category != "General" and _has_trait(a.applicant_id, comp_cat) and _check_percentile_eligibility(a, vertical_targets, horizontal_targets)]
+                        potential_in = potential_unallocated + potential_allocated_reserved
+                        potential_in.sort(key=lambda x: (x.overall_rank or 999999))
+                    else:
+                        potential_in = [u for u in unallocated if _has_trait(u.applicant_id, comp_cat) and _check_percentile_eligibility(u, vertical_targets, horizontal_targets)]
                         potential_in = [u for u in potential_in if v_cat in get_applicant_categories(u.applicant_id)]
+                        potential_in.sort(key=lambda x: (x.overall_rank or 999999))
                     
                     for in_cand in potential_in:
                         if deficit <= 0: break
@@ -1118,7 +1129,18 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                             # Sort by lowest merit rank for displacement (highest rank number)
                             eligible_out.sort(key=lambda x: -(x.overall_rank or 999999))
                             out_cand = eligible_out[0]
-                            comp_candidates = [a for a in unallocated if _has_trait(a.applicant_id, comp_cat) and _check_percentile_eligibility(a, vertical_targets, horizontal_targets)]
+                            
+                            # If in_cand is already in this vertical category, skip
+                            if getattr(in_cand, "vertical_category", None) == v_cat:
+                                continue
+
+                            # If in_cand was in a reserved category, free up that reserved seat
+                            prev_v = getattr(in_cand, "vertical_category", None)
+                            if prev_v and prev_v in vertical_targets:
+                                vertical_targets[prev_v]["filled"] -= 1
+                                if in_cand in allocated_list:
+                                    allocated_list.remove(in_cand)
+
                             # Recursive Displacement: Save out_cand in their reserved category if possible
                             disp_reason = f"Displaced from {v_cat} category to accommodate {comp_cat} sub-quota candidate ({in_cand.candidate_name or in_cand.applicant_id})"
                             _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies, reason=disp_reason)
@@ -1179,6 +1201,54 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                         _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies, reason=disp_reason)
                         _assign_seat_to_applicant(in_cand, v_belong, "Open" if v_belong == "General" else "Reserved", allocated_list, unallocated, vertical_targets[v_belong], status_field)
                         deficit -= 1
+
+        # --- PHASE 3.25: MULTI-TRAIT SUB-QUOTA RECONCILIATION ---
+        # If Phase 3 introduced horizontal candidates with compartmental traits (e.g. PWD + Karnataka),
+        # the category may now have more compartmental candidates than its target quota.
+        # Reconcile so that excess compartmental candidates (who do not have other protected horizontal traits)
+        # are released back to unallocated, making room for top unallocated vertical merit candidates.
+        for comp_row in policy.compartmental_reservations:
+            comp_cat = comp_row.category_name
+            for v_cat in ordered_cats:
+                v_info = vertical_targets[v_cat]
+                target_info = compartmental_targets.get((comp_cat, v_cat))
+                if not target_info or target_info["seats"] <= 0:
+                    continue
+
+                comp_in_v = [a for a in allocated_list if a.vertical_category == v_cat and _has_trait(a.applicant_id, comp_cat)]
+                excess = len(comp_in_v) - target_info["seats"]
+                if excess > 0:
+                    # Candidates eligible to be released: those who have comp_cat trait,
+                    # but DO NOT satisfy any other mandatory horizontal reservation (like PWD)
+                    # and are the lowest ranked in merit
+                    releasable = [
+                        a for a in comp_in_v
+                        if not any(
+                            _has_trait(a.applicant_id, h.category_name)
+                            for h in policy.horizontal_reservations
+                            if h.category_name != "Women"
+                        )
+                    ]
+                    # Further verify they are not essential for Women quota if Women quota would fall below target
+                    releasable_safe = []
+                    for cand in releasable:
+                        is_safe = True
+                        for h in policy.horizontal_reservations:
+                            if _has_trait(cand.applicant_id, h.category_name):
+                                cur_h_count = len([a for a in allocated_list if _has_trait(a.applicant_id, h.category_name)])
+                                if cur_h_count <= horizontal_targets[h.category_name]["seats"]:
+                                    is_safe = False
+                                    break
+                        if is_safe:
+                            releasable_safe.append(cand)
+
+                    if releasable_safe:
+                        # Sort by lowest merit (highest rank number)
+                        releasable_safe.sort(key=lambda x: -(x.overall_rank or 999999))
+                        to_release = releasable_safe[:excess]
+                        for rel_cand in to_release:
+                            disp_reason = f"Displaced from {v_cat} as {comp_cat} sub-quota was fulfilled by higher/dual-trait candidate"
+                            _execute_recursive_displacement(rel_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies, reason=disp_reason)
 
         # --- PHASE 3.5: VERTICAL BACKFILL ---
         _publish_allocation_progress(doc, 96, "Applying vertical backfills for vacant seats...")
@@ -1247,7 +1317,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                                         has_unfilled_subquota = True
                                         break
                             
-                            tie_candidates_to_assign.append((u, v_cat))
+                            if v_info["filled"] < v_info["seats"] or has_unfilled_subquota:
+                                tie_candidates_to_assign.append((u, v_cat))
 
             for tie_cand, v_cat in tie_candidates_to_assign:
                 if tie_cand in unallocated:
