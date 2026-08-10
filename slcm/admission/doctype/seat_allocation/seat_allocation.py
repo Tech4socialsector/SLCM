@@ -171,13 +171,25 @@ class SeatAllocation(Document):
                             x for x in self.selection_applicant
                             if cat in get_applicant_categories(x.applicant_id)
                         ]
+                        matching_allocated = [
+                            x for x in matching_apps if x.selection_status in selection_statuses
+                        ]
                     else:
                         matching_apps = [
                             x for x in self.selection_applicant
-                            if getattr(x, "actual_category", "") == cat or getattr(x, "vertical_category", "") == cat
+                            if (getattr(x, "vertical_category", "") or getattr(x, "actual_category", "")) == cat
                         ]
+                        # For allocated vertical seats, count candidates consuming that vertical quota
+                        matching_allocated = [
+                            x for x in self.selection_applicant
+                            if getattr(x, "vertical_category", "") == cat and x.selection_status in selection_statuses
+                        ]
+                else:
+                    matching_allocated = [
+                        x for x in matching_apps if x.selection_status in selection_statuses
+                    ]
                 
-                row.actually_allocated = len([x for x in matching_apps if x.selection_status in selection_statuses])
+                row.actually_allocated = len(matching_allocated)
                 row.allocated_seats = row.actually_allocated
                 row.actually_waitlisted = len([x for x in matching_apps if x.selection_status == "Waitlisted"])
                 row.actually_rejected = len([x for x in matching_apps if x.selection_status in rejection_statuses])
