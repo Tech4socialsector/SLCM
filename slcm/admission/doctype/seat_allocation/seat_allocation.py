@@ -581,6 +581,24 @@ class SeatAllocation(Document):
         if self.status == "Published":
             frappe.throw("Cannot re-run allocation after publish.")
 
+        # Soft-archive any previous non-published allocation for same cycle/campus/program level
+        existing_filters = {
+            "admission_cycle": self.admission_cycle,
+            "campus": self.campus,
+            "program_level": self.program_level,
+            "status": ["in", ["Draft", "Allocated"]],
+            "name": ["!=", self.name]
+        }
+        if self.program:
+            existing_filters["program"] = self.program
+
+        existing = frappe.get_all("Seat Allocation", filters=existing_filters, fields=["name", "docstatus"])
+        for ex in existing:
+            ex_doc = frappe.get_doc("Seat Allocation", ex.name)
+            if ex_doc.docstatus == 1:
+                ex_doc.cancel()
+            ex_doc.db_set("status", "Superseded")
+
         cache_key = f"merit_generation_{self.admission_cycle}_{self.campus}_{self.program_level}_{self.program or ''}".replace(" ", "_")
         frappe.cache().delete_value(cache_key)
 

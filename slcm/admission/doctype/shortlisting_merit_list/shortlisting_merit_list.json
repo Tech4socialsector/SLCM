@@ -81,7 +81,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Draft\nAllocated\nPublished"
+   "options": "Draft\nAllocated\nPublished\nSuperseded"
   },
   {
    "fieldname": "total_candidates",

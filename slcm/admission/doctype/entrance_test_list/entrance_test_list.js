@@ -997,6 +997,58 @@ function _show_allocation_confirmation(frm, parent_dialog, result, selected_prov
 }
 
 function _execute_allocation(frm, parent_dialog, selected_providers, selected_applicants, allocation_type) {
+    const total_count = selected_applicants.length;
+
+    // Build Live Progress Dialog
+    const progress_dialog = new frappe.ui.Dialog({
+        title: __("Allocating Seats in Background..."),
+        fields: [
+            {
+                fieldtype: "HTML",
+                fieldname: "progress_html",
+                options: `
+                    <div style="padding: 10px 5px; font-family: inherit;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <div id="etg-current-applicant" style="font-weight:600; font-size:13px; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:75%;">
+                                Initializing seat allocation...
+                            </div>
+                            <div id="etg-progress-percent" style="font-weight:700; font-size:14px; color:#2563eb;">
+                                0%
+                            </div>
+                        </div>
+                        <div style="height:10px; background:#e2e8f0; border-radius:6px; overflow:hidden; margin-bottom:12px; position:relative;">
+                            <div id="etg-progress-bar" style="height:100%; width:0%; background:linear-gradient(90deg, #3b82f6, #10b981); border-radius:6px; transition: width 0.2s ease;"></div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:#64748b;">
+                            <span id="etg-counter-text">Processing 0 of ${total_count}</span>
+                            <span style="display:flex; align-items:center; gap:4px; font-weight:600; color:#10b981;">
+                                <span style="display:inline-block; width:7px; height:7px; background:#10b981; border-radius:50%; animation: pulse 1.5s infinite;"></span>
+                                Real-Time Database Commits
+                            </span>
+                        </div>
+                    </div>
+                `
+            }
+        ]
+    });
+
+    progress_dialog.no_cancel();
+    progress_dialog.show();
+
+    // Listen to Real-Time Progress Events via WebSockets
+    frappe.realtime.on("entrance_test_seat_allocation_progress", function (data) {
+        if (!data) return;
+        const pct = data.progress || 0;
+        const current = data.current || 0;
+        const total = data.total || total_count;
+        const app_name = data.applicant_name ? `Processing: <b>${data.applicant_name}</b>` : `Allocating applicant ${current}...`;
+
+        progress_dialog.$wrapper.find("#etg-progress-bar").css("width", `${pct}%`);
+        progress_dialog.$wrapper.find("#etg-progress-percent").text(`${pct}%`);
+        progress_dialog.$wrapper.find("#etg-current-applicant").html(app_name);
+        progress_dialog.$wrapper.find("#etg-counter-text").text(`Processing ${current} of ${total}`);
+    });
+
     frappe.call({
         method: "allocate_seats",
         doc: frm.doc,
@@ -1005,9 +1057,10 @@ function _execute_allocation(frm, parent_dialog, selected_providers, selected_ap
             selected_applicants: selected_applicants,
             allocation_type: allocation_type
         },
-        freeze: true,
-        freeze_message: __("Allocating Seats..."),
         callback: function (r) {
+            frappe.realtime.off("entrance_test_seat_allocation_progress");
+            progress_dialog.hide();
+
             if (!r.exc) {
                 let res = r.message;
                 let count = 0;

@@ -41,6 +41,18 @@ if (window.frappe && frappe.ui && frappe.ui.form && frappe.ui.form.ControlAutoco
 	};
 }
 
+// Patch for ControlPhone initialization error when selected_icon is not built
+if (window.frappe && frappe.ui && frappe.ui.form && frappe.ui.form.ControlPhone) {
+	var _origPhoneSetFormattedInput = frappe.ui.form.ControlPhone.prototype.set_formatted_input;
+	frappe.ui.form.ControlPhone.prototype.set_formatted_input = async function(value) {
+		if (!this.selected_icon && this.setup_country_code_picker) {
+			try { this.setup_country_code_picker(); } catch(e) {}
+		}
+		if (!this.selected_icon) return;
+		return _origPhoneSetFormattedInput.call(this, value);
+	};
+}
+
 // ═══════════════════════════════════════════════════════════════════
 //  SLCM — Applicant Web Form client script
 //  Features:
@@ -5232,12 +5244,9 @@ function setupCityStateFilter() {
 
 		function cityQueryFn() {
 			var st = wf.get_value(stateFld);
-			if (!st) {
-				return { filters: [['name', '=', '__slcm_no_state__']] };
-			}
 			return {
 				query: 'slcm.admission.web_form.applicant_form.applicant_form.city_query',
-				filters: { state: st }
+				filters: { state: st || '' }
 			};
 		}
 
@@ -5264,6 +5273,10 @@ function setupCityStateFilter() {
 		wf.on(countryFld, function () {
 			if (wf._is_syncing_address) return;
 			var currentCountry = wf.get_value(countryFld);
+			if (!lastCountry && currentCountry) {
+				lastCountry = currentCountry;
+				return;
+			}
 			if (lastCountry === currentCountry) return;
 			lastCountry = currentCountry;
 
@@ -5275,6 +5288,10 @@ function setupCityStateFilter() {
 			if (wf._is_syncing_address) return;
 			var currentCountry = wf.get_value(countryFld);
 			var currentState = wf.get_value(stateFld);
+			if (!lastState && currentState) {
+				lastState = currentState;
+				return;
+			}
 			if (lastState === currentState) return;
 			lastState = currentState;
 
