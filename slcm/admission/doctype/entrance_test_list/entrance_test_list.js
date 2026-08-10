@@ -352,7 +352,7 @@ function _show_allocation_dialog(frm, applicants, providers) {
         primary_action_label: __("Allocate Seats"),
         primary_action(values) {
             const allocation_type = values.allocation_type || "Allocate Directly";
-            const send_email = values.send_email;
+            const send_email = values.send_email ? 1 : 0;
 
             if (!selected_provider_names.size) {
                 frappe.msgprint(__("Please select at least one Entrance Test Provider."));
