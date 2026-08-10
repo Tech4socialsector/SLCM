@@ -130,19 +130,26 @@ class EntranceTestList(Document):
         test_cfg_cache = {}
 
         for i, app_name in enumerate(selected_applicants):
-            # Publish progress to the UI
-            frappe.publish_progress(
-                float(i + 1) / total_applicants * 100, 
-                title=_("Allocating Entrance Test Seats..."),
-                description=f"Processing {i + 1} of {total_applicants}"
-            )
-
             app = applicant_map.get(app_name)
             if not app:
                 continue
 
             if getattr(app, "allocation_status", "") in ("Allocated", "Converted"):
                 continue
+
+            # Publish real-time WebSocket progress to user interface
+            progress_pct = round(float(i + 1) / total_applicants * 100, 1)
+            frappe.publish_realtime(
+                event="entrance_test_seat_allocation_progress",
+                message={
+                    "progress": progress_pct,
+                    "current": i + 1,
+                    "total": total_applicants,
+                    "allocated_count": created_count,
+                    "applicant_name": getattr(app, "candidate_name", "Unknown") or "Unknown"
+                },
+                user=frappe.session.user
+            )
 
             try:
                 cycle_name = self.admission_cycle
@@ -1138,3 +1145,76 @@ def get_providers_with_capacity(city=None, campus=None, programme=None):
             p.available_capacity = p.available_capacity or 0
             
     return providers
+
+
+@frappe.whitelist()
+def start_background_seat_allocation(entrance_test_list, providers, selected_applicants, allocation_date=None, entrance_test_name=None, allocation_type=None):
+    """
+    Enqueues the seat allocation process to the background queue (Redis Queue).
+    Returns immediately to the client with a job confirmation.
+    Publishes real-time progress via frappe.publish_realtime to the frontend.
+    """
+    if isinstance(providers, str):
+        providers = json.loads(providers)
+    if isinstance(selected_applicants, str):
+        selected_applicants = json.loads(selected_applicants)
+
+    user = frappe.session.user
+
+    frappe.enqueue(
+        "slcm.admission.doctype.entrance_test_list.entrance_test_list._process_seat_allocation_job",
+        queue="long" if len(selected_applicants) > 300 else "default",
+        timeout=3600,
+        entrance_test_list=entrance_test_list,
+        providers=providers,
+        selected_applicants=selected_applicants,
+        allocation_date=allocation_date,
+        entrance_test_name=entrance_test_name,
+        allocation_type=allocation_type,
+        user=user,
+        enqueue_after_commit=True
+    )
+
+    return {
+        "status": "queued",
+        "total_applicants": len(selected_applicants),
+        "message": _("Seat allocation process started in the background.")
+    }
+
+
+def _process_seat_allocation_job(entrance_test_list, providers, selected_applicants, allocation_date=None, entrance_test_name=None, allocation_type=None, user=None):
+    """
+    Background worker job for processing seat allocation safely without timeouts.
+    Emits real-time progress via frappe.publish_realtime to the user's browser.
+    """
+    try:
+        etl_doc = frappe.get_doc("Entrance Test List", entrance_test_list)
+        result = etl_doc.allocate_seats(
+            providers=providers,
+            selected_applicants=selected_applicants,
+            allocation_date=allocation_date,
+            entrance_test_name=entrance_test_name,
+            allocation_type=allocation_type
+        )
+        frappe.publish_realtime(
+            event="entrance_test_seat_allocation_completed",
+            message={
+                "status": "success",
+                "allocated_count": result.get("allocated_count", 0),
+                "unallocated": result.get("unallocated", []),
+                "entrance_test_list": entrance_test_list
+            },
+            user=user
+        )
+    except Exception as e:
+        frappe.log_error(message=traceback.format_exc(), title=f"Background Seat Allocation Error for {entrance_test_list}")
+        frappe.publish_realtime(
+            event="entrance_test_seat_allocation_completed",
+            message={
+                "status": "error",
+                "error": str(e),
+                "entrance_test_list": entrance_test_list
+            },
+            user=user
+        )
+
