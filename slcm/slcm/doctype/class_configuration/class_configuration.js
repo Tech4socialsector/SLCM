@@ -79,9 +79,9 @@ frappe.ui.form.on('Class Student', {
         if (row.student) {
             // Fetch student details
             frappe.db.get_value('Student Master', row.student,
-                ['first_name', 'middle_name', 'last_name', 'registration_id', 'email'], (r) => {
+                ['first_name', 'registration_id', 'email'], (r) => {
                     if (r) {
-                        let student_name = [r.first_name, r.middle_name, r.last_name].filter(Boolean).join(" ");
+                        let student_name = r.first_name || "";
                         frappe.model.set_value(cdt, cdn, 'student_name', student_name);
                         frappe.model.set_value(cdt, cdn, 'registration_id', r.registration_id);
                         frappe.model.set_value(cdt, cdn, 'email', r.email);
@@ -114,7 +114,7 @@ function set_link_filters(frm) {
             return {
                 query: 'slcm.slcm.doctype.class_configuration.class_configuration.student_query',
                 filters: {
-                    programme: frm.doc.programme,
+                    programme_of_study: frm.doc.programme,
                     batch: frm.doc.batch,
                     section: frm.doc.section,
                 },
