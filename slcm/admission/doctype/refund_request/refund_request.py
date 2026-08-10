@@ -61,7 +61,7 @@ class RefundRequest(Document):
 		# We need to find the specific row in the Seat Allocation child table
 		seat_row = frappe.db.get_value("Seat Selection Applicant", {
 			"applicant_id": self.applicant,
-			"selection_status": ["in", ["Selected", "Offer Issued", "Offer Accepted", "Fee Paid", "Accepted"]]
+			"selection_status": ["in", ["Selected", "Offer Issued", "Offer Accepted", "Confirmation Fee Paid", "Full Fee Paid", "Accepted"]]
 		}, "name")
 
 		if seat_row:
@@ -91,31 +91,44 @@ class RefundRequest(Document):
 
 
 	def validate_afa_fee_type(self):
-		"""Ensure only Admission Fee type AFA can be linked to a Refund Request."""
+		"""Ensure only Admission Fee or Confirmation Fee type AFA can be linked to a Refund Request."""
 		if self.applicant_fee_assignment:
 			fee_type = frappe.db.get_value(
 				"Applicant Fee Assignment", self.applicant_fee_assignment, "fee_type"
 			)
-			if fee_type != "Admission Fee":
+			if fee_type not in ("Admission Fee", "Confirmation Fee"):
 				frappe.throw(
-					_("Only 'Admission Fee' Applicant Fee Assignments can be linked to a Refund Request. "
+					_("Only 'Admission Fee' or 'Confirmation Fee' Applicant Fee Assignments can be linked to a Refund Request. "
 					  "The selected assignment is of type '{0}'.").format(fee_type or "Unknown")
 				)
 
 	def fetch_payment_details(self):
 		"""Resolve payment details from Applicant Fee Assignment → Applicant Payment Receipt."""
 		if self.applicant_fee_assignment and not self.razorpay_payment_id:
-			# Get the latest paid Applicant Payment Receipt linked to this AFA
-			receipt_name = frappe.db.get_value(
-				"Applicant Payment Receipt",
-				{"offer_letter": frappe.db.get_value("Applicant Fee Assignment", self.applicant_fee_assignment, "offer_letter"),
-				 "docstatus": ["<", 2]},
-				"name",
-				order_by="creation desc"
+			afa = frappe.db.get_value(
+				"Applicant Fee Assignment",
+				self.applicant_fee_assignment,
+				["offer_letter", "fee_type"],
+				as_dict=True
 			)
-			if receipt_name:
-				self.applicant_payment_receipt = receipt_name
-		
+			if afa and afa.offer_letter:
+				# For Confirmation Fee, find the receipt with fee_type = Confirmation Fee
+				# For Admission Fee, find the most recent receipt for the offer
+				receipt_filters = {
+					"offer_letter": afa.offer_letter,
+					"docstatus": ["<", 2]
+				}
+				if afa.fee_type == "Confirmation Fee":
+					receipt_filters["fee_type"] = "Confirmation Fee"
+				receipt_name = frappe.db.get_value(
+					"Applicant Payment Receipt",
+					receipt_filters,
+					"name",
+					order_by="creation desc"
+				)
+				if receipt_name:
+					self.applicant_payment_receipt = receipt_name
+
 		if self.applicant_payment_receipt and not self.razorpay_payment_id:
 			receipt = frappe.get_doc("Applicant Payment Receipt", self.applicant_payment_receipt)
 			# Use net_amount (post-scholarship) as the actual amount paid
@@ -123,7 +136,7 @@ class RefundRequest(Document):
 			self.razorpay_payment_id = receipt.transaction_id
 
 	def apply_refund_policy(self):
-		if self.refund_type == "Full":
+		if self.refund_type == "Full" and not self.applicant_fee_assignment and not self.applicant_payment_receipt:
 			self.refund_amount = self.amount_paid
 			return
 		
@@ -131,13 +144,34 @@ class RefundRequest(Document):
 			self.refund_amount = 0
 			return
 
-		# If partial, but no policy selected, try to auto-select
+		# Check if this request is specifically for Confirmation Fee
+		is_conf_fee = False
+		if self.applicant_fee_assignment:
+			afa_fee_type = frappe.db.get_value("Applicant Fee Assignment", self.applicant_fee_assignment, "fee_type")
+			if afa_fee_type == "Confirmation Fee":
+				is_conf_fee = True
+		if not is_conf_fee and self.applicant_payment_receipt:
+			apr_fee_type = frappe.db.get_value("Applicant Payment Receipt", self.applicant_payment_receipt, "fee_type")
+			if apr_fee_type and "Confirmation" in apr_fee_type:
+				is_conf_fee = True
+
 		amount_paid = flt(self.amount_paid)
-		
-		# Use shared utility to get correct policies for this applicant's Fee Structure
 		from slcm.admission.utils.refund import get_applicant_refund_policies
 		res = get_applicant_refund_policies(self.applicant)
-		
+
+		if is_conf_fee:
+			is_conf_refundable = res.get("is_confirmation_fee_refundable", False)
+			conf_pct = flt(res.get("confirmation_fee_refund_percentage") or 0.0) if is_conf_refundable else 0.0
+			self.refund_amount = round(amount_paid * (conf_pct / 100.0), 2)
+			if conf_pct == 100:
+				self.refund_type = "Full"
+			elif conf_pct == 0:
+				self.refund_type = "No Refund"
+			else:
+				self.refund_type = "Partial"
+			return
+
+		# Course Fee Refund Policy calculation
 		policies = res.get("policies", [])
 		days = res.get("days_since_payment", 0)
 
@@ -147,21 +181,17 @@ class RefundRequest(Document):
 				self.refund_amount = 0
 				return
 
-			# Sort policies by days_from_payment ascending to ensure correct matching
 			sorted_policies = sorted(policies, key=lambda p: p.get("days_from_payment", 0))
 			for p in sorted_policies:
 				if days <= p.get("days_from_payment"):
 					self.refund_policy = p.get("policy_name")
 					break
 			if not self.refund_policy and sorted_policies:
-				# Exceeded all day windows — no refund applicable
 				self.refund_type = "No Refund"
 				self.refund_amount = 0
 				return
 
-		# Calculate based on selected policy
 		if self.refund_policy:
-			# Find the percentage from the resolved policies list
 			percentage = 0
 			for p in policies:
 				if p.get("policy_name") == self.refund_policy:
@@ -169,17 +199,17 @@ class RefundRequest(Document):
 					break
 			
 			if not percentage:
-				# Fallback to direct DocType fetch if not in the Fee Structure list 
-				# (e.g. if manually selected a global policy)
 				percentage = flt(frappe.db.get_value("Refund Policy", self.refund_policy, "refund_percentage"))
 
-			self.refund_amount = amount_paid * (percentage / 100.0)
+			self.refund_amount = round(amount_paid * (percentage / 100.0), 2)
+
 
 	def handle_refund_type(self):
-		if self.refund_type == "Full":
+		if self.refund_type == "Full" and not flt(self.refund_amount):
 			self.refund_amount = self.amount_paid
 		elif self.refund_type == "No Refund":
 			self.refund_amount = 0
+
 
 	def validate_refund_amount(self):
 		if flt(self.refund_amount) > flt(self.amount_paid):
@@ -293,77 +323,111 @@ def create_refund_request(cancellation):
 	if isinstance(cancellation, str):
 		cancellation = frappe.get_doc("Admission Cancellation", cancellation)
 
-	# Resolve Applicant Fee Assignment for this applicant's offer
-	afa_name = None
-	if cancellation.offer:
+	created_refunds = []
+
+	receipt_name = cancellation.get("applicant_payment_receipt")
+	if receipt_name:
+		receipts = frappe.get_all(
+			"Applicant Payment Receipt",
+			filters={"name": receipt_name},
+			fields=["name", "fee_type", "net_amount", "total_amount", "transaction_id", "offer_letter"]
+		)
+	else:
+		receipts = frappe.get_all(
+			"Applicant Payment Receipt",
+			filters={"applicant": cancellation.applicant, "docstatus": ["<", 2]},
+			fields=["name", "fee_type", "net_amount", "total_amount", "transaction_id", "offer_letter"],
+			order_by="creation asc"
+		)
+
+
+	# Also fetch refund policies to know percentages
+	from slcm.admission.utils.refund import get_applicant_refund_policies
+	res_ref = get_applicant_refund_policies(cancellation.applicant)
+	policies = res_ref.get("policies", [])
+	days = res_ref.get("days_since_payment", 0)
+	
+	is_conf_refundable = res_ref.get("is_confirmation_fee_refundable", False)
+	conf_fee_pct = flt(res_ref.get("confirmation_fee_refund_percentage") or 0.0) if is_conf_refundable else 0.0
+
+	# Find active course policy percentage
+	course_policy_pct = 0.0
+	sorted_policies = sorted(policies, key=lambda p: p.get("days_from_payment", 0))
+	for p in sorted_policies:
+		if days <= p.get("days_from_payment", 0):
+			course_policy_pct = flt(p.get("refund_percentage", 0))
+			break
+	if not course_policy_pct and sorted_policies:
+		course_policy_pct = flt(sorted_policies[-1].get("refund_percentage", 0))
+
+	# Process each receipt (Confirmation Fee vs Course/Admission Fee)
+	for r in receipts:
+		existing_rr = frappe.db.get_value(
+			"Refund Request",
+			{"applicant_payment_receipt": r.name, "status": ["not in", ["Rejected", "Failed"]]},
+			"name"
+		)
+		if existing_rr:
+			if not frappe.db.get_value("Refund Request", existing_rr, "admission_cancellation"):
+				frappe.db.set_value("Refund Request", existing_rr, "admission_cancellation", cancellation.name)
+			created_refunds.append(existing_rr)
+			continue
+
+		amt_paid = flt(r.net_amount) if flt(r.get("net_amount")) > 0 else flt(r.total_amount)
+
+		if amt_paid <= 0:
+			continue
+
+		ft = r.fee_type or ""
+		is_conf = "Confirmation" in ft
+		
+		ref_pct = conf_fee_pct if is_conf else course_policy_pct
+		ref_amt = round(amt_paid * (ref_pct / 100.0), 2)
+		if ref_amt <= 0:
+			continue
+
+		# Resolve AFA for this receipt
+		afa_type = "Confirmation Fee" if is_conf else "Admission Fee"
 		afa_name = frappe.db.get_value("Applicant Fee Assignment", {
 			"applicant": cancellation.applicant,
-			"offer_letter": cancellation.offer,
-			"fee_type": "Admission Fee",
-			"docstatus": 1
+			"fee_type": afa_type,
+			"status": "Paid",
+			"docstatus": ["!=", 2]
 		}, "name", order_by="creation desc")
 
-	# Resolve Payment Receipt — prefer the one already on the cancellation doc
-	# (set by fetch_applicant_details), then fall back to querying via offer_letter
-	receipt_name = cancellation.get("applicant_payment_receipt")
+		# Create individual Refund Request for this specific transaction ID
+		refund = frappe.new_doc("Refund Request")
+		refund.applicant = cancellation.applicant
+		refund.admission_cancellation = cancellation.name
+		refund.status = "Under Review"
+		refund.refund_reason = cancellation.cancellation_reason
+		if afa_name:
+			refund.applicant_fee_assignment = afa_name
+		refund.applicant_payment_receipt = r.name
+		refund.razorpay_payment_id = r.transaction_id
+		refund.amount_paid = amt_paid
+		refund.refund_amount = ref_amt
+		refund.refund_type = "Full" if ref_pct == 100 else ("No Refund" if ref_pct == 0 else "Partial")
+		
+		refund.insert(ignore_permissions=True)
+		created_refunds.append(refund.name)
 
-	if not receipt_name and cancellation.offer:
-		receipt_name = frappe.db.get_value(
-			"Applicant Payment Receipt",
-			{"offer_letter": cancellation.offer, "docstatus": ["<", 2]},
-			"name",
-			order_by="creation desc"
-		)
+	# Fallback: If no receipts found, use direct cancellation razorpay_id
+	if not created_refunds and (cancellation.get("razorpay_id") or cancellation.get("amount_paid")):
+		amt_paid = flt(cancellation.amount_paid)
+		if amt_paid > 0:
+			refund = frappe.new_doc("Refund Request")
+			refund.applicant = cancellation.applicant
+			refund.admission_cancellation = cancellation.name
+			refund.status = "Under Review"
+			refund.refund_reason = cancellation.cancellation_reason
+			refund.razorpay_payment_id = cancellation.razorpay_id
+			refund.amount_paid = amt_paid
+			refund.refund_amount = amt_paid
+			refund.refund_type = "Full"
+			refund.insert(ignore_permissions=True)
+			created_refunds.append(refund.name)
 
-	# If still no receipt, try via the AFA's offer_letter (handles Converted AFA)
-	if not receipt_name and afa_name:
-		offer_letter = frappe.db.get_value("Applicant Fee Assignment", afa_name, "offer_letter")
-		if offer_letter:
-			receipt_name = frappe.db.get_value(
-				"Applicant Payment Receipt",
-				{"offer_letter": offer_letter, "docstatus": ["<", 2]},
-				"name",
-				order_by="creation desc"
-			)
+	return created_refunds[0] if created_refunds else None
 
-	# Nothing to refund if we have no payment source at all
-	if not afa_name and not receipt_name and not cancellation.get("razorpay_id"):
-		return None
-
-	refund = frappe.new_doc("Refund Request")
-	refund.applicant = cancellation.applicant
-	refund.admission_cancellation = cancellation.name
-	refund.status = "Under Review"
-	refund.refund_reason = cancellation.cancellation_reason
-
-	# Link the AFA (Admission Fee type, submitted)
-	if afa_name:
-		refund.applicant_fee_assignment = afa_name
-
-	# Resolve actual paid amount & Razorpay ID from Payment Receipt
-	if receipt_name:
-		receipt = frappe.get_doc("Applicant Payment Receipt", receipt_name)
-		refund.applicant_payment_receipt = receipt_name
-		refund.razorpay_payment_id = receipt.transaction_id
-		# net_amount = actual amount after scholarship deduction
-		refund.amount_paid = flt(receipt.net_amount) if flt(receipt.get('net_amount')) > 0 else flt(receipt.total_amount)
-		refund.refund_amount = refund.amount_paid
-
-	# Last fallback: razorpay_id stored directly on cancellation (legacy path)
-	if not refund.razorpay_payment_id and cancellation.get("razorpay_id"):
-		refund.razorpay_payment_id = cancellation.razorpay_id
-		refund.amount_paid = flt(cancellation.amount_paid)
-		refund.refund_amount = flt(cancellation.amount_paid)
-
-	# Safety guard: never create a refund with no amount and no payment ID
-	if not refund.razorpay_payment_id and not flt(refund.amount_paid):
-		frappe.log_error(
-			f"Skipped Refund Request creation for Cancellation {cancellation.name}: "
-			f"no Razorpay payment ID and no amount resolved.",
-			"Refund Request Creation"
-		)
-		return None
-
-	refund.insert(ignore_permissions=True)
-	return refund.name
 

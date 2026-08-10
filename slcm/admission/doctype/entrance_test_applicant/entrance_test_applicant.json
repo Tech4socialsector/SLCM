@@ -12,6 +12,7 @@
   "program_level",
   "email",
   "gender",
+  "pwd",
   "exempts_entrance_test",
   "exempts_interview",
   "entrance_test",
@@ -20,50 +21,72 @@
  ],
  "fields": [
   {
+   "fieldname": "applicant_id",
+   "fieldtype": "Link",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Applicant ID",
+   "options": "Applicant"
+  },
+  {
+   "fetch_from": "applicant.candidate_name",
+   "fieldname": "candidate_name",
+   "fieldtype": "Data",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Candidate Name"
+  },
+  {
    "fieldname": "program",
    "fieldtype": "Link",
+   "in_filter": 1,
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Programme",
    "options": "Programme"
   },
   {
    "fieldname": "program_level",
    "fieldtype": "Select",
+   "in_filter": 1,
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Programme Level",
    "options": "Undergraduate\nPostgraduate\nResearch Course"
   },
   {
-   "fetch_from": "applicant.candidate_name",
-   "fieldname": "candidate_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Candidate Name"
-  },
-  {
-   "fieldname": "applicant_id",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Applicant ID",
-   "options": "Applicant"
-  },
-  {
    "fieldname": "email",
    "fieldtype": "Data",
+   "in_filter": 1,
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Email"
   },
   {
    "fieldname": "gender",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Gender"
+  },
+  {
+   "default": "0",
+   "fieldname": "pwd",
+   "fieldtype": "Check",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "PWD",
+   "read_only": 1
   },
   {
    "default": "0",
    "fieldname": "exempts_entrance_test",
    "fieldtype": "Check",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Exempts Entrance Test",
    "read_only": 1
   },
@@ -72,6 +95,7 @@
    "fieldname": "exempts_interview",
    "fieldtype": "Check",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Exempts Interview",
    "read_only": 1
   },
@@ -79,7 +103,9 @@
    "default": "0",
    "fieldname": "entrance_test",
    "fieldtype": "Check",
+   "in_filter": 1,
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Entrance Test",
    "read_only": 1
   },
@@ -95,23 +121,23 @@
    "default": "Not Allocated",
    "fieldname": "allocation_status",
    "fieldtype": "Select",
+   "in_filter": 1,
    "in_list_view": 1,
    "label": "Allocation Status",
-   "options": "Not Allocated\nAllocated\nPreferences Assigned"
+   "options": "Not Allocated\nAllocated\nPreferences Assigned\nConverted"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-03-26 14:45:02.774595",
+ "modified": "2026-08-04 20:04:15.335310",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Applicant",
  "owner": "Administrator",
  "permissions": [],
  "row_format": "Dynamic",
- "rows_threshold_for_grid_search": 20,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

@@ -12,6 +12,8 @@
   "program",
   "academic_year",
   "offer_letter",
+  "fee_type",
+  "assignment",
   "payment_receipt_template",
   "column_break_1",
   "payment_date",
@@ -27,13 +29,14 @@
   "fee_breakdown_section",
   "fee_components",
   "totals_section",
-  "total_amount",
-  "currency",
-  "scholarship_amount",
+  "confirmation_fee",
   "scholarship_applied",
+  "scholarship_amount",
   "net_amount",
+  "total_amount",
+  "column_break_akrk",
+  "currency",
   "receipt_pdf",
-  "amended_from",
   "notification_receiver"
  ],
  "fields": [
@@ -82,6 +85,21 @@
    "label": "Offer Letter",
    "options": "Offer Letter",
    "read_only": 1
+  },
+  {
+   "fieldname": "fee_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Fee Type",
+   "options": "Application Fee\nConfirmation Fee\nAdmission Fee",
+   "reqd": 1
+  },
+  {
+   "fieldname": "assignment",
+   "fieldtype": "Link",
+   "label": "Fee Assignment",
+   "options": "Applicant Fee Assignment"
   },
   {
    "fieldname": "column_break_1",
@@ -158,11 +176,12 @@
    "label": "Fee Breakdown"
   },
   {
+   "depends_on": "eval:doc.fee_type == 'Application Fee' || doc.fee_type == 'Admission Fee'",
    "fieldname": "fee_components",
    "fieldtype": "Table",
    "label": "Fee Components",
-   "options": "Applicant Receipt Component",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.fee_type == 'Application Fee' || doc.fee_type == 'Admission Fee'",
+   "options": "Applicant Receipt Component"
   },
   {
    "fieldname": "totals_section",
@@ -196,6 +215,13 @@
    "read_only": 1
   },
   {
+   "depends_on": "eval:doc.fee_type == 'Confirmation Fee'",
+   "fieldname": "confirmation_fee",
+   "fieldtype": "Currency",
+   "label": "Confirmation Fee",
+   "read_only": 1
+  },
+  {
    "fieldname": "net_amount",
    "fieldtype": "Currency",
    "label": "Net Amount",
@@ -205,12 +231,6 @@
    "fieldname": "receipt_pdf",
    "fieldtype": "Attach",
    "label": "Receipt PDF"
-  },
-  {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "options": "Applicant Payment Receipt"
   },
   {
    "fieldname": "notification_receiver",
@@ -225,10 +245,14 @@
    "fieldtype": "Link",
    "label": "Payment Receipt Template",
    "options": "Print Format"
+  },
+  {
+   "fieldname": "column_break_akrk",
+   "fieldtype": "Column Break"
   }
  ],
  "links": [],
- "modified": "2026-07-01 12:02:35.211500",
+ "modified": "2026-08-05 11:15:00.055472",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Payment Receipt",

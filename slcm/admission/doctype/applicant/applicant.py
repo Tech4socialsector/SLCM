@@ -17,9 +17,25 @@ from slcm.admission.utils.regulatory import log_audit_trail
 APPLICATION_SUBMITTED_STATUSES = frozenset(
     {
         "Submitted",
-        "Interview Excempted",
+        "Completed",
+        "Entrance Test Scheduled",
+        "Entrance Test Allocated",
         "Entrance Test Exempted",
+        "Entrance Test Completed",
+        "Interview Scheduled",
+        "Interview Exempted",
+        "Interview Excempted",
+        "Interview Completed",
+        "Exempted Entrance Test And Interview",
         "Excempted Entrance Test And Interview",
+        "Merit Selected",
+        "Merit Waitlisted",
+        "Merit Published",
+        "Seat Selected",
+        "Seat Waitlisted",
+        "Offer Issued",
+        "Offer Accepted",
+        "Enrolled",
     }
 )
 
@@ -369,11 +385,12 @@ class Applicant(Document):
             frappe.db.set_value(self.doctype, self.name, "user_id", self.email, update_modified=False)
         self.sync_user_profile()
 
-        # Generate the application PDF when the status is submitted
+        # Generate the application PDF when the status is submitted and form is missing
         if (
             self.name
             and self.status in APPLICATION_SUBMITTED_STATUSES
             and not self.flags.get("in_pdf_generation")
+            and not frappe.db.get_value("Applicant", self.name, "application_form")
         ):
             self.generate_application_pdf()
 
@@ -384,9 +401,9 @@ class Applicant(Document):
             else self.flags.get("old_status")
         )
         just_submitted = (
-            old_status == "Draft"
+            (not old_status or old_status == "Draft" or old_status not in APPLICATION_SUBMITTED_STATUSES)
             and self.status in APPLICATION_SUBMITTED_STATUSES
-            and self.has_value_changed("status")
+            and (self.is_new() or self.has_value_changed("status"))
         )
 
         if just_submitted:
@@ -863,9 +880,9 @@ class Applicant(Document):
 
         # ── PDF generation & storage in application_form field ────────────────
         try:
-            pdf_content = self.generate_application_pdf()
-            if not pdf_content:
-                pdf_content = read_stored_application_form_pdf(self.name)
+            pdf_content = read_stored_application_form_pdf(self.name)
+            if not pdf_content and not self.flags.get("in_pdf_generation"):
+                pdf_content = self.generate_application_pdf()
             
             attachments = []
             if pdf_content:
@@ -3122,7 +3139,7 @@ def bulk_convert_applicants_to_student(applicants=None):
             skipped.append({"applicant": an, "reason": _("Applicant not found.")})
             continue
         st = frappe.db.get_value("Applicant", an, "status")
-        if st != "Fee Paid":
+        if st not in ["Confirmation Fee Paid", "Full Fee Paid"]:
             skipped.append(
                 {
                     "applicant": an,
@@ -3365,193 +3382,88 @@ def _auto_allocate_entrance_test_on_submission(applicant_doc):
             return
     # ─────────────────────────────────────────────────────────────────────────
 
-    # Idempotency: a seat allocation already exists for this applicant
-    existing = frappe.db.get_value(
-        "Entrance Test Seat Allocation",
-        {"applicant": applicant_doc.name},
-        "name",
+    # Domestic Applicants:
+    # No automated seat allocation. Look up or create Entrance Test List record for chosen Entrance Test City
+    city_pref = (
+        (applicant_doc.first_preference or "").strip()
+        or (applicant_doc.second_preference or "").strip()
+        or (applicant_doc.third_preference or "").strip()
     )
-    if existing:
-        frappe.log_error(f"Auto Allocate skipped: existing allocation {existing}", "Auto Allocate Debug")
+
+    if not city_pref:
+        frappe.log_error(f"Domestic Applicant Entrance Test List sync skipped: No test city preference for {applicant_doc.name}")
         return
 
-    test_cfg = _resolve_entrance_test_config_for_applicant(applicant_doc)
-    if not test_cfg or not test_cfg.get("entrance_test_name"):
-        frappe.log_error("Auto Allocate skipped: no test_cfg or entrance_test_name", "Auto Allocate Debug")
+    etl_name = _get_or_create_city_entrance_test_list(applicant_doc, city_pref)
+    if not etl_name:
         return
-
-    preference_providers = _get_preference_provider_names(applicant_doc)
-    if not preference_providers:
-        frappe.log_error("Auto Allocate skipped: no preference_providers", "Auto Allocate Debug")
-        return
-
-    allocated = None
-    for provider_name in preference_providers:
-        allocated = _try_allocate_provider_seat_atomic(provider_name)
-        if allocated:
-            break
-
-    if not allocated:
-        # All preferred centers are full — no auto seat given.
-        # Set center_filled = 1 so the admin can pick up this applicant
-        # in the manual Entrance Test Generation flow.
-        # (The generation SQL also checks: app.name NOT IN tabEntrance Test Seat Allocation,
-        #  so only truly un-allocated applicants will appear there.)
-        try:
-            frappe.db.set_value("Applicant", applicant_doc.name, "center_filled", 1, update_modified=False)
-        except Exception:
-            frappe.log_error(
-                frappe.get_traceback(),
-                f"Failed to mark center_filled for Applicant {applicant_doc.name}",
-            )
-        return
-    else:
-        try:
-            frappe.db.set_value("Applicant", applicant_doc.name, "center_filled", 0, update_modified=False)
-        except Exception:
-            pass
-
-    entrance_test_list_name = _get_or_create_auto_entrance_test_list(applicant_doc)
-    if not entrance_test_list_name:
-        return
-
-    allocation = frappe.new_doc("Entrance Test Seat Allocation")
-    allocation.entrance_test_list = entrance_test_list_name
-    allocation.academic_year = applicant_doc.academic_year
-    allocation.admission_cycle = applicant_doc.admission_cycle
-    allocation.campus = applicant_doc.campus
-    allocation.program_level = applicant_doc.program_level
-    allocation.entrance_test_name = test_cfg.get("entrance_test_name")
-    allocation.allocation_date = test_cfg.get("entrance_test_date")
-    allocation.start_time = test_cfg.get("start_time")
-    allocation.end_time = test_cfg.get("end_time")
-
-    allocation.applicant = applicant_doc.name
-    allocation.candidate_name = applicant_doc.candidate_name
-    allocation.program = applicant_doc.program
-    allocation.email = applicant_doc.email
-    allocation.gender = applicant_doc.gender
-    allocation.entrance_test = getattr(applicant_doc, "entrance_test", 0)
-    allocation.intereview = getattr(applicant_doc, "intereview", 0)
-    allocation.exempts_entrance_test = cint(getattr(applicant_doc, "exempts_entrance_test", 0))
-    allocation.exempts_interview = cint(getattr(applicant_doc, "exempts_interview", 0))
-
-    allocation.entrance_test_provider = allocated["provider"]
-    allocation.center_name = allocated["center_name"]
-    allocation.center_address = allocated["center_address"]
-    allocation.room_code = allocated["room_code"]
-    allocation.room_name = allocated["room_name"]
-    allocation.building = allocated["building"]
-    allocation.floor = allocated["floor"]
-    allocation.seat_number = allocated["seat_number"]
-    allocation.allocation_status = "Allocated"
-    allocation.entrance_test_status = "Scheduled"
-    allocation.allocated_by = frappe.session.user
-
-    for idx, provider_name in enumerate(preference_providers, start=1):
-        pvals = frappe.db.get_value(
-            "Entrance Test Provider",
-            provider_name,
-            ["center_name", "center_address"],
-            as_dict=True,
-        ) or {}
-        allocation.append(
-            "assigned_preferences",
-            {
-                "provider": provider_name,
-                "center_name": pvals.get("center_name"),
-                "center_address": pvals.get("center_address"),
-                "preference_order": idx,
-            },
-        )
 
     try:
-        categories = applicant_doc._get_applicant_categories()
-        for cat in categories:
-            allocation.append("category", {"category": cat})
-    except Exception:
-        pass
-
-    allocation.insert(ignore_permissions=True)
-
-    if allocated.get("aecs_name"):
-        frappe.db.set_value("Available Exam Center Seats", allocated["aecs_name"], {
-            "assigned_to_applicant": allocation.applicant,
-            "assigned_to_name": allocation.candidate_name
-        }, update_modified=False)
-
-    # Store admit card file immediately after auto-allocation.
-    # (Manual allocation already does this inside Entrance Test List flow.)
-    try:
-        if not getattr(allocation, "admit_card_download", None):
-            frappe.enqueue(
-                "slcm.admission.doctype.entrance_test_list.entrance_test_list.generate_and_store_admit_card",
-                allocation=allocation.name,
-                is_rescheduled=False,
-                queue="long",
-                enqueue_after_commit=True
-            )
-    except Exception:
-        frappe.log_error(
-            frappe.get_traceback(),
-            f"Auto admit card generation queuing failed for auto allocation {allocation.name}",
-        )
-
-    # Keep Entrance Test List child table in sync for operational visibility.
-    try:
-        exists_row = frappe.db.exists(
-            "Entrance Test Applicant",
-            {
-                "parent": entrance_test_list_name,
-                "applicant_id": applicant_doc.name
-            }
+        etl = frappe.get_doc("Entrance Test List", etl_name)
+        exists_row = any(
+            (row.applicant_id or "").strip() == applicant_doc.name
+            for row in (etl.entrance_test_applicant or [])
         )
         if not exists_row:
-            max_idx = frappe.db.get_value(
-                "Entrance Test Applicant",
-                {"parent": entrance_test_list_name},
-                fieldname="idx",
-                order_by="idx desc"
-            ) or 0
-            
-            child = frappe.get_doc({
-                "doctype": "Entrance Test Applicant",
-                "parent": entrance_test_list_name,
-                "parenttype": "Entrance Test List",
-                "parentfield": "entrance_test_applicant",
-                "idx": max_idx + 1,
-                "applicant_id": applicant_doc.name,
-                "candidate_name": applicant_doc.candidate_name,
-                "program": applicant_doc.program,
-                "program_level": applicant_doc.program_level,
-                "email": applicant_doc.email,
-                "gender": applicant_doc.gender,
-                "exempts_entrance_test": cint(getattr(applicant_doc, "exempts_entrance_test", 0)),
-                "exempts_interview": cint(getattr(applicant_doc, "exempts_interview", 0)),
-                "allocation_status": "Allocated",
-            })
-            child.insert(ignore_permissions=True)
+            etl.append(
+                "entrance_test_applicant",
+                {
+                    "applicant_id": applicant_doc.name,
+                    "candidate_name": applicant_doc.candidate_name,
+                    "program": applicant_doc.program,
+                    "program_level": applicant_doc.program_level,
+                    "email": applicant_doc.email,
+                    "gender": applicant_doc.gender,
+                    "exempts_entrance_test": cint(getattr(applicant_doc, "exempts_entrance_test", 0)),
+                    "exempts_interview": cint(getattr(applicant_doc, "exempts_interview", 0)),
+                    "allocation_status": "Not Allocated",
+                },
+            )
+            etl.save(ignore_permissions=True)
+            frappe.db.commit()
     except Exception:
         frappe.log_error(
             frappe.get_traceback(),
-            f"Auto allocation list sync failed for Applicant {applicant_doc.name}",
+            f"Domestic applicant Entrance Test List sync failed for {applicant_doc.name}",
         )
 
-    # Auto-allocation uses a dedicated configurable email template.
-    # Notification log remains same as existing allocation flow.
-    try:
-        from slcm.admission.doctype.entrance_test_list.entrance_test_list import (
-            _send_allocation_notification,
-        )
 
-        if allocation.email:
-            _send_automated_entrance_test_allocation_email(allocation, allocation.email)
-            _send_allocation_notification(allocation, allocation.email)
-    except Exception:
-        frappe.log_error(
-            frappe.get_traceback(),
-            f"Auto allocation email failed for {allocation.name}",
-        )
+def _get_or_create_city_entrance_test_list(applicant_doc, city):
+    """
+    Get or create Entrance Test List record for a given Entrance Test City.
+    If a list already exists for this city, reuse it.
+    """
+    if not city:
+        return None
+
+    filters = {"entrance_test_city": city}
+    if applicant_doc.academic_year:
+        filters["academic_year"] = applicant_doc.academic_year
+    if applicant_doc.admission_cycle:
+        filters["admission_cycle"] = applicant_doc.admission_cycle
+
+    list_name = frappe.db.get_value("Entrance Test List", filters, "name")
+    if not list_name:
+        list_name = frappe.db.get_value("Entrance Test List", {"entrance_test_city": city}, "name")
+
+    if list_name:
+        return list_name
+
+    etl = frappe.get_doc(
+        {
+            "doctype": "Entrance Test List",
+            "academic_year": applicant_doc.academic_year,
+            "campus": applicant_doc.campus,
+            "admission_cycle": applicant_doc.admission_cycle,
+            "program_level": applicant_doc.program_level,
+            "entrance_test_city": city,
+            "generated_on": now(),
+            "status": "Generated",
+            "entrance_test_applicant": [],
+        }
+    )
+    etl.insert(ignore_permissions=True)
+    return etl.name
 
 
 def _resolve_entrance_test_config_for_applicant(applicant_doc):
@@ -3626,40 +3538,6 @@ def _try_allocate_provider_seat_atomic(provider_name):
     if not provider_rows:
         return None
 
-    # Check for freed seats in Available Exam Center Seats first
-    available_seats = frappe.db.sql(
-        """
-        SELECT name, room_code, room_name, building, floor, seat_number, center_name
-        FROM `tabAvailable Exam Center Seats`
-        WHERE entrance_test_provider = %s AND status = 'Available'
-        ORDER BY creation ASC
-        LIMIT 1
-        FOR UPDATE
-        """,
-        provider_name,
-        as_dict=True,
-    )
-
-    if available_seats:
-        available_seat = available_seats[0]
-        seat_number = available_seat.get("seat_number")
-        
-        # We don't increment room_reserved_seats because the physical seat is still "reserved", we just swap the owner.
-        frappe.db.set_value("Available Exam Center Seats", available_seat.name, {
-            "status": "Occupied"
-        }, update_modified=False)
-        
-        return {
-            "provider": provider_name,
-            "center_name": available_seat.get("center_name"),
-            "center_address": provider_rows[0].get("center_address"),
-            "room_code": available_seat.get("room_code"),
-            "room_name": available_seat.get("room_name"),
-            "building": available_seat.get("building"),
-            "floor": available_seat.get("floor"),
-            "seat_number": seat_number,
-            "aecs_name": available_seat.name
-        }
         
     room_rows = frappe.db.sql(
         """
@@ -3804,6 +3682,28 @@ def _send_automated_entrance_test_allocation_email(allocation, email):
             cc_list = [c.strip() for c in cc_field_value.replace(";", ",").split(",") if c.strip()]
 
         if message_body:
+            attachments = []
+            if not getattr(allocation, "is_international_applicant", 0):
+                if not getattr(allocation, "admit_card_download", None):
+                    try:
+                        from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
+                        generate_and_store_admit_card(allocation, is_rescheduled=False)
+                        allocation.reload()
+                    except Exception:
+                        frappe.log_error(traceback.format_exc(), f"Admit card generation failed for {allocation.name}")
+
+                if getattr(allocation, "admit_card_download", None):
+                    try:
+                        file_name = frappe.db.get_value("File", {"file_url": allocation.admit_card_download}, "name")
+                        if file_name:
+                            file_doc = frappe.get_doc("File", file_name)
+                            attachments.append({
+                                "fname": file_doc.file_name,
+                                "fcontent": file_doc.get_content()
+                            })
+                    except Exception:
+                        frappe.log_error(traceback.format_exc(), f"Failed to attach Admit Card for {allocation.name}")
+
             sender = None
             if template.get("email_account"):
                 sender = frappe.db.get_value("Email Account", template.get("email_account"), "email_id") or template.get("email_account")
@@ -3814,6 +3714,7 @@ def _send_automated_entrance_test_allocation_email(allocation, email):
                 cc=cc_list,
                 subject=subject,
                 message=message_body,
+                attachments=attachments,
                 reference_doctype="Entrance Test Seat Allocation",
                 reference_name=allocation.name,
                 now=False,
@@ -3867,14 +3768,8 @@ def _auto_allocate_international_entrance_test(applicant_doc):
         )
         return
 
-    # Get or create the shared Entrance Test List (same as domestic)
-    entrance_test_list_name = _get_or_create_auto_entrance_test_list(applicant_doc)
-    if not entrance_test_list_name:
-        return
-
-    # Build allocation record — NO center/room/seat fields set
+    # No Entrance Test List created or linked for international applicants.
     allocation = frappe.new_doc("Entrance Test Seat Allocation")
-    allocation.entrance_test_list   = entrance_test_list_name
     allocation.academic_year        = applicant_doc.academic_year
     allocation.admission_cycle      = applicant_doc.admission_cycle
     allocation.campus               = applicant_doc.campus
@@ -3910,34 +3805,6 @@ def _auto_allocate_international_entrance_test(applicant_doc):
 
     allocation.insert(ignore_permissions=True)
 
-    # Keep Entrance Test List child table in sync for operational visibility
-    try:
-        etl = frappe.get_doc("Entrance Test List", entrance_test_list_name)
-        exists_row = any(
-            (row.applicant_id or "").strip() == applicant_doc.name
-            for row in (etl.entrance_test_applicant or [])
-        )
-        if not exists_row:
-            etl.append(
-                "entrance_test_applicant",
-                {
-                    "applicant_id":         applicant_doc.name,
-                    "candidate_name":       applicant_doc.candidate_name,
-                    "program":              applicant_doc.program,
-                    "program_level":        applicant_doc.program_level,
-                    "email":                applicant_doc.email,
-                    "gender":               applicant_doc.gender,
-                    "exempts_entrance_test": cint(getattr(applicant_doc, "exempts_entrance_test", 0)),
-                    "exempts_interview":    cint(getattr(applicant_doc, "exempts_interview", 0)),
-                    "allocation_status":    "Allocated",
-                },
-            )
-            etl.save(ignore_permissions=True)
-    except Exception:
-        frappe.log_error(
-            frappe.get_traceback(),
-            f"International auto allocation list sync failed for Applicant {applicant_doc.name}",
-        )
 
     # Send international-specific email (NO admit card attached)
     try:

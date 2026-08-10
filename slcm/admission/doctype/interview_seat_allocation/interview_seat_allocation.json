@@ -14,7 +14,6 @@
   "column_break_nxyr",
   "admission_cycle",
   "campus",
-  "status",
   "section_break_ijkj",
   "category",
   "tab_applicant_info",
@@ -63,6 +62,7 @@
   "final_cumulative_score",
   "final_percentage",
   "result_published",
+  "status",
   "section_break_zvsn",
   "feedback",
   "tab_entrance_test_result",
@@ -193,8 +193,7 @@
    "default": "0",
    "fieldname": "is_international_applicant",
    "fieldtype": "Check",
-   "label": "Is International Applicant",
-   "read_only": 1
+   "label": "Is International Applicant"
   },
   {
    "fieldname": "section_break_isa_src",
@@ -379,8 +378,8 @@
   {
    "fieldname": "interview_result_status",
    "fieldtype": "Select",
-   "label": "Result Status",
-   "options": "\nPass\nFail\nWithheld\nPending"
+   "label": "Result",
+   "options": "\nPass\nFail"
   },
   {
    "default": "0",
@@ -556,7 +555,7 @@
   {
    "fieldname": "status",
    "fieldtype": "Select",
-   "label": "Status",
+   "label": "Selection Status",
    "options": "\nSelected\nWaitlisted\nRejected\nOffer Issued"
   },
   {
@@ -571,7 +570,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-14 14:43:36.554824",
+ "modified": "2026-08-05 17:10:26.417758",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Seat Allocation",
@@ -595,6 +594,7 @@
    "delete": 1,
    "email": 1,
    "export": 1,
+   "import": 1,
    "print": 1,
    "read": 1,
    "report": 1,
@@ -604,8 +604,10 @@
    "write": 1
   },
   {
+   "create": 1,
    "email": 1,
    "export": 1,
+   "if_owner": 1,
    "print": 1,
    "read": 1,
    "report": 1,

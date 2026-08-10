@@ -123,7 +123,8 @@ class InterviewConfiguration(Document):
                 app.intereview,
                 app.foriegn_national,
                 0.0               AS entrance_test_score,
-                0.0               AS part_a_score
+                0.0               AS part_a_score,
+                1                 AS cumulative_rank
             FROM `tabApplicant` app
             INNER JOIN `tabEligibility Evaluation` ee
                     ON ee.applicant_name = app.name
@@ -158,7 +159,8 @@ class InterviewConfiguration(Document):
                 app.intereview,
                 app.foriegn_national,
                 COALESCE(etsa.part_b_total_marks_scored, 0) AS entrance_test_score,
-                COALESCE(etsa.part_a_total_marks_scored, 0) AS part_a_score
+                COALESCE(etsa.part_a_total_marks_scored, 0) AS part_a_score,
+                COALESCE(etsa.entrance_test_rank, 999999) AS cumulative_rank
             FROM `tabEntrance Test Seat Allocation` etsa
             INNER JOIN `tabApplicant` app
                     ON app.name = etsa.applicant
@@ -170,6 +172,7 @@ class InterviewConfiguration(Document):
                 AND etsa.admission_cycle = %(admission_cycle)s
                 {program_filter}
                 AND etsa.result_status   = 'Pass'
+                AND COALESCE(etsa.part_b_total_marks_scored, 0) > 0
                 AND app.status != 'Rejected'
                 AND app.name NOT IN (SELECT applicant_id FROM `tabInterview Applicant`)
                 AND COALESCE(etsa.exempts_interview, 0) = 0
@@ -193,7 +196,8 @@ class InterviewConfiguration(Document):
                 app.intereview,
                 app.foriegn_national,
                 0.0               AS entrance_test_score,
-                0.0               AS part_a_score
+                0.0               AS part_a_score,
+                1                 AS cumulative_rank
             FROM `tabApplicant` app
             INNER JOIN `tabProgramme` p
                     ON p.name = app.program
@@ -204,7 +208,11 @@ class InterviewConfiguration(Document):
                 {program_filter}
                 AND app.status != 'Rejected'
                 AND app.name NOT IN (SELECT applicant_id FROM `tabInterview Applicant`)
-                AND p.entrance_test = 0
+                AND (
+                    (app.foriegn_national = 'Yes' AND p.international_entrance_test = 0)
+                    OR
+                    (COALESCE(app.foriegn_national, '') != 'Yes' AND p.entrance_test = 0)
+                )
                 AND (app.exempts_interview IS NULL OR app.exempts_interview = 0)
                 AND (
                     (app.foriegn_national = 'Yes' AND p.international_interview = 1)
@@ -292,9 +300,26 @@ class InterviewConfiguration(Document):
             else:
                 num_to_select = len(applicants)
 
-            # Rank applicants by entrance_test_score desc, part_a_score desc
-            applicants.sort(key=lambda x: (x.get("entrance_test_score", 0), x.get("part_a_score", 0)), reverse=True)
-            return applicants[:num_to_select]
+            # Sort applicants primarily by cumulative_rank (ascending)
+            applicants.sort(key=lambda x: x.get("cumulative_rank", 999999))
+            
+            selected = []
+            current_rank = None
+            for app in applicants:
+                rank = app.get("cumulative_rank", 999999)
+                # If we haven't reached the required number, keep adding
+                if len(selected) < num_to_select:
+                    selected.append(app)
+                    current_rank = rank
+                else:
+                    # Reached quota: if this applicant shares the exact same rank as the 
+                    # last selected applicant (tie at the cutoff), we must include them.
+                    if rank == current_rank:
+                        selected.append(app)
+                    else:
+                        break # Stop selecting once we exceed quota and rank changes
+            
+            return selected
 
         # 3. Filter based on selected applicant_type
         target_applicants = []

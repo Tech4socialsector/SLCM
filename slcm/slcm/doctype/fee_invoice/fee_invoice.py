@@ -33,18 +33,16 @@ class FeeInvoice(Document):
 		# Calculate total from components
 		total = 0
 		for row in self.fee_components:
-			# If total_amount isn't set, calculate it now
-			if not row.total_amount:
-				if row.is_taxable:
-					row.tax_amount = flt(row.amount) * flt(row.tax_rate) / 100
-				else:
-					row.tax_amount = 0
-				row.total_amount = flt(row.amount) + flt(row.tax_amount)
+			if row.is_taxable:
+				row.tax_amount = flt(row.amount) * flt(row.tax_rate) / 100
+			else:
+				row.tax_amount = 0
+			row.total_amount = flt(row.amount) + flt(row.tax_amount)
 			
 			total += flt(row.total_amount)
 		
 		self.total_amount = total
-		self.final_payable_amount = flt(self.total_amount) - flt(self.scholarship_amount)
+		self.final_payable_amount = max(0, flt(self.total_amount) - flt(self.scholarship_amount))
 
 		# Calculate paid amount from payments
 		paid = 0

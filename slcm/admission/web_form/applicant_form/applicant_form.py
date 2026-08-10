@@ -830,6 +830,9 @@ def check_eligibility(applicant_name):
     if not applicant_name:
         return {"status": "Incomplete", "message": ""}
 
+    if not _portal_can_access_applicant(applicant_name):
+        return {"status": "Error", "message": _("Not permitted.")}
+
     doc = frappe.get_doc("Applicant", applicant_name)
 
     if not all([doc.program, doc.campus, doc.admission_cycle, doc.academic_year]):
@@ -1195,3 +1198,99 @@ def download_portal_application_fee_receipt(applicant_name):
     frappe.local.response.filename = f"{safe}.pdf"
     frappe.local.response.filecontent = pdf
     frappe.local.response.type = "pdf"
+
+@frappe.whitelist(allow_guest=True)
+def state_query(doctype=None, txt=None, searchfield=None, start=0, page_len=20, filters=None, **kwargs):
+    if isinstance(filters, str):
+        import json
+        try:
+            filters = json.loads(filters)
+        except Exception:
+            filters = {}
+    if not filters:
+        filters = {}
+
+    country = filters.get("country") if isinstance(filters, dict) else None
+    if not country:
+        country = frappe.form_dict.get("filters[country]") or frappe.form_dict.get("country")
+
+    cond = ""
+    params = {
+        "txt": "%" + (txt or "") + "%",
+        "start": cint(start),
+        "page_len": cint(page_len)
+    }
+
+    if country and country.strip():
+        country_clean = country.strip()
+        matched_rows = frappe.db.sql("""
+            select distinct name from `tabState`
+            where (LOWER(country) = LOWER(%(country)s) or name = 'Other')
+            and name like %(txt)s
+            order by (case when name = 'Other' then 1 else 0 end), name
+            limit %(start)s, %(page_len)s
+        """, {
+            "country": country_clean,
+            "txt": "%" + (txt or "") + "%",
+            "start": cint(start),
+            "page_len": cint(page_len)
+        })
+        if matched_rows:
+            return [{"value": r[0], "description": "", "label": r[0]} for r in matched_rows]
+
+    rows = frappe.db.sql(f"""
+        select distinct name from `tabState`
+        where name like %(txt)s
+        order by (case when name = 'Other' then 1 else 0 end), name
+        limit %(start)s, %(page_len)s
+    """, params)
+
+    return [{"value": r[0], "description": "", "label": r[0]} for r in rows]
+
+@frappe.whitelist(allow_guest=True)
+def city_query(doctype=None, txt=None, searchfield=None, start=0, page_len=20, filters=None, **kwargs):
+    if isinstance(filters, str):
+        import json
+        try:
+            filters = json.loads(filters)
+        except Exception:
+            filters = {}
+    if not filters:
+        filters = {}
+
+    state = filters.get("state") if isinstance(filters, dict) else None
+    if not state:
+        state = frappe.form_dict.get("filters[state]") or frappe.form_dict.get("state")
+
+    cond = ""
+    params = {
+        "txt": "%" + (txt or "") + "%",
+        "start": cint(start),
+        "page_len": cint(page_len)
+    }
+
+    if state and state.strip():
+        state_clean = state.strip()
+        matched_rows = frappe.db.sql("""
+            select distinct IFNULL(NULLIF(city_name, ''), name) as display_name from `tabCity`
+            where (LOWER(state) = LOWER(%(state)s) or name = 'Other' or city_name = 'Other')
+            and (city_name like %(txt)s or name like %(txt)s)
+            order by (case when city_name = 'Other' or name = 'Other' then 1 else 0 end), display_name
+            limit %(start)s, %(page_len)s
+        """, {
+            "state": state_clean,
+            "txt": "%" + (txt or "") + "%",
+            "start": cint(start),
+            "page_len": cint(page_len)
+        })
+        if matched_rows:
+            return [{"value": r[0], "description": "", "label": r[0]} for r in matched_rows]
+
+    rows = frappe.db.sql(f"""
+        select distinct IFNULL(NULLIF(city_name, ''), name) as display_name from `tabCity`
+        where (city_name like %(txt)s or name like %(txt)s)
+        order by (case when city_name = 'Other' or name = 'Other' then 1 else 0 end), display_name
+        limit %(start)s, %(page_len)s
+    """, params)
+
+    return [{"value": r[0], "description": "", "label": r[0]} for r in rows]

@@ -113,7 +113,7 @@ class EligibilityResult(Document):
                     "attached_to_name": self.name,
                     "attached_to_field": "eligibility_result_card",
                     "content": pdf_content,
-                    "is_private": 0
+                    "is_private": 1
                 })
                 _file.save(ignore_permissions=True)
                 file_url = _file.file_url
@@ -198,7 +198,7 @@ def bulk_download_cards(names):
         zip_buffer.getvalue(),
         "Eligibility Result",
         names[0], 
-        is_private=0,
+        is_private=1,
         df="eligibility_result_card"
     )
 

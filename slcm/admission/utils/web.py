@@ -684,7 +684,8 @@ def get_offer_list(limit_start=0, limit_page_length=10):
     # Fetch offers
     fields = [
         "name", "program", "issued_on", "status", 
-        "payment_deadline", "payable_amount", "campus", "applicant",
+        "payment_deadline", "offer_acceptance_deadline", "confirmation_fee_deadline", 
+        "payable_amount", "campus", "applicant",
         "academic_year", "admission_cycle"
     ]
     
@@ -721,12 +722,14 @@ def get_offer_list(limit_start=0, limit_page_length=10):
             
         # Fetch scholarship info from Applicant Fee Assignment
         afa = frappe.db.get_value("Applicant Fee Assignment", 
-            {"offer_letter": offer.name, "fee_type": "Admission Fee", "docstatus": ["!=", 2]}, 
+            {"offer_letter": offer.name, "fee_type": ["in", ["Admission Fee", "Confirmation Fee"]], "docstatus": ["!=", 2]}, 
             ["scholarship_amount", "final_payable_amount"], as_dict=True)
         
         if afa:
             offer.scholarship_amount = afa.scholarship_amount or 0
-            offer.final_payable_amount = afa.final_payable_amount or offer.payable_amount
+            offer.final_payable_amount = afa.final_payable_amount if afa.final_payable_amount is not None else offer.payable_amount
+            # Ensure the list view also reflects the true total amount if we have an assignment
+            offer.payable_amount = offer.final_payable_amount
         else:
             offer.scholarship_amount = 0
             offer.final_payable_amount = offer.payable_amount
@@ -781,19 +784,64 @@ def download_admit_card(admit_card):
     field_to_check = "reschedule_admit_card" if is_rescheduled else "admit_card"
     stored_file_url = getattr(doc, field_to_check)
 
-    if not stored_file_url:
-        from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
-        stored_file_url = generate_and_store_admit_card(doc.name, is_rescheduled=is_rescheduled)
-        if stored_file_url:
-            doc.reload()
-
     if stored_file_url:
-        file_doc = frappe.get_doc("File", {"file_url": stored_file_url})
-        frappe.local.response.filename = f"Admit_Card_{doc.applicant}.pdf"
-        frappe.local.response.filecontent = file_doc.get_content()
-        frappe.local.response.type = "download"
-    else:
-        frappe.throw("Admit Card generation failed. Please contact the admission office.")
+        try:
+            file_doc = frappe.get_doc("File", {"file_url": stored_file_url})
+            frappe.local.response.filename = f"Admit_Card_{doc.applicant}.pdf"
+            frappe.local.response.filecontent = file_doc.get_content()
+            frappe.local.response.type = "download"
+            return
+        except Exception:
+            pass
+
+    frappe.flags.ignore_print_permissions = True
+    pdf_content = None
+    last_error = None
+
+    for generator in ("wkhtmltopdf", "chrome"):
+        try:
+            pdf_generator_options = {}
+            if generator == "chrome":
+                pdf_generator_options = {
+                    "no-sandbox": "",
+                    "disable-setuid-sandbox": "",
+                    "disable-dev-shm-usage": ""
+                }
+
+            pdf_content = frappe.get_print(
+                "Entrance Test Seat Allocation",
+                doc.name,
+                "Admit Card",
+                as_pdf=True,
+                doc=doc,
+                pdf_generator=generator,
+                pdf_options=pdf_generator_options if generator == "wkhtmltopdf" else None
+            )
+            if pdf_content:
+                break
+        except Exception as e:
+            last_error = e
+            error_details = {
+                "admit_card": doc.name,
+                "generator": generator,
+                "error": str(e),
+                "site": frappe.local.site,
+                "url": frappe.utils.get_url()
+            }
+            frappe.log_error(
+                title=f"Admit Card Download failed with {generator}",
+                message=frappe.as_json(error_details) + "\n" + frappe.get_traceback()
+            )
+            if generator == "wkhtmltopdf":
+                continue
+            break
+
+    if not pdf_content:
+        frappe.throw(frappe._("PDF generation failed for admit card. Error: {0}").format(str(last_error)))
+
+    frappe.local.response.filename = f"Admit_Card_{doc.applicant}.pdf"
+    frappe.local.response.filecontent = pdf_content
+    frappe.local.response.type = "download"
 
 @frappe.whitelist(methods=["POST", "GET"])
 def download_application(applicant_name):

@@ -197,7 +197,7 @@ def get_data(filters):
                     v_cat = app.vertical_category or "General"
                     if v_cat not in cat_capacities: v_cat = "General"
                     
-                    is_allocated = app.selection_status in ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid"]
+                    is_allocated = app.selection_status in ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Confirmation Fee Paid", "Full Fee Paid"]
                     is_waitlisted = app.selection_status == "Waitlisted"
                     
                     if v_cat not in stats: 

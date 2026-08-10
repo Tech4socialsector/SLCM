@@ -35,7 +35,6 @@ class OfferLetter(Document):
 
         self.set_notification_receiver()
         self.validate_status_transition()
-        self.handle_audit_and_locking()
 
     def set_notification_receiver(self):
         if self.applicant:
@@ -63,7 +62,6 @@ class OfferLetter(Document):
             "Withdrawn": ("Offer Declined", "Offer Declined"),
             "Expired": ("Offer Expired", "Offer Expired"),
             "Accepted": ("Offer Accepted", "Offer Accepted"),
-            "Payment Completed": ("Fee Paid", "Fee Paid"),
             "Issued": ("Offer Issued", "Offer Issued")
         }
 
@@ -138,62 +136,9 @@ class OfferLetter(Document):
             self.payable_amount = new_payable_amount
             if self.status == "Issued":
                 self.ignore_lock = True
-                self.edit_reason = "Synced fee amount from updated Fee Structure"
             self.save(ignore_permissions=True)
             return True
         return False
-
-    def handle_audit_and_locking(self):
-        """Detects changes in sensitive fields and enforces locking."""
-        if self.is_new():
-            return
-
-        db_doc = self.get_doc_before_save()
-        if not db_doc:
-            return
-
-        sensitive_fields = ["status", "payment_deadline", "payable_amount", "campus", "program","accepted_on"]
-        db_status = db_doc.status
-
-        # If Issued or beyond, restrict modification of sensitive fields
-        is_locked_state = db_status not in ["Draft"]
-        
-        for fieldname in sensitive_fields:
-            if self.has_value_changed(fieldname):
-                # Status change is handled by validate_status_transition
-                if fieldname == "status":
-                    continue
-                
-                # Check for lock override
-                if is_locked_state and not self.get("ignore_lock"):
-                    # Exception 1: Allow setting accepted_on and status for standard transitions
-                    is_status_accept = fieldname == "status" and self.status == "Accepted"
-                    is_field_accept = fieldname == "accepted_on" and not db_doc.get("accepted_on")
-                    
-                    if is_status_accept or is_field_accept:
-                        pass
-                    else:
-                        self.enforce_lock_override(fieldname)
-
-
-
-    def enforce_lock_override(self, fieldname):
-        """Validates if the user has permission to override a locked field."""
-
-        if "System Manager" not in frappe.get_roles():
-            throw(_("Modification of '{0}' is locked after the offer is Issued. Only System Managers can override.").format(
-                self.meta.get_label(fieldname)
-            ))
-
-        # Require reason for override
-        reason = (self.get("edit_reason") or "").strip()
-
-        if not reason:
-            throw(_("A reason is required to override the lock on field '{0}'. Please provide an Edit Reason before saving.").format(
-                self.meta.get_label(fieldname)
-            ))
-
-
 
     def on_payment_authorized(self, status):
         """

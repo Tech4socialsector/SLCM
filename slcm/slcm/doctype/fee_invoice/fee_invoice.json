@@ -165,7 +165,7 @@
    "fieldname": "needs_accommodation",
    "fieldtype": "Select",
    "label": "Needs Accommodation",
-   "options": "Yes\\nNo",
+   "options": "Yes\nNo",
    "read_only": 1
   },
   {
@@ -178,13 +178,12 @@
    "read_only": 1
   },
   {
+   "description": "Tracks the Razorpay gateway payment attempt state (separate from invoice billing status)",
    "fieldname": "payment_status",
    "fieldtype": "Select",
-   "in_list_view": 0,
    "label": "Online Payment Status",
    "options": "\nPayment Initiated\nAuthorized\nCaptured\nPayment Failed\nRefunded",
-   "read_only": 1,
-   "description": "Tracks the Razorpay gateway payment attempt state (separate from invoice billing status)"
+   "read_only": 1
   },
   {
    "fieldname": "section_components",
@@ -210,7 +209,7 @@
   }
  ],
  "links": [],
- "modified": "2026-03-18 12:38:43.232222",
+ "modified": "2026-07-30 14:51:50.896737",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Fee Invoice",
@@ -234,6 +233,5 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "title_field": "student_name",
- "custom": 0
+ "title_field": "student_name"
 }

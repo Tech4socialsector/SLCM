@@ -123,7 +123,7 @@ class StudentMaster(Document):
             "previous_state":  confirmed_previous_state,
             "updated_by":      frappe.session.user,
             "updated_on":      now_datetime(),
-            "remarks":         self.status_remarks,
+            "remarks":         self.status_remark,
         })
 
         frappe.get_doc({
@@ -470,7 +470,7 @@ def update_registration_status(student_id, new_status, remarks=None):
     student.registration_status = new_status
     student.status_updated_by = frappe.session.user
     student.status_updated_on = now_datetime()
-    student.status_remarks = remarks
+    student.status_remark = remarks
 
     try:
         student.save(ignore_permissions=True)

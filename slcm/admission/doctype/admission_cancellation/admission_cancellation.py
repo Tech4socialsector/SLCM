@@ -21,37 +21,46 @@ class AdmissionCancellation(Document):
 
 		# Fetch program and campus from applicant
 		applicant_doc = frappe.get_doc("Applicant", self.applicant)
-		self.program = applicant_doc.program
-		self.campus = applicant_doc.campus
+		if not self.program:
+			self.program = applicant_doc.program
+		if not self.campus:
+			self.campus = applicant_doc.campus
 
-		# Fetch the latest active Offer Letter for this applicant
-		offer_name = frappe.db.get_value(
-			"Offer Letter",
-			{"applicant": self.applicant, "status": ["not in", ["Rejected", "Withdrawn"]]},
-			"name",
-			order_by="creation desc"
-		)
+		if not self.offer:
+			offer_name = frappe.db.get_value(
+				"Offer Letter",
+				{"applicant": self.applicant, "status": ["not in", ["Rejected", "Withdrawn"]]},
+				"name",
+				order_by="creation desc"
+			)
+			if offer_name:
+				self.offer = offer_name
+
+		if self.applicant_payment_receipt:
+			return
+
+		offer_name = self.offer
 		if not offer_name:
 			return
 
-		self.offer = offer_name
+		# ── Primary: resolve via Applicant Payment Receipts linked to the Offer Letter ──
 
-		# ── Primary: resolve via Applicant Payment Receipt linked to the Offer Letter ──
-		# APR.net_amount = actual amount paid (post-scholarship); APR.transaction_id = Razorpay pay_xxx
-		receipt = frappe.db.get_value(
+		receipts = frappe.get_all(
 			"Applicant Payment Receipt",
-			{"offer_letter": offer_name, "docstatus": ["<", 2]},
-			["name", "net_amount", "total_amount", "transaction_id"],
-			as_dict=True,
+			filters={"offer_letter": offer_name, "docstatus": ["<", 2]},
+			fields=["name", "net_amount", "total_amount", "transaction_id"],
 			order_by="creation desc"
 		)
 
-		if receipt:
-			self.applicant_payment_receipt = receipt.name
-			# Use net_amount (actual paid after scholarship); fallback to total_amount
-			self.amount_paid = flt(receipt.net_amount) if flt(receipt.net_amount) > 0 else flt(receipt.total_amount)
-			self.razorpay_id = receipt.transaction_id
-			return  # APR is the authoritative source — no need to fall through
+		if receipts:
+			total_paid = 0.0
+			for r in receipts:
+				amt = flt(r.net_amount) if flt(r.get("net_amount")) > 0 else flt(r.total_amount)
+				total_paid += amt
+			self.applicant_payment_receipt = receipts[0].name
+			self.amount_paid = total_paid
+			self.razorpay_id = receipts[0].transaction_id
+			return
 
 		# ── Fallback: no APR found, try Payment Request on Offer Letter ──
 		pr = frappe.db.get_value(
@@ -64,6 +73,7 @@ class AdmissionCancellation(Document):
 		if pr:
 			self.amount_paid = flt(pr.amount)
 			self.razorpay_id = pr.transaction_id
+
 
 	def set_cancellation_metadata(self):
 		if self.is_new():

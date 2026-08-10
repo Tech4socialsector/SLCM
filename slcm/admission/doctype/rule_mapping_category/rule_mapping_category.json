@@ -37,32 +37,36 @@
    "fieldname": "minimum_percentage_hsc",
    "fieldtype": "Percent",
    "in_list_view": 1,
-   "label": "Minimum Percentage In HSC"
+   "label": "Minimum Percentage In HSC",
+   "precision": "1"
   },
   {
    "fieldname": "minimum_percentage_sslc",
    "fieldtype": "Percent",
    "in_list_view": 1,
-   "label": "Minimum Percentage In SSLC"
+   "label": "Minimum Percentage In SSLC",
+   "precision": "1"
   },
   {
    "fieldname": "minimum_cgpa_ug",
    "fieldtype": "Percent",
    "in_list_view": 1,
-   "label": "Minimum CGPA in UG"
+   "label": "Minimum CGPA in UG",
+   "precision": "1"
   },
   {
    "fieldname": "minimum_cgpa_pg",
    "fieldtype": "Percent",
    "in_list_view": 1,
-   "label": "Minimum CGPA in PG"
+   "label": "Minimum CGPA in PG",
+   "precision": "1"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-03-16 11:55:25.772518",
+ "modified": "2026-07-30 11:05:36.819973",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Rule Mapping Category",

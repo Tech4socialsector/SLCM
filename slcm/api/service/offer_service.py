@@ -110,7 +110,7 @@ class OfferService:
         return admission_year
 
     @staticmethod
-    @frappe.whitelist(allow_guest=True)
+    @frappe.whitelist()
     def generate_offer(applicant, campus, program, cycle, admission_year=None):
         """
         Main entry point for generating an offer letter.
@@ -252,14 +252,23 @@ class OfferService:
 
             offer.fee_structure = fee_structure_name
             
-            # Set validity/deadline from Fee Structure
-            offer.payment_deadline = FeeService._calculate_deadline(fee_structure_name)
+            # Set deadlines
+            offer.offer_acceptance_deadline = config.due_date
+            
+            fee_doc = frappe.get_cached_doc("Fee Structure", fee_structure_name)
+            if fee_doc:
+                offer.confirmation_fee_deadline = fee_doc.due_date_for_confirmation_fee
+                offer.payment_deadline = fee_doc.valid_until
             
             # Freeze Fees from Fee Structure
             foriegn_national = frappe.db.get_value("Applicant", applicant, "foriegn_national")
             is_foreign = foriegn_national == "Yes"
             fee_data = FeeService._calculate_and_freeze_fees(fee_structure_name, is_foreign=is_foreign)
-            offer.payable_amount = fee_data.get("total_payable")
+            
+            if fee_data.get("is_confirmation_fee_applicable"):
+                offer.payable_amount = fee_data.get("confirmation_fee_amount")
+            else:
+                offer.payable_amount = fee_data.get("total_payable")
             
             # Ensure Fetch From doesn't overwrite our resolved campus and cycle 
             # if they differ from the applicant's default preferences
@@ -321,15 +330,24 @@ class OfferService:
             throw(_("Only 'Issued' or 'Accepted' offers can be processed. Current status: {0}").format(offer.status))
 
         # Reject expired-by-deadline for both Issued and Accepted (idempotent re-calls / race with scheduler)
-        if offer.payment_deadline and getdate(offer.payment_deadline) < getdate(now_datetime()):
+        if offer.status == "Issued":
+            deadline = offer.offer_acceptance_deadline
+            deadline_label = "offer acceptance deadline"
+        else:
+            deadline = offer.confirmation_fee_deadline
+            deadline_label = "confirmation fee deadline"
+
+        if deadline and getdate(deadline) < getdate(now_datetime()):
             throw(
-                _("This offer is no longer valid: the payment deadline ({0}) has passed. You cannot accept or proceed with this offer.")
-                .format(offer.payment_deadline)
+                _("This offer is no longer valid: the {0} ({1}) has passed. You cannot proceed.")
+                .format(deadline_label, deadline)
             )
 
         if offer.status == "Issued":
             offer.status = "Accepted"
             offer.accepted_on = now_datetime()
+            if needs_accommodation:
+                offer.needs_accommodation = needs_accommodation
             offer.save(ignore_permissions=True)
 
             if needs_accommodation:
@@ -408,8 +426,6 @@ class OfferService:
             throw(_("Cannot reject offer in status: {0}").format(status))
 
         offer.status = "Rejected"
-        if reason:
-            offer.edit_reason = reason # Passed to the log via model hook
         offer.save(ignore_permissions=True)
 
         from slcm.admission.utils.notifications import log_communication
@@ -437,20 +453,48 @@ class OfferService:
 
         Note: ``Accepted`` → ``Expired`` must be allowed in ``OfferLetter.validate_status_transition``.
         """
-        to_expire = frappe.get_all("Offer Letter", filters={
-            "status": ["in", ["Issued", "Accepted"]],
-            "payment_deadline": ["<", frappe.utils.nowdate()]
-        }, fields=["name"])
+        active_offers = frappe.get_all("Offer Letter", filters={
+            "status": ["in", ["Issued", "Accepted", "Confirmation Fee Paid"]]
+        }, fields=["name", "status", "offer_acceptance_deadline", "confirmation_fee_deadline", "payment_deadline"])
+
+        now_date = frappe.utils.nowdate()
+        to_expire = []
+
+        for row in active_offers:
+            should_expire = False
+            if row.status == "Issued":
+                if row.offer_acceptance_deadline and frappe.utils.getdate(row.offer_acceptance_deadline) < frappe.utils.getdate(now_date):
+                    should_expire = True
+            elif row.status == "Accepted":
+                # Find pending fee assignment
+                afa = frappe.db.get_value("Applicant Fee Assignment", 
+                    {"offer_letter": row.name, "status": "Assigned", "docstatus": ["!=", 2]}, 
+                    ["fee_type"], as_dict=1)
+                
+                if afa:
+                    if afa.fee_type == "Confirmation Fee":
+                        if row.confirmation_fee_deadline and frappe.utils.getdate(row.confirmation_fee_deadline) < frappe.utils.getdate(now_date):
+                            should_expire = True
+                    elif afa.fee_type == "Admission Fee":
+                        if row.payment_deadline and frappe.utils.getdate(row.payment_deadline) < frappe.utils.getdate(now_date):
+                            should_expire = True
+
+            elif row.status == "Confirmation Fee Paid":
+                if row.payment_deadline and frappe.utils.getdate(row.payment_deadline) < frappe.utils.getdate(now_date):
+                    should_expire = True
+
+            if should_expire:
+                to_expire.append(row.name)
 
         processed = 0
         batch_size = 50 
         
-        for i, entry in enumerate(to_expire):
+        for i, offer_name in enumerate(to_expire):
             try:
                 # We save each individually to trigger the automated status hook
-                doc = frappe.get_doc("Offer Letter", entry.name)
+                doc = frappe.get_doc("Offer Letter", offer_name)
                 doc.status = "Expired"
-                doc.edit_reason = _("Automatically expired by system scheduler.")
+
                 doc.save(ignore_permissions=True)
                 
                 from slcm.admission.utils.notifications import log_communication
@@ -472,7 +516,7 @@ class OfferService:
                     
             except Exception as e:
                 frappe.db.rollback()
-                frappe.log_error(f"Failed to expire offer {entry.name}: {str(e)}", "Auto Expiry Error")
+                frappe.log_error(f"Failed to expire offer {offer_name}: {str(e)}", "Auto Expiry Error")
                 
         # Final commit for remaining records
         if processed > 0:
@@ -865,7 +909,23 @@ class OfferService:
             offer_doc.rendered_content = html_content
 
             # Generate PDF
-            pdf_content = frappe.get_print("Offer Letter", offer_doc.name, print_format, as_pdf=True)
+            # Workaround for wkhtmltopdf HostNotFoundError/deadlock on single-threaded dev servers
+            original_host_name = frappe.conf.get("host_name")
+            try:
+                if getattr(frappe.local, "request", None):
+                    from urllib.parse import urlparse
+                    parsed = urlparse(frappe.request.host_url)
+                    port = parsed.port or (443 if parsed.scheme == 'https' else 80)
+                    frappe.conf.host_name = f"{parsed.scheme}://127.0.0.1:{port}"
+                else:
+                    frappe.conf.host_name = "http://127.0.0.1:8000"
+                
+                pdf_content = frappe.get_print("Offer Letter", offer_doc.name, print_format, as_pdf=True)
+            finally:
+                if original_host_name is not None:
+                    frappe.conf.host_name = original_host_name
+                elif "host_name" in frappe.conf:
+                    del frappe.conf.host_name
             
             if not pdf_content:
                 frappe.log_error(f"PDF Generation returned empty content for {offer_doc.name}", "PDF Generation Warning")
@@ -1007,12 +1067,12 @@ class OfferService:
                 ol.name,
                 app.candidate_name as applicant_name,
                 ol.program,
-                ol.payment_deadline
+                ol.offer_acceptance_deadline as payment_deadline
             FROM `tabOffer Letter` ol
             JOIN `tabApplicant` app ON ol.applicant = app.name
             WHERE ol.status = 'Issued'
-              AND (ol.payment_deadline >= CURDATE() OR ol.payment_deadline IS NULL)
-            ORDER BY ol.payment_deadline ASC
+              AND (ol.offer_acceptance_deadline >= CURDATE() OR ol.offer_acceptance_deadline IS NULL)
+            ORDER BY ol.offer_acceptance_deadline ASC
         """, as_dict=1)
         return offers
 
@@ -1181,7 +1241,7 @@ class OfferService:
 def extended_fee_deadline():
     return OfferService.extended_fee_deadline()
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def generate_offer(applicant, campus, program, cycle, admission_year=None):
     return OfferService.generate_offer(applicant, campus, program, cycle, admission_year)
 
@@ -1220,12 +1280,12 @@ def expire_offers():
 def get_online_payment_url(offer_name, gateway=None):
     return OfferService.get_online_payment_url(offer_name, gateway)
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def create_offer_razorpay_order(offer_name):
     from slcm.api.service.fee_service import FeeService
     return FeeService.create_offer_razorpay_order(offer_name)
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def verify_offer_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, offer_name):
     from slcm.api.service.fee_service import FeeService
     return FeeService.verify_offer_payment(razorpay_payment_id, razorpay_order_id, razorpay_signature, offer_name)
@@ -1243,3 +1303,239 @@ def background_bulk_worker(applicants, user=None):
 
 def _send_bulk_reminders_worker(offer_names, email_template, send_email=True, send_notification=True, sender_email=None, user=None):
     return OfferService._send_bulk_reminders_worker(offer_names, email_template, send_email, send_notification, sender_email, user)
+import frappe
+from frappe import _
+from frappe.utils import flt
+
+@frappe.whitelist(allow_guest=True)
+def get_offer_details(offer_name=None):
+    """
+    Fetches details of a specific offer letter or the latest active one.
+    Supports Admin view.
+    """
+    user = frappe.session.user
+    if user == "Guest":
+        return {"error": "Authentication required"}
+
+    roles = frappe.get_roles(user)
+    is_admin = "Administrator" in roles or "System Manager" in roles
+
+    # Find applicant linked to this user for default filtering
+    applicant = frappe.db.get_value("Applicant", {"email": user}, "name")
+    if not applicant and frappe.db.exists("Applicant", user):
+        applicant = user
+
+    if offer_name:
+        # Verify the offer exists. If not admin, verify it belongs to this user's email.
+        check_filters = {"name": offer_name}
+        if not is_admin:
+            check_filters["email"] = user
+
+        exists = frappe.get_all("Offer Letter", filters=check_filters, limit=1, ignore_permissions=True)
+        if not exists:
+            return {"error": _("Offer Letter {0} not found or you don't have permission to view it.").format(offer_name)}
+        offer_id = offer_name
+    else:
+        # User is looking for their own latest offer
+        latest_filters = {
+            "status": ["in", ["Issued", "Accepted", "Payment Completed"]]
+        }
+        if not is_admin:
+            latest_filters["email"] = user
+            
+        offers = frappe.get_all("Offer Letter", 
+            filters=latest_filters, 
+            fields=["name"], 
+            order_by="creation desc", 
+            limit=1, 
+            ignore_permissions=True
+        )
+        
+        if not offers:
+            return {"error": _("No active admission offer found for your account at this time.")}
+        offer_id = offers[0].name
+
+    try:
+        offer_doc = frappe.get_doc("Offer Letter", offer_id)
+        offer_dict = offer_doc.as_dict()
+        rendered_content = offer_doc.rendered_content
+        target_applicant = offer_doc.applicant
+        fee_structure = offer_doc.fee_structure
+    except frappe.PermissionError:
+        safe_fields = ["name", "applicant", "candidate_name", "program", "status", "rendered_content", "fee_structure", "offer_deadline", "confirmation_fee_due_date", "full_fee_due_date", "campus", "admission_cycle"]
+        offer_fields = frappe.get_all("Offer Letter", filters={"name": offer_id}, fields=safe_fields, limit=1, ignore_permissions=True)
+        if not offer_fields:
+            return {"error": _("Access Denied")}
+        offer_dict = offer_fields[0]
+        rendered_content = offer_dict.get("rendered_content")
+        target_applicant = offer_dict.get("applicant")
+        fee_structure = offer_dict.get("fee_structure")
+
+    fee_data = []
+
+    # First, try to fetch pending components from Applicant Fee Assignment (AFA)
+    afa = frappe.db.get_value("Applicant Fee Assignment",
+        {"offer_letter": offer_id, "fee_type": ["in", ["Admission Fee", "Confirmation Fee"]], "status": "Assigned", "docstatus": ["!=", 2]},
+        ["name", "final_payable_amount", "scholarship_amount", "scholarship_applied", "total_amount", "fee_type", "confirmation_fee"],
+        order_by="creation desc",
+        as_dict=True)
+
+    if not afa:
+        afa = frappe.db.get_value("Applicant Fee Assignment",
+            {"offer_letter": offer_id, "fee_type": ["in", ["Admission Fee", "Confirmation Fee"]], "docstatus": ["!=", 2]},
+            ["name", "final_payable_amount", "scholarship_amount", "scholarship_applied", "total_amount", "fee_type", "confirmation_fee"],
+            order_by="creation desc",
+            as_dict=True)
+
+    if afa:
+        if afa.final_payable_amount is not None:
+            offer_dict["payable_amount"] = afa.final_payable_amount
+            
+        if afa.fee_type == "Confirmation Fee":
+            fee_data.append({
+                "component": "Confirmation Fee",
+                "amount": afa.confirmation_fee or afa.total_amount
+            })
+        else:
+            afa_components = frappe.get_all("Applicant Fee Component Child",
+                filters={"parent": afa.name, "parenttype": "Applicant Fee Assignment"},
+                fields=["component_name", "fee_component", "total_amount", "amount"],
+                ignore_permissions=True
+            )
+            for comp in afa_components:
+                fee_data.append({
+                    "component": comp.component_name or comp.fee_component,
+                    "amount": comp.total_amount or comp.amount
+                })
+
+    if not fee_data and fee_structure:
+        applicant_nationality = "Indian"
+        if target_applicant:
+            applicant_nationality = frappe.db.get_value("Applicant", target_applicant, "nationality") or "Indian"
+
+        parentfield = "fee_components_for_indian" if applicant_nationality.strip().lower() == "indian" else "fee_components_for_foreign"
+
+        fs_doc = frappe.get_doc("Fee Structure", fee_structure)
+        if fs_doc.is_confirmation_fee_applicable:
+            fee_data.append({
+                "component": "Confirmation Fee",
+                "amount": fs_doc.confirmation_fee_amount
+            })
+        else:
+            fs_components = frappe.get_all("Fee Component Child",
+                filters={"parent": fee_structure, "parenttype": "Fee Structure", "parentfield": parentfield},
+                fields=["component_name", "fee_component", "total_amount", "amount"],
+                ignore_permissions=True
+            )
+            for comp in fs_components:
+                fee_data.append({
+                    "component": comp.component_name or comp.fee_component,
+                    "amount": comp.total_amount or comp.amount
+                })
+
+    fee_paid = (offer_dict.get("status") == "Payment Completed")
+    if not fee_paid:
+        is_admission_paid = frappe.db.get_value("Applicant Fee Assignment",
+            {"offer_letter": offer_id, "fee_type": "Admission Fee", "status": ["in", ["Paid", "Converted"]]}, "name")
+        if is_admission_paid:
+            fee_paid = True
+
+    applicant_id = target_applicant
+    admission_cycle = offer_dict.get("admission_cycle") or frappe.db.get_value("Applicant", applicant_id, "admission_cycle")
+    live_scholarship_query = frappe.db.sql("""
+        SELECT SUM(calculated_benefit)
+        FROM `tabScholarship Application`
+        WHERE applicant_id = %s AND admission_cycle = %s AND status = 'Approved'
+    """, (applicant_id, admission_cycle))
+    live_scholarship = live_scholarship_query[0][0] if live_scholarship_query and live_scholarship_query[0] else 0
+    scholarship_amount = flt(live_scholarship)
+    offer_dict["scholarship_amount"] = scholarship_amount
+
+    online_payment_enabled = frappe.db.get_value("Fee Structure", fee_structure, "online_payment") if fee_structure else False
+
+    scholarship_data = None
+    latest_sa = frappe.get_all("Scholarship Application",
+        filters={"applicant_id": applicant_id, "admission_cycle": admission_cycle, "docstatus": ["!=", 2]},
+        fields=["name", "status", "scholarship_scheme", "calculated_benefit", "original_fee_amount", "final_fee_amount", "income_certificate", "supporting_documents"],
+        order_by="creation desc",
+        limit=1
+    )
+    if latest_sa:
+        scholarship_data = latest_sa[0]
+        if scholarship_data.status == "Submitted":
+            scholarship_data.status = "Submitted"
+
+    applied_scholarship = 0
+    if afa and afa.scholarship_applied and flt(afa.scholarship_amount) > 0:
+        offer_dict["payable_amount"] = flt(afa.final_payable_amount)
+        applied_scholarship = flt(afa.scholarship_amount)
+    elif scholarship_data and scholarship_data.status == "Approved":
+        benefit = flt(scholarship_data.calculated_benefit)
+        offer_dict["payable_amount"] = max(0, flt(offer_dict["payable_amount"]) - benefit)
+        applied_scholarship = benefit
+
+    if applied_scholarship > 0:
+        fee_data.append({
+            "component": "Scholarship Benefit",
+            "amount": -applied_scholarship,
+            "is_discount": True
+        })
+
+    if afa and afa.fee_type == "Admission Fee" and flt(afa.confirmation_fee) > 0:
+        fee_data.append({
+            "component": "Confirmation Fee Paid",
+            "amount": -flt(afa.confirmation_fee),
+            "is_discount": True
+        })
+
+    applicant_data = frappe.get_all("Applicant", filters={"name": target_applicant}, fields=["*"], limit=1, ignore_permissions=True)
+    applicant_dict = applicant_data[0] if applicant_data else {}
+    if applicant_dict and not applicant_dict.get("candidate_photo"):
+        applicant_dict["candidate_photo"] = frappe.db.get_value("User", frappe.session.user, "user_image")
+
+    cancellation = frappe.get_all("Admission Cancellation", 
+        filters={"offer": offer_id}, 
+        fields=["name", "status"], 
+        limit=1
+    )
+    cancellation_info = {
+        "has_cancellation": True if cancellation else False,
+        "cancellation_name": cancellation[0].name if cancellation else "",
+        "cancellation_status": cancellation[0].status if cancellation else ""
+    }
+
+    from slcm.admission.utils.scholarship_availability import get_available_scholarships_for_dashboard
+    available_scholarships_count = 0
+    enable_scholarship = frappe.db.get_value("Admission Cycle", admission_cycle, "enable_scholarship")
+    if enable_scholarship:
+        try:
+            available_scholarships = get_available_scholarships_for_dashboard(
+                applicant_id=target_applicant,
+                cycle=admission_cycle,
+                campus=applicant_dict.get("campus"),
+                program=applicant_dict.get("program"),
+                applicant_statuses=[applicant_dict.get("status")]
+            )
+            available_scholarships_count = len(available_scholarships)
+        except Exception:
+            pass
+
+    receipts = frappe.get_all("Applicant Payment Receipt",
+        filters={"offer_letter": offer_id, "docstatus": ["<", 2]},
+        fields=["name", "fee_type"],
+        order_by="creation desc", ignore_permissions=True)
+
+    return {
+        "offer": offer_dict,
+        "applicant": applicant_dict,
+        "fee_breakdown": fee_data,
+        "rendered_content": rendered_content,
+        "is_admin": is_admin,
+        "is_fee_paid": True if fee_paid else False,
+        "online_payment_enabled": online_payment_enabled,
+        "currency": frappe.defaults.get_global_default("currency") or "INR",
+        "cancellation": cancellation_info,
+        "available_scholarships_count": available_scholarships_count,
+        "scholarship_application": scholarship_data,
+        "receipts": receipts
+    }

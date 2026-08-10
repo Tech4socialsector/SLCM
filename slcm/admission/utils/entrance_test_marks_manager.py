@@ -274,12 +274,13 @@ def import_entrance_test_marks_file(file_url=None):
     app_col_idx = find_col_index(["Application Number", "Applicant", "Application ID", "App No"])
     part_a_col_idx = find_col_index(["Part A Marks", "Part A", "Part-A Total Mark Scored"])
     part_b_col_idx = find_col_index(["Part B Marks", "Part B", "Part-B Total Marks Scored"])
+    status_col_idx = find_col_index(["Status", "Result Status", "Result"])
 
     if app_col_idx is None:
         frappe.throw(_("Column 'Application Number' not found in file headers. File headers found: {0}").format(", ".join(header)))
 
-    if part_a_col_idx is None and part_b_col_idx is None:
-        frappe.throw(_("Neither 'Part A Marks' nor 'Part B Marks' column was found in the uploaded file."))
+    if part_a_col_idx is None and part_b_col_idx is None and status_col_idx is None:
+        frappe.throw(_("Neither 'Part A Marks', 'Part B Marks', nor 'Status' column was found in the uploaded file."))
 
     # Collect statistics and log errors
     success_count = 0
@@ -318,11 +319,13 @@ def import_entrance_test_marks_file(file_url=None):
         # Extract values
         part_a_raw = cstr(row[part_a_col_idx]).strip() if (part_a_col_idx is not None and part_a_col_idx < len(row)) else ""
         part_b_raw = cstr(row[part_b_col_idx]).strip() if (part_b_col_idx is not None and part_b_col_idx < len(row)) else ""
+        status_raw = cstr(row[status_col_idx]).strip() if (status_col_idx is not None and status_col_idx < len(row)) else ""
 
         has_part_a = part_a_raw != ""
         has_part_b = part_b_raw != ""
+        has_status = status_raw != ""
 
-        if not has_part_a and not has_part_b:
+        if not has_part_a and not has_part_b and not has_status:
             skipped_count += 1
             continue
 
@@ -330,7 +333,7 @@ def import_entrance_test_marks_file(file_url=None):
         current_doc = frappe.db.get_value(
             "Entrance Test Seat Allocation",
             alloc_name,
-            ["part_a_total_marks_scored", "part_b_total_marks_scored", "total_marks"],
+            ["part_a_total_marks_scored", "part_b_total_marks_scored", "total_marks", "result_status", "applicant"],
             as_dict=True
         )
 
@@ -362,6 +365,10 @@ def import_entrance_test_marks_file(file_url=None):
                 })
                 continue
 
+        if has_status:
+            if current_doc.result_status != status_raw:
+                update_dict["result_status"] = status_raw
+
         if update_dict:
             # Calculate final cumulative total & percentage
             part_a = update_dict.get("part_a_total_marks_scored", current_doc.part_a_total_marks_scored or 0)
@@ -371,11 +378,21 @@ def import_entrance_test_marks_file(file_url=None):
 
             percentage = flt((total_sec / float(max_marks)) * 100.0, 2) if max_marks > 0 else 0.0
 
-            update_dict["total_marks_secured_in_part_a_b"] = total_sec
-            update_dict["percentage"] = percentage
+            if has_part_a or has_part_b:
+                update_dict["total_marks_secured_in_part_a_b"] = total_sec
+                update_dict["percentage"] = percentage
 
             # Update DB without modifying modified timestamp so background jobs don't clash
             frappe.db.set_value("Entrance Test Seat Allocation", alloc_name, update_dict, update_modified=False)
+            
+            # Explicitly invoke recalculate_result_status equivalent
+            if "result_status" in update_dict and current_doc.applicant:
+                try:
+                    from slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation import _update_applicant_status_for_result_status
+                    _update_applicant_status_for_result_status(current_doc.applicant, update_dict["result_status"])
+                except Exception as e:
+                    frappe.log_error(f"Failed to update applicant status for {current_doc.applicant}: {str(e)}")
+
             updated_count += 1
         
         success_count += 1
