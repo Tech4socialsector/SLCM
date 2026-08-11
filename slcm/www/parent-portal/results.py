@@ -54,7 +54,7 @@ def get_context(context):
                 filters={"student": student_name, "exam_plan": ep_name},
                 fields=[
                     "name", "course", "total_marks", "grade", "moderated_grade",
-                    "updated_final_marks", "updated_grade",
+                    "updated_final_marks", "updated_grade", "re_exam_grade",
                     "enrollment_status", "attendance_status",
                     "mfa", "remark", "consider_for_sgpa",
                 ],
@@ -101,6 +101,7 @@ def get_context(context):
                     "reexam_groups":     reexam_groups,
                     "has_comp_marks":    bool(regular_groups or reexam_groups),
                     "show_total":        show_total,
+                    "re_exam_grade":     m.re_exam_grade or "",
                 })
 
             courses_out.sort(key=lambda c: c["course_name"])

@@ -81,7 +81,7 @@ def get_context(context):
                 fields=[
                     "name", "course", "evaluation_schema",
                     "total_marks", "grade", "moderated_grade",
-                    "updated_final_marks", "updated_grade",
+                    "updated_final_marks", "updated_grade", "re_exam_grade",
                     "improvement_marks", "improvement_grade", "improvement_applied",
                     "enrollment_status", "attendance_status",
                     "mfa", "fairness_status", "remark", "consider_for_sgpa",
@@ -164,6 +164,7 @@ def get_context(context):
                     "remark":                   m.remark or "",
                     "updated_final_marks":      round(float(m.updated_final_marks), 2) if m.updated_final_marks else None,
                     "updated_grade":            m.updated_grade or "",
+                    "re_exam_grade":            m.re_exam_grade or "",
                     "improvement_marks":        round(float(m.improvement_marks), 2) if m.improvement_marks else None,
                     "improvement_grade":        m.improvement_grade or "",
                     "improvement_applied":      int(m.improvement_applied or 0),
