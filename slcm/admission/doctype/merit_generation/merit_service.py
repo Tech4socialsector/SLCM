@@ -1142,8 +1142,9 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                                     allocated_list.remove(in_cand)
 
                             # Recursive Displacement: Save out_cand in their reserved category if possible
-                            disp_reason = f"Displaced from {v_cat} category to accommodate {comp_cat} sub-quota candidate ({in_cand.candidate_name or in_cand.applicant_id})"
+                            disp_reason = f"Displaced from {v_cat} category to accommodate {comp_cat} sub-quota candidate {in_cand.candidate_name or in_cand.applicant_id} ({in_cand.applicant_id})"
                             _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies, reason=disp_reason)
+                            in_cand.remarks = f"Allocated seat under {comp_cat} {v_cat} Sub-quota displacing {out_cand.candidate_name or out_cand.applicant_id} ({out_cand.applicant_id})"
                             _assign_seat_to_applicant(in_cand, v_cat, "Open" if v_cat == "General" else "Reserved", allocated_list, unallocated, v_info, status_field)
                             deficit -= 1
 
@@ -1197,8 +1198,9 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                         eligible_out.sort(key=lambda x: -(x.overall_rank or 999999))
                         out_cand = eligible_out[0]
                         
-                        disp_reason = f"Displaced from {v_belong} category to accommodate {h_cat} horizontal reservation candidate ({in_cand.candidate_name or in_cand.applicant_id})"
+                        disp_reason = f"Displaced from {v_belong} category to accommodate {h_cat} horizontal reservation candidate {in_cand.candidate_name or in_cand.applicant_id} ({in_cand.applicant_id})"
                         _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies, reason=disp_reason)
+                        in_cand.remarks = f"Allocated seat under {h_cat} Horizontal Reservation displacing {out_cand.candidate_name or out_cand.applicant_id} ({out_cand.applicant_id})"
                         _assign_seat_to_applicant(in_cand, v_belong, "Open" if v_belong == "General" else "Reserved", allocated_list, unallocated, vertical_targets[v_belong], status_field)
                         deficit -= 1
 
@@ -1274,6 +1276,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                 potential.sort(key=lambda x: (x.overall_rank or 999999))
                 in_cand = potential[0]
                 
+                in_cand.remarks = f"Allocated seat under {v_cat} Vertical Backfill based on Final Rank #{in_cand.overall_rank or ''}"
                 _assign_seat_to_applicant(in_cand, v_cat, "Open" if v_cat == "General" else "Reserved", allocated_list, unallocated, v_info, status_field)
 
         # --- PHASE 3.6: TIE-BREAKER FOR SEAT ALLOCATION ---
@@ -1323,6 +1326,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
             for tie_cand, v_cat in tie_candidates_to_assign:
                 if tie_cand in unallocated:
                     alloc_type = "Open" if v_cat == "General" else "Reserved"
+                    tie_cand.remarks = f"Allocated seat under {v_cat} Category due to Final Cutoff Score Tie (Total Score: {getattr(tie_cand, 'total_score', '')}, Final Rank #{getattr(tie_cand, 'overall_rank', '')})"
                     _assign_seat_to_applicant(
                         tie_cand, 
                         v_cat, 
@@ -1344,7 +1348,8 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
             else:
                 setattr(u, status_field, "Rejected")
                 u.allocation_type = "Not Allocated"
-                u.remarks = "Not enough merit to secure a seat"
+                if not getattr(u, "remarks", None):
+                    u.remarks = f"Not allocated: Exceeded {getattr(u, 'actual_category', 'General') or 'General'} category seat capacity / cutoff rank (Final Rank #{getattr(u, 'overall_rank', '') or ''})"
                 u.vertical_category = ""
 
         # --- PHASE 4: WAITLIST ALLOCATION ---
@@ -1376,9 +1381,11 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                     if is_comp and v_info.get("compartmentalized_waitlist_filled", 0) < w_comp_limit:
                         assigned = True
                         v_info["compartmentalized_waitlist_filled"] = v_info.get("compartmentalized_waitlist_filled", 0) + 1
+                        w_cand.remarks = f"Waitlisted under {comp_cat} {v_cat} Sub-quota based on merit ranking (Waitlist Rank #{v_info['compartmentalized_waitlist_filled']})"
                     elif v_info.get("waitlist_filled", 0) < w_limit:
                         assigned = True
                         v_info["waitlist_filled"] = v_info.get("waitlist_filled", 0) + 1
+                        w_cand.remarks = f"Waitlisted under {v_cat} Category based on merit ranking (Waitlist Rank #{v_info['waitlist_filled']})"
                         
                     if assigned:
                         # Use _assign_seat_to_applicant to handle categorization strings
@@ -1600,6 +1607,22 @@ def _assign_seat_to_applicant(app, vertical_cat, alloc_type, allocated_list, una
     
     display_field = "allocated_category" if hasattr(app, "allocated_category") else "shortlist_category"
     setattr(app, display_field, " + ".join(parts))
+
+    # Populating default selection remarks if no specific displacement/tie remark already exists
+    if not getattr(app, "remarks", None):
+        rank_val = getattr(app, "overall_rank", None) or getattr(app, "shortlist_rank", None) or ""
+        score_val = getattr(app, "total_score", None) or getattr(app, "nlsat_part_a_score", None) or ""
+        act_cat = getattr(app, "actual_category", None) or "General"
+        score_str = f" (Score: {score_val})" if score_val else ""
+        if vertical_cat == "General":
+            if act_cat != "General":
+                app.remarks = f"Allocated seat under General (Open Merit) via Merit Migration from {act_cat} based on Final Rank #{rank_val}{score_str}"
+            else:
+                app.remarks = f"Allocated seat under General (Open Merit) based on Final Rank #{rank_val}{score_str}"
+        else:
+            cat_rank = getattr(app, "category_rank", None) or ""
+            cat_rank_str = f" Category Rank #{cat_rank}," if cat_rank else ""
+            app.remarks = f"Allocated seat under {vertical_cat} Reserved Quota based on{cat_rank_str} Final Rank #{rank_val}{score_str}"
     
     v_info["filled"] += 1
     allocated_list.append(app)
@@ -1927,7 +1950,8 @@ def execute_part_a_shortlisting(doc):
             for idx in range(len(general_shortlist) - 1, -1, -1):
                 if not general_shortlist[idx].is_karnataka:
                     displaced_cand = general_shortlist.pop(idx)
-                    displaced_cand.remarks = f"Displaced from General shortlist to accommodate Karnataka sub-quota candidate ({kar_cand.candidate_name or kar_cand.applicant_id})"
+                    displaced_cand.remarks = f"Displaced from General shortlist to accommodate Karnataka sub-quota candidate {kar_cand.candidate_name or kar_cand.applicant_id} ({kar_cand.applicant_id})"
+                    kar_cand.remarks = f"Shortlisted under {comp_cat} General Sub-quota displacing {displaced_cand.candidate_name or displaced_cand.applicant_id} ({displaced_cand.applicant_id})"
                     general_shortlist.append(kar_cand)
                     break
 
@@ -1987,7 +2011,8 @@ def execute_part_a_shortlisting(doc):
                 for idx in range(len(cat_shortlist) - 1, -1, -1):
                     if not cat_shortlist[idx].is_karnataka:
                         displaced_cand = cat_shortlist.pop(idx)
-                        displaced_cand.remarks = f"Displaced from {cat} shortlist to accommodate Karnataka sub-quota candidate ({kar_cand.candidate_name or kar_cand.applicant_id})"
+                        displaced_cand.remarks = f"Displaced from {cat} shortlist to accommodate Karnataka sub-quota candidate {kar_cand.candidate_name or kar_cand.applicant_id} ({kar_cand.applicant_id})"
+                        kar_cand.remarks = f"Shortlisted under {comp_cat} {cat} Sub-quota displacing {displaced_cand.candidate_name or displaced_cand.applicant_id} ({displaced_cand.applicant_id})"
                         cat_shortlist.append(kar_cand)
                         break
 
@@ -2072,7 +2097,8 @@ def execute_part_a_shortlisting(doc):
             if same_compartment:
                 lowest_idx, lowest_cand = max(same_compartment, key=lambda pair: (pair[1].shortlist_rank or 999999))
                 shortlist.pop(lowest_idx)
-                lowest_cand.remarks = f"Displaced from {cat} shortlist to accommodate PWD horizontal reservation candidate ({pwd_cand.candidate_name or pwd_cand.applicant_id})"
+                lowest_cand.remarks = f"Displaced from {cat} shortlist to accommodate PWD horizontal reservation candidate {pwd_cand.candidate_name or pwd_cand.applicant_id} ({pwd_cand.applicant_id})"
+                pwd_cand.remarks = f"Shortlisted under PWD Horizontal Reservation displacing {lowest_cand.candidate_name or lowest_cand.applicant_id} ({lowest_cand.applicant_id})"
                 shortlist.append(pwd_cand)
                 accommodate_displaced_candidate(lowest_cand, cat)
                 selected_set.add(pwd_cand.applicant_id)
@@ -2087,7 +2113,8 @@ def execute_part_a_shortlisting(doc):
                 if same_cat:
                     lowest_idx, lowest_cand = max(same_cat, key=lambda pair: (pair[1].shortlist_rank or 999999))
                     shortlist.pop(lowest_idx)
-                    lowest_cand.remarks = f"Displaced from {cat} shortlist to accommodate PWD horizontal reservation candidate ({pwd_cand.candidate_name or pwd_cand.applicant_id})"
+                    lowest_cand.remarks = f"Displaced from {cat} shortlist to accommodate PWD horizontal reservation candidate {pwd_cand.candidate_name or pwd_cand.applicant_id} ({pwd_cand.applicant_id})"
+                    pwd_cand.remarks = f"Shortlisted under PWD Horizontal Reservation displacing {lowest_cand.candidate_name or lowest_cand.applicant_id} ({lowest_cand.applicant_id})"
                     shortlist.append(pwd_cand)
                     accommodate_displaced_candidate(lowest_cand, cat)
                     selected_set.add(pwd_cand.applicant_id)
@@ -2125,6 +2152,8 @@ def execute_part_a_shortlisting(doc):
             if cands_1:
                 lowest_idx, lowest_cand = max(cands_1, key=lambda pair: (pair[1].shortlist_rank or 999999))
                 shortlist.pop(lowest_idx)
+                lowest_cand.remarks = f"Displaced from {cat} shortlist to accommodate Women horizontal reservation candidate {female_cand.candidate_name or female_cand.applicant_id} ({female_cand.applicant_id})"
+                female_cand.remarks = f"Shortlisted under Women Horizontal Reservation displacing {lowest_cand.candidate_name or lowest_cand.applicant_id} ({lowest_cand.applicant_id})"
                 shortlist.append(female_cand)
                 accommodate_displaced_candidate(lowest_cand, cat)
                 selected_set.add(female_cand.applicant_id)
@@ -2139,6 +2168,8 @@ def execute_part_a_shortlisting(doc):
                 if cands_2:
                     lowest_idx, lowest_cand = max(cands_2, key=lambda pair: (pair[1].shortlist_rank or 999999))
                     shortlist.pop(lowest_idx)
+                    lowest_cand.remarks = f"Displaced from {cat} shortlist to accommodate Women horizontal reservation candidate {female_cand.candidate_name or female_cand.applicant_id} ({female_cand.applicant_id})"
+                    female_cand.remarks = f"Shortlisted under Women Horizontal Reservation displacing {lowest_cand.candidate_name or lowest_cand.applicant_id} ({lowest_cand.applicant_id})"
                     shortlist.append(female_cand)
                     accommodate_displaced_candidate(lowest_cand, cat)
                     selected_set.add(female_cand.applicant_id)
@@ -2208,6 +2239,22 @@ def execute_part_a_shortlisting(doc):
         display_field = "allocated_category" if hasattr(candidate_row, "allocated_category") else "shortlist_category"
         setattr(candidate_row, display_field, " + ".join(parts))
 
+        # Default remarks if not already populated by a specific displacement or tie event
+        if not getattr(candidate_row, "remarks", None):
+            rank_val = getattr(candidate_row, "shortlist_rank", None) or getattr(candidate_row, "overall_rank", None) or ""
+            score_val = getattr(candidate_row, "nlsat_part_a_score", None) or getattr(candidate_row, "total_score", None) or ""
+            act_cat = getattr(candidate_row, "actual_category", None) or "General"
+            score_str = f" (Score: {score_val})" if score_val else ""
+            if vertical_cat == "General":
+                if act_cat != "General":
+                    candidate_row.remarks = f"Shortlisted under General (Open Merit) via Merit Migration from {act_cat} based on Part A Rank #{rank_val}{score_str}"
+                else:
+                    candidate_row.remarks = f"Shortlisted under General (Open Merit) based on Part A Rank #{rank_val}{score_str}"
+            else:
+                cat_rank = getattr(candidate_row, "category_rank", None) or ""
+                cat_rank_str = f" Category Rank #{cat_rank}," if cat_rank else ""
+                candidate_row.remarks = f"Shortlisted under {vertical_cat} Reserved Quota based on{cat_rank_str} Part A Rank #{rank_val}{score_str}"
+
     # --- 7c.5 Add Tie Candidates (Option A) ---
     for cat_name in list(shortlists.keys()):
         s_list = shortlists[cat_name]
@@ -2226,6 +2273,7 @@ def execute_part_a_shortlisting(doc):
                     tie_candidates.append(cand)
                     
         for tie_cand in tie_candidates:
+            tie_cand.remarks = f"Shortlisted under {cat_name} List due to Cutoff Score Tie (Score: {getattr(tie_cand, 'nlsat_part_a_score', '')}, Part A Rank #{getattr(tie_cand, 'shortlist_rank', '')})"
             s_list.append(tie_cand)
 
     # --- 7d. Assignment & Sanitization Pass ---
@@ -2248,7 +2296,10 @@ def execute_part_a_shortlisting(doc):
             row.allocation_type = "Not Allocated"
             setattr(row, status_field, "Rejected")
             if hasattr(row, "remarks") and not row.remarks:
-                row.remarks = "Not shortlisted: Exceeded category quota limit / cutoff rank"
+                rank_val = getattr(row, "shortlist_rank", None) or getattr(row, "overall_rank", None) or ""
+                score_val = getattr(row, "nlsat_part_a_score", None) or getattr(row, "total_score", None) or ""
+                act_cat = getattr(row, "actual_category", None) or "General"
+                row.remarks = f"Not shortlisted: Exceeded {act_cat} category quota cutoff (Part A Rank #{rank_val}, Score: {score_val})"
             row.compartmentalized_category = ""
             row.horizontal_categories = ""
             display_field = "allocated_category" if hasattr(row, "allocated_category") else "shortlist_category"
