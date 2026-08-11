@@ -55,8 +55,8 @@ def lock_seat_after_payment(payment_request):
 	from slcm.api.service.offer_service import OfferService
 	from slcm.api.service import fee_service as fee_service_module
 
-	OfferService.sync_seat_allocation_status(offer, "Fee Paid")
-	OfferService.update_applicant_status(offer.applicant, status="Fee Paid")
+	OfferService.sync_seat_allocation_status(offer, "Confirmation Fee Paid")
+	OfferService.update_applicant_status(offer.applicant, status="Confirmation Fee Paid")
 
 	# Generate receipt if not already generated
 	payment_id = getattr(pr_doc, "razorpay_payment_id", None) or pr_doc.get("razorpay_payment_id") or pr_doc.get("transaction_id")

@@ -83,7 +83,7 @@ def get_context(context):
             "fee_type": "Admission Fee",
             "status": ["in", ["Paid", "Converted"]],
             "docstatus": ["!=", 2]
-        }) or (frappe.db.get_value("Applicant", applicant.name, "status") == "Fee Paid")
+        }) or (frappe.db.get_value("Applicant", applicant.name, "status") in ["Confirmation Fee Paid", "Full Fee Paid"])
 
         if is_fee_paid:
             context.error = _("Scholarship applications are not permitted once the admission fee has been paid. "

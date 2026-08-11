@@ -1,6 +1,6 @@
 app_name = "slcm"
 app_title = "SLCM"
-page_js = {"dashboard-view": ["public/js/pace_dashboard_filters.js", "public/js/document_verifier_filters.js", "public/js/admission_dashboard_filters.js"]}
+page_js = {"dashboard-view": ["public/js/pace_dashboard_filters.js", "public/js/document_verifier_filters.js", "public/js/admission_dashboard_filters.js", "public/js/entrance_test_dashboard_filters.js"]}
 
 
 required_apps = ["payments"]
@@ -72,8 +72,10 @@ jinja = {
 		"slcm.slcm.doctype.parent_portal_settings.parent_portal_settings.get_parent_portal_settings",
 		"slcm.admission.utils.portal.get_portal_website_branding",
 		"slcm.admission.utils.portal.get_typography_style_block",
+		"slcm.admission.doctype.seat_allocation.seat_allocation.get_results_notification_context",
 	],
 }
+
 
 # Fixtures – exported to JSON and committed to git so every developer/server gets them
 fixtures = [
@@ -203,7 +205,8 @@ fixtures = [
                 "Applicant Not Started Application Reminder",
                 "Applicant Draft Application Reminder",
                 "Applicant Fee Payment Pending Reminder",
-                "Applicant Application Rejected"
+                "Applicant Application Rejected",
+                "Admission Fee Pending Reminder"
             ]]
         ]
     },
@@ -324,7 +327,7 @@ fixtures = [
     # --- Transcript Print Format ---
     {
         "doctype": "Print Format",
-        "filters": [["name", "=", "Student Transcript"]]
+        "filters": [["name", "in", ["Student Transcript", "Seat Allocation Result Notification"]]]
     },
     {
         "doctype": "Venue Type",

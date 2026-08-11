@@ -113,7 +113,7 @@ def get_context(context):
             "fee_type": "Admission Fee",
             "status": ["in", ["Paid", "Converted"]],
             "docstatus": ["!=", 2]
-        }) or (applicant.status == "Fee Paid")
+        }) or (applicant.status in ["Confirmation Fee Paid", "Full Fee Paid"])
 
         # 2. Get Categories from Applicant Category child table
         applicant_categories = set()

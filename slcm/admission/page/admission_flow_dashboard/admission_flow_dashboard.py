@@ -87,10 +87,10 @@ def get_summary_cards(where_clause):
         SELECT 
             COUNT(*) as total,
             SUM(CASE WHEN status NOT IN ('Draft') THEN 1 ELSE 0 END) as submitted,
-            SUM(CASE WHEN status IN ('Selected', 'Offer Issued', 'Offer Accepted', 'Fee Paid', 'Accepted') THEN 1 ELSE 0 END) as selected,
+            SUM(CASE WHEN status IN ('Selected', 'Offer Issued', 'Offer Accepted', 'Confirmation Fee Paid', 'Full Fee Paid', 'Accepted') THEN 1 ELSE 0 END) as selected,
             SUM(CASE WHEN status = 'Waitlisted' THEN 1 ELSE 0 END) as waitlisted,
             SUM(CASE WHEN status = 'Rejected' THEN 1 ELSE 0 END) as rejected,
-            SUM(CASE WHEN status = 'Fee Paid' THEN 1 ELSE 0 END) as enrolled
+            SUM(CASE WHEN status IN ('Confirmation Fee Paid', 'Full Fee Paid') THEN 1 ELSE 0 END) as enrolled
         FROM `tabApplicant`
         {where_clause}
     """
@@ -99,7 +99,7 @@ def get_summary_cards(where_clause):
     # Get Total Offers Issued (cumulative)
     sql_offers = f"""
         SELECT COUNT(*) FROM `tabApplicant` 
-        {where_clause} AND status IN ('Offer Issued', 'Offer Accepted', 'Offer Declined', 'Offer Expired', 'Fee Paid')
+        {where_clause} AND status IN ('Offer Issued', 'Offer Accepted', 'Offer Declined', 'Offer Expired', 'Confirmation Fee Paid', 'Full Fee Paid')
     """
     offers_count = frappe.db.sql(sql_offers)[0][0]
     
@@ -116,11 +116,11 @@ def get_summary_cards(where_clause):
 def get_funnel_data(where_clause):
     # Stages for funnel
     stages = [
-        {"label": "Submitted", "statuses": ["Submitted", "Selected", "Waitlisted", "Rejected", "Offer Accepted", "Offer Issued", "Offer Declined", "Offer Expired", "Fee Paid", "Accepted"]},
-        {"label": "Selected", "statuses": ["Selected", "Offer Issued", "Offer Accepted", "Offer Declined", "Offer Expired", "Fee Paid", "Accepted"]},
-        {"label": "Offer Issued", "statuses": ["Offer Issued", "Offer Accepted", "Offer Declined", "Offer Expired", "Fee Paid"]},
-        {"label": "Offer Accepted", "statuses": ["Offer Accepted", "Fee Paid", "Accepted"]},
-        {"label": "Fee Paid", "statuses": ["Fee Paid"]}
+        {"label": "Submitted", "statuses": ["Submitted", "Selected", "Waitlisted", "Rejected", "Offer Accepted", "Offer Issued", "Offer Declined", "Offer Expired", "Confirmation Fee Paid", "Full Fee Paid", "Accepted"]},
+        {"label": "Selected", "statuses": ["Selected", "Offer Issued", "Offer Accepted", "Offer Declined", "Offer Expired", "Confirmation Fee Paid", "Full Fee Paid", "Accepted"]},
+        {"label": "Offer Issued", "statuses": ["Offer Issued", "Offer Accepted", "Offer Declined", "Offer Expired", "Confirmation Fee Paid", "Full Fee Paid"]},
+        {"label": "Offer Accepted", "statuses": ["Offer Accepted", "Confirmation Fee Paid", "Full Fee Paid", "Accepted"]},
+        {"label": "Confirmation Fee Paid", "statuses": ["Confirmation Fee Paid", "Full Fee Paid"]}
     ]
     
     data = []
@@ -160,14 +160,14 @@ def get_offer_status_breakdown(where_clause):
         SELECT 
             CASE 
                 WHEN status = 'Offer Issued' THEN 'Pending Action'
-                WHEN status IN ('Offer Accepted', 'Fee Paid', 'Accepted') THEN 'Accepted'
+                WHEN status IN ('Offer Accepted', 'Confirmation Fee Paid', 'Full Fee Paid', 'Accepted') THEN 'Accepted'
                 WHEN status = 'Offer Declined' THEN 'Declined'
                 WHEN status = 'Offer Expired' THEN 'Expired'
                 ELSE 'Other'
             END as label,
             COUNT(*) as count
         FROM `tabApplicant`
-        {where_clause} AND status IN ('Offer Issued', 'Offer Accepted', 'Offer Declined', 'Offer Expired', 'Fee Paid', 'Accepted')
+        {where_clause} AND status IN ('Offer Issued', 'Offer Accepted', 'Offer Declined', 'Offer Expired', 'Confirmation Fee Paid', 'Full Fee Paid', 'Accepted')
         GROUP BY label
     """
     return frappe.db.sql(sql, as_dict=1)

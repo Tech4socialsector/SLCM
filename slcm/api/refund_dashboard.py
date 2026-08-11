@@ -1,6 +1,6 @@
 import frappe
 from frappe import _
-from frappe.utils import flt, getdate, nowdate, add_months, get_first_day, get_last_day
+from frappe.utils import flt, cint, getdate, nowdate, add_months, get_first_day, get_last_day
 
 @frappe.whitelist()
 def get_dashboard_data(filters=None):
@@ -12,10 +12,7 @@ def get_dashboard_data(filters=None):
     # We use table aliases for joins: rr = Refund Request, ac = Admission Cancellation
     refund_conditions, refund_values = get_conditions(filters, "request_date", "rr")
     cancellation_conditions, cancellation_values = get_conditions(filters, "requested_on", "ac")
-
-    limit_start = frappe.utils.cint(filters.get("limit_start", 0))
-    limit_page_length = frappe.utils.cint(filters.get("limit_page_length", 10))
-
+    
     return {
         "kpis": get_kpis(refund_conditions, refund_values, cancellation_conditions, cancellation_values),
         "charts": {
@@ -26,34 +23,35 @@ def get_dashboard_data(filters=None):
             "campus_dist": get_campus_distribution(refund_conditions, refund_values),
             "processing_time": get_avg_processing_time(refund_conditions, refund_values)
         },
-        "recent_refunds": get_recent_refunds(refund_conditions, refund_values, limit_start, limit_page_length),
+        "recent_refunds": get_recent_refunds(refund_conditions, refund_values, filters.get("limit_start", 0), filters.get("limit_page_length", 10)),
         "total_recent_refunds": get_recent_refunds_count(refund_conditions, refund_values)
     }
 
 def get_conditions(filters, date_field, table_alias):
     conditions = []
     values = {}
-
+    
     if filters.get("from_date") and filters.get("to_date"):
-        conditions.append(f"{table_alias}.{date_field} BETWEEN %(from_date)s AND %(to_date)s")
-        values["from_date"] = filters["from_date"]
-        values["to_date"] = f"{filters['to_date']} 23:59:59"
-
+        from_key = f"{table_alias}_from_date"
+        to_key = f"{table_alias}_to_date"
+        conditions.append(f"{table_alias}.{date_field} BETWEEN %({from_key})s AND %({to_key})s")
+        values[from_key] = str(filters["from_date"])
+        values[to_key] = f"{filters['to_date']} 23:59:59"
+    
     if filters.get("campus"):
-        # campus is in Admission Cancellation (ac)
         conditions.append("ac.campus = %(campus)s")
         values["campus"] = filters["campus"]
-
+        
     if filters.get("program"):
-        # program is in Admission Cancellation (ac)
         conditions.append("ac.program = %(program)s")
         values["program"] = filters["program"]
-
+        
     if filters.get("status") and table_alias == "rr":
         conditions.append("rr.status = %(status)s")
         values["status"] = filters["status"]
-
-    return (" AND ".join(conditions) if conditions else "1=1"), values
+        
+    where_clause = " AND ".join(conditions) if conditions else "1=1"
+    return where_clause, values
 
 def get_kpis(refund_conditions, refund_values, cancellation_conditions, cancellation_values):
     # Financial KPIs
@@ -65,17 +63,20 @@ def get_kpis(refund_conditions, refund_values, cancellation_conditions, cancella
     """, refund_values)[0][0] or 0
 
     today = nowdate()
-    today_values = dict(refund_values, today=today)
+    today_values = dict(refund_values)
+    today_values["today_date"] = today
     refunded_today = frappe.db.sql(f"""
         SELECT SUM(rr.refund_amount)
         FROM `tabRefund Request` rr
         JOIN `tabAdmission Cancellation` ac ON rr.admission_cancellation = ac.name
-        WHERE rr.status = 'Processed' AND DATE(rr.refund_date) = %(today)s AND {refund_conditions}
+        WHERE rr.status = 'Processed' AND DATE(rr.refund_date) = %(today_date)s AND {refund_conditions}
     """, today_values)[0][0] or 0
 
     month_start = get_first_day(today)
     month_end = get_last_day(today)
-    month_values = dict(refund_values, month_start=month_start, month_end=month_end)
+    month_values = dict(refund_values)
+    month_values["month_start"] = month_start
+    month_values["month_end"] = month_end
     refunded_this_month = frappe.db.sql(f"""
         SELECT SUM(rr.refund_amount)
         FROM `tabRefund Request` rr
@@ -91,7 +92,7 @@ def get_kpis(refund_conditions, refund_values, cancellation_conditions, cancella
         WHERE {refund_conditions}
         GROUP BY rr.status
     """, refund_values, as_dict=1)
-
+    
     status_counts = {item.status: item.count for item in counts}
 
     # Total cancellations count
@@ -141,7 +142,7 @@ def get_cancellation_reasons(conditions, values):
         WHERE {conditions}
         GROUP BY ac.cancellation_reason_type
     """, values, as_dict=1)
-
+    
     for d in data:
         if d.label:
             d.label = d.label.title()
@@ -179,9 +180,8 @@ def get_avg_processing_time(conditions, values):
     return round(flt(res), 1)
 
 def get_recent_refunds(conditions, values, limit_start=0, limit_page_length=10):
-    limit_start = frappe.utils.cint(limit_start)
-    limit_page_length = frappe.utils.cint(limit_page_length)
-    # Manual SQL for joins
+    limit_start = cint(limit_start)
+    limit_page_length = cint(limit_page_length) if limit_page_length else 10
     return frappe.db.sql(f"""
         SELECT rr.name, rr.applicant, ac.program, rr.amount_paid, rr.refund_amount, rr.status, rr.request_date, rr.refund_date
         FROM `tabRefund Request` rr
@@ -197,4 +197,4 @@ def get_recent_refunds_count(conditions, values):
         FROM `tabRefund Request` rr
         JOIN `tabAdmission Cancellation` ac ON rr.admission_cancellation = ac.name
         WHERE {conditions}
-    """, values)[0][0] or 0
+    """, values, as_dict=1)

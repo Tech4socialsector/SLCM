@@ -141,8 +141,10 @@ To confirm your acceptance of this offer, please complete the initial admission 
  
 <p>
 <strong>Payable Amount:</strong> ₹{{ doc.payable_amount or "0" }} <br>
-<strong style="color: #920c24; font-weight: 600;">Payment Deadline:</strong>
-{{ frappe.utils.formatdate(doc.payment_deadline, "dd MMMM yyyy") if doc.payment_deadline else "Not specified" }}
+<strong style="color: #920c24; font-weight: 600;">Offer Acceptance Deadline:</strong>
+{{ frappe.utils.formatdate(doc.offer_acceptance_deadline, "dd MMMM yyyy") if doc.offer_acceptance_deadline else "Not specified" }} <br>
+<strong style="color: #920c24; font-weight: 600;">Confirmation Fee Deadline:</strong>
+{{ frappe.utils.formatdate(doc.confirmation_fee_deadline, "dd MMMM yyyy") if doc.confirmation_fee_deadline else "Not specified" }}
 </p>
  
 <p style="text-align: center; margin: 30px 0;">

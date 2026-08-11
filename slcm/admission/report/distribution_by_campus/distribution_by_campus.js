@@ -40,7 +40,7 @@ frappe.query_reports["Distribution by Campus"] = {
 			"fieldname": "status",
 			"label": __("Application Status"),
 			"fieldtype": "Select",
-			"options": "\nSubmitted\nSelected\nWaitlisted\nRejected\nOffer Accepted\nOffer Issued\nOffer Declined\nOffer Expired\nFee Paid"
+			"options": "\nSubmitted\nSelected\nWaitlisted\nRejected\nOffer Accepted\nOffer Issued\nOffer Declined\nOffer Expired\nConfirmation Fee Paid\nFull Fee Paid"
 		}
 	],
 	"onload": function (report) {

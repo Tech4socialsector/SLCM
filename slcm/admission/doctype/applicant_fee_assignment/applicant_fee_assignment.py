@@ -84,6 +84,12 @@ class ApplicantFeeAssignment(Document):
 		Scholarship is deducted only for Application Fee assignments.
 		Mirrors ``application_fee`` from the grid total for Application Fee type.
 		"""
+		if self.fee_type == "Confirmation Fee":
+			base_total = flt(self.confirmation_fee)
+			self.total_amount = base_total
+			self.final_payable_amount = max(0, base_total - flt(self.scholarship_amount))
+			return
+
 		base_total = 0
 		for row in self.fee_components:
 			if row.is_taxable:
@@ -97,7 +103,7 @@ class ApplicantFeeAssignment(Document):
 		if self.fee_type == "Application Fee":
 			self.application_fee = base_total
 
-		self.final_payable_amount = max(0, base_total - flt(self.scholarship_amount))
+		self.final_payable_amount = max(0, base_total - flt(self.scholarship_amount) - flt(self.confirmation_fee))
 
 	def validate_status_change(self):
 		if self.status == "Converted":
@@ -105,7 +111,7 @@ class ApplicantFeeAssignment(Document):
 				frappe.throw(frappe._("Status cannot be set to 'Converted' manually. Please use the 'Convert to Student' action."))
 
 	def before_submit(self):
-		if not self.fee_components:
+		if not self.fee_components and self.fee_type != "Confirmation Fee":
 			frappe.throw(frappe._("At least one Fee Component row is required."))
 
 		for row in self.fee_components:
@@ -153,8 +159,8 @@ def _map_applicant_to_student(student, applicant, program, admission_cycle, offe
 def create_invoice(docname):
 	doc = frappe.get_doc("Applicant Fee Assignment", docname)
 
-	if doc.fee_type not in ["Admission Fee", "Confirmation Fee"]:
-		frappe.throw(frappe._("Create Invoice is only for Admission/Confirmation Fee assignments."))
+	if doc.fee_type != "Admission Fee":
+		frappe.throw(frappe._("Conversion to Student is only allowed for the Admission Fee."))
 
 	if doc.status == "Converted":
 		frappe.throw(frappe._("This assignment has already been converted to a student."))

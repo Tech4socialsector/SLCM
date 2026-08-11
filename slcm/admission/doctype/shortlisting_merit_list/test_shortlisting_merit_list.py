@@ -54,11 +54,10 @@ class IntegrationTestShortlistingMeritList(IntegrationTestCase):
 			frappe.get_all = orig_get_all
 			frappe.db.set_value = orig_set_value
 
-	def test_part_b_zero_is_valid_in_final_merit_ranking(self):
+	def test_part_b_zero_or_negative_rejection_in_final_merit_ranking(self):
 		"""
-		Test that candidates who appeared for Part B and scored 0 are still ranked
-		(matched Excel behaviour). Only candidates who never appeared (part_b_not_appeared=True)
-		should be rejected.
+		Test that candidates with Part B score <= 0 (0 or minus marks) during Final Allotment Ranking
+		are Rejected and omitted from rank.
 		"""
 		from slcm.admission.doctype.merit_generation.merit_service import _rank_applicants
 
@@ -75,7 +74,7 @@ class IntegrationTestShortlistingMeritList(IntegrationTestCase):
 				"applicant_id": "APP-02",
 				"total_score": 60.0,
 				"entrance_score": 60.0,
-				"interview_score": 0.0,  # Zero Part B but appeared — valid, should be ranked
+				"interview_score": 0.0,  # Zero Part B -> should be Rejected
 				"status": "Selected",
 				"overall_rank": 0
 			}),
@@ -96,21 +95,20 @@ class IntegrationTestShortlistingMeritList(IntegrationTestCase):
 		assert app1.overall_rank == 1
 		assert app1.status == "Selected"
 
-		# APP-02 (Part B = 0 but appeared) MUST be ranked — Excel behaviour
+		# APP-02 (Part B = 0) MUST be Rejected and unranked
 		app2 = next(c for c in cands if c.applicant_id == "APP-02")
-		assert app2.overall_rank == 2
-		assert app2.status == "Selected"
+		assert app2.overall_rank == 0
+		assert app2.status == "Rejected"
 
-		# APP-03 (Part B = 20) should be Rank 3
+		# APP-03 (Part B = 20) should be Rank 2
 		app3 = next(c for c in cands if c.applicant_id == "APP-03")
-		assert app3.overall_rank == 3
+		assert app3.overall_rank == 2
 		assert app3.status == "Selected"
 
 	def test_part_b_not_appeared_rejection_in_final_merit_ranking(self):
 		"""
 		Test that candidates who did NOT appear for Part B (part_b_not_appeared=True)
 		during Final Allotment Ranking are Rejected and omitted from rank.
-		Candidates with Part B = 0 who DID appear are still ranked.
 		"""
 		from slcm.admission.doctype.merit_generation.merit_service import _rank_applicants
 
@@ -128,7 +126,7 @@ class IntegrationTestShortlistingMeritList(IntegrationTestCase):
 				"applicant_id": "APP-02",
 				"total_score": 60.0,
 				"entrance_score": 60.0,
-				"interview_score": 0.0,  # Zero Part B but appeared — should be ranked
+				"interview_score": 10.0,
 				"part_b_not_appeared": False,
 				"status": "Selected",
 				"overall_rank": 0
@@ -151,7 +149,7 @@ class IntegrationTestShortlistingMeritList(IntegrationTestCase):
 		assert app1.overall_rank == 1
 		assert app1.status == "Selected"
 
-		# APP-02 (Part B = 0, appeared) → Rank 2 (not rejected)
+		# APP-02 (Part B = 10, appeared) → Rank 2
 		app2 = next(c for c in cands if c.applicant_id == "APP-02")
 		assert app2.overall_rank == 2
 		assert app2.status == "Selected"

@@ -446,15 +446,16 @@ def get_context(context):
                 ad["campus"] = sole
                 context.applicant_data = ad
 
-    # ── Entrance Test Providers (for Test Centre preference dropdowns) ──
+    # ── Entrance Test Cities (for Test City preference dropdowns) ──
     try:
-        context.entrance_test_providers = frappe.get_all(
-            "Entrance Test Provider",
-            fields=["name", "provider_name"],
-            filters={"active": 1},
-            order_by="provider_name asc"
+        context.entrance_test_cities = frappe.get_all(
+            "Entrance Test City",
+            fields=["name", "entrance_test_city_name"],
+            order_by="entrance_test_city_name asc"
         )
+        context.entrance_test_providers = context.entrance_test_cities
     except Exception:
+        context.entrance_test_cities = []
         context.entrance_test_providers = []
 
     # ── Academic Years; ensure prefill year is in list ──────────────────
@@ -1168,7 +1169,7 @@ def upload_applicant_file(doctype="Applicant", docname=None, is_private=0, field
 
     docname = docname or frappe.form_dict.get("docname") or frappe.form_dict.get("doc_name")
     doctype = (doctype or frappe.form_dict.get("doctype") or "Applicant").strip()
-    is_private = int(frappe.form_dict.get("is_private", is_private) or 0)
+    is_private = 1  # Security Fix: Force all applicant uploads to be private
     fieldname = fieldname or frappe.form_dict.get("fieldname") or ""
 
     if doctype != "Applicant" or not docname:

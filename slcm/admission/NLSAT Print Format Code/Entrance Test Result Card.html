@@ -1,0 +1,245 @@
+{%- set campus_display_name = frappe.db.get_value("Campus", doc.campus, "campus_name") if doc.campus else (doc.campus or "NATIONAL LAW SCHOOL OF INDIA UNIVERSITY") -%}
+{%- set campus_logo_path = frappe.db.get_value("Campus", doc.campus, "logo") if doc.campus else None -%}
+{%- set admit_no = doc.admit_card_number or ("AC-" + doc.name) -%}
+{%- set dob = frappe.utils.formatdate(doc.date_of_birth) if doc.date_of_birth else "—" -%}
+
+{%- set _site = frappe.utils.get_url() -%}
+
+{#- PRODUCTION IMAGE HANDLER -#}
+{%- set _logo_src = '' -%}
+{%- if campus_logo_path -%}
+    {%- set _lb64 = get_file_b64(campus_logo_path) -%}
+    {%- if _lb64 -%}
+        {%- set _lext = (campus_logo_path.split('.')[-1] | lower) -%}
+        {%- set _lmime = 'image/jpeg' if _lext in ['jpg','jpeg'] else ('image/png' if _lext == 'png' else 'image/svg+xml') -%}
+        {%- set _logo_src = 'data:' ~ _lmime ~ ';base64,' ~ _lb64 -%}
+    {%- else -%}{%- set _logo_src = _site ~ campus_logo_path -%}{%- endif -%}
+{%- endif -%}
+
+{%- set _photo_src = '' -%}
+{%- if doc.profile -%}
+    {%- set _pb64 = get_file_b64(doc.profile) -%}
+    {%- if _pb64 -%}
+        {%- set _pext = (doc.profile.split('.')[-1] | lower) -%}
+        {%- set _pmime = 'image/jpeg' if _pext in ['jpg','jpeg'] else ('image/png' if _pext == 'png' else 'image/webp') -%}
+        {%- set _photo_src = 'data:' ~ _pmime ~ ';base64,' ~ _pb64 -%}
+    {%- else -%}{%- set _photo_src = _site ~ doc.profile -%}{%- endif -%}
+{%- endif -%}
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<style>
+    * { box-sizing: border-box; -moz-box-sizing: border-box; }
+    @page { size: A4; margin: 15mm; }
+    html, body { margin: 0; padding: 0; background: #fff; width: 100%; height: 100%; }
+    
+    body { 
+        font-family: "Times New Roman", Times, serif; 
+        font-size: 13px; 
+        color: #000; 
+    }
+    
+    .result-card { 
+        width: 100%; 
+        max-width: 190mm; 
+        margin: 0 auto; 
+    }
+    
+    .master-tbl { 
+        width: 100%; 
+        border-collapse: separate; 
+        border-spacing: 2px;
+        border: 1px solid #000; 
+    }
+    
+    .master-tbl td { 
+        border: 1px solid #000; 
+        padding: 5px 12px; 
+        vertical-align: middle;
+    }
+    
+    .hdr-row td {
+        background-color: #9E1B32 !important; /* Deep Red */
+        color: #fff !important;
+        text-align: center;
+        padding: 15px 10px;
+        position: relative;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .logo-box {
+        position: absolute;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #fff;
+        padding: 4px;
+        width: 60px;
+        height: 60px;
+        border: 1.5px solid #9E1B32;
+        text-align: center;
+    }
+    
+    .univ-name {
+        font-size: 20px;
+        font-weight: normal;
+        font-family: "Times New Roman", Times, serif;
+        letter-spacing: 0.5px;
+    }
+    
+    .univ-sub {
+        font-size: 12px;
+        margin-top: 3px;
+    }
+    
+    .title-row td {
+        text-align: center;
+        font-size: 14px;
+        padding: 10px;
+    }
+    
+    .photo-row td {
+        text-align: center;
+        padding: 15px;
+    }
+    
+    .photo-box {
+        width: 110px;
+        height: 140px;
+        border: 1px solid #000;
+        margin: 0 auto;
+        overflow: hidden;
+    }
+    
+    .sec-row td {
+        text-align: center;
+        font-weight: bold;
+        padding: 6px;
+    }
+    
+    .lbl-col {
+        width: 45%;
+    }
+    
+    .val-col {
+        width: 55%;
+    }
+</style>
+</head>
+<body>
+
+<div class="result-card">
+    <table class="master-tbl">
+        <!-- Header -->
+        <tr class="hdr-row">
+            <td colspan="2">
+                <div class="logo-box">
+                    {% if _logo_src %}
+                        <img src="{{ _logo_src }}" style="max-width:100%; max-height:100%; object-fit:contain; margin-top:2px;">
+                    {% else %}
+                        <div style="color:#000; font-size:9px; margin-top:15px;">LOGO</div>
+                    {% endif %}
+                </div>
+                <div class="univ-name" style="color: #ffffff;">NATIONAL LAW SCHOOL OF INDIA UNIVERSITY</div>
+                <div class="univ-sub" style="color: #ffffff;">BENGALURU</div>
+            </td>
+        </tr>
+        
+        <!-- Title -->
+        <tr class="title-row">
+            <td colspan="2">
+                National Law School Admission Test-{{ doc.entrance_test_name or doc.entrance_test_list or "—" }} – Score Card
+            </td>
+        </tr>
+        
+        <!-- Photo -->
+        <tr class="photo-row">
+            <td colspan="2">
+                <div class="photo-box">
+                    {% if _photo_src %}
+                        <img src="{{ _photo_src }}" style="width:100%; height:100%; object-fit:cover;">
+                    {% else %}
+                        <div style="line-height:140px; color:#ccc; font-family:sans-serif;">Photo</div>
+                    {% endif %}
+                </div>
+            </td>
+        </tr>
+        
+        <!-- Details -->
+        <tr>
+            <td class="lbl-col">Application Number</td>
+            <td class="val-col">{{ doc.applicant or "—" }}</td>
+        </tr>
+        <tr>
+            <td>Admit Card Number</td>
+            <td>{{ admit_no }}</td>
+        </tr>
+        <tr>
+            <td>Name of the Candidate</td>
+            <td>{{ doc.candidate_name or "—" }}</td>
+        </tr>
+        <tr>
+            <td>Date of Birth</td>
+            <td>{{ dob }}</td>
+        </tr>
+        
+        <!-- Part A -->
+        <tr class="sec-row">
+            <td colspan="2">Part A</td>
+        </tr>
+        <tr>
+            <td>Total Marks Scored</td>
+            <td>{{ doc.part_a_total_marks_scored or 0 }}</td>
+        </tr>
+        <tr>
+            <td>All India Rank</td>
+            <td>{{ doc.part_a_all_india_rank or "—" }}</td>
+        </tr>
+        
+        <!-- Part B -->
+        <tr class="sec-row">
+            <td colspan="2">Part B</td>
+        </tr>
+        <tr>
+            <td>Total Marks Scored</td>
+            <td>{{ doc.part_b_total_marks_scored or 0 }}</td>
+        </tr>
+        
+        <!-- Cumulative -->
+        <tr class="sec-row">
+            <td colspan="2">Cumulative Score (Part A + Part B)</td>
+        </tr>
+        <tr>
+            <td>Total Marks Secured in Part A + Part B</td>
+            <td>{{ doc.total_marks_secured_in_part_a_b or 0 }}</td>
+        </tr>
+        <tr>
+            <td>Percentile</td>
+            <td>{{ doc.percentile or 0 }}</td>
+        </tr>
+        <tr>
+            <td>All India Rank</td>
+            <td>{{ doc.entrance_test_rank or "—" }}</td>
+        </tr>
+        
+        <!-- Status -->
+        <tr class="sec-row">
+            <td colspan="2">
+                Status: 
+                {% if doc.result_status == "Pass" %}
+                    <span style="color: #166534; font-size: 15px;">PASS</span>
+                {% elif doc.result_status == "Fail" %}
+                    <span style="color: #991b1b; font-size: 15px;">FAIL</span>
+                {% else %}
+                    <span style="color: #334155; font-size: 15px;">{{ (doc.result_status or "Declared") | upper }}</span>
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+</div>
+
+</body>
+</html>

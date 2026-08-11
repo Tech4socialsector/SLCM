@@ -7,7 +7,12 @@ frappe.listview_settings['Offer Letter'] = {
             return [__("Issued"), "blue", "status,=,Issued"];
         } else if (doc.status === "Accepted") {
             return [__("Accepted"), "green", "status,=,Accepted"];
+        } else if (doc.status === "Confirmation Fee Paid") {
+            return [__("Confirmation Fee Paid"), "purple", "status,=,Confirmation Fee Paid"];
+        } else if (doc.status === "Full Fee Paid") {
+            return [__("Full Fee Paid"), "darkgreen", "status,=,Full Fee Paid"];
         } else if (doc.status === "Payment Completed") {
+            // Legacy status – keep for backward compatibility
             return [__("Paid"), "purple", "status,=,Payment Completed"];
         } else if (doc.status === "Rejected") {
             return [__("Rejected"), "red", "status,=,Rejected"];
@@ -86,7 +91,7 @@ frappe.listview_settings['Offer Letter'] = {
                         label: __('Offer Status'),
                         fieldname: 'status',
                         fieldtype: 'Select',
-                        options: '\nDraft\nIssued\nAccepted\nPayment Completed\nRejected\nExpired\nWithdrawn'
+                        options: '\nDraft\nIssued\nAccepted\nConfirmation Fee Paid\nFull Fee Paid\nPayment Completed\nRejected\nExpired\nWithdrawn'
                     },
                     {
                         label: __('Output Format'),
