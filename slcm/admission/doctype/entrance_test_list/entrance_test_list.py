@@ -730,7 +730,7 @@ def _send_allocation_email(allocation, email, allocation_type=None):
     try:
         if allocation_type == "Allocate Directly":
             template_name = "Automated Entrance Test Allocation"
-            attach_admit_card = True
+            attach_admit_card = False
         else:
             template_name = "Entrance Test Allocation"
             attach_admit_card = False
