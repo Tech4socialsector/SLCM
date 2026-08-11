@@ -340,7 +340,7 @@
               <th colspan="{{ grp.components|length }}" class="pp-rt-th-group" style="background:#fef3c7;color:var(--pp-warning);">{{ grp.type_name }}</th>
               {% endfor %}
               {% if c.reexam_groups %}
-              <th colspan="2" class="pp-rt-th-group" style="background:#f3e8ff;color:#7c3aed;">Updated Final</th>
+              <th colspan="3" class="pp-rt-th-group" style="background:#f3e8ff;color:#7c3aed;">Updated Final</th>
               {% endif %}
             </tr>
             <tr>
@@ -365,6 +365,7 @@
               {% if c.reexam_groups %}
               <th>Updated<br>Marks</th>
               <th>Updated<br>Grade</th>
+              <th>Re-Exam<br>Grade</th>
               {% endif %}
             </tr>
           </thead>
@@ -416,6 +417,13 @@
                 {% if c.display_grade %}
                 <span class="pp-rt-grade {% if c.is_fail %}pp-rt-grade-fail{% else %}pp-rt-grade-pass{% endif %}" style="font-size:14px;">
                   {{ c.display_grade }}
+                </span>
+                {% else %}—{% endif %}
+              </td>
+              <td>
+                {% if c.re_exam_grade %}
+                <span class="pp-rt-grade" style="font-size:14px;color:#9a3412;border-color:#fed7aa;background:#fff7ed;">
+                  {{ c.re_exam_grade }}
                 </span>
                 {% else %}—{% endif %}
               </td>
