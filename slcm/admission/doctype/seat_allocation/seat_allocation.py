@@ -124,7 +124,7 @@ class SeatAllocation(Document):
         self.total_rejected = 0
         
         rejection_statuses = ["Rejected", "Offer Declined", "Offer Expired", "Withdrawn"]
-        selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Enrolled", "Seat Selected"]
+        selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid", "Payment Completed", "Enrolled", "Seat Selected", "Confirmation Fee Paid", "Full Fee Paid"]
         
         for row in (self.selection_applicant or []):
             if row.selection_status in selection_statuses:
@@ -137,6 +137,26 @@ class SeatAllocation(Document):
         self.summary_total_selected = self.total_selected
         self.summary_total_waitlisted = self.total_waitlisted
         self.summary_total_rejected = self.total_rejected
+
+        # Normalize vertical_category and allocated_category for selected applicants first
+        for row in (self.selection_applicant or []):
+            v_cat = row.get("vertical_category")
+            c_cat = row.get("compartmentalized_category")
+            h_cats_str = row.get("horizontal_categories")
+
+            if row.selection_status in selection_statuses and v_cat:
+                parts = [v_cat]
+                if c_cat:
+                    parts.append(c_cat)
+                if h_cats_str:
+                    h_cats = sorted([c.strip() for c in h_cats_str.split(",") if c.strip()])
+                    parts.extend(h_cats)
+                row.allocated_category = " + ".join(parts)
+            elif row.selection_status in selection_statuses and not v_cat and row.allocated_category:
+                pass
+            elif row.selection_status in selection_statuses and not v_cat:
+                row.vertical_category = "General"
+                row.allocated_category = "General"
 
         # Recalculate category summary counts dynamically if rows exist
         if getattr(self, "category_summary", None):
@@ -205,42 +225,11 @@ class SeatAllocation(Document):
                     overall_rnk,
                 )
 
-
             self.selection_applicant.sort(key=get_save_sort_key)
             for i, row in enumerate(self.selection_applicant):
                 row.idx = i + 1
 
         self.validate_uniqueness()
-        
-        # Update display name for combined categories (e.g., "SC + Women")
-        # This handles initial allocation, waitlist promotion, and manual saves.
-        h_categories = frappe.db.get_all("Admission Category", 
-            filters={"reservation_type": ["in", ["Horizontal", "Compartmentalised Horizontal"]]}, 
-            pluck="name"
-        )
-        
-        for row in (self.selection_applicant or []):
-            v_cat = row.get("vertical_category")
-            c_cat = row.get("compartmentalized_category")
-            h_cats_str = row.get("horizontal_categories")
-
-            if row.selection_status in selection_statuses and v_cat:
-                parts = [v_cat]
-                
-                if c_cat:
-                    parts.append(c_cat)
-                
-                if h_cats_str:
-                    h_cats = sorted([c.strip() for c in h_cats_str.split(",") if c.strip()])
-                    parts.extend(h_cats)
-                
-                row.allocated_category = " + ".join(parts)
-            elif row.selection_status in selection_statuses and not v_cat and row.allocated_category:
-                # Backwards compatibility for manually set categories
-                pass
-            elif row.selection_status in selection_statuses and not v_cat:
-                row.vertical_category = "General"
-                row.allocated_category = "General"
 
         before = None
         try:

@@ -854,6 +854,7 @@ def _populate_category_lists(doc):
                 
         is_shortlist = hasattr(doc, "shortlist_applicants")
         counts = {}
+        valid_active = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid", "Payment Completed", "Enrolled", "Seat Selected", "Confirmation Fee Paid", "Full Fee Paid", "Shortlisted"]
         
         # Resolve dynamic categorisation tallies from DB masters
         db_cats_all = frappe.get_all("Admission Category", fields=["name", "reservation_type"])
@@ -866,16 +867,16 @@ def _populate_category_lists(doc):
                 if cat.startswith(f"{comp_name} ") or cat.startswith(f"{comp_name}("):
                     v_name = cat[len(comp_name):].strip("() ")
                     if v_name == "Common":
-                        counts[cat] = len([x for x in sorted_applicants if getattr(x, status_field, "") != "Rejected" and _has_trait(x.applicant_id, comp_name, is_shortlist)])
+                        counts[cat] = len([x for x in sorted_applicants if getattr(x, status_field, "") in valid_active and _has_trait(x.applicant_id, comp_name, is_shortlist)])
                     else:
-                        counts[cat] = len([x for x in sorted_applicants if getattr(x, status_field, "") != "Rejected" and (getattr(x, "vertical_category", "") or getattr(x, "actual_category", "")) == v_name and _has_trait(x.applicant_id, comp_name, is_shortlist)])
+                        counts[cat] = len([x for x in sorted_applicants if getattr(x, status_field, "") in valid_active and (getattr(x, "vertical_category", "") or getattr(x, "actual_category", "")) == v_name and _has_trait(x.applicant_id, comp_name, is_shortlist)])
                     is_comp = True
                     break
             if not is_comp:
                 if cat in horiz_types:
-                    counts[cat] = len([x for x in sorted_applicants if getattr(x, status_field, "") != "Rejected" and _has_trait(x.applicant_id, cat, is_shortlist)])
+                    counts[cat] = len([x for x in sorted_applicants if getattr(x, status_field, "") in valid_active and _has_trait(x.applicant_id, cat, is_shortlist)])
                 else:
-                    counts[cat] = len([x for x in sorted_applicants if getattr(x, status_field, "") != "Rejected" and getattr(x, "vertical_category", "") == cat])
+                    counts[cat] = len([x for x in sorted_applicants if getattr(x, status_field, "") in valid_active and getattr(x, "vertical_category", "") == cat])
         
         for cat in ordered_cats:
             info = category_mapping.get(cat, {"seats": 0, "required": 0})
