@@ -30,6 +30,13 @@ class MeritList(Document):
 
     def validate(self):
         self.validate_uniqueness()
+        self.calculate_summary_counts()
+
+    def calculate_summary_counts(self):
+        if self.merit_applicants:
+            self.total_applicants = len(self.merit_applicants)
+            self.total_selected = len([a for a in self.merit_applicants if a.status == "Selected" or getattr(a, "allocation_type", "") in ("Open", "Reserved")])
+            self.total_rejected = len([a for a in self.merit_applicants if a.status == "Rejected"])
 
     def on_trash(self):
         """

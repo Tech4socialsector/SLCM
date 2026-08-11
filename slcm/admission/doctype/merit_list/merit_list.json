@@ -14,6 +14,8 @@
   "generated_on",
   "published_on",
   "total_applicants",
+  "total_selected",
+  "total_rejected",
   "section_break_rbff",
   "merit_applicants",
   "tab_general_list",
@@ -86,6 +88,18 @@
    "fieldname": "total_applicants",
    "fieldtype": "Int",
    "label": "Total Applicants",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_selected",
+   "fieldtype": "Int",
+   "label": "Total Selected",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_rejected",
+   "fieldtype": "Int",
+   "label": "Total Rejected",
    "read_only": 1
   },
   {

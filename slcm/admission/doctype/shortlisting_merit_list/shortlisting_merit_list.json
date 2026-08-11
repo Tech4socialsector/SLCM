@@ -16,6 +16,7 @@
   "generated_on",
   "status",
   "total_candidates",
+  "total_rejected",
   "section_break_jvuw",
   "shortlist_applicants",
   "tab_general_list",
@@ -87,6 +88,12 @@
    "fieldname": "total_candidates",
    "fieldtype": "Int",
    "label": "Total Candidates",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_rejected",
+   "fieldtype": "Int",
+   "label": "Total Rejected",
    "read_only": 1
   },
   {
