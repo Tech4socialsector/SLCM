@@ -1,4 +1,4 @@
-{
+ {
  "actions": [],
  "allow_rename": 1,
  "creation": "2026-02-17 11:05:00",
@@ -196,8 +196,10 @@
    "read_only": 1
   },
   {
+   "columns": 4,
    "fieldname": "remarks",
    "fieldtype": "Small Text",
+   "in_list_view": 1,
    "label": "Remarks",
    "read_only": 1
   }
