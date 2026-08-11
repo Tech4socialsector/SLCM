@@ -10,7 +10,6 @@ class StudentEnrollment(Document):
     def validate(self):
         self.validate_duplicate_enrollment()
         self._validate_cohort_seat_limit()
-        self._validate_status_transition()
 
     def before_save(self):
         self.fetch_program_and_courses()
@@ -137,21 +136,6 @@ class StudentEnrollment(Document):
                 _("Batch {0} has reached its seat limit of {1}").format(self.batch, seat_limit)
             )
 
-    def _validate_status_transition(self):
-        """Guard against status changes that don't make sense.
-
-        Full lifecycle rules (e.g. Pending -> Enrolled -> Dropped/Completed
-        ordering) are not enforced yet - only the one transition that is
-        wrong under any policy: un-completing a Completed enrollment.
-        Extend here once the intended lifecycle is finalized.
-        """
-        if not self.is_new() and self.has_value_changed("status"):
-            previous = self.get_doc_before_save()
-            if previous and previous.status == "Completed" and self.status != "Completed":
-                frappe.throw(
-                    _("Cannot change status from Completed to {0}").format(self.status)
-                )
-
     def validate_duplicate_enrollment(self):
         """Prevent duplicate enrollment for same student + batch + academic_year."""
         filters = {
@@ -179,7 +163,12 @@ class StudentEnrollment(Document):
         frappe.db.set_value("Batch", batch, "total_enrolled_count", count, update_modified=False)
 
     def _sync_student_master_status(self):
-        """When enrollment is dropped/completed, reflect on Student Master."""
+        """Reflect this enrollment's status on Student Master.
+
+        Status changes are unrestricted (including moving away from
+        Completed/Dropped), so this always sets Student Master to match the
+        current status rather than only reacting to Dropped/Completed.
+        """
         if not self.student:
             return
         if self.status == "Dropped":
@@ -190,6 +179,11 @@ class StudentEnrollment(Document):
         elif self.status == "Completed":
             frappe.db.set_value("Student Master", self.student, {
                 "student_status": "Graduated",
+            })
+        else:
+            frappe.db.set_value("Student Master", self.student, {
+                "student_status": "Active",
+                "academic_status": "Active",
             })
 
 
