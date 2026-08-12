@@ -128,6 +128,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		                       background:#fff; border:1.5px solid #e2e8f0; border-radius:9px;
 		                       box-shadow:0 8px 24px rgba(0,0,0,.12); min-width:170px;
 		                       padding:5px; margin-top:4px; }
+		/* Bridge the visual gap above the menu so hovering across it doesn't
+		   drop out of .er2-btn-dd and close the menu before a click lands. */
+		.er2-btn-dd .dd-menu::before { content:''; position:absolute; left:0; right:0;
+		                                top:-4px; height:4px; }
 		.er2-btn-dd:hover .dd-menu,
 		.er2-btn-dd.open .dd-menu { display:block; }
 		.dd-item { padding:8px 12px; font-size:12.5px; cursor:pointer; color:#475569;
@@ -961,6 +965,28 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		S.left_collapsed = !S.left_collapsed;
 		$left.toggleClass('collapsed', S.left_collapsed);
 		$collapse.html(S.left_collapsed ? '&#9654;' : '&#9664;');
+	});
+
+	// ── Action-bar dropdowns (click to open, not hover) ──────────────────────
+	// Hover-only dropdowns leave a dead zone between the button and the menu
+	// (the 4px margin-top gap) that closes the menu before the pointer reaches
+	// it, making the options look unclickable. Click-to-toggle is reliable
+	// regardless of pointer path/speed and also works on touch/trackpad.
+	$body.on('click', '.er2-btn-dd > .er2-btn', function (e) {
+		e.stopPropagation();
+		var $dd = $(this).closest('.er2-btn-dd');
+		var wasOpen = $dd.hasClass('open');
+		$body.find('.er2-btn-dd.open').removeClass('open');
+		if (!wasOpen) $dd.addClass('open');
+	});
+	$body.on('click', '.dd-menu', function (e) {
+		e.stopPropagation();
+	});
+	$body.on('click', '.dd-item', function () {
+		$body.find('.er2-btn-dd.open').removeClass('open');
+	});
+	$(document).off('click.er2-dd').on('click.er2-dd', function () {
+		$body.find('.er2-btn-dd.open').removeClass('open');
 	});
 
 	// ── Sync vertical scroll ──────────────────────────────────────────────────

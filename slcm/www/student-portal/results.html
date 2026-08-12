@@ -211,6 +211,9 @@
             {% for grp in c.reexam_groups %}
             <th colspan="{{ grp.components | length }}" class="sp-rt-th-group sp-rt-tg-reexam">{{ grp.type_name }}</th>
             {% endfor %}
+            {% if c.reexam_groups %}
+            <th colspan="1" class="sp-rt-th-group sp-rt-tg-reexam">Re-Exam Grade</th>
+            {% endif %}
             {# Improvement Exam #}
             <th colspan="2" class="sp-rt-th-group" style="background:linear-gradient(90deg,#f0fdf4,#dcfce7);color:#14532d;border-bottom:2px solid #4ade80;">Improvement Exam</th>
             {# Updated Final Result #}
@@ -241,6 +244,9 @@
               </th>
               {% endfor %}
             {% endfor %}
+            {% if c.reexam_groups %}
+            <th class="sp-rt-th-comp">Re-Exam<br>Grade</th>
+            {% endif %}
             <th class="sp-rt-th-comp">Improvement<br>Marks</th>
             <th class="sp-rt-th-comp">Improvement<br>Grade</th>
             <th class="sp-rt-th-comp">Updated<br>Final Marks</th>
@@ -260,7 +266,7 @@
               <th class="sp-rt-th-sub">Marks</th>
               {% endfor %}
             {% endfor %}
-            <th colspan="4" class="sp-rt-th-sub"></th>
+            <th colspan="{% if c.reexam_groups %}5{% else %}4{% endif %}" class="sp-rt-th-sub"></th>
           </tr>
 
           </thead>
@@ -317,6 +323,15 @@
               <td class="sp-rt-marks">{% if c.attendance_status == 'Absent' %}Absent{% else %}{{ comp.marks }}{% endif %}</td>
               {% endfor %}
             {% endfor %}
+
+            {# Re-exam Grade #}
+            {% if c.reexam_groups %}
+            <td class="sp-rt-grade-cell">
+              {% if c.re_exam_grade %}
+              <span class="sp-rt-grade sp-rt-grade-pass" style="color:#9a3412;border-color:#fed7aa;">{{ c.re_exam_grade }}</span>
+              {% else %}<span style="color:var(--sp-text-4);">—</span>{% endif %}
+            </td>
+            {% endif %}
 
             {# Improvement Marks #}
             <td class="sp-rt-total" style="color:#15803d;">

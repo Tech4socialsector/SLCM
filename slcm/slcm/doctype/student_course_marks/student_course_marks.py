@@ -21,6 +21,13 @@ class StudentCourseMarks(Document):
 		if self.updated_grade:
 			return
 
+		# Don't assign a grade (e.g. "F") until marks have actually been
+		# entered — otherwise every student is treated as graded/failed
+		# from the moment their record is created.
+		if not self._has_marks_entered():
+			self.grade = ""
+			return
+
 		schema_name = self._resolve_grading_schema()
 		if not schema_name:
 			return
@@ -38,6 +45,14 @@ class StudentCourseMarks(Document):
 		# Reflect failed status in enrollment_status if not already set
 		if schema.is_failed(effective_marks) and not self.enrollment_status:
 			pass  # enrollment_status is set by admin, not auto
+
+	def _has_marks_entered(self):
+		if self.updated_final_marks not in (None, ""):
+			return True
+		for row in self.marks_entries:
+			if row.marks not in (None, "") or row.moderated_marks not in (None, ""):
+				return True
+		return False
 
 	def _resolve_grading_schema(self):
 		"""Return grading schema name via Course Schema Assignment (exam_plan + course)."""
