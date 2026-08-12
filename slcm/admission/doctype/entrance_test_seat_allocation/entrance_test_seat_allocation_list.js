@@ -1326,6 +1326,12 @@ function _show_reject_and_allocate_dialog(listview, initial_providers) {
                     update_allocation_type_ui();
                 }
             },
+            {
+                label: __("Send Email"),
+                fieldname: "send_email",
+                fieldtype: "Check",
+                default: 1
+            },
             { fieldtype: 'Column Break' },
             {
                 label: __("Entrance Test City"),
@@ -1457,7 +1463,8 @@ function _show_reject_and_allocate_dialog(listview, initial_providers) {
                 freeze_message: __("Analyzing Allocation Scenario..."),
                 callback: function (r) {
                     if (!r.exc && r.message) {
-                        _show_reallocation_confirmation(d, listview, r.message, selected_providers_array, selected_applicants, values.allocation_type);
+                        const send_email = values.send_email ? 1 : 0;
+                        _show_reallocation_confirmation(d, listview, r.message, selected_providers_array, selected_applicants, values.allocation_type, send_email);
                     }
                 }
             });
@@ -1656,7 +1663,7 @@ function _show_reject_and_allocate_dialog(listview, initial_providers) {
 }
 
 
-function _show_reallocation_confirmation(parent_dialog, listview, result, selected_providers, selected_applicants, allocation_type) {
+function _show_reallocation_confirmation(parent_dialog, listview, result, selected_providers, selected_applicants, allocation_type, send_email) {
     const total = result.total_selected || 0;
     const total_avail = result.effective_total_available != null ? result.effective_total_available : (result.total_available_seats || 0);
     const breakdown = result.programme_breakdown || [];
@@ -1933,7 +1940,8 @@ function _show_reallocation_confirmation(parent_dialog, listview, result, select
                 args: {
                     applicants: selected_applicants,
                     providers: selected_providers,
-                    allocation_type: allocation_type
+                    allocation_type: allocation_type,
+                    send_email: send_email
                 },
                 freeze: true,
                 freeze_message: __('Re-allocating...'),
