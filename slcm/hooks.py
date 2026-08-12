@@ -580,11 +580,13 @@ scheduler_events = {
 # Role-based home page — portal users must not land on /desk (no desk_access)
 role_home_page = {
     "slcm_Faculty": "/faculty-portal",
+    "slcm_Student": "/student-portal",
     "slcm_parent": "/parent-portal",
 }
 
 # Website
 website_route_rules = [
+    {"from_route": "/login", "to_route": "portal-login/login"},
     {"from_route": "/admission/login", "to_route": "admission/login"},
     {"from_route": "/applicant-dashboard", "to_route": "applicant_dashboard"},
     {"from_route": "/admission/<name>", "to_route": "admission/program_detail"},
