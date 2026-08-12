@@ -103,11 +103,11 @@ def _resolve_offerings_and_roster(academic_year=None, term=None, programme=None,
 	if courses:
 		co_filters["course_title"] = ["in", courses]
 	if batches:
-		co_filters["cohort"] = ["in", batches]
+		co_filters["batch"] = ["in", batches]
 	elif sections:
 		# Course Offering.section is very often left blank in this data model
 		# (the section actually assigned to a course is recorded via its
-		# Batch/cohort, not a direct Course-Offering-level field). Only fall
+		# Batch, not a direct Course-Offering-level field). Only fall
 		# back to deriving the batch from the Section's own `batch` field when
 		# the user didn't already pick a Batch directly — if they picked
 		# both, the explicit Batch filter above already takes precedence.
@@ -116,7 +116,7 @@ def _resolve_offerings_and_roster(academic_year=None, term=None, programme=None,
 		)
 		section_batches = list({b for b in section_batches if b})
 		if section_batches:
-			co_filters["cohort"] = ["in", section_batches]
+			co_filters["batch"] = ["in", section_batches]
 
 	if user != "Administrator" and not _is_unrestricted(roles):
 		if "slcm_Faculty" not in roles:

@@ -33,15 +33,17 @@ class ClassConfiguration(Document):
         """Auto-generate class name if not provided"""
         if not self.class_name:
             parts = []
-            if self.course:
-                parts.append(self.course)
-            if self.type:
-                parts.append(self.type)
+            if self.course_offering:
+                course_title = frappe.db.get_value("Course Offering", self.course_offering, "course_title")
+                if course_title:
+                    parts.append(course_title)
+            if self.class_configuration_type:
+                parts.append(self.class_configuration_type)
             if self.batch:
                 parts.append(self.batch)
             if self.section:
                 parts.append(self.section)
-            
+
             if parts:
                 self.class_name = " - ".join(parts)
 

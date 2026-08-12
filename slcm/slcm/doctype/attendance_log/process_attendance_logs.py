@@ -462,15 +462,15 @@ def _is_student_in_session(student, session):
 
 
 def _is_student_in_course_offering(student, course_offering):
-    """True if the student is actively enrolled in this Course Offering's cohort."""
+    """True if the student is actively enrolled in this Course Offering's batch."""
     if not course_offering:
         return False
-    cohort = frappe.db.get_value("Course Offering", course_offering, "cohort")
-    if not cohort:
+    batch = frappe.db.get_value("Course Offering", course_offering, "batch")
+    if not batch:
         return False
     return bool(frappe.db.exists("Student Enrollment", {
         "student":  student,
-        "batch":    cohort,
+        "batch":    batch,
         "status":   "Enrolled",
     }))
 

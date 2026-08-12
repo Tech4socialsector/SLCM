@@ -1518,11 +1518,11 @@ def get_student_profile(student):
 	)
 	if not sm:
 		frappe.throw("Student not found.")
-	# Get cohort/programme label
-	cohort_name = ""
+	# Get batch/programme label
+	batch_name = ""
 	if sm.get("programme"):
-		cohort_name = frappe.db.get_value("Batch", sm["programme"], "cohort_name") or sm["programme"]
-	sm["cohort_name"] = cohort_name
+		batch_name = frappe.db.get_value("Batch", sm["programme"], "batch_name") or sm["programme"]
+	sm["batch_name"] = batch_name
 	return sm
 
 

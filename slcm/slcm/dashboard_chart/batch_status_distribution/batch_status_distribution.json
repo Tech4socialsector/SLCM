@@ -1,5 +1,5 @@
 {
- "chart_name": "Cohort Status Distribution",
+ "chart_name": "Batch Status Distribution",
  "chart_type": "Group By",
  "currency": "INR",
  "docstatus": 0,
@@ -12,7 +12,7 @@
  "is_public": 1,
  "is_standard": 0,
  "module": "SLCM",
- "name": "Cohort Status Distribution",
+ "name": "Batch Status Distribution",
  "number_of_groups": 0,
  "owner": "Administrator",
  "roles": [],

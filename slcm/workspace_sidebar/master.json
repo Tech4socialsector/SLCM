@@ -154,8 +154,8 @@
    "icon": "list",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Curriculum",
-   "link_to": "Curriculum",
+   "label": "Course List",
+   "link_to": "Course List",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link"

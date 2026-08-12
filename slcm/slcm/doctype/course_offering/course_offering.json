@@ -2,7 +2,7 @@
  "actions": [],
  "allow_import": 1,
  "allow_rename": 1,
- "autoname": "format:{course_title}-{cohort}-{term_name}",
+ "autoname": "format:{course_title}-{batch}-{term_name}",
  "creation": "2025-12-30 13:03:04.922140",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -10,7 +10,7 @@
   "course_title",
   "course_name",
   "credit_value",
-  "cohort",
+  "batch",
   "faculty",
   "column_break_rote",
   "program",
@@ -42,7 +42,7 @@
    "reqd": 1
   },
   {
-   "fieldname": "cohort",
+   "fieldname": "batch",
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
@@ -64,10 +64,11 @@
   {
    "fetch_from": "program.academic_term",
    "fieldname": "term_name",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Term",
+   "options": "Academic Term",
    "reqd": 1
   },
   {
@@ -122,7 +123,6 @@
   {
    "fieldname": "section",
    "fieldtype": "Link",
-   "hidden": 1,
    "label": "Section",
    "options": "Section"
   },

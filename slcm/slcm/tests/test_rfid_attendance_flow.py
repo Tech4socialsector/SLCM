@@ -35,14 +35,14 @@ def _get_test_context():
     if not offering:
         return None, None
 
-    # Find a student enrolled in this offering's cohort
-    cohort = frappe.db.get_value("Course Offering", offering, "cohort")
-    if not cohort:
+    # Find a student enrolled in this offering's batch
+    batch = frappe.db.get_value("Course Offering", offering, "batch")
+    if not batch:
         return offering, None
 
     enrollment = frappe.db.get_value(
         "Student Enrollment",
-        {"cohort": cohort, "status": "Enrolled"},
+        {"batch": batch, "status": "Enrolled"},
         "student",
     )
     return offering, enrollment

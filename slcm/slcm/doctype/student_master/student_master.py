@@ -66,7 +66,7 @@ def _get_valid_fee_structure_for_program(program):
 
 
 def _resolve_program(programme):
-    """Resolve a Cohort name (or bare Program name) to a Program name."""
+    """Resolve a Batch name (or bare Program name) to a Program name."""
     program = frappe.db.get_value("Batch", programme, "program")
     if not program and frappe.db.exists("Programme", programme):
         program = programme
@@ -550,7 +550,7 @@ def validate_new_enrollment(student_id):
         }
 
     if not student.batch:
-        return {"allowed": False, "message": "Programme (Cohort) is not set in Student Master."}
+        return {"allowed": False, "message": "Programme (Batch) is not set in Student Master."}
 
     existing_enrollment = frappe.db.exists(
         "Student Enrollment",
@@ -687,7 +687,7 @@ def _validate_transition_requirements(student, new_status):
 
 @frappe.whitelist()
 def fetch_program_fee_details(programme):
-    """Return fee details from the currently date-valid Student Fee Structure for the given cohort."""
+    """Return fee details from the currently date-valid Student Fee Structure for the given batch."""
     if not programme:
         return None
 
@@ -906,9 +906,9 @@ def get_academic_progress(student_name, enrollment_name=None):
         )
 
     # Batch / Section details
-    cohort_doc = None
+    batch_doc = None
     if enrollment.batch:
-        cohort_doc = frappe.db.get_value(
+        batch_doc = frappe.db.get_value(
             "Batch",
             enrollment.batch,
             ["batch_name", "batch_code", "term_year", "status"],
@@ -943,11 +943,11 @@ def get_academic_progress(student_name, enrollment_name=None):
         "status":               enrollment.status or "",
         "program":              enrollment.program or "",
         "program_name":         program_name,
-        "cohort":               enrollment.batch or "",
-        "cohort_name":          cohort_doc.batch_name if cohort_doc else (enrollment.batch or ""),
-        "cohort_code":          cohort_doc.batch_code if cohort_doc else "",
-        "cohort_term_year":     cohort_doc.term_year if cohort_doc else "",
-        "cohort_status":        cohort_doc.status if cohort_doc else "",
+        "batch":                enrollment.batch or "",
+        "batch_name":          batch_doc.batch_name if batch_doc else (enrollment.batch or ""),
+        "batch_code":          batch_doc.batch_code if batch_doc else "",
+        "term_year":     batch_doc.term_year if batch_doc else "",
+        "batch_status":  batch_doc.status if batch_doc else "",
         "batch_year":           enrollment.batch_year_ref or "",
         "faculty_advisor":      enrollment.faculty_advisor or "",
         "faculty_advisor_name": faculty_advisor_name,

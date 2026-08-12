@@ -80,7 +80,7 @@ class SLCMAnalyticsDashboard {
 		this.$body    = this.$wrapper.find('.page-content');
 		this.$body.css({ padding: 0, background: 'var(--sad-bg)' });
 
-		this.filters      = { academic_year: null, term: null, program: null, cohort: null, student_status: null };
+		this.filters      = { academic_year: null, term: null, program: null, batch: null, student_status: null };
 		this.active_tab   = 'overview';
 		this.chart_refs   = {};
 		this._drilldown_open = false;
@@ -676,8 +676,8 @@ class SLCMAnalyticsDashboard {
 					<div id="sad-f-prog"></div>
 				</div>
 				<div class="sad-filter-group">
-					<div class="sad-filter-label">Cohort</div>
-					<div id="sad-f-cohort"></div>
+					<div class="sad-filter-label">Batch</div>
+					<div id="sad-f-batch"></div>
 				</div>
 				<div class="sad-filter-group">
 					<div class="sad-filter-label">Student Status</div>
@@ -860,7 +860,7 @@ class SLCMAnalyticsDashboard {
 
 				this.$ay = make_select('sad-f-ay', opts.academic_years, 'name', 'name', 'All Years', (val) => {
 					this.filters.academic_year = val || null;
-					this._refresh_cohort_filter();
+					this._refresh_batch_filter();
 					this._refresh_term_filter();
 				});
 
@@ -870,11 +870,11 @@ class SLCMAnalyticsDashboard {
 
 				this.$prog = make_select('sad-f-prog', opts.programs, 'name', 'program_name', 'All Programs', (val) => {
 					this.filters.program = val || null;
-					this._refresh_cohort_filter();
+					this._refresh_batch_filter();
 				});
 
-				this.$cohort = make_select('sad-f-cohort', opts.cohorts, 'name', 'cohort_name', 'All Cohorts', (val) => {
-					this.filters.cohort = val || null;
+				this.$batch = make_select('sad-f-batch', opts.batches, 'name', 'batch_name', 'All Batches', (val) => {
+					this.filters.batch = val || null;
 				});
 
 				this.$sstatus = make_select('sad-f-sstatus', opts.student_statuses || [], 'value', 'label', 'All Statuses', (val) => {
@@ -886,20 +886,20 @@ class SLCMAnalyticsDashboard {
 		});
 	}
 
-	_refresh_cohort_filter() {
+	_refresh_batch_filter() {
 		if (!this._filter_options) return;
 		const ay   = this.filters.academic_year;
 		const prog = this.filters.program;
 
-		let cohorts = this._filter_options.cohorts;
-		if (ay)   cohorts = cohorts.filter(c => c.academic_year === ay);
-		if (prog) cohorts = cohorts.filter(c => c.program === prog);
+		let batches = this._filter_options.batches;
+		if (ay)   batches = batches.filter(c => c.academic_year === ay);
+		if (prog) batches = batches.filter(c => c.program === prog);
 
-		const $sel = this.$cohort;
-		$sel.html('<option value="">All Cohorts</option>');
-		cohorts.forEach(c => $sel.append(`<option value="${c.name}">${c.cohort_name}</option>`));
+		const $sel = this.$batch;
+		$sel.html('<option value="">All Batches</option>');
+		batches.forEach(c => $sel.append(`<option value="${c.name}">${c.batch_name}</option>`));
 		$sel.val('');
-		this.filters.cohort = null;
+		this.filters.batch = null;
 	}
 
 	_refresh_term_filter() {
@@ -920,19 +920,19 @@ class SLCMAnalyticsDashboard {
 		this.filters.academic_year  = this.$ay?.val()      || null;
 		this.filters.term           = this.$term?.val()    || null;
 		this.filters.program        = this.$prog?.val()    || null;
-		this.filters.cohort         = this.$cohort?.val()  || null;
+		this.filters.batch         = this.$batch?.val()  || null;
 		this.filters.student_status = this.$sstatus?.val() || null;
 		this._load_tab(this.active_tab, true);
 	}
 
 	_reset_filters() {
-		this.filters = { academic_year: null, term: null, program: null, cohort: null, student_status: null };
+		this.filters = { academic_year: null, term: null, program: null, batch: null, student_status: null };
 		this.$ay?.val('');
 		this.$term?.val('');
 		this.$prog?.val('');
-		this.$cohort?.val('');
+		this.$batch?.val('');
 		this.$sstatus?.val('');
-		this._refresh_cohort_filter();
+		this._refresh_batch_filter();
 		this._refresh_term_filter();
 		this._load_tab(this.active_tab, true);
 	}
@@ -1100,10 +1100,10 @@ class SLCMAnalyticsDashboard {
 
 				$('#sad-tab-content').html(`
 					<div class="sad-kpi-grid">
-						${this._kpi('Total Enrolled', total, '🎓', 'primary', 'across all cohorts', { module:'students', dimension:'student_status', value:'Active' })}
+						${this._kpi('Total Enrolled', total, '🎓', 'primary', 'across all batches', { module:'students', dimension:'student_status', value:'Active' })}
 						${this._kpi('Active Rate', active_pct + '%', '✅', active_pct >= 80 ? 'success' : 'warning', 'of all students', { module:'students', dimension:'student_status', value:'Active' })}
 						${this._kpi('Programs', d.program_distribution.length, '📚', 'info', 'with enrollments', { module:'students', dimension:'programs_list', value:'all' })}
-						${this._kpi('Cohorts', d.cohort_distribution.length, '🗂️', 'purple', 'active cohorts', { module:'students', dimension:'cohorts_list', value:'all' })}
+						${this._kpi('Batches', d.batch_distribution.length, '🗂️', 'purple', 'active batches', { module:'students', dimension:'batches_list', value:'all' })}
 					</div>
 
 					<div class="sad-section-title">Enrollment Breakdown</div>
@@ -1114,7 +1114,7 @@ class SLCMAnalyticsDashboard {
 						${this._chart_card('sad-st-scholar',   'Scholarship Split',      'Scholarship coverage',     '', '')}
 					</div>
 
-					<div class="sad-section-title">Program & Cohort Analysis</div>
+					<div class="sad-section-title">Program & Batch Analysis</div>
 					<div class="sad-chart-grid">
 						<div class="sad-chart-wide">
 							${this._chart_card('sad-st-program', 'Program-wise Enrollment', 'Student count per program', 'Click bar to drill down', '')}
@@ -1122,7 +1122,7 @@ class SLCMAnalyticsDashboard {
 					</div>
 					<div class="sad-chart-grid">
 						${this._chart_card('sad-st-admission', 'Admission Type',         'Regular vs PACE vs Other', '', '')}
-						${this._chart_card('sad-st-cohort',    'Top Cohorts',            'Enrollment per cohort',    '', '')}
+						${this._chart_card('sad-st-batch',    'Top Batches',            'Enrollment per batch',    '', '')}
 						${this._chart_card('sad-st-regstatus', 'Registration Status',    'Workflow progress',        '', '')}
 					</div>
 				`);
@@ -1133,7 +1133,7 @@ class SLCMAnalyticsDashboard {
 				this._render_donut('#sad-st-scholar .sad-chart-body', d.scholarship_distribution, 'students', 'scholarship');
 				this._render_bar_horizontal('#sad-st-program .sad-chart-body', d.program_distribution, { module: 'students', dimension: 'program' });
 				this._render_donut('#sad-st-admission .sad-chart-body', d.admission_type, 'students', 'admission_type');
-				this._render_bar_horizontal('#sad-st-cohort .sad-chart-body', d.cohort_distribution.slice(0, 8), { module: 'students', dimension: 'cohort' });
+				this._render_bar_horizontal('#sad-st-batch .sad-chart-body', d.batch_distribution.slice(0, 8), { module: 'students', dimension: 'batch' });
 				this._render_funnel('#sad-st-regstatus .sad-chart-body', d.registration_status, { module: 'students', dimension: 'reg_status' });
 			},
 		});
@@ -1427,7 +1427,7 @@ class SLCMAnalyticsDashboard {
 					<div class="sad-section-title">Print & Issuance</div>
 					<div class="sad-chart-grid">
 						<div class="sad-chart-wide">
-							${this._chart_card('sad-id-program', 'Cards by Program / Cohort', 'Cohort-wise card issuance', 'Click bar to drill down', '')}
+							${this._chart_card('sad-id-program', 'Cards by Program / Batch', 'Batch-wise card issuance', 'Click bar to drill down', '')}
 						</div>
 					</div>
 				`);
@@ -1522,7 +1522,7 @@ class SLCMAnalyticsDashboard {
 					<div class="sad-section-title">Program-wise Promotions</div>
 					<div class="sad-chart-grid">
 						<div class="sad-chart-wide">
-							${this._chart_card('sad-pr-program', 'Promotion by Program/Cohort', 'Promotion outcomes per cohort', 'Click bar to drill down', '')}
+							${this._chart_card('sad-pr-program', 'Promotion by Program/Batch', 'Promotion outcomes per batch', 'Click bar to drill down', '')}
 						</div>
 					</div>
 				`);
@@ -1534,7 +1534,7 @@ class SLCMAnalyticsDashboard {
 				this._render_donut('#sad-pr-backlog .sad-chart-body',    d.backlog_result,   'promotion', 'backlog_result');
 				this._render_donut('#sad-pr-attendance .sad-chart-body', d.attendance_result,'promotion', 'attendance_result');
 				this._render_donut('#sad-pr-shortage .sad-chart-body',   d.shortage_result,  'promotion', 'shortage_result');
-				this._render_bar_horizontal('#sad-pr-program .sad-chart-body', d.cohort_dist,{ module: 'promotion', dimension: 'cohort' });
+				this._render_bar_horizontal('#sad-pr-program .sad-chart-body', d.batch_dist,{ module: 'promotion', dimension: 'batch' });
 			},
 		});
 	}
@@ -1805,16 +1805,16 @@ class SLCMAnalyticsDashboard {
 				$('#sad-tab-content').html(`
 					<div class="sad-kpi-grid">
 						${this._kpi('Active Programs',      d.active_programs,      '🏫', 'primary',  `${d.total_programs} total`,               { module:'programme', dimension:'program_status', value:'Active' })}
-						${this._kpi('Active Cohorts',       d.active_cohorts,       '🗂️', 'info',     `${d.total_cohorts} total cohorts`,         { module:'programme', dimension:'cohort_status',  value:'Active' })}
+						${this._kpi('Active Batches',       d.active_batches,       '🗂️', 'info',     `${d.total_batches} total batches`,         { module:'programme', dimension:'batch_status',  value:'Active' })}
 						${this._kpi('Total Enrollments',    d.total_enrollments,    '🎓', 'success',  `${d.active_enrollments} actively enrolled`, { module:'programme', dimension:'enrollment_status', value:'Enrolled' })}
 						${this._kpi('Open Course Offerings',d.open_offerings,       '📖', 'warning',  `${d.total_offerings} total offerings`,     { module:'programme', dimension:'offering_status', value:'Open' })}
 						${this._kpi('Enrollment Rate',      d.enrollment_rate + '%','📊', enroll_rate_color, 'enrolled vs dropped',              { module:'programme', dimension:'enrollment_status', value:'Enrolled' })}
 					</div>
 
-					<div class="sad-section-title">Program & Cohort Overview</div>
+					<div class="sad-section-title">Program & Batch Overview</div>
 					<div class="sad-chart-grid">
 						${this._chart_card('sad-pm-prog-status',  'Program Status',          'Active vs Inactive',           '', '')}
-						${this._chart_card('sad-pm-cohort-status','Cohort Status',           'Planned / Active / Completed / Inactive', '', '')}
+						${this._chart_card('sad-pm-batch-status','Batch Status',           'Planned / Active / Completed / Inactive', '', '')}
 						${this._chart_card('sad-pm-level',        'Level of Study',          'UG / PG / Research breakdown', '', '')}
 						${this._chart_card('sad-pm-dept',         'Programs by Department',  'Department-wise count',        '', '')}
 					</div>
@@ -1827,7 +1827,7 @@ class SLCMAnalyticsDashboard {
 					</div>
 					<div class="sad-chart-grid">
 						${this._chart_card('sad-pm-enroll-status', 'Enrollment Status',        'Enrolled / Dropped / Completed / Pending', '', '')}
-						${this._chart_card('sad-pm-cohort-enroll', 'Top Cohorts by Enrollment','Active cohort headcount',   'Click bar to drill down', '')}
+						${this._chart_card('sad-pm-batch-enroll', 'Top Batches by Enrollment','Active batch headcount',   'Click bar to drill down', '')}
 					</div>
 
 					<div class="sad-section-title">Course Offering Analysis</div>
@@ -1839,12 +1839,12 @@ class SLCMAnalyticsDashboard {
 				`);
 
 				this._render_donut('#sad-pm-prog-status .sad-chart-body',   d.program_status,      'programme', 'program_status');
-				this._render_donut('#sad-pm-cohort-status .sad-chart-body', d.cohort_status,       'programme', 'cohort_status');
+				this._render_donut('#sad-pm-batch-status .sad-chart-body', d.batch_status,       'programme', 'batch_status');
 				this._render_donut('#sad-pm-level .sad-chart-body',         d.level_of_study,      'programme', 'level_of_study');
 				this._render_donut('#sad-pm-dept .sad-chart-body',          d.dept_distribution,   'programme', 'department');
 				this._render_bar_horizontal('#sad-pm-prog-enroll .sad-chart-body',   d.program_enrollment,  { module: 'programme', dimension: 'program_enrollment' });
 				this._render_donut('#sad-pm-enroll-status .sad-chart-body', d.enrollment_status,   'programme', 'enrollment_status');
-				this._render_bar_horizontal('#sad-pm-cohort-enroll .sad-chart-body', d.cohort_enrollment,   { module: 'programme', dimension: 'cohort_enrollment' });
+				this._render_bar_horizontal('#sad-pm-batch-enroll .sad-chart-body', d.batch_enrollment,   { module: 'programme', dimension: 'batch_enrollment' });
 				this._render_donut('#sad-pm-offering-status .sad-chart-body', d.offering_status,   'programme', 'offering_status');
 				this._render_bar_horizontal('#sad-pm-offering-prog .sad-chart-body', d.offering_by_program, { module: 'programme', dimension: 'offering_program' });
 				this._render_donut('#sad-pm-course-status .sad-chart-body', d.course_enroll_status,'programme', 'course_enroll_status');
@@ -2161,9 +2161,9 @@ class SLCMAnalyticsDashboard {
 			'students:student_status':        { dt: 'Student Master',                filters: f('student_status') },
 			'students:reg_status':            { dt: 'Student Master',                filters: f('student_status') },
 			'students:gender':                { dt: 'Student Master',                filters: f('gender') },
-			'students:cohort':                { dt: 'Student Master',                filters: {} },
+			'students:batch':                { dt: 'Student Master',                filters: {} },
 			'students:programs_list':         { dt: 'Programme',                       filters: {} },
-			'students:cohorts_list':          { dt: 'Batch',                        filters: {} },
+			'students:batches_list':          { dt: 'Batch',                        filters: {} },
 
 			// ── Admission ────────────────────────────────────────────────
 			'admission:app_status':           { dt: 'Admission Application',         filters: f('status') },
@@ -2209,11 +2209,11 @@ class SLCMAnalyticsDashboard {
 			'programme:program_status':       { dt: 'Programme',                       filters: f('program_status') },
 			'programme:level_of_study':       { dt: 'Programme',                       filters: f('level_of_study') },
 			'programme:department':           { dt: 'Programme',                       filters: f('department') },
-			'programme:cohort_status':        { dt: 'Batch',                        filters: f('status') },
+			'programme:batch_status':        { dt: 'Batch',                        filters: f('status') },
 			'programme:enrollment_status':    { dt: 'Student Enrollment',            filters: f('enrollment_status') },
 			'programme:course_enroll_status': { dt: 'Student Enrollment',            filters: f('enrollment_status') },
 			'programme:program_enrollment':   { dt: 'Student Enrollment',            filters: {} },
-			'programme:cohort_enrollment':    { dt: 'Student Enrollment',            filters: {} },
+			'programme:batch_enrollment':    { dt: 'Student Enrollment',            filters: {} },
 			'programme:offering_status':      { dt: 'Course Offering',               filters: f('status') },
 			'programme:offering_program':     { dt: 'Course Offering',               filters: f('program') },
 
@@ -2237,7 +2237,7 @@ class SLCMAnalyticsDashboard {
 			'promotion:backlog_result':       { dt: 'Student Promotion',             filters: {} },
 			'promotion:attendance_result':    { dt: 'Student Promotion',             filters: {} },
 			'promotion:shortage_result':      { dt: 'Student Promotion',             filters: {} },
-			'promotion:cohort':               { dt: 'Student Promotion',             filters: f('cohort') },
+			'promotion:batch':               { dt: 'Student Promotion',             filters: f('batch') },
 		};
 
 		return map[`${module}:${dimension}`] || null;
@@ -2324,7 +2324,7 @@ class SLCMAnalyticsDashboard {
 		const { module, dimension } = this._drilldown_state;
 		const listRoute = this._drilldown_list_route;
 		const row_doctype = listRoute ? listRoute.dt : null;
-		const special_id = { 'programs_list': 'program_id', 'cohorts_list': 'cohort_id' };
+		const special_id = { 'programs_list': 'program_id', 'batches_list': 'batch_id' };
 		const id_field = special_id[dimension] || 'name';
 
 		// Table

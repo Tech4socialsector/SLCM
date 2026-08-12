@@ -56,7 +56,7 @@ frappe.ui.form.on("Bulk Fee Structure Update", {
 function _run_preview(frm) {
 	// Client-side validation
 	if (frm.doc.target_scope === "Programme" && !frm.doc.programme) {
-		frappe.msgprint({ title: __("Required"), message: __("Please select a Programme (Cohort)."), indicator: "orange" });
+		frappe.msgprint({ title: __("Required"), message: __("Please select a Programme (Batch)."), indicator: "orange" });
 		return;
 	}
 	if (frm.doc.target_scope === "Programme" && !frm.doc.program) {
@@ -111,7 +111,7 @@ function _run_preview(frm) {
 function _confirm_and_apply(frm) {
 	const count       = (frm.doc.affected_students || []).length;
 	const scope_label = frm.doc.target_scope === "Programme"
-		? (frm.doc.programme || "selected cohort")
+		? (frm.doc.programme || "selected batch")
 		: (frm.doc.program   || "selected program");
 
 	const inv_warning_html = frm.doc.update_existing_invoices

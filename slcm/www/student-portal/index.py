@@ -264,7 +264,7 @@ def _get_active_enrollment(student_name):
     enrollments = frappe.get_all(
         "Student Enrollment",
         filters={"student": student_name, "status": "Enrolled"},
-        fields=["name", "cohort", "program", "academic_year", "term_name",
+        fields=["name", "batch", "program", "academic_year", "term_name",
                 "status", "faculty_advisor", "enrollment_date"],
         order_by="creation desc",
         limit=1,
@@ -276,7 +276,7 @@ def _get_active_enrollment(student_name):
     all_enrollments = frappe.get_all(
         "Student Enrollment",
         filters={"student": student_name},
-        fields=["name", "cohort", "program", "academic_year", "term_name",
+        fields=["name", "batch", "program", "academic_year", "term_name",
                 "status", "faculty_advisor", "enrollment_date"],
         order_by="creation desc",
         limit=1,
@@ -309,7 +309,7 @@ def _set_student_nav(context, student):
     context.student_id = student.registration_id or student.name
     context.student_photo = student.passport_size_photo or ""
     context.student_initial = (context.student_name[0]).upper() if context.student_name else "S"
-    context.programme_name = frappe.db.get_value("Batch", student.programme, "cohort_name") or student.programme or ""
+    context.programme_name = frappe.db.get_value("Batch", student.programme, "batch_name") or student.programme or ""
     context.department = student.department or ""
     context.batch_year = student.batch_year or ""
 

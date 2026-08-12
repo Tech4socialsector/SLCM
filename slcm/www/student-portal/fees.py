@@ -679,7 +679,7 @@ def get_context(context):
             enrollment = frappe.get_all(
                 "Student Enrollment",
                 filters={"student": student_name, "status": "Enrolled"},
-                fields=["name", "academic_year", "term_name", "cohort", "program"],
+                fields=["name", "academic_year", "term_name", "batch", "program"],
                 order_by="creation desc",
                 limit=1,
                 ignore_permissions=True,
@@ -714,7 +714,7 @@ def _set_student_nav(context, student):
     context.student_photo  = student.passport_size_photo or ""
     context.student_initial = (context.student_name[0]).upper() if context.student_name else "S"
     context.programme_name = (
-        frappe.db.get_value("Batch", student.programme, "cohort_name")
+        frappe.db.get_value("Batch", student.programme, "batch_name")
         or student.programme or ""
     )
     context.department = student.department or ""

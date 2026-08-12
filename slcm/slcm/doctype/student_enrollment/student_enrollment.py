@@ -9,7 +9,8 @@ from frappe.model.document import Document
 class StudentEnrollment(Document):
     def validate(self):
         self.validate_duplicate_enrollment()
-        self._validate_cohort_seat_limit()
+        self._validate_batch_seat_limit()
+        self._validate_status_transition()
 
     def before_save(self):
         self.fetch_program_and_courses()
@@ -103,7 +104,7 @@ class StudentEnrollment(Document):
         if self.program and self.batch and not self.enrolled_courses:
             offerings = frappe.get_all(
                 "Course Offering",
-                filters={"cohort": self.batch, "status": "Open"},
+                filters={"batch": self.batch, "status": "Open"},
                 fields=["name", "course_title"],
             )
             for offering in offerings:
@@ -115,7 +116,7 @@ class StudentEnrollment(Document):
                     "status":          "Enrolled",
                 })
 
-    def _validate_cohort_seat_limit(self):
+    def _validate_batch_seat_limit(self):
         """Block enrollment if batch has reached its seat limit."""
         if not self.batch:
             return

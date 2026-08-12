@@ -107,8 +107,9 @@
   {
    "fetch_from": "program.academic_term",
    "fieldname": "academic_term",
-   "fieldtype": "Data",
-   "label": "Academic Term"
+   "fieldtype": "Link",
+   "label": "Academic Term",
+   "options": "Academic Term"
   },
   {
    "fieldname": "batch_name",
@@ -158,7 +159,7 @@
   {
    "group": "Academics",
    "link_doctype": "Course Offering",
-   "link_fieldname": "course_title"
+   "link_fieldname": "batch"
   },
   {
    "link_doctype": "Student Master",

@@ -12,7 +12,7 @@ frappe.ui.form.on("Course Management", {
 		// 1. Override the form instance save method
 		frm.save = function () {
 			if (frm.doc.program && frm.doc.academic_year) {
-				frm.trigger("save_curriculum");
+				frm.trigger("save_course_list");
 			} else {
 				frappe.msgprint(__("Please select Programme and Academic Year first."));
 			}
@@ -31,7 +31,7 @@ frappe.ui.form.on("Course Management", {
 				frm.save();
 				return false; // Prevent default
 			},
-			description: __("Save Curriculum"),
+			description: __("Save Course List"),
 			page: frm.page,
 		});
 
@@ -49,8 +49,8 @@ frappe.ui.form.on("Course Management", {
 		// Load UI if data already present
 		if (frm.doc.program && frm.doc.academic_year) {
 			frm.trigger("autorefresh");
-		} else if (frm.curriculum_data) {
-			// If we have curriculum data but filters changed, re-render to pick up settings changes
+		} else if (frm.course_list_data) {
+			// If we have course list data but filters changed, re-render to pick up settings changes
 			frm.trigger("render_ui");
 		}
 
@@ -59,7 +59,7 @@ frappe.ui.form.on("Course Management", {
 			frm.set_value("academic_year", "");
 			frm.set_value("batch", "");
 			frm.set_value("section", "");
-			frm.curriculum_data = null;
+			frm.course_list_data = null;
 			// Clear persistence
 			frappe.model.user_settings.save(frm.doctype, "filters", null);
 			frm.trigger("render_ui");
@@ -116,7 +116,7 @@ frappe.ui.form.on("Course Management", {
 			batch: frm.doc.batch,
 			section: frm.doc.section
 		});
-		frm.trigger("load_curriculum");
+		frm.trigger("load_course_list");
 	},
 
 	batch: function (frm) {
@@ -152,10 +152,10 @@ frappe.ui.form.on("Course Management", {
 		}
 	},
 
-	load_curriculum: function (frm) {
+	load_course_list: function (frm) {
 		if (frm.doc.program && frm.doc.academic_year) {
 			frappe.call({
-				method: "slcm.slcm.doctype.course_management.course_management.get_curriculum",
+				method: "slcm.slcm.doctype.course_management.course_management.get_course_list",
 				args: {
 					program: frm.doc.program,
 					academic_year: frm.doc.academic_year,
@@ -164,7 +164,7 @@ frappe.ui.form.on("Course Management", {
 				},
 				callback: function (r) {
 					if (r.message) {
-						frm.curriculum_data = r.message;
+						frm.course_list_data = r.message;
 						frm.term_list = null; // Reset logic on load
 
 						// Sync system logic
@@ -202,7 +202,7 @@ frappe.ui.form.on("Course Management", {
 		const activeTermId = wrapper.find(".collapse.show").attr("id");
 		wrapper.empty();
 
-		if (!frm.curriculum_data) return;
+		if (!frm.course_list_data) return;
 
 		// Get Dynamic Columns from Course Meta
 		const course_meta = frappe.get_meta("Course");
@@ -231,7 +231,7 @@ frappe.ui.form.on("Course Management", {
 		let activeTerms = new Set(frm.term_list || []);
 		for (let i = 1; i <= defaultCount; i++) activeTerms.add(i);
 
-		(frm.curriculum_data.curriculum_courses || []).forEach((c) => {
+		(frm.course_list_data.courses || []).forEach((c) => {
 
 			// -----------------------------------------------------------------------------
 			// MIGRATION LOGIC (On the fly view adaptation)
@@ -268,16 +268,16 @@ frappe.ui.form.on("Course Management", {
 
 		// Render Container
 		const html = `
-            <div class="curriculum-manager">
+            <div class="course-list-manager">
                 <div class="clearfix mb-3">
                     <div class="text-muted small float-left">
-                        Configure courses for ${frm.curriculum_data.program} (${frm.curriculum_data.academic_year}) - <b>${system} System</b>
+                        Configure courses for ${frm.course_list_data.program} (${frm.course_list_data.academic_year}) - <b>${system} System</b>
                     </div>
                 </div>
 
                 <div class="card mb-3">
                     <div class="card-header">
-                        <h5 class="mb-0">Term Dependent Curriculum</h5>
+                        <h5 class="mb-0">Term Dependent Course List</h5>
                     </div>
                     <div class="card-body p-0">
                         <div class="accordion" id="accordionSemesters"></div>
@@ -298,7 +298,7 @@ frappe.ui.form.on("Course Management", {
 
 		frm.term_list.forEach((term) => {
 			const termName = `${system} ${term}`;
-			const coursesInSem = (frm.curriculum_data.curriculum_courses || []).filter(
+			const coursesInSem = (frm.course_list_data.courses || []).filter(
 				(c) => c.semester === termName
 			);
 
@@ -477,26 +477,26 @@ frappe.ui.form.on("Course Management", {
 		});
 	},
 
-	save_curriculum: function (frm) {
-		if (!frm.curriculum_data || !frm.doc.program) {
+	save_course_list: function (frm) {
+		if (!frm.course_list_data || !frm.doc.program) {
 			frappe.msgprint("Please select a Programme");
 			return;
 		}
 
 		frappe.call({
-			method: "slcm.slcm.doctype.course_management.course_management.save_curriculum",
+			method: "slcm.slcm.doctype.course_management.course_management.save_course_list",
 			args: {
 				program: frm.doc.program,
 				academic_year: frm.doc.academic_year,
 				academic_system: frm.doc.academic_system,
 				batch: frm.doc.batch,
 				section: frm.doc.section,
-				courses: JSON.stringify(frm.curriculum_data.curriculum_courses || []),
+				courses: JSON.stringify(frm.course_list_data.courses || []),
 			},
 			freeze: true,
 			callback: function (r) {
 				frappe.show_alert({
-					message: __("Curriculum Saved Successfully"),
+					message: __("Course List Saved Successfully"),
 					indicator: "green",
 				});
 				frm.trigger("autorefresh");
@@ -521,7 +521,7 @@ function find_item_by_data(frm, $el) {
 	const clusterName = $el.data("cluster");
 	const isCluster = !!clusterName;
 
-	return (frm.curriculum_data.curriculum_courses || []).find((c) => {
+	return (frm.course_list_data.courses || []).find((c) => {
 		// Match against course_type
 		// Logic handles migrated data (fallback to enrollment_type if course_type missing)
 		// We use a loose fallback to support ANY legacy type
@@ -554,11 +554,11 @@ function remove_item(frm, $el) {
 	}
 
 	frappe.confirm(confirmMsg, () => {
-		let list = frm.curriculum_data.curriculum_courses || [];
+		let list = frm.course_list_data.courses || [];
 		let deleted = false;
 
 		// Update finding logic to be specific
-		frm.curriculum_data.curriculum_courses = list.filter((c) => {
+		frm.course_list_data.courses = list.filter((c) => {
 			// If already deleted one instance (for this specific button click), keep others
 			if (deleted) return true;
 
@@ -589,7 +589,7 @@ function remove_item(frm, $el) {
 		if (deleted) {
 			frm.active_term_name = sem;
 			frm.trigger("render_ui");
-			frm.trigger("save_curriculum");
+			frm.trigger("save_course_list");
 		}
 	});
 }
@@ -734,8 +734,8 @@ function add_course_dialog(frm, semester, course_type, course_fields, enrollment
 		],
 		primary_action_label: "Add Selected Courses",
 		primary_action() {
-			if (!frm.curriculum_data.curriculum_courses) {
-				frm.curriculum_data.curriculum_courses = [];
+			if (!frm.course_list_data.courses) {
+				frm.course_list_data.courses = [];
 			}
 
 			let added = 0;
@@ -753,7 +753,7 @@ function add_course_dialog(frm, semester, course_type, course_fields, enrollment
 				// But here we allow duplicates if checking from different view.
 				// However, data structure is list.
 				// If I add SAME course with SAME CT and SAME ET, it is duplicate.
-				const exists = frm.curriculum_data.curriculum_courses.find(
+				const exists = frm.course_list_data.courses.find(
 					(e) =>
 						e.semester === semester &&
 						e.course_type === selectedCt &&
@@ -764,7 +764,7 @@ function add_course_dialog(frm, semester, course_type, course_fields, enrollment
 
 				if (exists) return;
 
-				frm.curriculum_data.curriculum_courses.push({
+				frm.course_list_data.courses.push({
 					semester: semester,
 					course_type: selectedCt,
 					enrollment_type: selectedEt,
@@ -780,7 +780,7 @@ function add_course_dialog(frm, semester, course_type, course_fields, enrollment
 			if (added > 0) {
 				frm.active_term_name = semester;
 				frm.trigger("render_ui");
-				frm.trigger("save_curriculum");
+				frm.trigger("save_course_list");
 			}
 
 			d.hide();
@@ -825,8 +825,8 @@ function add_course_dialog(frm, semester, course_type, course_fields, enrollment
 
 		// Logic to check existing
 		const existingCourses = new Set();
-		if (frm.curriculum_data.curriculum_courses) {
-			frm.curriculum_data.curriculum_courses.forEach(c => {
+		if (frm.course_list_data.courses) {
+			frm.course_list_data.courses.forEach(c => {
 				if (c.semester === semester && c.course_group_type === "Course") existingCourses.add(c.course);
 			});
 		}
@@ -891,10 +891,10 @@ function edit_course_dialog(frm, item, course_fields) {
 	// Dynamically build fields
 	let dialogFields = [];
 
-	// Always include credits (mapped to credit_value in Course, but credits in CurriculumItem)
+	// Always include credits (mapped to credit_value in Course, but credits in Course List Course)
 	dialogFields.push({
 		label: "Credits",
-		fieldname: "credits", // internal name in curriculum item
+		fieldname: "credits", // internal name in course list item
 		fieldtype: "Int",
 		default: item.credits || item.credit_value,
 		reqd: 1,
@@ -903,7 +903,7 @@ function edit_course_dialog(frm, item, course_fields) {
 	/*
 	   If we want to allow editing other fields, we need to know if they are strictly 'override' fields
 	   or just read-only from Course.
-	   Typically curriculum overrides credits. Other fields like Name/Department are fixed from Course.
+	   Typically the course list overrides credits. Other fields like Name/Department are fixed from Course.
 	   The user request says "Edit credit value syncs correctly".
 	   It doesn't explicitly ask to edit OTHER fields.
 	   But it asks for "Changes in Course DocType... reflected".
@@ -924,7 +924,7 @@ function edit_course_dialog(frm, item, course_fields) {
 
 			frm.active_term_name = item.semester;
 			frm.trigger("render_ui");
-			frm.trigger("save_curriculum");
+			frm.trigger("save_course_list");
 			d.hide();
 		},
 	});
@@ -962,7 +962,7 @@ function edit_cluster_dialog(frm, item) {
 			Object.assign(item, values);
 			frm.active_term_name = item.semester;
 			frm.trigger("render_ui");
-			frm.trigger("save_curriculum");
+			frm.trigger("save_course_list");
 			d.hide();
 		},
 	});
@@ -1024,13 +1024,13 @@ function add_cluster_dialog(frm, semester, course_type, enrollment_type) {
 		],
 		primary_action_label: "Add",
 		primary_action: function (values) {
-			if (!frm.curriculum_data.curriculum_courses)
-				frm.curriculum_data.curriculum_courses = [];
+			if (!frm.course_list_data.courses)
+				frm.course_list_data.courses = [];
 
 			const selectedCt = values.course_type || course_type;
 			const selectedEt = values.enrollment_type || enrollment_type || "Full";
 
-			frm.curriculum_data.curriculum_courses.push({
+			frm.course_list_data.courses.push({
 				semester: semester,
 				course_type: selectedCt,
 				enrollment_type: selectedEt,
@@ -1040,7 +1040,7 @@ function add_cluster_dialog(frm, semester, course_type, enrollment_type) {
 
 			frm.active_term_name = semester;
 			frm.trigger("render_ui");
-			frm.trigger("save_curriculum");
+			frm.trigger("save_course_list");
 			d.hide();
 		},
 	});

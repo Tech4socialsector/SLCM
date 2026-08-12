@@ -94,12 +94,12 @@ def _get_student(email):
 
     # programme field on Student Master is a Link to Cohort.
     # We need the Program linked from that Cohort.
-    cohort_programme = None
+    batch_programme = None
     if sm.get("programme"):
-        cohort_programme = frappe.db.get_value("Batch", sm["programme"], "program")
+        batch_programme = frappe.db.get_value("Batch", sm["programme"], "program")
 
     return {
-        "programme": cohort_programme,
+        "programme": batch_programme,
         "current_year": (sm.get("current_year") or "").strip(),
     }
 

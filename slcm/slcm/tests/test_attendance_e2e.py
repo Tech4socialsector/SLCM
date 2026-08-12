@@ -48,14 +48,14 @@ def _resolve_context():
     if not offering:
         return {}
 
-    cohort  = frappe.db.get_value("Course Offering", offering, "cohort")
+    batch  = frappe.db.get_value("Course Offering", offering, "batch")
     faculty_id = frappe.db.get_value("Course Offering", offering, "faculty")
 
     student = frappe.db.get_value(
         "Student Enrollment",
-        {"cohort": cohort, "status": "Enrolled"},
+        {"batch": batch, "status": "Enrolled"},
         "student",
-    ) if cohort else None
+    ) if batch else None
 
     # Parent linked to that student (first entry in parents child table)
     parent_email = None
@@ -78,7 +78,7 @@ def _resolve_context():
 
     _ctx.update({
         "offering":     offering,
-        "cohort":       cohort,
+        "batch":       batch,
         "student":      student,
         "faculty_id":   faculty_id,
         "faculty_user": faculty_user,

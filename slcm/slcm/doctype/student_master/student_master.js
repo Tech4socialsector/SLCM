@@ -308,7 +308,7 @@ frappe.ui.form.on("Student Master", {
 											]
 												.filter(Boolean)
 												.join(" "),
-											cohort: frm.doc.programme,
+											batch: frm.doc.programme,
 											academic_year: frm.doc.academic_year,
 										});
 									} else {
@@ -709,9 +709,9 @@ function _build_academic_progress_html(d) {
 	</div>
 	<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
 		${info_card("📚", "Programme", e.program_name || e.program || "—", e.program && e.program_name && e.program !== e.program_name ? enc(e.program) : "")}
-		${info_card("👥", "Section / Cohort", e.cohort_name || e.cohort || "—",
-		            e.cohort_code ? enc(e.cohort_code) + (e.cohort_status ? " &nbsp;" + badge(e.cohort_status, e.cohort_status === "Active" ? "green" : "gray") : "") : (e.cohort_status ? badge(e.cohort_status, e.cohort_status === "Active" ? "green" : "gray") : ""))}
-		${info_card("🗂️", "Batch", e.batch_year || d.batch_year || "—", e.cohort_term_year ? `Term Year ${enc(String(e.cohort_term_year))}` : "")}
+		${info_card("👥", "Section / Batch", e.batch_name || e.batch || "—",
+		            e.batch_code ? enc(e.batch_code) + (e.batch_status ? " &nbsp;" + badge(e.batch_status, e.batch_status === "Active" ? "green" : "gray") : "") : (e.batch_status ? badge(e.batch_status, e.batch_status === "Active" ? "green" : "gray") : ""))}
+		${info_card("🗂️", "Batch", e.batch_year || d.batch_year || "—", e.term_year ? `Term Year ${enc(String(e.term_year))}` : "")}
 		${info_card("🧑‍🏫", "Faculty Advisor", e.faculty_advisor_name || e.faculty_advisor || "—", "")}
 	</div>
 	<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">

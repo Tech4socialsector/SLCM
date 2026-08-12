@@ -626,7 +626,7 @@
  {
   "aggregate_function_based_on": null,
   "based_on": null,
-  "chart_name": "Cohort Status Distribution",
+  "chart_name": "Batch Status Distribution",
   "chart_type": "Group By",
   "color": null,
   "currency": "INR",
@@ -645,7 +645,7 @@
   "last_synced_on": "2026-08-03 16:28:12.699817",
   "modified": "2026-08-03 15:51:32.119771",
   "module": "SLCM",
-  "name": "Cohort Status Distribution",
+  "name": "Batch Status Distribution",
   "number_of_groups": 0,
   "parent_document_type": null,
   "report_name": null,

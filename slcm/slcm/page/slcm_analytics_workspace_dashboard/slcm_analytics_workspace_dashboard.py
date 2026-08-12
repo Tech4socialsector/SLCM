@@ -261,12 +261,12 @@ def merge_filters_for_doctype(doctype, base_filters, dashboard_filters):
     merged = list(base_filters) if base_filters else []
 
     # We want to map standard keys:
-    # academic_year, term, program, cohort, student_status
+    # academic_year, term, program, batch, student_status
     mapping = {
         "academic_year": ["academic_year"],
         "term": ["academic_term", "term"],
         "program": ["program", "programme"],
-        "cohort": ["batch", "cohort", "programme"],
+        "batch": ["batch", "programme"],
         "student_status": ["student_status", "status"],
     }
 

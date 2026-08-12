@@ -12,7 +12,7 @@
   "batch",
   "academic_system",
   "section_break_courses",
-  "curriculum_courses"
+  "courses"
  ],
  "fields": [
   {
@@ -47,10 +47,10 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "curriculum_courses",
+   "fieldname": "courses",
    "fieldtype": "Table",
    "label": "Courses",
-   "options": "Curriculum Course"
+   "options": "Course List Course"
   },
   {
    "fieldname": "batch",

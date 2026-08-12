@@ -63,7 +63,7 @@ frappe.ui.form.on('Class Configuration', {
     term: function (frm) {
         if (frm.doc.term) {
             // Fetch term details
-            frappe.db.get_value('Term Configuration', frm.doc.term,
+            frappe.db.get_value('Academic Term', frm.doc.term,
                 ['academic_year', 'system'], (r) => {
                     if (r) {
                         frm.set_df_property('term', 'description',
@@ -73,14 +73,14 @@ frappe.ui.form.on('Class Configuration', {
         }
     },
 
-    course: function (frm) {
-        if (frm.doc.course && !frm.doc.class_name) {
+    course_offering: function (frm) {
+        if (frm.doc.course_offering && !frm.doc.class_name) {
             // Auto-generate class name suggestion
             generate_class_name(frm);
         }
     },
 
-    type: function (frm) {
+    class_configuration_type: function (frm) {
         if (!frm.doc.class_name) {
             generate_class_name(frm);
         }
@@ -138,22 +138,32 @@ function set_link_filters(frm) {
 }
 
 function generate_class_name(frm) {
-    let parts = [];
-    if (frm.doc.course) {
-        parts.push(frm.doc.course);
-    }
-    if (frm.doc.type) {
-        parts.push(frm.doc.type);
-    }
-    if (frm.doc.batch) {
-        parts.push(frm.doc.batch);
-    }
-    if (frm.doc.section) {
-        parts.push(frm.doc.section);
+    function apply(course_title) {
+        let parts = [];
+        if (course_title) {
+            parts.push(course_title);
+        }
+        if (frm.doc.class_configuration_type) {
+            parts.push(frm.doc.class_configuration_type);
+        }
+        if (frm.doc.batch) {
+            parts.push(frm.doc.batch);
+        }
+        if (frm.doc.section) {
+            parts.push(frm.doc.section);
+        }
+
+        if (parts.length > 0) {
+            frm.set_value('class_name', parts.join(' - '));
+        }
     }
 
-    if (parts.length > 0) {
-        frm.set_value('class_name', parts.join(' - '));
+    if (frm.doc.course_offering) {
+        frappe.db.get_value('Course Offering', frm.doc.course_offering, 'course_title', (r) => {
+            apply(r && r.course_title);
+        });
+    } else {
+        apply(null);
     }
 }
 

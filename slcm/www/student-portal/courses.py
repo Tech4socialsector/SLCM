@@ -54,21 +54,21 @@ def get_context(context):
             ignore_permissions=True,
         )
 
-        # If no formal enrollment record, synthesise one from the student's cohort
+        # If no formal enrollment record, synthesise one from the student's batch
         if not enrollments and student.programme:
-            cohort_doc = frappe.db.get_value(
+            batch_doc = frappe.db.get_value(
                 "Batch",
                 student.programme,
-                ["name", "cohort_name", "academic_year", "term_name", "status"],
+                ["name", "batch_name", "academic_year", "term_name", "status"],
                 as_dict=True,
             )
-            if cohort_doc:
+            if batch_doc:
                 enrollments = [frappe._dict({
                     "name": None,
-                    "batch": cohort_doc.name,
+                    "batch": batch_doc.name,
                     "program": None,
-                    "academic_year": cohort_doc.academic_year,
-                    "term_name": cohort_doc.term_name,
+                    "academic_year": batch_doc.academic_year,
+                    "term_name": batch_doc.term_name,
                     "status": "Enrolled",
                     "faculty_advisor": None,
                     "enrollment_date": None,
@@ -77,7 +77,7 @@ def get_context(context):
         enrollment_data = []
 
         for enr in enrollments:
-            cohort = enr.batch
+            batch = enr.batch
 
             # ── Step 1: courses from Student Enrollment Course child table ──
             child_courses = []
@@ -89,12 +89,12 @@ def get_context(context):
                     ignore_permissions=True,
                 )
 
-            # ── Step 2: Course Offerings for this cohort (fallback only) ──
-            cohort_offerings = []
-            if cohort and not child_courses:
-                cohort_offerings = frappe.get_all(
+            # ── Step 2: Course Offerings for this batch (fallback only) ──
+            batch_offerings = []
+            if batch and not child_courses:
+                batch_offerings = frappe.get_all(
                     "Course Offering",
-                    filters={"cohort": cohort},
+                    filters={"batch": batch},
                     fields=[
                         "name", "course_name", "course_title",
                         "faculty", "credit_value", "status", "term_name",
@@ -134,9 +134,9 @@ def get_context(context):
                         att=att,
                     ))
 
-            elif cohort_offerings:
-                # Fallback: show all Course Offerings for the cohort
-                for co in cohort_offerings:
+            elif batch_offerings:
+                # Fallback: show all Course Offerings for the batch
+                for co in batch_offerings:
                     co_name = co.name or ""
                     att = att_map.get(co_name) or att_map.get(co.course_title) or frappe._dict()
 
@@ -154,19 +154,19 @@ def get_context(context):
             # Sort: by course name
             courses_out.sort(key=lambda c: c["course_name"])
 
-            # Cohort display name
-            cohort_display = enr.term_name or cohort or "—"
-            if cohort:
-                cn = frappe.db.get_value("Batch", cohort, "cohort_name")
+            # Batch display name
+            batch_display = enr.term_name or batch or "—"
+            if batch:
+                cn = frappe.db.get_value("Batch", batch, "batch_name")
                 if cn:
-                    cohort_display = cn
+                    batch_display = cn
 
             term_prefix = _get_term_prefix(enr.academic_year)
             term_label = _get_term_label(enr.term_name, term_prefix)
 
             enrollment_data.append({
                 "enrollment": enr,
-                "cohort_display": cohort_display,
+                "batch_display": batch_display,
                 "term_label": term_label,
                 "courses": courses_out,
                 "course_count": len(courses_out),
@@ -292,7 +292,7 @@ def _set_student_nav(context, student):
     context.student_photo = student.passport_size_photo or ""
     context.student_initial = (context.student_name[0]).upper() if context.student_name else "S"
     context.programme_name = (
-        frappe.db.get_value("Batch", student.programme, "cohort_name")
+        frappe.db.get_value("Batch", student.programme, "batch_name")
         or student.programme
         or ""
     )

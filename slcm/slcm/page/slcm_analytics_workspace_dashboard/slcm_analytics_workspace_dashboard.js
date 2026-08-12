@@ -69,7 +69,7 @@ const SAWD_MODULE_META = {
 	overview:    { icon: '📊', label: 'Overview',    desc: 'Institution-wide KPI summary' },
 	admission:   { icon: '🎯', label: 'Admission',   desc: 'Application pipeline & offers' },
 	students:    { icon: '🎓', label: 'Students',    desc: 'Enrollment & demographics' },
-	programme:   { icon: '📚', label: 'Programme',   desc: 'Programs, cohorts & offerings' },
+	programme:   { icon: '📚', label: 'Programme',   desc: 'Programs, batches & offerings' },
 	attendance:  { icon: '📋', label: 'Attendance',  desc: 'Session records & trends' },
 	examination: { icon: '📝', label: 'Examination', desc: 'Exams, marks & results' },
 	fees:        { icon: '💰', label: 'Fees',        desc: 'Collection, invoices & trends' },
@@ -151,7 +151,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 		this.$body    = this.$wrapper.find('.page-content');
 		this.$body.css({ padding: 0, background: 'var(--sawd-bg)' });
 
-		this.filters          = { academic_year: null, term: null, program: null, cohort: null, student_status: null };
+		this.filters          = { academic_year: null, term: null, program: null, batch: null, student_status: null };
 		this.active_tab       = 'overview';
 		this.active_exam_subtab      = 'exam_planner';
 		this.active_attendance_subtab = 'attendance_workspace';
@@ -854,7 +854,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 					<div class="sawd-filter-group"><div class="sawd-filter-label">Academic Year</div><div id="sawd-f-ay"></div></div>
 					<div class="sawd-filter-group"><div class="sawd-filter-label">Term</div><div id="sawd-f-term"></div></div>
 					<div class="sawd-filter-group"><div class="sawd-filter-label">Programme</div><div id="sawd-f-prog"></div></div>
-					<div class="sawd-filter-group"><div class="sawd-filter-label">Cohort</div><div id="sawd-f-cohort"></div></div>
+					<div class="sawd-filter-group"><div class="sawd-filter-label">Batch</div><div id="sawd-f-batch"></div></div>
 					<div class="sawd-filter-group"><div class="sawd-filter-label">Student Status</div><div id="sawd-f-sstatus"></div></div>
 					<div class="sawd-filter-actions">
 						<button class="sawd-btn sawd-btn-primary" id="sawd-apply-filters"><i class="fa fa-filter"></i> Apply</button>
@@ -1363,27 +1363,27 @@ class SLCMWorkspaceAnalyticsDashboard {
 				this._ms_ay     = this._make_multiselect('sawd-f-ay',     opts.academic_years,          'name',  'name',         'All Years');
 				this._ms_term   = this._make_multiselect('sawd-f-term',   opts.terms || [],              'name',  'term_name',    'All Terms');
 				this._ms_prog   = this._make_multiselect('sawd-f-prog',   opts.programs,                 'name',  'program_name', 'All Programs');
-				this._ms_cohort = this._make_multiselect('sawd-f-cohort', opts.cohorts,                  'name',  'cohort_name',  'All Cohorts');
+				this._ms_batch = this._make_multiselect('sawd-f-batch', opts.batches,                  'name',  'batch_name',  'All Batches');
 				this._ms_status = this._make_multiselect('sawd-f-sstatus',opts.student_statuses || [],   'value', 'label',        'All Statuses');
 
 				// Restore previously-selected filter values (see sawd_load_state)
-				// now that the widgets exist. Cohort options depend on year/programme,
-				// so refresh those before restoring the cohort selection itself.
+				// now that the widgets exist. Batch options depend on year/programme,
+				// so refresh those before restoring the batch selection itself.
 				if (this.filters.academic_year)  this._ms_ay.set_values([].concat(this.filters.academic_year));
 				if (this.filters.program)        this._ms_prog.set_values([].concat(this.filters.program));
 				if (this.filters.student_status) this._ms_status.set_values([].concat(this.filters.student_status));
-				this._refresh_cohort_filter();
+				this._refresh_batch_filter();
 				this._refresh_term_filter();
 				if (this.filters.term)           this._ms_term.set_values([].concat(this.filters.term));
-				if (this.filters.cohort)         this._ms_cohort.set_values([].concat(this.filters.cohort));
+				if (this.filters.batch)         this._ms_batch.set_values([].concat(this.filters.batch));
 
-				// Cascade: ay/prog selection change → refresh dependent cohort & term options
+				// Cascade: ay/prog selection change → refresh dependent batch & term options
 				$(document).on('change', '#sawd_f_ay_list input[type=checkbox]', () => {
-					this._refresh_cohort_filter();
+					this._refresh_batch_filter();
 					this._refresh_term_filter();
 				});
 				$(document).on('change', '#sawd_f_prog_list input[type=checkbox]', () => {
-					this._refresh_cohort_filter();
+					this._refresh_batch_filter();
 				});
 
 				this._load_tab(this.active_tab);
@@ -1391,14 +1391,14 @@ class SLCMWorkspaceAnalyticsDashboard {
 		});
 	}
 
-	_refresh_cohort_filter() {
-		if (!this._filter_options || !this._ms_cohort) return;
+	_refresh_batch_filter() {
+		if (!this._filter_options || !this._ms_batch) return;
 		const ay_vals  = this._ms_ay?.get_values()   || [];
 		const prog_vals = this._ms_prog?.get_values() || [];
-		let cohorts = this._filter_options.cohorts;
-		if (ay_vals.length)   cohorts = cohorts.filter(c => ay_vals.includes(c.academic_year));
-		if (prog_vals.length) cohorts = cohorts.filter(c => prog_vals.includes(c.program));
-		this._ms_cohort.set_options(cohorts);
+		let batches = this._filter_options.batches;
+		if (ay_vals.length)   batches = batches.filter(c => ay_vals.includes(c.academic_year));
+		if (prog_vals.length) batches = batches.filter(c => prog_vals.includes(c.program));
+		this._ms_batch.set_options(batches);
 	}
 
 	_refresh_term_filter() {
@@ -1424,20 +1424,20 @@ class SLCMWorkspaceAnalyticsDashboard {
 		this.filters.academic_year  = this._ms_ay?.get_values()     || null;
 		this.filters.term           = this._ms_term?.get_values()   || null;
 		this.filters.program        = this._ms_prog?.get_values()   || null;
-		this.filters.cohort         = this._ms_cohort?.get_values() || null;
+		this.filters.batch         = this._ms_batch?.get_values() || null;
 		this.filters.student_status = this._ms_status?.get_values() || null;
 		this._persist_state();
 		this._load_tab(this.active_tab, true);
 	}
 
 	_reset_filters() {
-		this.filters = { academic_year: null, term: null, program: null, cohort: null, student_status: null };
+		this.filters = { academic_year: null, term: null, program: null, batch: null, student_status: null };
 		this._ms_ay?.reset();
 		this._ms_term?.reset();
 		this._ms_prog?.reset();
-		this._ms_cohort?.reset();
+		this._ms_batch?.reset();
 		this._ms_status?.reset();
-		this._refresh_cohort_filter();
+		this._refresh_batch_filter();
 		this._refresh_term_filter();
 		this._persist_state();
 		this._load_tab(this.active_tab, true);
@@ -1814,7 +1814,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 				academic_year: 'academic_year',
 				term: 'academic_term',
 				program: 'program',
-				cohort: 'cohort',
+				batch: 'batch',
 				student_status: 'status'
 			};
 			for (let [k, val] of Object.entries(this.filters)) {
@@ -2042,10 +2042,10 @@ class SLCMWorkspaceAnalyticsDashboard {
 
 				$('#sawd-tab-content').html(`
 					<div class="sawd-kpi-grid">
-						${this._kpi('Total Enrolled', total,            '🎓', 'primary', 'across all cohorts',   { module:'students', dimension:'student_status', value:'Active' })}
+						${this._kpi('Total Enrolled', total,            '🎓', 'primary', 'across all batches',   { module:'students', dimension:'student_status', value:'Active' })}
 						${this._kpi('Active Rate',    active_pct + '%', '✅', active_pct >= 80 ? 'success' : 'warning', 'of all students', { module:'students', dimension:'student_status', value:'Active' })}
 						${this._kpi('Programs',       d.program_distribution.length, '📚', 'info', 'with enrollments', { module:'students', dimension:'programs_list', value:'all' })}
-						${this._kpi('Cohorts',        d.cohort_distribution.length,  '🗂️', 'purple','active cohorts', { module:'students', dimension:'cohorts_list', value:'all' })}
+						${this._kpi('Batches',        d.batch_distribution.length,  '🗂️', 'purple','active batches', { module:'students', dimension:'batches_list', value:'all' })}
 					</div>
 
 					<div class="sawd-section-title">Enrollment Breakdown</div>
@@ -2056,7 +2056,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 						${this._chart_card('sawd-st-scholar', 'Scholarship Split',   'Scholarship coverage',    '', '')}
 					</div>
 
-					<div class="sawd-section-title">Program & Cohort Analysis</div>
+					<div class="sawd-section-title">Program & Batch Analysis</div>
 					<div class="sawd-chart-grid">
 						<div class="sawd-chart-wide">
 							${this._chart_card('sawd-st-program','Programme-wise Enrollment','Student count per programme','Click bar to drill down','')}
@@ -2064,7 +2064,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 					</div>
 					<div class="sawd-chart-grid sawd-chart-grid-3">
 						${this._chart_card('sawd-st-admission','Admission Type',      'Regular vs PACE vs Other','','') }
-						${this._chart_card('sawd-st-cohort',   'Top Cohorts',         'Enrollment per cohort',    '','') }
+						${this._chart_card('sawd-st-batch',   'Top Batches',         'Enrollment per batch',    '','') }
 						${this._chart_card('sawd-st-regstatus','Registration Status', 'Workflow progress',        '','') }
 					</div>
 				`);
@@ -2075,7 +2075,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 				this._render_donut('#sawd-st-scholar .sawd-chart-body',   d.scholarship_distribution,'students', 'scholarship');
 				this._render_bar_horizontal('#sawd-st-program .sawd-chart-body',   d.program_distribution,       { module:'students', dimension:'program' });
 				this._render_donut('#sawd-st-admission .sawd-chart-body', d.admission_type,         'students', 'admission_type');
-				this._render_bar_horizontal('#sawd-st-cohort .sawd-chart-body',    d.cohort_distribution.slice(0,8), { module:'students', dimension:'cohort' });
+				this._render_bar_horizontal('#sawd-st-batch .sawd-chart-body',    d.batch_distribution.slice(0,8), { module:'students', dimension:'batch' });
 				this._render_funnel('#sawd-st-regstatus .sawd-chart-body', d.registration_status,   { module:'students', dimension:'reg_status' });
 			},
 		});
@@ -2387,9 +2387,9 @@ class SLCMWorkspaceAnalyticsDashboard {
 			'students:student_status':        { dt: 'Student Master',                 filters: f('student_status') },
 			'students:reg_status':            { dt: 'Student Master',                 filters: f('student_status') },
 			'students:gender':                { dt: 'Student Master',                 filters: f('gender') },
-			'students:cohort':                { dt: 'Student Master',                 filters: {} },
+			'students:batch':                { dt: 'Student Master',                 filters: {} },
 			'students:programs_list':         { dt: 'Programme',                        filters: {} },
-			'students:cohorts_list':          { dt: 'Batch',                         filters: {} },
+			'students:batches_list':          { dt: 'Batch',                         filters: {} },
 			'admission:app_status':           { dt: 'Admission Application',          filters: f('status') },
 			'admission:app_program':          { dt: 'Admission Application',          filters: {} },
 			'admission:eligibility_status':   { dt: 'Admission Application',          filters: f('eligibility_status') },
@@ -2405,7 +2405,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 			'examination:improvement_payment':{ dt: 'Improvement Exam Registration',  filters: f('payment_status') },
 			'examination:transcript_status':  { dt: 'Student Transcript',             filters: f('status') },
 			'programme:program_status':       { dt: 'Programme',                        filters: f('program_status') },
-			'programme:cohort_status':        { dt: 'Batch',                         filters: f('status') },
+			'programme:batch_status':        { dt: 'Batch',                         filters: f('status') },
 			'programme:enrollment_status':    { dt: 'Student Enrollment',             filters: f('enrollment_status') },
 			'programme:offering_status':      { dt: 'Course Offering',                filters: f('status') },
 			'fees:payment_status':            { dt: 'Fee Demand',                     filters: f('status') },
@@ -2568,7 +2568,7 @@ class SLCMWorkspaceAnalyticsDashboard {
 		const { dimension } = this._drilldown_state;
 		const listRoute = this._drilldown_list_route;
 		const row_doctype = listRoute ? listRoute.dt : null;
-		const special_id = { programs_list: 'program_id', cohorts_list: 'cohort_id' };
+		const special_id = { programs_list: 'program_id', batches_list: 'batch_id' };
 		const id_field = special_id[dimension] || 'name';
 
 		const col_labels = cols.map(c => `<th>${c.replace(/_/g,' ').replace(/\b\w/g, s => s.toUpperCase())}</th>`).join('');

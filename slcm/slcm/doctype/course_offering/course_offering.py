@@ -7,8 +7,32 @@ from frappe.model.document import Document
 
 class CourseOffering(Document):
 	def validate(self):
+		self.validate_batch_program()
+		self.validate_term()
+		self.validate_section_belongs_to_batch()
 		self.validate_faculty_table_sections()
 		self.sync_primary_faculty()
+
+	def validate_batch_program(self):
+		batch_program = frappe.db.get_value("Batch", self.batch, "program")
+		if batch_program and batch_program != self.program:
+			frappe.throw(
+				f"Batch {self.batch} belongs to Programme {batch_program}, not {self.program}."
+			)
+
+	def validate_term(self):
+		batch_term = frappe.db.get_value("Batch", self.batch, "academic_term")
+		if batch_term and self.term_name and batch_term != self.term_name:
+			frappe.throw(
+				f"Batch {self.batch}'s term is {batch_term}, not {self.term_name}."
+			)
+
+	def validate_section_belongs_to_batch(self):
+		if not self.section:
+			return
+		section_batch = frappe.db.get_value("Section", self.section, "batch")
+		if section_batch and section_batch != self.batch:
+			frappe.throw(f"Section {self.section} belongs to Batch {section_batch}, not {self.batch}.")
 
 	def validate_faculty_table_sections(self):
 		"""Each section can have only one Primary faculty; a section with no

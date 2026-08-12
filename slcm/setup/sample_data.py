@@ -71,14 +71,14 @@ def create_sample_student():
         print(f"  [--] Academic Year exists:  {academic_year}")
 
     # ------------------------------------------------------------------ #
-    # 4. Cohort                                                             #
+    # 4. Batch                                                              #
     # ------------------------------------------------------------------ #
-    cohort_name = "BTech CSE 2025 - Semester 1"
-    if not frappe.db.exists("Batch", cohort_name):
-        cohort = frappe.get_doc({
+    batch_name = "BTech CSE 2025 - Semester 1"
+    if not frappe.db.exists("Batch", batch_name):
+        batch = frappe.get_doc({
             "doctype": "Batch",
-            "cohort_code": "BTCSE-2025-S1",
-            "cohort_name": cohort_name,
+            "batch_code": "BTCSE-2025-S1",
+            "batch_name": batch_name,
             "program": prog.name,
             "academic_year": academic_year,
             "term_name": "Semester 1",
@@ -89,11 +89,11 @@ def create_sample_student():
             "end_date": "2029-06-30",
             "status": "Active",
         })
-        cohort.insert(ignore_permissions=True, ignore_mandatory=True)
-        print(f"  [OK] Created Cohort:     {cohort.name}")
+        batch.insert(ignore_permissions=True, ignore_mandatory=True)
+        print(f"  [OK] Created Batch:      {batch.name}")
     else:
-        cohort = frappe.get_doc("Batch", cohort_name)
-        print(f"  [--] Cohort exists:      {cohort.name}")
+        batch = frappe.get_doc("Batch", batch_name)
+        print(f"  [--] Batch exists:       {batch.name}")
 
     # ------------------------------------------------------------------ #
     # 5. Gender master records (Frappe Link doctype)                        #
@@ -141,7 +141,7 @@ def create_sample_student():
 
         # ── Programme Mapping ─────────────────────────────────────────
         "department": dept.name,
-        "programme": cohort.name,
+        "programme": batch.name,
         "batch_year": "2025",
 
         # ── Personal ──────────────────────────────────────────────────
@@ -208,7 +208,7 @@ def create_sample_student():
     print(f"  Student ID   : {student.name}")
     print(f"  Name         : Arjun Kumar Sharma")
     print(f"  Department   : {dept.name}")
-    print(f"  Cohort       : {cohort.name}")
+    print(f"  Batch        : {batch.name}")
     print(f"  Academic Year: {academic_year}")
     _print_links(student.name)
 

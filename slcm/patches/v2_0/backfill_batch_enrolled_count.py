@@ -20,14 +20,14 @@ def execute():
 
     counts = frappe.db.sql(
         """
-        SELECT cohort, COUNT(name) AS total
+        SELECT batch, COUNT(name) AS total
         FROM `tabStudent Enrollment`
         WHERE status != 'Dropped' AND docstatus < 2
-        GROUP BY cohort
+        GROUP BY batch
         """,
         as_dict=True,
     )
-    count_by_batch = {row["cohort"]: row["total"] for row in counts if row["cohort"]}
+    count_by_batch = {row["batch"]: row["total"] for row in counts if row["batch"]}
 
     for batch_name in frappe.db.get_all("Batch", pluck="name"):
         frappe.db.set_value(

@@ -134,7 +134,7 @@ def _get_students_raw(program, academic_year, from_year):
 			sm.programme     AS programme,
 			sm.batch_year    AS batch_year,
 			sm.current_year  AS current_year,
-			c.batch_name     AS cohort_name
+			c.batch_name     AS batch_name
 		FROM `tabStudent Master` sm
 		INNER JOIN `tabBatch` c ON c.name = sm.programme
 		WHERE
@@ -232,21 +232,21 @@ def _get_students_raw(program, academic_year, from_year):
 	return students
 
 
-def _resolve_next_batch(current_cohort):
+def _resolve_next_batch(current_batch):
 	"""Given a Student Enrollment's current Batch, find the Batch for the
-	same program + entry cohort (section) one year_of_study ahead, in the
+	same program + entry batch (section) one year_of_study ahead, in the
 	next Academic Year by start date. Returns None if no such Batch exists
 	yet (registrar hasn't created it) or the current batch has no section.
 
 	NOTE: this only covers promotion that happens once per Academic Year
 	(matches how Batches are seeded today - e.g. Semester I/III/V as
-	successive years of study for different entry cohorts). Trimester-wise
+	successive years of study for different entry batches). Trimester-wise
 	promotion (multiple Batch changes within a single academic year, as at
 	NLSIU) is not yet implemented here - see conversation with Nishanth
 	before extending this for that case.
 	"""
 	batch = frappe.db.get_value(
-		"Batch", current_cohort,
+		"Batch", current_batch,
 		["program", "section", "term_year", "academic_year"], as_dict=True,
 	)
 	if not batch or not batch.section or batch.term_year is None:
@@ -687,7 +687,7 @@ def download_formatted_promotion_list(program, academic_year, university_name=No
 	)
 
 	# When no policies exist yet, fall back to raw student data grouped by year level.
-	# Do NOT filter by academic_year here — cohort.academic_year may differ from the
+	# Do NOT filter by academic_year here — batch.academic_year may differ from the
 	# academic_year the user selected (e.g. "2026-27" vs "2025-2026").
 	import re as _re
 	def _year_num(val, fallback=1):
@@ -831,7 +831,7 @@ def download_formatted_promotion_list(program, academic_year, university_name=No
 
 		if use_raw_fallback:
 			# No promotion run yet — fetch students directly by program + current_year.
-			# Intentionally no academic_year filter: cohort.academic_year may differ
+			# Intentionally no academic_year filter: batch.academic_year may differ
 			# from the user-selected academic_year.
 			raw_students = frappe.db.sql("""
 				SELECT sm.name AS student,

@@ -19,7 +19,6 @@
   "year",
   "section_break_course",
   "course_offering",
-  "course",
   "column_break_2",
   "faculty",
   "seat_limit",
@@ -74,7 +73,7 @@
   {
    "fetch_from": "batch.program",
    "fieldname": "programme",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Programme",
@@ -90,7 +89,8 @@
    "in_standard_filter": 1,
    "label": "Term",
    "mandatory_depends_on": "eval:doc.batch",
-   "options": "Term Configuration"
+   "options": "Academic Term",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_1",
@@ -114,16 +114,6 @@
    "fieldname": "section_break_course",
    "fieldtype": "Section Break",
    "label": "Course Details"
-  },
-  {
-   "fetch_from": "course_offering.course_title",
-   "fieldname": "course",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Course",
-   "options": "Course Offering",
-   "reqd": 1
   },
   {
    "fieldname": "column_break_2",
@@ -175,8 +165,11 @@
   {
    "fieldname": "course_offering",
    "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Course Offering",
-   "options": "Course Offering"
+   "options": "Course Offering",
+   "reqd": 1
   }
  ],
  "links": [],

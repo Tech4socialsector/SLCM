@@ -5,7 +5,7 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "setup_curriculum_tab",
+  "setup_course_tab",
   "academic_year",
   "program",
   "batch",
@@ -19,7 +19,7 @@
  ],
  "fields": [
   {
-   "fieldname": "setup_curriculum_tab",
+   "fieldname": "setup_course_tab",
    "fieldtype": "Tab Break",
    "label": "Set-Up Course"
   },

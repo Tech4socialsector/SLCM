@@ -81,14 +81,14 @@ class CourseManagement(Document):
 
 
 # ---------------------------------------------------------------------
-# GET CURRICULUM
+# GET COURSE LIST
 # ---------------------------------------------------------------------
 @frappe.whitelist()
-def get_curriculum(program, academic_year, batch=None, section=None):
+def get_course_list(program, academic_year, batch=None, section=None):
 	if not program or not academic_year:
 		return None
 
-	# Prefer batch-specific curriculum
+	# Prefer batch-specific course list
 	filters = {
 		"program": program,
 		"academic_year": academic_year,
@@ -99,7 +99,7 @@ def get_curriculum(program, academic_year, batch=None, section=None):
 
 	name = frappe.db.get_value("Course List", filters, "name")
 
-	# Fallback to generic curriculum
+	# Fallback to generic course list
 	if not name and batch:
 		name = frappe.db.get_value(
 			"Course List",
@@ -117,15 +117,15 @@ def get_curriculum(program, academic_year, batch=None, section=None):
 		"academic_year": academic_year,
 		"batch": batch,
 		"academic_system": "Semester",
-		"curriculum_courses": [],
+		"courses": [],
 	}
 
 
 # ---------------------------------------------------------------------
-# SAVE CURRICULUM (MASTER FIX)
+# SAVE COURSE LIST (MASTER FIX)
 # ---------------------------------------------------------------------
 @frappe.whitelist()
-def save_curriculum(
+def save_course_list(
 	program,
 	academic_year,
 	courses,
@@ -149,7 +149,7 @@ def save_curriculum(
 		filters["batch"] = batch
 
 	name = frappe.db.get_value("Course List", filters, "name")
-	
+
 	# If not found with batch, try without batch (fallback for existing records without batch)
 	if not name and batch:
 		name = frappe.db.get_value("Course List", {
@@ -169,10 +169,10 @@ def save_curriculum(
 		doc.section = section
 
 		# Replace child table
-		doc.set("curriculum_courses", [])
+		doc.set("courses", [])
 
 		for course in courses:
-			doc.append("curriculum_courses", {
+			doc.append("courses", {
 				"semester": course.get("semester"),
 				"enrollment_type": course.get("enrollment_type"),
 				"course_type": course.get("course_type"),
@@ -186,7 +186,7 @@ def save_curriculum(
 
 		# Save the document properly
 		doc.save(ignore_permissions=True)
-		generate_offerings_from_curriculum(doc)
+		generate_offerings_from_course_list(doc)
 		frappe.db.commit()
 
 		return {"status": "updated", "name": doc.name}
@@ -202,7 +202,7 @@ def save_curriculum(
 	doc.section = section
 
 	for course in courses:
-		doc.append("curriculum_courses", {
+		doc.append("courses", {
 			"semester": course.get("semester"),
 			"enrollment_type": course.get("enrollment_type"),
 			"course_type": course.get("course_type"),
@@ -216,65 +216,61 @@ def save_curriculum(
 
 	# 🔥 INSERT ONLY ONCE
 	doc.insert(ignore_permissions=True)
-	generate_offerings_from_curriculum(doc)
+	generate_offerings_from_course_list(doc)
 	frappe.db.commit()
 
 	return {"status": "created", "name": doc.name}
 
 
 # ---------------------------------------------------------------------
-# GENERATE COURSE OFFERINGS FROM CURRICULUM
+# GENERATE COURSE OFFERINGS FROM COURSE LIST
 # ---------------------------------------------------------------------
-def generate_offerings_from_curriculum(course_list_doc):
+def generate_offerings_from_course_list(course_list_doc):
 	"""Create/update one Course Offering per (course, batch, semester) in the
-	saved curriculum, so Course Management's plan is what actually drives
+	saved course list, so Course Management's plan is what actually drives
 	enrollment instead of requiring offerings to be entered by hand.
 
-	Only runs for batch-specific curricula (a generic, batch-less curriculum
-	has no cohort to scope an offering to, so there is nothing to generate).
-	Cluster rows are skipped since they don't map to a single Course.
+	Only runs for batch-specific course lists (a generic, batch-less course
+	list has no batch to scope an offering to, so there is nothing to
+	generate). Cluster rows are skipped since they don't map to a single
+	Course.
 	"""
 	if not course_list_doc.batch:
 		return
 
-	for row in course_list_doc.curriculum_courses:
+	for row in course_list_doc.courses:
 		if row.course_group_type != "Course" or not row.course or not row.semester:
 			continue
 
+		if not frappe.db.exists("Academic Term", row.semester):
+			frappe.throw(
+				f"Row {row.idx}: '{row.semester}' is not a valid Academic Term. "
+				"Course Offerings can only be generated for a real Academic Term."
+			)
+
 		filters = {
 			"course_title": row.course,
-			"cohort": course_list_doc.batch,
+			"batch": course_list_doc.batch,
 			"term_name": row.semester,
 		}
 		existing = frappe.db.get_value("Course Offering", filters, "name")
 
-		message_log_len = len(frappe.message_log)
-		try:
-			if existing:
-				offering = frappe.get_doc("Course Offering", existing)
-			else:
-				offering = frappe.new_doc("Course Offering")
-				offering.course_title = row.course
-				offering.cohort = course_list_doc.batch
-				offering.term_name = row.semester
+		if existing:
+			offering = frappe.get_doc("Course Offering", existing)
+		else:
+			offering = frappe.new_doc("Course Offering")
+			offering.course_title = row.course
+			offering.batch = course_list_doc.batch
+			offering.term_name = row.semester
 
-			offering.program = course_list_doc.program
-			if not offering.status:
-				offering.status = "Active"
+		offering.program = course_list_doc.program
+		if not offering.status:
+			offering.status = "Active"
 
-			if existing:
-				offering.save(ignore_permissions=True)
-			else:
-				offering.insert(ignore_permissions=True)
-		except Exception:
-			# Drop any message queued by the failed attempt (e.g. a validation
-			# error) so it doesn't leak into the response of what is otherwise
-			# a successful Course Management save.
-			del frappe.message_log[message_log_len:]
-			frappe.log_error(
-				title="Course Offering generation failed",
-				message=frappe.get_traceback(),
-			)
+		if existing:
+			offering.save(ignore_permissions=True)
+		else:
+			offering.insert(ignore_permissions=True)
 
 
 
@@ -326,7 +322,7 @@ def get_details_from_section(section):
 # COURSE SEARCH (CUSTOM DIALOG)
 # ---------------------------------------------------------------------
 @frappe.whitelist()
-def get_courses_for_curriculum(department, txt=None, start=0, page_length=20):
+def get_courses_for_course_list(txt=None, start=0, page_length=20):
 	start = int(start or 0)
 	page_length = int(page_length or 20)
 	txt = f"%{txt}%" if txt else "%"
@@ -337,17 +333,14 @@ def get_courses_for_curriculum(department, txt=None, start=0, page_length=20):
 			c.name,
 			c.course_name,
 			c.course_code,
-			c.credit_value,
-			COALESCE(d.department_name, d.name) AS department_name
+			c.credit_value
 		FROM `tabCourse` c
-		LEFT JOIN `tabDepartment` d ON d.name = c.department
 		WHERE
-			c.department = %s
-			AND c.status = 'Active'
+			c.status = 'Active'
 			AND c.course_name LIKE %s
 		ORDER BY c.course_name
 		LIMIT %s, %s
 		""",
-		(department, txt, start, page_length),
+		(txt, start, page_length),
 		as_dict=True,
 	)

@@ -16,7 +16,7 @@ class BulkFeeStructureUpdate(Document):
 
     def _validate_inputs(self):
         if self.target_scope == "Programme" and not self.programme:
-            frappe.throw(_("Programme (Cohort) is required when Update Scope is 'Programme'."))
+            frappe.throw(_("Programme (Batch) is required when Update Scope is 'Programme'."))
         if self.target_scope == "Programme" and not self.program:
             frappe.throw(_("Program is required when Update Scope is 'Programme'."))
         if self.status == "Applied":
@@ -25,10 +25,10 @@ class BulkFeeStructureUpdate(Document):
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def _resolve_program_from_cohort(cohort):
-    program = frappe.db.get_value("Batch", cohort, "program")
-    if not program and frappe.db.exists("Programme", cohort):
-        program = cohort
+def _resolve_program_from_batch(batch):
+    program = frappe.db.get_value("Batch", batch, "program")
+    if not program and frappe.db.exists("Programme", batch):
+        program = batch
     return program
 
 
@@ -39,11 +39,11 @@ def _get_students_for_scope(target_scope, programme, program, batch_year=None, a
     if target_scope == "Programme":
         filters["programme"] = programme
     else:
-        # Resolve all cohorts that map to this program
-        cohorts = frappe.get_all("Batch", filters={"program": program}, pluck="name")
-        if not cohorts:
+        # Resolve all batches that map to this program
+        batches = frappe.get_all("Batch", filters={"program": program}, pluck="name")
+        if not batches:
             return []
-        filters["programme"] = ["in", cohorts]
+        filters["programme"] = ["in", batches]
 
     if batch_year:
         filters["batch_year"] = batch_year

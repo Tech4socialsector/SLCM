@@ -183,9 +183,9 @@ class IDCardCommonMixin:
 		if self.card_type == "Student" and self.student:
 			programme = frappe.db.get_value("Student Master", self.student, "programme")
 			if programme:
-				cohort_end = frappe.db.get_value("Batch", programme, "end_date")
-				if cohort_end:
-					self.expiry_date = cohort_end
+				batch_end = frappe.db.get_value("Batch", programme, "end_date")
+				if batch_end:
+					self.expiry_date = batch_end
 
 	def _sync_id_card_issued_on_cancel(self):
 		"""Reset id_card_issued on Student Master if no other active card remains."""

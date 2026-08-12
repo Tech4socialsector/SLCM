@@ -18,17 +18,17 @@ frappe.ui.form.on("Term Administration", {
 		frappe.call({
 			method: "frappe.client.get_list",
 			args: {
-				doctype: "Term Configuration",
+				doctype: "Academic Term",
 				fields: [
 					"name",
 					"term_name",
 					"academic_year",
-					"starts",
-					"ends",
+					"term_start_date",
+					"term_end_date",
 					"system",
 				],
 				limit_page_length: 100,
-				order_by: "starts desc",
+				order_by: "term_start_date desc",
 			},
 			callback(r) {
 				const terms = r.message || [];
@@ -69,8 +69,8 @@ frappe.ui.form.on("Term Administration", {
 							<tr class="term-row" data-name="${t.name}" style="cursor:pointer;">
 								<td>${t.term_name || t.name}</td>
 								<td>${t.academic_year || "-"}</td>
-								<td>${t.starts ? frappe.datetime.str_to_user(t.starts) : "-"}</td>
-								<td>${t.ends ? frappe.datetime.str_to_user(t.ends) : "-"}</td>
+								<td>${t.term_start_date ? frappe.datetime.str_to_user(t.term_start_date) : "-"}</td>
+								<td>${t.term_end_date ? frappe.datetime.str_to_user(t.term_end_date) : "-"}</td>
 								<td>${t.system || "-"}</td>
 							</tr>
 						`;
@@ -81,13 +81,13 @@ frappe.ui.form.on("Term Administration", {
 				$wrapper.html(html);
 
 				$wrapper.find(".btn-add-term").on("click", () => {
-					frappe.set_route("Form", "Term Configuration", "new-term-configuration");
+					frappe.set_route("Form", "Academic Term", "new-academic-term");
 				});
 
 				$wrapper.find(".term-row").on("click", function () {
 					frappe.set_route(
 						"Form",
-						"Term Configuration",
+						"Academic Term",
 						$(this).data("name")
 					);
 				});

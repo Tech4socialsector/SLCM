@@ -248,9 +248,9 @@ class StudentAttendance(Document):
 
 
 @frappe.whitelist()
-def get_enrolled_cohorts(student):
+def get_enrolled_batches(student):
 	"""
-	Fetch all cohorts that a student is currently enrolled in.
+	Fetch all batches that a student is currently enrolled in.
 	Used to filter Course Offerings in the UI.
 	"""
 	if not student:

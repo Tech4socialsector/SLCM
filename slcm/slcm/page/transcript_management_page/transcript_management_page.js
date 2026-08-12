@@ -1055,7 +1055,7 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 				const stat_sel   = $(wrapper).find("#tm-f-status");
 
 				(r.message.programmes || []).forEach(p => {
-					const label = p.cohort_name || p.name;
+					const label = p.batch_name || p.name;
 					state._prog_labels[p.name] = label;
 					prog_sel.append(`<option value="${p.name}">${frappe.utils.escape_html(label)}</option>`);
 				});

@@ -64,7 +64,7 @@ def _resolve_course_offerings(term_name, course_names):
 	"""Map each course title to a Course Offering name for the given term.
 
 	A course can have more than one offering in the same term (different
-	cohorts/programmes) - the first (by name) is used and the ambiguity is
+	batches/programmes) - the first (by name) is used and the ambiguity is
 	logged rather than guessed at silently.
 	"""
 	course_names = [c for c in (course_names or []) if c]
@@ -438,7 +438,7 @@ def get_courses_for_plan(exam_plan, search=""):
 
 	# Programme now lives on Course Offering, not Course. Derive it per-course
 	# from the offerings scoped to this exam plan's term (a course can have
-	# multiple offerings/programmes in the same term across cohorts).
+	# multiple offerings/programmes in the same term across batches).
 	programme_map = {}
 	try:
 		term_name = frappe.db.get_value("Exam Plan", exam_plan, "term")

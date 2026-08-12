@@ -8,21 +8,22 @@ class TermAdministration(Document):
 def get_classes_with_faculty():
 	"""Get all classes with faculty names instead of IDs"""
 	classes = frappe.db.sql("""
-		SELECT 
+		SELECT
 			cc.name,
 			cc.class_name,
 			cc.term,
 			cc.programme,
-			cc.course,
-			cc.type,
+			co.course_title AS course,
+			cc.class_configuration_type AS type,
 			cc.faculty,
 			CONCAT(f.first_name, ' ', COALESCE(f.last_name, '')) as faculty_name
 		FROM `tabClass Configuration` cc
 		LEFT JOIN `tabFaculty` f ON cc.faculty = f.name
+		LEFT JOIN `tabCourse Offering` co ON co.name = cc.course_offering
 		ORDER BY cc.creation DESC
 		LIMIT 100
 	""", as_dict=True)
-	
+
 	return classes
 
 @frappe.whitelist()
@@ -30,9 +31,8 @@ def create_class(data):
 	if isinstance(data, str):
 		data = frappe.parse_json(data)
 
-	# Check duplicate
-	# Adapting to Class Configuration fields based on JS input
-	# JS input: program, academic_year, academic_term, course, class_type, faculty, max_strength, section, student_group_name
+	# JS input: program, academic_year, academic_term, batch, course, class_type,
+	# faculty, max_strength, section, student_group_name
 
 	exists = frappe.db.exists(
 		"Class Configuration",
@@ -44,23 +44,36 @@ def create_class(data):
 	if exists:
 		frappe.throw("A class with this name already exists.")
 
+	course_offering = frappe.db.get_value(
+		"Course Offering",
+		{
+			"course_title": data.get("course"),
+			"batch": data.get("batch"),
+			"term_name": data.get("academic_term"),
+		},
+		"name",
+	)
+	if not course_offering:
+		frappe.throw(
+			f"No Course Offering found for Course {data.get('course')}, "
+			f"Batch {data.get('batch')}, Term {data.get('academic_term')}."
+		)
+
 	doc = frappe.new_doc("Class Configuration")
 	doc.class_name = data.get("student_group_name")
-	doc.programme = data.get("program")
-	doc.academic_year = data.get("academic_year")
-	doc.term = data.get("academic_term")
-	doc.course = data.get("course")
-	doc.type = data.get("class_type")
+	doc.class_configuration_type = "Section" if data.get("section") else "Group"
+	doc.batch = data.get("batch")
+	doc.section = data.get("section")
+	doc.course_offering = course_offering
 	doc.faculty = data.get("faculty")
-	doc.capacity = data.get("max_strength")
-	# doc.section = data.get("section") # Assuming section is handled or linked
-	
+	doc.seat_limit = data.get("max_strength")
+
 	doc.insert()
 	return doc.name
 
 @frappe.whitelist()
 def create_classes_by_section(
-	program, academic_year, batch, academic_term, course, class_type, faculty
+	batch, academic_term, course, class_type, faculty, program=None, academic_year=None
 ):
 	# Enqueue this to run in background
 	frappe.enqueue(
@@ -79,8 +92,21 @@ def create_classes_by_section(
 	return "Bulk creation started. You will be notified upon completion."
 
 def process_bulk_class_creation(
-	program, academic_year, batch, academic_term, course, class_type, faculty, user
+	batch, academic_term, course, class_type, faculty, user, program=None, academic_year=None
 ):
+	course_offering = frappe.db.get_value(
+		"Course Offering",
+		{"course_title": course, "batch": batch, "term_name": academic_term},
+		"name",
+	)
+	if not course_offering:
+		frappe.publish_realtime(
+			"bulk_class_creation_done",
+			{"created": 0, "skipped": 0, "error": f"No Course Offering found for Course {course}, Batch {batch}, Term {academic_term}."},
+			user=user,
+		)
+		return
+
 	sections = frappe.get_all(
 		"Section",
 		filters={"batch": batch},
@@ -92,12 +118,11 @@ def process_bulk_class_creation(
 
 	for section in sections:
 		class_name = f"{course}-{section.section_name}-{class_type}"
-		
+
 		if frappe.db.exists("Class Configuration", {
 			"class_name": class_name,
-			"programme": program,
-			"term": academic_term,
 			"batch": batch,
+			"section": section.name,
 			"class_configuration_type": "Section",
 		}):
 			skipped_count += 1
@@ -105,15 +130,13 @@ def process_bulk_class_creation(
 
 		doc = frappe.new_doc("Class Configuration")
 		doc.class_name = class_name
-		doc.programme = program
-		doc.academic_year = academic_year
-		doc.term = academic_term
-		doc.course = course
-		doc.type = class_type
+		doc.class_configuration_type = "Section"
+		doc.batch = batch
+		doc.section = section.name
+		doc.course_offering = course_offering
 		doc.faculty = faculty
-		doc.capacity = section.capacity
-		# Store section info if field exists, otherwise rely on name
-		
+		doc.seat_limit = section.capacity
+
 		doc.insert()
 		created_count += 1
 

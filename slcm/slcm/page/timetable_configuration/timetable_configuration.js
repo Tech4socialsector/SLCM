@@ -35,7 +35,7 @@ class TimetableConfiguration {
             parent: this.wrapper.find('#term-filter'),
             df: {
                 fieldtype: 'Link',
-                options: 'Term Configuration',
+                options: 'Academic Term',
                 fieldname: 'term',
                 placeholder: 'Select Term',
                 change: () => {
@@ -51,7 +51,7 @@ class TimetableConfiguration {
             parent: this.wrapper.find('#course-filter'),
             df: {
                 fieldtype: 'Link',
-                options: 'Course Master',
+                options: 'Course',
                 fieldname: 'course',
                 placeholder: 'All Courses',
                 change: () => {
@@ -226,7 +226,7 @@ class TimetableConfiguration {
                     fieldtype: 'Link',
                     label: __('Course'),
                     fieldname: 'course',
-                    options: 'Course Master',
+                    options: 'Course',
                     reqd: 1
                 },
                 {
