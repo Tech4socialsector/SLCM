@@ -943,8 +943,9 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
 
     # Calculate and persist percentiles for each program group separately.
     # This must happen before the percentile eligibility filter below.
-    for _prog_applicants in grouped_by_program.values():
-        _calculate_and_sync_percentiles(_prog_applicants, is_shortlist=is_shortlist_allocation)
+    if getattr(doc, "doctype", "") != "Seat Allocation":
+        for _prog_applicants in grouped_by_program.values():
+            _calculate_and_sync_percentiles(_prog_applicants, is_shortlist=is_shortlist_allocation)
 
     for program, applicants in grouped_by_program.items():
         policy_name = frappe.db.get_value("Programme Reservation Policy", {
