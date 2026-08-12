@@ -124,6 +124,8 @@ slcm.show_bulk_email_dialog = function (reference_doctype, docnames, listview) {
                             let type = d.get_value('message_type');
                             d.set_df_property('message', 'hidden', type === 'HTML' ? 1 : 0);
                             d.set_df_property('message_html', 'hidden', type === 'Text' ? 1 : 0);
+                            d.set_df_property('message', 'reqd', type === 'Text' ? 1 : 0);
+                            d.set_df_property('message_html', 'reqd', type === 'HTML' ? 1 : 0);
                         }
                     },
                     {
@@ -132,7 +134,8 @@ slcm.show_bulk_email_dialog = function (reference_doctype, docnames, listview) {
                     {
                         fieldname: 'message',
                         label: __('Message'),
-                        fieldtype: 'Text Editor'
+                        fieldtype: 'Text Editor',
+                        reqd: 1
                     },
                     {
                         fieldname: 'message_html',
