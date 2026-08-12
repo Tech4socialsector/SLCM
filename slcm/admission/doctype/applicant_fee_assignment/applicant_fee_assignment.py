@@ -21,6 +21,16 @@ class ApplicantFeeAssignment(Document):
 		if self.offer_letter:
 			if not self.fee_type or self.fee_type not in ["Admission Fee", "Confirmation Fee"]:
 				self.fee_type = "Admission Fee"
+				
+			existing = frappe.db.get_value("Applicant Fee Assignment", {
+				"offer_letter": self.offer_letter,
+				"fee_type": self.fee_type,
+				"name": ["!=", self.name],
+				"status": ["!=", "Cancelled"],
+				"docstatus": ["<", 2]
+			})
+			if existing:
+				frappe.throw(frappe._("An active Applicant Fee Assignment ({0}) already exists for the Offer Letter {1}.").format(existing, self.offer_letter))
 		else:
 			self.fee_type = "Application Fee"
 			if self.applicant:

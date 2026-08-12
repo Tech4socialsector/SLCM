@@ -925,25 +925,27 @@ def get_context(context):
                 context.et_is_rescheduled = (et_doc.is_rescheduled == 1 or et_doc.entrance_test_status == "Rescheduled")
                 context.et_show_result = (et_doc.entrance_test_status in ["Attended", "Absent"] and et_doc.result_published == 1)
                 
-                # Fetch location for assigned preferences
                 context.et_preferences = []
                 prefs = et_doc.re_assigned_preferences if context.et_is_rescheduled else et_doc.assigned_preferences
                 for p in prefs:
-                    provider_info = frappe.db.get_value("Entrance Test Provider", p.provider, ["location", "pwd_accessible"], as_dict=True) or {}
+                    provider_info = frappe.db.get_value("Entrance Test Provider", p.provider, ["center_name", "center_address", "location", "pwd_accessible"], as_dict=True) or {}
                     context.et_preferences.append({
                         "provider": p.provider,
-                        "center_name": p.center_name,
-                        "center_address": p.center_address,
+                        "center_name": provider_info.get("center_name") or p.center_name,
+                        "center_address": provider_info.get("center_address") or p.center_address,
                         "location": provider_info.get("location"),
                         "pwd_accessible": provider_info.get("pwd_accessible")
                     })
                 
                 context.et_is_pwd = getattr(applicant, "pwd", None) == "Yes"
                 
-                # Fetch location for the currently allocated center
+                # Fetch latest details for the currently allocated center
                 current_provider = et_doc.re_entrance_test_provider if context.et_is_rescheduled else et_doc.entrance_test_provider
                 if current_provider:
-                    context.et_location = frappe.db.get_value("Entrance Test Provider", current_provider, "location")
+                    current_provider_info = frappe.db.get_value("Entrance Test Provider", current_provider, ["location", "center_address", "center_name"], as_dict=True) or {}
+                    context.et_location = current_provider_info.get("location")
+                    context.et_center_address = current_provider_info.get("center_address")
+                    context.et_center_name = current_provider_info.get("center_name")
                 
                 context.et_doc_json = frappe.as_json(et_doc.as_dict())
                 

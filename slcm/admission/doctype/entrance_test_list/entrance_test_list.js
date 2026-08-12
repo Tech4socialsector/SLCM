@@ -1,3 +1,5 @@
+let etl_allocation_progress_dialog = null;
+
 frappe.ui.form.on("Entrance Test List", {
     refresh: function (frm) {
         // Hide button only if user is strictly an Entrance Test Provider (and not an Admin/Manager)
@@ -15,6 +17,67 @@ frappe.ui.form.on("Entrance Test List", {
                 open_generate_preference_dialog(frm);
             }, __("Actions"));
         }
+        
+        // Listen to Real-Time Progress Events via WebSockets even after page refresh
+        frappe.realtime.off("entrance_test_seat_allocation_progress");
+        frappe.realtime.on("entrance_test_seat_allocation_progress", function (data) {
+            if (!data) return;
+            const pct = data.progress || 0;
+            const current = data.current || 0;
+            const total = data.total || 0;
+            const app_name = data.applicant_name ? `Processing: <b>${data.applicant_name}</b>` : `Allocating applicant ${current}...`;
+
+            if (!etl_allocation_progress_dialog) {
+                etl_allocation_progress_dialog = new frappe.ui.Dialog({
+                    title: __("Allocating Seats in Background..."),
+                    fields: [
+                        {
+                            fieldtype: "HTML",
+                            fieldname: "progress_html",
+                            options: `
+                                <div style="padding: 10px 5px; font-family: inherit;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                        <div id="etg-current-applicant" style="font-weight:600; font-size:13px; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:75%;">
+                                            Initializing seat allocation...
+                                        </div>
+                                        <div id="etg-progress-percent" style="font-weight:700; font-size:14px; color:#2563eb;">
+                                            0%
+                                        </div>
+                                    </div>
+                                    <div style="height:10px; background:#e2e8f0; border-radius:6px; overflow:hidden; margin-bottom:12px; position:relative;">
+                                        <div id="etg-progress-bar" style="height:100%; width:0%; background:linear-gradient(90deg, #3b82f6, #10b981); border-radius:6px; transition: width 0.2s ease;"></div>
+                                    </div>
+                                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:#64748b;">
+                                        <span id="etg-counter-text">Processing 0 of ${total}</span>
+                                    </div>
+                                </div>
+                            `
+                        }
+                    ]
+                });
+                etl_allocation_progress_dialog.no_cancel();
+            }
+
+            if (!etl_allocation_progress_dialog.display) {
+                etl_allocation_progress_dialog.show();
+            }
+
+            etl_allocation_progress_dialog.$wrapper.find("#etg-progress-bar").css("width", `${pct}%`);
+            etl_allocation_progress_dialog.$wrapper.find("#etg-progress-percent").text(`${pct}%`);
+            etl_allocation_progress_dialog.$wrapper.find("#etg-current-applicant").html(app_name);
+            etl_allocation_progress_dialog.$wrapper.find("#etg-counter-text").text(`Processing ${current} of ${total}`);
+            
+            if (pct >= 100 || current >= total) {
+                setTimeout(() => {
+                    if (etl_allocation_progress_dialog && etl_allocation_progress_dialog.display) {
+                        etl_allocation_progress_dialog.hide();
+                        if (frm && frm.doc && frm.doc.name) {
+                            frm.reload_doc();
+                        }
+                    }
+                }, 1500);
+            }
+        });
     }
 });
 
@@ -52,12 +115,10 @@ function open_allocation_dialog(frm) {
     }
 
     frappe.call({
-        method: "frappe.client.get_list",
+        method: "slcm.admission.doctype.entrance_test_list.entrance_test_list.get_providers_with_capacity",
         args: {
-            doctype: "Entrance Test Provider",
-            filters: provider_filters,
-            fields: ["name", "center_name", "center_address", "provider_type", "city", "pwd_accessible"],
-            limit_page_length: 100
+            city: frm.doc.entrance_test_city || "",
+            campus: frm.doc.campus || ""
         },
         callback: function (r) {
             const providers = r.message || [];
@@ -65,7 +126,7 @@ function open_allocation_dialog(frm) {
                 const target_label = frm.doc.entrance_test_city ? __("city '{0}'", [frm.doc.entrance_test_city]) : __("campus '{0}'", [frm.doc.campus]);
                 frappe.msgprint({
                     title: __("No Available Providers"),
-                    message: __("No active Entrance Test Providers with available seats found for {0}.", [target_label]),
+                    message: __("No active Entrance Test Providers found for {0}.", [target_label]),
                     indicator: "orange"
                 });
                 return;
@@ -120,6 +181,12 @@ function _show_allocation_dialog(frm, applicants, providers) {
                 }
             },
             {
+                label: __("Send Email"),
+                fieldname: "send_email",
+                fieldtype: "Check",
+                default: 1
+            },
+            {
                 fieldtype: "Column Break"
             },
             {
@@ -129,8 +196,16 @@ function _show_allocation_dialog(frm, applicants, providers) {
                 options: "Entrance Test City",
                 default: frm.doc.entrance_test_city || "",
                 onchange: function() {
-                    const selected_city = d.get_value("entrance_test_city");
-                    fetch_and_render_providers(selected_city);
+                    fetch_and_render_providers();
+                }
+            },
+            {
+                label: __("Check Available Seats By Programme"),
+                fieldname: "check_available_seats_by_programme",
+                fieldtype: "Link",
+                options: "Programme",
+                onchange: function() {
+                    fetch_and_render_providers();
                 }
             },
             {
@@ -199,7 +274,7 @@ function _show_allocation_dialog(frm, applicants, providers) {
                 label: __("Auto-select (Enter Number)"),
                 fieldname: "auto_select_count",
                 fieldtype: "Int",
-                description: __("Enter count to automatically select first N unallocated students")
+                description: __("Enter count to automatically select first N unallocated applicant")
             },
             {
                 fieldtype: "Section Break"
@@ -277,6 +352,7 @@ function _show_allocation_dialog(frm, applicants, providers) {
         primary_action_label: __("Allocate Seats"),
         primary_action(values) {
             const allocation_type = values.allocation_type || "Allocate Directly";
+            const send_email = values.send_email ? 1 : 0;
 
             if (!selected_provider_names.size) {
                 frappe.msgprint(__("Please select at least one Entrance Test Provider."));
@@ -318,7 +394,7 @@ function _show_allocation_dialog(frm, applicants, providers) {
                         });
                         return;
                     }
-                    _show_allocation_confirmation(frm, d, result, selected_providers, selected_applicants, allocation_type);
+                    _show_allocation_confirmation(frm, d, result, selected_providers, selected_applicants, allocation_type, send_email);
                 }
             });
         }
@@ -501,23 +577,16 @@ function _show_allocation_dialog(frm, applicants, providers) {
         render_center_page();
     }
 
-    function fetch_and_render_providers(city_name) {
-        const provider_filters = { 
-            active: 1
-        };
-        if (city_name) {
-            provider_filters.city = city_name;
-        } else if (frm.doc.campus) {
-            provider_filters.campus = frm.doc.campus;
-        }
+    function fetch_and_render_providers() {
+        const city_name = d ? d.get_value("entrance_test_city") : frm.doc.entrance_test_city;
+        const prog_name = d ? d.get_value("check_available_seats_by_programme") : "";
 
         frappe.call({
-            method: "frappe.client.get_list",
+            method: "slcm.admission.doctype.entrance_test_list.entrance_test_list.get_providers_with_capacity",
             args: {
-                doctype: "Entrance Test Provider",
-                filters: provider_filters,
-                fields: ["name", "center_name", "center_address", "provider_type", "city", "pwd_accessible", "available_capacity"],
-                limit_page_length: 100
+                city: city_name || "",
+                campus: (!city_name && frm.doc.campus) ? frm.doc.campus : "",
+                programme: prog_name || ""
             },
             callback: function (r) {
                 providers = r.message || [];
@@ -678,7 +747,7 @@ function _show_allocation_dialog(frm, applicants, providers) {
     });
 }
 
-function _show_allocation_confirmation(frm, parent_dialog, result, selected_providers, selected_applicants, allocation_type) {
+function _show_allocation_confirmation(frm, parent_dialog, result, selected_providers, selected_applicants, allocation_type, send_email) {
     const total = result.total_selected || 0;
     const total_avail = result.effective_total_available != null ? result.effective_total_available : (result.total_available_seats || 0);
     const breakdown = result.programme_breakdown || [];
@@ -950,7 +1019,7 @@ function _show_allocation_confirmation(frm, parent_dialog, result, selected_prov
         primary_action_label: btn_label,
         primary_action: function () {
             confirm_dialog.hide();
-            _execute_allocation(frm, parent_dialog, selected_providers, selected_applicants, allocation_type);
+            _execute_allocation(frm, parent_dialog, selected_providers, selected_applicants, allocation_type, send_email);
         },
         secondary_action_label: __("Cancel"),
         secondary_action: function () {
@@ -997,18 +1066,63 @@ function _show_allocation_confirmation(frm, parent_dialog, result, selected_prov
     }, 100);
 }
 
-function _execute_allocation(frm, parent_dialog, selected_providers, selected_applicants, allocation_type) {
+function _execute_allocation(frm, parent_dialog, selected_providers, selected_applicants, allocation_type, send_email) {
+    const total_count = selected_applicants.length;
+
+    if (!etl_allocation_progress_dialog) {
+        etl_allocation_progress_dialog = new frappe.ui.Dialog({
+            title: __("Allocating Seats in Background..."),
+            fields: [
+                {
+                    fieldtype: "HTML",
+                    fieldname: "progress_html",
+                    options: `
+                        <div style="padding: 10px 5px; font-family: inherit;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                <div id="etg-current-applicant" style="font-weight:600; font-size:13px; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:75%;">
+                                    Initializing seat allocation...
+                                </div>
+                                <div id="etg-progress-percent" style="font-weight:700; font-size:14px; color:#2563eb;">
+                                    0%
+                                </div>
+                            </div>
+                            <div style="height:10px; background:#e2e8f0; border-radius:6px; overflow:hidden; margin-bottom:12px; position:relative;">
+                                <div id="etg-progress-bar" style="height:100%; width:0%; background:linear-gradient(90deg, #3b82f6, #10b981); border-radius:6px; transition: width 0.2s ease;"></div>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:#64748b;">
+                                <span id="etg-counter-text">Processing 0 of ${total_count}</span>
+                            </div>
+                        </div>
+                    `
+                }
+            ]
+        });
+        etl_allocation_progress_dialog.no_cancel();
+    }
+    
+    // Reset state before showing
+    etl_allocation_progress_dialog.$wrapper.find("#etg-progress-bar").css("width", `0%`);
+    etl_allocation_progress_dialog.$wrapper.find("#etg-progress-percent").text(`0%`);
+    etl_allocation_progress_dialog.$wrapper.find("#etg-current-applicant").html("Initializing seat allocation...");
+    etl_allocation_progress_dialog.$wrapper.find("#etg-counter-text").text(`Processing 0 of ${total_count}`);
+    
+    etl_allocation_progress_dialog.show();
+
     frappe.call({
         method: "allocate_seats",
         doc: frm.doc,
         args: {
             providers: selected_providers,
             selected_applicants: selected_applicants,
-            allocation_type: allocation_type
+            allocation_type: allocation_type,
+            send_email: send_email
         },
-        freeze: true,
-        freeze_message: __("Allocating Seats..."),
         callback: function (r) {
+            frappe.realtime.off("entrance_test_seat_allocation_progress");
+            if (etl_allocation_progress_dialog) {
+                etl_allocation_progress_dialog.hide();
+            }
+
             if (!r.exc) {
                 let res = r.message;
                 let count = 0;

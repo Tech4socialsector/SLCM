@@ -147,8 +147,10 @@
    "read_only": 1
   },
   {
+   "columns": 4,
    "fieldname": "remarks",
    "fieldtype": "Small Text",
+   "in_list_view": 1,
    "label": "Remarks",
    "read_only": 1
   }
