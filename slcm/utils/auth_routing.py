@@ -3,6 +3,24 @@ import urllib.parse
 from werkzeug.exceptions import HTTPException
 from werkzeug.wrappers import Response
 
+
+def get_website_user_home_page(user):
+    """Registered as the get_website_user_home_page hook.
+
+    frappe.get_roles() special-cases Administrator to return EVERY Role in
+    the system (see frappe/permissions.py), so Administrator always "holds"
+    slcm_Faculty/slcm_Student/slcm_parent too. Without this override,
+    get_home_page_via_hooks() would fall through to the role_home_page hook
+    below and send Administrator to whichever portal role it happens to
+    check first (e.g. /faculty-portal) instead of the desk. This hook is
+    checked first, so returning "app" here for Administrator short-circuits
+    that entirely; everyone else falls through to the normal role-based
+    lookup unchanged.
+    """
+    if user == "Administrator":
+        return "app"
+    return None
+
 class AuthRedirect(HTTPException):
     def __init__(self, location):
         super().__init__()
@@ -83,11 +101,11 @@ def intercept_login():
 
         if path.startswith("/student-portal") or path.startswith("/faculty-portal"):
             encoded_url = urllib.parse.quote(path, safe='')
-            raise AuthRedirect(f"/login?tab=faculty-student&redirect-to={encoded_url}")
+            raise AuthRedirect(f"/portal-login?tab=faculty-student&redirect-to={encoded_url}")
 
         if path.startswith("/parent-portal"):
             encoded_url = urllib.parse.quote(path, safe='')
-            raise AuthRedirect(f"/login?tab=parent&redirect-to={encoded_url}")
+            raise AuthRedirect(f"/portal-login?tab=parent&redirect-to={encoded_url}")
 
     elif frappe.session.user != "Guest":
         applicant_route = (frappe.get_cached_value("Web Form", "applicant-form", "route") or "admission/application-form").strip("/")
@@ -134,13 +152,16 @@ def intercept_login():
                     if existing_app:
                         raise AuthRedirect(f"/{base_route}/{existing_app}")
 
-    # 2. Intercept the standard Frappe /login fallback. /login itself is now
-    # rendered by our own unified template (see website_route_rules), so most
-    # of what used to happen here — bouncing to a separate student/faculty/
-    # parent login page — is no longer needed. Admission/PACE Applicant logins
-    # remain separate (different audience, out of scope of the unification),
-    # so those redirects are preserved. For everything else we just set a
-    # default-tab hint and let the unified page render normally.
+    # 2. Intercept the standard Frappe /login fallback. /login is left as
+    # Frappe's own stock login page (username/password) — that's what
+    # Administrator/System Users hit when accessing /app while logged out,
+    # and it must keep working untouched. We only redirect AWAY from /login
+    # when there's a clear signal this is a Student/Faculty/Parent visit
+    # (via the logged_out_from cookie or a matching redirect-to), sending
+    # those to the unified /portal-login page instead. Admission/PACE
+    # Applicant logins remain separate (different audience, out of scope).
+    # Anything else (desk, or no signal at all) falls through and renders
+    # the default Frappe /login page as-is.
     if path == "/login":
         if frappe.session.user != "Guest":
             return
@@ -165,11 +186,9 @@ def intercept_login():
         elif logged_out_from == "admission":
             raise AuthRedirect("/admission/login")
         elif logged_out_from == "student" or logged_out_from == "faculty":
-            frappe.local.flags.default_login_tab = "faculty-student"
-            return
+            raise AuthRedirect("/portal-login?tab=faculty-student")
         elif logged_out_from == "parent":
-            frappe.local.flags.default_login_tab = "parent"
-            return
+            raise AuthRedirect("/portal-login?tab=parent")
 
         # Normal fallback if no logout cookie is found
         redirect_to = frappe.form_dict.get("redirect-to") or frappe.form_dict.get("redirect_to") or ""
@@ -178,11 +197,14 @@ def intercept_login():
             raise AuthRedirect(f"/paceadmissions/login?redirect-to={urllib.parse.quote(redirect_to, safe='')}")
         elif "/applicant-form" in redirect_to or "/admission/" in redirect_to:
             raise AuthRedirect(f"/admission/login?redirect-to={urllib.parse.quote(redirect_to, safe='')}")
-        elif "/parent-portal" in redirect_to or "/parent/" in redirect_to:
-            frappe.local.flags.default_login_tab = "parent"
-        else:
-            frappe.local.flags.default_login_tab = "faculty-student"
+        elif "/student-portal" in redirect_to or "/faculty-portal" in redirect_to:
+            raise AuthRedirect(f"/portal-login?tab=faculty-student&redirect-to={urllib.parse.quote(redirect_to, safe='')}")
+        elif "/parent-portal" in redirect_to:
+            raise AuthRedirect(f"/portal-login?tab=parent&redirect-to={urllib.parse.quote(redirect_to, safe='')}")
 
+        # No portal signal at all (e.g. redirect-to=/app, or a bare /login
+        # hit) — this is desk/admin territory, so show the default Frappe
+        # login page instead of guessing.
         return
 
 def enforce_student_google_login(login_manager=None):
@@ -237,7 +259,7 @@ def enforce_student_google_login(login_manager=None):
     settings = frappe.get_single("Student Portal Settings")
     if not settings.get("enable_google_login"):
         _reject_google_login(
-            login_manager, "Google login is not enabled for the student portal.", "/login?tab=faculty-student"
+            login_manager, "Google login is not enabled for the student portal.", "/portal-login?tab=faculty-student"
         )
         return
 
@@ -248,7 +270,7 @@ def enforce_student_google_login(login_manager=None):
         _reject_google_login(
             login_manager,
             f"Only @{allowed_domain} accounts can log in to the student portal.",
-            "/login?tab=faculty-student"
+            "/portal-login?tab=faculty-student"
         )
         return
 
@@ -257,7 +279,7 @@ def enforce_student_google_login(login_manager=None):
         _reject_google_login(
             login_manager,
             "No student record found for this email. Please contact administration.",
-            "/login?tab=faculty-student"
+            "/portal-login?tab=faculty-student"
         )
         return
 
@@ -308,7 +330,7 @@ def enforce_faculty_google_login(login_manager=None):
     settings = frappe.get_single("Faculty Portal Settings")
     if not settings.get("enable_google_login"):
         _reject_google_login(
-            login_manager, "Google login is not enabled for the faculty portal.", "/login?tab=faculty-student"
+            login_manager, "Google login is not enabled for the faculty portal.", "/portal-login?tab=faculty-student"
         )
         return
 
@@ -319,7 +341,7 @@ def enforce_faculty_google_login(login_manager=None):
         _reject_google_login(
             login_manager,
             f"Only @{allowed_domain} accounts can log in to the faculty portal.",
-            "/login?tab=faculty-student"
+            "/portal-login?tab=faculty-student"
         )
         return
 
@@ -371,7 +393,7 @@ def enforce_parent_google_login(login_manager=None):
     settings = frappe.get_single("Parent Portal Settings")
     if not settings.get("enable_google_login"):
         _reject_google_login(
-            login_manager, "Google login is not enabled for the parent portal.", "/login?tab=parent"
+            login_manager, "Google login is not enabled for the parent portal.", "/portal-login?tab=parent"
         )
         return
 
@@ -382,7 +404,7 @@ def enforce_parent_google_login(login_manager=None):
         _reject_google_login(
             login_manager,
             f"Only @{allowed_domain} accounts can log in to the parent portal.",
-            "/login?tab=parent"
+            "/portal-login?tab=parent"
         )
         return
 
@@ -392,7 +414,7 @@ def enforce_parent_google_login(login_manager=None):
         user_doc.save(ignore_permissions=True)
 
 
-def _reject_google_login(login_manager, message, redirect_page="/login?tab=faculty-student"):
+def _reject_google_login(login_manager, message, redirect_page="/portal-login?tab=faculty-student"):
     """Tears down a just-created Google login session and bounces the
     browser back to the given login page with an error message.
 

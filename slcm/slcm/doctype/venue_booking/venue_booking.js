@@ -159,6 +159,20 @@ frappe.ui.form.on('Venue Booking', {
             'System Manager', 'Administrator', 'slcm_Registrar'
         ]);
 
+        // ── Recurring series: link back to the parent, or list this series' occurrences ──
+        if (!frm.is_new() && frm.doc.parent_booking) {
+            frm.dashboard.add_comment(
+                __('This booking is part of a recurring series started by {0}.',
+                    [`<a href="/app/venue-booking/${frm.doc.parent_booking}">${frm.doc.parent_booking}</a>`]),
+                'blue', true
+            );
+        }
+        if (!frm.is_new() && frm.doc.is_recurring && !frm.doc.parent_booking) {
+            frm.add_custom_button(__('View Occurrences'), function () {
+                frappe.set_route('List', 'Venue Booking', { parent_booking: frm.doc.name });
+            });
+        }
+
         if (!frm.is_new() && canManage) {
 
             // ── Swap Request banner + actions ──────────────────────────

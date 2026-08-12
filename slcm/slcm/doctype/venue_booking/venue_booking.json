@@ -17,6 +17,20 @@
   "end_datetime",
   "status",
   "book_by_occupancy",
+  "section_break_recurring",
+  "is_recurring",
+  "recurrence_frequency",
+  "column_break_recurrence",
+  "recurrence_end_date",
+  "section_break_weekdays",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+  "parent_booking",
   "section_break_requester",
   "requester_type",
   "requester_name",
@@ -96,6 +110,94 @@
    "fieldname": "book_by_occupancy",
    "fieldtype": "Check",
    "label": "Filter By Expected Occupancy"
+  },
+  {
+   "fieldname": "section_break_recurring",
+   "fieldtype": "Section Break",
+   "label": "Recurring Booking"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_recurring",
+   "fieldtype": "Check",
+   "label": "Make this a Recurring Booking"
+  },
+  {
+   "depends_on": "eval:doc.is_recurring",
+   "fieldname": "recurrence_frequency",
+   "fieldtype": "Select",
+   "label": "Repeat Frequency",
+   "mandatory_depends_on": "eval:doc.is_recurring",
+   "options": "Daily\nWeekly\nMonthly"
+  },
+  {
+   "depends_on": "eval:doc.is_recurring",
+   "fieldname": "column_break_recurrence",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.is_recurring",
+   "fieldname": "recurrence_end_date",
+   "fieldtype": "Date",
+   "label": "Repeat Until",
+   "mandatory_depends_on": "eval:doc.is_recurring"
+  },
+  {
+   "depends_on": "eval:doc.is_recurring && doc.recurrence_frequency=='Weekly'",
+   "fieldname": "section_break_weekdays",
+   "fieldtype": "Section Break",
+   "label": "Repeat On"
+  },
+  {
+   "default": "0",
+   "fieldname": "monday",
+   "fieldtype": "Check",
+   "label": "Monday"
+  },
+  {
+   "default": "0",
+   "fieldname": "tuesday",
+   "fieldtype": "Check",
+   "label": "Tuesday"
+  },
+  {
+   "default": "0",
+   "fieldname": "wednesday",
+   "fieldtype": "Check",
+   "label": "Wednesday"
+  },
+  {
+   "default": "0",
+   "fieldname": "thursday",
+   "fieldtype": "Check",
+   "label": "Thursday"
+  },
+  {
+   "default": "0",
+   "fieldname": "friday",
+   "fieldtype": "Check",
+   "label": "Friday"
+  },
+  {
+   "default": "0",
+   "fieldname": "saturday",
+   "fieldtype": "Check",
+   "label": "Saturday"
+  },
+  {
+   "default": "0",
+   "fieldname": "sunday",
+   "fieldtype": "Check",
+   "label": "Sunday"
+  },
+  {
+   "fieldname": "parent_booking",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Parent Booking (Series)",
+   "no_copy": 1,
+   "options": "Venue Booking",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_requester",

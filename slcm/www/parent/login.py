@@ -16,7 +16,7 @@ def get_context(context):
     )
     error = frappe.local.request.args.get("error", "")
 
-    target = f"/login?tab=parent&redirect-to={quote(redirect_to, safe='')}"
+    target = f"/portal-login?tab=parent&redirect-to={quote(redirect_to, safe='')}"
     if error:
         target += f"&error={quote(error, safe='')}"
 

@@ -86,7 +86,7 @@ def _get_google_login_url(tab, redirect_to):
         # first, and the browser lands back on the tab it started from if
         # the login is rejected. The real destination is carried through as
         # a query param and honored once the role check passes.
-        callback_target = f"/login?tab={tab}&redirect-to=" + quote(redirect_to, safe="")
+        callback_target = f"/portal-login?tab={tab}&redirect-to=" + quote(redirect_to, safe="")
         # "google" here is the Social Login Key docname, not the display label.
         return get_oauth2_authorize_url("google", callback_target)
     except Exception:
