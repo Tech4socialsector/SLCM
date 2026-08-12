@@ -192,6 +192,7 @@ fixtures = [
                 "HD Ticket SLA Escalation - New Agent",
                 "HD Ticket SLA Escalation - Previous Agent",
                 "HD Ticket SLA Escalation - Max Hops Reached",
+                "SLA Breach Reminder",
                 "Venue Booking - New Request (Admin)",
                 "Venue Booking - Status Update (Requester)",
                 "Venue Booking - Swap Request Decision (Requester)",
