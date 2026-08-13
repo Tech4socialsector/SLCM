@@ -230,11 +230,12 @@
   {
    "fieldname": "international_seats",
    "fieldtype": "Int",
-   "label": "International Seats "
+   "label": "International Seats ",
+   "reqd": 1
   }
  ],
  "links": [],
- "modified": "2026-07-21 13:49:27.152853",
+ "modified": "2026-08-13 11:37:23.577428",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Programme Reservation Policy",
