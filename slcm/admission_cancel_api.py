@@ -141,6 +141,7 @@ def get_refund_policies(applicant=None, program=None, campus=None, offer=None, p
 
 @frappe.whitelist()
 def process_refund(name):
+	frappe.has_permission("Refund Request", "write", throw=True)
 	refund = frappe.get_doc("Refund Request", name)
 	
 	if refund.status == "Processed":
@@ -282,6 +283,7 @@ def process_refund(name):
 
 @frappe.whitelist()
 def process_bulk_refunds(names):
+	frappe.has_permission("Refund Request", "write", throw=True)
 	if isinstance(names, str):
 		names = json.loads(names)
 	
@@ -456,6 +458,13 @@ def submit_admission_cancellation(**kwargs):
 	separate Admission Cancellation records for each fee payment.
 	"""
 	applicant = kwargs.get("applicant")
+	
+	if frappe.session.user != "Administrator":
+		owner = frappe.db.get_value("Applicant", applicant, "owner")
+		email = frappe.db.get_value("Applicant", applicant, "email")
+		if owner != frappe.session.user and email != frappe.session.user:
+			frappe.throw(_("Not permitted to cancel this admission."), frappe.PermissionError)
+
 	offer = kwargs.get("offer")
 
 	if offer in ("None", "", None):

@@ -248,6 +248,7 @@ def generate_offerings_from_curriculum(course_list_doc):
 		}
 		existing = frappe.db.get_value("Course Offering", filters, "name")
 
+		message_log_len = len(frappe.message_log)
 		try:
 			if existing:
 				offering = frappe.get_doc("Course Offering", existing)
@@ -259,13 +260,17 @@ def generate_offerings_from_curriculum(course_list_doc):
 
 			offering.program = course_list_doc.program
 			if not offering.status:
-				offering.status = "Open"
+				offering.status = "Active"
 
 			if existing:
 				offering.save(ignore_permissions=True)
 			else:
 				offering.insert(ignore_permissions=True)
 		except Exception:
+			# Drop any message queued by the failed attempt (e.g. a validation
+			# error) so it doesn't leak into the response of what is otherwise
+			# a successful Course Management save.
+			del frappe.message_log[message_log_len:]
 			frappe.log_error(
 				title="Course Offering generation failed",
 				message=frappe.get_traceback(),

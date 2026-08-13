@@ -124,7 +124,7 @@ class SeatAllocation(Document):
         self.total_rejected = 0
         
         rejection_statuses = ["Rejected", "Offer Declined", "Offer Expired", "Withdrawn"]
-        selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Enrolled", "Seat Selected"]
+        selection_statuses = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid", "Payment Completed", "Enrolled", "Seat Selected", "Confirmation Fee Paid", "Full Fee Paid"]
         
         for row in (self.selection_applicant or []):
             if row.selection_status in selection_statuses:
@@ -137,6 +137,26 @@ class SeatAllocation(Document):
         self.summary_total_selected = self.total_selected
         self.summary_total_waitlisted = self.total_waitlisted
         self.summary_total_rejected = self.total_rejected
+
+        # Normalize vertical_category and allocated_category for selected applicants first
+        for row in (self.selection_applicant or []):
+            v_cat = row.get("vertical_category")
+            c_cat = row.get("compartmentalized_category")
+            h_cats_str = row.get("horizontal_categories")
+
+            if row.selection_status in selection_statuses and v_cat:
+                parts = [v_cat]
+                if c_cat:
+                    parts.append(c_cat)
+                if h_cats_str:
+                    h_cats = sorted([c.strip() for c in h_cats_str.split(",") if c.strip()])
+                    parts.extend(h_cats)
+                row.allocated_category = " + ".join(parts)
+            elif row.selection_status in selection_statuses and not v_cat and row.allocated_category:
+                pass
+            elif row.selection_status in selection_statuses and not v_cat:
+                row.vertical_category = "General"
+                row.allocated_category = "General"
 
         # Recalculate category summary counts dynamically if rows exist
         if getattr(self, "category_summary", None):
@@ -171,13 +191,25 @@ class SeatAllocation(Document):
                             x for x in self.selection_applicant
                             if cat in get_applicant_categories(x.applicant_id)
                         ]
+                        matching_allocated = [
+                            x for x in matching_apps if x.selection_status in selection_statuses
+                        ]
                     else:
                         matching_apps = [
                             x for x in self.selection_applicant
-                            if getattr(x, "actual_category", "") == cat or getattr(x, "vertical_category", "") == cat
+                            if (getattr(x, "vertical_category", "") or getattr(x, "actual_category", "")) == cat
                         ]
+                        # For allocated vertical seats, count candidates consuming that vertical quota
+                        matching_allocated = [
+                            x for x in self.selection_applicant
+                            if getattr(x, "vertical_category", "") == cat and x.selection_status in selection_statuses
+                        ]
+                else:
+                    matching_allocated = [
+                        x for x in matching_apps if x.selection_status in selection_statuses
+                    ]
                 
-                row.actually_allocated = len([x for x in matching_apps if x.selection_status in selection_statuses])
+                row.actually_allocated = len(matching_allocated)
                 row.allocated_seats = row.actually_allocated
                 row.actually_waitlisted = len([x for x in matching_apps if x.selection_status == "Waitlisted"])
                 row.actually_rejected = len([x for x in matching_apps if x.selection_status in rejection_statuses])
@@ -193,42 +225,11 @@ class SeatAllocation(Document):
                     overall_rnk,
                 )
 
-
             self.selection_applicant.sort(key=get_save_sort_key)
             for i, row in enumerate(self.selection_applicant):
                 row.idx = i + 1
 
         self.validate_uniqueness()
-        
-        # Update display name for combined categories (e.g., "SC + Women")
-        # This handles initial allocation, waitlist promotion, and manual saves.
-        h_categories = frappe.db.get_all("Admission Category", 
-            filters={"reservation_type": ["in", ["Horizontal", "Compartmentalised Horizontal"]]}, 
-            pluck="name"
-        )
-        
-        for row in (self.selection_applicant or []):
-            v_cat = row.get("vertical_category")
-            c_cat = row.get("compartmentalized_category")
-            h_cats_str = row.get("horizontal_categories")
-
-            if row.selection_status in selection_statuses and v_cat:
-                parts = [v_cat]
-                
-                if c_cat:
-                    parts.append(c_cat)
-                
-                if h_cats_str:
-                    h_cats = sorted([c.strip() for c in h_cats_str.split(",") if c.strip()])
-                    parts.extend(h_cats)
-                
-                row.allocated_category = " + ".join(parts)
-            elif row.selection_status in selection_statuses and not v_cat and row.allocated_category:
-                # Backwards compatibility for manually set categories
-                pass
-            elif row.selection_status in selection_statuses and not v_cat:
-                row.vertical_category = "General"
-                row.allocated_category = "General"
 
         before = None
         try:
@@ -521,7 +522,6 @@ class SeatAllocation(Document):
             })
 
         self.save()
-        frappe.db.commit()
 
     def _finish_allocation(self):
         """
@@ -565,7 +565,6 @@ class SeatAllocation(Document):
         self.status = "Allocated"
         self.save()
         self.sync_filled_seats()
-        frappe.db.commit()
 
         if not getattr(self.flags, "is_background", False):
             frappe.msgprint("Seat Allocation phase completed successfully.")
@@ -904,7 +903,6 @@ class SeatAllocation(Document):
                         frappe.log_error(f"Manual Promotion Offer Generation Failed: {str(e)}", "Waitlist Promotion")
                 
                 self.save(ignore_permissions=True)
-                frappe.db.commit()
                 return True
         else:
             from slcm.admission.doctype.waitlist_rule.waitlist_promotion import promote_waitlist_without_rule
@@ -948,9 +946,8 @@ class SeatAllocation(Document):
 
             # Periodically commit to manage resources
             if i % 10 == 0:
-                frappe.db.commit()
+                pass # Removed manual commit to preserve atomicity
 
-        frappe.db.commit()
         frappe.msgprint(frappe._("Seat Allocation has been published successfully, and notification emails have been queued."), indicator="green")
 
     def _send_allocation_notification(self, row, email):
@@ -1053,7 +1050,6 @@ class SeatAllocation(Document):
 
             frappe.db.set_value("Applicant", row.applicant_id, "status", new_status)
 
-        frappe.db.commit()
         frappe.msgprint(frappe._("Seat Allocation has been unpublished and candidate statuses reverted."), indicator="orange")
 
 

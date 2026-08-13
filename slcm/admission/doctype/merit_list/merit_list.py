@@ -30,6 +30,13 @@ class MeritList(Document):
 
     def validate(self):
         self.validate_uniqueness()
+        self.calculate_summary_counts()
+
+    def calculate_summary_counts(self):
+        if self.merit_applicants:
+            self.total_applicants = len(self.merit_applicants)
+            self.total_selected = len([a for a in self.merit_applicants if a.status == "Selected" or getattr(a, "allocation_type", "") in ("Open", "Reserved")])
+            self.total_rejected = len([a for a in self.merit_applicants if a.status == "Rejected"])
 
     def on_trash(self):
         """
@@ -139,6 +146,7 @@ def create_seat_allocation(merit_list_name, selected_applicants):
             "admission_rank": row.overall_rank if row and merit.merit_processing_stage == "Final Allotment Ranking" else None,
             "actual_category": row.actual_category if row else None,
             "vertical_category": row.vertical_category if row else None,
+            "percentile_score": row.percentile_score if row else 0,
             "selection_status": "Draft"
         })
 

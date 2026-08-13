@@ -9,11 +9,12 @@
   "academic_year",
   "campus",
   "admission_cycle",
+  "generated_on",
   "column_break_ivl1",
   "program_level",
   "program",
+  "applicant_type",
   "status",
-  "generated_on",
   "applicant_section",
   "interview_applicant"
  ],
@@ -70,6 +71,13 @@
    "options": "Programme"
   },
   {
+   "fieldname": "applicant_type",
+   "fieldtype": "Select",
+   "label": "Applicant Type",
+   "options": "Domestic Applicants\nInternational Applicants\nBoth",
+   "read_only": 1
+  },
+  {
    "default": "Generated",
    "fieldname": "status",
    "fieldtype": "Select",
@@ -99,7 +107,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-26 14:46:39.946393",
+ "modified": "2026-08-13 11:33:32.575169",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview List",
