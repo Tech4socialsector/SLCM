@@ -36,6 +36,8 @@ const PALETTE = {
 		'Accepted':     '#059669',
 		'Rejected':     '#dc2626',
 		'Pending':      '#d97706',
+		'Allotted':          '#059669',
+		'Pending Allotment': '#d97706',
 	},
 };
 
@@ -1454,8 +1456,8 @@ class SLCMAnalyticsDashboard {
 				$('#sad-tab-content').html(`
 					<div class="sad-kpi-grid">
 						${this._kpi('Total Bookings',   d.total_bookings,   '🏛️', 'primary', 'all requests',                 { module:'venue', dimension:'booking_status', value:'all' })}
-						${this._kpi('Pending Approval', d.pending_bookings, '⏳', 'warning', 'awaiting decision',            { module:'venue', dimension:'booking_status', value:'Pending' })}
-						${this._kpi('Approved',         d.approved_bookings,'✅', 'success', 'confirmed bookings',           { module:'venue', dimension:'booking_status', value:'Approved' })}
+						${this._kpi('Pending Allotment', d.pending_bookings, '⏳', 'warning', 'awaiting decision',            { module:'venue', dimension:'booking_status', value:'Pending Allotment' })}
+						${this._kpi('Allotted',         d.approved_bookings,'✅', 'success', 'confirmed bookings',           { module:'venue', dimension:'booking_status', value:'Allotted' })}
 						${this._kpi('Rejected/Cancelled',d.rejected_bookings,'❌','danger',  'declined or cancelled',        { module:'venue', dimension:'booking_status', value:'Rejected' })}
 					</div>
 

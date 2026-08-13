@@ -44,10 +44,10 @@ def get_context(context):
         for b in my_bookings:
             b["start_fmt"] = frappe.utils.format_datetime(b.start_datetime, "dd MMM yyyy, hh:mm a") if b.start_datetime else "—"
             b["end_fmt"]   = frappe.utils.format_datetime(b.end_datetime, "hh:mm a") if b.end_datetime else "—"
-            status = b.status or "Pending"
+            status = b.status or "Pending Allotment"
             b["status_class"] = {
-                "Pending":  "fp-badge-warning",
-                "Approved": "fp-badge-success",
+                "Pending Allotment": "fp-badge-warning",
+                "Allotted": "fp-badge-success",
                 "Rejected": "fp-badge-danger",
                 "Cancelled": "fp-badge-neutral",
             }.get(status, "fp-badge-neutral")
@@ -56,8 +56,8 @@ def get_context(context):
 
         # ── Stats ────────────────────────────────────────────────────
         context.total_bookings = len(my_bookings)
-        context.pending_bookings = sum(1 for b in my_bookings if (b.status or "Pending") == "Pending")
-        context.approved_bookings = sum(1 for b in my_bookings if b.status == "Approved")
+        context.pending_bookings = sum(1 for b in my_bookings if (b.status or "Pending Allotment") == "Pending Allotment")
+        context.approved_bookings = sum(1 for b in my_bookings if b.status == "Allotted")
         context.rejected_bookings = sum(1 for b in my_bookings if b.status == "Rejected")
 
         # ── Available rooms ──────────────────────────────────────────

@@ -3,7 +3,7 @@
  "docstatus": 0,
  "doctype": "Number Card",
  "document_type": "Venue Booking",
- "filters_json": "[[\"Venue Booking\",\"status\",\"=\",\"Approved\",false]]",
+ "filters_json": "[[\"Venue Booking\",\"status\",\"=\",\"Allotted\",false]]",
  "function": "Count",
  "is_public": 1,
  "is_standard": 1,
