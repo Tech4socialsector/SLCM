@@ -62,7 +62,7 @@ class IntegrationTestInterviewConfiguration(IntegrationTestCase):
             "academic_year": "2026-2027",
             "campus": "NLSIU",
             "admission_cycle": "AD",
-            "program": [{"program": "BA LLB (Hons)"}],
+            "program": "BA LLB (Hons)",
             "applicant_type": "International Applicants",
             "enter_international_ratio": "1:3"
         })
@@ -101,7 +101,7 @@ class IntegrationTestInterviewConfiguration(IntegrationTestCase):
             "academic_year": "2026-2027",
             "campus": "NLSIU",
             "admission_cycle": "AD",
-            "program": [{"program": "BA LLB (Hons)"}],
+            "program": "BA LLB (Hons)",
             "applicant_type": "Domestic Applicants",
             "enter_domestic_ratio": "3:1"
         })

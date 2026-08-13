@@ -26,50 +26,96 @@ class InterviewConfiguration(Document):
         if not self.configuration_code:
             yr = getdate().strftime("%y")
             code = frappe.generate_hash("InterviewConfiguration", 8).upper()[:8]
-            self.configuration_code = f"IVC-{yr}-{code}"
-
-        # Update counts on save as well
-        if self.academic_year and self.campus and self.admission_cycle and self.program:
-            try:
-                self.calculate_and_set_counts()
-            except Exception:
-                pass
-
-    def calculate_and_set_counts(self):
+    @frappe.whitelist()
+    def get_applicant_counts(self):
         all_apps = self.get_eligible_applicants()
-        domestic_count = 0
-        international_count = 0
+        
+        domestic_apps = []
+        international_apps = []
+        
         for app in all_apps:
             if app.get("foriegn_national") == "Yes":
-                international_count += 1
+                international_apps.append(app)
             else:
-                domestic_count += 1
+                domestic_apps.append(app)
+
+        def simulate_selection(applicants, seats, ratio_str):
+            if self.fetch_exempted_applicant or not ratio_str:
+                return applicants
+            try:
+                if ":" in ratio_str:
+                    parts = ratio_str.split(":")
+                    num1 = float(parts[0])
+                    num2 = float(parts[1])
+                    multiplier = max(num1, num2) / min(num1, num2)
+                else:
+                    multiplier = float(ratio_str)
+            except Exception:
+                multiplier = 1.0
+
+            if seats > 0:
+                num_to_select = int(math.ceil(seats * multiplier))
+            else:
+                num_to_select = len(applicants)
+
+            applicants.sort(key=lambda x: x.get("cumulative_rank", 999999))
+            
+            selected = []
+            current_rank = None
+            for app in applicants:
+                rank = app.get("cumulative_rank", 999999)
+                if len(selected) < num_to_select:
+                    selected.append(app)
+                    current_rank = rank
+                else:
+                    if rank == current_rank:
+                        selected.append(app)
+                    else:
+                        break
+            return selected
+
+        target_dom = []
+        target_int = []
+        d_seats = self.get_total_seats("Domestic Applicants")
+        i_seats = self.get_total_seats("International Applicants")
 
         if self.applicant_type == "Domestic Applicants":
-            self.domestic_applicants_count = domestic_count
-            self.international_applicants_count = 0
+            target_dom = simulate_selection(domestic_apps, d_seats, self.enter_domestic_ratio)
+            international_apps = [] # Excluded for counting
         elif self.applicant_type == "International Applicants":
-            self.domestic_applicants_count = 0
-            self.international_applicants_count = international_count
+            target_int = simulate_selection(international_apps, i_seats, self.enter_international_ratio)
+            domestic_apps = [] # Excluded for counting
         else:
-            self.domestic_applicants_count = domestic_count
-            self.international_applicants_count = international_count
+            target_dom = simulate_selection(domestic_apps, d_seats, self.enter_domestic_ratio)
+            target_int = simulate_selection(international_apps, i_seats, self.enter_international_ratio)
 
-    @frappe.whitelist()
-    def fetch_applicant_counts(self):
-        self.calculate_and_set_counts()
-        self.db_set("domestic_applicants_count", self.domestic_applicants_count)
-        self.db_set("international_applicants_count", self.international_applicants_count)
+        final_selected = target_dom + target_int
+        final_pool = domestic_apps + international_apps
+
+        total_eligible = len(final_pool)
+        selected_count = len(final_selected)
+        rejected_count = total_eligible - selected_count
+
+        entrance_passers = sum(1 for a in final_pool if a.get("source_type") == "Entrance Test")
+        direct_merit = sum(1 for a in final_pool if a.get("source_type") == "National Test (Direct)")
+        academic = sum(1 for a in final_pool if a.get("source_type") == "Academic Eligibility")
+
         return {
-            "domestic_applicants_count": self.domestic_applicants_count,
-            "international_applicants_count": self.international_applicants_count
+            "total_eligible": total_eligible,
+            "domestic_eligible": len(domestic_apps),
+            "international_eligible": len(international_apps),
+            "selected_count": selected_count,
+            "rejected_count": rejected_count,
+            "entrance_passers": entrance_passers,
+            "direct_merit": direct_merit,
+            "academic": academic
         }
 
     def get_total_seats(self, applicant_type=None):
         if not applicant_type:
             applicant_type = self.applicant_type
 
-        program_names = [p.program for p in self.program] if self.program else []
+        program_names = [self.program] if self.program else []
         if not program_names:
             return 0
 
@@ -97,7 +143,7 @@ class InterviewConfiguration(Document):
         return total_seats
 
     def get_eligible_applicants(self):
-        program_names = [p.program for p in self.program] if self.program else []
+        program_names = [self.program] if self.program else []
         if not program_names:
             return []
 
@@ -360,10 +406,8 @@ class InterviewConfiguration(Document):
             )
             frappe.throw(msg, title=_("Generation Failed"))
 
-        # Determine level_of_study from first chosen program
-        program_levels = {frappe.db.get_value("Programme", p.program, "level_of_study") for p in self.program if p.program}
-        program_levels = {l for l in program_levels if l}
-        program_level = list(program_levels)[0] if program_levels else "Undergraduate"
+        # Determine level_of_study from chosen program
+        program_level = frappe.db.get_value("Programme", self.program, "level_of_study") if self.program else "Undergraduate"
 
         # 5. Create Interview List
         interview_list_data = {
@@ -374,10 +418,11 @@ class InterviewConfiguration(Document):
             "program_level":        program_level,
             "generated_on":         now(),
             "status":               "Generated",
+            "applicant_type":       self.applicant_type,
             "interview_applicant":  []
         }
         if self.program:
-            interview_list_data["program"] = self.program[0].program
+            interview_list_data["program"] = self.program
 
         interview_list = frappe.get_doc(interview_list_data)
 

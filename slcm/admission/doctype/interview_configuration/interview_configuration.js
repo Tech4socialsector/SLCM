@@ -28,6 +28,59 @@ frappe.ui.form.on("Interview Configuration", {
         }
     },
 
+    after_save: function (frm) {
+        if (frm.doc.academic_year && frm.doc.campus && frm.doc.admission_cycle && frm.doc.program) {
+            frm.call({
+                method: "get_applicant_counts",
+                doc: frm.doc,
+                callback: (r) => {
+                    if (r.message) {
+                        let d = r.message;
+                        let count_html = ``;
+                        if (frm.doc.applicant_type === "Both") {
+                            count_html = `
+                                <div><b>Domestic Candidates:</b> ${d.domestic_eligible}</div>
+                                <div style="margin-top: 4px;"><b>International Candidates:</b> ${d.international_eligible}</div>
+                            `;
+                        } else if (frm.doc.applicant_type === "Domestic Applicants") {
+                            count_html = `<div><b>Domestic Candidates:</b> ${d.domestic_eligible}</div>`;
+                        } else if (frm.doc.applicant_type === "International Applicants") {
+                            count_html = `<div><b>International Candidates:</b> ${d.international_eligible}</div>`;
+                        } else {
+                            count_html = `<div><b>Total Eligible Candidates:</b> ${d.total_eligible}</div>`;
+                        }
+
+                        let msg = `
+                            <div style="font-size: 14px; text-align: left; width: 100%;">
+                                ${count_html}
+                                <div style="margin-top: 8px; font-size: 13px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 4px;">
+                                    <b>Applicant Type:</b> ${frm.doc.applicant_type}
+                                </div>
+                            </div>
+                        `;
+                        
+                        let $toast = $(`
+                            <div style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); 
+                                        z-index: 1040; background: #fff; color: #1f272e; padding: 12px 20px; 
+                                        border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                                        border-left: 4px solid #007bff;
+                                        display: flex; align-items: center; justify-content: space-between;
+                                        min-width: 250px; font-weight: 500;">
+                                <div style="flex-grow: 1;">${msg}</div>
+                                <button style="background: transparent; border: none; font-size: 22px; color: #94a3b8; cursor: pointer; padding: 0; margin-left: 20px; line-height: 1; align-self: flex-start;" 
+                                        onclick="$(this).parent().fadeOut(()=>$(this).parent().remove())">&times;</button>
+                            </div>
+                        `).hide().appendTo("body").fadeIn();
+
+                        setTimeout(() => {
+                            $toast.fadeOut(() => $toast.remove());
+                        }, 7000);
+                    }
+                }
+            });
+        }
+    },
+
     refresh: function (frm) {
         // Remove any previously added buttons (safety)
         frm.remove_custom_button("Fetch Applicant");
@@ -41,32 +94,15 @@ frappe.ui.form.on("Interview Configuration", {
             frm.doc.academic_year &&
             frm.doc.campus &&
             frm.doc.admission_cycle &&
-            (frm.doc.program && frm.doc.program.length > 0)
+            frm.doc.program
         );
 
         if (show_actions) {
-            // ── "Fetch Applicant" button ──────────────────────────────────────
-            frm.add_custom_button(__("Fetch Applicant"), function () {
-                frm.call({
-                    method: "fetch_applicant_counts",
-                    doc: frm.doc,
-                    freeze: true,
-                    freeze_message: __("Fetching applicant counts..."),
-                    callback: (r) => {
-                        if (!r.exc) {
-                            frm.reload_doc();
-                            frappe.show_alert({
-                                message: __("Applicant counts updated successfully."),
-                                indicator: "green"
-                            });
-                        }
-                    }
-                });
-            }).addClass("btn-primary");
+
 
             // ── "Generate Interview List" button ─────────────────────────────────
             frm.add_custom_button(__("Generate Interview List"), function () {
-                let program_list = (frm.doc.program || []).map(p => p.program).filter(Boolean).join(", ");
+                let program_list = frm.doc.program || "";
                 let program_row = program_list ? 
                     `<tr><td style="color: #adb5bd; font-weight: 500;">Programme</td><td style="font-weight: 700; text-align: right; color: #495057;">${program_list}</td></tr>` : '';
 
@@ -126,9 +162,8 @@ frappe.ui.form.on("Interview Configuration", {
                     campus: frm.doc.campus,
                     admission_cycle: frm.doc.admission_cycle
                 };
-                let first_program = (frm.doc.program && frm.doc.program.length > 0) ? frm.doc.program[0].program : null;
-                if (first_program) {
-                    filters.program = first_program;
+                if (frm.doc.program) {
+                    filters.program = frm.doc.program;
                 }
                 frappe.db.get_value("Interview List", filters, "name", (r) => {
                     if (r && r.name) {
@@ -168,6 +203,7 @@ frappe.ui.form.on("Interview Configuration", {
     }
 });
 
+
 function toggle_ratio_fields(frm) {
     let show_domestic = !frm.doc.fetch_exempted_applicant && (frm.doc.applicant_type === "Domestic Applicants" || frm.doc.applicant_type === "Both");
     let show_international = !frm.doc.fetch_exempted_applicant && (frm.doc.applicant_type === "International Applicants" || frm.doc.applicant_type === "Both");
@@ -193,20 +229,14 @@ function toggle_ratio_fields(frm) {
 }
 
 function check_programme_settings(frm, show_toast = true) {
-    if (!frm.doc.program || frm.doc.program.length === 0) {
+    if (!frm.doc.program) {
         frm.doc.__show_dom_ratio = true;
         frm.doc.__show_int_ratio = true;
         toggle_ratio_fields(frm);
         return;
     }
 
-    let program_names = frm.doc.program.map(p => p.program).filter(Boolean);
-    if (program_names.length === 0) {
-        frm.doc.__show_dom_ratio = true;
-        frm.doc.__show_int_ratio = true;
-        toggle_ratio_fields(frm);
-        return;
-    }
+    let program_names = [frm.doc.program];
 
     frappe.call({
         method: "frappe.client.get_list",
