@@ -15,7 +15,6 @@
   "section_break_content",
   "featured_image",
   "summary",
-  "col_break_2",
   "content",
   "section_break_publishing",
   "publish_date",
@@ -102,10 +101,6 @@
    "fieldname": "featured_image",
    "fieldtype": "Attach Image",
    "label": "Featured Image"
-  },
-  {
-   "fieldname": "col_break_2",
-   "fieldtype": "Column Break"
   },
   {
    "fieldname": "content",
@@ -227,7 +222,7 @@
  ],
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-06-10 17:49:09.780303",
+ "modified": "2026-08-05 12:19:23.483096",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Portal Announcement",

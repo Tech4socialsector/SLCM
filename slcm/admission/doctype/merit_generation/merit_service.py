@@ -404,6 +404,7 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
               AND (etsa.program_level = %(program_level)s OR p.level_of_study = %(program_level)s)
               AND etsa.entrance_test_status = 'Attended'
               AND etsa.result_status = 'Pass'
+              AND IFNULL(etsa.is_international_applicant, 0) = 0
               {program_cond}
         """, query_args, as_dict=True)
 
@@ -854,6 +855,7 @@ def _populate_category_lists(doc):
                 
         is_shortlist = hasattr(doc, "shortlist_applicants")
         counts = {}
+        valid_active = ["Selected", "Offer Issued", "Offer Accepted", "Accepted", "Fee Paid", "Payment Completed", "Enrolled", "Seat Selected", "Confirmation Fee Paid", "Full Fee Paid", "Shortlisted"]
         
         # Resolve dynamic categorisation tallies from DB masters
         db_cats_all = frappe.get_all("Admission Category", fields=["name", "reservation_type"])
@@ -866,16 +868,16 @@ def _populate_category_lists(doc):
                 if cat.startswith(f"{comp_name} ") or cat.startswith(f"{comp_name}("):
                     v_name = cat[len(comp_name):].strip("() ")
                     if v_name == "Common":
-                        counts[cat] = len([x for x in sorted_applicants if getattr(x, status_field, "") != "Rejected" and _has_trait(x.applicant_id, comp_name, is_shortlist)])
+                        counts[cat] = len([x for x in sorted_applicants if getattr(x, status_field, "") in valid_active and _has_trait(x.applicant_id, comp_name, is_shortlist)])
                     else:
-                        counts[cat] = len([x for x in sorted_applicants if getattr(x, status_field, "") != "Rejected" and (getattr(x, "vertical_category", "") or getattr(x, "actual_category", "")) == v_name and _has_trait(x.applicant_id, comp_name, is_shortlist)])
+                        counts[cat] = len([x for x in sorted_applicants if getattr(x, status_field, "") in valid_active and (getattr(x, "vertical_category", "") or getattr(x, "actual_category", "")) == v_name and _has_trait(x.applicant_id, comp_name, is_shortlist)])
                     is_comp = True
                     break
             if not is_comp:
                 if cat in horiz_types:
-                    counts[cat] = len([x for x in sorted_applicants if getattr(x, status_field, "") != "Rejected" and _has_trait(x.applicant_id, cat, is_shortlist)])
+                    counts[cat] = len([x for x in sorted_applicants if getattr(x, status_field, "") in valid_active and _has_trait(x.applicant_id, cat, is_shortlist)])
                 else:
-                    counts[cat] = len([x for x in sorted_applicants if getattr(x, status_field, "") != "Rejected" and getattr(x, "vertical_category", "") == cat])
+                    counts[cat] = len([x for x in sorted_applicants if getattr(x, status_field, "") in valid_active and getattr(x, "vertical_category", "") == cat])
         
         for cat in ordered_cats:
             info = category_mapping.get(cat, {"seats": 0, "required": 0})
@@ -1706,14 +1708,28 @@ def _calculate_and_sync_percentiles(applicants, is_shortlist=False):
         if app_id:
             updates.append((app_id, percentile))
 
-    # 4. Bulk update Entrance Test Seat Allocation.
-    if getattr(frappe, "db", None) and hasattr(frappe.db, "exists"):
-        for applicant_id, percentile in updates:
-            if frappe.db.exists("Entrance Test Seat Allocation", applicant_id):
-                frappe.db.set_value("Entrance Test Seat Allocation", applicant_id, "percentile", percentile, update_modified=False)
+    # 4. Bulk update Entrance Test Seat Allocation in batches to prevent database lock contention.
+    if getattr(frappe, "db", None) and updates:
+        batch_size = 500
+        for i in range(0, len(updates), batch_size):
+            batch = updates[i:i + batch_size]
+            when_clauses = " ".join(["WHEN %s THEN %s" for _ in batch])
+            params = []
+            for app_id, pct in batch:
+                params.extend([app_id, pct])
+            app_ids = tuple(app_id for app_id, _ in batch)
+            params.extend(app_ids)
+            in_placeholders = ", ".join(["%s"] * len(app_ids))
+            sql = f"""
+                UPDATE `tabEntrance Test Seat Allocation`
+                SET percentile = CASE name {when_clauses} END
+                WHERE name IN ({in_placeholders})
+            """
+            frappe.db.sql(sql, params)
 
         if hasattr(frappe.db, "commit"):
             frappe.db.commit()
+
 
 
 def execute_part_a_shortlisting(doc):

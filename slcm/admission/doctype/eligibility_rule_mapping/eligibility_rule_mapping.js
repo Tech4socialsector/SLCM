@@ -9,6 +9,18 @@ frappe.ui.form.on('Eligibility Rule Mapping', {
         });
     },
 
+    refresh: function (frm) {
+        frm.trigger("applicant_type");
+    },
+
+    applicant_type: function (frm) {
+        if (frm.doc.applicant_type === "International Applicants") {
+            frm.set_df_property("reservation_category", "hidden", 1);
+        } else {
+            frm.set_df_property("reservation_category", "hidden", 0);
+        }
+    },
+
     priority: function (frm) {
         if (frm.doc.priority && frm.doc.priority > 100) {
             frappe.show_alert({
