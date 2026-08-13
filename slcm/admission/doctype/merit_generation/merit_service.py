@@ -404,6 +404,7 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
               AND (etsa.program_level = %(program_level)s OR p.level_of_study = %(program_level)s)
               AND etsa.entrance_test_status = 'Attended'
               AND etsa.result_status = 'Pass'
+              AND IFNULL(etsa.is_international_applicant, 0) = 0
               {program_cond}
         """, query_args, as_dict=True)
 
@@ -944,8 +945,9 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
 
     # Calculate and persist percentiles for each program group separately.
     # This must happen before the percentile eligibility filter below.
-    for _prog_applicants in grouped_by_program.values():
-        _calculate_and_sync_percentiles(_prog_applicants, is_shortlist=is_shortlist_allocation)
+    if getattr(doc, "doctype", "") != "Seat Allocation":
+        for _prog_applicants in grouped_by_program.values():
+            _calculate_and_sync_percentiles(_prog_applicants, is_shortlist=is_shortlist_allocation)
 
     for program, applicants in grouped_by_program.items():
         policy_name = frappe.db.get_value("Programme Reservation Policy", {
@@ -1694,7 +1696,7 @@ def _calculate_and_sync_percentiles(applicants, is_shortlist=False):
     updates = []  # (applicant_id, percentile)
     for app in applicants:
         score = _get_score(app)
-        count_le = bisect.bisect_right(all_scores, score)  # # scores <= this score
+        count_le = bisect.bisect_left(all_scores, score)  # # scores < this score
         percentile = round((count_le / total_count) * 100, 4)
         if isinstance(app, dict):
             app["percentile_score"] = percentile
@@ -1706,14 +1708,28 @@ def _calculate_and_sync_percentiles(applicants, is_shortlist=False):
         if app_id:
             updates.append((app_id, percentile))
 
-    # 4. Bulk update Entrance Test Seat Allocation.
-    if getattr(frappe, "db", None) and hasattr(frappe.db, "exists"):
-        for applicant_id, percentile in updates:
-            if frappe.db.exists("Entrance Test Seat Allocation", applicant_id):
-                frappe.db.set_value("Entrance Test Seat Allocation", applicant_id, "percentile", percentile, update_modified=False)
+    # 4. Bulk update Entrance Test Seat Allocation in batches to prevent database lock contention.
+    if getattr(frappe, "db", None) and updates:
+        batch_size = 500
+        for i in range(0, len(updates), batch_size):
+            batch = updates[i:i + batch_size]
+            when_clauses = " ".join(["WHEN %s THEN %s" for _ in batch])
+            params = []
+            for app_id, pct in batch:
+                params.extend([app_id, pct])
+            app_ids = tuple(app_id for app_id, _ in batch)
+            params.extend(app_ids)
+            in_placeholders = ", ".join(["%s"] * len(app_ids))
+            sql = f"""
+                UPDATE `tabEntrance Test Seat Allocation`
+                SET percentile = CASE name {when_clauses} END
+                WHERE name IN ({in_placeholders})
+            """
+            frappe.db.sql(sql, params)
 
         if hasattr(frappe.db, "commit"):
             frappe.db.commit()
+
 
 
 def execute_part_a_shortlisting(doc):

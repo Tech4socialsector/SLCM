@@ -146,6 +146,7 @@ def create_seat_allocation(merit_list_name, selected_applicants):
             "admission_rank": row.overall_rank if row and merit.merit_processing_stage == "Final Allotment Ranking" else None,
             "actual_category": row.actual_category if row else None,
             "vertical_category": row.vertical_category if row else None,
+            "percentile_score": row.percentile_score if row else 0,
             "selection_status": "Draft"
         })
 
