@@ -9,10 +9,17 @@ from frappe.email.doctype.email_template.email_template import get_email_templat
 
 WEEKDAY_FIELDS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
 
+STATUS_PENDING = "Pending Allotment"
+STATUS_ALLOTTED = "Allotted"
+STATUS_REJECTED = "Rejected"
+STATUS_CANCELLED = "Cancelled"
+
 
 class VenueBooking(Document):
 	def before_insert(self):
 		self._set_requester_info()
+		self.created_by = frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user
+		self.created_on = frappe.utils.now()
 
 	def validate(self):
 		self.validate_dates()
@@ -23,8 +30,8 @@ class VenueBooking(Document):
 	def _protect_status_field(self):
 		"""Prevent non-admin users from changing the status field directly."""
 		if self.is_new():
-			# New docs always start as Pending — reset if someone tried to set it
-			self.status = "Pending"
+			# New docs always start as Pending Allotment — reset if someone tried to set it
+			self.status = STATUS_PENDING
 			return
 
 		admin_roles = {"System Manager", "Administrator", "slcm_Registrar"}
@@ -159,7 +166,7 @@ class VenueBooking(Document):
 			occurrence.start_datetime = occ_start
 			occurrence.end_datetime = occ_end
 			occurrence.parent_booking = self.name
-			occurrence.status = "Pending"
+			occurrence.status = STATUS_PENDING
 			occurrence.is_recurring = 0
 			occurrence.recurrence_frequency = None
 			occurrence.recurrence_end_date = None
@@ -293,30 +300,32 @@ def get_venue_query(doctype, txt, searchfield, start, page_len, filters):
 def approve_booking(booking_name, admin_remarks=None):
 	_require_admin()
 	booking = frappe.get_doc("Venue Booking", booking_name)
-	if booking.status != "Pending":
-		frappe.throw(_("Only Pending bookings can be approved."))
+	if booking.status != STATUS_PENDING:
+		frappe.throw(_("Only bookings Pending Allotment can be allotted."))
 	frappe.db.set_value("Venue Booking", booking_name, {
-		"status": "Approved",
-		"admin_remarks": admin_remarks or ""
+		"status": STATUS_ALLOTTED,
+		"admin_remarks": admin_remarks or "",
+		**_reply_meta()
 	})
 	frappe.db.commit()
-	_notify_requester(booking_name, "Approved", admin_remarks)
-	return {"status": "Approved"}
+	_notify_requester(booking_name, STATUS_ALLOTTED, admin_remarks)
+	return {"status": STATUS_ALLOTTED}
 
 
 @frappe.whitelist()
 def reject_booking(booking_name, admin_remarks=None):
 	_require_admin()
 	booking = frappe.get_doc("Venue Booking", booking_name)
-	if booking.status != "Pending":
-		frappe.throw(_("Only Pending bookings can be rejected."))
+	if booking.status != STATUS_PENDING:
+		frappe.throw(_("Only bookings Pending Allotment can be rejected."))
 	frappe.db.set_value("Venue Booking", booking_name, {
-		"status": "Rejected",
-		"admin_remarks": admin_remarks or ""
+		"status": STATUS_REJECTED,
+		"admin_remarks": admin_remarks or "",
+		**_reply_meta()
 	})
 	frappe.db.commit()
-	_notify_requester(booking_name, "Rejected", admin_remarks)
-	return {"status": "Rejected"}
+	_notify_requester(booking_name, STATUS_REJECTED, admin_remarks)
+	return {"status": STATUS_REJECTED}
 
 
 @frappe.whitelist()
@@ -327,11 +336,21 @@ def cancel_booking(booking_name, admin_remarks=None):
 		frappe.throw(_("Booking is already cancelled."))
 	frappe.db.set_value("Venue Booking", booking_name, {
 		"status": "Cancelled",
-		"admin_remarks": admin_remarks or ""
+		"admin_remarks": admin_remarks or "",
+		**_reply_meta()
 	})
 	frappe.db.commit()
 	_notify_requester(booking_name, "Cancelled", admin_remarks)
 	return {"status": "Cancelled"}
+
+
+def _reply_meta():
+	"""replied_by/replied_on stamp for whichever admin action (Allot/Reject/Cancel)
+	is changing the booking's status."""
+	return {
+		"replied_by": frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user,
+		"replied_on": frappe.utils.now(),
+	}
 
 
 @frappe.whitelist()
@@ -642,20 +661,20 @@ def _notify_requester(booking_name, new_status, admin_remarks=None):
 			return
 
 		status_colors = {
-			"Approved": "#166534",
-			"Rejected": "#991b1b",
-			"Cancelled": "#374151",
+			STATUS_ALLOTTED: "#166534",
+			STATUS_REJECTED: "#991b1b",
+			STATUS_CANCELLED: "#374151",
 		}
 		status_bg = {
-			"Approved": "#f0fdf4",
-			"Rejected": "#fef2f2",
-			"Cancelled": "#f3f4f6",
+			STATUS_ALLOTTED: "#f0fdf4",
+			STATUS_REJECTED: "#fef2f2",
+			STATUS_CANCELLED: "#f3f4f6",
 		}
 		color = status_colors.get(new_status, "#374151")
 		bg    = status_bg.get(new_status, "#f3f4f6")
 		footer_note = (
 			"Your booking is confirmed. Please ensure the venue is kept clean after use."
-			if new_status == "Approved"
+			if new_status == STATUS_ALLOTTED
 			else "If you have any questions, please contact the administration."
 		)
 

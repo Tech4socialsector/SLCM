@@ -45,6 +45,12 @@
   "reason",
   "attachment",
   "admin_remarks",
+  "section_break_audit",
+  "created_by",
+  "created_on",
+  "column_break_audit",
+  "replied_by",
+  "replied_on",
   "section_break_swap",
   "swap_requested",
   "swap_requested_venue",
@@ -53,8 +59,7 @@
   "swap_status",
   "swap_admin_remarks",
   "section_break_swap_log",
-  "swap_log",
-  "amended_from"
+  "swap_log"
  ],
  "fields": [
   {
@@ -69,8 +74,8 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Room",
-   "options": "Room",
+   "label": "Venue Type",
+   "options": "Venue Type",
    "reqd": 1
   },
   {
@@ -97,12 +102,12 @@
    "reqd": 1
   },
   {
-   "default": "Pending",
+   "default": "Pending Allotment",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Pending\nApproved\nRejected\nCancelled",
+   "options": "Pending Allotment\nAllotted\nRejected\nCancelled",
    "read_only": 1
   },
   {
@@ -298,6 +303,48 @@
   },
   {
    "collapsible": 1,
+   "fieldname": "section_break_audit",
+   "fieldtype": "Section Break",
+   "label": "Audit Trail"
+  },
+  {
+   "fieldname": "created_by",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Created By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "created_on",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Created On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_audit",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "replied_by",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Replied By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "replied_on",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Replied On",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
    "fieldname": "section_break_swap",
    "fieldtype": "Section Break",
    "hidden": 1,
@@ -362,15 +409,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Venue Booking",
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
    "fieldname": "venue",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -382,7 +420,7 @@
   {
    "fetch_from": "venue.building",
    "fieldname": "building",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Building",
    "options": "Building",
    "read_only": 1
@@ -390,16 +428,15 @@
   {
    "fetch_from": "venue.floor",
    "fieldname": "floor",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Floor",
    "options": "Floor",
    "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
- "is_submittable": 1,
  "links": [],
- "modified": "2026-07-14 09:24:31.194524",
+ "modified": "2026-08-13 09:13:47.116073",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Venue Booking",
@@ -407,7 +444,6 @@
  "owner": "Administrator",
  "permissions": [
   {
-   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -417,15 +453,12 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
-   "submit": 1,
    "write": 1
   },
   {
-   "cancel": 1,
    "create": 1,
    "read": 1,
    "role": "slcm_Student",
-   "submit": 1,
    "write": 1
   },
   {
@@ -439,11 +472,9 @@
    "write": 1
   },
   {
-   "cancel": 1,
    "create": 1,
    "read": 1,
    "role": "slcm_Registrar",
-   "submit": 1,
    "write": 1
   }
  ],

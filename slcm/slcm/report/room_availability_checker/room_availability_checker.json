@@ -23,6 +23,44 @@
    "fieldtype": "Select",
    "label": "Venue Type",
    "options": "\nClassroom\nMoot Court\nOpen Spaces\nMeeting Room\nMess\nQuad\nConference Hall\nProject\nGuest House\nStaff Quarters"
+  },
+  {
+   "fieldname": "room",
+   "fieldtype": "Link",
+   "label": "Room",
+   "options": "Room"
+  },
+  {
+   "fieldname": "block",
+   "fieldtype": "Link",
+   "label": "Block",
+   "options": "Block"
+  },
+  {
+   "fieldname": "min_capacity",
+   "fieldtype": "Int",
+   "label": "Minimum Capacity"
+  },
+  {
+   "fieldname": "floor",
+   "fieldtype": "Data",
+   "label": "Floor"
+  },
+  {
+   "fieldname": "facilities",
+   "fieldtype": "Data",
+   "label": "Facilities"
+  },
+  {
+   "fieldname": "booked_by",
+   "fieldtype": "Data",
+   "label": "Booked By / Requester"
+  },
+  {
+   "fieldname": "availability_status",
+   "fieldtype": "Select",
+   "label": "Availability",
+   "options": "\nAvailable\nBooked"
   }
  ],
  "is_standard": "Yes",

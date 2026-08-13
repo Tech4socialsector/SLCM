@@ -1654,10 +1654,10 @@ def get_venue_analytics(academic_year=None, term=None, program=None, cohort=None
 
 	status_dist = frappe.db.sql(
 		"""
-		SELECT COALESCE(NULLIF(status, ''), 'Pending') AS label, COUNT(*) AS value
+		SELECT COALESCE(NULLIF(status, ''), 'Pending Allotment') AS label, COUNT(*) AS value
 		FROM `tabVenue Booking`
 		GROUP BY status
-		ORDER BY FIELD(status, 'Pending', 'Approved', 'Rejected', 'Cancelled') ASC
+		ORDER BY FIELD(status, 'Pending Allotment', 'Allotted', 'Rejected', 'Cancelled') ASC
 		""",
 		as_dict=True,
 	)
@@ -1691,8 +1691,8 @@ def get_venue_analytics(academic_year=None, term=None, program=None, cohort=None
 	)
 
 	total_bookings    = frappe.db.count("Venue Booking")
-	pending_bookings  = frappe.db.count("Venue Booking", filters={"status": "Pending"})
-	approved_bookings = frappe.db.count("Venue Booking", filters={"status": "Approved"})
+	pending_bookings  = frappe.db.count("Venue Booking", filters={"status": "Pending Allotment"})
+	approved_bookings = frappe.db.count("Venue Booking", filters={"status": "Allotted"})
 	rejected_bookings = frappe.db.sql(
 		"""SELECT COUNT(*) FROM `tabVenue Booking`
 		   WHERE status IN ('Rejected', 'Cancelled')"""
