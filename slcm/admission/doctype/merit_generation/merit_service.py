@@ -404,6 +404,7 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
               AND (etsa.program_level = %(program_level)s OR p.level_of_study = %(program_level)s)
               AND etsa.entrance_test_status = 'Attended'
               AND etsa.result_status = 'Pass'
+              AND IFNULL(etsa.is_international_applicant, 0) = 0
               {program_cond}
         """, query_args, as_dict=True)
 
