@@ -124,6 +124,8 @@ slcm.show_bulk_email_dialog = function (reference_doctype, docnames, listview) {
                             let type = d.get_value('message_type');
                             d.set_df_property('message', 'hidden', type === 'HTML' ? 1 : 0);
                             d.set_df_property('message_html', 'hidden', type === 'Text' ? 1 : 0);
+                            d.set_df_property('message', 'reqd', type === 'Text' ? 1 : 0);
+                            d.set_df_property('message_html', 'reqd', type === 'HTML' ? 1 : 0);
                         }
                     },
                     {
@@ -132,7 +134,8 @@ slcm.show_bulk_email_dialog = function (reference_doctype, docnames, listview) {
                     {
                         fieldname: 'message',
                         label: __('Message'),
-                        fieldtype: 'Text Editor'
+                        fieldtype: 'Text Editor',
+                        reqd: 1
                     },
                     {
                         fieldname: 'message_html',
@@ -468,12 +471,12 @@ slcm.show_bulk_email_progress = function (bulk_email_name, recipients_data) {
     });
 
     // Check state periodically as a robust fallback for flaky WebSocket connections
-    let poll_interval = setInterval(() => {
+    const check_state = () => {
         frappe.db.get_value('Bulk Email', bulk_email_name, ['status', 'sent_count', 'failed_count', 'total_recipients', 'server_response']).then(r => {
             if (!r.message) return;
             let doc = r.message;
             if (['Success', 'Partial', 'Error'].includes(doc.status)) {
-                clearInterval(poll_interval);
+                if (poll_interval) clearInterval(poll_interval);
                 handle_complete({
                     bulk_email: bulk_email_name,
                     sent: doc.sent_count || 0,
@@ -491,7 +494,10 @@ slcm.show_bulk_email_progress = function (bulk_email_name, recipients_data) {
                 $('#be-progress-text').text(`Processed ${sent + failed} of ${doc.total_recipients || 0} (Sent: ${sent}, Failed: ${failed})`);
             }
         });
-    }, 2000);
+    };
+
+    check_state(); // Fetch immediately on load
+    let poll_interval = setInterval(check_state, 2000);
 
     progress_dialog.onhide = () => {
         clearInterval(poll_interval);

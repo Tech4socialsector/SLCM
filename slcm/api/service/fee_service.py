@@ -734,14 +734,12 @@ class FeeService:
         """
         try:
             import json
-            existing = frappe.db.get_value(
+            existing = frappe.db.exists(
                 "Applicant Payment Receipt",
                 {
-                    "offer_letter": offer_doc.name,
                     "transaction_id": transaction_id,
                     "docstatus": ["<", 2],
-                },
-                "name",
+                }
             )
             if existing:
                 return existing

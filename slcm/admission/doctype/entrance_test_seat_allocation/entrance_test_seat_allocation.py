@@ -860,7 +860,7 @@ def get_applicant_count(academic_year=None, admission_cycle=None, program_level=
 
 
 @frappe.whitelist()
-def reject_and_allocate_applicants(applicants, providers, allocation_type=None):
+def reject_and_allocate_applicants(applicants, providers, allocation_type=None, send_email=1):
     if isinstance(applicants, str):
         applicants = json.loads(applicants)
     if isinstance(providers, str):
@@ -1011,7 +1011,7 @@ def reject_and_allocate_applicants(applicants, providers, allocation_type=None):
             except Exception:
                 pass
 
-        if email and _send_allocation_email:
+        if email and _send_allocation_email and frappe.utils.cint(send_email):
             try:
                 # Attach reallocation flag for Jinja templates
                 doc.is_reallocation = True

@@ -42,6 +42,15 @@ class ShortlistingMeritList(Document):
         for t in tables:
             self.set(t, [])
 
+    def validate(self):
+        self.calculate_summary_counts()
+
+    def calculate_summary_counts(self):
+        if self.shortlist_applicants:
+            self.total_candidates = len(self.shortlist_applicants)
+            self.total_shortlisted = len([a for a in self.shortlist_applicants if a.shortlist_status == "Shortlisted"])
+            self.total_rejected = len([a for a in self.shortlist_applicants if a.shortlist_status == "Rejected"])
+
     def pull_from_merit_list(self, merit):
         if isinstance(merit, str):
             merit = frappe.get_doc("Merit List", merit)
@@ -61,8 +70,7 @@ class ShortlistingMeritList(Document):
                 "date_of_birth": row.get("date_of_birth"),
                 "shortlist_status": "Shortlisted"
             })
-        self.total_candidates = len(self.shortlist_applicants)
-        self.total_shortlisted = len([a for a in self.shortlist_applicants if a.shortlist_status == "Shortlisted"])
+        self.calculate_summary_counts()
         
         # Automatically execute shortlisting logic to fill categories
         from slcm.admission.doctype.merit_generation.merit_service import execute_advanced_allocation_logic, _populate_category_lists
@@ -70,7 +78,7 @@ class ShortlistingMeritList(Document):
         _populate_category_lists(self)
         
         # Re-calculate shortlisted count after allocation
-        self.total_shortlisted = len([a for a in self.shortlist_applicants if a.shortlist_status == "Shortlisted"])
+        self.calculate_summary_counts()
         
         self.status = "Allocated"
         self.save()
@@ -81,7 +89,7 @@ class ShortlistingMeritList(Document):
         from slcm.admission.doctype.merit_generation.merit_service import execute_advanced_allocation_logic, _populate_category_lists
         execute_advanced_allocation_logic(self, is_shortlist_allocation=True)
         _populate_category_lists(self)
-        self.total_shortlisted = len([a for a in self.shortlist_applicants if a.shortlist_status == "Shortlisted"])
+        self.calculate_summary_counts()
         self.status = "Allocated"
         self.save()
         frappe.db.commit()
@@ -127,59 +135,50 @@ class ShortlistingMeritList(Document):
     def sync_shortlisted_status_to_entrance_test_allocations(self):
         """
         Synchronizes shortlisted_status field in Entrance Test Seat Allocation
-        with candidate shortlist_status from this Shortlisting Merit List.
+        with candidate shortlist_status from this Shortlisting Merit List using bulk SQL queries.
         """
-        shortlisted_map = {}
+        status_groups = {}
         if self.shortlist_applicants:
             for row in self.shortlist_applicants:
                 if row.applicant_id:
-                    shortlisted_map[row.applicant_id] = row.shortlist_status or "Shortlisted"
+                    st = row.shortlist_status or "Shortlisted"
+                    status_groups.setdefault(st, []).append(row.applicant_id)
 
-        filters = {}
-        if self.admission_cycle:
-            filters["admission_cycle"] = self.admission_cycle
-        if self.campus:
-            filters["campus"] = self.campus
-        if self.program_level:
-            filters["program_level"] = self.program_level
-        if self.program:
-            filters["program"] = self.program
-
-        allocations = frappe.get_all("Entrance Test Seat Allocation", filters=filters, fields=["name", "applicant", "shortlisted_status"])
-
-        for alloc in allocations:
-            app_id = alloc.applicant
-            new_status = shortlisted_map.get(app_id, "")
-            if (alloc.shortlisted_status or "") != new_status:
-                frappe.db.set_value("Entrance Test Seat Allocation", alloc.name, "shortlisted_status", new_status, update_modified=False)
+        batch_size = 1000
+        # Bulk update status for shortlisted applicants using Primary Key
+        for status_val, app_ids in status_groups.items():
+            for i in range(0, len(app_ids), batch_size):
+                batch = app_ids[i:i + batch_size]
+                frappe.db.sql("""
+                    UPDATE `tabEntrance Test Seat Allocation`
+                    SET shortlisted_status = %(status)s
+                    WHERE name IN %(applicants)s
+                      AND (shortlisted_status != %(status)s OR shortlisted_status IS NULL)
+                """, {"status": status_val, "applicants": tuple(batch)})
 
     def clear_shortlisted_status_in_entrance_test_allocations(self):
         """
         Clears shortlisted_status to blank ("") in Entrance Test Seat Allocation
-        for all applicants associated with this Shortlisting Merit List.
+        for all applicants associated with this Shortlisting Merit List using bulk SQL queries.
         """
         applicant_ids = [row.applicant_id for row in (self.shortlist_applicants or []) if row.applicant_id]
 
-        filters = {}
-        if self.admission_cycle:
-            filters["admission_cycle"] = self.admission_cycle
-        if self.campus:
-            filters["campus"] = self.campus
-        if self.program_level:
-            filters["program_level"] = self.program_level
-        if self.program:
-            filters["program"] = self.program
-
-        allocations = frappe.get_all("Entrance Test Seat Allocation", filters=filters, fields=["name", "applicant"])
-        alloc_names = set(a.name for a in allocations)
-
+        batch_size = 1000
         if applicant_ids:
-            by_app = frappe.get_all("Entrance Test Seat Allocation", filters={"applicant": ["in", applicant_ids]}, fields=["name"])
-            for a in by_app:
-                alloc_names.add(a.name)
+            for i in range(0, len(applicant_ids), batch_size):
+                batch = applicant_ids[i:i + batch_size]
+                frappe.db.sql("""
+                    UPDATE `tabEntrance Test Seat Allocation`
+                    SET shortlisted_status = ''
+                    WHERE name IN %(applicants)s
+                      AND shortlisted_status != ''
+                      AND shortlisted_status IS NOT NULL
+                """, {"applicants": tuple(batch)})
 
-        for alloc_name in alloc_names:
-            frappe.db.set_value("Entrance Test Seat Allocation", alloc_name, "shortlisted_status", "", update_modified=False)
+        frappe.db.delete("Admission Audit Log", {
+            "reference_doctype": "Shortlisting Merit List",
+            "reference_name": self.name
+        })
 
 @frappe.whitelist()
 def get_generation_progress(docname):

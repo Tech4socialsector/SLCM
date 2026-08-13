@@ -213,12 +213,16 @@ def update_applicant_from_form(**kwargs):
         
         if target_doctype == "Applicant":
             # Update Applicant only — User profile is updated only via update_user_profile (portal modal).
-            frappe.db.set_value("Applicant", target_docname, applicant_update_dict)
+            doc = frappe.get_doc("Applicant", target_docname)
+            doc.update(applicant_update_dict)
+            doc.save(ignore_permissions=True)
         else:
             parent = frappe.db.get_value(target_doctype, target_docname, "parent")
             if parent != app_name:
                 return {"success": False, "error": "Invalid document reference."}
-            frappe.db.set_value(target_doctype, target_docname, applicant_update_dict)
+            doc = frappe.get_doc(target_doctype, target_docname)
+            doc.update(applicant_update_dict)
+            doc.save(ignore_permissions=True)
 
         frappe.db.commit()
         return {"success": True, "status": "ok"}
@@ -234,7 +238,7 @@ def sync_applicant_to_user(doc, method=None):
     """
     return
 
-@frappe.whitelist(allow_guest=True, methods=["POST", "GET"])
+@frappe.whitelist(methods=["POST", "GET"])
 def update_profile(**kwargs):
     """
     Legacy wrapper for existing dashboard functionality.

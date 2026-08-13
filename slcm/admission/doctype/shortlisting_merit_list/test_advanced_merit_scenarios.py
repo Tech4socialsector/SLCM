@@ -795,3 +795,111 @@ class IntegrationTestAdvancedMeritScenarios(IntegrationTestCase):
             # Verify no allocated candidate violated percentile rules
             for c in allocated_candidates:
                 self.assertNotEqual(c.remarks, "Did not meet minimum percentile threshold", "Seat Allocation must not allocate candidate violating percentile threshold")
+
+    def test_karnataka_reserved_candidate_merit_migration_to_general_karnataka(self):
+        """
+        Verify that a top-merit SC Karnataka candidate moves to General Karnataka sub-quota,
+        vacating their SC seat so it is filled by the next SC candidate.
+        """
+        from slcm.tests.merit_system.fixtures.candidate_fixtures import mock_doc_registry, MockDoc
+
+        # Candidate pool:
+        # APP-G1: Gen, non-KA, score 100 -> Gen #1
+        # APP-G2: Gen, non-KA, score 90  -> Displaced from Gen for Karnataka
+        # APP-SC1: SC, KA, score 80      -> Top KA candidate -> Migrates to General (Karnataka)
+        # APP-SC2: SC, non-KA, score 70  -> Backfills the vacated SC seat
+        # APP-G3: Gen, KA, score 60      -> Lower merit KA than SC1
+        # APP-SC3: SC, non-KA, score 50  -> Unallocated
+
+        candidates = [
+            frappe._dict({
+                "applicant_id": "APP-G1", "candidate_name": "Gen 1", "program": self.program,
+                "entrance_score": 50.0, "interview_score": 50.0, "total_score": 100.0,
+                "actual_category": "General", "vertical_category": "General", "horizontal_categories": "",
+                "status": "Selected", "allocation_type": "Open", "overall_rank": 1
+            }),
+            frappe._dict({
+                "applicant_id": "APP-G2", "candidate_name": "Gen 2", "program": self.program,
+                "entrance_score": 45.0, "interview_score": 45.0, "total_score": 90.0,
+                "actual_category": "General", "vertical_category": "General", "horizontal_categories": "",
+                "status": "Selected", "allocation_type": "Open", "overall_rank": 2
+            }),
+            frappe._dict({
+                "applicant_id": "APP-SC1", "candidate_name": "SC 1 (KA)", "program": self.program,
+                "entrance_score": 40.0, "interview_score": 40.0, "total_score": 80.0,
+                "actual_category": "SC", "vertical_category": "SC", "horizontal_categories": "Karnataka",
+                "status": "Selected", "allocation_type": "Reserved", "overall_rank": 3
+            }),
+            frappe._dict({
+                "applicant_id": "APP-SC2", "candidate_name": "SC 2 (AI)", "program": self.program,
+                "entrance_score": 35.0, "interview_score": 35.0, "total_score": 70.0,
+                "actual_category": "SC", "vertical_category": "SC", "horizontal_categories": "",
+                "status": "Selected", "allocation_type": "Reserved", "overall_rank": 4
+            }),
+            frappe._dict({
+                "applicant_id": "APP-G3", "candidate_name": "Gen 3 (KA)", "program": self.program,
+                "entrance_score": 30.0, "interview_score": 30.0, "total_score": 60.0,
+                "actual_category": "General", "vertical_category": "General", "horizontal_categories": "Karnataka",
+                "status": "Selected", "allocation_type": "Open", "overall_rank": 5
+            }),
+            frappe._dict({
+                "applicant_id": "APP-SC3", "candidate_name": "SC 3 (AI)", "program": self.program,
+                "entrance_score": 25.0, "interview_score": 25.0, "total_score": 50.0,
+                "actual_category": "SC", "vertical_category": "SC", "horizontal_categories": "",
+                "status": "Selected", "allocation_type": "Reserved", "overall_rank": 6
+            }),
+        ]
+
+        for c in candidates:
+            mock_doc_registry[f"Applicant-{c.applicant_id}"] = MockDoc(
+                "Applicant", c.applicant_id,
+                original_vertical_category=c.actual_category,
+                original_horizontal_categories=c.horizontal_categories
+            )
+
+        class CustomPolicy(MockPolicy):
+            def __init__(self):
+                self.shortlisting_multiplier = 1.0
+                self.apply_percentile_cutoff_for_shortlisting = 0
+                self.revert_unfilled_compartmental_seats = True
+                self.categories = [
+                    MockDoc("Admission Category Row", "Gen", category_name="General", seats=2, shortlisting_target=2, min_percentile=0.0, priority=1),
+                    MockDoc("Admission Category Row", "SC", category_name="SC", seats=1, shortlisting_target=1, min_percentile=0.0, priority=2),
+                ]
+                self.horizontal_reservations = []
+                self.compartmental_reservations = [
+                    MockDoc("Compartmentalised Reservation Row", "Karnataka", category_name="Karnataka", percentage=50.0, shortlisting_target=1, min_percentile=0.0),
+                ]
+
+        from unittest.mock import patch
+        orig_get_doc = frappe.get_doc
+        def custom_get_doc(doctype, name=None, **kwargs):
+            if doctype == "Programme Reservation Policy":
+                return CustomPolicy()
+            return orig_get_doc(doctype, name, **kwargs)
+
+        with patch("frappe.get_doc", custom_get_doc):
+            doc_ml = self._get_mock_doc(candidates, is_shortlist=False)
+            execute_advanced_allocation_logic(doc_ml)
+
+            app_g1 = next(r for r in doc_ml.merit_applicants if r.applicant_id == "APP-G1")
+            app_sc1 = next(r for r in doc_ml.merit_applicants if r.applicant_id == "APP-SC1")
+            app_sc2 = next(r for r in doc_ml.merit_applicants if r.applicant_id == "APP-SC2")
+            app_g2 = next(r for r in doc_ml.merit_applicants if r.applicant_id == "APP-G2")
+
+            # 1. APP-G1 gets Open General seat
+            self.assertEqual(app_g1.vertical_category, "General")
+            self.assertEqual(app_g1.allocation_type, "Open")
+
+            # 2. APP-SC1 (Karnataka SC #1) migrates to General (Karnataka sub-quota)
+            self.assertEqual(app_sc1.vertical_category, "General")
+            self.assertEqual(app_sc1.allocation_type, "Open")
+            self.assertEqual(app_sc1.status, "Selected")
+
+            # 3. APP-SC2 fills the vacated SC seat!
+            self.assertEqual(app_sc2.vertical_category, "SC")
+            self.assertEqual(app_sc2.allocation_type, "Reserved")
+            self.assertEqual(app_sc2.status, "Selected")
+
+            # 4. APP-G2 was displaced to make room for Karnataka sub-quota candidate
+            self.assertEqual(app_g2.status, "Rejected")
