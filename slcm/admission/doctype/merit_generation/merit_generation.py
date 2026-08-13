@@ -72,6 +72,7 @@ class MeritGeneration(Document):
               AND etsa.campus = %(campus)s
               AND etsa.entrance_test_status = 'Attended'
               AND etsa.result_status = 'Pass'
+              AND IFNULL(etsa.is_international_applicant, 0) = 0
               {program_cond}
             LIMIT 1
         """, check_filters, as_dict=True)
