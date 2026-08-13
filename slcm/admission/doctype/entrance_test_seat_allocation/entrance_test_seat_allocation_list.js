@@ -240,7 +240,9 @@ function open_publish_result_dialog(listview) {
 
     let pd = new frappe.ui.Dialog({
         title: __("Publish Entrance Test Result"),
+        size: "extra-large",
         fields: [
+            { fieldtype: "Section Break", label: __("Filters") },
             {
                 label: __("Academic Year"),
                 fieldname: "academic_year",
@@ -250,6 +252,7 @@ function open_publish_result_dialog(listview) {
                 reqd: 1,
                 change() { update_dialog_applicant_count(pd); }
             },
+            { fieldtype: "Column Break" },
             {
                 label: __("Admission Cycle"),
                 fieldname: "admission_cycle",
@@ -259,6 +262,7 @@ function open_publish_result_dialog(listview) {
                 reqd: 1,
                 change() { update_dialog_applicant_count(pd); }
             },
+            { fieldtype: "Column Break" },
             {
                 label: __("Programme Level"),
                 fieldname: "program_level",
@@ -271,6 +275,7 @@ function open_publish_result_dialog(listview) {
                     update_dialog_applicant_count(pd);
                 }
             },
+            { fieldtype: "Section Break" },
             {
                 label: __("Applicant Type"),
                 fieldname: "applicant_type",
@@ -280,6 +285,7 @@ function open_publish_result_dialog(listview) {
                 reqd: 1,
                 change() { update_dialog_applicant_count(pd); }
             },
+            { fieldtype: "Column Break" },
             {
                 label: __("Programme"),
                 fieldname: "program",
@@ -288,9 +294,59 @@ function open_publish_result_dialog(listview) {
                 depends_on: "eval:doc.program_level",
                 change() { update_dialog_applicant_count(pd); }
             },
+            { fieldtype: "Section Break" },
             {
                 fieldname: "total_applicants_html",
                 fieldtype: "HTML"
+            },
+            { fieldtype: "Section Break", label: __("Email Settings") },
+            {
+                label: __("Send Email"),
+                fieldname: "send_email",
+                fieldtype: "Check",
+                default: 0,
+                onchange: function() {
+                    let is_send = pd.get_value("send_email");
+                    let format = pd.get_value("email_format");
+                    
+                    if (pd.fields_dict.email_format) {
+                        pd.fields_dict.email_format.$wrapper.toggle(!!is_send);
+                    }
+                    
+                    if (pd.fields_dict.custom_email_content) {
+                        let show_editor = !!(is_send && format === "Custom");
+                        pd.fields_dict.custom_email_content.$wrapper.toggle(show_editor);
+                        if (show_editor) {
+                            setTimeout(() => pd.fields_dict.custom_email_content.refresh(), 50);
+                        }
+                    }
+                }
+            },
+            { fieldtype: "Column Break" },
+            {
+                label: __("Email Format"),
+                fieldname: "email_format",
+                fieldtype: "Select",
+                options: "Default\nCustom",
+                default: "Default",
+                onchange: function() {
+                    let is_send = pd.get_value("send_email");
+                    let format = pd.get_value("email_format");
+                    
+                    if (pd.fields_dict.custom_email_content) {
+                        let show_editor = !!(is_send && format === "Custom");
+                        pd.fields_dict.custom_email_content.$wrapper.toggle(show_editor);
+                        if (show_editor) {
+                            setTimeout(() => pd.fields_dict.custom_email_content.refresh(), 50);
+                        }
+                    }
+                }
+            },
+            { fieldtype: "Section Break" },
+            {
+                label: __("Custom Email Content"),
+                fieldname: "custom_email_content",
+                fieldtype: "Text Editor"
             }
         ],
         primary_action_label: __("Publish"),
@@ -302,7 +358,16 @@ function open_publish_result_dialog(listview) {
                     frappe.show_progress(__("Publishing Results"), 0, 100, __("Updating records and queueing emails..."));
                     frappe.call({
                         method: "slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.publish_results",
-                        args: values,
+                        args: {
+                            academic_year: values.academic_year,
+                            admission_cycle: values.admission_cycle,
+                            program_level: values.program_level,
+                            applicant_type: values.applicant_type,
+                            program: values.program,
+                            send_email: values.send_email,
+                            email_format: values.email_format,
+                            custom_email_content: values.custom_email_content
+                        },
                         callback: function (r) {
                             frappe.show_progress(__("Publishing Results"), 100, 100, __("Completed"));
                             setTimeout(() => frappe.hide_progress(), 3000);
@@ -343,6 +408,10 @@ function open_publish_result_dialog(listview) {
     });
 
     pd.show();
+
+    // Initial Hide of Email Fields
+    if (pd.fields_dict.email_format) pd.fields_dict.email_format.$wrapper.hide();
+    if (pd.fields_dict.custom_email_content) pd.fields_dict.custom_email_content.$wrapper.hide();
 
     if (default_ay || default_ac || default_pl) {
         pd.set_values({
