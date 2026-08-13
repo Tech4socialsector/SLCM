@@ -37,6 +37,20 @@ frappe.ui.form.on('Class Configuration', {
 
     batch: function (frm) {
         set_link_filters(frm);
+        if (frm.doc.batch) {
+            frappe.db.get_value('Batch', frm.doc.batch, ['program', 'academic_term'], (r) => {
+                if (r) {
+                    frm.set_value('programme', r.program || '');
+                    frm.set_value('term', r.academic_term || '');
+                    if (!r.academic_term) {
+                        frappe.show_alert({
+                            message: __('Selected Batch has no Academic Term set'),
+                            indicator: 'orange'
+                        });
+                    }
+                }
+            });
+        }
     },
 
     section: function (frm) {
@@ -236,12 +250,14 @@ function download_sample_students_csv() {
         + "B20262027001,Jane Doe,B2627-A\n"
         + "B20262027002,John Smith,B2627-A\n";
     let blob = new Blob([csv_content], { type: 'text/csv' });
+    let url = window.URL.createObjectURL(blob);
     let link = document.createElement('a');
-    link.href = window.URL.createObjectURL(blob);
+    link.href = url;
     link.download = 'sample_students.csv';
     document.body.appendChild(link);
     link.click();
     link.remove();
+    window.URL.revokeObjectURL(url);
 }
 
 function bulk_upload_students(frm) {
@@ -251,7 +267,9 @@ function bulk_upload_students(frm) {
             {
                 fieldname: 'sample_html',
                 fieldtype: 'HTML',
-                options: `<a href="#" id="download-sample-students-csv">${__('Download Sample CSV')}</a>`
+                options: `<a href="#" id="download-sample-students-csv" class="btn btn-secondary btn-sm">
+                    ${frappe.utils.icon('download', 'sm')} ${__('Download Sample CSV')}
+                </a>`
             },
             {
                 fieldname: 'file',
