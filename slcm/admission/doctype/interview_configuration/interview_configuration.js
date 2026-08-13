@@ -41,7 +41,7 @@ frappe.ui.form.on("Interview Configuration", {
             frm.doc.academic_year &&
             frm.doc.campus &&
             frm.doc.admission_cycle &&
-            (frm.doc.program && frm.doc.program.length > 0)
+            frm.doc.program
         );
 
         if (show_actions) {
@@ -66,7 +66,7 @@ frappe.ui.form.on("Interview Configuration", {
 
             // ── "Generate Interview List" button ─────────────────────────────────
             frm.add_custom_button(__("Generate Interview List"), function () {
-                let program_list = (frm.doc.program || []).map(p => p.program).filter(Boolean).join(", ");
+                let program_list = frm.doc.program || "";
                 let program_row = program_list ? 
                     `<tr><td style="color: #adb5bd; font-weight: 500;">Programme</td><td style="font-weight: 700; text-align: right; color: #495057;">${program_list}</td></tr>` : '';
 
@@ -126,9 +126,8 @@ frappe.ui.form.on("Interview Configuration", {
                     campus: frm.doc.campus,
                     admission_cycle: frm.doc.admission_cycle
                 };
-                let first_program = (frm.doc.program && frm.doc.program.length > 0) ? frm.doc.program[0].program : null;
-                if (first_program) {
-                    filters.program = first_program;
+                if (frm.doc.program) {
+                    filters.program = frm.doc.program;
                 }
                 frappe.db.get_value("Interview List", filters, "name", (r) => {
                     if (r && r.name) {
@@ -193,20 +192,14 @@ function toggle_ratio_fields(frm) {
 }
 
 function check_programme_settings(frm, show_toast = true) {
-    if (!frm.doc.program || frm.doc.program.length === 0) {
+    if (!frm.doc.program) {
         frm.doc.__show_dom_ratio = true;
         frm.doc.__show_int_ratio = true;
         toggle_ratio_fields(frm);
         return;
     }
 
-    let program_names = frm.doc.program.map(p => p.program).filter(Boolean);
-    if (program_names.length === 0) {
-        frm.doc.__show_dom_ratio = true;
-        frm.doc.__show_int_ratio = true;
-        toggle_ratio_fields(frm);
-        return;
-    }
+    let program_names = [frm.doc.program];
 
     frappe.call({
         method: "frappe.client.get_list",

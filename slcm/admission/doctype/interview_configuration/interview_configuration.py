@@ -69,7 +69,7 @@ class InterviewConfiguration(Document):
         if not applicant_type:
             applicant_type = self.applicant_type
 
-        program_names = [p.program for p in self.program] if self.program else []
+        program_names = [self.program] if self.program else []
         if not program_names:
             return 0
 
@@ -97,7 +97,7 @@ class InterviewConfiguration(Document):
         return total_seats
 
     def get_eligible_applicants(self):
-        program_names = [p.program for p in self.program] if self.program else []
+        program_names = [self.program] if self.program else []
         if not program_names:
             return []
 
@@ -360,10 +360,8 @@ class InterviewConfiguration(Document):
             )
             frappe.throw(msg, title=_("Generation Failed"))
 
-        # Determine level_of_study from first chosen program
-        program_levels = {frappe.db.get_value("Programme", p.program, "level_of_study") for p in self.program if p.program}
-        program_levels = {l for l in program_levels if l}
-        program_level = list(program_levels)[0] if program_levels else "Undergraduate"
+        # Determine level_of_study from chosen program
+        program_level = frappe.db.get_value("Programme", self.program, "level_of_study") if self.program else "Undergraduate"
 
         # 5. Create Interview List
         interview_list_data = {
@@ -377,7 +375,7 @@ class InterviewConfiguration(Document):
             "interview_applicant":  []
         }
         if self.program:
-            interview_list_data["program"] = self.program[0].program
+            interview_list_data["program"] = self.program
 
         interview_list = frappe.get_doc(interview_list_data)
 

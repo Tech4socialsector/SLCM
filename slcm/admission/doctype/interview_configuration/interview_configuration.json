@@ -73,9 +73,9 @@
   },
   {
    "fieldname": "program",
-   "fieldtype": "Table MultiSelect",
+   "fieldtype": "Link",
    "label": "Programme",
-   "options": "Interview Configuration Program",
+   "options": "Programme",
    "reqd": 1
   },
   {

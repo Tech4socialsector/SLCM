@@ -32,12 +32,6 @@ class InterviewSeatAllocation(Document):
             self.final_percentage = (
                 self.final_cumulative_score / max_marks * 100.0
             ) if max_marks > 0 else 0.0
-
-            if self.final_percentage >= 70.0:
-                self.interview_result_status = "Pass"
-            else:
-                self.interview_result_status = "Fail"
-                self.status = "Rejected"
         elif self.interview_status == "Absent":
             self.final_cumulative_score = 0.0
             self.final_percentage = 0.0
