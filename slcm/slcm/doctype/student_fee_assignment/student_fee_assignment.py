@@ -32,7 +32,7 @@ class StudentFeeAssignment(Document):
 	def update_status(self):
 		if self.outstanding_amount <= 0:
 			self.status = "Paid"
-		elif self.paid_amount > 0:
+		elif (self.paid_amount or 0) > 0:
 			self.status = "Partially Paid"
 		else:
 			self.status = "Unpaid"
