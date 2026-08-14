@@ -143,6 +143,16 @@ class ApplicantFeeAssignment(Document):
 	def on_cancel(self):
 		self.status = "Cancelled"
 
+	def on_update(self):
+		if self.status == "Paid" and self.offer_letter:
+			today = frappe.utils.today()
+			if self.fee_type == "Confirmation Fee":
+				if not frappe.db.get_value("Offer Letter", self.offer_letter, "confirmation_fee_paid_on"):
+					frappe.db.set_value("Offer Letter", self.offer_letter, "confirmation_fee_paid_on", today)
+			elif self.fee_type == "Admission Fee":
+				if not frappe.db.get_value("Offer Letter", self.offer_letter, "full_fee_paid_on"):
+					frappe.db.set_value("Offer Letter", self.offer_letter, "full_fee_paid_on", today)
+
 
 # ── Import unified conversion helpers ────────────────────────────────────────
 # The field mapping, scholarship sync, and student creation logic now live in

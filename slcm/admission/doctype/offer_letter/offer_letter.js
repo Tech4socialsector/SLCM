@@ -174,17 +174,17 @@ frappe.ui.form.on("Offer Letter", {
     },
 
     validate(frm) {
+        let today = frappe.datetime.get_today();
         // Ensure payment_deadline is not in the past during validation
-        if (frm.doc.payment_deadline && frm.doc.payment_deadline < frappe.datetime.now_datetime()) {
-            frappe.throw(__('Payment Deadline cannot be in the past. Please select a future date and time.'));
+        if (frm.doc.payment_deadline && frm.doc.payment_deadline < today) {
+            frappe.throw(__('Payment Deadline cannot be in the past. Please select a future date or today.'));
         }
-        if (frm.doc.offer_acceptance_deadline && frm.doc.offer_acceptance_deadline < frappe.datetime.now_datetime()) {
-            frappe.throw(__('Offer Acceptance Deadline cannot be in the past. Please select a future date and time.'));
+        if (frm.doc.offer_acceptance_deadline && frm.doc.offer_acceptance_deadline < today) {
+            frappe.throw(__('Offer Acceptance Deadline cannot be in the past. Please select a future date or today.'));
         }
-        if (frm.doc.confirmation_fee_deadline && frm.doc.confirmation_fee_deadline < frappe.datetime.now_datetime()) {
-            frappe.throw(__('Confirmation Fee Deadline cannot be in the past. Please select a future date and time.'));
+        if (frm.doc.confirmation_fee_deadline && frm.doc.confirmation_fee_deadline < today) {
+            frappe.throw(__('Confirmation Fee Deadline cannot be in the past. Please select a future date or today.'));
         }
-
     }
 });
 

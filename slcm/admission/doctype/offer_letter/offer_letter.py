@@ -33,6 +33,14 @@ class OfferLetter(Document):
             fee_data = FeeService._calculate_and_freeze_fees(self.fee_structure, is_foreign=is_foreign)
             self.payable_amount = fee_data.get("total_payable")
 
+        now_date = frappe.utils.getdate(frappe.utils.nowdate())
+        if self.has_value_changed("payment_deadline") and self.payment_deadline and frappe.utils.getdate(self.payment_deadline) < now_date:
+            frappe.throw(_("Payment Deadline cannot be in the past."))
+        if self.has_value_changed("offer_acceptance_deadline") and self.offer_acceptance_deadline and frappe.utils.getdate(self.offer_acceptance_deadline) < now_date:
+            frappe.throw(_("Offer Acceptance Deadline cannot be in the past."))
+        if self.has_value_changed("confirmation_fee_deadline") and self.confirmation_fee_deadline and frappe.utils.getdate(self.confirmation_fee_deadline) < now_date:
+            frappe.throw(_("Confirmation Fee Deadline cannot be in the past."))
+
         self.set_notification_receiver()
         self.validate_status_transition()
 

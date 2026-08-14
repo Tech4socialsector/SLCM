@@ -19,6 +19,7 @@
   "assignment_details_section",
   "assignment_date",
   "status",
+  "payment_date",
   "confirmation_fee",
   "accommodation_fee",
   "column_break_2",
@@ -212,7 +213,8 @@
    "fieldname": "confirmation_fee",
    "fieldtype": "Currency",
    "label": "Confirmation Fee",
-   "non_negative": 1
+   "non_negative": 1,
+   "precision": "2"
   },
   {
    "default": "0",
@@ -221,11 +223,19 @@
    "fieldtype": "Check",
    "label": "Accommodation Fee",
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.status == \"Paid\" || doc.status == \"Partially Paid\"",
+   "fieldname": "payment_date",
+   "fieldtype": "Date",
+   "in_preview": 1,
+   "label": "Payment Date"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-04 14:25:26.673534",
+ "modified": "2026-08-14 19:04:28.816200",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Fee Assignment",
