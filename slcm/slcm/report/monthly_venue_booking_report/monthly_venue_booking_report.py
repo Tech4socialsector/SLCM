@@ -74,7 +74,7 @@ def get_data(filters):
     """, params, as_dict=True)
 
     data = []
-    status_counts = {"Pending": 0, "Approved": 0, "Rejected": 0, "Cancelled": 0}
+    status_counts = {"Pending Allotment": 0, "Allotted": 0, "Rejected": 0, "Cancelled": 0}
 
     for row in rows:
         duration = 0
@@ -92,19 +92,19 @@ def get_data(filters):
             "start_datetime": row.start_datetime,
             "end_datetime":   row.end_datetime,
             "duration_hrs":   duration,
-            "status":         row.status or "Pending",
+            "status":         row.status or "Pending Allotment",
             "admin_remarks":  row.admin_remarks or "",
         })
 
-        s = row.status or "Pending"
+        s = row.status or "Pending Allotment"
         if s in status_counts:
             status_counts[s] += 1
 
     # Summary cards
     summary = [
         {"label": _("Total Bookings"), "value": len(data),                       "indicator": "Blue"},
-        {"label": _("Approved"),       "value": status_counts["Approved"],        "indicator": "Green"},
-        {"label": _("Pending"),        "value": status_counts["Pending"],         "indicator": "Orange"},
+        {"label": _("Allotted"),       "value": status_counts["Allotted"],        "indicator": "Green"},
+        {"label": _("Pending Allotment"),        "value": status_counts["Pending Allotment"],         "indicator": "Orange"},
         {"label": _("Rejected"),       "value": status_counts["Rejected"],        "indicator": "Red"},
         {"label": _("Cancelled"),      "value": status_counts["Cancelled"],       "indicator": "Grey"},
     ]
@@ -119,20 +119,20 @@ def get_chart(data, filters):
     day_map = {}
     current = from_date
     while current <= to_date:
-        day_map[current.strftime("%d %b")] = {"Approved": 0, "Pending": 0, "Rejected": 0, "Cancelled": 0}
+        day_map[current.strftime("%d %b")] = {"Allotted": 0, "Pending Allotment": 0, "Rejected": 0, "Cancelled": 0}
         current += timedelta(days=1)
 
     for row in data:
         if row["start_datetime"]:
             day_key = getdate(row["start_datetime"]).strftime("%d %b")
             if day_key in day_map:
-                s = row["status"] or "Pending"
+                s = row["status"] or "Pending Allotment"
                 if s in day_map[day_key]:
                     day_map[day_key][s] += 1
 
     labels  = list(day_map.keys())
-    approved  = [day_map[d]["Approved"]  for d in labels]
-    pending   = [day_map[d]["Pending"]   for d in labels]
+    approved  = [day_map[d]["Allotted"]  for d in labels]
+    pending   = [day_map[d]["Pending Allotment"]   for d in labels]
     rejected  = [day_map[d]["Rejected"]  for d in labels]
     cancelled = [day_map[d]["Cancelled"] for d in labels]
 
@@ -140,8 +140,8 @@ def get_chart(data, filters):
         "data": {
             "labels": labels,
             "datasets": [
-                {"name": _("Approved"),  "values": approved,  "chartType": "bar"},
-                {"name": _("Pending"),   "values": pending,   "chartType": "bar"},
+                {"name": _("Allotted"),  "values": approved,  "chartType": "bar"},
+                {"name": _("Pending Allotment"),   "values": pending,   "chartType": "bar"},
                 {"name": _("Rejected"),  "values": rejected,  "chartType": "bar"},
                 {"name": _("Cancelled"), "values": cancelled, "chartType": "bar"},
             ],

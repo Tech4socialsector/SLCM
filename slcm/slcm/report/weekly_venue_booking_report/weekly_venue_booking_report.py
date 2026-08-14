@@ -75,7 +75,7 @@ def get_data(filters):
     """, params, as_dict=True)
 
     day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-    status_counts = {"Pending": 0, "Approved": 0, "Rejected": 0, "Cancelled": 0}
+    status_counts = {"Pending Allotment": 0, "Allotted": 0, "Rejected": 0, "Cancelled": 0}
     data = []
 
     for row in rows:
@@ -99,18 +99,18 @@ def get_data(filters):
             "start_datetime": row.start_datetime,
             "end_datetime":   row.end_datetime,
             "duration_hrs":   duration,
-            "status":         row.status or "Pending",
+            "status":         row.status or "Pending Allotment",
             "admin_remarks":  row.admin_remarks or "",
         })
 
-        s = row.status or "Pending"
+        s = row.status or "Pending Allotment"
         if s in status_counts:
             status_counts[s] += 1
 
     summary = [
         {"label": _("Total Bookings"), "value": len(data),                "indicator": "Blue"},
-        {"label": _("Approved"),       "value": status_counts["Approved"], "indicator": "Green"},
-        {"label": _("Pending"),        "value": status_counts["Pending"],  "indicator": "Orange"},
+        {"label": _("Allotted"),       "value": status_counts["Allotted"], "indicator": "Green"},
+        {"label": _("Pending Allotment"),        "value": status_counts["Pending Allotment"],  "indicator": "Orange"},
         {"label": _("Rejected"),       "value": status_counts["Rejected"], "indicator": "Red"},
         {"label": _("Cancelled"),      "value": status_counts["Cancelled"],"indicator": "Grey"},
     ]
@@ -123,12 +123,12 @@ def get_chart(data, filters):
     day_names  = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
     # One bucket per day of the week (Mon–Sun)
-    buckets = {i: {"Approved": 0, "Pending": 0, "Rejected": 0, "Cancelled": 0} for i in range(7)}
+    buckets = {i: {"Allotted": 0, "Pending Allotment": 0, "Rejected": 0, "Cancelled": 0} for i in range(7)}
 
     for row in data:
         if row["start_datetime"]:
             idx = getdate(row["start_datetime"]).weekday()
-            s   = row["status"] or "Pending"
+            s   = row["status"] or "Pending Allotment"
             if s in buckets[idx]:
                 buckets[idx][s] += 1
 
@@ -142,8 +142,8 @@ def get_chart(data, filters):
         "data": {
             "labels": labels,
             "datasets": [
-                {"name": _("Approved"),  "values": [buckets[i]["Approved"]  for i in range(7)], "chartType": "bar"},
-                {"name": _("Pending"),   "values": [buckets[i]["Pending"]   for i in range(7)], "chartType": "bar"},
+                {"name": _("Allotted"),  "values": [buckets[i]["Allotted"]  for i in range(7)], "chartType": "bar"},
+                {"name": _("Pending Allotment"),   "values": [buckets[i]["Pending Allotment"]   for i in range(7)], "chartType": "bar"},
                 {"name": _("Rejected"),  "values": [buckets[i]["Rejected"]  for i in range(7)], "chartType": "bar"},
                 {"name": _("Cancelled"), "values": [buckets[i]["Cancelled"] for i in range(7)], "chartType": "bar"},
             ],

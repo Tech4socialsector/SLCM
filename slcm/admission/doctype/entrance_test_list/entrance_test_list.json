@@ -70,16 +70,16 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Draft\nGenerated\nPublished"
+   "options": "Draft\nGenerated"
   },
   {
+   "default": "Draft",
    "fieldname": "allocation_status",
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Allocation Status",
-   "options": "Draft\nPartially Completed\nCompleted",
-   "default": "Draft"
+   "options": "Draft\nPartially Completed\nCompleted"
   },
   {
    "fieldname": "entrance_test_applicant",
@@ -99,7 +99,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-05 14:49:26.834795",
+ "modified": "2026-08-10 20:46:51.961676",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test List",

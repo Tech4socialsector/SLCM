@@ -9,13 +9,30 @@ frappe.listview_settings['Venue Booking'] = {
         listview.__vb_bulk_setup = true;
 
         const STATUSES = [
-            { status: 'Pending', color: '#f59e0b', indicator: 'orange' },
-            { status: 'Approved', color: '#10b981', indicator: 'green' },
+            { status: 'Pending Allotment', color: '#f59e0b', indicator: 'orange' },
+            { status: 'Allotted', color: '#10b981', indicator: 'green' },
             { status: 'Rejected', color: '#ef4444', indicator: 'red' },
             { status: 'Cancelled', color: '#6b7280', indicator: 'grey' }
         ];
 
-        // ── 1. Page toolbar buttons (always visible in top bar) ────────────────
+        // ── 1a. Standalone Allot / Reject buttons (top-level, always visible) ──
+        listview.page.add_inner_button(
+            __('Allot'),
+            function () { vb_bulk_action(listview, STATUSES[1]); } // Allotted
+        );
+        listview.page.add_inner_button(
+            __('Reject'),
+            function () { vb_bulk_action(listview, STATUSES[2]); } // Rejected
+        );
+
+        // Frappe's page-actions template ships the custom-actions container with
+        // "hidden-xs hidden-md" classes, which hide ALL custom toolbar buttons
+        // (this one included) via `display:none` whenever the browser window
+        // width falls in the 992–1199px range. Force it visible regardless of
+        // window size so these buttons don't silently disappear.
+        listview.page.inner_toolbar.removeClass('hidden-xs hidden-md');
+
+        // ── 1b. Page toolbar buttons (always visible in top bar) ────────────────
         STATUSES.forEach(function (cfg) {
             listview.page.add_inner_button(
                 __('Mark {0}', [cfg.status]),
@@ -91,46 +108,31 @@ frappe.listview_settings['Venue Booking'] = {
 
     formatters: {
         status: function (value, df, doc) {
-            // Booking approval status badge
+            // Booking allotment status badge
             const approvalCfg = {
-                'Pending': { bg: '#fef3c7', color: '#92400e', icon: '⏳', label: 'Pending' },
-                'Approved': { bg: '#d1fae5', color: '#065f46', icon: '✓', label: 'Approved' },
+                'Pending Allotment': { bg: '#fef3c7', color: '#92400e', icon: '⏳', label: 'Pending Allotment' },
+                'Allotted': { bg: '#d1fae5', color: '#065f46', icon: '✓', label: 'Allotted' },
                 'Rejected': { bg: '#fee2e2', color: '#991b1b', icon: '✗', label: 'Rejected' },
                 'Cancelled': { bg: '#f3f4f6', color: '#6b7280', icon: '⊘', label: 'Cancelled' }
             };
             const a = approvalCfg[value] || { bg: '#e0f2fe', color: '#0369a1', icon: '•', label: value || '—' };
 
-            // Document submission status badge
-            const docCfg = {
-                0: { bg: '#fef9c3', color: '#854d0e', label: 'Draft' },
-                1: { bg: '#dbeafe', color: '#1d4ed8', label: 'Submitted' },
-                2: { bg: '#fee2e2', color: '#991b1b', label: 'Cancelled' }
-            };
-            const ds = doc ? (docCfg[doc.docstatus] || docCfg[0]) : docCfg[0];
-
-            return `<div style="display:flex;flex-direction:column;gap:3px;line-height:1;">
-                <span style="background:${a.bg};color:${a.color};
+            return `<span style="background:${a.bg};color:${a.color};
                     padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;
                     white-space:nowrap;display:inline-flex;align-items:center;gap:3px;">
                     ${a.icon} ${a.label}
-                </span>
-                <span style="background:${ds.bg};color:${ds.color};
-                    padding:1px 7px;border-radius:8px;font-size:10px;font-weight:600;
-                    white-space:nowrap;display:inline-block;margin-top:1px;">
-                    ${ds.label}
-                </span>
-            </div>`;
+                </span>`;
         }
     },
 
     get_indicator: function (doc) {
         const map = {
-            'Approved': ['Approved', 'green', 'status,=,Approved'],
+            'Allotted': ['Allotted', 'green', 'status,=,Allotted'],
             'Rejected': ['Rejected', 'red', 'status,=,Rejected'],
             'Cancelled': ['Cancelled', 'grey', 'status,=,Cancelled'],
-            'Pending': ['Pending', 'orange', 'status,=,Pending'],
+            'Pending Allotment': ['Pending Allotment', 'orange', 'status,=,Pending Allotment'],
         };
-        return map[doc.status] || ['Pending', 'orange', 'status,=,Pending'];
+        return map[doc.status] || ['Pending Allotment', 'orange', 'status,=,Pending Allotment'];
     }
 };
 
@@ -158,6 +160,20 @@ frappe.ui.form.on('Venue Booking', {
         const canManage = frappe.user.has_role([
             'System Manager', 'Administrator', 'slcm_Registrar'
         ]);
+
+        // ── Recurring series: link back to the parent, or list this series' occurrences ──
+        if (!frm.is_new() && frm.doc.parent_booking) {
+            frm.dashboard.add_comment(
+                __('This booking is part of a recurring series started by {0}.',
+                    [`<a href="/app/venue-booking/${frm.doc.parent_booking}">${frm.doc.parent_booking}</a>`]),
+                'blue', true
+            );
+        }
+        if (!frm.is_new() && frm.doc.is_recurring && !frm.doc.parent_booking) {
+            frm.add_custom_button(__('View Occurrences'), function () {
+                frappe.set_route('List', 'Venue Booking', { parent_booking: frm.doc.name });
+            });
+        }
 
         if (!frm.is_new() && canManage) {
 
@@ -214,9 +230,9 @@ frappe.ui.form.on('Venue Booking', {
                 }, __('Swap Request'));
             }
 
-            // ── Approve (Pending only) ─────────────────────────────────
-            if (frm.doc.status === 'Pending') {
-                frm.add_custom_button(__('Approve'), function () {
+            // ── Allot (Pending Allotment only) ─────────────────────────
+            if (frm.doc.status === 'Pending Allotment') {
+                frm.add_custom_button(__('Allot'), function () {
                     frappe.prompt([
                         {
                             label: __('Remarks (optional)'),
@@ -231,18 +247,18 @@ frappe.ui.form.on('Venue Booking', {
                                 admin_remarks: values.admin_remarks || ''
                             },
                             freeze: true,
-                            freeze_message: __('Approving…'),
+                            freeze_message: __('Allotting…'),
                             callback: function (r) {
                                 if (!r.exc) {
-                                    frappe.show_alert({ message: __('Booking Approved'), indicator: 'green' });
+                                    frappe.show_alert({ message: __('Booking Allotted'), indicator: 'green' });
                                     frm.reload_doc();
                                 }
                             }
                         });
-                    }, __('Approve Booking'), __('Approve'));
+                    }, __('Allot Booking'), __('Allot'));
                 }, __('Actions'));
 
-                // ── Reject (Pending only) ──────────────────────────────
+                // ── Reject (Pending Allotment only) ────────────────────
                 frm.add_custom_button(__('Reject'), function () {
                     frappe.prompt([
                         {
@@ -271,8 +287,8 @@ frappe.ui.form.on('Venue Booking', {
                 }, __('Actions'));
             }
 
-            // ── Cancel (Pending or Approved) ───────────────────────────
-            if (['Pending', 'Approved'].includes(frm.doc.status)) {
+            // ── Cancel (Pending Allotment or Allotted) ──────────────────
+            if (['Pending Allotment', 'Allotted'].includes(frm.doc.status)) {
                 frm.add_custom_button(__('Cancel Booking'), function () {
                     frappe.prompt([
                         {
@@ -504,8 +520,8 @@ function _toggle_student_field(frm) {
 function _set_status_banner(frm) {
     if (frm.is_new()) return;
     const colors = {
-        'Pending': 'yellow',
-        'Approved': 'green',
+        'Pending Allotment': 'yellow',
+        'Allotted': 'green',
         'Rejected': 'red',
         'Cancelled': 'grey'
     };

@@ -17,6 +17,20 @@
   "end_datetime",
   "status",
   "book_by_occupancy",
+  "section_break_recurring",
+  "is_recurring",
+  "recurrence_frequency",
+  "column_break_recurrence",
+  "recurrence_end_date",
+  "section_break_weekdays",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+  "parent_booking",
   "section_break_requester",
   "requester_type",
   "requester_name",
@@ -31,6 +45,12 @@
   "reason",
   "attachment",
   "admin_remarks",
+  "section_break_audit",
+  "created_by",
+  "created_on",
+  "column_break_audit",
+  "replied_by",
+  "replied_on",
   "section_break_swap",
   "swap_requested",
   "swap_requested_venue",
@@ -39,8 +59,7 @@
   "swap_status",
   "swap_admin_remarks",
   "section_break_swap_log",
-  "swap_log",
-  "amended_from"
+  "swap_log"
  ],
  "fields": [
   {
@@ -55,8 +74,8 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Room",
-   "options": "Room",
+   "label": "Venue Type",
+   "options": "Venue Type",
    "reqd": 1
   },
   {
@@ -83,12 +102,12 @@
    "reqd": 1
   },
   {
-   "default": "Pending",
+   "default": "Pending Allotment",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Pending\nApproved\nRejected\nCancelled",
+   "options": "Pending Allotment\nAllotted\nRejected\nCancelled",
    "read_only": 1
   },
   {
@@ -96,6 +115,94 @@
    "fieldname": "book_by_occupancy",
    "fieldtype": "Check",
    "label": "Filter By Expected Occupancy"
+  },
+  {
+   "fieldname": "section_break_recurring",
+   "fieldtype": "Section Break",
+   "label": "Recurring Booking"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_recurring",
+   "fieldtype": "Check",
+   "label": "Make this a Recurring Booking"
+  },
+  {
+   "depends_on": "eval:doc.is_recurring",
+   "fieldname": "recurrence_frequency",
+   "fieldtype": "Select",
+   "label": "Repeat Frequency",
+   "mandatory_depends_on": "eval:doc.is_recurring",
+   "options": "Daily\nWeekly\nMonthly"
+  },
+  {
+   "depends_on": "eval:doc.is_recurring",
+   "fieldname": "column_break_recurrence",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.is_recurring",
+   "fieldname": "recurrence_end_date",
+   "fieldtype": "Date",
+   "label": "Repeat Until",
+   "mandatory_depends_on": "eval:doc.is_recurring"
+  },
+  {
+   "depends_on": "eval:doc.is_recurring && doc.recurrence_frequency=='Weekly'",
+   "fieldname": "section_break_weekdays",
+   "fieldtype": "Section Break",
+   "label": "Repeat On"
+  },
+  {
+   "default": "0",
+   "fieldname": "monday",
+   "fieldtype": "Check",
+   "label": "Monday"
+  },
+  {
+   "default": "0",
+   "fieldname": "tuesday",
+   "fieldtype": "Check",
+   "label": "Tuesday"
+  },
+  {
+   "default": "0",
+   "fieldname": "wednesday",
+   "fieldtype": "Check",
+   "label": "Wednesday"
+  },
+  {
+   "default": "0",
+   "fieldname": "thursday",
+   "fieldtype": "Check",
+   "label": "Thursday"
+  },
+  {
+   "default": "0",
+   "fieldname": "friday",
+   "fieldtype": "Check",
+   "label": "Friday"
+  },
+  {
+   "default": "0",
+   "fieldname": "saturday",
+   "fieldtype": "Check",
+   "label": "Saturday"
+  },
+  {
+   "default": "0",
+   "fieldname": "sunday",
+   "fieldtype": "Check",
+   "label": "Sunday"
+  },
+  {
+   "fieldname": "parent_booking",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Parent Booking (Series)",
+   "no_copy": 1,
+   "options": "Venue Booking",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_requester",
@@ -196,6 +303,48 @@
   },
   {
    "collapsible": 1,
+   "fieldname": "section_break_audit",
+   "fieldtype": "Section Break",
+   "label": "Audit Trail"
+  },
+  {
+   "fieldname": "created_by",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Created By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "created_on",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Created On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_audit",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "replied_by",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Replied By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "replied_on",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Replied On",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
    "fieldname": "section_break_swap",
    "fieldtype": "Section Break",
    "hidden": 1,
@@ -260,15 +409,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Venue Booking",
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
    "fieldname": "venue",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -280,7 +420,7 @@
   {
    "fetch_from": "venue.building",
    "fieldname": "building",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Building",
    "options": "Building",
    "read_only": 1
@@ -288,16 +428,15 @@
   {
    "fetch_from": "venue.floor",
    "fieldname": "floor",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "label": "Floor",
    "options": "Floor",
    "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
- "is_submittable": 1,
  "links": [],
- "modified": "2026-07-14 09:24:31.194524",
+ "modified": "2026-08-13 09:13:47.116073",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Venue Booking",
@@ -305,7 +444,6 @@
  "owner": "Administrator",
  "permissions": [
   {
-   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -315,15 +453,12 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
-   "submit": 1,
    "write": 1
   },
   {
-   "cancel": 1,
    "create": 1,
    "read": 1,
    "role": "slcm_Student",
-   "submit": 1,
    "write": 1
   },
   {
@@ -337,11 +472,9 @@
    "write": 1
   },
   {
-   "cancel": 1,
    "create": 1,
    "read": 1,
    "role": "slcm_Registrar",
-   "submit": 1,
    "write": 1
   }
  ],

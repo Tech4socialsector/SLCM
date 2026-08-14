@@ -473,7 +473,7 @@ def create_venue_booking(event_name, venue_type, room, start_datetime, end_datet
     doc.reason = reason
     doc.requester_type = "Faculty"
     doc.requester_name = requester_display or str(faculty_name)
-    doc.status = "Pending"
+    doc.status = "Pending Allotment"
     doc.insert(ignore_permissions=True)
     frappe.db.commit()
 
@@ -1142,7 +1142,7 @@ def drilldown_venue_bookings():
     try:
         raw = frappe.get_all(
             "Venue Booking",
-            filters={"requester_name": ["in", name_filters], "status": "Pending"},
+            filters={"requester_name": ["in", name_filters], "status": "Pending Allotment"},
             fields=["name", "event_name", "venue_type", "room",
                     "start_datetime", "end_datetime", "expected_attendees",
                     "status", "creation"],
@@ -1162,7 +1162,7 @@ def drilldown_venue_bookings():
             "start": frappe.utils.format_datetime(b.start_datetime, "dd MMM yyyy HH:mm") if b.start_datetime else "—",
             "end": frappe.utils.format_datetime(b.end_datetime, "dd MMM yyyy HH:mm") if b.end_datetime else "—",
             "attendees": b.expected_attendees or 0,
-            "status": b.status or "Pending",
+            "status": b.status or "Pending Allotment",
         })
 
     return {
