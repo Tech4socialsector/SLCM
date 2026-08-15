@@ -68,12 +68,19 @@ class TimeTable(Document):
         if not self.schedule_date or not self.from_time or not self.to_time:
             return
 
-        # 1. Check for Duplicate Time Table entry (Same Course Offering, Same Date, Overlapping Time)
+        # 1. Check for Duplicate Time Table entry (Same Course Offering, Same Venue,
+        # Same Title/Section, Same Date, Overlapping Time). Venue is required and
+        # Title carries the section identifier (e.g. "BLM101-Legal Methods-A"), so
+        # parallel sections of the same Course Offering meeting at the same time in
+        # different venues/sections are a legitimate schedule, not a duplicate — the
+        # venue itself is separately protected by check_venue_conflict().
         if self.course_offering:
             filters = {
                 "name": ["!=", self.name],
                 "course_offering": self.course_offering,
                 "schedule_date": self.schedule_date,
+                "venue": self.venue,
+                "title": self.title,
                 "docstatus": ["<", 2] # Exclude cancelled
             }
 
