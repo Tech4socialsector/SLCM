@@ -194,119 +194,132 @@ def _update_applicant_status_for_interview_result_status(applicant_name, intervi
         _update_applicant_status(applicant_name, "Interview Rejected")
 
 
-@frappe.whitelist()
-def update_ranks_by_category(academic_year, admission_cycle, program_level, interview_list=None):
-    """
-    Recalculates cumulative marks, offered admission status, assigns ranks to Attended applicants,
-    publishes results, and sends notification emails.
-    """
-    if not (academic_year and admission_cycle and program_level):
-        frappe.throw("Academic Year, Admission Cycle, and Programme Level are required.")
 
-    # Fetch ALL applicants (Attended + Absent) to process
-    all_filters = {
-        "academic_year": academic_year,
-        "admission_cycle": admission_cycle,
-        "program_level": program_level,
-        "interview_status": ["in", ["Attended", "Absent"]]
-    }
-    if interview_list:
-        all_filters["interview_list"] = interview_list
-
-    all_records = frappe.get_all("Interview Seat Allocation",
-        filters=all_filters,
-        fields=["name", "interview_status"]
-    )
-
-    # 1. Update cumulative scores and publish result
-    for rec in all_records:
-        doc = frappe.get_doc("Interview Seat Allocation", rec.name)
-        doc.result_published = 1
-        # Calling save will trigger validate -> calculate_final_cumulative
-        doc.save(ignore_permissions=True)
-
-    frappe.db.commit()
-
-    # 2. Rank Attended applicants based on final_cumulative_score desc
-    attended_filters = {
-        "academic_year": academic_year,
-        "admission_cycle": admission_cycle,
-        "program_level": program_level,
-        "interview_status": "Attended"
-    }
-    if interview_list:
-        attended_filters["interview_list"] = interview_list
-
-    attended_records = frappe.get_all("Interview Seat Allocation",
-        filters=attended_filters,
-        fields=["name", "final_cumulative_score"],
-        order_by="final_cumulative_score desc"
-    )
-
-    total_attended = len(attended_records)
-    if total_attended > 0:
-        # Rank competitive sorting (ties get same rank)
-        sorted_recs = sorted(attended_records, key=lambda x: flt(x.get("final_cumulative_score")), reverse=True)
-        last_score = None
-        current_rank = 0
-        for idx, rec in enumerate(sorted_recs, start=1):
-            score = flt(rec.get("final_cumulative_score"))
-            if last_score is None or score != last_score:
-                current_rank = idx
-                last_score = score
-            
-            frappe.db.set_value("Interview Seat Allocation", rec.name, "rank", current_rank, update_modified=False)
+def get_custom_email_html(custom_content):
+    header = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap" rel="stylesheet">
+    <style>
+        /* Base reset for email clients */
+        body { margin: 0; padding: 0; background-color: #ffffff; font-family: 'Merriweather', serif; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse !important; }
+        img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
         
-        frappe.db.commit()
+        /* Responsive overrides */
+        @media only screen and (max-width: 600px) {
+            .container { width: 100% !important; min-width: 100% !important; }
+            .mobile-header-padding { padding: 30px 20px 15px 20px !important; }
+            .logo-img { height: 42px !important; width: auto !important; }
+            .univ-name, .campus-name { font-size: 16px !important; line-height: 1.2 !important; white-space: nowrap !important; }
+            .body-content { padding: 20px 20px !important; }
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: 'Merriweather', serif;">
+    <!-- Gmail mobile auto-shrink fix -->
+    <div style="display:none; white-space:nowrap; font:15px courier; line-height:0;">
+        &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+    </div>
 
-    # Clear ranks for Absent/non-Attended
-    absent_filters = all_filters.copy()
-    absent_filters["interview_status"] = ["!=", "Attended"]
-    absent_records = frappe.get_all("Interview Seat Allocation", filters=absent_filters, fields=["name"])
-    for rec in absent_records:
-        frappe.db.set_value("Interview Seat Allocation", rec.name, "rank", 0, update_modified=False)
-    
-    frappe.db.commit()
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; background-color: #ffffff; table-layout: fixed;">
+        <!-- Header Section -->
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="max-width: 600px; width: 100%;">
+                    <tr>
+                        <td style="padding: 40px 40px 15px 40px;" class="mobile-header-padding">
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%;">
+                                <tr>
+                                    <!-- Logo Cell -->
+                                    <td width="1" style="vertical-align: middle; padding-right: 20px;">
+                                        {% set inst_logo = frappe.db.get_single_value('Institution Settings', 'logo') %}
+                                        {% if inst_logo %}
+                                            <img src="{{ frappe.utils.get_url(inst_logo) }}" alt="Logo" class="logo-img" style="height: 52px; width: auto; display: block; border: 0;">
+                                        {% else %}
+                                            <div style="width: 40px; height: 40px; background-color: #f3f4f6; border-radius: 4px;"></div>
+                                        {% endif %}
+                                    </td>
+                                    <!-- Title Cell -->
+                                    <td style="vertical-align: middle; text-align: left;">
+                                        <div class="univ-name" style="font-family: 'Merriweather', serif; font-size: 20px; color: #920c24; line-height: 1.25; font-weight: 400; margin: 0; white-space: nowrap;">
+                                            National Law School of India University
+                                        </div>
+                                        <div style="border-top: 1.5px solid #920c24; margin: 5px 0; padding: 0; font-size: 0px; line-height: 0px;">&nbsp;</div>
+                                        <div class="campus-name" style="font-family: 'Merriweather', serif; font-size: 20px; color: #920c24; line-height: 1.25; font-weight: 700; margin: 0; white-space: nowrap;">
+                                            Bengaluru
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
 
-    # 3. Send email notifications and notification logs
-    count = 0
-    total = len(all_records)
-    for i, rec in enumerate(all_records):
-        # Publish progress
-        percent = (float(i + 1) / total) * 100
-        frappe.publish_progress(
-            percent, 
-            title=_("Updating Ranks & Sending Emails..."), 
-            description=f"Processing {i + 1} of {total}"
+        <!-- Body Section -->
+        <tr>
+            <td align="center">
+                <!-- Content Wrapper -->
+                <table width="600" cellpadding="0" cellspacing="0" border="0" class="container" style="max-width: 600px; width: 100%;">
+                    <!-- Body Content -->
+                    <tr>
+                        <td class="body-content" style="padding: 20px 40px 40px 40px; font-family: 'Merriweather', serif; font-size: 16px; line-height: 1.6; color: #333333;">
+"""
+
+    footer = """
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+"""
+    return header + (custom_content or "") + footer
+
+
+def _send_custom_result_email(doc, email, custom_email_content):
+    """Send a custom result notification email to the applicant."""
+    try:
+        # Prepare arguments for Jinja
+        doc_dict = doc.as_dict()
+        args = {
+            "doc": doc_dict,
+            "portal_url": get_url("/merit-and-scholarship/admission_dashboard?panel=applications")
+        }
+
+        # Use the header (subject) and sender from the default email template
+        template_name = "Interview Result"
+        sender = None
+        if frappe.db.exists("Email Template", template_name):
+            template = frappe.get_doc("Email Template", template_name)
+            subject = frappe.render_template(template.subject, args)
+            if template.get("email_account"):
+                sender = frappe.db.get_value("Email Account", template.get("email_account"), "email_id") or template.get("email_account")
+        else:
+            subject = f"Interview Result - {doc.interview_list}"
+        
+        # Render the custom content wrapped in the HTML header/footer template to allow variables
+        full_html_template = get_custom_email_html(custom_email_content)
+        message_body = frappe.render_template(full_html_template, args)
+
+        frappe.sendmail(
+            recipients=[email],
+            sender=sender,
+            subject=subject,
+            message=message_body,
+            reference_doctype="Interview Seat Allocation",
+            reference_name=doc.name,
+            now=False
         )
-
-        # Reload doc to get updated rank
-        doc = frappe.get_doc("Interview Seat Allocation", rec.name)
-        
-        # Resolve email
-        email = doc.email or ""
-        if not email and doc.applicant:
-            try:
-                app_email = frappe.db.get_value("Applicant", doc.applicant, "email")
-                if app_email:
-                    email = app_email
-            except Exception:
-                pass
-
-        if email:
-            try:
-                _send_result_notification_email(doc, email)
-                _send_result_notification(doc, email)
-                count += 1
-            except Exception:
-                frappe.log_error(message=traceback.format_exc(), title=f"Interview Result Email/Notification Failed: {doc.name}")
-        
-        if i % 10 == 0:
-            frappe.db.commit()
-
-    frappe.db.commit()
-    return count
-
+        frappe.logger().info(f"Custom Interview Result Notification Email queued successfully to {email} for {doc.name}")
+    except Exception:
+        frappe.log_error(message=traceback.format_exc(), title=f"Custom Result Email Failed: {doc.name}")
 
 
 def _send_result_notification_email(doc, email):
@@ -690,9 +703,10 @@ def _send_reschedule_notification(doc, email):
 
 
 @frappe.whitelist()
-def bulk_publish_results(records):
+def bulk_publish_results(records, send_email=0, email_format="Default", custom_email_content=""):
     if isinstance(records, str):
         records = json.loads(records)
+    send_email = int(send_email)
     
     count = 0
     for name in records:
@@ -701,8 +715,115 @@ def bulk_publish_results(records):
             if not doc.result_published:
                 doc.result_published = 1
                 doc.save(ignore_permissions=True)
+                
+                if send_email:
+                    # Send email and in-app notification
+                    email = doc.email or ""
+                    if not email and doc.applicant:
+                        try:
+                            app_email = frappe.db.get_value("Applicant", doc.applicant, "email")
+                            if app_email:
+                                email = app_email
+                        except Exception:
+                            pass
+
+                    if email:
+                        try:
+                            if email_format == "Custom":
+                                _send_custom_result_email(doc, email, custom_email_content)
+                            else:
+                                _send_result_notification_email(doc, email)
+                            _send_result_notification(doc, email)
+                        except Exception:
+                            frappe.log_error(message=frappe.get_traceback(), title=f"Interview Result Email/Notification Failed: {doc.name}")
+
                 count += 1
         except Exception as e:
             frappe.log_error(f"Failed to publish Interview Result for {name}: {str(e)}", "Bulk Publish Results Error")
             
     return {"success": True, "count": count}
+
+@frappe.whitelist()
+def get_interview_applicant_count(academic_year=None, admission_cycle=None, program_level=None, program=None):
+    """
+    Returns total applicant counts for Interview Seat Allocation
+    matching the dialog filters.
+    """
+    filters = {}
+    if academic_year:
+        filters["academic_year"] = academic_year
+    if admission_cycle:
+        filters["admission_cycle"] = admission_cycle
+    if program_level:
+        filters["program_level"] = program_level
+    if program:
+        filters["program"] = program
+
+    total = frappe.db.count("Interview Seat Allocation", filters=filters)
+
+    filters_completed = filters.copy()
+    filters_completed["interview_status"] = "Attended"
+    completed = frappe.db.count("Interview Seat Allocation", filters=filters_completed)
+
+    filters_absent = filters.copy()
+    filters_absent["interview_status"] = "Absent"
+    absent = frappe.db.count("Interview Seat Allocation", filters=filters_absent)
+
+    return {
+        "total": total,
+        "completed": completed,
+        "absent": absent
+    }
+
+@frappe.whitelist()
+def get_unpublished_interviews_for_dialog(
+    academic_year=None, admission_cycle=None, program_level=None, program=None,
+    filter_applicant=None, filter_candidate_name=None, filter_program=None, filter_result=None, filter_selection_status=None,
+    limit_start=0, limit_page_length=20
+):
+    """
+    Returns a paginated list of applicants whose interview results are not yet published.
+    """
+    filters = {"result_published": 0}
+    
+    # Main Dialog Filters
+    if academic_year:
+        filters["academic_year"] = academic_year
+    if admission_cycle:
+        filters["admission_cycle"] = admission_cycle
+    if program_level:
+        filters["program_level"] = program_level
+    if program:
+        filters["program"] = program
+        
+    # Table Specific Filters
+    if filter_applicant:
+        filters["applicant"] = ["like", f"%{filter_applicant}%"]
+    if filter_candidate_name:
+        filters["candidate_name"] = ["like", f"%{filter_candidate_name}%"]
+    if filter_program:
+        filters["program"] = ["like", f"%{filter_program}%"]
+    if filter_result:
+        filters["interview_result_status"] = filter_result
+    if filter_selection_status:
+        filters["status"] = filter_selection_status
+
+    # Get data
+    records = frappe.get_all(
+        "Interview Seat Allocation",
+        filters=filters,
+        fields=[
+            "name", "applicant", "candidate_name", "program", "interview_result_status", "status"
+        ],
+        limit_start=limit_start,
+        limit_page_length=limit_page_length,
+        order_by="creation desc"
+    )
+    
+    # Get total count for pagination
+    total_count = frappe.db.count("Interview Seat Allocation", filters=filters)
+    
+    return {
+        "records": records,
+        "total_count": total_count
+    }

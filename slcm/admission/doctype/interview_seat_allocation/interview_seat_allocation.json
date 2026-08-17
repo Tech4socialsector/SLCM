@@ -63,8 +63,6 @@
   "final_percentage",
   "result_published",
   "status",
-  "section_break_zvsn",
-  "feedback",
   "tab_entrance_test_result",
   "et_source",
   "et_attendance_marked_on",
@@ -425,12 +423,6 @@
    "options": "\nConfirm Attendance\nDecline Interview Invitation\nRequest Rescheduling"
   },
   {
-   "fieldname": "feedback",
-   "fieldtype": "Small Text",
-   "hidden": 1,
-   "label": "Feedback"
-  },
-  {
    "fieldname": "tab_entrance_test_result",
    "fieldtype": "Tab Break",
    "label": "Entrance Test Result"
@@ -561,16 +553,12 @@
   {
    "fieldname": "column_break_hbsv",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "section_break_zvsn",
-   "fieldtype": "Section Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-05 17:10:26.417758",
+ "modified": "2026-08-14 12:28:02.513826",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Interview Seat Allocation",

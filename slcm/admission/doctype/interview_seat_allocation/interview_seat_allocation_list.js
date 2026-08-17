@@ -11,94 +11,6 @@ frappe.listview_settings['Interview Seat Allocation'] = {
 
         // show buttons for anyone who is not a pure applicant or when the user is an admin
         if (!is_applicant || is_admin) {
-            // Update Rank button (only once)
-            if (!listview.page.wrapper.find('.btn-update-rank').length) {
-                const ubtn = listview.page.add_inner_button(__("Update Rank"), function () {
-                    let d = new frappe.ui.Dialog({
-                        title: __("Update Rank"),
-                        fields: [
-                            {
-                                label: __("Academic Year"),
-                                fieldname: "academic_year",
-                                fieldtype: "Link",
-                                options: "Academic Year",
-                                reqd: 1
-                            },
-                            {
-                                label: __("Admission Cycle"),
-                                fieldname: "admission_cycle",
-                                fieldtype: "Link",
-                                options: "Admission Cycle",
-                                reqd: 1
-                            },
-                            {
-                                label: __("Programme Level"),
-                                fieldname: "program_level",
-                                fieldtype: "Select",
-                                options: "Undergraduate\nPostgraduate\nResearch Course",
-                                default: "Research Course",
-                                reqd: 1
-                            },
-                            {
-                                label: __("Interview List"),
-                                fieldname: "interview_list",
-                                fieldtype: "Link",
-                                options: "Interview List",
-                                description: __("Optional - limit to this specific interview event")
-                            }
-                        ],
-                        primary_action_label: __("Update Rank"),
-                        primary_action(values) {
-                            if (!values.academic_year || !values.admission_cycle || !values.program_level) {
-                                frappe.msgprint(__("Academic Year, Admission Cycle and Programme Level are required."));
-                                return;
-                            }
-                            
-                            // Hide dialog immediately to show progress bar clearly
-                            d.hide();
-
-                            frappe.call({
-                                method: "slcm.admission.doctype.interview_seat_allocation.interview_seat_allocation.update_ranks_by_category",
-                                args: values,
-                                callback: function (r) {
-                                    if (r.message !== undefined) {
-                                        // Show toast at the top center
-                                        frappe.msgprint({
-                                            message: __("Ranks updated and emails sent successfully for {0} applicants.", [r.message]),
-                                            indicator: 'green',
-                                            alert: true
-                                        });
-                                    }
-                                    listview.refresh();
-                                }
-                            });
-                        }
-                    });
-                    d.set_query("admission_cycle", function () {
-                        return {
-                            filters: {
-                                "status": "Active"
-                            }
-                        };
-                    });
-                    d.show();
-                });
-                ubtn.addClass('btn-update-rank');
-            }
-
-            // Reschedule button (also only once)
-            if (!listview.page.wrapper.find('.btn-reschedule').length) {
-                const rbtn = listview.page.add_button(__('Reschedule'), function () {
-                    try {
-                        open_reschedule_dialog(listview);
-                    } catch (e) {
-                        console.error('Reschedule dialog error', e);
-                        frappe.msgprint({ title: __('Error'), message: __('Unable to open Reschedule dialog. See browser console for details.'), indicator: 'red' });
-                    }
-                }, 'btn-primary');
-                rbtn.addClass('btn-reschedule');
-            }
-
             // Bulk Publish Results button
             if (!listview.page.wrapper.find('.btn-bulk-publish').length) {
                 const pbbtn = listview.page.add_inner_button(__('Bulk Publish Results'), function () {
@@ -108,21 +20,34 @@ frappe.listview_settings['Interview Seat Allocation'] = {
                         console.error('Bulk Publish dialog error', e);
                         frappe.msgprint({ title: __('Error'), message: __('Unable to open Bulk Publish dialog.'), indicator: 'red' });
                     }
-                });
+                }, __("Actions"));
                 pbbtn.addClass('btn-bulk-publish');
             }
 
             // Generate Offer Letters button (only once)
             if (!listview.page.wrapper.find('.btn-generate-offers').length) {
-                const obtn = listview.page.add_button(__('Generate Offer Letters'), function () {
+                const obtn = listview.page.add_inner_button(__('Generate Offer Letters'), function () {
                     try {
                         open_generate_offer_dialog(listview);
                     } catch (e) {
                         console.error('Generate Offer dialog error', e);
                         frappe.msgprint({ title: __('Error'), message: __('Unable to open Generate Offer dialog.'), indicator: 'red' });
                     }
-                }, 'btn-primary');
+                }, __("Actions"));
                 obtn.addClass('btn-generate-offers');
+            }
+
+            // Reschedule button (also only once)
+            if (!listview.page.wrapper.find('.btn-reschedule').length) {
+                const rbtn = listview.page.add_inner_button(__('Reschedule'), function () {
+                    try {
+                        open_reschedule_dialog(listview);
+                    } catch (e) {
+                        console.error('Reschedule dialog error', e);
+                        frappe.msgprint({ title: __('Error'), message: __('Unable to open Reschedule dialog. See browser console for details.'), indicator: 'red' });
+                    }
+                }, __("Actions"));
+                rbtn.addClass('btn-reschedule');
             }
         }
     }
@@ -551,7 +476,17 @@ function update_offer_selected_count(d, total) {
     d.$wrapper.find('#select-all-offer-applicants').prop('checked', t > 0 && n === t);
 }
 
+function get_listview_filter_val(listview, fieldname) {
+    let filter = listview.filter_area.filter_list.filters.find(f => f[1] === fieldname);
+    return filter ? filter[3] : "";
+}
+
 function open_bulk_publish_dialog(listview) {
+    const default_pl = get_listview_filter_val(listview, "program_level");
+    const default_ay = get_listview_filter_val(listview, "academic_year");
+    const default_program = get_listview_filter_val(listview, "program");
+    const default_ac = get_listview_filter_val(listview, "admission_cycle");
+
     let d = new frappe.ui.Dialog({
         title: __('Bulk Publish Results'),
         size: 'extra-large',
@@ -562,7 +497,11 @@ function open_bulk_publish_dialog(listview) {
                 fieldname: 'program_level',
                 fieldtype: 'Select',
                 options: 'Undergraduate\nPostgraduate\nResearch Course',
-                on_change: () => fetch_unpublished_applicants(d)
+                default: default_pl,
+                change() { 
+                    update_dialog_applicant_count(d);
+                    update_unpublished_interviews_table(d, false);
+                }
             },
             { fieldtype: 'Column Break' },
             {
@@ -570,15 +509,23 @@ function open_bulk_publish_dialog(listview) {
                 fieldname: 'academic_year',
                 fieldtype: 'Link',
                 options: 'Academic Year',
-                on_change: () => fetch_unpublished_applicants(d)
+                default: default_ay,
+                change() { 
+                    update_dialog_applicant_count(d);
+                    update_unpublished_interviews_table(d, false);
+                }
             },
             { fieldtype: 'Column Break' },
             {
-                label: __('Campus'),
-                fieldname: 'campus',
+                label: __('Programme'),
+                fieldname: 'program',
                 fieldtype: 'Link',
-                options: 'Campus',
-                on_change: () => fetch_unpublished_applicants(d)
+                options: 'Programme',
+                default: default_program,
+                change() { 
+                    update_dialog_applicant_count(d);
+                    update_unpublished_interviews_table(d, false);
+                }
             },
             { fieldtype: 'Column Break' },
             {
@@ -586,23 +533,75 @@ function open_bulk_publish_dialog(listview) {
                 fieldname: 'admission_cycle',
                 fieldtype: 'Link',
                 options: 'Admission Cycle',
-                on_change: () => fetch_unpublished_applicants(d)
+                default: default_ac,
+                change() { 
+                    update_dialog_applicant_count(d);
+                    update_unpublished_interviews_table(d, false);
+                }
             },
-
+            { fieldtype: 'Section Break' },
+            {
+                fieldname: 'total_applicants_html',
+                fieldtype: 'HTML'
+            },
             { fieldtype: 'Section Break', label: __('Select Unpublished Results') },
             {
                 fieldtype: 'HTML',
-                fieldname: 'applicants_html'
+                fieldname: 'unpublished_interviews_html'
+            },
+            { fieldtype: "Section Break", label: __("Email Settings") },
+            {
+                label: __("Send Email"),
+                fieldname: "send_email",
+                fieldtype: "Check",
+                default: 0,
+                onchange: function() {
+                    let is_send = d.get_value("send_email");
+                    let format = d.get_value("email_format");
+                    
+                    if (d.fields_dict.email_format) {
+                        d.fields_dict.email_format.$wrapper.toggle(!!is_send);
+                    }
+                    
+                    if (d.fields_dict.custom_email_content) {
+                        let show_editor = !!(is_send && format === "Custom");
+                        d.fields_dict.custom_email_content.$wrapper.toggle(show_editor);
+                        if (show_editor) {
+                            setTimeout(() => d.fields_dict.custom_email_content.refresh(), 50);
+                        }
+                    }
+                }
+            },
+            { fieldtype: "Column Break" },
+            {
+                label: __("Email Format"),
+                fieldname: "email_format",
+                fieldtype: "Select",
+                options: "Default\nCustom",
+                default: "Default",
+                onchange: function() {
+                    let is_send = d.get_value("send_email");
+                    let format = d.get_value("email_format");
+                    
+                    if (d.fields_dict.custom_email_content) {
+                        let show_editor = !!(is_send && format === "Custom");
+                        d.fields_dict.custom_email_content.$wrapper.toggle(show_editor);
+                        if (show_editor) {
+                            setTimeout(() => d.fields_dict.custom_email_content.refresh(), 50);
+                        }
+                    }
+                }
+            },
+            { fieldtype: "Section Break" },
+            {
+                label: __("Custom Email Content"),
+                fieldname: "custom_email_content",
+                fieldtype: "Text Editor"
             }
         ],
         primary_action_label: __('Publish Results'),
         primary_action(values) {
-            const selected_records = [];
-            d.$wrapper.find('.applicant-checkbox:checked').each(function () {
-                selected_records.push($(this).data('name'));
-            });
-
-            if (!selected_records.length) {
+            if (!d.unpublished_state.selected_names.length) {
                 frappe.msgprint({ message: __('Please select at least one record to publish.'), indicator: 'orange' });
                 return;
             }
@@ -610,7 +609,10 @@ function open_bulk_publish_dialog(listview) {
             frappe.call({
                 method: 'slcm.admission.doctype.interview_seat_allocation.interview_seat_allocation.bulk_publish_results',
                 args: {
-                    records: selected_records
+                    records: JSON.stringify(d.unpublished_state.selected_names),
+                    send_email: values.send_email,
+                    email_format: values.email_format,
+                    custom_email_content: values.custom_email_content
                 },
                 freeze: true,
                 freeze_message: __('Publishing Results...'),
@@ -628,93 +630,268 @@ function open_bulk_publish_dialog(listview) {
         }
     });
 
+    d.unpublished_state = {
+        page: 1,
+        limit: 10,
+        selected_names: []
+    };
+
     d.show();
+
+    if (d.fields_dict.email_format) d.fields_dict.email_format.$wrapper.hide();
+    if (d.fields_dict.custom_email_content) d.fields_dict.custom_email_content.$wrapper.hide();
+
     d.set_query("admission_cycle", function () {
-        return {
-            filters: {
-                "status": "Active"
-            }
-        };
+        return { filters: { "status": "Active" } };
     });
-    fetch_unpublished_applicants(d);
+
+    ["program_level", "academic_year", "program", "admission_cycle"].forEach(fn => {
+        if (d.fields_dict[fn] && d.fields_dict[fn].$input) {
+            d.fields_dict[fn].$input.on("change blur input", () => {
+                update_dialog_applicant_count(d);
+                update_unpublished_interviews_table(d, false);
+            });
+        }
+    });
+
+    update_dialog_applicant_count(d);
+    update_unpublished_interviews_table(d, false);
 }
 
-function fetch_unpublished_applicants(d) {
-    const filters = { result_published: 0 };
+function update_dialog_applicant_count(d) {
+    const html_field = d.get_field("total_applicants_html");
+    if (!html_field) return;
 
-    if (d.get_value('program_level')) filters.program_level = d.get_value('program_level');
-    if (d.get_value('academic_year')) filters.academic_year = d.get_value('academic_year');
-    if (d.get_value('campus')) filters.campus = d.get_value('campus');
-    if (d.get_value('admission_cycle')) filters.admission_cycle = d.get_value('admission_cycle');
+    let args = {
+        academic_year: d.get_value("academic_year") || "",
+        admission_cycle: d.get_value("admission_cycle") || "",
+        program_level: d.get_value("program_level") || "",
+        program: d.get_value("program") || ""
+    };
 
     frappe.call({
-        method: 'frappe.client.get_list',
-        args: {
-            doctype: 'Interview Seat Allocation',
-            filters: filters,
-            fields: ['name', 'candidate_name', 'applicant', 'program', 'interview_result_status'],
-            limit_page_length: 100
-        },
+        method: "slcm.admission.doctype.interview_seat_allocation.interview_seat_allocation.get_interview_applicant_count",
+        args: args,
         callback: function (r) {
-            const applicants = r.message || [];
-            let html = `
-                <div style="margin-bottom:10px; display:flex; gap:12px; align-items:center;">
-                    <label style="font-weight:600; cursor:pointer; margin:0; display:flex; align-items:center;">
-                        <input type="checkbox" id="select-all-publish-applicants">
-                        <span style="margin-left:8px;">Select All</span>
-                    </label>
-                    <span id="selected-publish-count" style="color:#6c757d; font-size:12px;">0 of ${applicants.length} selected</span>
-                </div>
-                <div style="max-height:250px; overflow-y:auto; border:1px solid #d1d8dd; border-radius:4px;">
-                    <table class="table table-bordered table-hover" style="margin:0; font-size:13px;">
-                        <thead style="position:sticky; top:0; background:#f4f5f6; z-index:1;">
-                            <tr>
-                                <th style="width:40px;"></th>
-                                <th>Candidate Name</th>
-                                <th>Applicant ID</th>
-                                <th>Programme</th>
-                                <th>Result</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
-
-            if (applicants.length) {
-                applicants.forEach(app => {
-                    html += `
-                        <tr>
-                            <td><input type="checkbox" class="applicant-checkbox" data-applicant="${app.applicant}" data-name="${app.name}"></td>
-                            <td>${app.candidate_name || ''}</td>
-                            <td>${app.applicant || ''}</td>
-                            <td>${app.program || ''}</td>
-                            <td><span class="badge badge-success">${app.interview_result_status || ''}</span></td>
-                        </tr>`;
-                });
-            } else {
-                html += `<tr><td colspan="5" class="text-muted">No unpublished results found.</td></tr>`;
+            if (r.message) {
+                let html = `
+                    <div style="background-color: #f0f8ff; border: 1px solid #cce5ff; padding: 15px 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div style="display: flex; flex-direction: column;">
+                            <span style="font-size: 11px; font-weight: 700; color: #0056b3; text-transform: uppercase; letter-spacing: 0.5px;">${__('Total Applicants')}</span>
+                            <span style="font-size: 24px; font-weight: 700; color: #004085; line-height: 1.2;">${r.message.total || 0}</span>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <div style="background-color: #ffffff; border: 1px solid #b8daff; padding: 5px 10px; border-radius: 4px; font-size: 11px; color: #004085; font-weight: 600; display: flex; align-items: center; gap: 5px;">
+                                <span style="display: inline-block; width: 6px; height: 6px; background-color: #28a745; border-radius: 50%;"></span>
+                                ${__('Attend: ')} <span style="font-size: 13px;">${r.message.completed || 0}</span>
+                            </div>
+                            <div style="background-color: #ffffff; border: 1px solid #b8daff; padding: 5px 10px; border-radius: 4px; font-size: 11px; color: #004085; font-weight: 600; display: flex; align-items: center; gap: 5px;">
+                                <span style="display: inline-block; width: 6px; height: 6px; background-color: #dc3545; border-radius: 50%;"></span>
+                                ${__('Absent: ')} <span style="font-size: 13px;">${r.message.absent || 0}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                html_field.$wrapper.html(html);
             }
-
-            html += '</tbody></table></div>';
-            d.get_field('applicants_html').$wrapper.html(html);
-
-            // Select All
-            d.$wrapper.find('#select-all-publish-applicants').on('change', function () {
-                d.$wrapper.find('.applicant-checkbox').prop('checked', $(this).is(':checked'));
-                update_publish_selected_count(d, applicants.length);
-            });
-
-            // Individual
-            d.$wrapper.on('change', '.applicant-checkbox', function () {
-                update_publish_selected_count(d, applicants.length);
-            });
-
-            update_publish_selected_count(d, applicants.length);
         }
     });
 }
 
-function update_publish_selected_count(d, total) {
-    const n = d.$wrapper.find('.applicant-checkbox:checked').length;
-    const t = total !== undefined ? total : d.$wrapper.find('.applicant-checkbox').length;
-    d.$wrapper.find('#selected-publish-count').text(`${n} of ${t} selected`);
-    d.$wrapper.find('#select-all-publish-applicants').prop('checked', t > 0 && n === t);
+function update_unpublished_interviews_table(d, is_page_change = false) {
+    const html_field = d.get_field("unpublished_interviews_html");
+    if (!html_field) return;
+
+    if (!is_page_change) {
+        d.unpublished_state.page = 1;
+    }
+
+    let args = {
+        academic_year: d.get_value("academic_year") || "",
+        admission_cycle: d.get_value("admission_cycle") || "",
+        program_level: d.get_value("program_level") || "",
+        program: d.get_value("program") || "",
+        filter_applicant: d.unpublished_state.filter_applicant || "",
+        filter_candidate_name: d.unpublished_state.filter_candidate_name || "",
+        filter_program: d.unpublished_state.filter_program || "",
+        filter_result: d.unpublished_state.filter_result || "",
+        filter_selection_status: d.unpublished_state.filter_selection_status || "",
+        limit_start: (d.unpublished_state.page - 1) * d.unpublished_state.limit,
+        limit_page_length: d.unpublished_state.limit
+    };
+
+    html_field.$wrapper.html(`<div class="text-muted"><i class="fa fa-spinner fa-spin"></i> ${__('Loading applicants...')}</div>`);
+
+    frappe.call({
+        method: "slcm.admission.doctype.interview_seat_allocation.interview_seat_allocation.get_unpublished_interviews_for_dialog",
+        args: args,
+        callback: function (r) {
+            if (r && r.message) {
+                render_unpublished_interviews_table(d, html_field, r.message.records, r.message.total_count);
+            }
+        }
+    });
+}
+
+function render_unpublished_interviews_table(d, html_field, records, total_count) {
+    let state = d.unpublished_state;
+    let total_pages = Math.ceil(total_count / state.limit) || 1;
+
+    let html = `
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 13px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <label style="margin: 0; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <input type="checkbox" class="unpub-select-all" ${records.length > 0 && html_field.$wrapper.find('.unpub-select-row:not(:checked)').length === 0 ? 'checked' : ''}> Select All Applicants
+                </label>
+                <button class="btn btn-xs btn-default unpub-clear-all">Clear All</button>
+                <span class="text-muted"><span class="unpub-selected-count">${state.selected_names.length}</span> of ${total_count} selected</span>
+            </div>
+            <div>
+                <button class="btn btn-xs btn-default unpub-prev" ${state.page <= 1 ? 'disabled' : ''}>« Prev</button>
+                <span style="margin: 0 10px; font-weight: 500;">Page ${state.page} of ${total_pages}</span>
+                <button class="btn btn-xs btn-default unpub-next" ${state.page >= total_pages ? 'disabled' : ''}>Next »</button>
+            </div>
+        </div>
+
+        <div style="border: 1px solid #d1d8dd; border-radius: 4px; overflow: hidden; overflow-x: auto;">
+            <table class="table table-bordered table-hover" style="margin-bottom: 0; font-size: 12px; white-space: nowrap;">
+                <thead style="background-color: #f8f9fa;">
+                    <tr>
+                        <th style="width: 40px; text-align: center; vertical-align: middle;"></th>
+                        <th style="width: 40px; text-align: center; vertical-align: middle;">No.</th>
+                        <th>
+                            <div style="color: #2b6cb0; margin-bottom: 5px;">${__('Applicant ID')}</div>
+                            <input type="text" class="form-control input-xs unpub-filter" data-filter="filter_applicant" placeholder="Filter ID..." value="${state.filter_applicant || ''}">
+                        </th>
+                        <th>
+                            <div style="color: #2b6cb0; margin-bottom: 5px;">${__('Candidate Name')}</div>
+                            <input type="text" class="form-control input-xs unpub-filter" data-filter="filter_candidate_name" placeholder="Filter Name..." value="${state.filter_candidate_name || ''}">
+                        </th>
+                        <th>
+                            <div style="color: #2b6cb0; margin-bottom: 5px;">${__('Programme')}</div>
+                            <input type="text" class="form-control input-xs unpub-filter" data-filter="filter_program" placeholder="Filter Programme..." value="${state.filter_program || ''}">
+                        </th>
+                        <th>
+                            <div style="color: #2b6cb0; margin-bottom: 5px;">${__('Selection Status')}</div>
+                            <select class="form-control input-xs unpub-filter" data-filter="filter_selection_status">
+                                <option value=""></option>
+                                <option value="Selected" ${state.filter_selection_status === 'Selected' ? 'selected' : ''}>Selected</option>
+                                <option value="Waitlisted" ${state.filter_selection_status === 'Waitlisted' ? 'selected' : ''}>Waitlisted</option>
+                                <option value="Rejected" ${state.filter_selection_status === 'Rejected' ? 'selected' : ''}>Rejected</option>
+                                <option value="Offer Issued" ${state.filter_selection_status === 'Offer Issued' ? 'selected' : ''}>Offer Issued</option>
+                            </select>
+                        </th>
+                        <th>
+                            <div style="color: #2b6cb0; margin-bottom: 5px;">${__('Result')}</div>
+                            <select class="form-control input-xs unpub-filter" data-filter="filter_result">
+                                <option value=""></option>
+                                <option value="Pass" ${state.filter_result === 'Pass' ? 'selected' : ''}>Pass</option>
+                                <option value="Fail" ${state.filter_result === 'Fail' ? 'selected' : ''}>Fail</option>
+                            </select>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    if (records.length === 0) {
+        html += `<tr><td colspan="7" class="text-center text-muted" style="padding: 15px;">${__('No unpublished applicants found matching filters.')}</td></tr>`;
+    } else {
+        records.forEach((r, idx) => {
+            let row_no = ((state.page - 1) * state.limit) + idx + 1;
+            let checked = state.selected_names.includes(r.name) ? 'checked' : '';
+            
+            // Badge styling for Result
+            let result_html = r.interview_result_status || '';
+            if (result_html === 'Pass') {
+                result_html = `<span class="badge badge-success">${result_html}</span>`;
+            } else if (result_html === 'Fail') {
+                result_html = `<span class="badge badge-danger">${result_html}</span>`;
+            }
+
+            html += `
+                <tr>
+                    <td style="text-align: center;">
+                        <input type="checkbox" class="unpub-select-row" data-name="${r.name}" ${checked}>
+                    </td>
+                    <td style="text-align: center; color: #2b6cb0;">${row_no}</td>
+                    <td>${r.applicant || ''}</td>
+                    <td style="font-weight: 600;">${r.candidate_name || ''}</td>
+                    <td>${r.program || ''}</td>
+                    <td>${r.status || ''}</td>
+                    <td>${result_html}</td>
+                </tr>
+            `;
+        });
+    }
+
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    html_field.$wrapper.html(html);
+
+    // Event listeners
+    let timeout = null;
+    html_field.$wrapper.find('.unpub-filter').on('input change', function() {
+        let filter_name = $(this).attr('data-filter');
+        let val = $(this).val();
+        state[filter_name] = val;
+        
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            update_unpublished_interviews_table(d, false);
+        }, 500);
+    });
+
+    html_field.$wrapper.find('.unpub-clear-all').on('click', function() {
+        state.selected_names = [];
+        html_field.$wrapper.find('.unpub-select-row').prop('checked', false);
+        html_field.$wrapper.find('.unpub-select-all').prop('checked', false);
+        html_field.$wrapper.find('.unpub-selected-count').text(0);
+    });
+
+    html_field.$wrapper.find('.unpub-select-all').on('change', function() {
+        let is_checked = $(this).is(':checked');
+        html_field.$wrapper.find('.unpub-select-row').each(function() {
+            $(this).prop('checked', is_checked);
+            let name = $(this).attr('data-name');
+            if (is_checked && !state.selected_names.includes(name)) {
+                state.selected_names.push(name);
+            } else if (!is_checked) {
+                state.selected_names = state.selected_names.filter(n => n !== name);
+            }
+        });
+        html_field.$wrapper.find('.unpub-selected-count').text(state.selected_names.length);
+    });
+
+    html_field.$wrapper.find('.unpub-select-row').on('change', function() {
+        let name = $(this).attr('data-name');
+        if ($(this).is(':checked')) {
+            if (!state.selected_names.includes(name)) state.selected_names.push(name);
+        } else {
+            state.selected_names = state.selected_names.filter(n => n !== name);
+        }
+        
+        html_field.$wrapper.find('.unpub-selected-count').text(state.selected_names.length);
+        
+        let all_checked = html_field.$wrapper.find('.unpub-select-row:not(:checked)').length === 0;
+        html_field.$wrapper.find('.unpub-select-all').prop('checked', all_checked && records.length > 0);
+    });
+
+    html_field.$wrapper.find('.unpub-prev').on('click', function() {
+        if (state.page > 1) {
+            state.page--;
+            update_unpublished_interviews_table(d, true);
+        }
+    });
+
+    html_field.$wrapper.find('.unpub-next').on('click', function() {
+        if (state.page < total_pages) {
+            state.page++;
+            update_unpublished_interviews_table(d, true);
+        }
+    });
 }
