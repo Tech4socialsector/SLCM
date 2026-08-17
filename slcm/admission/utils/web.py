@@ -916,7 +916,7 @@ def download_application(applicant_name):
     frappe.local.response.type = "download"
 
 @frappe.whitelist(methods=["POST", "GET"])
-def download_receipt(receipt_name):
+def download_receipt(receipt_name=None, fee_type=None, offer_letter=None):
     """
     Generates and downloads the Applicant Payment Receipt PDF for the owner.
 
@@ -924,10 +924,23 @@ def download_receipt(receipt_name):
     as the print format, falling back to the default format.
     """
     user = frappe.session.user
-    try:
-        receipt = frappe.get_doc("Applicant Payment Receipt", receipt_name, ignore_permissions=True)
-    except frappe.DoesNotExistError:
-        frappe.throw("Receipt not found")
+    receipt = None
+    
+    if receipt_name:
+        try:
+            receipt = frappe.get_doc("Applicant Payment Receipt", receipt_name, ignore_permissions=True)
+        except frappe.DoesNotExistError:
+            frappe.throw("Receipt not found")
+    elif fee_type and offer_letter:
+        receipts = frappe.get_all("Applicant Payment Receipt", 
+                                 filters={"offer_letter": offer_letter, "fee_type": fee_type, "docstatus": 1},
+                                 order_by="creation desc", limit=1)
+        if receipts:
+            receipt = frappe.get_doc("Applicant Payment Receipt", receipts[0].name, ignore_permissions=True)
+        else:
+            frappe.throw(f"Receipt for {fee_type} not found")
+    else:
+        frappe.throw("Receipt details not provided")
 
     # Check if this user owns the receipt (via the Applicant record)
     applicant_name = receipt.applicant

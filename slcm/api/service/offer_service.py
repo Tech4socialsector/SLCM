@@ -1531,7 +1531,7 @@ def get_offer_details(offer_name=None):
 
     receipts = frappe.get_all("Applicant Payment Receipt",
         filters={"offer_letter": offer_id, "docstatus": ["<", 2]},
-        fields=["name", "fee_type", "payment_date"],
+        fields=["name", "fee_type", "payment_date", "payment_mode", "transaction_id"],
         order_by="creation desc", ignore_permissions=True)
 
     return {

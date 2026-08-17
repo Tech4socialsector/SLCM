@@ -1,7 +1,15 @@
+from __future__ import unicode_literals
 import frappe
+from frappe import _, bold, throw
+from frappe.utils import flt, getdate, add_months, nowdate, add_days, get_datetime, now_datetime
+from datetime import datetime
 import json
-from frappe import _, throw
-from frappe.utils import add_days, getdate, now_datetime, get_datetime, flt
+import logging
+
+def update_payment_request_paid_on(doc, method):
+    if doc.status == "Paid" and not doc.paid_on:
+        doc.paid_on = frappe.utils.nowdate()
+
 
 from slcm.api.service.application_fee_service import get_payment_receipt_template_for_policy
 from slcm.api.service.razorpay_utils import (

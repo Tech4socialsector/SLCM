@@ -556,12 +556,27 @@ _pc.mission_text) or '' %}
 						Back to Offer Letter
 					</a>
 					<div id="offer-detail-wrapper">
-						<div class="text-center p-5 mt-5" id="loader">
-							<div
-								class="spinner-border"
-								style="
-								<span class="sr-only">{{ _("Loading...") }}</span>
-							</div>
+						<div class="text-center p-5 mt-5" id="loader" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px;">
+                            <style>
+                                @keyframes custom-spin {
+                                    from { transform: rotate(0deg); }
+                                    to { transform: rotate(360deg); }
+                                }
+                                .custom-loader-ring {
+                                    width: 60px;
+                                    height: 60px;
+                                    border-radius: 50%;
+                                    border: 4px solid color-mix(in srgb, var(--primary) 20%, transparent);
+                                    border-top-color: var(--primary);
+                                    animation: custom-spin 1s linear infinite;
+                                }
+                            </style>
+                            <div style="position: relative; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+                                <div class="custom-loader-ring" style="position: absolute; top: 0; left: 0;"></div>
+                                <span class="material-symbols-outlined" style="color: var(--primary); font-size: 28px; position: relative; z-index: 1;">description</span>
+                            </div>
+                            <h4 style="margin-top: 24px; color: var(--primary); font-weight: 700;">{{ _("Loading Details...") }}</h4>
+                            <p style="color: #64748b;">{{ _("Please wait while we fetch your admission information.") }}</p>
 						</div>
 					</div>
 				</div>
@@ -858,10 +873,55 @@ _pc.mission_text) or '' %}
 	        const has_conf_fee_deduction = deductions.some(d => d.component.includes('Confirmation'));
 
 	        
+        
+        let is_conf_paid = offer.status === 'Confirmation Fee Paid';
+        let is_full_paid = offer.status === 'Full Fee Paid' || offer.status === 'Enrolled';
+        
         let html = `
         <div style="max-width: none; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; padding-bottom: 40px;">
+        `;
+
+        if (is_conf_paid || is_full_paid) {
+            let banner_bg = '#f0fdf4';
+            let banner_border = '#bbf7d0';
+            let icon_bg = '#dcfce7';
+            let icon_color = '#16a34a';
+            let title = is_full_paid ? '{{ _("Full Fee Paid Successfully!") }}' : '{{ _("Confirmation Fee Paid Successfully!") }}';
+            let subtitle = is_full_paid ? '<div style="font-size: 0.95rem; font-weight: 600; color: #166534; margin-bottom: 4px;">{{ _("Congratulations! Your admission is now confirmed.") }}</div>' : '';
             
-            <!-- Top Bar -->
+            // Try to find the payment date and amount from offer properties
+            let payment_date = is_full_paid ? offer.full_fee_paid_on : offer.confirmation_fee_paid_on;
+            let formatted_date = payment_date ? format_date_dd_mm_yyyy(payment_date) : '';
+            
+            // If we don't have the amount explicitly, we can calculate it from the fee structure
+            let paid_amount_val = 0;
+            if (is_full_paid) {
+                // Approximate it as the total full fee
+                let active_breakdown = fee_breakdown.filter(f => !f.is_discount && (offer.needs_accommodation === 'Yes' || !f.is_accommodation_fee));
+                paid_amount_val = active_breakdown.reduce((sum, f) => sum + f.amount, 0);
+            } else {
+                paid_amount_val = offer.confirmation_fee_amount || 0; // Or from fee_breakdown
+            }
+            
+            let amount_str = format_currency(paid_amount_val, currency);
+            let payment_text = payment_date ? `{{ _("Payment of ") }}${amount_str}{{ _(" received on ") }}${formatted_date}.` : `{{ _("Payment of ") }}${amount_str}{{ _(" received.") }}`;
+
+            html += `
+            <!-- Success Banner -->
+            <div style="background: ${banner_bg}; border: 1px solid ${banner_border}; border-radius: 12px; padding: 20px 24px; display: flex; align-items: flex-start; gap: 16px;">
+                <div style="width: 40px; height: 40px; border-radius: 50%; background: ${icon_bg}; color: ${icon_color}; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <span class="material-symbols-outlined" style="font-size: 24px;">check_circle</span>
+                </div>
+                <div>
+                    <h3 style="margin: 0 0 4px 0; color: #166534; font-size: 1.25rem; font-weight: 800;">${title}</h3>
+                    ${subtitle}
+                    <div style="color: #15803d; font-size: 0.95rem;">${payment_text}</div>
+                </div>
+            </div>
+            `;
+        }
+
+        html += `
             <!-- Fee Details Block (Yellow Theme) -->
             <div class="ui-card" style="background: #fefce8; border: 1px solid #fde047; padding: 32px; border-radius: 12px; display: flex; flex-direction: column; gap: 24px;">
                 <!-- Title -->
@@ -881,7 +941,8 @@ _pc.mission_text) or '' %}
                                 <tr style="border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 0.85rem;">
                                     <th style="padding: 12px 12px 12px 0; font-weight: 600;">#</th>
                                     <th style="padding: 12px; font-weight: 600;">{{ _("Fee Component") }}</th>
-                                    <th style="padding: 12px 0 12px 12px; font-weight: 600; text-align: right;">{{ _("Amount") }}</th>
+                                    <th style="padding: 12px; font-weight: 600; text-align: right;">{{ _("Amount (₹)") }}</th>
+                                    ${(is_conf_paid || is_full_paid) ? `<th style="padding: 12px 0 12px 12px; font-weight: 600; text-align: center;">{{ _("Status") }}</th>` : ''}
                                 </tr>
                             </thead>
                             <tbody>
@@ -897,18 +958,13 @@ _pc.mission_text) or '' %}
                                     const total_deductions = deductions.reduce((sum, f) => sum + Math.abs(f.amount), 0);
                                     const calculated_payable = total_full_fee - total_deductions;
                                     
-                                    // Make sure confirmation fee is extracted correctly, even if it's implicitly part of the total
                                     let conf_amount = offer.confirmation_fee_amount || 0;
-                                    let has_conf_fee_deduction = deductions.some(d => d.component.includes('Confirmation'));
-
                                     let index = 1;
                                     
-                                    // First, show the Confirmation Fee row if it hasn't been paid yet (or show it anyway based on the design mockup)
-                                    let html = '';
+                                    let rows_html = '';
                                     
-                                    // The design shows Confirmation Fee as item 1 in the full fee breakdown, even if it's an upfront fee.
                                     if (offer.status === 'Issued' || offer.status === 'Accepted') {
-                                        html += `
+                                        rows_html += `
                                         <tr style="border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; color: #475569;">
                                             <td style="padding: 16px 16px 16px 0;">${index++}</td>
                                             <td style="padding: 16px;">
@@ -917,30 +973,47 @@ _pc.mission_text) or '' %}
                                                     <span style="background: #fef08a; color: #b45309; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; border: 1px solid #fde047;">Due</span>
                                                 </div>
                                             </td>
-                                            <td style="padding: 16px 0 16px 16px; text-align: right; color: #1e293b;">
-                                                ${format_currency(conf_amount, currency)}
+                                            <td style="padding: 16px; text-align: right; color: #1e293b;">${format_currency(conf_amount, currency)}</td>
+                                        </tr>`;
+                                    } else if (is_conf_paid || is_full_paid) {
+                                        rows_html += `
+                                        <tr style="border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; color: #475569;">
+                                            <td style="padding: 16px 16px 16px 0;">${index++}</td>
+                                            <td style="padding: 16px;">
+                                                <div style="display: flex; align-items: center; gap: 8px;">
+                                                    {{ _("Confirmation Fee") }}
+                                                </div>
+                                            </td>
+                                            <td style="padding: 16px; text-align: right; color: #1e293b;">${format_currency(conf_amount, currency)}</td>
+                                            <td style="padding: 16px 0 16px 16px; text-align: center;">
+                                                <span style="background: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; border: 1px solid #bbf7d0;">Paid</span>
                                             </td>
                                         </tr>`;
                                     }
 
-                                    html += base_components.map(f => {
+                                    rows_html += base_components.map(f => {
                                         let note = '';
                                         if (f.is_accommodation_fee) {
                                             note = (offer.status === 'Issued') ? ' (Optional)' : (offer.status === 'Accepted' ? ' (Opted)' : '');
                                         }
+                                        
+                                        let status_pill = '';
+                                        if (is_full_paid) {
+                                            status_pill = `<span style="background: #dcfce7; color: #16a34a; padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; border: 1px solid #bbf7d0;">Paid</span>`;
+                                        } else if (is_conf_paid) {
+                                            status_pill = `<span style="background: #ffedd5; color: #c2410c; padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; border: 1px solid #fed7aa;">Pending</span>`;
+                                        }
+
                                         return `
                                         <tr style="border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; color: #475569;">
                                             <td style="padding: 16px 16px 16px 0;">${index++}</td>
-                                            <td style="padding: 16px;">
-                                                ${f.component}${note}
-                                            </td>
-                                            <td style="padding: 16px 0 16px 16px; text-align: right; color: #1e293b;">
-                                                ${format_currency(f.amount, currency)}
-                                            </td>
+                                            <td style="padding: 16px;">${f.component}${note}</td>
+                                            <td style="padding: 16px; text-align: right; color: #1e293b;">${format_currency(f.amount, currency)}</td>
+                                            ${(is_conf_paid || is_full_paid) ? `<td style="padding: 16px 0 16px 16px; text-align: center;">${status_pill}</td>` : ''}
                                         </tr>`;
                                     }).join('');
                                     
-                                    html += `
+                                    rows_html += `
                                     </tbody>
                                 </table>
                                 
@@ -950,187 +1023,388 @@ _pc.mission_text) or '' %}
                                         <span style="color: #0f172a;">${format_currency(total_full_fee, currency)}</span>
                                     </div>
                                     <div style="background: white; padding: 16px 24px; display: flex; justify-content: space-between; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #dc2626;">
-                                        <span>{{ _("Less: Confirmation Fee (To be Deducted)") }}</span>
+                                        <span>{{ _("Less: Confirmation Fee (Deducted)") }}</span>
                                         <span>- ${format_currency(conf_amount, currency)}</span>
                                     </div>
-                                    <div style="background: #f0fdf4; padding: 16px 24px; display: flex; justify-content: space-between; font-weight: 700; color: #1e293b;">
+                                    <div style="background: #f0fdf4; padding: 16px 24px; display: flex; justify-content: space-between; font-weight: 700; color: #1e293b; ${(is_conf_paid || is_full_paid) ? 'border-bottom: 1px solid #e2e8f0;' : ''}">
                                         <span>{{ _("Total Payable (After Deduction)") }}</span>
                                         <span style="color: #16a34a; font-size: 1.1rem;">${format_currency(Math.max(0, total_full_fee - conf_amount), currency)}</span>
                                     </div>
-                                </div>`;
+                                    `;
                                     
-                                    return html;
+                                    if (is_conf_paid) {
+                                        rows_html += `
+                                        <div style="background: white; padding: 16px 24px; display: flex; justify-content: space-between; border-bottom: 1px solid #e2e8f0; font-weight: 700; color: #1e293b;">
+                                            <span>{{ _("Paid Amount") }}</span>
+                                            <span style="color: #16a34a;">${format_currency(conf_amount, currency)}</span>
+                                        </div>
+                                        <div style="background: #dcfce7; padding: 16px 24px; display: flex; justify-content: space-between; font-weight: 700; color: #1e293b;">
+                                            <span>{{ _("Remaining Balance (To be Paid)") }}</span>
+                                            <span style="color: #16a34a; font-size: 1.1rem;">${format_currency(Math.max(0, total_full_fee - conf_amount), currency)}</span>
+                                        </div>
+                                        `;
+                                    } else if (is_full_paid) {
+                                        rows_html += `
+                                        <div style="background: white; padding: 16px 24px; display: flex; justify-content: space-between; border-bottom: 1px solid #e2e8f0; font-weight: 700; color: #1e293b;">
+                                            <span>{{ _("Total Paid") }}</span>
+                                            <span style="color: #16a34a;">${format_currency(total_full_fee, currency)}</span>
+                                        </div>
+                                        <div style="background: #dcfce7; padding: 16px 24px; display: flex; justify-content: space-between; font-weight: 700; color: #1e293b;">
+                                            <span>{{ _("Balance") }}</span>
+                                            <span style="color: #16a34a; font-size: 1.1rem;">${format_currency(0, currency)}</span>
+                                        </div>
+                                        `;
+                                    }
+                                    
+                                    rows_html += `</div>`;
+                                    
+                                    return rows_html;
                                 })()}
                     </div>
+                    `;
 
-                    <!-- Right Column: How it works -->
-                    <div style="flex: 0 0 350px; background: #fef9c3; border-radius: 12px; padding: 24px; border: 1px solid #fde047; display: flex; flex-direction: column; justify-content: space-between;">
-                        <div>
-                            <div style="font-weight: 700; margin-bottom: 24px; color: #334155; display: flex; align-items: center; gap: 8px;">
-                                <span class="material-symbols-outlined" style="color: #ca8a04;">info</span> {{ _("How it works") }}
+        // Right Column
+        html += `
+                    <div style="flex: 0 0 350px; display: flex; flex-direction: column; gap: 24px;">
+        `;
+        
+        if (offer.status === 'Issued' || offer.status === 'Accepted') {
+            html += `
+                        <div style="background: #fef9c3; border-radius: 12px; padding: 24px; border: 1px solid #fde047; display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+                            <div>
+                                <div style="font-weight: 700; margin-bottom: 24px; color: #334155; display: flex; align-items: center; gap: 8px;">
+                                    <span class="material-symbols-outlined" style="color: #ca8a04;">info</span> {{ _("How it works") }}
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 20px; position: relative;">
+                                    <!-- Vertical timeline line -->
+                                    <div style="position: absolute; left: 11px; top: 24px; bottom: 24px; width: 1px; background: #facc15; z-index: 0;"></div>
+                                    
+                                    <div style="display: flex; gap: 16px; align-items: flex-start; position: relative; z-index: 1;">
+                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #fefce8; border: 1px solid #ca8a04; color: #ca8a04; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;">1</div>
+                                        <div style="font-size: 0.9rem; color: #475569; line-height: 1.5;">{{ _("Pay the Confirmation Fee to secure your admission.") }}</div>
+                                    </div>
+                                    ${has_conf_fee_deduction ? `
+                                    <div style="display: flex; gap: 16px; align-items: flex-start; position: relative; z-index: 1;">
+                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #fefce8; border: 1px solid #ca8a04; color: #ca8a04; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;">2</div>
+                                        <div style="font-size: 0.9rem; color: #475569; line-height: 1.5;">{{ _("The Confirmation Fee will be deducted from the Total Full Fee.") }}</div>
+                                    </div>
+                                    <div style="display: flex; gap: 16px; align-items: flex-start; position: relative; z-index: 1;">
+                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #fefce8; border: 1px solid #ca8a04; color: #ca8a04; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;">3</div>
+                                        <div style="font-size: 0.9rem; color: #475569; line-height: 1.5;">{{ _("Pay the remaining balance (Total Payable) to complete your admission.") }}</div>
+                                    </div>
+                                    ` : `
+                                    <div style="display: flex; gap: 16px; align-items: flex-start; position: relative; z-index: 1;">
+                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #fefce8; border: 1px solid #ca8a04; color: #ca8a04; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;">2</div>
+                                        <div style="font-size: 0.9rem; color: #475569; line-height: 1.5;">{{ _("Pay the Full Fee to complete your admission.") }}</div>
+                                    </div>
+                                    `}
+                                </div>
                             </div>
-                            
-                            <div style="display: flex; flex-direction: column; gap: 20px; position: relative;">
-                                <!-- Vertical timeline line -->
-                                <div style="position: absolute; left: 11px; top: 24px; bottom: 24px; width: 1px; background: #facc15; z-index: 0;"></div>
-                                
-                                <div style="display: flex; gap: 16px; align-items: flex-start; position: relative; z-index: 1;">
-                                    <div style="width: 24px; height: 24px; border-radius: 50%; background: #fefce8; border: 1px solid #ca8a04; color: #ca8a04; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;">1</div>
-                                    <div style="font-size: 0.9rem; color: #475569; line-height: 1.5;">{{ _("Pay the Confirmation Fee to secure your admission.") }}</div>
-                                </div>
-                                ${has_conf_fee_deduction ? `
-                                <div style="display: flex; gap: 16px; align-items: flex-start; position: relative; z-index: 1;">
-                                    <div style="width: 24px; height: 24px; border-radius: 50%; background: #fefce8; border: 1px solid #ca8a04; color: #ca8a04; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;">2</div>
-                                    <div style="font-size: 0.9rem; color: #475569; line-height: 1.5;">{{ _("The Confirmation Fee will be deducted from the Total Full Fee.") }}</div>
-                                </div>
-                                <div style="display: flex; gap: 16px; align-items: flex-start; position: relative; z-index: 1;">
-                                    <div style="width: 24px; height: 24px; border-radius: 50%; background: #fefce8; border: 1px solid #ca8a04; color: #ca8a04; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;">3</div>
-                                    <div style="font-size: 0.9rem; color: #475569; line-height: 1.5;">{{ _("Pay the remaining balance (Total Payable) to complete your admission.") }}</div>
-                                </div>
+                            <!-- Payment Actions -->
+                            <div style="margin-top: 32px;">
+                                ${offer.status === 'Issued' ? `
+                                    <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                                        <button class="btn" style="flex: 1; border: 1px solid #ef4444; color: #ef4444; background: white; font-weight: 600; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="handle_reject()">
+                                            <span class="material-symbols-outlined" style="font-size: 18px;">close</span> {{ _("Reject") }}
+                                        </button>
+                                        <button class="btn" style="flex: 2; background: #facc15; color: #422006; font-weight: 700; border: none; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="handle_primary_action()">
+                                            <span class="material-symbols-outlined" style="font-size: 18px;">check_circle</span>
+                                            {{ _("Accept Offer") }}
+                                        </button>
+                                    </div>
                                 ` : `
-                                <div style="display: flex; gap: 16px; align-items: flex-start; position: relative; z-index: 1;">
-                                    <div style="width: 24px; height: 24px; border-radius: 50%; background: #fefce8; border: 1px solid #ca8a04; color: #ca8a04; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;">2</div>
-                                    <div style="font-size: 0.9rem; color: #475569; line-height: 1.5;">{{ _("Pay the Full Fee to complete your admission.") }}</div>
-                                </div>
+                                    ${is_fee_paid ? `
+                                        <button class="btn btn-default" style="width: 100%; font-weight: 600; padding: 12px; border-radius: 8px; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="handle_download_receipt()">
+                                            <span class="material-symbols-outlined" style="font-size: 18px;">download</span>
+                                            {{ _("Download Receipt") }}
+                                        </button>
+                                    ` : ''}
+                                    ${online_payment_enabled ? `
+                                        <button class="btn btn-pay" style="width: 100%; background: #facc15; color: #422006; font-weight: 700; border: none; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="handle_primary_action()">
+                                            <span class="material-symbols-outlined" style="font-size: 18px;">account_balance_wallet</span>
+                                            {{ _("Pay Confirmation Fee") }}
+                                        </button>
+                                    ` : ''}
                                 `}
                             </div>
                         </div>
-
-                        <!-- Payment Actions -->
-                        <div style="margin-top: 32px;">
-                            ${offer.status === 'Issued' ? `
-                                <div style="display: flex; gap: 12px; margin-bottom: 12px;">
-                                    <button class="btn" style="flex: 1; border: 1px solid #ef4444; color: #ef4444; background: white; font-weight: 600; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="handle_reject()">
-                                        <span class="material-symbols-outlined" style="font-size: 18px;">close</span> {{ _("Reject") }}
-                                    </button>
-                                    <button class="btn" style="flex: 2; background: #facc15; color: #422006; font-weight: 700; border: none; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="handle_primary_action()">
-                                        <span class="material-symbols-outlined" style="font-size: 18px;">check_circle</span>
-                                        {{ _("Accept Offer") }}
-                                    </button>
+            `;
+        } else if (is_conf_paid || is_full_paid) {
+            
+            let paid_amount_val = 0;
+            if (is_full_paid) {
+                let active_breakdown = fee_breakdown.filter(f => !f.is_discount && (offer.needs_accommodation === 'Yes' || !f.is_accommodation_fee));
+                paid_amount_val = active_breakdown.reduce((sum, f) => sum + f.amount, 0);
+            } else {
+                paid_amount_val = offer.confirmation_fee_amount || 0;
+            }
+            let active_receipt = null;
+            if (cur_offer_data.receipts && cur_offer_data.receipts.length > 0) {
+                if (is_full_paid) {
+                    active_receipt = cur_offer_data.receipts.find(r => r.fee_type === 'Admission Fee') || cur_offer_data.receipts.find(r => r.fee_type === 'Confirmation Fee') || cur_offer_data.receipts[0];
+                } else {
+                    active_receipt = cur_offer_data.receipts.find(r => r.fee_type === 'Confirmation Fee') || cur_offer_data.receipts[0];
+                }
+            }
+            
+            let payment_date = active_receipt && active_receipt.payment_date ? active_receipt.payment_date : (is_full_paid ? offer.full_fee_paid_on : offer.confirmation_fee_paid_on);
+            let formatted_date = payment_date ? format_date_dd_mm_yyyy(payment_date) : '-';
+            let transaction_id = active_receipt && active_receipt.transaction_id ? active_receipt.transaction_id : '-';
+            let payment_mode = active_receipt && active_receipt.payment_mode ? active_receipt.payment_mode : 'Online';
+            
+            html += `
+                        <!-- Payment Information Card -->
+                        <div style="background: white; border-radius: 12px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            <h5 style="margin: 0 0 16px 0; font-weight: 700; color: #1e293b;">{{ _("Payment Information") }}</h5>
+                            <div style="display: flex; align-items: center; gap: 8px; color: #16a34a; font-size: 0.9rem; font-weight: 600; margin-bottom: 20px;">
+                                <span class="material-symbols-outlined" style="font-size: 18px;">check_circle</span>
+                                ${is_full_paid ? '{{ _("Full Fee Paid") }}' : '{{ _("Confirmation Fee Paid") }}'}
+                            </div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.9rem;">
+                                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+                                    <span style="color: #64748b;">{{ _("Total Paid Amount") }}</span>
+                                    <span style="font-weight: 700; color: #1e293b;">${format_currency(paid_amount_val, currency)}</span>
                                 </div>
-                            ` : ''}
-
-                            ${offer.status === 'Accepted' && online_payment_enabled ? `
-                                <button class="btn btn-pay" style="width: 100%; background: #facc15; color: #422006; font-weight: 700; border: none; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="handle_primary_action()" ${data.scholarship_application && data.scholarship_application.status === 'Submitted' ? 'disabled style="opacity: 0.6; cursor: not-allowed;"' : ''}>
-                                    <span class="material-symbols-outlined" style="font-size: 18px;">account_balance_wallet</span>
-                                    {{ _("Pay Confirmation Fee") }}
-                                </button>
-                                <div style="text-align: center; margin-top: 12px; color: #475569; font-size: 0.95rem;">
-                                    Amount to Pay: <strong style="color: #1e293b;">${format_currency(offer.confirmation_fee_amount, currency)}</strong>
+                                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+                                    <span style="color: #64748b;">{{ _("Payment Date") }}</span>
+                                    <span style="font-weight: 600; color: #1e293b;">${formatted_date}</span>
                                 </div>
-                            ` : ''}
-
-                            ${offer.status === 'Confirmation Fee Paid' && online_payment_enabled ? `
-                                <button class="btn btn-pay" style="width: 100%; background: #facc15; color: #422006; font-weight: 700; border: none; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="handle_primary_action()">
-                                    <span class="material-symbols-outlined" style="font-size: 18px;">account_balance_wallet</span>
-                                    {{ _("Pay Full Fee") }}
-                                </button>
-                            ` : ''}
-
-                            ${(data.receipts && data.receipts.length > 0) ? 
-                                data.receipts.map(r => `
-                                    <button class="btn btn-pay" style="width: 100%; margin-top: 12px; background: white; border: 1px solid #facc15; color: #422006; font-weight: 600; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="window.open('/api/method/frappe.utils.print_format.download_pdf?doctype=Applicant+Payment+Receipt&name=${r.name}&format=Applicant+Payment+Receipt&no_letterhead=0&letterhead=No+Letterhead&settings=%7B%7D&_lang=en', '_blank')">
-                                        <span class="material-symbols-outlined" style="font-size: 18px;">receipt</span> ${r.fee_type || 'Fee'} {{ _("Receipt") }}
-                                    </button>
-                                `).join('') 
-                            : (['Payment Completed', 'Full Fee Paid'].includes(offer.status) || is_fee_paid || (applicant && ['Confirmation Fee Paid', 'Full Fee Paid'].includes(applicant.status)) ? `
-                                <button class="btn btn-pay" style="width: 100%; margin-top: 12px; background: white; border: 1px solid #facc15; color: #422006; font-weight: 600; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="handle_download_receipt()">
-                                    <span class="material-symbols-outlined" style="font-size: 18px;">receipt</span> {{ _("Download Receipt") }}
-                                </button>
-                            ` : '')}
+                                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+                                    <span style="color: #64748b;">{{ _("Payment Mode") }}</span>
+                                    <span style="font-weight: 600; color: #1e293b;">${payment_mode}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+                                    <span style="color: #64748b;">{{ _("Transaction ID") }}</span>
+                                    <span style="font-weight: 600; color: #1e293b;">${transaction_id}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding-top: 4px;">
+                                    <span style="color: #64748b;">{{ _("Receipt") }}</span>
+                                    <a href="#" onclick="handle_download_receipt('${is_full_paid ? 'Admission Fee' : 'Confirmation Fee'}'); return false;" style="font-weight: 600; color: var(--primary); text-decoration: none; display: flex; align-items: center; gap: 4px; hover:underline">
+                                        {{ _("Download") }} <span class="material-symbols-outlined" style="font-size: 16px;">download</span>
+                                    </a>
+                                </div>
+                            </div>
                         </div>
+            `;
+            
+            if (is_full_paid) {
+                html += `
+                        <!-- Admission Status Card -->
+                        <div style="background: white; border-radius: 12px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            <h5 style="margin: 0 0 16px 0; font-weight: 700; color: #1e293b;">{{ _("Admission Status") }}</h5>
+                            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 32px; height: 32px; border-radius: 50%; background: #16a34a; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <span class="material-symbols-outlined" style="font-size: 20px;">verified_user</span>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 800; color: #166534; font-size: 1.05rem;">{{ _("ADMISSION CONFIRMED") }}</div>
+                                </div>
+                            </div>
+                            <p style="margin: 16px 0 0 0; font-size: 0.9rem; color: #475569; text-align: center;">{{ _("Welcome to the University!") }}</p>
+                        </div>
+                        
+                        <!-- What's Next Card -->
+                        <div style="background: white; border-radius: 12px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            <h5 style="margin: 0 0 16px 0; font-weight: 700; color: #1e293b;">{{ _("What's Next?") }}</h5>
+                            <div style="display: flex; gap: 12px; align-items: flex-start;">
+                                <span class="material-symbols-outlined" style="color: #16a34a; font-size: 20px;">check_circle</span>
+                                <div style="font-size: 0.9rem; color: #475569; line-height: 1.5;">
+                                    {{ _("You will receive further communication regarding orientation, academic calendar and class schedule on your registered email.") }}
+                                </div>
+                            </div>
+                        </div>
+                `;
+            } else if (is_conf_paid) {
+                html += `
+                        <!-- What's Next Card -->
+                        <div style="background: white; border-radius: 12px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            <h5 style="margin: 0 0 16px 0; font-weight: 700; color: #1e293b;">{{ _("What's Next?") }}</h5>
+                            <ol style="margin: 0; padding-left: 16px; font-size: 0.9rem; color: #475569; line-height: 1.6; display: flex; flex-direction: column; gap: 8px;">
+                                <li>{{ _("Your confirmation fee has been received.") }}</li>
+                                ${has_conf_fee_deduction ? `<li>{{ _("The amount has been deducted from your total fee.") }}</li>` : ''}
+                                <li>
+                                    {{ _("Please pay the remaining balance on or before") }} 
+                                    <strong style="color: #1e293b;">${offer.payment_deadline ? format_date_dd_mm_yyyy(offer.payment_deadline) : '-'}</strong> 
+                                    {{ _("to complete your admission.") }}
+                                </li>
+                            </ol>
+                            
+                            ${online_payment_enabled ? `
+                                <button class="btn btn-pay" style="width: 100%; background: #facc15; color: #422006; font-weight: 700; border: none; padding: 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 24px;" onclick="handle_primary_action()">
+                                    {{ _("Pay Remaining Balance") }}
+                                </button>
+                            ` : ''}
+                        </div>
+                `;
+            }
+        }
+        
+        html += `
                     </div>
                 </div>
             </div>
+        `;
 
-            <!-- Status Block (Blue Theme) -->
-            <div class="ui-card" style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 32px; border-radius: 12px;">
-                <!-- Title -->
-                <h4 style="margin: 0; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; color: #1e293b; font-weight: 700;">
-                    <div style="background: #3b82f6; border-radius: 8px; padding: 8px; display: flex; align-items: center; justify-content: center;">
-                        <span class="material-symbols-outlined" style="color: white;">stacked_line_chart</span>
+        // Status Stepper (Replaces the old blue grid card)
+        let s_issued = true;
+        let s_accepted = offer.accepted_on ? true : false;
+        let s_conf_paid = offer.confirmation_fee_paid_on ? true : false;
+        let s_full_paid = offer.full_fee_paid_on || offer.status === 'Enrolled' ? true : false;
+        
+        html += `
+            <div style="display: flex; flex-wrap: wrap; gap: 32px; margin-bottom: 32px;">
+                <!-- Status Timeline -->
+                <div class="ui-card" style="flex: 1 1 500px; background: #eff6ff; border: 1px solid #bfdbfe; padding: 32px; border-radius: 12px;">
+                    <!-- Title -->
+                    <h4 style="margin: 0; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; color: #1e293b; font-weight: 700;">
+                        <div style="background: #3b82f6; border-radius: 8px; padding: 8px; display: flex; align-items: center; justify-content: center;">
+                            <span class="material-symbols-outlined" style="color: white;">stacked_line_chart</span>
+                        </div>
+                        {{ _("Status") }}
+                    </h4>
+
+                    <div style="background: white; border-radius: 12px; border: 1px solid #dbeafe; padding: 32px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow-x: auto;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; min-width: 600px; position: relative;">
+                            <!-- Connector Line Background -->
+                            <div style="position: absolute; top: 16px; left: 10%; right: 10%; height: 2px; background: #e2e8f0; z-index: 0;"></div>
+                            <!-- Connector Line Foreground -->
+                            <div style="position: absolute; top: 16px; left: 10%; height: 2px; background: #16a34a; z-index: 0; transition: width 0.5s ease; width: ${s_full_paid ? '80%' : (s_conf_paid ? '53%' : (s_accepted ? '26%' : '0%'))};"></div>
+                            
+                            <!-- Step 1: Issued -->
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; z-index: 1; width: 25%; text-align: center;">
+                                <div style="width: 34px; height: 34px; border-radius: 50%; background: #16a34a; color: white; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                                    <span class="material-symbols-outlined" style="font-size: 20px;">check</span>
+                                </div>
+                                <div>
+                                    <div style="color: #1e293b; font-size: 0.95rem; font-weight: 600;">{{ _("Offer Issued") }}</div>
+                                    <div style="color: #64748b; font-size: 0.85rem; margin-top: 4px;">${offer.issue_date ? format_date_dd_mm_yyyy(offer.issue_date) : '-'}</div>
+                                </div>
+                            </div>
+
+                            <!-- Step 2: Accepted -->
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; z-index: 1; width: 25%; text-align: center;">
+                                <div style="width: 34px; height: 34px; border-radius: 50%; background: ${s_accepted ? '#16a34a' : 'white'}; color: ${s_accepted ? 'white' : '#94a3b8'}; border: ${s_accepted ? 'none' : '2px solid #e2e8f0'}; display: flex; align-items: center; justify-content: center;">
+                                    <span class="material-symbols-outlined" style="font-size: 20px;">${s_accepted ? 'check' : 'inventory_2'}</span>
+                                </div>
+                                <div>
+                                    <div style="color: ${s_accepted ? '#1e293b' : '#64748b'}; font-size: 0.95rem; font-weight: 600;">{{ _("Offer Accepted") }}</div>
+                                    <div style="color: #64748b; font-size: 0.85rem; margin-top: 4px;">${s_accepted ? format_date_dd_mm_yyyy(offer.accepted_on) : '—'}</div>
+                                </div>
+                            </div>
+
+                            <!-- Step 3: Confirmation Fee -->
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; z-index: 1; width: 25%; text-align: center;">
+                                <div style="width: 34px; height: 34px; border-radius: 50%; background: ${s_conf_paid ? '#16a34a' : 'white'}; color: ${s_conf_paid ? 'white' : '#94a3b8'}; border: ${s_conf_paid ? 'none' : '2px solid #e2e8f0'}; display: flex; align-items: center; justify-content: center;">
+                                    <span class="material-symbols-outlined" style="font-size: 20px;">${s_conf_paid ? 'check' : 'account_balance_wallet'}</span>
+                                </div>
+                                <div>
+                                    <div style="color: ${s_conf_paid ? '#1e293b' : '#64748b'}; font-size: 0.95rem; font-weight: 600;">{{ _("Confirmation Fee Paid") }}</div>
+                                    <div style="color: #64748b; font-size: 0.85rem; margin-top: 4px;">${s_conf_paid ? format_date_dd_mm_yyyy(offer.confirmation_fee_paid_on) : (offer.confirmation_fee_deadline ? 'Due: ' + format_date_dd_mm_yyyy(offer.confirmation_fee_deadline) : '—')}</div>
+                                    ${s_conf_paid ? `<div style="display: inline-block; background: #dcfce7; color: #16a34a; padding: 2px 10px; border-radius: 99px; font-weight: 600; font-size: 0.75rem; border: 1px solid #bbf7d0; margin-top: 6px;">${format_currency(offer.confirmation_fee_amount || 0, currency)}</div>` : ''}
+                                </div>
+                            </div>
+
+                            <!-- Step 4: Full Fee -->
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; z-index: 1; width: 25%; text-align: center;">
+                                <div style="width: 34px; height: 34px; border-radius: 50%; background: ${s_full_paid ? '#16a34a' : 'white'}; color: ${s_full_paid ? 'white' : '#94a3b8'}; border: ${s_full_paid ? 'none' : '2px solid #e2e8f0'}; display: flex; align-items: center; justify-content: center;">
+                                    <span class="material-symbols-outlined" style="font-size: 20px;">${s_full_paid ? 'check' : 'account_balance_wallet'}</span>
+                                </div>
+                                <div>
+                                    <div style="color: ${s_full_paid ? '#1e293b' : '#64748b'}; font-size: 0.95rem; font-weight: 600;">{{ _("Full Fee Paid") }}</div>
+                                    <div style="color: #64748b; font-size: 0.85rem; margin-top: 4px;">${s_full_paid ? format_date_dd_mm_yyyy(offer.full_fee_paid_on) : (offer.payment_deadline ? 'Due: ' + format_date_dd_mm_yyyy(offer.payment_deadline) : '—')}</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    {{ _("Status") }}
-                </h4>
+                </div>
 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; background: white; border-radius: 12px; border: 1px solid #dbeafe; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-                    
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #dcfce7; color: #16a34a; display: flex; align-items: center; justify-content: center; margin-bottom: 8px;">
-                            <span class="material-symbols-outlined" style="font-size: 18px;">check_circle</span>
+                <!-- Right: Receipts (Moved up here) -->
+                ${(is_conf_paid || is_full_paid) ? `
+                <div style="flex: 0 0 320px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 32px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    <h4 style="margin: 0 0 24px 0; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 12px;">
+                        <div style="background: #f1f5f9; border-radius: 8px; padding: 8px; display: flex; align-items: center; justify-content: center;">
+                            <span class="material-symbols-outlined" style="color: #475569;">receipt_long</span>
                         </div>
-                        <div style="color: #64748b; font-size: 0.9rem;">{{ _("Offer Status") }}</div>
-                        <div style="display: inline-flex; align-items: center; background: #dcfce7; color: #16a34a; padding: 4px 16px; border-radius: 99px; font-weight: 600; font-size: 0.85rem; width: fit-content; border: 1px solid #bbf7d0;">
-                            ${display_status}
+                        {{ _("Payment Receipts") }}
+                    </h4>
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        
+                        ${is_conf_paid || is_full_paid ? `
+                            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="color: #334155; font-size: 0.95rem; font-weight: 700;">1. Confirmation Fee Receipt</div>
+                                    <span class="material-symbols-outlined" style="color: #16a34a; font-size: 18px;">check_circle</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                                    <div style="color: #64748b; font-size: 0.85rem;">${offer.confirmation_fee_paid_on ? format_date_dd_mm_yyyy(offer.confirmation_fee_paid_on) : ''}</div>
+                                    <a href="#" onclick="handle_download_receipt('Confirmation Fee'); return false;" style="display: flex; align-items: center; gap: 4px; color: var(--primary); text-decoration: none; font-size: 0.85rem; font-weight: 600; padding: 4px 8px; background: #eff6ff; border-radius: 4px;">
+                                        <span class="material-symbols-outlined" style="font-size: 16px;">download</span> {{ _("Download") }}
+                                    </a>
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${is_full_paid ? `
+                            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="color: #334155; font-size: 0.95rem; font-weight: 700;">2. Full Fee Receipt</div>
+                                    <span class="material-symbols-outlined" style="color: #16a34a; font-size: 18px;">check_circle</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                                    <div style="color: #64748b; font-size: 0.85rem;">${offer.full_fee_paid_on ? format_date_dd_mm_yyyy(offer.full_fee_paid_on) : ''}</div>
+                                    <a href="#" onclick="handle_download_receipt('Admission Fee'); return false;" style="display: flex; align-items: center; gap: 4px; color: var(--primary); text-decoration: none; font-size: 0.85rem; font-weight: 600; padding: 4px 8px; background: #eff6ff; border-radius: 4px;">
+                                        <span class="material-symbols-outlined" style="font-size: 16px;">download</span> {{ _("Download") }}
+                                    </a>
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+
+            <!-- Offer Letter & Documents Block -->
+            <div class="ui-card" style="padding: 32px; border-radius: 12px; border: 1px solid #e2e8f0; background: white;">
+                <h4 style="margin: 0 0 24px 0; display: flex; align-items: center; gap: 12px; color: #1e293b; font-weight: 700;">
+                    <div style="background: #f1f5f9; border-radius: 8px; padding: 8px; display: flex; align-items: center; justify-content: center;">
+                        <span class="material-symbols-outlined" style="color: #475569;">description</span>
+                    </div>
+                    {{ _("Offer Letter & Documents") }}
+                </h4>
+                
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; background: #f8fafc;">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <div>
+                                <div style="font-weight: 700; color: #1e293b; font-size: 1.05rem;">Provisional Offer Letter</div>
+                                <div style="color: #475569; font-size: 0.9rem; margin-top: 2px;">${offer.program || '-'}</div>
+                                <div style="color: #64748b; font-size: 0.85rem; margin-top: 4px;">Issued on ${offer.issue_date ? format_date_dd_mm_yyyy(offer.issue_date) : '-'}</div>
+                            </div>
                         </div>
-                        ${offer.accepted_on ? `
-                            <div style="color: #64748b; font-size: 0.85rem; margin-top: 4px;">{{ _("Offer accepted on") }}<br>${format_date_dd_mm_yyyy(offer.accepted_on)}</div>
+                        
+                        ${offer.status !== 'Draft' ? `
+                            <button class="btn btn-default" style="border: 1px solid #e2e8f0; background: white; color: #475569; display: flex; align-items: center; gap: 8px; font-weight: 600; padding: 10px 16px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" onclick="window.open('/api/method/frappe.utils.print_format.download_pdf?doctype=Offer+Letter&name=${offer.name}&format=Offer+Letter&no_letterhead=0&letterhead=No+Letterhead&settings=%7B%7D&_lang=en', '_blank')">
+                                <span class="material-symbols-outlined" style="font-size: 18px;">download</span>
+                                {{ _("Download PDF") }}
+                            </button>
                         ` : ''}
                     </div>
-
-                    <div style="display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #f1f5f9; padding-left: 24px;">
-                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #eff6ff; color: #3b82f6; display: flex; align-items: center; justify-content: center; margin-bottom: 8px;">
-                            <span class="material-symbols-outlined" style="font-size: 18px;">calendar_today</span>
-                        </div>
-                        <div style="color: #64748b; font-size: 0.9rem;">{{ _("Confirmation Fee Due Date") }}</div>
-                        <div style="font-weight: 700; color: #1e293b; font-size: 1.05rem;">${offer.confirmation_fee_deadline ? format_date_dd_mm_yyyy(offer.confirmation_fee_deadline) : '-'}</div>
-                        ${offer.confirmation_fee_paid_on ? `
-                            <div style="color: #16a34a; font-size: 0.85rem; margin-top: 4px; font-weight: 600;">{{ _("Paid on") }} ${format_date_dd_mm_yyyy(offer.confirmation_fee_paid_on)}</div>
-                        ` : `
-                            <div style="color: #64748b; font-size: 0.85rem; margin-top: 4px;">{{ _("Pay the confirmation fee") }}<br>{{ _("on or before this date") }}</div>
-                        `}
-                    </div>
-
-                    <div style="display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #f1f5f9; padding-left: 24px;">
-                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #eff6ff; color: #3b82f6; display: flex; align-items: center; justify-content: center; margin-bottom: 8px;">
-                            <span class="material-symbols-outlined" style="font-size: 18px;">calendar_today</span>
-                        </div>
-                        <div style="color: #64748b; font-size: 0.9rem;">{{ _("Full Fee Payment Due Date") }}</div>
-                        <div style="font-weight: 700; color: #1e293b; font-size: 1.05rem;">${offer.payment_deadline ? format_date_dd_mm_yyyy(offer.payment_deadline) : '-'}</div>
-                        ${offer.full_fee_paid_on ? `
-                            <div style="color: #16a34a; font-size: 0.85rem; margin-top: 4px; font-weight: 600;">{{ _("Paid on") }} ${format_date_dd_mm_yyyy(offer.full_fee_paid_on)}</div>
-                        ` : `
-                            <div style="color: #64748b; font-size: 0.85rem; margin-top: 4px;">{{ _("Pay the remaining balance") }}<br>{{ _("on or before this date") }}</div>
-                        `}
-                    </div>
-
-                    <div style="display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #f1f5f9; padding-left: 24px;">
-                        <div style="width: 32px; height: 32px; border-radius: 50%; background: #f8fafc; color: #64748b; display: flex; align-items: center; justify-content: center; margin-bottom: 8px;">
-                            <span class="material-symbols-outlined" style="font-size: 18px;">description</span>
-                        </div>
-                        <div style="color: #64748b; font-size: 0.9rem;">{{ _("Offer Issued On") }}</div>
-                        <div style="font-weight: 700; color: #1e293b; font-size: 1.05rem;">${offer.issue_date ? format_date_dd_mm_yyyy(offer.issue_date) : '-'}</div>
-                        <div style="color: #64748b; font-size: 0.85rem; margin-top: 4px;">{{ _("Offer issued by the university") }}</div>
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- Offer Letter Block -->
-            <div class="ui-card" style="padding: 32px; border-radius: 12px; border: 1px solid #e2e8f0; background: white;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
-                    <h4 style="margin: 0; display: flex; align-items: center; gap: 12px; color: #1e293b; font-weight: 700;">
-                        <div style="background: #f1f5f9; border-radius: 8px; padding: 8px; display: flex; align-items: center; justify-content: center;">
-                            <span class="material-symbols-outlined" style="color: #475569;">description</span>
-                        </div>
-                        {{ _("Offer Letter") }}
-                    </h4>
                     
-                    ${offer.status === 'Issued' || offer.status === 'Accepted' || offer.status === 'Confirmation Fee Paid' || offer.status === 'Full Fee Paid' ? `
-                        <button class="btn btn-default" style="border: 1px solid #e2e8f0; background: white; color: #475569; display: flex; align-items: center; gap: 8px; font-weight: 600; padding: 8px 16px; border-radius: 8px;" onclick="window.open('/api/method/frappe.utils.print_format.download_pdf?doctype=Offer+Letter&name=${offer.name}&format=Offer+Letter&no_letterhead=0&letterhead=No+Letterhead&settings=%7B%7D&_lang=en', '_blank')">
-                            <span class="material-symbols-outlined" style="font-size: 18px;">print</span>
-                            {{ _("Print / Download PDF") }}
-                        </button>
-                    ` : ''}
-                </div>
+                    <div style="font-size: 0.85rem; color: #64748b; display: flex; align-items: flex-start; gap: 8px; background: #eff6ff; padding: 12px 16px; border-radius: 8px; border: 1px solid #bfdbfe;">
+                        <span class="material-symbols-outlined" style="font-size: 18px; color: #3b82f6;">info</span>
+                        ${is_full_paid ? '{{ _("Thank you for securing your admission. We look forward to welcoming you to the University.") }}' : '{{ _("Note: Please pay the remaining balance on or before the due date to secure your admission.") }}'}
+                    </div>
 
-                <div class="letter-content" style="width: 100%; height: 800px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-                    ${rendered_content ? `<iframe id="offer-letter-iframe" style="width: 100%; height: 100%; border: none;"></iframe>` : '<div class="text-center text-muted p-5"><span class="material-symbols-outlined" style="font-size: 48px; color: #cbd5e1; margin-bottom: 16px; display: block;">visibility_off</span><br>{{ _("No preview available") }}</div>'}
+                    <div style="margin-top: 8px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; height: 800px; background: #f8fafc; position: relative;">
+                        <iframe id="offer-letter-iframe" style="width: 100%; height: 100%; border: none;"></iframe>
+                    </div>
                 </div>
             </div>
             
         </div>`;
-        wrapper.html(html);
+wrapper.html(html);
 	        
 	        if (rendered_content) {
 	            const iframe = document.getElementById('offer-letter-iframe');
@@ -1430,16 +1704,25 @@ _pc.mission_text) or '' %}
 	        window.open(url, '_blank');
 	    }
 
-	    async function handle_download_receipt() {
+	    async function handle_download_receipt(fee_type) {
 	        const offer = cur_offer_data.offer;
 	        try {
+	            let filters = { offer_letter: offer.name, docstatus: 1 };
+	            if (fee_type) {
+	                filters.fee_type = fee_type;
+	            }
+	            
 	            const r = await apiFetch('frappe.client.get_value', {
 	                doctype: 'Applicant Payment Receipt',
-	                filters: { offer_letter: offer.name },
+	                filters: filters,
 	                fieldname: 'name'
 	            });
 	            if (r && r.name) {
 	                const url = `/api/method/slcm.admission.utils.web.download_receipt?receipt_name=${encodeURIComponent(r.name)}`;
+	                window.open(url, '_blank');
+	            } else if (fee_type) {
+	                // Fallback to direct url with fee_type if get_value fails
+	                const url = `/api/method/slcm.admission.utils.web.download_receipt?fee_type=${encodeURIComponent(fee_type)}&offer_letter=${encodeURIComponent(offer.name)}`;
 	                window.open(url, '_blank');
 	            } else {
 	                showToast("{{ _('Payment Receipt not found. It might still be generating, please refresh in a moment.') }}", "info");

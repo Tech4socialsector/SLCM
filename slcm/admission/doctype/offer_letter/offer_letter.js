@@ -50,6 +50,14 @@ frappe.ui.form.on("Offer Letter", {
         frm.fields_dict.accepted_on.datepicker.update({
             minDate: new Date(frappe.datetime.get_today()),
         });
+        
+        ['offer_acceptance_deadline', 'confirmation_fee_deadline', 'payment_deadline'].forEach(field => {
+            if (frm.fields_dict[field] && frm.fields_dict[field].datepicker) {
+                frm.fields_dict[field].datepicker.update({
+                    minDate: new Date(frappe.datetime.get_today()),
+                });
+            }
+        });
 
         if (frm.doc.status === "Accepted") {
             frm.add_custom_button(__('Record Manual Payment'), function () {
@@ -177,13 +185,19 @@ frappe.ui.form.on("Offer Letter", {
         let today = frappe.datetime.get_today();
         // Ensure payment_deadline is not in the past during validation
         if (frm.doc.payment_deadline && frm.doc.payment_deadline < today) {
-            frappe.throw(__('Payment Deadline cannot be in the past. Please select a future date or today.'));
+            if (frm.is_new() || frm.is_dirty('payment_deadline')) {
+                frappe.throw(__('Payment Deadline cannot be in the past. Please select a future date or today.'));
+            }
         }
-        if (frm.doc.offer_acceptance_deadline && frm.doc.offer_acceptance_deadline < today) {
-            frappe.throw(__('Offer Acceptance Deadline cannot be in the past. Please select a future date or today.'));
-        }
+        // if (frm.doc.offer_acceptance_deadline && frm.doc.offer_acceptance_deadline < today) {
+        //     if (frm.is_new() || frm.is_dirty('offer_acceptance_deadline')) {
+        //         frappe.throw(__('Offer Acceptance Deadline cannot be in the past. Please select a future date or today.'));
+        //     }
+        // }
         if (frm.doc.confirmation_fee_deadline && frm.doc.confirmation_fee_deadline < today) {
-            frappe.throw(__('Confirmation Fee Deadline cannot be in the past. Please select a future date or today.'));
+            if (frm.is_new() || frm.is_dirty('confirmation_fee_deadline')) {
+                frappe.throw(__('Confirmation Fee Deadline cannot be in the past. Please select a future date or today.'));
+            }
         }
     }
 });
