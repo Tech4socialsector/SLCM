@@ -149,8 +149,7 @@
    "allow_on_submit": 1,
    "fieldname": "paid_on",
    "fieldtype": "Datetime",
-   "label": "Paid On",
-   "read_only": 1
+   "label": "Paid On"
   },
   {
    "default": "0",
@@ -171,7 +170,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-17 10:21:30.671883",
+ "modified": "2026-08-17 12:59:15.285829",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Payment Request",

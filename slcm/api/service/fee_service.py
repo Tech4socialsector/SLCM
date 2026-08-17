@@ -455,13 +455,19 @@ class FeeService:
             
         is_confirmation = False
         if assignment_name:
-            frappe.db.set_value("Applicant Fee Assignment", assignment_name, "status", "Paid")
+            frappe.db.set_value("Applicant Fee Assignment", assignment_name, {
+                "status": "Paid",
+                "payment_date": frappe.utils.today()
+            })
             fee_type = frappe.db.get_value("Applicant Fee Assignment", assignment_name, "fee_type")
             is_confirmation = (fee_type == "Confirmation Fee")
 
         from slcm.api.service.offer_service import OfferService
         if is_confirmation:
-            frappe.db.set_value("Offer Letter", offer_doc.name, "status", "Confirmation Fee Paid")
+            frappe.db.set_value("Offer Letter", offer_doc.name, {
+                "status": "Confirmation Fee Paid",
+                "confirmation_fee_paid_on": frappe.utils.today()
+            })
             OfferService.update_applicant_status(offer_doc.applicant, status="Confirmation Fee Paid")
             
             # Generate the next assignment for Full Fee
@@ -502,7 +508,10 @@ class FeeService:
             next_assignment.insert(ignore_permissions=True)
             next_assignment.submit()
         else:
-            frappe.db.set_value("Offer Letter", offer_doc.name, "status", "Full Fee Paid")
+            frappe.db.set_value("Offer Letter", offer_doc.name, {
+                "status": "Full Fee Paid",
+                "full_fee_paid_on": frappe.utils.today()
+            })
             OfferService.update_applicant_status(offer_doc.applicant, status="Full Fee Paid")
             
         # 2. Update Payment Request
@@ -694,10 +703,20 @@ class FeeService:
             return {"status": "failed", "message": _("An unexpected error occurred during payment verification. Please contact support.")}
 
     @staticmethod
-    def _resolve_payment_receipt_print_format(applicant_name, campus=None):
+    def _resolve_payment_receipt_print_format(applicant_name, campus=None, fee_type=None, offer_letter=None):
         """
         Print Format name from Programme Reservation Policy (same rules as portal download_receipt).
         """
+        if fee_type in ["Confirmation Fee", "Admission Fee"] and offer_letter:
+            try:
+                offer = frappe.get_doc("Offer Letter", offer_letter)
+                if offer.fee_structure:
+                    tpl = frappe.db.get_value("Fee Structure", offer.fee_structure, "receipt_print_format")
+                    if tpl:
+                        return tpl
+            except Exception:
+                pass
+
         if not applicant_name:
             return None
         try:
@@ -819,7 +838,7 @@ class FeeService:
             receipt.net_amount = _flt(afa.final_payable_amount) if afa.final_payable_amount else receipt.total_amount - receipt.scholarship_amount
 
             tpl = FeeService._resolve_payment_receipt_print_format(
-                offer_doc.applicant, getattr(offer_doc, "campus", None)
+                offer_doc.applicant, getattr(offer_doc, "campus", None), afa.fee_type, offer_doc.name
             )
             if tpl:
                 receipt.payment_receipt_template = tpl
@@ -953,6 +972,7 @@ class FeeService:
             if status == "Paid":
                 update_data["failure_message"] = None
                 update_data["gateway_status"] = "captured"
+                update_data["paid_on"] = frappe.utils.nowdate()
             elif failure_reason:
                 update_data["status"] = "Failed"
                 update_data["failure_message"] = failure_reason

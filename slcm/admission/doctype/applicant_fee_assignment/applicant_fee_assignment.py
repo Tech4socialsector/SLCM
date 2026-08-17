@@ -140,6 +140,10 @@ class ApplicantFeeAssignment(Document):
 
 		self.status = "Assigned"
 
+	def before_save(self):
+		if self.status == "Paid" and not self.payment_date:
+			self.payment_date = frappe.utils.today()
+
 	def on_cancel(self):
 		self.status = "Cancelled"
 
@@ -156,7 +160,7 @@ class ApplicantFeeAssignment(Document):
 			self.generate_payment_receipt()
 
 	def generate_payment_receipt(self):
-		if frappe.db.exists("Applicant Payment Receipt", {"assignment": self.name, "docstatus": 1}):
+		if frappe.db.exists("Applicant Payment Receipt", {"assignment": self.name, "fee_type": self.fee_type, "docstatus": ["!=", 2]}):
 			return
 		
 		# Get print format from Offer Letter's Fee Structure

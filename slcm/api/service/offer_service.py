@@ -1440,6 +1440,10 @@ def get_offer_details(offer_name=None):
             })
             
     offer_dict["confirmation_fee_amount"] = confirmation_fee_amount
+    if fee_structure:
+        offer_dict["deduct_confirmation_fee"] = frappe.db.get_value("Fee Structure", fee_structure, "deduct_confirmation_fee") or 0
+    else:
+        offer_dict["deduct_confirmation_fee"] = 0
     offer_dict["program_name"] = frappe.db.get_value("Programme", offer_dict.get("program"), "program_name") or offer_dict.get("program")
 
     fee_paid = (offer_dict.get("status") == "Payment Completed")
