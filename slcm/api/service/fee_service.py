@@ -765,7 +765,6 @@ class FeeService:
                 "Applicant Payment Receipt",
                 {
                     "transaction_id": transaction_id,
-                    "docstatus": ["<", 2],
                 }
             )
             if existing:
@@ -1114,20 +1113,23 @@ class FeeService:
             )
 
         # ── 4. Resolve Payment Receipt & Razorpay Payment ID ────────────────────
-        receipt_name = frappe.db.get_value(
+        receipt_data = frappe.db.get_all(
             "Applicant Payment Receipt",
-            {"offer_letter": offer.name, "fee_type": "Confirmation Fee", "docstatus": ["<", 2]},
-            "name",
-            order_by="creation desc",
+            filters={"offer_letter": offer.name, "fee_type": "Confirmation Fee"},
+            fields=["name"],
+            order_by="creation desc"
         )
+        receipt_name = receipt_data[0].name if receipt_data else None
+
         # Fallback: any receipt linked to this offer (older data may not have fee_type set)
         if not receipt_name:
-            receipt_name = frappe.db.get_value(
+            receipt_data = frappe.db.get_all(
                 "Applicant Payment Receipt",
-                {"offer_letter": offer.name, "docstatus": ["<", 2]},
-                "name",
-                order_by="creation asc",  # earliest receipt = confirmation fee payment
+                filters={"offer_letter": offer.name},
+                fields=["name"],
+                order_by="creation asc"
             )
+            receipt_name = receipt_data[0].name if receipt_data else None
 
         razorpay_payment_id = None
         amount_paid = flt(conf_afa.final_payable_amount or conf_afa.confirmation_fee or conf_afa.total_amount)
@@ -1661,7 +1663,7 @@ class FeeService:
         """Generates Applicant Payment Receipt for application fee."""
         try:
             if transaction_id:
-                existing = frappe.db.get_value(
+                existing = frappe.db.exists(
                     "Applicant Payment Receipt",
                     {
                         "applicant": applicant_doc.name,
@@ -1676,7 +1678,7 @@ class FeeService:
             existing = frappe.db.sql(
                 """
                 SELECT name FROM `tabApplicant Payment Receipt`
-                WHERE applicant = %s AND docstatus < 2 AND IFNULL(offer_letter, '') = ''
+                WHERE applicant = %s AND IFNULL(offer_letter, '') = ''
                 ORDER BY creation DESC LIMIT 1
                 """,
                 applicant_doc.name,
@@ -1762,7 +1764,7 @@ class FeeService:
         dup = frappe.db.sql(
             """
             SELECT name FROM `tabApplicant Payment Receipt`
-            WHERE applicant = %s AND docstatus < 2 AND IFNULL(offer_letter, '') = ''
+            WHERE applicant = %s AND IFNULL(offer_letter, '') = ''
             LIMIT 1
             """,
             applicant_name,

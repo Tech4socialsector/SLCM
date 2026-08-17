@@ -646,8 +646,8 @@ _pc.mission_text) or '' %}
                     style="height: 100vh;"
 				>
 					<div
-						class="spinner-border text-white"
-						style="width: 3rem; height: 3rem;"
+						class="spinner-border"
+						style="width: 3rem; height: 3rem; color: var(--primary); border-color: var(--primary);"
                         role="status"
                     ></div>
 					<h4 class="mt-4 font-weight-bold text-white" id="processing-msg" style="color: white !important;">
@@ -661,7 +661,7 @@ _pc.mission_text) or '' %}
 				<div class="custom-modal-content" style="border-radius: 12px; border: none; overflow: hidden; padding: 0; max-width: 500px;">
 					<div class="custom-modal-header" style="background: #f8fafc; padding: 24px 32px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
 						<h4 style="margin: 0; display: flex; align-items: center; gap: 12px; color: #1e293b; font-weight: 700;">
-                            <div style="background: #facc15; border-radius: 8px; padding: 6px; display: flex; align-items: center; justify-content: center;">
+                            <div style=" border-radius: 8px; padding: 6px; display: flex; align-items: center; justify-content: center;">
                                 <span class="material-symbols-outlined" style="color: #422006; font-size: 20px;">account_balance_wallet</span>
                             </div>
                             {{ _("Fee Payment") }}
@@ -991,10 +991,7 @@ _pc.mission_text) or '' %}
             <div style="display: flex; flex-wrap: wrap; gap: 32px; margin-bottom: 0;">
                 <div class="ui-card" style="flex: 1 1 500px; background: #eff6ff; border: 1px solid #bfdbfe; padding: 32px; border-radius: 12px;">
                     <h4 style="margin: 0; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; color: #1e293b; font-weight: 700;">
-                        <div style="background: #3b82f6; border-radius: 8px; padding: 8px; display: flex; align-items: center; justify-content: center;">
-                            <span class="material-symbols-outlined" style="color: white;">stacked_line_chart</span>
-                        </div>
-                        {{ _("Status") }}
+                        {{ _("Offer Status") }}
                     </h4>
         `;
 
@@ -1039,6 +1036,9 @@ _pc.mission_text) or '' %}
             const step3_label_color = s_conf_paid ? '#1e293b' : '#64748b';
             const step4_label_color = s_full_paid ? '#1e293b' : '#64748b';
             const conf_badge = s_conf_paid ? `<div style="display: inline-block; background: #dcfce7; color: #16a34a; padding: 2px 10px; border-radius: 99px; font-weight: 600; font-size: 0.75rem; border: 1px solid #bbf7d0; margin-top: 6px;">${format_currency(offer.confirmation_fee_amount || 0, currency)}</div>` : '';
+            
+            const full_badge = s_full_paid ? `<div style="display: inline-block; background: #dcfce7; color: #16a34a; padding: 2px 10px; border-radius: 99px; font-weight: 600; font-size: 0.75rem; border: 1px solid #bbf7d0; margin-top: 6px;">${format_currency(offer.payable_amount || 0, currency)}</div>` : '';
+
             const issue_date_val = offer.issue_date ? format_date_dd_mm_yyyy(offer.issue_date) : (offer.issued_on ? format_date_dd_mm_yyyy(offer.issued_on) : '-');
             html += `
                     <div class="status-stepper-card stepper-scroll-wrap" style="background: white; border-radius: 12px; border: 1px solid #dbeafe; padding: 32px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow-x: auto;">
@@ -1084,6 +1084,7 @@ _pc.mission_text) or '' %}
                                 <div>
                                     <div style="color: ${step4_label_color}; font-size: 0.95rem; font-weight: 600;">{{ _("Full Fee Paid") }}</div>
                                     <div style="color: #64748b; font-size: 0.85rem; margin-top: 4px;">${step4_date}</div>
+                                    ${full_badge}
                                 </div>
                             </div>
                         </div>
@@ -1151,30 +1152,27 @@ _pc.mission_text) or '' %}
 
 
         html += `
-            <!-- Fee Details Block (Yellow Theme) -->
-            <div class="ui-card" style="background: #fefce8; border: 1px solid #fde047; padding: 32px; border-radius: 12px; display: flex; flex-direction: column; gap: 24px;">
+            <!-- Fee Details Block -->
+            <div class="ui-card" style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 32px; border-radius: 12px; display: flex; flex-direction: column; gap: 24px;">
                 <!-- Title -->
                 <h4 style="margin: 0; display: flex; align-items: center; gap: 12px; color: #1e293b; font-weight: 700;">
-                    <div style="background: #facc15; border-radius: 8px; padding: 8px; display: flex; align-items: center; justify-content: center;">
-                        <span class="material-symbols-outlined" style="color: #422006;">account_balance_wallet</span>
-                    </div>
                     {{ _("Fee Details") }}
                 </h4>
 
                 <div class="fee-layout-wrap" style="display: flex; flex-wrap: wrap; gap: 32px; align-items: stretch;">
                     <!-- Left Column: Summary Table -->
-                    <div class="fee-left-col" style="flex: 1 1 600px; background: white; border-radius: 12px; border: 1px solid #fef08a; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                    <div class="fee-left-col" style="flex: 1 1 600px; background: white; border-radius: 12px; border: 1px solid #eff6ff; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
                         
                         <!-- Standalone Confirmation Fee Card -->
                         ${(() => {
                             if (!offer.confirmation_fee_amount || offer.confirmation_fee_amount <= 0) return '';
                             const conf_status_label = s_conf_paid
                                 ? `<span style="background:#dcfce7;color:#16a34a;padding:3px 12px;border-radius:99px;font-size:0.75rem;font-weight:700;border:1px solid #bbf7d0;">{{ _("Paid") }}</span>`
-                                : `<span style="background:#fef08a;color:#b45309;padding:3px 12px;border-radius:99px;font-size:0.75rem;font-weight:700;border:1px solid #fde047;">{{ _("Due") }}</span>`;
+                                : `<span style="background:#eff6ff;color:#b45309;padding:3px 12px;border-radius:99px;font-size:0.75rem;font-weight:700;border:1px solid var(--primary);">{{ _("Due") }}</span>`;
                             return `
-                            <div style="background: ${s_conf_paid ? '#f0fdf4' : '#fefce8'}; border: 1px solid ${s_conf_paid ? '#bbf7d0' : '#fde047'}; border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                            <div style="background: ${s_conf_paid ? '#f0fdf4' : '#eff6ff'}; border: 1px solid ${s_conf_paid ? '#bbf7d0' : '#bfdbfe'}; border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
                                 <div style="display: flex; align-items: center; gap: 12px;">
-                                    <div style="background: ${s_conf_paid ? '#dcfce7' : '#fef08a'}; border-radius: 8px; padding: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <div style="background: ${s_conf_paid ? '#eff6ff' : '#eff6ff'}; border-radius: 8px; padding: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                         <span class="material-symbols-outlined" style="font-size: 20px; color: ${s_conf_paid ? '#16a34a' : '#b45309'};">lock</span>
                                     </div>
                                     <div>
@@ -1306,23 +1304,23 @@ _pc.mission_text) or '' %}
         if (offer.status === 'Issued' || offer.status === 'Accepted') {
             // ── "How it works" card ──────────────────────────────────────────
             html += `
-                        <div class="how-it-works-col" style="background: #fef9c3; border-radius: 12px; padding: 24px; border: 1px solid #fde047; display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+                        <div class="how-it-works-col" style="background: #eff6ff; border-radius: 12px; padding: 24px; border: 1px solid #bfdbfe; display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
                             <div>
                                 <div style="font-weight: 700; margin-bottom: 24px; color: #334155; display: flex; align-items: center; gap: 8px;">
-                                    <span class="material-symbols-outlined" style="color: #ca8a04;">info</span> {{ _("How it works") }}
+                                    <span class="material-symbols-outlined" style="color: var(--primary)">info</span> {{ _("How it works") }}
                                 </div>
                                 <div style="display: flex; flex-direction: column; gap: 20px; position: relative;">
-                                    <div style="position: absolute; left: 11px; top: 24px; bottom: 24px; width: 1px; background: #facc15; z-index: 0;"></div>
+                                    <div style="position: absolute; left: 11px; top: 24px; bottom: 24px; width: 1px; background: var(--primary); z-index: 0;"></div>
 
                                     <!-- Step 1 (always shown): Accept the Offer -->
                                     <div style="display: flex; gap: 16px; align-items: flex-start; position: relative; z-index: 1;">
-                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: ${s_accepted ? '#dcfce7' : '#fefce8'}; border: 1px solid ${s_accepted ? '#16a34a' : '#ca8a04'}; color: ${s_accepted ? '#16a34a' : '#ca8a04'}; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;">${s_accepted ? '<span class="material-symbols-outlined" style="font-size:14px;">check</span>' : '1'}</div>
+                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: ${s_accepted ? '#dcfce7' : '#fefce8'}; border: 1px solid ${s_accepted ? '#16a34a' : 'var(--primary)'}; color: ${s_accepted ? '#16a34a' : '#ca8a04'}; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;">${s_accepted ? '<span class="material-symbols-outlined" style="font-size:14px;">check</span>' : '1'}</div>
                                         <div style="font-size: 0.9rem; color: #475569; line-height: 1.5;">{{ _("Review and accept the offer to secure your seat.") }}</div>
                                     </div>
 
                                     <!-- Step 2: Pay Confirmation Fee -->
                                     <div style="display: flex; gap: 16px; align-items: flex-start; position: relative; z-index: 1;">
-                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: ${s_conf_paid ? '#dcfce7' : '#fefce8'}; border: 1px solid ${s_conf_paid ? '#16a34a' : '#ca8a04'}; color: ${s_conf_paid ? '#16a34a' : '#ca8a04'}; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;">${s_conf_paid ? '<span class="material-symbols-outlined" style="font-size:14px;">check</span>' : '2'}</div>
+                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: ${s_conf_paid ? '#dcfce7' : '#fefce8'}; border: 1px solid ${s_conf_paid ? '#16a34a' : 'var(--primary)'}; color: ${s_conf_paid ? '#16a34a' : 'var(--primary)'}; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;">${s_conf_paid ? '<span class="material-symbols-outlined" style="font-size:14px;">check</span>' : '2'}</div>
                                         <div style="font-size: 0.9rem; color: #475569; line-height: 1.5;">{{ _("Pay the Confirmation Fee to secure your admission.") }}</div>
                                     </div>
             `;
@@ -1330,12 +1328,12 @@ _pc.mission_text) or '' %}
                 html += `
                                     <!-- Step 3: Deduction note -->
                                     <div style="display: flex; gap: 16px; align-items: flex-start; position: relative; z-index: 1;">
-                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #fefce8; border: 1px solid #ca8a04; color: #ca8a04; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;">3</div>
+                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #fefce8; border: 1px solid var(--primary); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;">3</div>
                                         <div style="font-size: 0.9rem; color: #475569; line-height: 1.5;">{{ _("The Confirmation Fee will be deducted from the Total Full Fee.") }}</div>
                                     </div>
                                     <!-- Step 4: Pay Remaining -->
                                     <div style="display: flex; gap: 16px; align-items: flex-start; position: relative; z-index: 1;">
-                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: ${s_full_paid ? '#dcfce7' : '#fefce8'}; border: 1px solid ${s_full_paid ? '#16a34a' : '#ca8a04'}; color: ${s_full_paid ? '#16a34a' : '#ca8a04'}; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;">${s_full_paid ? '<span class="material-symbols-outlined" style="font-size:14px;">check</span>' : '4'}</div>
+                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: ${s_full_paid ? '#dcfce7' : '#fefce8'}; border: 1px solid ${s_full_paid ? '#16a34a' : 'var(--primary)'}; color: ${s_full_paid ? '#16a34a' : 'var(--primary)'}; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;">${s_full_paid ? '<span class="material-symbols-outlined" style="font-size:14px;">check</span>' : '4'}</div>
                                         <div style="font-size: 0.9rem; color: #475569; line-height: 1.5;">{{ _("Pay the remaining balance (Total Payable) to complete your admission.") }}</div>
                                     </div>
                 `;
@@ -1459,7 +1457,7 @@ _pc.mission_text) or '' %}
                                     <span class="material-symbols-outlined" style="font-size: 20px;">verified_user</span>
                                 </div>
                                 <div>
-                                    <div style="font-weight: 800; color: #166534; font-size: 1.05rem;">{{ _("ADMISSION CONFIRMED") }}</div>
+                                    <div style="font-weight: 800; color: #166534; font-size: 1.05rem;">{{ _("Admission Confirmed") }}</div>
                                 </div>
                             </div>
                             <p style="margin: 16px 0 0 0; font-size: 0.9rem; color: #475569; text-align: center;">{{ _("Welcome to the University!") }}</p>
@@ -1521,9 +1519,6 @@ _pc.mission_text) or '' %}
             <!-- Offer Letter & Documents Block -->
             <div class="ui-card" style="padding: 32px; border-radius: 12px; border: 1px solid #e2e8f0; background: white;">
                 <h4 style="margin: 0 0 24px 0; display: flex; align-items: center; gap: 12px; color: #1e293b; font-weight: 700;">
-                    <div style="background: #f1f5f9; border-radius: 8px; padding: 8px; display: flex; align-items: center; justify-content: center;">
-                        <span class="material-symbols-outlined" style="color: #475569;">description</span>
-                    </div>
                     {{ _("Offer Letter") }}
                 </h4>
                 

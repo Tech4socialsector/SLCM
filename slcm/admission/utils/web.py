@@ -933,7 +933,7 @@ def download_receipt(receipt_name=None, fee_type=None, offer_letter=None):
             frappe.throw("Receipt not found")
     elif fee_type and offer_letter:
         receipts = frappe.get_all("Applicant Payment Receipt", 
-                                 filters={"offer_letter": offer_letter, "fee_type": fee_type, "docstatus": ["<", 2]},
+                                 filters={"offer_letter": offer_letter, "fee_type": fee_type},
                                  order_by="creation desc", limit=1)
         if receipts:
             receipt = frappe.get_doc("Applicant Payment Receipt", receipts[0].name, ignore_permissions=True)
@@ -1075,7 +1075,7 @@ def get_latest_application_fee_receipt(applicant_name: str):
 
     receipt_name = frappe.db.get_value(
         "Applicant Payment Receipt",
-        {"applicant": applicant_name, "offer_letter": ["is", "not set"], "docstatus": ["<", 2]},
+        {"applicant": applicant_name, "offer_letter": ["is", "not set"]},
         "name",
         order_by="creation desc",
     )

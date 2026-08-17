@@ -1061,20 +1061,41 @@ class OfferService:
     def get_pending_offers_list():
         """
         Fetches all Offers with 'Issued' status that haven't passed their deadline.
+        Applies standard Frappe permissions dynamically.
         """
-        offers = frappe.db.sql("""
-            SELECT 
-                ol.name,
-                app.candidate_name as applicant_name,
-                ol.program,
-                ol.offer_acceptance_deadline as payment_deadline
-            FROM `tabOffer Letter` ol
-            JOIN `tabApplicant` app ON ol.applicant = app.name
-            WHERE ol.status = 'Issued'
-              AND (ol.offer_acceptance_deadline >= CURDATE() OR ol.offer_acceptance_deadline IS NULL)
-            ORDER BY ol.offer_acceptance_deadline ASC
-        """, as_dict=1)
-        return offers
+        user = frappe.session.user
+        if user == "Guest":
+            frappe.throw("Not permitted", frappe.PermissionError)
+
+        roles = frappe.get_roles(user)
+        filters = {"status": "Issued"}
+
+        # If the user is strictly an Applicant (without desk access), restrict to their own email
+        # to ensure they only get their own data, avoiding hardcoding other roles.
+        has_desk_access = frappe.db.get_value("User", user, "user_type") == "System User"
+        if "Applicant" in roles and not has_desk_access:
+            filters["email"] = user
+
+        offers = frappe.get_all(
+            "Offer Letter",
+            filters=filters,
+            fields=["name", "applicant", "program", "offer_acceptance_deadline as payment_deadline"],
+            ignore_permissions=False,
+            order_by="offer_acceptance_deadline asc"
+        )
+
+        from frappe.utils import getdate, nowdate
+        today = getdate(nowdate())
+
+        valid_offers = []
+        for offer in offers:
+            if offer.payment_deadline and getdate(offer.payment_deadline) < today:
+                continue
+
+            offer.applicant_name = frappe.db.get_value("Applicant", offer.applicant, "candidate_name")
+            valid_offers.append(offer)
+
+        return valid_offers
 
     @staticmethod
     @frappe.whitelist()
