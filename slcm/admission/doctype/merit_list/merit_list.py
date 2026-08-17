@@ -169,41 +169,98 @@ def publish_merit_list(merit_list_name):
     """
     Publishes the Merit List so students can view their scores
     on the applicant results portal page.
-    Sets status to 'Published' and records an audit log.
+    Sets status to 'Publishing' during execution and 'Published' once completed.
     Also updates the Application Status of all applicants in the list to 'Merit Published'.
     """
     doc = frappe.get_doc("Merit List", merit_list_name)
 
     if doc.status == "Published":
         frappe.throw(f"Merit List '{merit_list_name}' is already published.")
+    if doc.status in ["Publishing", "In Progress"]:
+        frappe.throw(f"Merit List '{merit_list_name}' is currently being published. Please wait.")
 
-    # docstatus check removed to allow publishing non-submittable records
-
-    doc.status = "Published"
-    from frappe.utils import now_datetime
-    doc.published_on = now_datetime()
-    doc.save()
-
-    # Update Applicant status
-    for row in doc.merit_applicants:
-        if row.applicant_id:
-            new_status = "Merit Published"
-            if row.status == "Selected":
-                new_status = "Merit Selected"
-            elif row.status == "Rejected":
-                new_status = "Merit Rejected"
-            elif row.status == "Waitlisted":
-                new_status = "Merit Waitlisted"
-                
-            frappe.db.set_value("Applicant", row.applicant_id, "status", new_status)
-
-
-
-    # Trigger notifications directly (uses now=False internally)
-    # Following the 'Interview Seat Allocation' method (Direct Loop + Periodic Commits)
-    _trigger_merit_notifications_local(doc)
-
+    # Mark status as Publishing while processing
+    doc.db_set("status", "Publishing")
     frappe.db.commit()
+
+    total = len(doc.merit_applicants)
+
+    frappe.publish_realtime(
+        "publish_merit_list_progress",
+        {
+            "current": 0,
+            "total": total,
+            "percent": 0,
+            "message": "Starting publication...",
+            "docname": doc.name
+        },
+        user=frappe.session.user
+    )
+
+    try:
+        # Update Applicant status & trigger notifications in one loop with realtime progress
+        for i, row in enumerate(doc.merit_applicants):
+            if row.applicant_id:
+                new_status = "Merit Published"
+                if row.status == "Selected":
+                    new_status = "Merit Selected"
+                elif row.status == "Rejected":
+                    new_status = "Merit Rejected"
+                elif row.status == "Waitlisted":
+                    new_status = "Merit Waitlisted"
+                    
+                frappe.db.set_value("Applicant", row.applicant_id, "status", new_status)
+
+                applicant_email = frappe.db.get_value("Applicant", row.applicant_id, "email")
+                if applicant_email:
+                    try:
+                        _send_merit_email_local(doc, row, applicant_email)
+                        _send_merit_system_notification_local(doc, row, applicant_email)
+                    except Exception:
+                        frappe.log_error(frappe.get_traceback(), f"Merit Notification Failed for {row.applicant_id}")
+
+            percent = int(((i + 1) / max(total, 1)) * 100)
+            frappe.publish_realtime(
+                "publish_merit_list_progress",
+                {
+                    "current": i + 1,
+                    "total": total,
+                    "percent": percent,
+                    "message": f"Publishing: {row.candidate_name or row.applicant_id} ({i + 1} of {total})",
+                    "docname": doc.name
+                },
+                user=frappe.session.user
+            )
+
+            if (i + 1) % 10 == 0:
+                frappe.db.commit()
+
+        # Mark as Published only AFTER all candidates are processed
+        from frappe.utils import now_datetime
+        doc.reload()
+        doc.status = "Published"
+        doc.published_on = now_datetime()
+        doc.save()
+
+        frappe.publish_realtime(
+            "publish_merit_list_progress",
+            {
+                "current": total,
+                "total": total,
+                "percent": 100,
+                "message": "Merit list published successfully.",
+                "docname": doc.name
+            },
+            user=frappe.session.user
+        )
+
+        frappe.db.commit()
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), f"Merit List Publish Failed for {doc.name}")
+        doc.db_set("status", "Generated")
+        frappe.db.commit()
+        frappe.throw(f"Failed to publish merit list: {str(e)}")
+
     return {"status": "Published"}
 
 

@@ -6,18 +6,53 @@ frappe.ui.form.on("Merit List", {
                 open_allocation_dialog(frm);
             });
 
+            // Auto-listen to progress if page is loaded/refreshed while Publishing
+            if (frm.doc.status === "Publishing" || frm.doc.status === "In Progress") {
+                const total = (frm.doc.merit_applicants || []).length || 100;
+                frappe.show_progress(__("Publishing Merit List"), 0, total, __("Publication in progress..."));
+                frappe.realtime.on("publish_merit_list_progress", function (data) {
+                    if (data.docname === frm.doc.name) {
+                        frappe.show_progress(
+                            __("Publishing Merit List"),
+                            data.current,
+                            data.total,
+                            data.message || __("Processing {0} of {1}", [data.current, data.total])
+                        );
+                        if (data.percent >= 100) {
+                            frappe.realtime.off("publish_merit_list_progress");
+                            frappe.hide_progress();
+                            frm.reload_doc();
+                        }
+                    }
+                });
+            }
+
             // Publish button — shown when status is Generated
-            if (frm.doc.status !== "Published") {
+            if (frm.doc.status === "Generated") {
                 frm.add_custom_button(__("Publish Merit List"), function () {
                     frappe.confirm(
                         __("Publishing will make merit scores visible to all students on their portal. Continue?"),
                         function () {
+                            const total = (frm.doc.merit_applicants || []).length || 100;
+                            frappe.show_progress(__("Publishing Merit List"), 0, total, __("Starting publication..."));
+
+                            frappe.realtime.on("publish_merit_list_progress", function (data) {
+                                if (data.docname === frm.doc.name) {
+                                    frappe.show_progress(
+                                        __("Publishing Merit List"),
+                                        data.current,
+                                        data.total,
+                                        data.message || __("Processing {0} of {1}", [data.current, data.total])
+                                    );
+                                }
+                            });
+
                             frappe.call({
                                 method: "slcm.admission.doctype.merit_list.merit_list.publish_merit_list",
                                 args: { merit_list_name: frm.doc.name },
-                                freeze: true,
-                                freeze_message: __("Publishing merit list..."),
                                 callback(r) {
+                                    frappe.realtime.off("publish_merit_list_progress");
+                                    frappe.hide_progress();
                                     if (!r.exc) {
                                         frappe.show_alert({
                                             message: __("Merit list published. Students can now view their scores."),
@@ -25,6 +60,11 @@ frappe.ui.form.on("Merit List", {
                                         });
                                         frm.reload_doc();
                                     }
+                                },
+                                error() {
+                                    frappe.realtime.off("publish_merit_list_progress");
+                                    frappe.hide_progress();
+                                    frm.reload_doc();
                                 }
                             });
                         }
@@ -107,12 +147,13 @@ frappe.ui.form.on("Merit List", {
 
             // Status indicator
             if (frm.doc.status === "Published") {
-                frm.set_indicator_formatter && frm.toolbar
-                    && frm.toolbar.set_indicator
-                    && frm.toolbar.set_indicator(["Published", "green"]);
                 frm.page.set_indicator(__("Published"), "green");
+            } else if (frm.doc.status === "Publishing" || frm.doc.status === "In Progress") {
+                frm.page.set_indicator(__("Publishing"), "orange");
             } else if (frm.doc.status === "Generated") {
                 frm.page.set_indicator(__("Generated"), "blue");
+            } else if (frm.doc.status === "Draft") {
+                frm.page.set_indicator(__("Draft"), "grey");
             }
         }
     },
