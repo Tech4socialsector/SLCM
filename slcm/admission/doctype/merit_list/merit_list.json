@@ -80,7 +80,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Draft\nGenerated\nPublished\nSuperseded",
+   "options": "Draft\nGenerated\nIn Progress\nPublishing\nPublished\nSuperseded",
    "read_only": 1,
    "reqd": 1
   },

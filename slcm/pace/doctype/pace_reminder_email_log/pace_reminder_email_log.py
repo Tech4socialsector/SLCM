@@ -7,7 +7,7 @@ class PACEReminderEmailLog(Document):
 
 def log_pace_reminder_email(recipient, subject, reminder_type, status="Sent", 
                           sender=None, reference_doctype=None, reference_name=None, 
-                          email_template=None, error_log=None):
+                          email_template=None, error_log=None, pace_admission=None):
     """
     Logs an entry into PACE Reminder Email Log.
     """
@@ -51,6 +51,7 @@ def log_pace_reminder_email(recipient, subject, reminder_type, status="Sent",
             "sent_at": now_datetime(),
             "reference_doctype": reference_doctype,
             "reference_name": reference_name,
+            "pace_admission": pace_admission,
             "email_template": email_template,
             "email_account": email_account,
             "error_log": error_log

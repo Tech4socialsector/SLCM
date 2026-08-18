@@ -1940,11 +1940,29 @@ def send_daily_pace_application_reminders(current_item=0, total_items=0):
                 if today_date > close_date:
                     continue
 
+                # Ensure we only send reminders for the admission cycle the user registered in
+                # by checking if they've received a reminder for a DIFFERENT cycle in the past.
+                previous_logs = frappe.get_all(
+                    "PACE Reminder Email Log",
+                    filters={
+                        "reference_doctype": "User",
+                        "reference_name": email,
+                    },
+                    fields=["pace_admission"]
+                )
+                belong_to_other_cycle = False
+                for log in previous_logs:
+                    if log.pace_admission and log.pace_admission != admission_name:
+                        belong_to_other_cycle = True
+                        break
+                if belong_to_other_cycle:
+                    continue
+
                 from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import should_send_reminder
                 if not should_send_reminder("application", user_doc.get("last_pace_reminder_sent"), admission_close_date):
                     continue
                 
-                send_pace_application_reminder_email(user_doc, formatted_close_date)
+                send_pace_application_reminder_email(user_doc, formatted_close_date, admission_name)
                 user_doc.db_set("last_pace_reminder_sent", today_date, update_modified=False)
                 sent_count += 1
             else:
@@ -2003,7 +2021,7 @@ def send_daily_pace_application_reminders(current_item=0, total_items=0):
     
     return sent_count
 
-def send_pace_application_reminder_email(user_doc, admission_close_date):
+def send_pace_application_reminder_email(user_doc, admission_close_date, pace_admission_name=None):
     """Sends Case 1 reminder email using Email Template doctype."""
     from frappe.email.doctype.email_template.email_template import get_email_template
     
@@ -2044,7 +2062,8 @@ def send_pace_application_reminder_email(user_doc, admission_close_date):
         sender=get_template_sender(template_name),
         reference_doctype="User",
         reference_name=user_doc.name,
-        email_template=template_name
+        email_template=template_name,
+        pace_admission=pace_admission_name
     )
 
 def send_pace_application_reminder_system_notification(user_doc, admission_close_date):

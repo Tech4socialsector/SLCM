@@ -78,6 +78,38 @@ frappe.ui.form.on("Seat Allocation", {
             start_allocation_progress_polling(frm);
         }
 
+        // Auto-listen to progress if page is loaded/refreshed while Publishing
+        if (frm.doc.status === "Publishing") {
+            const total = (frm.doc.selection_applicant || []).length || 100;
+            frappe.show_progress(__("Publishing Seat Allocation"), 0, total, __("Publication in progress..."));
+            frappe.realtime.on("publish_seat_allocation_progress", function (data) {
+                if (data.docname === frm.doc.name) {
+                    frappe.show_progress(
+                        __("Publishing Seat Allocation"),
+                        data.current,
+                        data.total,
+                        data.message || __("Processing {0} of {1}", [data.current, data.total])
+                    );
+                    if (data.percent >= 100) {
+                        frappe.realtime.off("publish_seat_allocation_progress");
+                        frappe.hide_progress();
+                        frm.reload_doc();
+                    }
+                }
+            });
+        }
+
+        // Status indicator
+        if (frm.doc.status === "Published") {
+            frm.page.set_indicator(__("Published"), "green");
+        } else if (frm.doc.status === "Publishing" || frm.doc.status === "In Progress") {
+            frm.page.set_indicator(__("Publishing"), "orange");
+        } else if (frm.doc.status === "Allocated") {
+            frm.page.set_indicator(__("Allocated"), "blue");
+        } else if (frm.doc.status === "Draft") {
+            frm.page.set_indicator(__("Draft"), "grey");
+        }
+
         // Prevent selecting past dates for published_on
         frm.set_df_property("published_on", "options", {
             minDate: new Date()
@@ -157,15 +189,33 @@ frappe.ui.form.on("Seat Allocation", {
                 frappe.confirm(
                     __("Are you sure you want to publish this allocation? This action is irreversible."),
                     () => {
+                        const total = (frm.doc.selection_applicant || []).length || 100;
+                        frappe.show_progress(__("Publishing Seat Allocation"), 0, total, __("Starting publication..."));
+
+                        frappe.realtime.on("publish_seat_allocation_progress", function (data) {
+                            if (data.docname === frm.doc.name) {
+                                frappe.show_progress(
+                                    __("Publishing Seat Allocation"),
+                                    data.current,
+                                    data.total,
+                                    data.message || __("Processing {0} of {1}", [data.current, data.total])
+                                );
+                            }
+                        });
+
                         frm.call({
                             method: "publish_allocation",
                             doc: frm.doc,
-                            freeze: true,
-                            freeze_message: __("Publishing allocation..."),
                             callback(r) {
+                                frappe.realtime.off("publish_seat_allocation_progress");
+                                frappe.hide_progress();
                                 if (!r.exc) {
                                     frm.reload_doc();
                                 }
+                            },
+                            error() {
+                                frappe.realtime.off("publish_seat_allocation_progress");
+                                frappe.hide_progress();
                             }
                         });
                     }

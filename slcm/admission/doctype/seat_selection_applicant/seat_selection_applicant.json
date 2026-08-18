@@ -118,17 +118,20 @@
   {
    "fieldname": "percentile_score",
    "fieldtype": "Float",
-   "label": "Percentile Score"
+   "label": "Percentile Score",
+   "precision": "2"
   },
   {
    "fieldname": "nlsat_part_a_score",
    "fieldtype": "Float",
-   "label": "NLSAT Part A Score"
+   "label": "NLSAT Part A Score",
+   "precision": "2"
   },
   {
    "fieldname": "nlsat_part_b_score",
    "fieldtype": "Float",
-   "label": "NLSAT Part B Score"
+   "label": "NLSAT Part B Score",
+   "precision": "2"
   },
   {
    "fieldname": "shortlist_rank",
@@ -159,7 +162,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-07-11 15:57:21.013370",
+ "modified": "2026-08-14 10:52:03.252435",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Seat Selection Applicant",
