@@ -29,7 +29,8 @@ class OfferNotificationService:
         # Rule 3: Use specific email fields based on status
         if new_status == "Issued":
             email_template_field = "offer_issued_email"
-            # Issued typically doesn't send a portal notification in old flow
+            portal_notification_subject = _("Admission Offer Issued")
+            portal_notification_content = _("You have received an admission offer for {0}. Please check your email and portal for details.").format(offer_doc.program)
         elif new_status == "Accepted":
             email_template_field = "offer_accepted_email"
             portal_notification_subject = _("Admission Offer Accepted")
@@ -64,6 +65,7 @@ class OfferNotificationService:
         # Send Portal Notification
         if portal_notification_subject and portal_notification_content:
             try:
+                # Log to custom communication log
                 from slcm.admission.utils.notifications import log_communication
                 log_communication(
                     applicant=offer_doc.applicant,
@@ -74,6 +76,25 @@ class OfferNotificationService:
                     reference_doctype="Offer Letter",
                     reference_name=offer_doc.name
                 )
+                
+                # Create System Notification Log for UI (Top-right Bell Icon)
+                receiver = offer_doc.notification_receiver
+                if not receiver and offer_doc.applicant:
+                    applicant_email = frappe.db.get_value("Applicant", offer_doc.applicant, "email")
+                    if applicant_email:
+                        receiver = frappe.db.get_value("User", {"email": applicant_email}, "name")
+                
+                if receiver:
+                    frappe.get_doc({
+                        "doctype": "Notification Log",
+                        "subject": portal_notification_subject,
+                        "email_content": portal_notification_content,
+                        "document_type": "Offer Letter",
+                        "document_name": offer_doc.name,
+                        "for_user": receiver,
+                        "type": "Alert"
+                    }).insert(ignore_permissions=True)
+
             except Exception as e:
                 frappe.log_error(f"Failed to log portal notification for Offer {offer_doc.name}: {str(e)}", "Offer Notification Service")
 
@@ -109,7 +130,12 @@ class OfferNotificationService:
                         "fcontent": pdf_content
                     }]
 
+            sender_email = None
+            if tpl.get("email_account"):
+                sender_email = frappe.db.get_value("Email Account", tpl.get("email_account"), "email_id") or tpl.get("email_account")
+
             frappe.sendmail(
+                sender=sender_email,
                 recipients=[applicant_email],
                 subject=subject,
                 message=message,
@@ -118,5 +144,15 @@ class OfferNotificationService:
                 reference_name=offer_doc.name,
                 now=True
             )
+            
+            # Frappe automatically creates a Notification Log for the recipient when a Communication 
+            # is attached to a document. We delete it here to prevent a duplicate, ugly UI notification 
+            # with the full email body, since we manually create a much cleaner one earlier in process_status_change.
+            frappe.db.delete("Notification Log", {
+                "document_type": "Offer Letter",
+                "document_name": offer_doc.name,
+                "subject": subject
+            })
+            
         except Exception as e:
             frappe.log_error(f"Failed to send email for Offer {offer_doc.name}: {str(e)}", "Offer Notification Service")
