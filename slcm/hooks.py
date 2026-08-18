@@ -359,7 +359,8 @@ doc_events = {
     },
     "HD Ticket": {
         "before_insert": "slcm.api.helpdesk_assignment.prefill_student_context_before_insert",
-        "before_validate": "slcm.api.helpdesk_assignment.apply_default_email_team"
+        "before_validate": "slcm.api.helpdesk_assignment.apply_default_email_team",
+        "validate": "slcm.api.helpdesk_facility_visit.validate_preferred_visit_slot"
     },
     "User": {
         "before_insert": "slcm.api.user_events.user_before_insert",
