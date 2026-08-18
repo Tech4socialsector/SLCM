@@ -23,9 +23,25 @@ def get_context(context):
 
     context.not_a_faculty = False
 
-    # Detect if the user has the HD Agent role — agents use a different helpdesk URL
-    user_roles = frappe.get_roles(frappe.session.user)
-    context.is_hd_agent = "HD Agent" in user_roles or "HD Manager" in user_roles
+    # Detect if the user has an Agent role — agents use the full helpdesk interface
+    try:
+        from helpdesk.utils import is_agent
+        context.is_hd_agent = is_agent(frappe.session.user)
+    except Exception:
+        user_roles = frappe.get_roles(frappe.session.user)
+        agent_roles = {
+            "Agent",
+            "Agent Manager",
+            "HD Agent",
+            "HD Manager",
+            "System Manager",
+            "Administrator",
+        }
+        context.is_hd_agent = bool(set(user_roles).intersection(agent_roles)) or bool(
+            frappe.db.exists("HD Agent", {"user": frappe.session.user})
+            or frappe.db.exists("HD Agent", frappe.session.user)
+        )
+
 
     try:
         faculty = frappe.get_doc("Faculty", faculty_name)
