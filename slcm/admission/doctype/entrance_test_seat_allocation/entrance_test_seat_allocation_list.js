@@ -1475,8 +1475,8 @@ function _show_reject_and_allocate_dialog(listview, initial_providers) {
         return applicants.filter(a => {
             const id_match = !applicant_filters.applicant_id || (a.applicant || "").toLowerCase().includes(applicant_filters.applicant_id);
             const name_match = !applicant_filters.candidate_name || (a.candidate_name || "").toLowerCase().includes(applicant_filters.candidate_name);
-            const level_match = !applicant_filters.programme_level || (a.program_level || "").toLowerCase().includes(applicant_filters.programme_level);
-            const prog_match = !applicant_filters.programme || (a.program || "").toLowerCase().includes(applicant_filters.programme);
+            const level_match = !applicant_filters.programme_level || (a.program_level || "").toLowerCase() === applicant_filters.programme_level;
+            const prog_match = !applicant_filters.programme || (a.program || "").toLowerCase() === applicant_filters.programme;
             const city_match = !applicant_filters.entrance_test_city || (a.entrance_test_city || "").toLowerCase().includes(applicant_filters.entrance_test_city);
             const centre_match = !applicant_filters.old_centre || (a.center_name || "").toLowerCase().includes(applicant_filters.old_centre);
             let pwd_match = true;
@@ -1679,11 +1679,12 @@ function _show_reject_and_allocate_dialog(listview, initial_providers) {
         ],
         primary_action_label: __('Reject and Allocate'),
         primary_action(values) {
-            const selected_applicants = Array.from(selected_applicant_names);
+            const filtered_applicant_names = new Set(get_filtered_applicants().map(a => a.name));
+            const selected_applicants = Array.from(selected_applicant_names).filter(name => filtered_applicant_names.has(name));
             const selected_providers_array = Array.from(selected_provider_names);
 
             if (!selected_applicants.length) {
-                frappe.msgprint(__('Please select at least one applicant.'));
+                frappe.msgprint(__('Please select at least one applicant from the current filter.'));
                 return;
             }
             if (values.allocation_type === "Allocate Directly" && !selected_providers_array.length) {
@@ -1805,8 +1806,8 @@ function _show_reject_and_allocate_dialog(listview, initial_providers) {
     // Applicant Events
     d.$wrapper.on("input", "#filter-applicant-id", function () { applicant_filters.applicant_id = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
     d.$wrapper.on("input", "#filter-candidate-name", function () { applicant_filters.candidate_name = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
-    d.$wrapper.on("input", "#filter-programme-level", function () { applicant_filters.programme_level = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
-    d.$wrapper.on("input", "#filter-programme", function () { applicant_filters.programme = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
+    d.$wrapper.on("input change", "#filter-programme-level", function () { applicant_filters.programme_level = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
+    d.$wrapper.on("input change", "#filter-programme", function () { applicant_filters.programme = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
     d.$wrapper.on("input", "#filter-entrance-test-city", function () { applicant_filters.entrance_test_city = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
     d.$wrapper.on("input", "#filter-old-centre", function () { applicant_filters.old_centre = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
     d.$wrapper.on("change", "#pwd-applicant-filter-chk", function () { applicant_filters.pwd_only = this.checked; applicant_current_page = 1; render_applicant_page(); });
@@ -1818,15 +1819,13 @@ function _show_reject_and_allocate_dialog(listview, initial_providers) {
 
     // Handle auto select count
     d.fields_dict.auto_select_count.df.onchange = function() {
-        const count = d.get_value("auto_select_count");
-        if (count > 0) {
-            const filtered = get_filtered_applicants();
-            selected_applicant_names.clear();
-            for (let i = 0; i < Math.min(count, filtered.length); i++) {
-                selected_applicant_names.add(filtered[i].name);
-            }
-            render_applicant_page();
+        const count = d.get_value("auto_select_count") || 0;
+        const filtered = get_filtered_applicants();
+        selected_applicant_names.clear();
+        for (let i = 0; i < Math.min(count, filtered.length); i++) {
+            selected_applicant_names.add(filtered[i].name);
         }
+        render_applicant_page();
     };
 
     function fetch_applicants() {
@@ -1846,6 +1845,15 @@ function _show_reject_and_allocate_dialog(listview, initial_providers) {
                 applicants = r.message || [];
                 selected_applicant_names.clear();
                 applicant_current_page = 1;
+                
+                const unique_programme_levels = [...new Set(applicants.map(a => a.program_level).filter(Boolean))].sort();
+                const unique_programmes = [...new Set(applicants.map(a => a.program).filter(Boolean))].sort();
+
+                const prog_level_options = `<option value="">${__("All Levels")}</option>` + 
+                    unique_programme_levels.map(l => `<option value="${l}" ${applicant_filters.programme_level === l.toLowerCase().trim() ? 'selected' : ''}>${l}</option>`).join("");
+                    
+                const prog_options = `<option value="">${__("All Programmes")}</option>` + 
+                    unique_programmes.map(p => `<option value="${p}" ${applicant_filters.programme === p.toLowerCase().trim() ? 'selected' : ''}>${p}</option>`).join("");
 
                 let html = `
                     <div style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
@@ -1892,12 +1900,14 @@ function _show_reject_and_allocate_dialog(listview, initial_providers) {
                                                style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; outline:none; background:#ffffff;">
                                     </th>
                                     <th style="padding:4px 6px;">
-                                        <input type="text" id="filter-programme-level" placeholder="${__("Filter Level...")}" value="${applicant_filters.programme_level}"
-                                               style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; outline:none; background:#ffffff;">
+                                        <select id="filter-programme-level" style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; outline:none; background:#ffffff;">
+                                            ${prog_level_options}
+                                        </select>
                                     </th>
                                     <th style="padding:4px 6px;">
-                                        <input type="text" id="filter-programme" placeholder="${__("Filter Programme...")}" value="${applicant_filters.programme}"
-                                               style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; outline:none; background:#ffffff;">
+                                        <select id="filter-programme" style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; outline:none; background:#ffffff;">
+                                            ${prog_options}
+                                        </select>
                                     </th>
                                     <th style="padding:4px 6px;">
                                         <input type="text" id="filter-entrance-test-city" placeholder="${__("Filter City...")}" value="${applicant_filters.entrance_test_city || ''}"
@@ -2203,6 +2213,7 @@ function _show_reallocation_confirmation(parent_dialog, listview, result, select
                     allocation_type: allocation_type,
                     send_email: send_email
                 },
+                timeout: 18000000,
                 freeze: true,
                 freeze_message: __('Re-allocating...'),
                 callback: function (r) {
