@@ -1206,7 +1206,7 @@ def start_background_seat_allocation(entrance_test_list, providers, selected_app
     frappe.enqueue(
         "slcm.admission.doctype.entrance_test_list.entrance_test_list._process_seat_allocation_job",
         queue="long" if len(selected_applicants) > 300 else "default",
-        timeout=3600,
+        timeout=18000,
         entrance_test_list=entrance_test_list,
         providers=providers,
         selected_applicants=selected_applicants,

@@ -201,7 +201,7 @@
   {# ── Sidebar ─────────────────────────────────────────────── #}
   <aside class="sp-sidebar" id="sp-sidebar">
 
-    {# Student Card #}
+    {# Student Card — hidden per request; markup kept for easy restore
     <div class="sp-student-card">
       <div class="sp-sidebar-avatar">
         {% if student_photo %}
@@ -217,6 +217,7 @@
         {% endif %}
       </div>
     </div>
+    #}
 
     {# ── Sidebar Navigation ──────────────────────────────────────────
          Keep only the core pages here. Everything else is accessible
@@ -225,7 +226,7 @@
 
     {# ── MAIN MENU ── #}
     <div class="sp-sidebar-section">
-      Main Menu
+      <!-- Main Menu -->
     </div>
     <div class="sp-section-items" id="sp-section-main-menu">
 
@@ -257,12 +258,12 @@
       </a>
       {% endif %} #}
 
-      {# Re-Examination — flat, independent item #}
-      {% if sp_settings.enable_re_exam_menu | default(1) %}
+      {# Re-Examination — moved to Quick Actions on Dashboard #}
+      {# {% if sp_settings.enable_re_exam_menu | default(1) %}
       <a href="/student-portal/re-exam" class="sp-nav-item {% if active_page == 're_exam' %}active{% endif %}" data-label="Re-Examination">
         <span class="sp-ms">assignment_late</span><span class="sp-nav-label">Re-Examination</span>
       </a>
-      {% endif %}
+      {% endif %} #}
 
       {# Fees & Payments #}
       {% if sp_settings.menu_fees | default(1) %}
@@ -301,20 +302,28 @@
       </a>
       {% endif %}
 
+      {# Helpdesk #}
+      {% if sp_settings.menu_helpdesk | default(1) %}
+      <a href="/student-portal/support" class="sp-nav-item {% if active_page == 'support' %}active{% endif %}" data-label="Helpdesk">
+        <span class="sp-ms">support_agent</span><span class="sp-nav-label">Helpdesk</span>
+      </a>
+      {% endif %}
+
     </div>
 
     {# ── MY INFO ── #}
     <div class="sp-sidebar-section" style="margin-top:18px;">
-      My Info
+      <!-- My Info -->
     </div>
     <div class="sp-section-items" id="sp-section-my-info">
 
-      {# My Profile #}
+      {# My Profile — hidden per request; markup kept for easy restore
       {% if sp_settings.menu_profile | default(1) %}
       <a href="/student-portal/profile" class="sp-nav-item {% if active_page == 'profile' %}active{% endif %}" data-label="My Profile">
         <span class="sp-ms">person</span><span class="sp-nav-label">My Profile</span>
       </a>
       {% endif %}
+      #}
 
       {# Hostel — visible only to active hostellers #}
       {%- set _h_user = frappe.session.user -%}
@@ -349,11 +358,6 @@
         <span class="sp-ms">work</span><span class="sp-nav-label">Placement</span>
       </a>
       {% endif %}
-      {% if sp_settings.menu_helpdesk | default(1) %}
-      <a href="/student-portal/support" class="sp-nav-item {% if active_page == 'support' %}active{% endif %}" data-label="Helpdesk">
-        <span class="sp-ms">support_agent</span><span class="sp-nav-label">Helpdesk</span>
-      </a>
-      {% endif %}
       ── End commented section ── #}
 
     </div>
@@ -363,9 +367,11 @@
       <span class="sp-ms">left_panel_close</span>
       <span class="sp-collapse-label">Collapse</span>
     </button>
+    {# Sign Out — hidden per request; markup kept for easy restore
     <a href="javascript:void(0)" onclick="spLogout()" class="sp-nav-item sp-danger" data-label="Sign Out">
       <span class="sp-ms">logout</span><span class="sp-nav-label">Sign Out</span>
     </a>
+    #}
   </aside>
 
   {# ── Main Content ─────────────────────────────────────────── #}

@@ -145,13 +145,15 @@
    "depends_on": "eval:!doc.use_html",
    "fieldname": "message",
    "fieldtype": "Text Editor",
-   "label": "Message"
+   "label": "Message",
+   "mandatory_depends_on": "eval:!doc.use_html"
   },
   {
    "depends_on": "eval:doc.use_html",
    "fieldname": "message_html",
    "fieldtype": "Code",
    "label": "Message (HTML)",
+   "mandatory_depends_on": "eval:doc.use_html",
    "options": "HTML"
   },
   {

@@ -1884,7 +1884,7 @@ def submit_venue_booking(
         "start_datetime":     start_datetime,
         "end_datetime":       end_datetime,
         "reason":             reason or "",
-        "status":             "Pending",
+        "status":             "Pending Allotment",
         "student":            student_name,
         "requester_type":     "Student",
         "requester_name":     full_name,
@@ -1911,8 +1911,8 @@ def request_venue_swap(booking_name, requested_room, reason=None):
     if booking.student != student_name and booking.owner != frappe.session.user:
         frappe.throw("You can only request a swap for your own bookings.", frappe.PermissionError)
 
-    if booking.status not in ("Pending", "Approved"):
-        frappe.throw("Swap requests can only be raised for Pending or Approved bookings.")
+    if booking.status not in ("Pending Allotment", "Allotted"):
+        frappe.throw("Swap requests can only be raised for bookings Pending Allotment or Allotted.")
 
     if booking.swap_requested:
         frappe.throw("A swap request is already pending for this booking.")
@@ -2188,8 +2188,8 @@ def update_venue_booking_attachment(booking_name, attachment):
     if booking.student != student_name and booking.owner != frappe.session.user:
         frappe.throw("You can only update your own bookings.", frappe.PermissionError)
 
-    if booking.status != "Pending":
-        frappe.throw("Attachments can only be updated on Pending bookings.")
+    if booking.status != "Pending Allotment":
+        frappe.throw("Attachments can only be updated on bookings Pending Allotment.")
 
     frappe.db.set_value("Venue Booking", booking_name, "attachment", attachment, update_modified=False)
     frappe.db.commit()
@@ -2211,8 +2211,8 @@ def cancel_venue_booking(booking_name):
     if booking.student != student_name:
         frappe.throw("You can only cancel your own bookings.", frappe.PermissionError)
 
-    if booking.status != "Pending":
-        frappe.throw("Only Pending bookings can be cancelled.")
+    if booking.status != "Pending Allotment":
+        frappe.throw("Only bookings Pending Allotment can be cancelled.")
 
     frappe.db.set_value("Venue Booking", booking_name, "status", "Cancelled")
     frappe.db.commit()
@@ -2226,7 +2226,7 @@ def bulk_update_venue_booking_status(booking_names, status, admin_remarks=""):
     if not allowed_roles.intersection(set(frappe.get_roles())):
         frappe.throw("Not permitted.", frappe.PermissionError)
 
-    valid_statuses = {"Pending", "Approved", "Rejected", "Cancelled"}
+    valid_statuses = {"Pending Allotment", "Allotted", "Rejected", "Cancelled"}
     if status not in valid_statuses:
         frappe.throw(f"Invalid status: {status}")
 
@@ -2234,10 +2234,13 @@ def bulk_update_venue_booking_status(booking_names, status, admin_remarks=""):
         import json
         booking_names = json.loads(booking_names)
 
+    replied_by = frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user
+    replied_on = frappe.utils.now()
+
     updated = 0
     for name in booking_names:
         try:
-            values = {"status": status}
+            values = {"status": status, "replied_by": replied_by, "replied_on": replied_on}
             if admin_remarks:
                 values["admin_remarks"] = admin_remarks
             frappe.db.set_value("Venue Booking", name, values)

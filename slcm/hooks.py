@@ -192,6 +192,7 @@ fixtures = [
                 "HD Ticket SLA Escalation - New Agent",
                 "HD Ticket SLA Escalation - Previous Agent",
                 "HD Ticket SLA Escalation - Max Hops Reached",
+                "SLA Breach Reminder",
                 "Venue Booking - New Request (Admin)",
                 "Venue Booking - Status Update (Requester)",
                 "Venue Booking - Swap Request Decision (Requester)",
@@ -580,14 +581,21 @@ scheduler_events = {
 	]
 }
 
+# Administrator holds every Role (including our portal roles below) per
+# frappe.get_roles()'s special-case, so without this it would be sent to
+# whichever portal role_home_page entry is checked first instead of /app.
+get_website_user_home_page = "slcm.utils.auth_routing.get_website_user_home_page"
+
 # Role-based home page — portal users must not land on /desk (no desk_access)
 role_home_page = {
     "slcm_Faculty": "/faculty-portal",
+    "slcm_Student": "/student-portal",
     "slcm_parent": "/parent-portal",
 }
 
 # Website
 website_route_rules = [
+    {"from_route": "/portal-login", "to_route": "portal-login/login"},
     {"from_route": "/admission/login", "to_route": "admission/login"},
     {"from_route": "/applicant-dashboard", "to_route": "applicant_dashboard"},
     {"from_route": "/admission/<name>", "to_route": "admission/program_detail"},

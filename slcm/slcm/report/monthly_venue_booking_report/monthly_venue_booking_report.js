@@ -38,7 +38,7 @@ frappe.query_reports["Monthly Venue Booking Report"] = {
             fieldname: "status",
             label: __("Status"),
             fieldtype: "Select",
-            options: "\nPending\nApproved\nRejected\nCancelled"
+            options: "\nPending Allotment\nAllotted\nRejected\nCancelled"
         },
         {
             fieldname: "requester_type",
@@ -58,10 +58,10 @@ frappe.query_reports["Monthly Venue Booking Report"] = {
         value = default_formatter(value, row, column, data);
         if (column.fieldname === "status" && data) {
             const colors = {
-                "Approved":  "green",
-                "Pending":   "orange",
-                "Rejected":  "red",
-                "Cancelled": "grey"
+                "Allotted":          "green",
+                "Pending Allotment": "orange",
+                "Rejected":          "red",
+                "Cancelled":         "grey"
             };
             const c = colors[data.status];
             if (c) value = `<span class="indicator-pill ${c}">${data.status}</span>`;
