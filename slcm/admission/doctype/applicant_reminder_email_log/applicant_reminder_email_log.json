@@ -14,6 +14,7 @@
   "sender",
   "email_template",
   "email_account",
+  "admission_cycle",   
   "sent_at",
   "section_break_ref",
   "reference_doctype",
@@ -92,6 +93,12 @@
    "fieldname": "section_break_ref",
    "fieldtype": "Section Break",
    "label": "Reference"
+  },
+  {
+   "fieldname": "admission_cycle",
+   "fieldtype": "Link",
+   "label": "Admission Cycle",
+   "options": "Admission Cycle"
   },
   {
    "fieldname": "reference_doctype",

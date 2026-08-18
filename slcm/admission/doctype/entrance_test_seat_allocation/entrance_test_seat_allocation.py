@@ -95,6 +95,11 @@ class EntranceTestSeatAllocation(Document):
     def generate_result_card(self):
         """Generates the Entrance Test Result Card PDF using the 'Entrance Test Result Card' print format."""
         try:
+            if self.entrance_test_result_card:
+                old_file_url = self.entrance_test_result_card
+                frappe.db.delete("File", {"file_url": old_file_url})
+                self.entrance_test_result_card = None
+
             # Using the Print Format name as requested (Configurable way)
             pdf_content = frappe.get_print(
                 self.doctype,
@@ -153,13 +158,8 @@ class EntranceTestSeatAllocation(Document):
                 from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
                 generate_and_store_admit_card(self, is_rescheduled=is_rescheduled)
 
-        # Generate Result Card when result_published is checked
         doc_before = self.get_doc_before_save()
-        if self.result_published:
-            if not doc_before or doc_before.result_published != 1:
-                self.generate_result_card()
-
-
+        # (Result Card generation is now handled explicitly via bulk_generate_result_cards)
 
 def _update_applicant_status_for_entrance_test_status(applicant_name, entrance_test_status):
     """
@@ -417,21 +417,78 @@ def update_ranks_by_category(academic_year, admission_cycle, program_level, entr
 
 
 @frappe.whitelist()
-def publish_results(academic_year, admission_cycle, program_level, program=None, entrance_test_list=None, applicant_type=None, send_email=0, email_format="Default", custom_email_content=None):
+def bulk_generate_result_cards(academic_year, admission_cycle, program_level=None, program=None, applicant_type=None):
+    """
+    Bulk generates Result Card PDFs for Attended applicants matching the given filters.
+    """
+    if not (academic_year and admission_cycle):
+        frappe.throw(_("Academic Year and Admission Cycle are required."))
+
+    filters = {
+        "academic_year": academic_year,
+        "admission_cycle": admission_cycle,
+        "entrance_test_status": ["in", ["Attended", "Absent"]]
+    }
+    if program_level:
+        filters["program_level"] = program_level
+    if program:
+        filters["program"] = program
+    if applicant_type == "Domestic Applicants":
+        filters["is_international_applicant"] = 0
+    elif applicant_type == "International Applicants":
+        filters["is_international_applicant"] = 1
+
+    records = frappe.get_all(
+        "Entrance Test Seat Allocation",
+        filters=filters,
+        fields=["name"]
+    )
+
+    total = len(records)
+    if total == 0:
+        frappe.throw(_("No matching records found to generate result cards."))
+
+    count = 0
+    for i, rec in enumerate(records, start=1):
+        frappe.publish_progress(
+            (i / total) * 100,
+            title=_("Generating Result Cards"),
+            description=_("Generating {0} of {1}").format(i, total)
+        )
+        
+        doc = frappe.get_doc("Entrance Test Seat Allocation", rec.name)
+        try:
+            doc.generate_result_card()
+            count += 1
+        except Exception:
+            frappe.log_error(title=f"Result Card Generation Failed: {doc.name}")
+
+    return {"generated": count}
+
+
+@frappe.whitelist()
+def publish_results(academic_year, admission_cycle, program_level=None, program=None, entrance_test_list=None, applicant_type=None, send_email=0, email_format="Default", custom_email_content=None, selected_names=None):
     """
     Sets result_published = 1 for all Entrance Test Seat Allocation records
     matching the given filters (Attended applicants) in bulk.
     Also queues result notification emails for each record.
     """
-    if not (academic_year and admission_cycle and program_level):
-        frappe.throw(_("Academic Year, Admission Cycle, and Program Level are required."))
+    if not (academic_year and admission_cycle):
+        frappe.throw(_("Academic Year and Admission Cycle are required."))
+
+    import json
+    selected_list = []
+    if selected_names:
+        selected_list = json.loads(selected_names)
 
     filters = {
         "academic_year": academic_year,
         "admission_cycle": admission_cycle,
-        "program_level": program_level,
         "entrance_test_status": ["in", ["Attended", "Absent"]]
     }
+    
+    if program_level:
+        filters["program_level"] = program_level
     if program:
         filters["program"] = program
     if entrance_test_list:
@@ -440,6 +497,9 @@ def publish_results(academic_year, admission_cycle, program_level, program=None,
         filters["is_international_applicant"] = 0
     elif applicant_type == "International Applicants":
         filters["is_international_applicant"] = 1
+
+    if selected_list:
+        filters["name"] = ["in", selected_list]
 
     records = frappe.get_all(
         "Entrance Test Seat Allocation",
@@ -466,15 +526,6 @@ def publish_results(academic_year, admission_cycle, program_level, program=None,
 
         # Mark as published
         doc.db_set("result_published", 1, update_modified=False)
-
-        # Generate Result Card PDF for Attended applicants (skip if already generated)
-        if doc.entrance_test_status == "Attended":
-            if not doc.entrance_test_result_card:
-                try:
-                    doc.generate_result_card()
-                    doc.reload()  # reload so email picks up new card URL
-                except Exception:
-                    frappe.log_error(title=f"Result Card Generation Failed: {doc.name}")
 
         # Resolve email
         email = doc.email or ""
@@ -975,6 +1026,65 @@ def get_applicant_count(academic_year=None, admission_cycle=None, program_level=
         "total": total,
         "attended": attended,
         "absent": absent
+    }
+
+@frappe.whitelist()
+def get_unpublished_applicants_for_dialog(
+    academic_year=None, admission_cycle=None, program_level=None, applicant_type=None, program=None,
+    filter_applicant=None, filter_candidate_name=None, filter_entrance_test_status=None,
+    filter_status=None, filter_admission_status=None,
+    limit_start=0, limit_page_length=20
+):
+    """
+    Returns a paginated list of applicants whose results are not yet published.
+    """
+    filters = {"result_published": 0}
+    
+    # Main Dialog Filters
+    if academic_year:
+        filters["academic_year"] = academic_year
+    if admission_cycle:
+        filters["admission_cycle"] = admission_cycle
+    if program_level:
+        filters["program_level"] = program_level
+    if program:
+        filters["program"] = program
+    if applicant_type == "Domestic Applicants":
+        filters["is_international_applicant"] = 0
+    elif applicant_type == "International Applicants":
+        filters["is_international_applicant"] = 1
+        
+    # Table Specific Filters
+    if filter_applicant:
+        filters["applicant"] = ["like", f"%{filter_applicant}%"]
+    if filter_candidate_name:
+        filters["candidate_name"] = ["like", f"%{filter_candidate_name}%"]
+    if filter_entrance_test_status:
+        filters["entrance_test_status"] = filter_entrance_test_status
+    if filter_status:
+        filters["result_status"] = filter_status
+    if filter_admission_status:
+        filters["admission_status"] = filter_admission_status
+
+    # Get data
+    records = frappe.get_all(
+        "Entrance Test Seat Allocation",
+        filters=filters,
+        fields=[
+            "name", "applicant", "candidate_name", 
+            "entrance_test_status", "result_status", "admission_status", "program_level", "program"
+        ],
+        limit_start=limit_start,
+        limit_page_length=limit_page_length,
+        order_by="creation desc"
+    )
+    
+    # Get total count for pagination
+    total_count = frappe.db.count("Entrance Test Seat Allocation", filters=filters)
+    
+    return {
+        "records": records,
+        "total_count": total_count
     }
 
 

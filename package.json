@@ -3,6 +3,7 @@
     "country-state-city": "^3.2.1"
   },
   "devDependencies": {
-    "@playwright/test": "^1.62.0"
+    "@playwright/test": "^1.62.0",
+    "cypress": "^15.20.1"
   }
 }

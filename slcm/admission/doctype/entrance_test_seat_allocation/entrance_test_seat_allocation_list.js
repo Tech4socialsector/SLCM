@@ -60,19 +60,24 @@ frappe.listview_settings['Entrance Test Seat Allocation'] = {
                 open_publish_result_dialog(listview);
             }, __("Actions"));
 
+            // 2.5 Generate Result Card
+            listview.page.add_inner_button(__("Generate Result Card"), function () {
+                open_generate_result_card_dialog(listview);
+            }, __("Actions"));
+
             // 3. Export Marks Template
             listview.page.add_inner_button(__("Export Marks Template"), function () {
                 open_export_marks_dialog_for_list(listview);
             }, __("Actions"));
 
-            // 4. Reschedule
-            listview.page.add_inner_button(__("Reschedule"), function () {
-                open_reschedule_dialog(listview);
-            }, __("Actions"));
-
-            // 5. Reject and Allocate Centre
+            // 4. Reject and Allocate Centre
             listview.page.add_inner_button(__("Reject and Allocate Centre"), function () {
                 open_reject_and_allocate_dialog(listview);
+            }, __("Actions"));
+
+            // 5. Reschedule
+            listview.page.add_inner_button(__("Reschedule"), function () {
+                open_reschedule_dialog(listview);
             }, __("Actions"));
         }
     }
@@ -116,7 +121,9 @@ function open_update_rank_dialog(listview) {
 
     let d = new frappe.ui.Dialog({
         title: __("Update Entrance Test Rank"),
+        size: "large",
         fields: [
+            { fieldtype: "Section Break", label: __("Filters") },
             {
                 label: __("Academic Year"),
                 fieldname: "academic_year",
@@ -126,6 +133,7 @@ function open_update_rank_dialog(listview) {
                 reqd: 1,
                 change() { update_dialog_applicant_count(d); }
             },
+            { fieldtype: "Column Break" },
             {
                 label: __("Admission Cycle"),
                 fieldname: "admission_cycle",
@@ -135,6 +143,7 @@ function open_update_rank_dialog(listview) {
                 reqd: 1,
                 change() { update_dialog_applicant_count(d); }
             },
+            { fieldtype: "Column Break" },
             {
                 label: __("Programme Level"),
                 fieldname: "program_level",
@@ -147,6 +156,7 @@ function open_update_rank_dialog(listview) {
                     update_dialog_applicant_count(d);
                 }
             },
+            { fieldtype: "Section Break" },
             {
                 label: __("Applicant Type"),
                 fieldname: "applicant_type",
@@ -156,6 +166,7 @@ function open_update_rank_dialog(listview) {
                 reqd: 1,
                 change() { update_dialog_applicant_count(d); }
             },
+            { fieldtype: "Column Break" },
             {
                 label: __("Programme"),
                 fieldname: "program",
@@ -164,6 +175,7 @@ function open_update_rank_dialog(listview) {
                 depends_on: "eval:doc.program_level",
                 change() { update_dialog_applicant_count(d); }
             },
+            { fieldtype: "Section Break" },
             {
                 fieldname: "total_applicants_html",
                 fieldtype: "HTML"
@@ -250,7 +262,10 @@ function open_publish_result_dialog(listview) {
                 options: "Academic Year",
                 default: default_ay,
                 reqd: 1,
-                change() { update_dialog_applicant_count(pd); }
+                change() { 
+                    update_dialog_applicant_count(pd); 
+                    update_unpublished_applicants_table(pd, false);
+                }
             },
             { fieldtype: "Column Break" },
             {
@@ -260,7 +275,10 @@ function open_publish_result_dialog(listview) {
                 options: "Admission Cycle",
                 default: default_ac,
                 reqd: 1,
-                change() { update_dialog_applicant_count(pd); }
+                change() { 
+                    update_dialog_applicant_count(pd); 
+                    update_unpublished_applicants_table(pd, false);
+                }
             },
             { fieldtype: "Column Break" },
             {
@@ -269,10 +287,10 @@ function open_publish_result_dialog(listview) {
                 fieldtype: "Select",
                 options: "Undergraduate\nPostgraduate\nResearch Course",
                 default: default_pl,
-                reqd: 1,
                 change() {
                     pd.set_value("program", "");
                     update_dialog_applicant_count(pd);
+                    update_unpublished_applicants_table(pd, false);
                 }
             },
             { fieldtype: "Section Break" },
@@ -283,7 +301,10 @@ function open_publish_result_dialog(listview) {
                 options: "Domestic Applicants\nInternational Applicants\nBoth",
                 default: "Domestic Applicants",
                 reqd: 1,
-                change() { update_dialog_applicant_count(pd); }
+                change() { 
+                    update_dialog_applicant_count(pd); 
+                    update_unpublished_applicants_table(pd, false);
+                }
             },
             { fieldtype: "Column Break" },
             {
@@ -292,11 +313,19 @@ function open_publish_result_dialog(listview) {
                 fieldtype: "Link",
                 options: "Programme",
                 depends_on: "eval:doc.program_level",
-                change() { update_dialog_applicant_count(pd); }
+                change() { 
+                    update_dialog_applicant_count(pd); 
+                    update_unpublished_applicants_table(pd, false);
+                }
             },
             { fieldtype: "Section Break" },
             {
                 fieldname: "total_applicants_html",
+                fieldtype: "HTML"
+            },
+            { fieldtype: "Section Break", label: __("Unpublished Applicants Preview") },
+            {
+                fieldname: "unpublished_applicants_html",
                 fieldtype: "HTML"
             },
             { fieldtype: "Section Break", label: __("Email Settings") },
@@ -366,7 +395,8 @@ function open_publish_result_dialog(listview) {
                             program: values.program,
                             send_email: values.send_email,
                             email_format: values.email_format,
-                            custom_email_content: values.custom_email_content
+                            custom_email_content: values.custom_email_content,
+                            selected_names: pd.unpublished_state.selected_names.length > 0 ? JSON.stringify(pd.unpublished_state.selected_names) : null
                         },
                         callback: function (r) {
                             frappe.show_progress(__("Publishing Results"), 100, 100, __("Completed"));
@@ -407,6 +437,12 @@ function open_publish_result_dialog(listview) {
         };
     });
 
+    pd.unpublished_state = {
+        page: 1,
+        limit: 10,
+        selected_names: []
+    };
+
     pd.show();
 
     // Initial Hide of Email Fields
@@ -424,11 +460,164 @@ function open_publish_result_dialog(listview) {
 
     ["academic_year", "admission_cycle", "program_level", "applicant_type", "program"].forEach(fn => {
         if (pd.fields_dict[fn] && pd.fields_dict[fn].$input) {
-            pd.fields_dict[fn].$input.on("change blur input", () => update_dialog_applicant_count(pd));
+            pd.fields_dict[fn].$input.on("change blur input", () => {
+                update_dialog_applicant_count(pd);
+                update_unpublished_applicants_table(pd, false);
+            });
         }
     });
 
     update_dialog_applicant_count(pd);
+    update_unpublished_applicants_table(pd, false);
+}
+
+/**
+ * Custom Generate Result Card Dialog for List View
+ */
+function open_generate_result_card_dialog(listview) {
+    const default_ay = get_listview_filter_val(listview, "academic_year");
+    const default_ac = get_listview_filter_val(listview, "admission_cycle");
+    const default_pl = get_listview_filter_val(listview, "program_level");
+
+    let gd = new frappe.ui.Dialog({
+        title: __("Generate Result Card"),
+        size: "large",
+        fields: [
+            { fieldtype: "Section Break", label: __("Filters") },
+            {
+                label: __("Academic Year"),
+                fieldname: "academic_year",
+                fieldtype: "Link",
+                options: "Academic Year",
+                default: default_ay,
+                reqd: 1,
+                change() { update_dialog_applicant_count(gd); }
+            },
+            { fieldtype: "Column Break" },
+            {
+                label: __("Admission Cycle"),
+                fieldname: "admission_cycle",
+                fieldtype: "Link",
+                options: "Admission Cycle",
+                default: default_ac,
+                reqd: 1,
+                change() { update_dialog_applicant_count(gd); }
+            },
+            { fieldtype: "Column Break" },
+            {
+                label: __("Programme Level"),
+                fieldname: "program_level",
+                fieldtype: "Select",
+                options: "\nUndergraduate\nPostgraduate\nResearch Course",
+                default: default_pl,
+                reqd: 0,
+                change() {
+                    gd.set_value("program", "");
+                    update_dialog_applicant_count(gd);
+                }
+            },
+            { fieldtype: "Section Break" },
+            {
+                label: __("Applicant Type"),
+                fieldname: "applicant_type",
+                fieldtype: "Select",
+                options: "Domestic Applicants\nInternational Applicants\nBoth",
+                default: "Domestic Applicants",
+                reqd: 1,
+                change() { update_dialog_applicant_count(gd); }
+            },
+            { fieldtype: "Column Break" },
+            {
+                label: __("Programme"),
+                fieldname: "program",
+                fieldtype: "Link",
+                options: "Programme",
+                depends_on: "eval:doc.program_level",
+                change() { update_dialog_applicant_count(gd); }
+            },
+            { fieldtype: "Section Break" },
+            {
+                fieldname: "total_applicants_html",
+                fieldtype: "HTML"
+            }
+        ],
+        primary_action_label: __("Generate"),
+        primary_action(values) {
+            frappe.confirm(
+                __("This will generate Result Cards for all matching Attended applicants. Do you want to continue?"),
+                function () {
+                    gd.hide();
+                    frappe.show_progress(__("Generating Result Cards"), 0, 100, __("Starting generation..."));
+                    frappe.call({
+                        method: "slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.bulk_generate_result_cards",
+                        args: {
+                            academic_year: values.academic_year,
+                            admission_cycle: values.admission_cycle,
+                            program_level: values.program_level,
+                            applicant_type: values.applicant_type,
+                            program: values.program
+                        },
+                        callback: function (r) {
+                            frappe.show_progress(__("Generating Result Cards"), 100, 100, __("Completed"));
+                            setTimeout(() => frappe.hide_progress(), 3000);
+                            if (!r.exc && r.message) {
+                                frappe.msgprint({
+                                    title: __("Generation Complete"),
+                                    message: __(
+                                        "<b>{0}</b> Result Cards generated successfully.",
+                                        [r.message.generated]
+                                    ),
+                                    indicator: "green"
+                                });
+                                listview.refresh();
+                            }
+                        },
+                        error: function () {
+                            frappe.hide_progress();
+                        }
+                    });
+                }
+            );
+        }
+    });
+
+    gd.listview = listview;
+
+    gd.set_query("admission_cycle", function () {
+        return { filters: { "status": "Active" } };
+    });
+    gd.set_query("program", function () {
+        let pl = gd.get_value("program_level");
+        if (pl) {
+            return {
+                query: "slcm.admission.doctype.entrance_test_generation.entrance_test_generation.get_program_query",
+                filters: {
+                    "program_level": pl,
+                    "admission_cycle": gd.get_value("admission_cycle")
+                }
+            };
+        }
+        return {};
+    });
+
+    gd.show();
+
+    if (default_ay || default_ac || default_pl) {
+        gd.set_values({
+            academic_year: default_ay,
+            admission_cycle: default_ac,
+            program_level: default_pl,
+            applicant_type: "Domestic Applicants"
+        });
+    }
+
+    ["academic_year", "admission_cycle", "program_level", "applicant_type", "program"].forEach(fn => {
+        if (gd.fields_dict[fn] && gd.fields_dict[fn].$input) {
+            gd.fields_dict[fn].$input.on("change blur input", () => update_dialog_applicant_count(gd));
+        }
+    });
+
+    setTimeout(() => update_dialog_applicant_count(gd), 500);
 }
 
 /**
@@ -2063,4 +2252,204 @@ function _show_reallocation_confirmation(parent_dialog, listview, result, select
             function() { $(this).css("background-color", "transparent"); }
         );
     }, 100);
+}
+
+/**
+ * Fetch and render the unpublished applicants table for the Publish dialog
+ */
+function update_unpublished_applicants_table(pd, is_page_change = false) {
+    const html_field = pd.get_field("unpublished_applicants_html");
+    if (!html_field) return;
+
+    if (!is_page_change) {
+        pd.unpublished_state.page = 1;
+        // Keep selected_names when filters change so user doesn't lose selections
+    }
+
+    let args = {
+        academic_year: pd.get_value("academic_year") || "",
+        admission_cycle: pd.get_value("admission_cycle") || "",
+        program_level: pd.get_value("program_level") || "",
+        applicant_type: pd.get_value("applicant_type") || "Domestic Applicants",
+        program: pd.get_value("program") || "",
+        filter_applicant: pd.unpublished_state.filter_applicant || "",
+        filter_candidate_name: pd.unpublished_state.filter_candidate_name || "",
+        filter_entrance_test_status: pd.unpublished_state.filter_entrance_test_status || "",
+        filter_status: pd.unpublished_state.filter_status || "",
+        filter_admission_status: pd.unpublished_state.filter_admission_status || "",
+        limit_start: (pd.unpublished_state.page - 1) * pd.unpublished_state.limit,
+        limit_page_length: pd.unpublished_state.limit
+    };
+
+    html_field.$wrapper.html(`<div class="text-muted"><i class="fa fa-spinner fa-spin"></i> ${__('Loading applicants...')}</div>`);
+
+    frappe.call({
+        method: "slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.get_unpublished_applicants_for_dialog",
+        args: args,
+        callback: function (r) {
+            if (r && r.message) {
+                render_unpublished_applicants_table(pd, html_field, r.message.records, r.message.total_count);
+            }
+        }
+    });
+}
+
+function render_unpublished_applicants_table(pd, html_field, records, total_count) {
+    let state = pd.unpublished_state;
+    let total_pages = Math.ceil(total_count / state.limit) || 1;
+
+    let html = `
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 13px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <label style="margin: 0; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <input type="checkbox" class="unpub-select-all" ${records.length > 0 && html_field.$wrapper.find('.unpub-select-row:not(:checked)').length === 0 ? 'checked' : ''}> Select All Applicants
+                </label>
+                <button class="btn btn-xs btn-default unpub-clear-all">Clear All</button>
+                <span class="text-muted"><span class="unpub-selected-count">${state.selected_names.length}</span> of ${total_count} selected</span>
+            </div>
+            <div>
+                <button class="btn btn-xs btn-default unpub-prev" ${state.page <= 1 ? 'disabled' : ''}>« Prev</button>
+                <span style="margin: 0 10px; font-weight: 500;">Page ${state.page} of ${total_pages}</span>
+                <button class="btn btn-xs btn-default unpub-next" ${state.page >= total_pages ? 'disabled' : ''}>Next »</button>
+            </div>
+        </div>
+
+        <div style="border: 1px solid #d1d8dd; border-radius: 4px; overflow: hidden; overflow-x: auto;">
+            <table class="table table-bordered table-hover" style="margin-bottom: 0; font-size: 12px; white-space: nowrap;">
+                <thead style="background-color: #f8f9fa;">
+                    <tr>
+                        <th style="width: 40px; text-align: center; vertical-align: middle;">
+                            
+                        </th>
+                        <th style="width: 40px; text-align: center; vertical-align: middle;">No.</th>
+                        <th>
+                            <div style="color: #2b6cb0; margin-bottom: 5px;">${__('Applicant ID')}</div>
+                            <input type="text" class="form-control input-xs unpub-filter" data-filter="filter_applicant" placeholder="Filter ID..." value="${state.filter_applicant || ''}">
+                        </th>
+                        <th>
+                            <div style="color: #2b6cb0; margin-bottom: 5px;">${__('Candidate Name')}</div>
+                            <input type="text" class="form-control input-xs unpub-filter" data-filter="filter_candidate_name" placeholder="Filter Name..." value="${state.filter_candidate_name || ''}">
+                        </th>
+                        <th>
+                            <div style="color: #2b6cb0; margin-bottom: 5px;">${__('Entrance Test Status')}</div>
+                            <select class="form-control input-xs unpub-filter" data-filter="filter_entrance_test_status">
+                                <option value=""></option>
+                                <option value="Scheduled" ${state.filter_entrance_test_status === 'Scheduled' ? 'selected' : ''}>Scheduled</option>
+                                <option value="Attended" ${state.filter_entrance_test_status === 'Attended' ? 'selected' : ''}>Attended</option>
+                                <option value="Absent" ${state.filter_entrance_test_status === 'Absent' ? 'selected' : ''}>Absent</option>
+                                <option value="Rescheduled" ${state.filter_entrance_test_status === 'Rescheduled' ? 'selected' : ''}>Rescheduled</option>
+                            </select>
+                        </th>
+                        <th>
+                            <div style="color: #2b6cb0; margin-bottom: 5px;">${__('Status')}</div>
+                            <select class="form-control input-xs unpub-filter" data-filter="filter_status">
+                                <option value=""></option>
+                                <option value="Pass" ${state.filter_status === 'Pass' ? 'selected' : ''}>Pass</option>
+                                <option value="Fail" ${state.filter_status === 'Fail' ? 'selected' : ''}>Fail</option>
+                            </select>
+                        </th>
+                        <th>
+                            <div style="color: #2b6cb0; margin-bottom: 5px;">${__('Admission Status')}</div>
+                            <select class="form-control input-xs unpub-filter" data-filter="filter_admission_status">
+                                <option value=""></option>
+                                <option value="Provisionally Offered Admission" ${state.filter_admission_status === 'Provisionally Offered Admission' ? 'selected' : ''}>Provisionally Offered Admission</option>
+                                <option value="Waitlisted" ${state.filter_admission_status === 'Waitlisted' ? 'selected' : ''}>Waitlisted</option>
+                            </select>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    if (records.length === 0) {
+        html += `<tr><td colspan="7" class="text-center text-muted" style="padding: 15px;">${__('No unpublished applicants found matching filters.')}</td></tr>`;
+    } else {
+        records.forEach((r, idx) => {
+            let row_no = ((state.page - 1) * state.limit) + idx + 1;
+            let checked = state.selected_names.includes(r.name) ? 'checked' : '';
+            html += `
+                <tr>
+                    <td style="text-align: center;">
+                        <input type="checkbox" class="unpub-select-row" data-name="${r.name}" ${checked}>
+                    </td>
+                    <td style="text-align: center; color: #2b6cb0;">${row_no}</td>
+                    <td>${r.applicant || ''}</td>
+                    <td style="font-weight: 600;">${r.candidate_name || ''}</td>
+                    <td>${r.entrance_test_status || ''}</td>
+                    <td>${r.result_status || ''}</td>
+                    <td>${r.admission_status || ''}</td>
+                </tr>
+            `;
+        });
+    }
+
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    html_field.$wrapper.html(html);
+
+    // Event listeners
+    let timeout = null;
+    html_field.$wrapper.find('.unpub-filter').on('input change', function() {
+        let filter_name = $(this).attr('data-filter');
+        let val = $(this).val();
+        state[filter_name] = val;
+        
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            update_unpublished_applicants_table(pd, false);
+        }, 500);
+    });
+
+    html_field.$wrapper.find('.unpub-clear-all').on('click', function() {
+        state.selected_names = [];
+        html_field.$wrapper.find('.unpub-select-row').prop('checked', false);
+        html_field.$wrapper.find('.unpub-select-all').prop('checked', false);
+        html_field.$wrapper.find('.unpub-selected-count').text(0);
+    });
+
+    html_field.$wrapper.find('.unpub-select-all').on('change', function() {
+        let is_checked = $(this).is(':checked');
+        html_field.$wrapper.find('.unpub-select-row').each(function() {
+            $(this).prop('checked', is_checked);
+            let name = $(this).attr('data-name');
+            if (is_checked && !state.selected_names.includes(name)) {
+                state.selected_names.push(name);
+            } else if (!is_checked) {
+                state.selected_names = state.selected_names.filter(n => n !== name);
+            }
+        });
+        html_field.$wrapper.find('.unpub-selected-count').text(state.selected_names.length);
+    });
+
+    html_field.$wrapper.find('.unpub-select-row').on('change', function() {
+        let name = $(this).attr('data-name');
+        if ($(this).is(':checked')) {
+            if (!state.selected_names.includes(name)) state.selected_names.push(name);
+        } else {
+            state.selected_names = state.selected_names.filter(n => n !== name);
+        }
+        
+        html_field.$wrapper.find('.unpub-selected-count').text(state.selected_names.length);
+        
+        let all_checked = html_field.$wrapper.find('.unpub-select-row:not(:checked)').length === 0;
+        html_field.$wrapper.find('.unpub-select-all').prop('checked', all_checked && records.length > 0);
+    });
+
+    html_field.$wrapper.find('.unpub-prev').on('click', function() {
+        if (state.page > 1) {
+            state.page--;
+            update_unpublished_applicants_table(pd, true);
+        }
+    });
+
+    html_field.$wrapper.find('.unpub-next').on('click', function() {
+        if (state.page < total_pages) {
+            state.page++;
+            update_unpublished_applicants_table(pd, true);
+        }
+    });
 }

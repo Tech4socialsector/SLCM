@@ -33,6 +33,23 @@ class OfferLetter(Document):
             fee_data = FeeService._calculate_and_freeze_fees(self.fee_structure, is_foreign=is_foreign)
             self.payable_amount = fee_data.get("total_payable")
 
+        now_date = frappe.utils.getdate(frappe.utils.nowdate())
+        if self.status in ["Draft", "Issued"]:
+            if self.payment_deadline and frappe.utils.getdate(self.payment_deadline) < now_date:
+                old_val = frappe.db.get_value("Offer Letter", self.name, "payment_deadline") if not self.is_new() else None
+                if self.is_new() or not old_val or frappe.utils.getdate(self.payment_deadline) != frappe.utils.getdate(old_val):
+                    frappe.throw(_("Payment Deadline cannot be in the past."))
+            
+            if self.offer_acceptance_deadline and frappe.utils.getdate(self.offer_acceptance_deadline) < now_date:
+                old_val = frappe.db.get_value("Offer Letter", self.name, "offer_acceptance_deadline") if not self.is_new() else None
+                if self.is_new() or not old_val or frappe.utils.getdate(self.offer_acceptance_deadline) != frappe.utils.getdate(old_val):
+                    frappe.throw(_("Offer Acceptance Deadline cannot be in the past."))
+            
+            if self.confirmation_fee_deadline and frappe.utils.getdate(self.confirmation_fee_deadline) < now_date:
+                old_val = frappe.db.get_value("Offer Letter", self.name, "confirmation_fee_deadline") if not self.is_new() else None
+                if self.is_new() or not old_val or frappe.utils.getdate(self.confirmation_fee_deadline) != frappe.utils.getdate(old_val):
+                    frappe.throw(_("Confirmation Fee Deadline cannot be in the past."))
+
         self.set_notification_receiver()
         self.validate_status_transition()
 

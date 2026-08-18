@@ -32,6 +32,8 @@
   "payment_deadline",
   "status",
   "needs_accommodation",
+  "confirmation_fee_paid_on",
+  "full_fee_paid_on",
   "connections_tab"
  ],
  "fields": [
@@ -211,6 +213,16 @@
    "fieldname": "offer_letter_section",
    "fieldtype": "Section Break",
    "label": "Offer Letter"
+  },
+  {
+   "fieldname": "confirmation_fee_paid_on",
+   "fieldtype": "Date",
+   "label": "Confirmation Fee Paid On"
+  },
+  {
+   "fieldname": "full_fee_paid_on",
+   "fieldtype": "Date",
+   "label": "Full Fee Paid On"
   }
  ],
  "grid_page_length": 50,
@@ -221,7 +233,7 @@
    "link_fieldname": "offer_letter"
   }
  ],
- "modified": "2026-08-05 10:53:43.304402",
+ "modified": "2026-08-14 19:07:19.528549",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letter",

@@ -86,7 +86,7 @@
         background: var(--card-bg);
         border-radius: 16px;
         border: 1px solid var(--border);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
         transition: all 0.3s ease;
         cursor: pointer;
         height: 100%;
@@ -449,35 +449,35 @@
             
             html += `
 <div class="col-12 col-lg-6 col-xl-4 mb-4">
-    <div class="offer-card" data-offer="${_encOffer}">
-        <div class="card-top-accent"></div>
+    <div class="offer-card" data-offer="${_encOffer}" style="border-top: 4px solid var(--primary);">
         <div class="card-body">
             <div class="status-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <span class="status-text ${status_class}">
-                    ${display_status}
+                <span class="status-text ${status_class}" style="font-size: 14px; font-weight: 700; color: #16a34a;">
+                    ${display_status.toUpperCase()}
                 </span>
-                <div class="candidate-avatar" style="width: 72px; height: 72px; border-radius: 20px; overflow: hidden; flex-shrink: 0; background: #f5f5f5; box-shadow: 0 2px 8px rgba(0,0,0,.12);">
+                <div class="candidate-avatar" style="width: 80px; height: 80px; border-radius: 12px; overflow: hidden; flex-shrink: 0; background: #f5f5f5; box-shadow: 0 4px 12px rgba(0,0,0,.1);">
                     ${_avatar}
                 </div>
             </div>
 
-            <div class="academic-year">
-                <i class="fa fa-calendar"></i> ${offer.academic_year || '2026-27'}
+            <div class="academic-year" style="color: #9f1239; font-weight: 700; margin-top: -12px;">
+                <span class="material-symbols-outlined" style="font-size: 16px; margin-right: 4px; vertical-align: middle;">calendar_today</span>
+                ${offer.academic_year || '2026-27'}
             </div>
             
-            <div class="program-name">${offer.program}</div>
+            <div class="program-name" style="font-size: 18px; font-weight: 800; color: var(--text-1); margin-top: 16px;">${offer.program}</div>
 
-            <div class="info-grid">
+            <div class="info-grid" style="margin-top: 24px; display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px;">
                 <div class="info-item">
-                    <span class="info-label">Campus</span>
-                    <div class="info-value">
+                    <span class="info-label" style="font-size: 13px; font-weight: 600; color: #94a3b8;">Campus</span>
+                    <div class="info-value" style="font-size: 14px; font-weight: 600; color: var(--text-2); display: flex; align-items: center; gap: 8px;">
                         ${_campusIcon}
                         <span>${offer.campus_name || offer.campus}</span>
                     </div>
                 </div>
                 <div class="info-item">
-                    <span class="info-label">Issued On</span>
-                    <div class="info-value">
+                    <span class="info-label" style="font-size: 13px; font-weight: 600; color: #94a3b8;">Issued On</span>
+                    <div class="info-value" style="font-size: 14px; font-weight: 600; color: var(--text-2);">
                         <span>${_issuedDate}</span>
                     </div>
                 </div>
@@ -502,9 +502,9 @@
                 
                 if (deadline_date) {
                     return `
-                        <div class="valid-until">
-                            <span class="valid-label">${deadline_label}</span>
-                            <span class="valid-value offer-timer" data-deadline="${deadline_date}">
+                        <div class="valid-until" style="margin-top: 24px; padding: 16px; border-radius: 8px; background: #fff7ed; border: 1px solid #ffedd5; display: flex; align-items: center; justify-content: space-between;">
+                            <span class="valid-label" style="font-size: 13px; font-weight: 700; color: #c2410c;">${deadline_label}</span>
+                            <span class="valid-value offer-timer" data-deadline="${deadline_date}" style="font-size: 14px; font-weight: 800; color: #9a3412;">
                                 ${format_date_dd_mm_yyyy(deadline_date)}
                             </span>
                         </div>
@@ -515,21 +515,21 @@
 
         </div>
 
-        <div class="card-footer">
-            <div class="price-container">
-                <span class="price-label">Admission Fee</span>
-                <div class="price-value">
+        <div class="card-footer" style="padding: 24px; background: #f8fafc; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
+            <div class="price-container" style="display: flex; flex-direction: column; gap: 4px;">
+                <span class="price-label" style="font-size: 14px; font-weight: 600; color: #64748b;">Admission Fee</span>
+                <div class="price-value" style="font-size: 18px; font-weight: 800; color: #9f1239;">
                     ${format_currency(offer.final_payable_amount || offer.payable_amount, currency)}
                 </div>
                 ${offer.scholarship_amount > 0 ? `
-                    <div class="scholarship-info">
+                    <div class="scholarship-info" style="font-size: 12px; font-weight: 700; color: #16a34a; display: flex; align-items: center; gap: 4px;">
                         <i class="fa fa-check-circle"></i> Scholarship Applied
                     </div>
                 ` : ''}
             </div>
 
-            <div class="action-button">
-                <i class="fa fa-arrow-right"></i>
+            <div class="action-button" style="background: #9f1239; color: white; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; box-shadow: 0 4px 12px rgba(159, 18, 57, 0.3);">
+                <span class="material-symbols-outlined">arrow_forward</span>
             </div>
         </div>
     </div>

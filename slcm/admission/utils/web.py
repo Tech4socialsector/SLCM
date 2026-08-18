@@ -916,7 +916,7 @@ def download_application(applicant_name):
     frappe.local.response.type = "download"
 
 @frappe.whitelist(methods=["POST", "GET"])
-def download_receipt(receipt_name):
+def download_receipt(receipt_name=None, fee_type=None, offer_letter=None):
     """
     Generates and downloads the Applicant Payment Receipt PDF for the owner.
 
@@ -924,10 +924,23 @@ def download_receipt(receipt_name):
     as the print format, falling back to the default format.
     """
     user = frappe.session.user
-    try:
-        receipt = frappe.get_doc("Applicant Payment Receipt", receipt_name, ignore_permissions=True)
-    except frappe.DoesNotExistError:
-        frappe.throw("Receipt not found")
+    receipt = None
+    
+    if receipt_name:
+        try:
+            receipt = frappe.get_doc("Applicant Payment Receipt", receipt_name, ignore_permissions=True)
+        except frappe.DoesNotExistError:
+            frappe.throw("Receipt not found")
+    elif fee_type and offer_letter:
+        receipts = frappe.get_all("Applicant Payment Receipt", 
+                                 filters={"offer_letter": offer_letter, "fee_type": fee_type},
+                                 order_by="creation desc", limit=1)
+        if receipts:
+            receipt = frappe.get_doc("Applicant Payment Receipt", receipts[0].name, ignore_permissions=True)
+        else:
+            frappe.throw(f"Receipt for {fee_type} not found")
+    else:
+        frappe.throw("Receipt details not provided")
 
     # Check if this user owns the receipt (via the Applicant record)
     applicant_name = receipt.applicant
@@ -937,10 +950,17 @@ def download_receipt(receipt_name):
         if "Admission Admin" not in frappe.get_roles() and "System Manager" not in frappe.get_roles():
             frappe.throw("Not permitted", frappe.PermissionError)
 
-    # Resolve print format from Programme Reservation Policy if possible
-    print_format = "Applicant Payment Receipt Format"  # Fallback
+    # Resolve print format dynamically
+    print_format = None
     try:
-        if applicant_name:
+        if receipt.fee_type in ["Confirmation Fee", "Admission Fee"] and receipt.offer_letter:
+            offer = frappe.get_doc("Offer Letter", receipt.offer_letter)
+            if offer.fee_structure:
+                template = frappe.db.get_value("Fee Structure", offer.fee_structure, "receipt_print_format")
+                if template:
+                    print_format = template
+
+        if not print_format and applicant_name:
             app = frappe.get_doc("Applicant", applicant_name)
             if app.admission_cycle and app.program:
                 # Prefer campus-specific policy; fall back to generic program+cycle
@@ -975,7 +995,7 @@ def download_receipt(receipt_name):
                     if template:
                         print_format = template
     except Exception:
-        # On any lookup error, quietly fall back to default format
+        # On any lookup error, quietly fall back to None
         pass
 
     frappe.flags.ignore_print_permissions = True
@@ -994,7 +1014,7 @@ def download_receipt(receipt_name):
 
             pdf_content = frappe.get_print(
                 "Applicant Payment Receipt",
-                receipt_name,
+                receipt.name,
                 print_format,
                 as_pdf=True,
                 doc=receipt,
@@ -1006,7 +1026,7 @@ def download_receipt(receipt_name):
         except Exception as e:
             last_error = e
             error_details = {
-                "receipt": receipt_name,
+                "receipt": receipt.name,
                 "generator": generator,
                 "error": str(e),
                 "site": frappe.local.site,
@@ -1023,7 +1043,12 @@ def download_receipt(receipt_name):
     if not pdf_content:
         frappe.throw(frappe._("PDF generation failed for receipt. Error: {0}").format(str(last_error)))
 
-    frappe.local.response.filename = f"Receipt_{receipt_name}.pdf"
+    candidate_name = frappe.db.get_value("Applicant", receipt.applicant, "candidate_name") or receipt.applicant
+    now_str = frappe.utils.now_datetime().strftime("%d-%m-%Y:%H:%M")
+    safe_candidate_name = str(candidate_name).replace("/", "-").replace("\\", "-")
+    safe_fee_type = str(receipt.fee_type).replace("/", "-").replace("\\", "-")
+
+    frappe.local.response.filename = f"Fee Receipt-{safe_candidate_name}-{safe_fee_type}-{now_str}.pdf"
     frappe.local.response.filecontent = pdf_content
     frappe.local.response.type = "download"
 
@@ -1050,7 +1075,7 @@ def get_latest_application_fee_receipt(applicant_name: str):
 
     receipt_name = frappe.db.get_value(
         "Applicant Payment Receipt",
-        {"applicant": applicant_name, "offer_letter": ["is", "not set"], "docstatus": 1},
+        {"applicant": applicant_name, "offer_letter": ["is", "not set"]},
         "name",
         order_by="creation desc",
     )
