@@ -20,30 +20,30 @@ from frappe.utils import get_url, getdate, today, now_datetime, formatdate
 
 def _get_active_cycle():
     """
-    Returns (cycle_name, cycle_end_date) for the currently Active
-    Admission Cycle, or (None, None) if none found.
+    Returns (cycle_name, cycle_end_date, application_end_date, status) for the currently Active
+    Admission Cycle, or fallback to the most recently Closed cycle.
     """
     cycle = frappe.db.get_value(
         "Admission Cycle",
         {"status": "Active"},
-        ["name", "cycle_end_date"],
+        ["name", "cycle_end_date", "application_end_date", "status"],
         as_dict=True,
     )
     if cycle:
-        return cycle.name, cycle.cycle_end_date
+        return cycle.name, cycle.cycle_end_date, cycle.application_end_date, cycle.status
 
-    # Fallback: look for the most recently closed cycle
+    # Fallback: look for the most recently closed cycle so rejections can still be processed
     cycle = frappe.db.get_value(
         "Admission Cycle",
         {"status": "Closed"},
-        ["name", "cycle_end_date"],
+        ["name", "cycle_end_date", "application_end_date", "status"],
         as_dict=True,
         order_by="cycle_end_date desc",
     )
     if cycle:
-        return cycle.name, cycle.cycle_end_date
+        return cycle.name, cycle.cycle_end_date, cycle.application_end_date, cycle.status
 
-    return None, None
+    return None, None, None, None
 
 
 def _get_template_sender(template_name):
@@ -131,12 +131,12 @@ def send_not_started_reminders(current_item=0, total_items=0, is_rejection_only=
         log_applicant_reminder_email,
     )
 
-    cycle_name, cycle_end_date = _get_active_cycle()
-    if not cycle_name or not cycle_end_date:
+    cycle_name, cycle_end_date, application_end_date, cycle_status = _get_active_cycle()
+    if not cycle_name or not application_end_date:
         return 0
 
     today_date = getdate(today())
-    close_date = getdate(cycle_end_date)
+    close_date = getdate(application_end_date)
     
     if is_rejection_only and today_date <= close_date:
         return 0
@@ -184,9 +184,27 @@ def send_not_started_reminders(current_item=0, total_items=0, is_rejection_only=
             if not user_doc.enabled:
                 continue
 
+            # Ensure we only send reminders for the admission cycle the user registered in
+            # by checking if they've received a reminder for a DIFFERENT cycle in the past.
+            previous_logs = frappe.get_all(
+                "Applicant Reminder Email Log",
+                filters={
+                    "reference_doctype": "User",
+                    "reference_name": email,
+                },
+                fields=["admission_cycle"]
+            )
+            belong_to_other_cycle = False
+            for log in previous_logs:
+                if log.admission_cycle and log.admission_cycle != cycle_name:
+                    belong_to_other_cycle = True
+                    break
+            if belong_to_other_cycle:
+                continue
+
             last_sent = user_doc.get("last_applicant_reminder_sent")
 
-            if not should_send_reminder("not_started", last_sent, cycle_end_date):
+            if not should_send_reminder("not_started", last_sent, application_end_date):
                 continue
 
             if today_date > close_date:
@@ -198,7 +216,7 @@ def send_not_started_reminders(current_item=0, total_items=0, is_rejection_only=
                     {
                         "candidate_name": user_doc.full_name or email,
                         "rejection_reason": rejection_reason,
-                        "cycle_end_date": formatdate(cycle_end_date),
+                        "cycle_end_date": formatdate(application_end_date),
                         "institution_name": institution_name,
                         "admission_portal_url": get_url("/admission-dashboard"),
                     },
@@ -214,17 +232,21 @@ def send_not_started_reminders(current_item=0, total_items=0, is_rejection_only=
                         reference_doctype="User",
                         reference_name=email,
                         email_template="Applicant Application Rejected",
+                        admission_cycle=cycle_name,
                     )
                     sent_count += 1
                 continue
 
             # Before deadline — send reminder
+            if cycle_status == "Closed":
+                continue
+
             subject, ok = _send_email_from_template(
                 template_name,
                 email,
                 {
                     "candidate_name": user_doc.first_name or user_doc.full_name or email,
-                    "cycle_end_date": formatdate(cycle_end_date),
+                    "cycle_end_date": formatdate(application_end_date),
                     "institution_name": institution_name,
                     "admission_portal_url": get_url("/admission-dashboard"),
                 },
@@ -241,6 +263,7 @@ def send_not_started_reminders(current_item=0, total_items=0, is_rejection_only=
                     reference_doctype="User",
                     reference_name=email,
                     email_template=template_name,
+                    admission_cycle=cycle_name,
                 )
                 sent_count += 1
 
@@ -266,12 +289,12 @@ def send_draft_applicant_reminders(current_item=0, total_items=0, is_rejection_o
         log_applicant_reminder_email,
     )
 
-    cycle_name, cycle_end_date = _get_active_cycle()
-    if not cycle_name or not cycle_end_date:
+    cycle_name, cycle_end_date, application_end_date, cycle_status = _get_active_cycle()
+    if not cycle_name or not application_end_date:
         return 0
 
     today_date = getdate(today())
-    close_date = getdate(cycle_end_date)
+    close_date = getdate(application_end_date)
     
     if is_rejection_only and today_date <= close_date:
         return 0
@@ -299,7 +322,7 @@ def send_draft_applicant_reminders(current_item=0, total_items=0, is_rejection_o
             if not recipient:
                 continue
 
-            if not should_send_reminder("draft", app.last_draft_reminder_sent, cycle_end_date):
+            if not should_send_reminder("draft", app.last_draft_reminder_sent, application_end_date):
                 continue
 
             if today_date > close_date:
@@ -312,7 +335,7 @@ def send_draft_applicant_reminders(current_item=0, total_items=0, is_rejection_o
                         "applicant_id": app.name,
                         "program": app.program or "",
                         "rejection_reason": rejection_reason,
-                        "cycle_end_date": formatdate(cycle_end_date),
+                        "cycle_end_date": formatdate(application_end_date),
                         "institution_name": institution_name,
                         "admission_portal_url": get_url("/admission-dashboard"),
                     },
@@ -338,6 +361,9 @@ def send_draft_applicant_reminders(current_item=0, total_items=0, is_rejection_o
                 continue
 
             # Before deadline — send reminder
+            if cycle_status == "Closed":
+                continue
+
             subject, ok = _send_email_from_template(
                 template_name,
                 recipient,
@@ -345,7 +371,7 @@ def send_draft_applicant_reminders(current_item=0, total_items=0, is_rejection_o
                     "candidate_name": app.candidate_name or recipient,
                     "applicant_id": app.name,
                     "program": app.program or "",
-                    "cycle_end_date": formatdate(cycle_end_date),
+                    "cycle_end_date": formatdate(application_end_date),
                     "institution_name": institution_name,
                     "admission_portal_url": get_url("/admission-dashboard"),
                 },
@@ -388,12 +414,12 @@ def send_unpaid_fee_reminders(current_item=0, total_items=0, is_rejection_only=F
         log_applicant_reminder_email,
     )
 
-    cycle_name, cycle_end_date = _get_active_cycle()
-    if not cycle_name or not cycle_end_date:
+    cycle_name, cycle_end_date, application_end_date, cycle_status = _get_active_cycle()
+    if not cycle_name or not application_end_date:
         return 0
 
     today_date = getdate(today())
-    close_date = getdate(cycle_end_date)
+    close_date = getdate(application_end_date)
     
     if is_rejection_only and today_date <= close_date:
         return 0
@@ -425,7 +451,7 @@ def send_unpaid_fee_reminders(current_item=0, total_items=0, is_rejection_only=F
             if not recipient:
                 continue
 
-            if not should_send_reminder("unpaid_fee", app.last_fee_reminder_sent, cycle_end_date):
+            if not should_send_reminder("unpaid_fee", app.last_fee_reminder_sent, application_end_date):
                 continue
 
             if today_date > close_date:
@@ -438,7 +464,7 @@ def send_unpaid_fee_reminders(current_item=0, total_items=0, is_rejection_only=F
                         "applicant_id": app.name,
                         "program": app.program or "",
                         "rejection_reason": rejection_reason,
-                        "cycle_end_date": formatdate(cycle_end_date),
+                        "cycle_end_date": formatdate(application_end_date),
                         "institution_name": institution_name,
                         "admission_portal_url": get_url("/admission-dashboard"),
                     },
@@ -463,6 +489,9 @@ def send_unpaid_fee_reminders(current_item=0, total_items=0, is_rejection_only=F
                 continue
 
             # Before deadline — send reminder
+            if cycle_status == "Closed":
+                continue
+
             subject, ok = _send_email_from_template(
                 template_name,
                 recipient,
@@ -471,7 +500,7 @@ def send_unpaid_fee_reminders(current_item=0, total_items=0, is_rejection_only=F
                     "applicant_id": app.name,
                     "program": app.program or "",
                     "application_fee_amount": app.application_fee_amount or 0,
-                    "cycle_end_date": formatdate(cycle_end_date),
+                    "cycle_end_date": formatdate(application_end_date),
                     "institution_name": institution_name,
                     "admission_portal_url": get_url("/admission-dashboard"),
                 },
@@ -513,7 +542,7 @@ def send_admission_fee_reminders(current_item=0, total_items=0, is_rejection_onl
     )
     from frappe.utils import today, getdate, formatdate
 
-    cycle_name, cycle_end_date = _get_active_cycle()
+    cycle_name, cycle_end_date, application_end_date, cycle_status = _get_active_cycle()
     if not cycle_name or not cycle_end_date:
         return 0
 
@@ -549,6 +578,8 @@ def send_admission_fee_reminders(current_item=0, total_items=0, is_rejection_onl
                 continue
             applicant_doc = frappe.get_doc("Applicant", assignment.applicant)
             if applicant_doc.status == "Rejected":
+                continue
+            if applicant_doc.admission_cycle != cycle_name:
                 continue
             recipient = applicant_doc.email
             if not recipient:
@@ -600,6 +631,9 @@ def send_admission_fee_reminders(current_item=0, total_items=0, is_rejection_onl
                 continue
 
             # Send reminder
+            if cycle_status == "Closed":
+                continue
+
             subject, ok = _send_email_from_template(
                 template_name,
                 recipient,
