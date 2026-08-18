@@ -11,7 +11,7 @@ def log_applicant_reminder_email(
     recipient, subject, reminder_type,
     status="Sent", sender=None,
     reference_doctype=None, reference_name=None,
-    email_template=None, error_log=None
+    email_template=None, error_log=None, admission_cycle=None
 ):
     """
     Creates a log entry in Applicant Reminder Email Log.
@@ -48,6 +48,7 @@ def log_applicant_reminder_email(
             "email_template": email_template,
             "email_account": email_account,
             "error_log": error_log,
+            "admission_cycle": admission_cycle,
         }).insert(ignore_permissions=True)
 
         frappe.db.commit()
