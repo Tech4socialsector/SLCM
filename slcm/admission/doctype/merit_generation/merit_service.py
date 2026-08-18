@@ -441,7 +441,7 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
         fields=[
             "name", "applicant", "candidate_name", "program", "program_level",
             "part_a_total_marks_scored", "part_b_total_marks_scored",
-            "shortlisted_status", "percentile", "gender"
+            "shortlisted_status", "gender"
         ]
     ) if applicant_names else []
     etsa_map = {r.name: r for r in etsa_records}
@@ -526,7 +526,7 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
             "ug_cgpa": ug_avg,
             "pg_cgpa": pg_avg,
             "date_of_birth": applicant_doc.get("date_of_birth"),
-            "percentile_score": etsa_doc.get("percentile") or 0,
+            "percentile_score": 0,
             "part_b_not_appeared": processing_stage != "Part A Ranking" and not etsa_part_b_shortlisted
         })
         
@@ -589,7 +589,7 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
     # Always use advanced ranking/allocation logic
     _rank_applicants(merit.merit_applicants, use_advanced_ranking=True, processing_stage=processing_stage)
     
-    # Calculate and persist percentiles for each program group separately.
+    # Calculate percentiles for each program group separately.
     grouped_by_program = {}
     for row in merit.merit_applicants:
         grouped_by_program.setdefault(row.program, []).append(row)
@@ -943,7 +943,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
     for row in applicants_list:
         grouped_by_program.setdefault(row.program, []).append(row)
 
-    # Calculate and persist percentiles for each program group separately.
+    # Calculate percentiles for each program group separately.
     # This must happen before the percentile eligibility filter below.
     if getattr(doc, "doctype", "") != "Seat Allocation":
         for _prog_applicants in grouped_by_program.values():
@@ -1510,12 +1510,7 @@ def _check_percentile_eligibility(app, vertical_targets, horizontal_targets=None
     # Rule: If multiple thresholds apply (e.g. General 75% + PWD 40%), the most lenient (minimum) applies
     threshold = min(thresholds) if thresholds else 0
         
-    percentile = float(getattr(app, "percentile_score", 0) or 0)
-    if not percentile and getattr(app, "applicant_id", None):
-        er_percentile = frappe.db.get_value("Entrance Test Seat Allocation", {"applicant": app.applicant_id}, "percentile")
-        if er_percentile is not None:
-            percentile = float(er_percentile)
-            
+    percentile = float(getattr(app, "percentile_score", 0) or (app.get("percentile_score") if isinstance(app, dict) else 0) or 0)
     return percentile >= threshold
 
 def _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies=None, reason=None):
@@ -1653,9 +1648,9 @@ def _execute_candidate_displacement(in_cand, out_cand, allocated_list, unallocat
 def _calculate_and_sync_percentiles(applicants, is_shortlist=False):
     """
     Calculates percentiles based on the current pool of applicants and 
-    updates the Eligibility Result records in the database.
+    assigns `percentile_score` on each applicant record in memory for merit / shortlisting processing.
 
-    Formula: (# candidates with score <= this candidate's score) / (total candidates) * 100
+    Formula: (# candidates with score < this candidate's score) / (total candidates) * 100
 
     Score field used:
     - Shortlisting stage:  nlsat_part_a_score  (Part A)
@@ -1692,43 +1687,15 @@ def _calculate_and_sync_percentiles(applicants, is_shortlist=False):
     if total_count == 0:
         return
 
-    # 3. Calculate cumulative percentiles and persist
-    updates = []  # (applicant_id, percentile)
+    # 3. Calculate percentiles and assign to applicant objects in memory
     for app in applicants:
         score = _get_score(app)
         count_le = bisect.bisect_left(all_scores, score)  # # scores < this score
         percentile = round((count_le / total_count) * 100, 4)
         if isinstance(app, dict):
             app["percentile_score"] = percentile
-            app_id = app.get("applicant_id")
         else:
             app.percentile_score = percentile
-            app_id = getattr(app, "applicant_id", None)
-
-        if app_id:
-            updates.append((app_id, percentile))
-
-    # 4. Bulk update Entrance Test Seat Allocation in batches to prevent database lock contention.
-    if getattr(frappe, "db", None) and updates:
-        batch_size = 500
-        for i in range(0, len(updates), batch_size):
-            batch = updates[i:i + batch_size]
-            when_clauses = " ".join(["WHEN %s THEN %s" for _ in batch])
-            params = []
-            for app_id, pct in batch:
-                params.extend([app_id, pct])
-            app_ids = tuple(app_id for app_id, _ in batch)
-            params.extend(app_ids)
-            in_placeholders = ", ".join(["%s"] * len(app_ids))
-            sql = f"""
-                UPDATE `tabEntrance Test Seat Allocation`
-                SET percentile = CASE name {when_clauses} END
-                WHERE name IN ({in_placeholders})
-            """
-            frappe.db.sql(sql, params)
-
-        if hasattr(frappe.db, "commit"):
-            frappe.db.commit()
 
 
 
