@@ -4,7 +4,7 @@
 frappe.ui.form.on("Offer Configuration", {
     refresh(frm) {
         // Disable past dates in the datepicker for offer_expiry_date
-        frm.fields_dict.offer_expiry_date.datepicker.update({
+        frm.fields_dict.due_date.datepicker.update({
             minDate: new Date(frappe.datetime.get_today())
         });
     },
