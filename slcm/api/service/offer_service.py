@@ -1061,20 +1061,41 @@ class OfferService:
     def get_pending_offers_list():
         """
         Fetches all Offers with 'Issued' status that haven't passed their deadline.
+        Applies standard Frappe permissions dynamically.
         """
-        offers = frappe.db.sql("""
-            SELECT 
-                ol.name,
-                app.candidate_name as applicant_name,
-                ol.program,
-                ol.offer_acceptance_deadline as payment_deadline
-            FROM `tabOffer Letter` ol
-            JOIN `tabApplicant` app ON ol.applicant = app.name
-            WHERE ol.status = 'Issued'
-              AND (ol.offer_acceptance_deadline >= CURDATE() OR ol.offer_acceptance_deadline IS NULL)
-            ORDER BY ol.offer_acceptance_deadline ASC
-        """, as_dict=1)
-        return offers
+        user = frappe.session.user
+        if user == "Guest":
+            frappe.throw("Not permitted", frappe.PermissionError)
+
+        roles = frappe.get_roles(user)
+        filters = {"status": "Issued"}
+
+        # If the user is strictly an Applicant (without desk access), restrict to their own email
+        # to ensure they only get their own data, avoiding hardcoding other roles.
+        has_desk_access = frappe.db.get_value("User", user, "user_type") == "System User"
+        if "Applicant" in roles and not has_desk_access:
+            filters["email"] = user
+
+        offers = frappe.get_all(
+            "Offer Letter",
+            filters=filters,
+            fields=["name", "applicant", "program", "offer_acceptance_deadline as payment_deadline"],
+            ignore_permissions=False,
+            order_by="offer_acceptance_deadline asc"
+        )
+
+        from frappe.utils import getdate, nowdate
+        today = getdate(nowdate())
+
+        valid_offers = []
+        for offer in offers:
+            if offer.payment_deadline and getdate(offer.payment_deadline) < today:
+                continue
+
+            offer.applicant_name = frappe.db.get_value("Applicant", offer.applicant, "candidate_name")
+            valid_offers.append(offer)
+
+        return valid_offers
 
     @staticmethod
     @frappe.whitelist()
@@ -1362,7 +1383,7 @@ def get_offer_details(offer_name=None):
         target_applicant = offer_doc.applicant
         fee_structure = offer_doc.fee_structure
     except frappe.PermissionError:
-        safe_fields = ["name", "applicant", "candidate_name", "program", "status", "rendered_content", "fee_structure", "offer_deadline", "confirmation_fee_due_date", "full_fee_due_date", "campus", "admission_cycle"]
+        safe_fields = ["name", "applicant", "candidate_name", "program", "status", "rendered_content", "fee_structure", "offer_deadline", "confirmation_fee_due_date", "full_fee_due_date", "campus", "admission_cycle", "accepted_on", "needs_accommodation"]
         offer_fields = frappe.get_all("Offer Letter", filters={"name": offer_id}, fields=safe_fields, limit=1, ignore_permissions=True)
         if not offer_fields:
             return {"error": _("Access Denied")}
@@ -1375,38 +1396,45 @@ def get_offer_details(offer_name=None):
 
     # First, try to fetch pending components from Applicant Fee Assignment (AFA)
     afa = frappe.db.get_value("Applicant Fee Assignment",
-        {"offer_letter": offer_id, "fee_type": ["in", ["Admission Fee", "Confirmation Fee"]], "status": "Assigned", "docstatus": ["!=", 2]},
+        {"offer_letter": offer_id, "fee_type": "Admission Fee", "status": "Assigned", "docstatus": ["!=", 2]},
         ["name", "final_payable_amount", "scholarship_amount", "scholarship_applied", "total_amount", "fee_type", "confirmation_fee"],
         order_by="creation desc",
         as_dict=True)
 
     if not afa:
         afa = frappe.db.get_value("Applicant Fee Assignment",
-            {"offer_letter": offer_id, "fee_type": ["in", ["Admission Fee", "Confirmation Fee"]], "docstatus": ["!=", 2]},
+            {"offer_letter": offer_id, "fee_type": "Admission Fee", "docstatus": ["!=", 2]},
             ["name", "final_payable_amount", "scholarship_amount", "scholarship_applied", "total_amount", "fee_type", "confirmation_fee"],
             order_by="creation desc",
             as_dict=True)
+
+    conf_afa = frappe.db.get_value("Applicant Fee Assignment",
+        {"offer_letter": offer_id, "fee_type": "Confirmation Fee", "docstatus": ["!=", 2]},
+        ["total_amount", "confirmation_fee", "name"],
+        order_by="creation desc", as_dict=True)
+
+    confirmation_fee_amount = 0
+    if conf_afa:
+        confirmation_fee_amount = conf_afa.confirmation_fee or conf_afa.total_amount
+    elif afa and afa.confirmation_fee:
+        confirmation_fee_amount = afa.confirmation_fee
 
     if afa:
         if afa.final_payable_amount is not None:
             offer_dict["payable_amount"] = afa.final_payable_amount
             
-        if afa.fee_type == "Confirmation Fee":
+        afa_components = frappe.get_all("Applicant Fee Component Child",
+            filters={"parent": afa.name, "parenttype": "Applicant Fee Assignment"},
+            fields=["component_name", "fee_component", "total_amount", "amount"],
+            ignore_permissions=True
+        )
+        for comp in afa_components:
+            is_acc = frappe.db.get_value("Fee Component", comp.fee_component, "is_accommodation_fee")
             fee_data.append({
-                "component": "Confirmation Fee",
-                "amount": afa.confirmation_fee or afa.total_amount
+                "component": comp.component_name or comp.fee_component,
+                "amount": comp.total_amount or comp.amount,
+                "is_accommodation_fee": is_acc
             })
-        else:
-            afa_components = frappe.get_all("Applicant Fee Component Child",
-                filters={"parent": afa.name, "parenttype": "Applicant Fee Assignment"},
-                fields=["component_name", "fee_component", "total_amount", "amount"],
-                ignore_permissions=True
-            )
-            for comp in afa_components:
-                fee_data.append({
-                    "component": comp.component_name or comp.fee_component,
-                    "amount": comp.total_amount or comp.amount
-                })
 
     if not fee_data and fee_structure:
         applicant_nationality = "Indian"
@@ -1416,22 +1444,28 @@ def get_offer_details(offer_name=None):
         parentfield = "fee_components_for_indian" if applicant_nationality.strip().lower() == "indian" else "fee_components_for_foreign"
 
         fs_doc = frappe.get_doc("Fee Structure", fee_structure)
-        if fs_doc.is_confirmation_fee_applicable:
+        if fs_doc.is_confirmation_fee_applicable and not confirmation_fee_amount:
+            confirmation_fee_amount = fs_doc.confirmation_fee_amount
+
+        fs_components = frappe.get_all("Fee Component Child",
+            filters={"parent": fee_structure, "parenttype": "Fee Structure", "parentfield": parentfield},
+            fields=["component_name", "fee_component", "total_amount", "amount"],
+            ignore_permissions=True
+        )
+        for comp in fs_components:
+            is_acc = frappe.db.get_value("Fee Component", comp.fee_component, "is_accommodation_fee")
             fee_data.append({
-                "component": "Confirmation Fee",
-                "amount": fs_doc.confirmation_fee_amount
+                "component": comp.component_name or comp.fee_component,
+                "amount": comp.total_amount or comp.amount,
+                "is_accommodation_fee": is_acc
             })
-        else:
-            fs_components = frappe.get_all("Fee Component Child",
-                filters={"parent": fee_structure, "parenttype": "Fee Structure", "parentfield": parentfield},
-                fields=["component_name", "fee_component", "total_amount", "amount"],
-                ignore_permissions=True
-            )
-            for comp in fs_components:
-                fee_data.append({
-                    "component": comp.component_name or comp.fee_component,
-                    "amount": comp.total_amount or comp.amount
-                })
+            
+    offer_dict["confirmation_fee_amount"] = confirmation_fee_amount
+    if fee_structure:
+        offer_dict["deduct_confirmation_fee"] = frappe.db.get_value("Fee Structure", fee_structure, "deduct_confirmation_fee") or 0
+    else:
+        offer_dict["deduct_confirmation_fee"] = 0
+    offer_dict["program_name"] = frappe.db.get_value("Programme", offer_dict.get("program"), "program_name") or offer_dict.get("program")
 
     fee_paid = (offer_dict.get("status") == "Payment Completed")
     if not fee_paid:
@@ -1522,7 +1556,7 @@ def get_offer_details(offer_name=None):
 
     receipts = frappe.get_all("Applicant Payment Receipt",
         filters={"offer_letter": offer_id, "docstatus": ["<", 2]},
-        fields=["name", "fee_type"],
+        fields=["name", "fee_type", "payment_date", "payment_mode", "transaction_id"],
         order_by="creation desc", ignore_permissions=True)
 
     return {

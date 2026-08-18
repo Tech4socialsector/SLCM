@@ -87,6 +87,7 @@
   "percentile",
   "column_break_vvxb",
   "result_status",
+  "admission_status",
   "result_published",
   "tab_communication",
   "admit_card_generated",
@@ -344,6 +345,13 @@
    "in_standard_filter": 1,
    "label": "Status",
    "options": "\nPass\nFail"
+  },
+  {
+   "fieldname": "admission_status",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Admission Status",
+   "options": "\nProvisionally Offered Admission\nWaitlisted"
   },
   {
    "default": "0",
