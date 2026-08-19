@@ -404,30 +404,31 @@ def download_merit_list(name, download_type, category=None):
     
     columns = [
         "Applicant ID", "Candidate Name", "Rank", "Candidate Category", 
-        "Category Rank", "Entrance Score", "Interview Score", "Total Score",
-        "Vertical Category", "Shortlisted Category", "Allocation Type", "Status"
+        "Category Rank", "Part A Score", "Part B Score", "Total Score",
+        "Vertical Category", "Shortlisted Category", "Allocation Type", "Selection Status", "Remarks"
     ]
     
     def get_row(candidate):
         return [
             candidate.applicant_id,
             candidate.candidate_name,
-            candidate.overall_rank,
+            candidate.overall_rank or "",
             candidate.actual_category,
-            candidate.category_rank,
-            candidate.entrance_score,
-            candidate.interview_score,
+            candidate.category_rank or "",
+            candidate.entrance_score or candidate.get("nlsat_part_a_score") or 0,
+            candidate.interview_score or candidate.get("nlsat_part_b_score") or 0,
             candidate.total_score,
-            candidate.vertical_category,
-            candidate.shortlist_category,
-            candidate.allocation_type,
-            candidate.status
+            candidate.vertical_category or "",
+            candidate.shortlist_category or "",
+            candidate.allocation_type or "Not Allocated",
+            candidate.status or "Draft",
+            candidate.get("remarks") or ""
         ]
 
     xlsx_data = {}
 
     if download_type == "Overall":
-        sheet_name = "Overall Merit Rank List"
+        sheet_name = "Overall Final Merit Rank List"
         rows = [columns]
         for cand in doc.merit_applicants:
             rows.append(get_row(cand))
@@ -435,32 +436,33 @@ def download_merit_list(name, download_type, category=None):
     
     elif download_type == "Category Wise":
         category_map = {
-            "General": ("Vertical Merit Rank List", "general_list"),
-            "SC": ("SC Merit Rank List", "sc_list"),
-            "ST": ("ST Merit Rank List", "st_list"),
-            "OBC": ("OBC Merit Rank List", "obc_list"),
-            "EWS": ("EWS Merit Rank List", "ews_list"),
-            "Karnataka": ("Karnataka Merit Rank List", "karnataka_list"),
-            "Women": ("Women Merit Rank List", "women_list"),
-            "PWD": ("PWD Merit Rank List", "pwd_list")
+            "General": ("Vertical Merit Rank List", lambda c: (c.actual_category == "General" or (c.shortlist_category and "General" in c.shortlist_category))),
+            "SC": ("SC Merit Rank List", lambda c: (c.actual_category == "SC" or (c.shortlist_category and "SC" in c.shortlist_category))),
+            "ST": ("ST Merit Rank List", lambda c: (c.actual_category == "ST" or (c.shortlist_category and "ST" in c.shortlist_category))),
+            "OBC": ("OBC Merit Rank List", lambda c: (c.actual_category in ["OBC-NCL", "OBC"] or (c.shortlist_category and "OBC" in c.shortlist_category))),
+            "EWS": ("EWS Merit Rank List", lambda c: (c.actual_category == "EWS" or (c.shortlist_category and "EWS" in c.shortlist_category))),
+            "Karnataka": ("Karnataka Merit Rank List", lambda c: (c.compartmentalized_category == "Karnataka" or (c.shortlist_category and "Karnataka" in c.shortlist_category) or getattr(c, "is_karnataka", False))),
+            "Women": ("Women Merit Rank List", lambda c: ("Women" in (c.horizontal_categories or "") or (c.shortlist_category and "Women" in c.shortlist_category) or getattr(c, "is_female", False))),
+            "PWD": ("PWD Merit Rank List", lambda c: ("PWD" in (c.horizontal_categories or "") or (c.shortlist_category and "PWD" in c.shortlist_category) or getattr(c, "is_pwd", False)))
         }
         
         if category and category != "All":
             if category in category_map:
-                label, fieldname = category_map.get(category)
+                label, filter_fn = category_map.get(category)
                 rows = [columns]
-                for cand in doc.get(fieldname):
-                    rows.append(get_row(cand))
+                for cand in doc.merit_applicants:
+                    if filter_fn(cand):
+                        rows.append(get_row(cand))
                 xlsx_data[label] = rows
         else:
             # All categories in separate sheets
-            for label, fieldname in category_map.values():
-                table_data = doc.get(fieldname)
-                if table_data:
-                    rows = [columns]
-                    for cand in table_data:
-                        rows.append(get_row(cand))
-                    xlsx_data[label] = rows
+            for cat_key, (label, filter_fn) in category_map.items():
+                cat_rows = [columns]
+                for cand in doc.merit_applicants:
+                    if filter_fn(cand):
+                        cat_rows.append(get_row(cand))
+                if len(cat_rows) > 1:
+                    xlsx_data[label] = cat_rows
 
     if not xlsx_data or not any(len(rows) > 1 for rows in xlsx_data.values()):
         frappe.throw("No candidate records found for the selected criteria. Please ensure the merit list has been generated.")

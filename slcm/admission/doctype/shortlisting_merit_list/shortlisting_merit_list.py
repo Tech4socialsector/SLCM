@@ -206,23 +206,25 @@ def download_merit_list(name, download_type, category=None):
         "Applicant ID", "Candidate Name", "Rank", "Candidate Category", 
         "Category Rank", "Part A Score", "Part A Percentile", "Vertical Category", 
         "Compartmentalized Category", "Horizontal Categories", 
-        "Allocation Type", "Shortlisted Category"
+        "Allocation Type", "Shortlisted Category", "Shortlist Status", "Remarks"
     ]
     
     def get_row(candidate):
         return [
             candidate.applicant_id,
             candidate.candidate_name,
-            candidate.shortlist_rank,
+            candidate.shortlist_rank or candidate.get("overall_rank") or "",
             candidate.actual_category,
-            candidate.category_rank,
+            candidate.category_rank or "",
             candidate.nlsat_part_a_score,
             candidate.get("percentile_score") or 0,
-            candidate.vertical_category,
-            candidate.compartmentalized_category,
-            candidate.horizontal_categories,
-            candidate.allocation_type,
-            candidate.shortlist_category
+            candidate.vertical_category or "",
+            candidate.compartmentalized_category or "",
+            candidate.horizontal_categories or "",
+            candidate.allocation_type or "Not Allocated",
+            candidate.shortlist_category or "",
+            candidate.shortlist_status or "Draft",
+            candidate.get("remarks") or ""
         ]
 
     xlsx_data = {}
@@ -236,32 +238,33 @@ def download_merit_list(name, download_type, category=None):
     
     elif download_type == "Category Wise":
         category_map = {
-            "General": ("Vertical Shortlisting Merit Rank List", "general_list"),
-            "SC": ("SC Shortlisting Merit Rank List", "sc_list"),
-            "ST": ("ST Shortlisting Merit Rank List", "st_list"),
-            "OBC": ("OBC Shortlisting Merit Rank List", "obc_list"),
-            "EWS": ("EWS Shortlisting Merit Rank List", "ews_list"),
-            "Karnataka": ("Karnataka Shortlisting Merit Rank List", "karnataka_list"),
-            "Women": ("Women Shortlisting Merit Rank List", "women_list"),
-            "PWD": ("PWD Shortlisting Merit Rank List", "pwd_list")
+            "General": ("Vertical Shortlisting Merit Rank List", lambda c: (c.actual_category == "General" or (c.shortlist_category and "General" in c.shortlist_category))),
+            "SC": ("SC Shortlisting Merit Rank List", lambda c: (c.actual_category == "SC" or (c.shortlist_category and "SC" in c.shortlist_category))),
+            "ST": ("ST Shortlisting Merit Rank List", lambda c: (c.actual_category == "ST" or (c.shortlist_category and "ST" in c.shortlist_category))),
+            "OBC": ("OBC Shortlisting Merit Rank List", lambda c: (c.actual_category in ["OBC-NCL", "OBC"] or (c.shortlist_category and "OBC" in c.shortlist_category))),
+            "EWS": ("EWS Shortlisting Merit Rank List", lambda c: (c.actual_category == "EWS" or (c.shortlist_category and "EWS" in c.shortlist_category))),
+            "Karnataka": ("Karnataka Shortlisting Merit Rank List", lambda c: (c.compartmentalized_category == "Karnataka" or (c.shortlist_category and "Karnataka" in c.shortlist_category) or getattr(c, "is_karnataka", False))),
+            "Women": ("Women Shortlisting Merit Rank List", lambda c: ("Women" in (c.horizontal_categories or "") or (c.shortlist_category and "Women" in c.shortlist_category) or getattr(c, "is_female", False))),
+            "PWD": ("PWD Shortlisting Merit Rank List", lambda c: ("PWD" in (c.horizontal_categories or "") or (c.shortlist_category and "PWD" in c.shortlist_category) or getattr(c, "is_pwd", False)))
         }
         
         if category and category != "All":
             if category in category_map:
-                label, fieldname = category_map.get(category)
+                label, filter_fn = category_map.get(category)
                 rows = [columns]
-                for cand in doc.get(fieldname):
-                    rows.append(get_row(cand))
+                for cand in doc.shortlist_applicants:
+                    if filter_fn(cand):
+                        rows.append(get_row(cand))
                 xlsx_data[label] = rows
         else:
             # All categories in separate sheets
-            for label, fieldname in category_map.values():
-                table_data = doc.get(fieldname)
-                if table_data:
-                    rows = [columns]
-                    for cand in table_data:
-                        rows.append(get_row(cand))
-                    xlsx_data[label] = rows
+            for cat_key, (label, filter_fn) in category_map.items():
+                cat_rows = [columns]
+                for cand in doc.shortlist_applicants:
+                    if filter_fn(cand):
+                        cat_rows.append(get_row(cand))
+                if len(cat_rows) > 1:
+                    xlsx_data[label] = cat_rows
 
     if not xlsx_data or not any(len(rows) > 1 for rows in xlsx_data.values()):
         frappe.throw("No candidate records found for the selected criteria. Please ensure the shortlisting logic has been run.")
