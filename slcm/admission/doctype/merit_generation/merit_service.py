@@ -2244,17 +2244,41 @@ def execute_part_a_shortlisting(doc):
         s_list = shortlists[cat_name]
         if not s_list:
             continue
-        lowest_score = min(float(getattr(x, "nlsat_part_a_score", 0) or 0) for x in s_list)
+        
         current_selected_ids = {x.applicant_id for x in get_all_selected()}
         
         tie_candidates = []
         for cand in eligible_applicants:
             if cand.applicant_id in current_selected_ids:
                 continue
+                
+            if cat_name != "General" and cand.actual_category != cat_name:
+                continue
+                
             cand_score = float(getattr(cand, "nlsat_part_a_score", 0) or 0)
-            if abs(cand_score - lowest_score) < 0.0001:
-                if cat_name == "General" or cand.actual_category == cat_name:
-                    tie_candidates.append(cand)
+            
+            # Check if cand ties with any valid candidate in s_list
+            is_tied = False
+            for s in s_list:
+                s_score = float(getattr(s, "nlsat_part_a_score", 0) or 0)
+                if abs(cand_score - s_score) < 0.0001:
+                    s_remarks = getattr(s, "remarks", "") or ""
+                    
+                    # Ensure cand has the same sub-quota traits if s used them to get in
+                    valid_tie = True
+                    if comp_cat and comp_cat in s_remarks and not cand.is_karnataka:
+                        valid_tie = False
+                    if "PWD" in s_remarks and not cand.is_pwd:
+                        valid_tie = False
+                    if "Women" in s_remarks and not cand.is_female:
+                        valid_tie = False
+                        
+                    if valid_tie:
+                        is_tied = True
+                        break
+            
+            if is_tied:
+                tie_candidates.append(cand)
                     
         for tie_cand in tie_candidates:
             tie_cand.remarks = f"Shortlisted under {cat_name} List due to Cutoff Score Tie (Score: {getattr(tie_cand, 'nlsat_part_a_score', '')}, Part A Rank #{getattr(tie_cand, 'shortlist_rank', '')})"
