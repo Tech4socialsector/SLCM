@@ -1231,10 +1231,17 @@ def get_marks_for_students(course, exam_plan, student_ids):
 		)
 		_failed_grade_set = {r[0] for r in fg if r[0]}
 
-	def _arrear_marker(student, grade):
+	def _arrear_marker(student, grade, row=None):
 		reg_cnt = reg_count_map.get(student, 0)
 		is_fail = bool(grade and grade in _failed_grade_set) if _failed_grade_set else False
 		total = reg_cnt + (1 if is_fail else 0)
+		
+		if row:
+			updated = row.get("updated_final_marks") or 0.0
+			original = row.get("total_marks") or 0.0
+			if updated > original:
+				return "I"
+
 		if total >= 3:
 			return "RR"
 		elif total >= 1:
@@ -1261,7 +1268,7 @@ def get_marks_for_students(course, exam_plan, student_ids):
 			"improvement_grade":    row["improvement_grade"] or "",
 			"improvement_applied":  int(row["improvement_applied"] or 0),
 			"re_exam_grade":        row["re_exam_grade"] or "",
-			"arrear_marker":        _arrear_marker(s, row["grade"] or ""),
+			"arrear_marker":        _arrear_marker(s, row["grade"] or "", row),
 			"entries":              {},
 		}
 
