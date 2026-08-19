@@ -19,80 +19,102 @@ def get_columns():
         {"label": _("Part B Rank"), "fieldname": "part_b_rank", "fieldtype": "Int", "width": 80},
         {"label": _("Candidate Name"), "fieldname": "candidate_name", "fieldtype": "Data", "width": 180},
         {"label": _("Applicant ID"), "fieldname": "applicant_id", "fieldtype": "Link", "options": "Applicant", "width": 120},
+        {"label": _("Programme"), "fieldname": "program", "fieldtype": "Link", "options": "Programme", "width": 140},
         {"label": _("Category"), "fieldname": "actual_category", "fieldtype": "Data", "width": 120},
         {"label": _("Part A Score"), "fieldname": "entrance_score", "fieldtype": "Float", "width": 100},
         {"label": _("Part B Score"), "fieldname": "interview_score", "fieldtype": "Float", "width": 100},
         {"label": _("Total Score"), "fieldname": "total_score", "fieldtype": "Float", "width": 100},
-        {"label": _("Percentile"), "fieldname": "percentile_score", "fieldtype": "Percent", "width": 100},
-        {"label": _("Shortlisted Category"), "fieldname": "shortlisted_category", "fieldtype": "Data", "width": 150},
+        {"label": _("Percentile"), "fieldname": "percentile_score", "fieldtype": "Float", "precision": 5, "width": 110},
+        {"label": _("Allocated / Shortlisted Category"), "fieldname": "shortlisted_category", "fieldtype": "Data", "width": 180},
         {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 100}
     ]
 
+def get_latest_parent_names(doctype, filters, extra_filters=None):
+    """
+    Finds the latest parent document name(s) for the given admission_cycle, campus, and optional program.
+    If program is specified, returns the single latest parent doc.
+    If program is not specified, returns the latest parent doc per distinct program.
+    """
+    cycle = filters.get("admission_cycle")
+    campus = filters.get("campus")
+    program = filters.get("program")
+
+    base_filters = {"admission_cycle": cycle, "campus": campus}
+    if extra_filters:
+        base_filters.update(extra_filters)
+
+    if program:
+        base_filters["program"] = program
+        active_filters = dict(base_filters)
+        active_filters["status"] = ["!=", "Superseded"]
+        doc_name = frappe.db.get_value(doctype, active_filters, "name", order_by="creation desc")
+        if not doc_name:
+            doc_name = frappe.db.get_value(doctype, base_filters, "name", order_by="creation desc")
+        return [doc_name] if doc_name else []
+
+    all_docs = frappe.get_all(doctype, filters=base_filters, fields=["name", "program", "status", "creation"], order_by="creation desc")
+    latest_by_prog = {}
+    for d in all_docs:
+        prog = d.program or "ALL"
+        if prog not in latest_by_prog:
+            latest_by_prog[prog] = d.name
+        elif d.status != "Superseded" and frappe.db.get_value(doctype, latest_by_prog[prog], "status") == "Superseded":
+            latest_by_prog[prog] = d.name
+    return list(latest_by_prog.values())
+
 def get_data(filters):
-    if filters.get("merit_processing_stage") == "Part A Ranking":
+    stage = filters.get("merit_processing_stage") or "Final Allotment Ranking"
+    if stage == "Part A Ranking":
         return get_part_a_data(filters)
+    elif stage == "Seat Allocation":
+        return get_seat_allocation_data(filters)
     else:
         return get_final_allotment_data(filters)
 
 def get_part_a_data(filters):
-    conditions = []
-    if filters.get("admission_cycle"):
-        conditions.append("ml.admission_cycle = %(admission_cycle)s")
-    if filters.get("campus"):
-        conditions.append("ml.campus = %(campus)s")
-    if filters.get("program"):
-        conditions.append("mla.program = %(program)s")
+    parents = get_latest_parent_names("Shortlisting Merit List", filters)
+    if not parents:
+        return []
 
-    where_clause = " AND ".join(conditions) if conditions else "1=1"
-
-    query = f"""
+    query = """
         SELECT
             mla.shortlist_rank as overall_rank,
             mla.shortlist_rank as part_a_rank,
             0 as part_b_rank,
             mla.candidate_name,
             mla.applicant_id,
+            mla.program,
             mla.actual_category,
             mla.nlsat_part_a_score as entrance_score,
             0 as interview_score,
             mla.nlsat_part_a_score as total_score,
-            etsa.percentile as percentile_score,
+            mla.percentile_score as percentile_score,
             mla.shortlist_category as shortlisted_category,
             mla.shortlist_status as status
         FROM
             `tabShortlisting Merit Candidate` mla
-        JOIN
-            `tabShortlisting Merit List` ml ON mla.parent = ml.name
-        LEFT JOIN
-            `tabEntrance Test Seat Allocation` etsa ON mla.applicant_id = etsa.applicant
         WHERE
-            mla.parentfield = 'shortlist_applicants' AND {where_clause}
+            mla.parent IN %(parents)s
+            AND mla.parentfield = 'shortlist_applicants'
         ORDER BY
-            mla.shortlist_rank ASC
+            CASE WHEN mla.shortlist_rank IS NULL OR mla.shortlist_rank = 0 THEN 999999 ELSE mla.shortlist_rank END ASC,
+            mla.nlsat_part_a_score DESC
     """
-    return frappe.db.sql(query, filters, as_dict=True)
+    return frappe.db.sql(query, {"parents": parents}, as_dict=True)
 
 def get_final_allotment_data(filters):
-    conditions = []
-    if filters.get("admission_cycle"):
-        conditions.append("ml.admission_cycle = %(admission_cycle)s")
-    if filters.get("campus"):
-        conditions.append("ml.campus = %(campus)s")
-    if filters.get("program"):
-        conditions.append("mla.program = %(program)s")
-    
-    # Force Final Allotment stage if querying Merit List Applicant
-    conditions.append("ml.merit_processing_stage = 'Final Allotment Ranking'")
+    parents = get_latest_parent_names("Merit List", filters, extra_filters={"merit_processing_stage": "Final Allotment Ranking"})
+    if not parents:
+        return []
 
-    where_clause = " AND ".join(conditions) if conditions else "1=1"
-
-    query = f"""
+    query = """
         SELECT
             mla.overall_rank,
             mla.part_a_rank,
             mla.part_b_rank,
             mla.candidate_name,
             mla.applicant_id,
+            mla.program,
             mla.actual_category,
             mla.entrance_score,
             mla.interview_score,
@@ -102,14 +124,44 @@ def get_final_allotment_data(filters):
             mla.status
         FROM
             `tabMerit List Applicant` mla
-        JOIN
-            `tabMerit List` ml ON mla.parent = ml.name
         WHERE
-            mla.parentfield = 'merit_applicants' AND {where_clause}
+            mla.parent IN %(parents)s
+            AND mla.parentfield = 'merit_applicants'
         ORDER BY
-            mla.overall_rank ASC
+            CASE WHEN mla.overall_rank IS NULL OR mla.overall_rank = 0 THEN 999999 ELSE mla.overall_rank END ASC,
+            mla.total_score DESC
     """
-    return frappe.db.sql(query, filters, as_dict=True)
+    return frappe.db.sql(query, {"parents": parents}, as_dict=True)
+
+def get_seat_allocation_data(filters):
+    parents = get_latest_parent_names("Seat Allocation", filters)
+    if not parents:
+        return []
+
+    query = """
+        SELECT
+            sa.overall_rank,
+            sa.shortlist_rank as part_a_rank,
+            0 as part_b_rank,
+            sa.candidate_name,
+            sa.applicant_id,
+            sa.program,
+            sa.actual_category,
+            sa.nlsat_part_a_score as entrance_score,
+            sa.nlsat_part_b_score as interview_score,
+            sa.total_score,
+            sa.percentile_score,
+            sa.allocated_category as shortlisted_category,
+            sa.selection_status as status
+        FROM
+            `tabSeat Selection Applicant` sa
+        WHERE
+            sa.parent IN %(parents)s
+        ORDER BY
+            CASE WHEN sa.overall_rank IS NULL OR sa.overall_rank = 0 THEN 999999 ELSE sa.overall_rank END ASC,
+            sa.total_score DESC
+    """
+    return frappe.db.sql(query, {"parents": parents}, as_dict=True)
 
 def get_chart(data):
     return None

@@ -24,7 +24,7 @@ frappe.query_reports["Overall Merit Report"] = {
 			"fieldname": "merit_processing_stage",
 			"label": __("Stage"),
 			"fieldtype": "Select",
-			"options": "\nPart A Ranking\nFinal Allotment Ranking",
+			"options": "\nPart A Ranking\nFinal Allotment Ranking\nSeat Allocation",
 			"default": "Final Allotment Ranking"
 		}
 	],

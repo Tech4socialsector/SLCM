@@ -1691,7 +1691,7 @@ def _calculate_and_sync_percentiles(applicants, is_shortlist=False):
     for app in applicants:
         score = _get_score(app)
         count_le = bisect.bisect_left(all_scores, score)  # # scores < this score
-        percentile = round((count_le / total_count) * 100, 4)
+        percentile = round((count_le / total_count) * 100, 5)
         if isinstance(app, dict):
             app["percentile_score"] = percentile
         else:
@@ -1918,45 +1918,21 @@ def execute_part_a_shortlisting(doc):
             targets[h_name] = req_seats
 
     # 5. General shortlist (Select top candidates)
-    general_shortlist = eligible_applicants[:targets["General"]["total"]]
+    general_shortlist = list(eligible_applicants[:targets["General"]["total"]])
 
-    # 6. Compartmental fill for General
-    all_karnataka_available = len([x for x in eligible_applicants if x.is_karnataka])
+    # 6. Compartmental fill for General (Include Karnataka candidates without displacing open merit candidates)
     kar_req_gen = targets["General"].get(comp_key, 0)
-    gen_deficit = max(0, kar_req_gen - all_karnataka_available)
-
     karnataka_count = len([x for x in general_shortlist if x.is_karnataka])
     if karnataka_count < kar_req_gen:
         remaining_karnataka = [x for x in eligible_applicants[targets["General"]["total"]:] if x.is_karnataka]
         to_add = remaining_karnataka[:kar_req_gen - karnataka_count]
         for kar_cand in to_add:
-            # Find and displace the lowest ranked non-Karnataka candidate in general_shortlist
-            for idx in range(len(general_shortlist) - 1, -1, -1):
-                if not general_shortlist[idx].is_karnataka:
-                    displaced_cand = general_shortlist.pop(idx)
-                    displaced_cand.remarks = f"Displaced from General shortlist to accommodate Karnataka sub-quota candidate {kar_cand.candidate_name or kar_cand.applicant_id} ({kar_cand.applicant_id})"
-                    kar_cand.remarks = f"Shortlisted under {comp_cat} General Sub-quota displacing {displaced_cand.candidate_name or displaced_cand.applicant_id} ({displaced_cand.applicant_id})"
-                    general_shortlist.append(kar_cand)
-                    break
-
-    # Ensure All-India candidates do not exceed their quota, leaving unfilled Karnataka seats vacant
-    if multiplier != 0:
-        max_ai_allowed = targets["General"]["total"] - kar_req_gen
-        ai_in_shortlist = [x for x in general_shortlist if not x.is_karnataka]
-        excess_ai = len(ai_in_shortlist) - max_ai_allowed
-        if excess_ai > 0:
-            removed_count = 0
-            for idx in range(len(general_shortlist) - 1, -1, -1):
-                if not general_shortlist[idx].is_karnataka:
-                    displaced_cand = general_shortlist.pop(idx)
-                    displaced_cand.remarks = "Displaced from General shortlist as All-India quota limit was reached for unfilled Karnataka seats"
-                    removed_count += 1
-                    if removed_count == excess_ai:
-                        break
+            kar_cand.remarks = f"Shortlisted under {comp_cat} General Sub-quota"
+            general_shortlist.append(kar_cand)
 
     targets["General"]["total"] = len(general_shortlist)
 
-    # 7. Reserved category shortlisting
+    # 7. Reserved category shortlisting (Include Karnataka candidates without displacing category merit candidates)
     reserved_rules = []
     for v_cat_name in vertical_cats:
         if v_cat_name != "General":
@@ -1977,13 +1953,7 @@ def execute_part_a_shortlisting(doc):
         
         # Pool strictly belonging to this vertical category, excluding general_shortlist
         pool = [x for x in eligible_applicants if x.actual_category == cat and x not in general_shortlist]
-        
-        # Calculate available Karnataka candidates strictly in this category's pool
-        all_karnataka_available = len([x for x in pool if x.is_karnataka])
-        deficit = max(0, kar_req - all_karnataka_available)
-
-        # Initial candidates up to total required
-        cat_shortlist = pool[:total_req]
+        cat_shortlist = list(pool[:total_req])
         
         # Karnataka compartmentalized sub-quota check inside this category shortlist
         karnataka_count = len([x for x in cat_shortlist if x.is_karnataka])
@@ -1991,33 +1961,13 @@ def execute_part_a_shortlisting(doc):
             remaining_karnataka = [x for x in pool[total_req:] if x.is_karnataka]
             to_add = remaining_karnataka[:kar_req - karnataka_count]
             for kar_cand in to_add:
-                # Find and displace the lowest ranked non-Karnataka candidate in cat_shortlist
-                for idx in range(len(cat_shortlist) - 1, -1, -1):
-                    if not cat_shortlist[idx].is_karnataka:
-                        displaced_cand = cat_shortlist.pop(idx)
-                        displaced_cand.remarks = f"Displaced from {cat} shortlist to accommodate Karnataka sub-quota candidate {kar_cand.candidate_name or kar_cand.applicant_id} ({kar_cand.applicant_id})"
-                        kar_cand.remarks = f"Shortlisted under {comp_cat} {cat} Sub-quota displacing {displaced_cand.candidate_name or displaced_cand.applicant_id} ({displaced_cand.applicant_id})"
-                        cat_shortlist.append(kar_cand)
-                        break
-
-        # Ensure All-India candidates do not exceed their quota, leaving unfilled Karnataka seats vacant
-        max_ai_allowed = total_req - kar_req
-        ai_in_shortlist = [x for x in cat_shortlist if not x.is_karnataka]
-        excess_ai = len(ai_in_shortlist) - max_ai_allowed
-        if excess_ai > 0:
-            removed_count = 0
-            for idx in range(len(cat_shortlist) - 1, -1, -1):
-                if not cat_shortlist[idx].is_karnataka:
-                    displaced_cand = cat_shortlist.pop(idx)
-                    displaced_cand.remarks = f"Displaced from {cat} shortlist as All-India quota limit was reached for unfilled Karnataka seats"
-                    removed_count += 1
-                    if removed_count == excess_ai:
-                        break
+                kar_cand.remarks = f"Shortlisted under {comp_cat} {cat} Sub-quota"
+                cat_shortlist.append(kar_cand)
 
         targets[cat]["total"] = len(cat_shortlist)
         shortlists[cat] = cat_shortlist
 
-    # --- 7b. Apply PWD Horizontal Reservation First ---
+    # --- 7b. Apply PWD Horizontal Reservation (Include without displacing) ---
     def get_all_selected():
         res = []
         for s_list in shortlists.values():
@@ -2028,92 +1978,16 @@ def execute_part_a_shortlisting(doc):
     selected_set = {x.applicant_id for x in all_selected}
     pwd_count = sum(1 for x in all_selected if x.is_pwd)
     
-    women_count = None
-    
-    def accommodate_displaced_candidate(displaced_cand, shortlist_name):
-        if displaced_cand.applicant_id in selected_set:
-            selected_set.remove(displaced_cand.applicant_id)
-            
-        if shortlist_name == "General":
-            v_cat = displaced_cand.actual_category
-            if v_cat != "General":
-                target_list = shortlists[v_cat]
-                target_total = targets[v_cat]["total"]
-                
-                if len(target_list) < target_total:
-                    target_list.append(displaced_cand)
-                    displaced_cand.remarks = f"Shortlisted in {v_cat} reserved pool after displacement from General shortlist"
-                    selected_set.add(displaced_cand.applicant_id)
-                else:
-                    displaceable = [
-                        (idx, x) for idx, x in enumerate(target_list)
-                        if not x.is_pwd and not (women_count is not None and x.is_female)
-                    ]
-                    if displaceable:
-                        # Prefer to displace non-Karnataka candidates if the incoming displaced candidate is not Karnataka
-                        if not displaced_cand.is_karnataka:
-                            non_kar = [p for p in displaceable if not p[1].is_karnataka]
-                            if non_kar:
-                                displaceable = non_kar
-                        lowest_idx, lowest_in_r = max(displaceable, key=lambda pair: (pair[1].shortlist_rank or 999999))
-                        if (displaced_cand.shortlist_rank or 0) < (lowest_in_r.shortlist_rank or 999999):
-                            target_list.pop(lowest_idx)
-                            lowest_in_r.remarks = f"Displaced from {v_cat} shortlist by higher merit candidate ({displaced_cand.candidate_name or displaced_cand.applicant_id}) returning from General list"
-                            target_list.append(displaced_cand)
-                            displaced_cand.remarks = f"Shortlisted in {v_cat} reserved pool after displacement from General shortlist"
-                            selected_set.remove(lowest_in_r.applicant_id)
-                            selected_set.add(displaced_cand.applicant_id)
-    
     if pwd_count < targets["PWD"]:
         remaining_pwd = [x for x in eligible_applicants if x.is_pwd and x.applicant_id not in selected_set]
         pwd_to_add = remaining_pwd[:targets["PWD"] - pwd_count]
-        
         for pwd_cand in pwd_to_add:
             cat = pwd_cand.actual_category
-            shortlist = shortlists[cat]
-            
-            displaced = False
-            # 1. Try to find lowest-ranked non-PWD in same compartment (Karnataka vs All-India)
-            same_compartment = [
-                (idx, x) for idx, x in enumerate(shortlist)
-                if not x.is_pwd and x.is_karnataka == pwd_cand.is_karnataka
-            ]
-            if same_compartment:
-                lowest_idx, lowest_cand = max(same_compartment, key=lambda pair: (pair[1].shortlist_rank or 999999))
-                shortlist.pop(lowest_idx)
-                lowest_cand.remarks = f"Displaced from {cat} shortlist to accommodate PWD horizontal reservation candidate {pwd_cand.candidate_name or pwd_cand.applicant_id} ({pwd_cand.applicant_id})"
-                pwd_cand.remarks = f"Shortlisted under PWD Horizontal Reservation displacing {lowest_cand.candidate_name or lowest_cand.applicant_id} ({lowest_cand.applicant_id})"
-                shortlist.append(pwd_cand)
-                accommodate_displaced_candidate(lowest_cand, cat)
-                selected_set.add(pwd_cand.applicant_id)
-                displaced = True
-            
-            # 2. Try to find lowest-ranked non-PWD in same vertical category
-            if not displaced:
-                same_cat = [
-                    (idx, x) for idx, x in enumerate(shortlist)
-                    if not x.is_pwd
-                ]
-                if same_cat:
-                    lowest_idx, lowest_cand = max(same_cat, key=lambda pair: (pair[1].shortlist_rank or 999999))
-                    shortlist.pop(lowest_idx)
-                    lowest_cand.remarks = f"Displaced from {cat} shortlist to accommodate PWD horizontal reservation candidate {pwd_cand.candidate_name or pwd_cand.applicant_id} ({pwd_cand.applicant_id})"
-                    pwd_cand.remarks = f"Shortlisted under PWD Horizontal Reservation displacing {lowest_cand.candidate_name or lowest_cand.applicant_id} ({lowest_cand.applicant_id})"
-                    shortlist.append(pwd_cand)
-                    accommodate_displaced_candidate(lowest_cand, cat)
-                    selected_set.add(pwd_cand.applicant_id)
-                    displaced = True
-                    
-            if not displaced:
-                # Append directly if no displacement possible
-                shortlist.append(pwd_cand)
-                selected_set.add(pwd_cand.applicant_id)
+            pwd_cand.remarks = "Shortlisted under PWD Horizontal Reservation"
+            shortlists[cat].append(pwd_cand)
+            selected_set.add(pwd_cand.applicant_id)
 
-    # --- 7c. Apply Women Horizontal Reservation Second ---
-    def get_pwd_total():
-        all_sel = get_all_selected()
-        return sum(1 for x in all_sel if x.is_pwd)
-
+    # --- 7c. Apply Women Horizontal Reservation (Include without displacing) ---
     all_selected = get_all_selected()
     selected_set = {x.applicant_id for x in all_selected}
     women_count = sum(1 for x in all_selected if x.is_female)
@@ -2121,76 +1995,11 @@ def execute_part_a_shortlisting(doc):
     if women_count < targets["Women"]:
         remaining_female = [x for x in eligible_applicants if x.is_female and x.applicant_id not in selected_set]
         female_to_add = remaining_female[:targets["Women"] - women_count]
-        
         for female_cand in female_to_add:
             cat = female_cand.actual_category
-            shortlist = shortlists[cat]
-            
-            displaced = False
-            
-            # Preference 1: Male, Non-PWD, Same Compartment
-            cands_1 = [
-                (idx, x) for idx, x in enumerate(shortlist)
-                if not x.is_female and not x.is_pwd and x.is_karnataka == female_cand.is_karnataka
-            ]
-            if cands_1:
-                lowest_idx, lowest_cand = max(cands_1, key=lambda pair: (pair[1].shortlist_rank or 999999))
-                shortlist.pop(lowest_idx)
-                lowest_cand.remarks = f"Displaced from {cat} shortlist to accommodate Women horizontal reservation candidate {female_cand.candidate_name or female_cand.applicant_id} ({female_cand.applicant_id})"
-                female_cand.remarks = f"Shortlisted under Women Horizontal Reservation displacing {lowest_cand.candidate_name or lowest_cand.applicant_id} ({lowest_cand.applicant_id})"
-                shortlist.append(female_cand)
-                accommodate_displaced_candidate(lowest_cand, cat)
-                selected_set.add(female_cand.applicant_id)
-                displaced = True
-                
-            # Preference 2: Male, Non-PWD, Any Compartment
-            if not displaced:
-                cands_2 = [
-                    (idx, x) for idx, x in enumerate(shortlist)
-                    if not x.is_female and not x.is_pwd
-                ]
-                if cands_2:
-                    lowest_idx, lowest_cand = max(cands_2, key=lambda pair: (pair[1].shortlist_rank or 999999))
-                    shortlist.pop(lowest_idx)
-                    lowest_cand.remarks = f"Displaced from {cat} shortlist to accommodate Women horizontal reservation candidate {female_cand.candidate_name or female_cand.applicant_id} ({female_cand.applicant_id})"
-                    female_cand.remarks = f"Shortlisted under Women Horizontal Reservation displacing {lowest_cand.candidate_name or lowest_cand.applicant_id} ({lowest_cand.applicant_id})"
-                    shortlist.append(female_cand)
-                    accommodate_displaced_candidate(lowest_cand, cat)
-                    selected_set.add(female_cand.applicant_id)
-                    displaced = True
-                    
-            # Preference 3: Male, PWD, Same Compartment (Protect PWD >= targets["PWD"])
-            if not displaced:
-                cands_3 = [
-                    (idx, x) for idx, x in enumerate(shortlist)
-                    if not x.is_female and x.is_pwd and x.is_karnataka == female_cand.is_karnataka
-                ]
-                if cands_3 and get_pwd_total() - 1 >= targets["PWD"]:
-                    lowest_idx, lowest_cand = max(cands_3, key=lambda pair: (pair[1].shortlist_rank or 999999))
-                    shortlist.pop(lowest_idx)
-                    shortlist.append(female_cand)
-                    accommodate_displaced_candidate(lowest_cand, cat)
-                    selected_set.add(female_cand.applicant_id)
-                    displaced = True
-                    
-            # Preference 4: Male, PWD, Any Compartment (Protect PWD >= targets["PWD"])
-            if not displaced:
-                cands_4 = [
-                    (idx, x) for idx, x in enumerate(shortlist)
-                    if not x.is_female and x.is_pwd
-                ]
-                if cands_4 and get_pwd_total() - 1 >= targets["PWD"]:
-                    lowest_idx, lowest_cand = max(cands_4, key=lambda pair: (pair[1].shortlist_rank or 999999))
-                    shortlist.pop(lowest_idx)
-                    shortlist.append(female_cand)
-                    accommodate_displaced_candidate(lowest_cand, cat)
-                    selected_set.add(female_cand.applicant_id)
-                    displaced = True
-                    
-            if not displaced:
-                # Append directly if no displacement possible
-                shortlist.append(female_cand)
-                selected_set.add(female_cand.applicant_id)
+            female_cand.remarks = "Shortlisted under Women Horizontal Reservation"
+            shortlists[cat].append(female_cand)
+            selected_set.add(female_cand.applicant_id)
 
     # Helper function to assign a shortlisted candidate
     def assign_candidate(candidate_row, vertical_cat, alloc_type):

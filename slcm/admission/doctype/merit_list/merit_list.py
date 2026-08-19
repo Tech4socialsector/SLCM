@@ -405,7 +405,7 @@ def download_merit_list(name, download_type, category=None):
     columns = [
         "Applicant ID", "Candidate Name", "Rank", "Candidate Category", 
         "Category Rank", "Entrance Score", "Interview Score", "Total Score",
-        "Vertical Category", "Shortlisted Category", "Allocation Type", "Status"
+        "Percentile", "Vertical Category", "Shortlisted Category", "Allocation Type", "Selection Status"
     ]
     
     def get_row(candidate):
@@ -418,10 +418,11 @@ def download_merit_list(name, download_type, category=None):
             candidate.entrance_score,
             candidate.interview_score,
             candidate.total_score,
+            candidate.get("percentile_score") or 0,
             candidate.vertical_category,
             candidate.shortlist_category,
             candidate.allocation_type,
-            candidate.status
+            candidate.status or "Rejected"
         ]
 
     xlsx_data = {}
