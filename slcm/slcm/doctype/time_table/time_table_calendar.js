@@ -11,7 +11,7 @@ frappe.views.calendar["Time Table"] = {
         // system-tz -> user-tz re-projection or the tile renders at the
         // wrong time whenever the viewer's personal timezone differs from
         // System Settings (e.g. class entered as 9:00 AM shows as 2:30 PM).
-        convertToUserTz: 0,
+        convertToUserTz: "convertToUserTz",
     },
     get_events_method: "slcm.slcm.doctype.time_table.time_table.get_events",
     update_event_method: "slcm.slcm.doctype.time_table.time_table.update_event",
