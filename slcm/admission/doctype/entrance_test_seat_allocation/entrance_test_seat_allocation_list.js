@@ -1,3 +1,102 @@
+let etl_allocation_progress_dialog = null;
+if (typeof window.etl_allocation_done === 'undefined') {
+    window.etl_allocation_done = false;
+}
+if (typeof window.etl_allocation_parent_dialog === 'undefined') {
+    window.etl_allocation_parent_dialog = null;
+}
+
+if (!window.show_etl_allocation_success_toast) {
+    window.show_etl_allocation_success_toast = function(count, unallocated) {
+        if (!document.getElementById("etg-toast-style")) {
+            const style = document.createElement("style");
+            style.id = "etg-toast-style";
+            style.innerHTML = `
+                @keyframes etgSlideDown {
+                    from { opacity: 0; transform: translateX(-50%) translateY(-30px); }
+                    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+                }
+                @keyframes etgSlideUp {
+                    from { opacity: 1; transform: translateX(-50%) translateY(0); }
+                    to   { opacity: 0; transform: translateX(-50%) translateY(-30px); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        const existingToast = document.getElementById("etl-success-toast");
+        if (existingToast) existingToast.remove();
+
+        unallocated = unallocated || [];
+        const border_color = unallocated.length > 0 ? "#eab308" : "#2da44e";
+        const icon_bg = unallocated.length > 0 ? "#fef9c3" : "#eafbee";
+        const icon_text = unallocated.length > 0 ? "⚠️" : "✅";
+        const header_color = unallocated.length > 0 ? "#854d0e" : "#1a7f37";
+
+        let unallocated_html = "";
+        if (unallocated.length > 0) {
+            unallocated_html = `
+                <div style="margin-top:10px; padding-top:8px; border-top:1px solid #fef08a; font-size:12px; color:#713f12;">
+                    <div style="font-weight:700; margin-bottom:4px;">
+                        The following applicant(s) could not be allocated:
+                    </div>
+                    <ul style="margin:0 0 0 16px; padding:0; list-style-type:disc;">
+                        ${unallocated.map(u => `<li style="margin-bottom:3px;"><b>${u.name}</b> (${u.applicant_id}): ${u.reason}</li>`).join("")}
+                    </ul>
+                </div>
+            `;
+        }
+
+        const toast = document.createElement("div");
+        toast.id = "etl-success-toast";
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            z-index: 999999;
+            background: #ffffff;
+            border: 1.5px solid ${border_color};
+            border-left: 5px solid ${border_color};
+            border-radius: 10px;
+            padding: 14px 20px;
+            min-width: 400px;
+            max-width: 600px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-family: inherit;
+            animation: etgSlideDown 0.35s cubic-bezier(.4,0,.2,1) forwards;
+        `;
+        toast.innerHTML = `
+            <div style="flex-shrink:0; width:36px; height:36px; background:${icon_bg};
+                        border-radius:50%; display:flex; align-items:center;
+                        justify-content:center; font-size:18px;">${icon_text}</div>
+            <div style="flex:1;">
+                <div style="font-weight:700; font-size:14px; color:${header_color}; margin-bottom:3px;">
+                    Allocation Process Summary
+                </div>
+                <div style="font-size:13px; color:#333;">
+                    Successfully allocated seats for <b>${count}</b> applicant(s).
+                </div>
+                ${unallocated_html}
+            </div>
+            <span id="etl-success-toast-close"
+                  style="cursor:pointer; color:#aaa; font-size:18px; line-height:1;
+                         padding:0 4px; align-self:flex-start; flex-shrink:0;"
+                  title="Dismiss">✕</span>
+        `;
+        document.body.appendChild(toast);
+
+        const dismissSuccessToast = () => {
+            toast.style.animation = "etgSlideUp 0.35s cubic-bezier(.4,0,.2,1) forwards";
+            setTimeout(() => toast.remove(), 350);
+        };
+        document.getElementById("etl-success-toast-close").addEventListener("click", dismissSuccessToast);
+        setTimeout(dismissSuccessToast, unallocated.length > 0 ? 12000 : 6000);
+    };
+}
+
 frappe.listview_settings['Entrance Test Seat Allocation'] = {
     onload: function(listview) {
         // Add to the 'Actions' menu that appears when records are selected
@@ -44,6 +143,36 @@ frappe.listview_settings['Entrance Test Seat Allocation'] = {
         });
     },
     refresh: function (listview) {
+        frappe.realtime.on("entrance_test_seat_allocation_progress", function (data) {
+            let pct = data.progress;
+            let current = data.current;
+            let total = data.total;
+            let name = data.applicant_name;
+
+            if (etl_allocation_progress_dialog && etl_allocation_progress_dialog.display) {
+                etl_allocation_progress_dialog.$wrapper.find("#etg-progress-bar").css("width", `${pct}%`);
+                etl_allocation_progress_dialog.$wrapper.find("#etg-progress-percent").text(`${pct}%`);
+                etl_allocation_progress_dialog.$wrapper.find("#etg-current-applicant").text(`Processing: ${name}`);
+                etl_allocation_progress_dialog.$wrapper.find("#etg-counter-text").text(`Processing ${current} of ${total}`);
+            }
+
+            if (pct >= 100 || current >= total) {
+                setTimeout(() => {
+                    if (!window.etl_allocation_done) {
+                        window.etl_allocation_done = true;
+                        if (etl_allocation_progress_dialog) {
+                            etl_allocation_progress_dialog.hide();
+                        }
+                        if (window.etl_allocation_parent_dialog) {
+                            window.etl_allocation_parent_dialog.hide();
+                        }
+                        listview.refresh();
+                        window.show_etl_allocation_success_toast(data.allocated_count || 0, []);
+                    }
+                }, 1500);
+            }
+        });
+
         // Hide buttons only for users with the "Applicant" role
         // and who are NOT Administrators/System Managers (to ensure admins always have access)
         const is_applicant = frappe.user_roles.includes("Applicant");
@@ -60,19 +189,24 @@ frappe.listview_settings['Entrance Test Seat Allocation'] = {
                 open_publish_result_dialog(listview);
             }, __("Actions"));
 
+            // 2.5 Generate Result Card
+            listview.page.add_inner_button(__("Generate Result Card"), function () {
+                open_generate_result_card_dialog(listview);
+            }, __("Actions"));
+
             // 3. Export Marks Template
             listview.page.add_inner_button(__("Export Marks Template"), function () {
                 open_export_marks_dialog_for_list(listview);
             }, __("Actions"));
 
-            // 4. Reschedule
-            listview.page.add_inner_button(__("Reschedule"), function () {
-                open_reschedule_dialog(listview);
-            }, __("Actions"));
-
-            // 5. Reject and Allocate Centre
+            // 4. Reject and Allocate Centre
             listview.page.add_inner_button(__("Reject and Allocate Centre"), function () {
                 open_reject_and_allocate_dialog(listview);
+            }, __("Actions"));
+
+            // 5. Reschedule
+            listview.page.add_inner_button(__("Reschedule"), function () {
+                open_reschedule_dialog(listview);
             }, __("Actions"));
         }
     }
@@ -116,7 +250,9 @@ function open_update_rank_dialog(listview) {
 
     let d = new frappe.ui.Dialog({
         title: __("Update Entrance Test Rank"),
+        size: "large",
         fields: [
+            { fieldtype: "Section Break", label: __("Filters") },
             {
                 label: __("Academic Year"),
                 fieldname: "academic_year",
@@ -126,6 +262,7 @@ function open_update_rank_dialog(listview) {
                 reqd: 1,
                 change() { update_dialog_applicant_count(d); }
             },
+            { fieldtype: "Column Break" },
             {
                 label: __("Admission Cycle"),
                 fieldname: "admission_cycle",
@@ -135,6 +272,7 @@ function open_update_rank_dialog(listview) {
                 reqd: 1,
                 change() { update_dialog_applicant_count(d); }
             },
+            { fieldtype: "Column Break" },
             {
                 label: __("Programme Level"),
                 fieldname: "program_level",
@@ -147,6 +285,7 @@ function open_update_rank_dialog(listview) {
                     update_dialog_applicant_count(d);
                 }
             },
+            { fieldtype: "Section Break" },
             {
                 label: __("Applicant Type"),
                 fieldname: "applicant_type",
@@ -156,6 +295,7 @@ function open_update_rank_dialog(listview) {
                 reqd: 1,
                 change() { update_dialog_applicant_count(d); }
             },
+            { fieldtype: "Column Break" },
             {
                 label: __("Programme"),
                 fieldname: "program",
@@ -164,6 +304,7 @@ function open_update_rank_dialog(listview) {
                 depends_on: "eval:doc.program_level",
                 change() { update_dialog_applicant_count(d); }
             },
+            { fieldtype: "Section Break" },
             {
                 fieldname: "total_applicants_html",
                 fieldtype: "HTML"
@@ -250,7 +391,10 @@ function open_publish_result_dialog(listview) {
                 options: "Academic Year",
                 default: default_ay,
                 reqd: 1,
-                change() { update_dialog_applicant_count(pd); }
+                change() { 
+                    update_dialog_applicant_count(pd); 
+                    update_unpublished_applicants_table(pd, false);
+                }
             },
             { fieldtype: "Column Break" },
             {
@@ -260,7 +404,10 @@ function open_publish_result_dialog(listview) {
                 options: "Admission Cycle",
                 default: default_ac,
                 reqd: 1,
-                change() { update_dialog_applicant_count(pd); }
+                change() { 
+                    update_dialog_applicant_count(pd); 
+                    update_unpublished_applicants_table(pd, false);
+                }
             },
             { fieldtype: "Column Break" },
             {
@@ -269,10 +416,10 @@ function open_publish_result_dialog(listview) {
                 fieldtype: "Select",
                 options: "Undergraduate\nPostgraduate\nResearch Course",
                 default: default_pl,
-                reqd: 1,
                 change() {
                     pd.set_value("program", "");
                     update_dialog_applicant_count(pd);
+                    update_unpublished_applicants_table(pd, false);
                 }
             },
             { fieldtype: "Section Break" },
@@ -283,7 +430,10 @@ function open_publish_result_dialog(listview) {
                 options: "Domestic Applicants\nInternational Applicants\nBoth",
                 default: "Domestic Applicants",
                 reqd: 1,
-                change() { update_dialog_applicant_count(pd); }
+                change() { 
+                    update_dialog_applicant_count(pd); 
+                    update_unpublished_applicants_table(pd, false);
+                }
             },
             { fieldtype: "Column Break" },
             {
@@ -292,11 +442,19 @@ function open_publish_result_dialog(listview) {
                 fieldtype: "Link",
                 options: "Programme",
                 depends_on: "eval:doc.program_level",
-                change() { update_dialog_applicant_count(pd); }
+                change() { 
+                    update_dialog_applicant_count(pd); 
+                    update_unpublished_applicants_table(pd, false);
+                }
             },
             { fieldtype: "Section Break" },
             {
                 fieldname: "total_applicants_html",
+                fieldtype: "HTML"
+            },
+            { fieldtype: "Section Break", label: __("Unpublished Applicants Preview") },
+            {
+                fieldname: "unpublished_applicants_html",
                 fieldtype: "HTML"
             },
             { fieldtype: "Section Break", label: __("Email Settings") },
@@ -366,7 +524,8 @@ function open_publish_result_dialog(listview) {
                             program: values.program,
                             send_email: values.send_email,
                             email_format: values.email_format,
-                            custom_email_content: values.custom_email_content
+                            custom_email_content: values.custom_email_content,
+                            selected_names: pd.unpublished_state.selected_names.length > 0 ? JSON.stringify(pd.unpublished_state.selected_names) : null
                         },
                         callback: function (r) {
                             frappe.show_progress(__("Publishing Results"), 100, 100, __("Completed"));
@@ -407,6 +566,12 @@ function open_publish_result_dialog(listview) {
         };
     });
 
+    pd.unpublished_state = {
+        page: 1,
+        limit: 10,
+        selected_names: []
+    };
+
     pd.show();
 
     // Initial Hide of Email Fields
@@ -424,11 +589,164 @@ function open_publish_result_dialog(listview) {
 
     ["academic_year", "admission_cycle", "program_level", "applicant_type", "program"].forEach(fn => {
         if (pd.fields_dict[fn] && pd.fields_dict[fn].$input) {
-            pd.fields_dict[fn].$input.on("change blur input", () => update_dialog_applicant_count(pd));
+            pd.fields_dict[fn].$input.on("change blur input", () => {
+                update_dialog_applicant_count(pd);
+                update_unpublished_applicants_table(pd, false);
+            });
         }
     });
 
     update_dialog_applicant_count(pd);
+    update_unpublished_applicants_table(pd, false);
+}
+
+/**
+ * Custom Generate Result Card Dialog for List View
+ */
+function open_generate_result_card_dialog(listview) {
+    const default_ay = get_listview_filter_val(listview, "academic_year");
+    const default_ac = get_listview_filter_val(listview, "admission_cycle");
+    const default_pl = get_listview_filter_val(listview, "program_level");
+
+    let gd = new frappe.ui.Dialog({
+        title: __("Generate Result Card"),
+        size: "large",
+        fields: [
+            { fieldtype: "Section Break", label: __("Filters") },
+            {
+                label: __("Academic Year"),
+                fieldname: "academic_year",
+                fieldtype: "Link",
+                options: "Academic Year",
+                default: default_ay,
+                reqd: 1,
+                change() { update_dialog_applicant_count(gd); }
+            },
+            { fieldtype: "Column Break" },
+            {
+                label: __("Admission Cycle"),
+                fieldname: "admission_cycle",
+                fieldtype: "Link",
+                options: "Admission Cycle",
+                default: default_ac,
+                reqd: 1,
+                change() { update_dialog_applicant_count(gd); }
+            },
+            { fieldtype: "Column Break" },
+            {
+                label: __("Programme Level"),
+                fieldname: "program_level",
+                fieldtype: "Select",
+                options: "\nUndergraduate\nPostgraduate\nResearch Course",
+                default: default_pl,
+                reqd: 0,
+                change() {
+                    gd.set_value("program", "");
+                    update_dialog_applicant_count(gd);
+                }
+            },
+            { fieldtype: "Section Break" },
+            {
+                label: __("Applicant Type"),
+                fieldname: "applicant_type",
+                fieldtype: "Select",
+                options: "Domestic Applicants\nInternational Applicants\nBoth",
+                default: "Domestic Applicants",
+                reqd: 1,
+                change() { update_dialog_applicant_count(gd); }
+            },
+            { fieldtype: "Column Break" },
+            {
+                label: __("Programme"),
+                fieldname: "program",
+                fieldtype: "Link",
+                options: "Programme",
+                depends_on: "eval:doc.program_level",
+                change() { update_dialog_applicant_count(gd); }
+            },
+            { fieldtype: "Section Break" },
+            {
+                fieldname: "total_applicants_html",
+                fieldtype: "HTML"
+            }
+        ],
+        primary_action_label: __("Generate"),
+        primary_action(values) {
+            frappe.confirm(
+                __("This will generate Result Cards for all matching Attended applicants. Do you want to continue?"),
+                function () {
+                    gd.hide();
+                    frappe.show_progress(__("Generating Result Cards"), 0, 100, __("Starting generation..."));
+                    frappe.call({
+                        method: "slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.bulk_generate_result_cards",
+                        args: {
+                            academic_year: values.academic_year,
+                            admission_cycle: values.admission_cycle,
+                            program_level: values.program_level,
+                            applicant_type: values.applicant_type,
+                            program: values.program
+                        },
+                        callback: function (r) {
+                            frappe.show_progress(__("Generating Result Cards"), 100, 100, __("Completed"));
+                            setTimeout(() => frappe.hide_progress(), 3000);
+                            if (!r.exc && r.message) {
+                                frappe.msgprint({
+                                    title: __("Generation Complete"),
+                                    message: __(
+                                        "<b>{0}</b> Result Cards generated successfully.",
+                                        [r.message.generated]
+                                    ),
+                                    indicator: "green"
+                                });
+                                listview.refresh();
+                            }
+                        },
+                        error: function () {
+                            frappe.hide_progress();
+                        }
+                    });
+                }
+            );
+        }
+    });
+
+    gd.listview = listview;
+
+    gd.set_query("admission_cycle", function () {
+        return { filters: { "status": "Active" } };
+    });
+    gd.set_query("program", function () {
+        let pl = gd.get_value("program_level");
+        if (pl) {
+            return {
+                query: "slcm.admission.doctype.entrance_test_generation.entrance_test_generation.get_program_query",
+                filters: {
+                    "program_level": pl,
+                    "admission_cycle": gd.get_value("admission_cycle")
+                }
+            };
+        }
+        return {};
+    });
+
+    gd.show();
+
+    if (default_ay || default_ac || default_pl) {
+        gd.set_values({
+            academic_year: default_ay,
+            admission_cycle: default_ac,
+            program_level: default_pl,
+            applicant_type: "Domestic Applicants"
+        });
+    }
+
+    ["academic_year", "admission_cycle", "program_level", "applicant_type", "program"].forEach(fn => {
+        if (gd.fields_dict[fn] && gd.fields_dict[fn].$input) {
+            gd.fields_dict[fn].$input.on("change blur input", () => update_dialog_applicant_count(gd));
+        }
+    });
+
+    setTimeout(() => update_dialog_applicant_count(gd), 500);
 }
 
 /**
@@ -1286,8 +1604,8 @@ function _show_reject_and_allocate_dialog(listview, initial_providers) {
         return applicants.filter(a => {
             const id_match = !applicant_filters.applicant_id || (a.applicant || "").toLowerCase().includes(applicant_filters.applicant_id);
             const name_match = !applicant_filters.candidate_name || (a.candidate_name || "").toLowerCase().includes(applicant_filters.candidate_name);
-            const level_match = !applicant_filters.programme_level || (a.program_level || "").toLowerCase().includes(applicant_filters.programme_level);
-            const prog_match = !applicant_filters.programme || (a.program || "").toLowerCase().includes(applicant_filters.programme);
+            const level_match = !applicant_filters.programme_level || (a.program_level || "").toLowerCase() === applicant_filters.programme_level;
+            const prog_match = !applicant_filters.programme || (a.program || "").toLowerCase() === applicant_filters.programme;
             const city_match = !applicant_filters.entrance_test_city || (a.entrance_test_city || "").toLowerCase().includes(applicant_filters.entrance_test_city);
             const centre_match = !applicant_filters.old_centre || (a.center_name || "").toLowerCase().includes(applicant_filters.old_centre);
             let pwd_match = true;
@@ -1490,11 +1808,12 @@ function _show_reject_and_allocate_dialog(listview, initial_providers) {
         ],
         primary_action_label: __('Reject and Allocate'),
         primary_action(values) {
-            const selected_applicants = Array.from(selected_applicant_names);
+            const filtered_applicant_names = new Set(get_filtered_applicants().map(a => a.name));
+            const selected_applicants = Array.from(selected_applicant_names).filter(name => filtered_applicant_names.has(name));
             const selected_providers_array = Array.from(selected_provider_names);
 
             if (!selected_applicants.length) {
-                frappe.msgprint(__('Please select at least one applicant.'));
+                frappe.msgprint(__('Please select at least one applicant from the current filter.'));
                 return;
             }
             if (values.allocation_type === "Allocate Directly" && !selected_providers_array.length) {
@@ -1616,8 +1935,8 @@ function _show_reject_and_allocate_dialog(listview, initial_providers) {
     // Applicant Events
     d.$wrapper.on("input", "#filter-applicant-id", function () { applicant_filters.applicant_id = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
     d.$wrapper.on("input", "#filter-candidate-name", function () { applicant_filters.candidate_name = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
-    d.$wrapper.on("input", "#filter-programme-level", function () { applicant_filters.programme_level = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
-    d.$wrapper.on("input", "#filter-programme", function () { applicant_filters.programme = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
+    d.$wrapper.on("input change", "#filter-programme-level", function () { applicant_filters.programme_level = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
+    d.$wrapper.on("input change", "#filter-programme", function () { applicant_filters.programme = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
     d.$wrapper.on("input", "#filter-entrance-test-city", function () { applicant_filters.entrance_test_city = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
     d.$wrapper.on("input", "#filter-old-centre", function () { applicant_filters.old_centre = $(this).val().toLowerCase().trim(); applicant_current_page = 1; render_applicant_page(); });
     d.$wrapper.on("change", "#pwd-applicant-filter-chk", function () { applicant_filters.pwd_only = this.checked; applicant_current_page = 1; render_applicant_page(); });
@@ -1629,15 +1948,13 @@ function _show_reject_and_allocate_dialog(listview, initial_providers) {
 
     // Handle auto select count
     d.fields_dict.auto_select_count.df.onchange = function() {
-        const count = d.get_value("auto_select_count");
-        if (count > 0) {
-            const filtered = get_filtered_applicants();
-            selected_applicant_names.clear();
-            for (let i = 0; i < Math.min(count, filtered.length); i++) {
-                selected_applicant_names.add(filtered[i].name);
-            }
-            render_applicant_page();
+        const count = d.get_value("auto_select_count") || 0;
+        const filtered = get_filtered_applicants();
+        selected_applicant_names.clear();
+        for (let i = 0; i < Math.min(count, filtered.length); i++) {
+            selected_applicant_names.add(filtered[i].name);
         }
+        render_applicant_page();
     };
 
     function fetch_applicants() {
@@ -1657,6 +1974,15 @@ function _show_reject_and_allocate_dialog(listview, initial_providers) {
                 applicants = r.message || [];
                 selected_applicant_names.clear();
                 applicant_current_page = 1;
+                
+                const unique_programme_levels = [...new Set(applicants.map(a => a.program_level).filter(Boolean))].sort();
+                const unique_programmes = [...new Set(applicants.map(a => a.program).filter(Boolean))].sort();
+
+                const prog_level_options = `<option value="">${__("All Levels")}</option>` + 
+                    unique_programme_levels.map(l => `<option value="${l}" ${applicant_filters.programme_level === l.toLowerCase().trim() ? 'selected' : ''}>${l}</option>`).join("");
+                    
+                const prog_options = `<option value="">${__("All Programmes")}</option>` + 
+                    unique_programmes.map(p => `<option value="${p}" ${applicant_filters.programme === p.toLowerCase().trim() ? 'selected' : ''}>${p}</option>`).join("");
 
                 let html = `
                     <div style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
@@ -1703,12 +2029,14 @@ function _show_reject_and_allocate_dialog(listview, initial_providers) {
                                                style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; outline:none; background:#ffffff;">
                                     </th>
                                     <th style="padding:4px 6px;">
-                                        <input type="text" id="filter-programme-level" placeholder="${__("Filter Level...")}" value="${applicant_filters.programme_level}"
-                                               style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; outline:none; background:#ffffff;">
+                                        <select id="filter-programme-level" style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; outline:none; background:#ffffff;">
+                                            ${prog_level_options}
+                                        </select>
                                     </th>
                                     <th style="padding:4px 6px;">
-                                        <input type="text" id="filter-programme" placeholder="${__("Filter Programme...")}" value="${applicant_filters.programme}"
-                                               style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; outline:none; background:#ffffff;">
+                                        <select id="filter-programme" style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; outline:none; background:#ffffff;">
+                                            ${prog_options}
+                                        </select>
                                     </th>
                                     <th style="padding:4px 6px;">
                                         <input type="text" id="filter-entrance-test-city" placeholder="${__("Filter City...")}" value="${applicant_filters.entrance_test_city || ''}"
@@ -2006,6 +2334,49 @@ function _show_reallocation_confirmation(parent_dialog, listview, result, select
         primary_action_label: btn_label,
         primary_action: function () {
             confirm_dialog.hide();
+
+            const total_count = selected_applicants.length;
+            window.etl_allocation_done = false;
+            window.etl_allocation_parent_dialog = parent_dialog;
+
+            if (!etl_allocation_progress_dialog) {
+                etl_allocation_progress_dialog = new frappe.ui.Dialog({
+                    title: __("Allocating Seats in Background..."),
+                    fields: [
+                        {
+                            fieldtype: "HTML",
+                            fieldname: "progress_html",
+                            options: `
+                                <div style="padding: 10px 5px; font-family: inherit;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                        <div id="etg-current-applicant" style="font-weight:600; font-size:13px; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:75%;">
+                                            Initializing seat allocation...
+                                        </div>
+                                        <div id="etg-progress-percent" style="font-weight:700; font-size:14px; color:#2563eb;">
+                                            0%
+                                        </div>
+                                    </div>
+                                    <div style="height:10px; background:#e2e8f0; border-radius:6px; overflow:hidden; margin-bottom:12px; position:relative;">
+                                        <div id="etg-progress-bar" style="height:100%; width:0%; background:linear-gradient(90deg, #3b82f6, #10b981); border-radius:6px; transition: width 0.2s ease;"></div>
+                                    </div>
+                                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:#64748b;">
+                                        <span id="etg-counter-text">Processing 0 of ${total_count}</span>
+                                    </div>
+                                </div>
+                            `
+                        }
+                    ]
+                });
+                etl_allocation_progress_dialog.no_cancel();
+            }
+
+            etl_allocation_progress_dialog.$wrapper.find("#etg-progress-bar").css("width", `0%`);
+            etl_allocation_progress_dialog.$wrapper.find("#etg-progress-percent").text(`0%`);
+            etl_allocation_progress_dialog.$wrapper.find("#etg-current-applicant").html("Initializing seat allocation...");
+            etl_allocation_progress_dialog.$wrapper.find("#etg-counter-text").text(`Processing 0 of ${total_count}`);
+            
+            etl_allocation_progress_dialog.show();
+
             frappe.call({
                 method: 'slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.reject_and_allocate_applicants',
                 args: {
@@ -2014,13 +2385,24 @@ function _show_reallocation_confirmation(parent_dialog, listview, result, select
                     allocation_type: allocation_type,
                     send_email: send_email
                 },
-                freeze: true,
-                freeze_message: __('Re-allocating...'),
+                timeout: 18000000,
                 callback: function (r) {
+                    frappe.realtime.off("entrance_test_seat_allocation_progress");
+                    if (window.etl_allocation_done) return;
+                    window.etl_allocation_done = true;
+
+                    if (etl_allocation_progress_dialog) {
+                        etl_allocation_progress_dialog.hide();
+                    }
+
                     if (!r.exc) {
-                        parent_dialog.hide();
+                        let count = r.message || 0;
+                        window.show_etl_allocation_success_toast(count, []);
+
+                        if (parent_dialog) {
+                            parent_dialog.hide();
+                        }
                         listview.refresh();
-                        frappe.show_alert({ message: __('Successfully re-allocated {0} applicants.', [selected_applicants.length]), indicator: 'green' });
                     }
                 }
             });
@@ -2063,4 +2445,204 @@ function _show_reallocation_confirmation(parent_dialog, listview, result, select
             function() { $(this).css("background-color", "transparent"); }
         );
     }, 100);
+}
+
+/**
+ * Fetch and render the unpublished applicants table for the Publish dialog
+ */
+function update_unpublished_applicants_table(pd, is_page_change = false) {
+    const html_field = pd.get_field("unpublished_applicants_html");
+    if (!html_field) return;
+
+    if (!is_page_change) {
+        pd.unpublished_state.page = 1;
+        // Keep selected_names when filters change so user doesn't lose selections
+    }
+
+    let args = {
+        academic_year: pd.get_value("academic_year") || "",
+        admission_cycle: pd.get_value("admission_cycle") || "",
+        program_level: pd.get_value("program_level") || "",
+        applicant_type: pd.get_value("applicant_type") || "Domestic Applicants",
+        program: pd.get_value("program") || "",
+        filter_applicant: pd.unpublished_state.filter_applicant || "",
+        filter_candidate_name: pd.unpublished_state.filter_candidate_name || "",
+        filter_entrance_test_status: pd.unpublished_state.filter_entrance_test_status || "",
+        filter_status: pd.unpublished_state.filter_status || "",
+        filter_admission_status: pd.unpublished_state.filter_admission_status || "",
+        limit_start: (pd.unpublished_state.page - 1) * pd.unpublished_state.limit,
+        limit_page_length: pd.unpublished_state.limit
+    };
+
+    html_field.$wrapper.html(`<div class="text-muted"><i class="fa fa-spinner fa-spin"></i> ${__('Loading applicants...')}</div>`);
+
+    frappe.call({
+        method: "slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.get_unpublished_applicants_for_dialog",
+        args: args,
+        callback: function (r) {
+            if (r && r.message) {
+                render_unpublished_applicants_table(pd, html_field, r.message.records, r.message.total_count);
+            }
+        }
+    });
+}
+
+function render_unpublished_applicants_table(pd, html_field, records, total_count) {
+    let state = pd.unpublished_state;
+    let total_pages = Math.ceil(total_count / state.limit) || 1;
+
+    let html = `
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 13px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <label style="margin: 0; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <input type="checkbox" class="unpub-select-all" ${records.length > 0 && html_field.$wrapper.find('.unpub-select-row:not(:checked)').length === 0 ? 'checked' : ''}> Select All Applicants
+                </label>
+                <button class="btn btn-xs btn-default unpub-clear-all">Clear All</button>
+                <span class="text-muted"><span class="unpub-selected-count">${state.selected_names.length}</span> of ${total_count} selected</span>
+            </div>
+            <div>
+                <button class="btn btn-xs btn-default unpub-prev" ${state.page <= 1 ? 'disabled' : ''}>« Prev</button>
+                <span style="margin: 0 10px; font-weight: 500;">Page ${state.page} of ${total_pages}</span>
+                <button class="btn btn-xs btn-default unpub-next" ${state.page >= total_pages ? 'disabled' : ''}>Next »</button>
+            </div>
+        </div>
+
+        <div style="border: 1px solid #d1d8dd; border-radius: 4px; overflow: hidden; overflow-x: auto;">
+            <table class="table table-bordered table-hover" style="margin-bottom: 0; font-size: 12px; white-space: nowrap;">
+                <thead style="background-color: #f8f9fa;">
+                    <tr>
+                        <th style="width: 40px; text-align: center; vertical-align: middle;">
+                            
+                        </th>
+                        <th style="width: 40px; text-align: center; vertical-align: middle;">No.</th>
+                        <th>
+                            <div style="color: #2b6cb0; margin-bottom: 5px;">${__('Applicant ID')}</div>
+                            <input type="text" class="form-control input-xs unpub-filter" data-filter="filter_applicant" placeholder="Filter ID..." value="${state.filter_applicant || ''}">
+                        </th>
+                        <th>
+                            <div style="color: #2b6cb0; margin-bottom: 5px;">${__('Candidate Name')}</div>
+                            <input type="text" class="form-control input-xs unpub-filter" data-filter="filter_candidate_name" placeholder="Filter Name..." value="${state.filter_candidate_name || ''}">
+                        </th>
+                        <th>
+                            <div style="color: #2b6cb0; margin-bottom: 5px;">${__('Entrance Test Status')}</div>
+                            <select class="form-control input-xs unpub-filter" data-filter="filter_entrance_test_status">
+                                <option value=""></option>
+                                <option value="Scheduled" ${state.filter_entrance_test_status === 'Scheduled' ? 'selected' : ''}>Scheduled</option>
+                                <option value="Attended" ${state.filter_entrance_test_status === 'Attended' ? 'selected' : ''}>Attended</option>
+                                <option value="Absent" ${state.filter_entrance_test_status === 'Absent' ? 'selected' : ''}>Absent</option>
+                                <option value="Rescheduled" ${state.filter_entrance_test_status === 'Rescheduled' ? 'selected' : ''}>Rescheduled</option>
+                            </select>
+                        </th>
+                        <th>
+                            <div style="color: #2b6cb0; margin-bottom: 5px;">${__('Status')}</div>
+                            <select class="form-control input-xs unpub-filter" data-filter="filter_status">
+                                <option value=""></option>
+                                <option value="Pass" ${state.filter_status === 'Pass' ? 'selected' : ''}>Pass</option>
+                                <option value="Fail" ${state.filter_status === 'Fail' ? 'selected' : ''}>Fail</option>
+                            </select>
+                        </th>
+                        <th>
+                            <div style="color: #2b6cb0; margin-bottom: 5px;">${__('Admission Status')}</div>
+                            <select class="form-control input-xs unpub-filter" data-filter="filter_admission_status">
+                                <option value=""></option>
+                                <option value="Provisionally Offered Admission" ${state.filter_admission_status === 'Provisionally Offered Admission' ? 'selected' : ''}>Provisionally Offered Admission</option>
+                                <option value="Waitlisted" ${state.filter_admission_status === 'Waitlisted' ? 'selected' : ''}>Waitlisted</option>
+                            </select>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    if (records.length === 0) {
+        html += `<tr><td colspan="7" class="text-center text-muted" style="padding: 15px;">${__('No unpublished applicants found matching filters.')}</td></tr>`;
+    } else {
+        records.forEach((r, idx) => {
+            let row_no = ((state.page - 1) * state.limit) + idx + 1;
+            let checked = state.selected_names.includes(r.name) ? 'checked' : '';
+            html += `
+                <tr>
+                    <td style="text-align: center;">
+                        <input type="checkbox" class="unpub-select-row" data-name="${r.name}" ${checked}>
+                    </td>
+                    <td style="text-align: center; color: #2b6cb0;">${row_no}</td>
+                    <td>${r.applicant || ''}</td>
+                    <td style="font-weight: 600;">${r.candidate_name || ''}</td>
+                    <td>${r.entrance_test_status || ''}</td>
+                    <td>${r.result_status || ''}</td>
+                    <td>${r.admission_status || ''}</td>
+                </tr>
+            `;
+        });
+    }
+
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    html_field.$wrapper.html(html);
+
+    // Event listeners
+    let timeout = null;
+    html_field.$wrapper.find('.unpub-filter').on('input change', function() {
+        let filter_name = $(this).attr('data-filter');
+        let val = $(this).val();
+        state[filter_name] = val;
+        
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            update_unpublished_applicants_table(pd, false);
+        }, 500);
+    });
+
+    html_field.$wrapper.find('.unpub-clear-all').on('click', function() {
+        state.selected_names = [];
+        html_field.$wrapper.find('.unpub-select-row').prop('checked', false);
+        html_field.$wrapper.find('.unpub-select-all').prop('checked', false);
+        html_field.$wrapper.find('.unpub-selected-count').text(0);
+    });
+
+    html_field.$wrapper.find('.unpub-select-all').on('change', function() {
+        let is_checked = $(this).is(':checked');
+        html_field.$wrapper.find('.unpub-select-row').each(function() {
+            $(this).prop('checked', is_checked);
+            let name = $(this).attr('data-name');
+            if (is_checked && !state.selected_names.includes(name)) {
+                state.selected_names.push(name);
+            } else if (!is_checked) {
+                state.selected_names = state.selected_names.filter(n => n !== name);
+            }
+        });
+        html_field.$wrapper.find('.unpub-selected-count').text(state.selected_names.length);
+    });
+
+    html_field.$wrapper.find('.unpub-select-row').on('change', function() {
+        let name = $(this).attr('data-name');
+        if ($(this).is(':checked')) {
+            if (!state.selected_names.includes(name)) state.selected_names.push(name);
+        } else {
+            state.selected_names = state.selected_names.filter(n => n !== name);
+        }
+        
+        html_field.$wrapper.find('.unpub-selected-count').text(state.selected_names.length);
+        
+        let all_checked = html_field.$wrapper.find('.unpub-select-row:not(:checked)').length === 0;
+        html_field.$wrapper.find('.unpub-select-all').prop('checked', all_checked && records.length > 0);
+    });
+
+    html_field.$wrapper.find('.unpub-prev').on('click', function() {
+        if (state.page > 1) {
+            state.page--;
+            update_unpublished_applicants_table(pd, true);
+        }
+    });
+
+    html_field.$wrapper.find('.unpub-next').on('click', function() {
+        if (state.page < total_pages) {
+            state.page++;
+            update_unpublished_applicants_table(pd, true);
+        }
+    });
 }

@@ -8,6 +8,15 @@ def user_before_insert(doc, method):
     if doc.user_type != "Website User":
         return
 
+    # Assign the current active admission cycle to the user for accurate applicant reminders
+    try:
+        from slcm.admission.applicant_reminder_emails import _get_active_cycle
+        active_cycle_name = _get_active_cycle()[0]
+        if active_cycle_name:
+            doc.registered_admission_cycle = active_cycle_name
+    except Exception:
+        pass
+
     institution = frappe.get_single("Institution Settings")
     enable_custom = getattr(institution, "enable_signup_email", 0)
     

@@ -169,41 +169,98 @@ def publish_merit_list(merit_list_name):
     """
     Publishes the Merit List so students can view their scores
     on the applicant results portal page.
-    Sets status to 'Published' and records an audit log.
+    Sets status to 'Publishing' during execution and 'Published' once completed.
     Also updates the Application Status of all applicants in the list to 'Merit Published'.
     """
     doc = frappe.get_doc("Merit List", merit_list_name)
 
     if doc.status == "Published":
         frappe.throw(f"Merit List '{merit_list_name}' is already published.")
+    if doc.status in ["Publishing", "In Progress"]:
+        frappe.throw(f"Merit List '{merit_list_name}' is currently being published. Please wait.")
 
-    # docstatus check removed to allow publishing non-submittable records
-
-    doc.status = "Published"
-    from frappe.utils import now_datetime
-    doc.published_on = now_datetime()
-    doc.save()
-
-    # Update Applicant status
-    for row in doc.merit_applicants:
-        if row.applicant_id:
-            new_status = "Merit Published"
-            if row.status == "Selected":
-                new_status = "Merit Selected"
-            elif row.status == "Rejected":
-                new_status = "Merit Rejected"
-            elif row.status == "Waitlisted":
-                new_status = "Merit Waitlisted"
-                
-            frappe.db.set_value("Applicant", row.applicant_id, "status", new_status)
-
-
-
-    # Trigger notifications directly (uses now=False internally)
-    # Following the 'Interview Seat Allocation' method (Direct Loop + Periodic Commits)
-    _trigger_merit_notifications_local(doc)
-
+    # Mark status as Publishing while processing
+    doc.db_set("status", "Publishing")
     frappe.db.commit()
+
+    total = len(doc.merit_applicants)
+
+    frappe.publish_realtime(
+        "publish_merit_list_progress",
+        {
+            "current": 0,
+            "total": total,
+            "percent": 0,
+            "message": "Starting publication...",
+            "docname": doc.name
+        },
+        user=frappe.session.user
+    )
+
+    try:
+        # Update Applicant status & trigger notifications in one loop with realtime progress
+        for i, row in enumerate(doc.merit_applicants):
+            if row.applicant_id:
+                new_status = "Merit Published"
+                if row.status == "Selected":
+                    new_status = "Merit Selected"
+                elif row.status == "Rejected":
+                    new_status = "Merit Rejected"
+                elif row.status == "Waitlisted":
+                    new_status = "Merit Waitlisted"
+                    
+                frappe.db.set_value("Applicant", row.applicant_id, "status", new_status)
+
+                applicant_email = frappe.db.get_value("Applicant", row.applicant_id, "email")
+                if applicant_email:
+                    try:
+                        _send_merit_email_local(doc, row, applicant_email)
+                        _send_merit_system_notification_local(doc, row, applicant_email)
+                    except Exception:
+                        frappe.log_error(frappe.get_traceback(), f"Merit Notification Failed for {row.applicant_id}")
+
+            percent = int(((i + 1) / max(total, 1)) * 100)
+            frappe.publish_realtime(
+                "publish_merit_list_progress",
+                {
+                    "current": i + 1,
+                    "total": total,
+                    "percent": percent,
+                    "message": f"Publishing: {row.candidate_name or row.applicant_id} ({i + 1} of {total})",
+                    "docname": doc.name
+                },
+                user=frappe.session.user
+            )
+
+            if (i + 1) % 10 == 0:
+                frappe.db.commit()
+
+        # Mark as Published only AFTER all candidates are processed
+        from frappe.utils import now_datetime
+        doc.reload()
+        doc.status = "Published"
+        doc.published_on = now_datetime()
+        doc.save()
+
+        frappe.publish_realtime(
+            "publish_merit_list_progress",
+            {
+                "current": total,
+                "total": total,
+                "percent": 100,
+                "message": "Merit list published successfully.",
+                "docname": doc.name
+            },
+            user=frappe.session.user
+        )
+
+        frappe.db.commit()
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), f"Merit List Publish Failed for {doc.name}")
+        doc.db_set("status", "Generated")
+        frappe.db.commit()
+        frappe.throw(f"Failed to publish merit list: {str(e)}")
+
     return {"status": "Published"}
 
 
@@ -347,30 +404,31 @@ def download_merit_list(name, download_type, category=None):
     
     columns = [
         "Applicant ID", "Candidate Name", "Rank", "Candidate Category", 
-        "Category Rank", "Entrance Score", "Interview Score", "Total Score",
-        "Vertical Category", "Shortlisted Category", "Allocation Type", "Status"
+        "Category Rank", "Part A Score", "Part B Score", "Total Score",
+        "Vertical Category", "Shortlisted Category", "Allocation Type", "Selection Status", "Remarks"
     ]
     
     def get_row(candidate):
         return [
             candidate.applicant_id,
             candidate.candidate_name,
-            candidate.overall_rank,
+            candidate.overall_rank or "",
             candidate.actual_category,
-            candidate.category_rank,
-            candidate.entrance_score,
-            candidate.interview_score,
+            candidate.category_rank or "",
+            candidate.entrance_score or candidate.get("nlsat_part_a_score") or 0,
+            candidate.interview_score or candidate.get("nlsat_part_b_score") or 0,
             candidate.total_score,
-            candidate.vertical_category,
-            candidate.shortlist_category,
-            candidate.allocation_type,
-            candidate.status
+            candidate.vertical_category or "",
+            candidate.shortlist_category or "",
+            candidate.allocation_type or "Not Allocated",
+            candidate.status or "Draft",
+            candidate.get("remarks") or ""
         ]
 
     xlsx_data = {}
 
     if download_type == "Overall":
-        sheet_name = "Overall Merit Rank List"
+        sheet_name = "Overall Final Merit Rank List"
         rows = [columns]
         for cand in doc.merit_applicants:
             rows.append(get_row(cand))
@@ -378,32 +436,33 @@ def download_merit_list(name, download_type, category=None):
     
     elif download_type == "Category Wise":
         category_map = {
-            "General": ("Vertical Merit Rank List", "general_list"),
-            "SC": ("SC Merit Rank List", "sc_list"),
-            "ST": ("ST Merit Rank List", "st_list"),
-            "OBC": ("OBC Merit Rank List", "obc_list"),
-            "EWS": ("EWS Merit Rank List", "ews_list"),
-            "Karnataka": ("Karnataka Merit Rank List", "karnataka_list"),
-            "Women": ("Women Merit Rank List", "women_list"),
-            "PWD": ("PWD Merit Rank List", "pwd_list")
+            "General": ("Vertical Merit Rank List", lambda c: (c.actual_category == "General" or (c.shortlist_category and "General" in c.shortlist_category))),
+            "SC": ("SC Merit Rank List", lambda c: (c.actual_category == "SC" or (c.shortlist_category and "SC" in c.shortlist_category))),
+            "ST": ("ST Merit Rank List", lambda c: (c.actual_category == "ST" or (c.shortlist_category and "ST" in c.shortlist_category))),
+            "OBC": ("OBC Merit Rank List", lambda c: (c.actual_category in ["OBC-NCL", "OBC"] or (c.shortlist_category and "OBC" in c.shortlist_category))),
+            "EWS": ("EWS Merit Rank List", lambda c: (c.actual_category == "EWS" or (c.shortlist_category and "EWS" in c.shortlist_category))),
+            "Karnataka": ("Karnataka Merit Rank List", lambda c: (c.compartmentalized_category == "Karnataka" or (c.shortlist_category and "Karnataka" in c.shortlist_category) or getattr(c, "is_karnataka", False))),
+            "Women": ("Women Merit Rank List", lambda c: ("Women" in (c.horizontal_categories or "") or (c.shortlist_category and "Women" in c.shortlist_category) or getattr(c, "is_female", False))),
+            "PWD": ("PWD Merit Rank List", lambda c: ("PWD" in (c.horizontal_categories or "") or (c.shortlist_category and "PWD" in c.shortlist_category) or getattr(c, "is_pwd", False)))
         }
         
         if category and category != "All":
             if category in category_map:
-                label, fieldname = category_map.get(category)
+                label, filter_fn = category_map.get(category)
                 rows = [columns]
-                for cand in doc.get(fieldname):
-                    rows.append(get_row(cand))
+                for cand in doc.merit_applicants:
+                    if filter_fn(cand):
+                        rows.append(get_row(cand))
                 xlsx_data[label] = rows
         else:
             # All categories in separate sheets
-            for label, fieldname in category_map.values():
-                table_data = doc.get(fieldname)
-                if table_data:
-                    rows = [columns]
-                    for cand in table_data:
-                        rows.append(get_row(cand))
-                    xlsx_data[label] = rows
+            for cat_key, (label, filter_fn) in category_map.items():
+                cat_rows = [columns]
+                for cand in doc.merit_applicants:
+                    if filter_fn(cand):
+                        cat_rows.append(get_row(cand))
+                if len(cat_rows) > 1:
+                    xlsx_data[label] = cat_rows
 
     if not xlsx_data or not any(len(rows) > 1 for rows in xlsx_data.values()):
         frappe.throw("No candidate records found for the selected criteria. Please ensure the merit list has been generated.")

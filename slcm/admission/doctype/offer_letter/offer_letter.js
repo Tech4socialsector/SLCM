@@ -5,6 +5,17 @@ frappe.ui.form.on("Offer Letter", {
 
     refresh(frm) {
 
+        // Disable past dates in the datepicker for offer_expiry_date
+        frm.fields_dict.payment_deadline.datepicker.update({
+            minDate: new Date(frappe.datetime.get_today())
+        });
+        frm.fields_dict.offer_acceptance_deadline.datepicker.update({
+            minDate: new Date(frappe.datetime.get_today())
+        });
+        frm.fields_dict.confirmation_fee_deadline.datepicker.update({
+            minDate: new Date(frappe.datetime.get_today())
+        });
+
         if (frm.doc.rendered_content) {
             // Force the field to display as rendered HTML instead of an editor or raw code
             frm.set_df_property('rendered_content', 'fieldtype', 'HTML');
@@ -49,6 +60,14 @@ frappe.ui.form.on("Offer Letter", {
 
         frm.fields_dict.accepted_on.datepicker.update({
             minDate: new Date(frappe.datetime.get_today()),
+        });
+        
+        ['offer_acceptance_deadline', 'confirmation_fee_deadline', 'payment_deadline'].forEach(field => {
+            if (frm.fields_dict[field] && frm.fields_dict[field].datepicker) {
+                frm.fields_dict[field].datepicker.update({
+                    minDate: new Date(frappe.datetime.get_today()),
+                });
+            }
         });
 
         if (frm.doc.status === "Accepted") {
@@ -160,31 +179,25 @@ frappe.ui.form.on("Offer Letter", {
             }, __('Actions'));
         }
     },
-    onload: function (frm) {
-        // Disable past dates in the payment_deadline datepicker
-        frm.set_df_property('payment_deadline', 'datepicker_options', {
-            minDate: frappe.datetime.now_date()
-        });
-        frm.set_df_property('offer_acceptance_deadline', 'datepicker_options', {
-            minDate: frappe.datetime.now_date()
-        });
-        frm.set_df_property('confirmation_fee_deadline', 'datepicker_options', {
-            minDate: frappe.datetime.now_date()
-        });
-    },
 
     validate(frm) {
+        let today = frappe.datetime.get_today();
         // Ensure payment_deadline is not in the past during validation
-        if (frm.doc.payment_deadline && frm.doc.payment_deadline < frappe.datetime.now_datetime()) {
-            frappe.throw(__('Payment Deadline cannot be in the past. Please select a future date and time.'));
+        if (frm.doc.payment_deadline && frm.doc.payment_deadline < today) {
+            if (frm.is_new() || frm.is_dirty('payment_deadline')) {
+                frappe.throw(__('Payment Deadline cannot be in the past. Please select a future date or today.'));
+            }
         }
-        if (frm.doc.offer_acceptance_deadline && frm.doc.offer_acceptance_deadline < frappe.datetime.now_datetime()) {
-            frappe.throw(__('Offer Acceptance Deadline cannot be in the past. Please select a future date and time.'));
+        // if (frm.doc.offer_acceptance_deadline && frm.doc.offer_acceptance_deadline < today) {
+        //     if (frm.is_new() || frm.is_dirty('offer_acceptance_deadline')) {
+        //         frappe.throw(__('Offer Acceptance Deadline cannot be in the past. Please select a future date or today.'));
+        //     }
+        // }
+        if (frm.doc.confirmation_fee_deadline && frm.doc.confirmation_fee_deadline < today) {
+            if (frm.is_new() || frm.is_dirty('confirmation_fee_deadline')) {
+                frappe.throw(__('Confirmation Fee Deadline cannot be in the past. Please select a future date or today.'));
+            }
         }
-        if (frm.doc.confirmation_fee_deadline && frm.doc.confirmation_fee_deadline < frappe.datetime.now_datetime()) {
-            frappe.throw(__('Confirmation Fee Deadline cannot be in the past. Please select a future date and time.'));
-        }
-
     }
 });
 

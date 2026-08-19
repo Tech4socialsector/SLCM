@@ -33,6 +33,23 @@ class OfferLetter(Document):
             fee_data = FeeService._calculate_and_freeze_fees(self.fee_structure, is_foreign=is_foreign)
             self.payable_amount = fee_data.get("total_payable")
 
+        now_date = frappe.utils.getdate(frappe.utils.nowdate())
+        if self.status in ["Draft", "Issued"]:
+            if self.payment_deadline and frappe.utils.getdate(self.payment_deadline) < now_date:
+                old_val = frappe.db.get_value("Offer Letter", self.name, "payment_deadline") if not self.is_new() else None
+                if self.is_new() or not old_val or frappe.utils.getdate(self.payment_deadline) != frappe.utils.getdate(old_val):
+                    frappe.throw(_("Payment Deadline cannot be in the past."))
+            
+            if self.offer_acceptance_deadline and frappe.utils.getdate(self.offer_acceptance_deadline) < now_date:
+                old_val = frappe.db.get_value("Offer Letter", self.name, "offer_acceptance_deadline") if not self.is_new() else None
+                if self.is_new() or not old_val or frappe.utils.getdate(self.offer_acceptance_deadline) != frappe.utils.getdate(old_val):
+                    frappe.throw(_("Offer Acceptance Deadline cannot be in the past."))
+            
+            if self.confirmation_fee_deadline and frappe.utils.getdate(self.confirmation_fee_deadline) < now_date:
+                old_val = frappe.db.get_value("Offer Letter", self.name, "confirmation_fee_deadline") if not self.is_new() else None
+                if self.is_new() or not old_val or frappe.utils.getdate(self.confirmation_fee_deadline) != frappe.utils.getdate(old_val):
+                    frappe.throw(_("Confirmation Fee Deadline cannot be in the past."))
+
         self.set_notification_receiver()
         self.validate_status_transition()
 
@@ -49,6 +66,15 @@ class OfferLetter(Document):
         # We use flags to pass audit data from validate to on_update to avoid redundant logic
         print("on update called for offer letter")
 
+        old_doc = self.get_doc_before_save()
+        old_status = old_doc.status if old_doc else None
+        
+        if old_status != self.status:
+            try:
+                from slcm.api.service.offer_notification import OfferNotificationService
+                OfferNotificationService.process_status_change(self, old_status, self.status)
+            except Exception as e:
+                frappe.log_error(f"Notification Error for {self.name}: {str(e)}", "Offer Notification")
 
         self.sync_status_to_seat_allocation()
 
@@ -90,6 +116,12 @@ class OfferLetter(Document):
                     other_doc = frappe.get_doc("Offer Letter", other_name)
                     other_doc.status = "Withdrawn"
                     other_doc.db_set("status", "Withdrawn")
+                    
+                    try:
+                        from slcm.api.service.offer_notification import OfferNotificationService
+                        OfferNotificationService.process_status_change(other_doc, "Issued", "Withdrawn")
+                    except Exception as e:
+                        frappe.log_error(f"Notification Error for {other_name}: {str(e)}", "Offer Notification")
                     
                     # Manually trigger sync since we used db_set to avoid full validation hooks
                     other_doc.sync_status_to_seat_allocation()

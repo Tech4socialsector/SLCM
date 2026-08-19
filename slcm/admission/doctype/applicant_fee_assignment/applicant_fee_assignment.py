@@ -140,8 +140,63 @@ class ApplicantFeeAssignment(Document):
 
 		self.status = "Assigned"
 
+	def before_save(self):
+		if self.status == "Paid" and not self.payment_date:
+			self.payment_date = frappe.utils.today()
+
 	def on_cancel(self):
 		self.status = "Cancelled"
+
+	def on_update(self):
+		if self.status == "Paid" and self.offer_letter:
+			today = frappe.utils.today()
+			if self.fee_type == "Confirmation Fee":
+				if not frappe.db.get_value("Offer Letter", self.offer_letter, "confirmation_fee_paid_on"):
+					frappe.db.set_value("Offer Letter", self.offer_letter, "confirmation_fee_paid_on", today)
+			elif self.fee_type == "Admission Fee":
+				if not frappe.db.get_value("Offer Letter", self.offer_letter, "full_fee_paid_on"):
+					frappe.db.set_value("Offer Letter", self.offer_letter, "full_fee_paid_on", today)
+			
+			self.generate_payment_receipt()
+
+	def generate_payment_receipt(self):
+		if frappe.db.exists("Applicant Payment Receipt", {"assignment": self.name, "fee_type": self.fee_type, "docstatus": ["!=", 2]}):
+			return
+		
+		# Get print format from Offer Letter's Fee Structure
+		receipt_print_format = None
+		if self.offer_letter:
+			fee_structure = frappe.db.get_value("Offer Letter", self.offer_letter, "fee_structure")
+			if fee_structure:
+				receipt_print_format = frappe.db.get_value("Fee Structure", fee_structure, "receipt_print_format")
+		
+		receipt = frappe.new_doc("Applicant Payment Receipt")
+		receipt.applicant = self.applicant
+		receipt.applicant_name = self.applicant_name
+		receipt.program = self.program
+		receipt.academic_year = self.academic_year
+		receipt.offer_letter = self.offer_letter
+		receipt.fee_type = self.fee_type
+		receipt.assignment = self.name
+		receipt.payment_date = self.get("payment_date") or frappe.utils.today()
+		receipt.total_amount = self.total_amount
+		receipt.scholarship_amount = self.scholarship_amount
+		receipt.scholarship_applied = self.scholarship_applied
+		receipt.confirmation_fee = self.confirmation_fee
+		receipt.net_amount = self.final_payable_amount
+		receipt.payment_mode = "Online"
+		if receipt_print_format:
+			receipt.payment_receipt_template = receipt_print_format
+
+		for row in self.fee_components:
+			receipt.append("fee_components", {
+				"fee_component": row.fee_component,
+				"component_name": row.component_name,
+				"amount": row.amount
+			})
+			
+		receipt.insert(ignore_permissions=True)
+		receipt.submit()
 
 
 # ── Import unified conversion helpers ────────────────────────────────────────

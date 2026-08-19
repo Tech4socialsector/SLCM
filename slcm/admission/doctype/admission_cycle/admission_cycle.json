@@ -230,7 +230,7 @@
   {
    "fieldname": "tab_2_tab",
    "fieldtype": "Tab Break",
-   "label": "Entrance Test "
+   "label": "Entrance Test Configurations"
   },
   {
    "allow_on_submit": 1,
@@ -254,7 +254,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-07-29 13:44:44.630437",
+ "modified": "2026-08-14 12:21:55.302238",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",

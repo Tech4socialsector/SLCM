@@ -202,11 +202,17 @@ function _show_slot_dialog(frm, applicants, staff_list) {
                 `
             },
             {
+                fieldtype: "Section Break"
+            },
+            {
                 label: __("Interview Date"),
                 fieldname: "interview_date",
                 fieldtype: "Date",
                 reqd: 1,
                 description: __("Date on which the interview will be conducted")
+            },
+            {
+                fieldtype: "Column Break"
             },
             {
                 label: __("Interview Time"),
@@ -216,14 +222,16 @@ function _show_slot_dialog(frm, applicants, staff_list) {
                 description: __("Time slot for the interview (optional)")
             },
             {
-                label: __("Select Applicants"),
-                fieldtype: "Section Break"
+                fieldtype: "Column Break"
             },
             {
                 label: __("Auto-select (Enter Number)"),
                 fieldname: "auto_select_count",
                 fieldtype: "Int",
                 description: __("Enter count to automatically select first N pending applicants")
+            },
+            {
+                fieldtype: "Column Break"
             },
             {
                 fieldtype: "Section Break"

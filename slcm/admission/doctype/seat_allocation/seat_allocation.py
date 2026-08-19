@@ -913,42 +913,99 @@ class SeatAllocation(Document):
         """
         Marks the allocation as Published, records the timestamp,
         advances candidate application statuses, and sends notifications.
+        Sets status to 'Publishing' during execution and 'Published' once completed.
         """
-        from frappe.utils import now
-        self.status = "Published"
-        self.published_on = now()
-        self.published_by = frappe.session.user
-        self.save()
+        if self.status == "Published":
+            frappe.throw(f"Seat Allocation '{self.name}' is already published.")
+        if self.status in ["Publishing", "In Progress"]:
+            frappe.throw(f"Seat Allocation '{self.name}' is currently being published or allocated. Please wait.")
 
-        # Update Applicant status and send notifications
-        for i, row in enumerate(self.selection_applicant):
-            if not row.applicant_id:
-                continue
+        # Set status to Publishing initially
+        self.db_set("status", "Publishing")
+        frappe.db.commit()
 
-            # Determine and update Applicant status
-            new_status = "Seat Selected"
-            if row.selection_status == "Selected":
+        total = len(self.selection_applicant)
+
+        frappe.publish_realtime(
+            "publish_seat_allocation_progress",
+            {
+                "current": 0,
+                "total": total,
+                "percent": 0,
+                "message": "Starting publication...",
+                "docname": self.name
+            },
+            user=frappe.session.user
+        )
+
+        try:
+            # Update Applicant status and send notifications
+            for i, row in enumerate(self.selection_applicant):
+                if not row.applicant_id:
+                    continue
+
+                # Determine and update Applicant status
                 new_status = "Seat Selected"
-            elif row.selection_status == "Waitlisted":
-                new_status = "Seat Waitlisted"
-            elif row.selection_status == "Rejected":
-                new_status = "Seat Rejected"
+                if row.selection_status == "Selected":
+                    new_status = "Seat Selected"
+                elif row.selection_status == "Waitlisted":
+                    new_status = "Seat Waitlisted"
+                elif row.selection_status == "Rejected":
+                    new_status = "Seat Rejected"
 
-            frappe.db.set_value("Applicant", row.applicant_id, "status", new_status)
+                frappe.db.set_value("Applicant", row.applicant_id, "status", new_status)
 
-            # Retrieve candidate email
-            applicant_email = frappe.db.get_value("Applicant", row.applicant_id, "email")
-            if applicant_email:
-                try:
-                    self._send_allocation_notification(row, applicant_email)
-                except Exception:
-                    frappe.log_error(frappe.get_traceback(), f"Seat Allocation Notification Failed for {row.applicant_id}")
+                # Retrieve candidate email
+                applicant_email = frappe.db.get_value("Applicant", row.applicant_id, "email")
+                if applicant_email:
+                    try:
+                        self._send_allocation_notification(row, applicant_email)
+                    except Exception:
+                        frappe.log_error(frappe.get_traceback(), f"Seat Allocation Notification Failed for {row.applicant_id}")
 
-            # Periodically commit to manage resources
-            if i % 10 == 0:
-                pass # Removed manual commit to preserve atomicity
+                percent = int(((i + 1) / max(total, 1)) * 100)
+                frappe.publish_realtime(
+                    "publish_seat_allocation_progress",
+                    {
+                        "current": i + 1,
+                        "total": total,
+                        "percent": percent,
+                        "message": f"Publishing: {row.candidate_name or row.applicant_id} ({i + 1} of {total})",
+                        "docname": self.name
+                    },
+                    user=frappe.session.user
+                )
 
-        frappe.msgprint(frappe._("Seat Allocation has been published successfully, and notification emails have been queued."), indicator="green")
+                if (i + 1) % 10 == 0:
+                    frappe.db.commit()
+
+            # Mark as Published only AFTER all candidates are processed
+            from frappe.utils import now
+            self.reload()
+            self.status = "Published"
+            self.published_on = now()
+            self.published_by = frappe.session.user
+            self.save()
+
+            frappe.publish_realtime(
+                "publish_seat_allocation_progress",
+                {
+                    "current": total,
+                    "total": total,
+                    "percent": 100,
+                    "message": "Seat Allocation published successfully.",
+                    "docname": self.name
+                },
+                user=frappe.session.user
+            )
+
+            frappe.db.commit()
+            frappe.msgprint(frappe._("Seat Allocation has been published successfully, and notification emails have been queued."), indicator="green")
+        except Exception as e:
+            frappe.log_error(frappe.get_traceback(), f"Seat Allocation Publish Failed for {self.name}")
+            self.db_set("status", "Allocated")
+            frappe.db.commit()
+            frappe.throw(f"Failed to publish seat allocation: {str(e)}")
 
     def _send_allocation_notification(self, row, email):
         """
@@ -1058,24 +1115,29 @@ def download_allocation(name):
     doc = frappe.get_doc("Seat Allocation", name)
     
     columns = [
-        "Applicant ID", "Candidate Name", "Rank", "Category", 
-        "Selection Status", "Total Score", "Allocated Category", "Vertical Category",
-        "Horizontal Categories", "Compartmentalized Category", "Allocation Type"
+        "Applicant ID", "Candidate Name", "Rank", "Category", "Category Rank",
+        "Part A Score", "Part B Score", "Total Score", "Selection Status",
+        "Allocated Category", "Vertical Category", "Horizontal Categories",
+        "Compartmentalized Category", "Allocation Type", "Remarks"
     ]
     
     def get_row(candidate):
         return [
             candidate.applicant_id,
             candidate.candidate_name,
-            candidate.overall_rank,
+            candidate.overall_rank or candidate.admission_rank or candidate.shortlist_rank or "",
             candidate.actual_category,
-            candidate.selection_status,
+            candidate.get("category_rank") or "",
+            candidate.get("nlsat_part_a_score") or 0,
+            candidate.get("nlsat_part_b_score") or 0,
             candidate.total_score,
-            candidate.allocated_category,
-            candidate.vertical_category,
-            candidate.horizontal_categories,
-            candidate.compartmentalized_category,
-            candidate.allocation_type
+            candidate.selection_status or "Draft",
+            candidate.allocated_category or "",
+            candidate.vertical_category or "",
+            candidate.horizontal_categories or "",
+            candidate.compartmentalized_category or "",
+            candidate.allocation_type or "Not Allocated",
+            candidate.get("remarks") or ""
         ]
 
     rows = [columns]
