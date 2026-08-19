@@ -111,7 +111,7 @@
    "fieldtype": "Float",
    "label": "Min Percentile Cutoff",
    "non_negative": 1,
-   "precision": "5"
+   "precision": "2"
   },
   {
    "fieldname": "shortlisting_target",

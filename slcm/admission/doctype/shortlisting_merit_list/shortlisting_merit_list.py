@@ -206,7 +206,7 @@ def download_merit_list(name, download_type, category=None):
         "Applicant ID", "Candidate Name", "Rank", "Candidate Category", 
         "Category Rank", "Part A Score", "Part A Percentile", "Vertical Category", 
         "Compartmentalized Category", "Horizontal Categories", 
-        "Allocation Type", "Shortlisted Category", "Selection Status"
+        "Allocation Type", "Shortlisted Category"
     ]
     
     def get_row(candidate):
@@ -222,8 +222,7 @@ def download_merit_list(name, download_type, category=None):
             candidate.compartmentalized_category,
             candidate.horizontal_categories,
             candidate.allocation_type,
-            candidate.shortlist_category,
-            candidate.shortlist_status or "Rejected"
+            candidate.shortlist_category
         ]
 
     xlsx_data = {}

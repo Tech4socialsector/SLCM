@@ -1116,8 +1116,7 @@ def download_allocation(name):
     
     columns = [
         "Applicant ID", "Candidate Name", "Rank", "Category", 
-        "Selection Status", "Entrance Score", "Interview Score", "Total Score", "Percentile",
-        "Allocated Category", "Vertical Category",
+        "Selection Status", "Total Score", "Allocated Category", "Vertical Category",
         "Horizontal Categories", "Compartmentalized Category", "Allocation Type"
     ]
     
@@ -1127,11 +1126,8 @@ def download_allocation(name):
             candidate.candidate_name,
             candidate.overall_rank,
             candidate.actual_category,
-            candidate.selection_status or "Rejected",
-            candidate.nlsat_part_a_score or candidate.entrance_score or 0,
-            candidate.nlsat_part_b_score or candidate.interview_score or 0,
+            candidate.selection_status,
             candidate.total_score,
-            candidate.percentile_score or 0,
             candidate.allocated_category,
             candidate.vertical_category,
             candidate.horizontal_categories,

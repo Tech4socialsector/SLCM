@@ -160,7 +160,6 @@
    "fieldname": "percentile_score",
    "fieldtype": "Float",
    "label": "Percentile ",
-   "precision": "5",
    "read_only": 1
   },
   {

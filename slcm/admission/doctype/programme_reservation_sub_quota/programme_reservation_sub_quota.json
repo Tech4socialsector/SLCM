@@ -78,8 +78,7 @@
    "description": "Minimum percentile score required for this category",
    "fieldname": "min_percentile",
    "fieldtype": "Float",
-   "label": "Min Percentile Cutoff",
-   "precision": "5"
+   "label": "Min Percentile Cutoff"
   },
   {
    "fieldname": "column_break_xosd",
