@@ -320,7 +320,7 @@ class EntranceTestList(Document):
 
                     sel_provider.reserved_seats = (sel_provider.reserved_seats or 0) + 1
                     sel_provider.calculate_capacity()
-                    sel_provider.save(ignore_permissions=True)
+                    # We will save the provider once at the end of the batch allocation instead of every loop iteration
 
                     seat_number = f"{(sel_provider.reserved_seats):02d}"
                     allocation.entrance_test_provider = sel_provider.name
@@ -335,19 +335,15 @@ class EntranceTestList(Document):
                     if admit_card_number:
                         allocation.admit_card_number = admit_card_number
 
+                    # Prevent on_update hook from synchronously generating the admit card
+                    allocation.flags.ignore_admit_card_generation = True
                     allocation.save(ignore_permissions=True)
 
-                    # Asynchronously enqueue PDF generation in background worker to ensure rapid batch processing
-                    try:
-                        frappe.enqueue(
-                            "slcm.admission.doctype.entrance_test_list.entrance_test_list.generate_and_store_admit_card",
-                            queue="default",
-                            allocation=allocation.name,
-                            is_rescheduled=False,
-                            enqueue_after_commit=True
-                        )
-                    except Exception:
-                        pass
+                    # Assign a dynamic URL for lazy PDF generation to maintain fast bulk processing speeds
+                    # We use allocation.name here since the document is now safely saved and has an ID
+                    dummy_url = f"/api/method/slcm.www.eligibility.entrance_test_seat_allocation.download_admit_card?allocation_name={allocation.name}"
+                    frappe.db.set_value(allocation.doctype, allocation.name, "admit_card_download", dummy_url)
+
                 else:
                     if app_pwd:
                         has_pwd_center = any(getattr(pdoc, "pwd_accessible", 0) for pdoc in provider_list)
@@ -401,7 +397,10 @@ class EntranceTestList(Document):
                     "reason": f"System error during allocation: {str(e)}"
                 })
 
-        
+        # Save updated provider capacities once after the entire loop completes
+        for pdoc in provider_list:
+            pdoc.save(ignore_permissions=True)
+            
         allocated_count = frappe.db.count("Entrance Test Applicant", {"parent": self.name, "allocation_status": ["in", ("Allocated", "Converted")]})
         total_len = len(self.entrance_test_applicant) if self.entrance_test_applicant else 0
         if total_len > 0:
@@ -1024,7 +1023,6 @@ def generate_and_store_admit_card(allocation, is_rescheduled=False, html_content
     admit_card_number = _generate_admit_card_number(allocation, is_rescheduled)
     frappe.db.set_value(allocation.doctype, allocation.name, "admit_card_number", admit_card_number)
     allocation.admit_card_number = admit_card_number
-        
     pdf_content = None
     try:
         if html_content:
@@ -1034,7 +1032,7 @@ def generate_and_store_admit_card(allocation, is_rescheduled=False, html_content
             from slcm.www.eligibility.entrance_test_seat_allocation import get_admit_card_html
             html = get_admit_card_html(allocation, is_rescheduled)
             
-        pdf_content = get_pdf(html)
+        pdf_content = get_pdf(html, options={"load-error-handling": "ignore"})
     except Exception as e:
         frappe.log_error(
             message=traceback.format_exc(),
@@ -1079,7 +1077,8 @@ def generate_and_store_admit_card(allocation, is_rescheduled=False, html_content
     }
         
     frappe.db.set_value(allocation.doctype, allocation.name, values)
-    allocation.update(values)
+    if not isinstance(allocation, str):
+        allocation.update(values)
     frappe.db.commit()
     
     return _file.file_url

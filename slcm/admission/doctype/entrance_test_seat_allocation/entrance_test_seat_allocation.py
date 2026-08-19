@@ -154,7 +154,7 @@ class EntranceTestSeatAllocation(Document):
                         should_regenerate = True
                         break
                         
-            if should_regenerate:
+            if should_regenerate and not self.flags.ignore_admit_card_generation:
                 from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
                 generate_and_store_admit_card(self, is_rescheduled=is_rescheduled)
 
@@ -244,23 +244,31 @@ def bulk_download_all_records(names):
             doc = frappe.get_doc("Entrance Test Seat Allocation", name)
             applicant_id = doc.applicant or doc.name
             
-            # 1. Admit Card Helper
             def add_admit_to_zip(field, suffix=""):
                 nonlocal found_files
-                if not getattr(doc, field):
-                    from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
-                    is_re = (field == "re_admit_card_download")
-                    generate_and_store_admit_card(doc, is_rescheduled=is_re)
-                    doc.reload()
                 
                 file_url = getattr(doc, field)
-                if file_url:
+                fpath = None
+                
+                if file_url and file_url.startswith("/private/files/"):
                     fname = file_url.split('/')[-1]
                     fpath = get_file_path(fname)
-                    if os.path.exists(fpath):
-                        zip_path = f"{applicant_id}/Admit_Card{suffix}.pdf"
-                        zip_file.write(fpath, arcname=zip_path)
-                        found_files += 1
+                    
+                # If there is no URL, or if it is a dynamic API URL, or the physical file is missing
+                if not file_url or file_url.startswith("/api/method/") or (fpath and not os.path.exists(fpath)):
+                    from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
+                    is_re = (field == "re_admit_card_download")
+                    file_url = generate_and_store_admit_card(doc, is_rescheduled=is_re)
+                    doc.reload()
+                    
+                    if file_url and file_url.startswith("/private/files/"):
+                        fname = file_url.split('/')[-1]
+                        fpath = get_file_path(fname)
+                
+                if file_url and fpath and os.path.exists(fpath):
+                    zip_path = f"{applicant_id}/Admit_Card{suffix}.pdf"
+                    zip_file.write(fpath, arcname=zip_path)
+                    found_files += 1
 
             # Process Admit Cards
             if doc.allocation_status in ["Allocated", "Reallocated"]:
@@ -1121,14 +1129,21 @@ def reject_and_allocate_applicants(applicants, providers, allocation_type=None, 
         _send_allocation_email = None
 
     for i, name in enumerate(applicants):
-        percent = (float(i + 1) / total * 100)
-        frappe.publish_progress(
-            percent, 
-            title=_("Rejecting and Allocating..."), 
-            description=f"Processing {i + 1} of {total}"
-        )
+        percent = round(float(i + 1) / total * 100, 1)
 
         doc = frappe.get_doc("Entrance Test Seat Allocation", name)
+
+        frappe.publish_realtime(
+            event="entrance_test_seat_allocation_progress",
+            message={
+                "progress": percent,
+                "current": i + 1,
+                "total": total,
+                "allocated_count": count,
+                "applicant_name": getattr(doc, "candidate_name", "Unknown") or "Unknown"
+            },
+            user=frappe.session.user
+        )
 
         # 1. Update the existing record directly (no new record creation)
         old_provider = doc.entrance_test_provider
@@ -1200,6 +1215,14 @@ def reject_and_allocate_applicants(applicants, providers, allocation_type=None, 
             # Compute new seat number based on provider's current reserved_seats + 1
             new_reserved = (pdoc.reserved_seats or 0) + 1
             doc.seat_number = f"{new_reserved:02d}"
+            
+            try:
+                from slcm.admission.doctype.entrance_test_list.entrance_test_list import _generate_admit_card_number
+                admit_card_number = _generate_admit_card_number(doc, is_rescheduled=False)
+                if admit_card_number:
+                    doc.admit_card_number = admit_card_number
+            except Exception:
+                pass
         else:
             doc.entrance_test_provider = None
             doc.center_name = None
@@ -1216,7 +1239,14 @@ def reject_and_allocate_applicants(applicants, providers, allocation_type=None, 
                     "preference_order": idx
                 })
 
+        # Prevent on_update hook from synchronously generating the admit card
+        doc.flags.ignore_admit_card_generation = True
         doc.save(ignore_permissions=True)
+        
+        # Assign a dynamic URL for lazy PDF generation
+        if allocation_type == "Allocate Directly" or not allocation_type:
+            dummy_url = f"/api/method/slcm.www.eligibility.entrance_test_seat_allocation.download_admit_card?allocation_name={doc.name}"
+            frappe.db.set_value(doc.doctype, doc.name, "admit_card_download", dummy_url)
 
         # 2. Decrement capacity for the chosen provider only if Allocated Directly
         if allocation_type == "Allocate Directly" or not allocation_type:

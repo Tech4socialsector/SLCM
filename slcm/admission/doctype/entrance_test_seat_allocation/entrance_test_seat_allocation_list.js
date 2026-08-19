@@ -1,3 +1,102 @@
+let etl_allocation_progress_dialog = null;
+if (typeof window.etl_allocation_done === 'undefined') {
+    window.etl_allocation_done = false;
+}
+if (typeof window.etl_allocation_parent_dialog === 'undefined') {
+    window.etl_allocation_parent_dialog = null;
+}
+
+if (!window.show_etl_allocation_success_toast) {
+    window.show_etl_allocation_success_toast = function(count, unallocated) {
+        if (!document.getElementById("etg-toast-style")) {
+            const style = document.createElement("style");
+            style.id = "etg-toast-style";
+            style.innerHTML = `
+                @keyframes etgSlideDown {
+                    from { opacity: 0; transform: translateX(-50%) translateY(-30px); }
+                    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+                }
+                @keyframes etgSlideUp {
+                    from { opacity: 1; transform: translateX(-50%) translateY(0); }
+                    to   { opacity: 0; transform: translateX(-50%) translateY(-30px); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        const existingToast = document.getElementById("etl-success-toast");
+        if (existingToast) existingToast.remove();
+
+        unallocated = unallocated || [];
+        const border_color = unallocated.length > 0 ? "#eab308" : "#2da44e";
+        const icon_bg = unallocated.length > 0 ? "#fef9c3" : "#eafbee";
+        const icon_text = unallocated.length > 0 ? "⚠️" : "✅";
+        const header_color = unallocated.length > 0 ? "#854d0e" : "#1a7f37";
+
+        let unallocated_html = "";
+        if (unallocated.length > 0) {
+            unallocated_html = `
+                <div style="margin-top:10px; padding-top:8px; border-top:1px solid #fef08a; font-size:12px; color:#713f12;">
+                    <div style="font-weight:700; margin-bottom:4px;">
+                        The following applicant(s) could not be allocated:
+                    </div>
+                    <ul style="margin:0 0 0 16px; padding:0; list-style-type:disc;">
+                        ${unallocated.map(u => `<li style="margin-bottom:3px;"><b>${u.name}</b> (${u.applicant_id}): ${u.reason}</li>`).join("")}
+                    </ul>
+                </div>
+            `;
+        }
+
+        const toast = document.createElement("div");
+        toast.id = "etl-success-toast";
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            z-index: 999999;
+            background: #ffffff;
+            border: 1.5px solid ${border_color};
+            border-left: 5px solid ${border_color};
+            border-radius: 10px;
+            padding: 14px 20px;
+            min-width: 400px;
+            max-width: 600px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-family: inherit;
+            animation: etgSlideDown 0.35s cubic-bezier(.4,0,.2,1) forwards;
+        `;
+        toast.innerHTML = `
+            <div style="flex-shrink:0; width:36px; height:36px; background:${icon_bg};
+                        border-radius:50%; display:flex; align-items:center;
+                        justify-content:center; font-size:18px;">${icon_text}</div>
+            <div style="flex:1;">
+                <div style="font-weight:700; font-size:14px; color:${header_color}; margin-bottom:3px;">
+                    Allocation Process Summary
+                </div>
+                <div style="font-size:13px; color:#333;">
+                    Successfully allocated seats for <b>${count}</b> applicant(s).
+                </div>
+                ${unallocated_html}
+            </div>
+            <span id="etl-success-toast-close"
+                  style="cursor:pointer; color:#aaa; font-size:18px; line-height:1;
+                         padding:0 4px; align-self:flex-start; flex-shrink:0;"
+                  title="Dismiss">✕</span>
+        `;
+        document.body.appendChild(toast);
+
+        const dismissSuccessToast = () => {
+            toast.style.animation = "etgSlideUp 0.35s cubic-bezier(.4,0,.2,1) forwards";
+            setTimeout(() => toast.remove(), 350);
+        };
+        document.getElementById("etl-success-toast-close").addEventListener("click", dismissSuccessToast);
+        setTimeout(dismissSuccessToast, unallocated.length > 0 ? 12000 : 6000);
+    };
+}
+
 frappe.listview_settings['Entrance Test Seat Allocation'] = {
     onload: function(listview) {
         // Add to the 'Actions' menu that appears when records are selected
@@ -44,6 +143,36 @@ frappe.listview_settings['Entrance Test Seat Allocation'] = {
         });
     },
     refresh: function (listview) {
+        frappe.realtime.on("entrance_test_seat_allocation_progress", function (data) {
+            let pct = data.progress;
+            let current = data.current;
+            let total = data.total;
+            let name = data.applicant_name;
+
+            if (etl_allocation_progress_dialog && etl_allocation_progress_dialog.display) {
+                etl_allocation_progress_dialog.$wrapper.find("#etg-progress-bar").css("width", `${pct}%`);
+                etl_allocation_progress_dialog.$wrapper.find("#etg-progress-percent").text(`${pct}%`);
+                etl_allocation_progress_dialog.$wrapper.find("#etg-current-applicant").text(`Processing: ${name}`);
+                etl_allocation_progress_dialog.$wrapper.find("#etg-counter-text").text(`Processing ${current} of ${total}`);
+            }
+
+            if (pct >= 100 || current >= total) {
+                setTimeout(() => {
+                    if (!window.etl_allocation_done) {
+                        window.etl_allocation_done = true;
+                        if (etl_allocation_progress_dialog) {
+                            etl_allocation_progress_dialog.hide();
+                        }
+                        if (window.etl_allocation_parent_dialog) {
+                            window.etl_allocation_parent_dialog.hide();
+                        }
+                        listview.refresh();
+                        window.show_etl_allocation_success_toast(data.allocated_count || 0, []);
+                    }
+                }, 1500);
+            }
+        });
+
         // Hide buttons only for users with the "Applicant" role
         // and who are NOT Administrators/System Managers (to ensure admins always have access)
         const is_applicant = frappe.user_roles.includes("Applicant");
@@ -2205,6 +2334,49 @@ function _show_reallocation_confirmation(parent_dialog, listview, result, select
         primary_action_label: btn_label,
         primary_action: function () {
             confirm_dialog.hide();
+
+            const total_count = selected_applicants.length;
+            window.etl_allocation_done = false;
+            window.etl_allocation_parent_dialog = parent_dialog;
+
+            if (!etl_allocation_progress_dialog) {
+                etl_allocation_progress_dialog = new frappe.ui.Dialog({
+                    title: __("Allocating Seats in Background..."),
+                    fields: [
+                        {
+                            fieldtype: "HTML",
+                            fieldname: "progress_html",
+                            options: `
+                                <div style="padding: 10px 5px; font-family: inherit;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                        <div id="etg-current-applicant" style="font-weight:600; font-size:13px; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:75%;">
+                                            Initializing seat allocation...
+                                        </div>
+                                        <div id="etg-progress-percent" style="font-weight:700; font-size:14px; color:#2563eb;">
+                                            0%
+                                        </div>
+                                    </div>
+                                    <div style="height:10px; background:#e2e8f0; border-radius:6px; overflow:hidden; margin-bottom:12px; position:relative;">
+                                        <div id="etg-progress-bar" style="height:100%; width:0%; background:linear-gradient(90deg, #3b82f6, #10b981); border-radius:6px; transition: width 0.2s ease;"></div>
+                                    </div>
+                                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:#64748b;">
+                                        <span id="etg-counter-text">Processing 0 of ${total_count}</span>
+                                    </div>
+                                </div>
+                            `
+                        }
+                    ]
+                });
+                etl_allocation_progress_dialog.no_cancel();
+            }
+
+            etl_allocation_progress_dialog.$wrapper.find("#etg-progress-bar").css("width", `0%`);
+            etl_allocation_progress_dialog.$wrapper.find("#etg-progress-percent").text(`0%`);
+            etl_allocation_progress_dialog.$wrapper.find("#etg-current-applicant").html("Initializing seat allocation...");
+            etl_allocation_progress_dialog.$wrapper.find("#etg-counter-text").text(`Processing 0 of ${total_count}`);
+            
+            etl_allocation_progress_dialog.show();
+
             frappe.call({
                 method: 'slcm.admission.doctype.entrance_test_seat_allocation.entrance_test_seat_allocation.reject_and_allocate_applicants',
                 args: {
@@ -2214,13 +2386,23 @@ function _show_reallocation_confirmation(parent_dialog, listview, result, select
                     send_email: send_email
                 },
                 timeout: 18000000,
-                freeze: true,
-                freeze_message: __('Re-allocating...'),
                 callback: function (r) {
+                    frappe.realtime.off("entrance_test_seat_allocation_progress");
+                    if (window.etl_allocation_done) return;
+                    window.etl_allocation_done = true;
+
+                    if (etl_allocation_progress_dialog) {
+                        etl_allocation_progress_dialog.hide();
+                    }
+
                     if (!r.exc) {
-                        parent_dialog.hide();
+                        let count = r.message || 0;
+                        window.show_etl_allocation_success_toast(count, []);
+
+                        if (parent_dialog) {
+                            parent_dialog.hide();
+                        }
                         listview.refresh();
-                        frappe.show_alert({ message: __('Successfully re-allocated {0} applicants.', [selected_applicants.length]), indicator: 'green' });
                     }
                 }
             });

@@ -331,7 +331,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Shortlisted Status",
+   "label": "Part -A Shortlisted Status",
    "options": "\nShortlisted\nRejected"
   },
   {
@@ -530,7 +530,7 @@
   {
    "fieldname": "percentile",
    "fieldtype": "Float",
-   "label": "Percentile",
+   "label": "Entrance Test Percentile",
    "precision": "2",
    "read_only": 1
   },
@@ -618,7 +618,7 @@
  "image_field": "profile",
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-07 16:44:31.403508",
+ "modified": "2026-08-18 17:22:28.756397",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Entrance Test Seat Allocation",
