@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:OL-{YYYY}-{#####}",
+ "autoname": "format:OL-{admission_year}-{#}",
  "creation": "2026-02-13 12:42:43.280155",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -43,7 +43,6 @@
    "in_list_view": 1,
    "label": "Applicant",
    "options": "Applicant",
-   "read_only": 1,
    "reqd": 1
   },
   {
@@ -233,7 +232,7 @@
    "link_fieldname": "offer_letter"
   }
  ],
- "modified": "2026-08-14 19:07:19.528549",
+ "modified": "2026-08-18 12:21:19.237149",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Letter",
@@ -308,10 +307,6 @@
    "title": "Accepted"
   },
   {
-   "color": "Purple",
-   "title": "Payment Completed"
-  },
-  {
    "color": "Red",
    "title": "Rejected"
   },
@@ -322,6 +317,14 @@
   {
    "color": "Yellow",
    "title": "Withdrawn"
+  },
+  {
+   "color": "Purple",
+   "title": "Confirmation Fee Paid"
+  },
+  {
+   "color": "Pink",
+   "title": "Full Fee Paid"
   }
  ],
  "title_field": "applicant_name",

@@ -1,23 +1,29 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "OC-{admission_cycle}.#",
  "creation": "2026-02-13 18:22:16.905855",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "admission_cycle",
-  "admission_year",
   "academic_year",
-  "campus",
   "due_date",
-  "column_break_sswl",
   "pdf_format",
-  "email_template",
-  "email_offer_accept",
-  "email_offer_rejecte",
-  "email_offer_fee",
+  "column_break_sswl",
+  "admission_year",
+  "campus",
   "fee_structure",
-  "is_active"
+  "enable_notifications",
+  "is_active",
+  "email_templates_section",
+  "offer_issued_email",
+  "offer_accepted_email",
+  "confirmation_fee_email",
+  "column_break_rcch",
+  "full_fee_email",
+  "offer_rejected_email",
+  "offer_expired_withdraw_email"
  ],
  "fields": [
   {
@@ -39,10 +45,9 @@
    "reqd": 1
   },
   {
-   "default": "Offer Letter",
    "fieldname": "pdf_format",
    "fieldtype": "Link",
-   "label": "PDF Format",
+   "label": "Offer Letter PDF Format",
    "options": "Print Format",
    "read_only_depends_on": "eval:doc.is_active == 1",
    "reqd": 1
@@ -50,16 +55,6 @@
   {
    "fieldname": "column_break_sswl",
    "fieldtype": "Column Break"
-  },
-  {
-   "default": "Admission Offer Letter",
-   "fieldname": "email_template",
-   "fieldtype": "Link",
-   "in_standard_filter": 1,
-   "label": "Email template for offer issued",
-   "options": "Email Template",
-   "read_only_depends_on": "eval:doc.is_active == 1",
-   "reqd": 1
   },
   {
    "default": "0",
@@ -108,33 +103,70 @@
    "reqd": 1
   },
   {
-   "fieldname": "email_offer_accept",
+   "fieldname": "offer_accepted_email",
    "fieldtype": "Link",
-   "label": "Email template for offer accept",
+   "label": "Email Template For Offer Accepted",
    "options": "Email Template"
   },
   {
-   "fieldname": "email_offer_rejecte",
+   "fieldname": "offer_rejected_email",
    "fieldtype": "Link",
-   "label": "Email template for offer rejecte",
+   "label": "Email Template For Offer Rejected",
    "options": "Email Template"
   },
   {
-   "fieldname": "email_offer_fee",
+   "fieldname": "confirmation_fee_email",
    "fieldtype": "Link",
-   "label": "Email template for fee",
+   "label": "Email Template For Confirmation Fee Paid",
    "options": "Email Template"
+  },
+  {
+   "fieldname": "full_fee_email",
+   "fieldtype": "Link",
+   "label": "Email Template For Full Fee Paid",
+   "options": "Email Template"
+  },
+  {
+   "depends_on": "eval:doc.enable_notifications == 1",
+   "fieldname": "email_templates_section",
+   "fieldtype": "Section Break",
+   "label": "Email Templates"
+  },
+  {
+   "fieldname": "column_break_rcch",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "offer_expired_withdraw_email",
+   "fieldtype": "Link",
+   "label": "Email Template For Offer Expired / Withdrawn",
+   "options": "Email Template"
+  },
+  {
+   "default": "0",
+   "description": "If enabled system will send email and system notification",
+   "fieldname": "enable_notifications",
+   "fieldtype": "Check",
+   "label": "Enable Notifications"
+  },
+  {
+   "fieldname": "offer_issued_email",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Email Template For Offer Issued",
+   "options": "Email Template",
+   "read_only_depends_on": "eval:doc.is_active == 1"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2026-08-05 18:18:54.142805",
+ "modified": "2026-08-18 12:54:19.988172",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Offer Configuration",
- "naming_rule": "By script",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {

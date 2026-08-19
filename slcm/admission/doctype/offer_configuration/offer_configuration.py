@@ -44,11 +44,6 @@ def validate_offer_config_fee_deadlines(config):
 
 class OfferConfiguration(Document):
 
-    def autoname(self):
-        """Naming: OC-{Year}-{Cycle}-{Campus}"""
-        if self.admission_year and self.admission_cycle and self.campus:
-            self.name = f"OC-{self.admission_year}-{self.admission_cycle}-{self.campus}"
-
     def validate(self):
         self.validate_single_config()
         validate_offer_config_fee_deadlines(self)

@@ -1115,24 +1115,29 @@ def download_allocation(name):
     doc = frappe.get_doc("Seat Allocation", name)
     
     columns = [
-        "Applicant ID", "Candidate Name", "Rank", "Category", 
-        "Selection Status", "Total Score", "Allocated Category", "Vertical Category",
-        "Horizontal Categories", "Compartmentalized Category", "Allocation Type"
+        "Applicant ID", "Candidate Name", "Rank", "Category", "Category Rank",
+        "Part A Score", "Part B Score", "Total Score", "Selection Status",
+        "Allocated Category", "Vertical Category", "Horizontal Categories",
+        "Compartmentalized Category", "Allocation Type", "Remarks"
     ]
     
     def get_row(candidate):
         return [
             candidate.applicant_id,
             candidate.candidate_name,
-            candidate.overall_rank,
+            candidate.overall_rank or candidate.admission_rank or candidate.shortlist_rank or "",
             candidate.actual_category,
-            candidate.selection_status,
+            candidate.get("category_rank") or "",
+            candidate.get("nlsat_part_a_score") or 0,
+            candidate.get("nlsat_part_b_score") or 0,
             candidate.total_score,
-            candidate.allocated_category,
-            candidate.vertical_category,
-            candidate.horizontal_categories,
-            candidate.compartmentalized_category,
-            candidate.allocation_type
+            candidate.selection_status or "Draft",
+            candidate.allocated_category or "",
+            candidate.vertical_category or "",
+            candidate.horizontal_categories or "",
+            candidate.compartmentalized_category or "",
+            candidate.allocation_type or "Not Allocated",
+            candidate.get("remarks") or ""
         ]
 
     rows = [columns]
