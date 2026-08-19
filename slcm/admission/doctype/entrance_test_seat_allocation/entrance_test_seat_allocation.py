@@ -1121,14 +1121,21 @@ def reject_and_allocate_applicants(applicants, providers, allocation_type=None, 
         _send_allocation_email = None
 
     for i, name in enumerate(applicants):
-        percent = (float(i + 1) / total * 100)
-        frappe.publish_progress(
-            percent, 
-            title=_("Rejecting and Allocating..."), 
-            description=f"Processing {i + 1} of {total}"
-        )
+        percent = round(float(i + 1) / total * 100, 1)
 
         doc = frappe.get_doc("Entrance Test Seat Allocation", name)
+
+        frappe.publish_realtime(
+            event="entrance_test_seat_allocation_progress",
+            message={
+                "progress": percent,
+                "current": i + 1,
+                "total": total,
+                "allocated_count": count,
+                "applicant_name": getattr(doc, "candidate_name", "Unknown") or "Unknown"
+            },
+            user=frappe.session.user
+        )
 
         # 1. Update the existing record directly (no new record creation)
         old_provider = doc.entrance_test_provider
