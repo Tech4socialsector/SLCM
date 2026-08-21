@@ -130,7 +130,7 @@ class OfferService:
         config = OfferService.get_config(admission_year, cycle, campus)
         resolved_cycle = config.admission_cycle
 
-        validate_offer_config_fee_deadlines(config)
+        validate_offer_config_fee_deadlines(config, program=program)
 
         # --- PRE-FLIGHT CHECKS (Before Transaction) ---
         if not config.offer_issued_email:
@@ -612,6 +612,11 @@ class OfferService:
             except Exception as e:
                 frappe.db.rollback()
                 error_msg = str(e) or "Unknown Server Error"
+                
+                # If it's a configuration error regarding deadlines, throw it properly so the UI halts
+                if "Deadline cannot be in the past" in error_msg:
+                    frappe.throw(error_msg)
+                    
                 results["errors"].append({"applicant": str(data.get("applicant") if isinstance(data, dict) else data), "error": error_msg})
                 frappe.log_error(f"Bulk Offer Generation Error for {str(data)}: {error_msg}", "Offer Service")
         
