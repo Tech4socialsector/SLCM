@@ -328,7 +328,7 @@ fixtures = [
     # --- Transcript Print Format ---
     {
         "doctype": "Print Format",
-        "filters": [["name", "in", ["Student Transcript", "Seat Allocation Result Notification"]]]
+        "filters": [["name", "in", ["Student Transcript", "Seat Allocation Result Notification","NLSAT Offer Letter"]]]
     },
     {
         "doctype": "Venue Type",
