@@ -93,14 +93,23 @@ class EntranceTestSeatAllocation(Document):
                     self.append("category", {"category": cat})
 
     def generate_result_card(self):
-        """Generates the Entrance Test Result Card PDF using the 'Entrance Test Result Card' print format."""
+        """Generates the dummy URL for Entrance Test Result Card."""
         try:
-            if self.entrance_test_result_card:
+            dummy_url = f"/api/method/slcm.www.eligibility.entrance_test_seat_allocation.download_result_card?allocation_name={self.name}"
+            self.db_set("entrance_test_result_card", dummy_url)
+            return dummy_url
+        except Exception:
+            frappe.log_error(traceback.format_exc(), f"Result Card Dummy URL Generation Failed: {self.name}")
+            return None
+
+    def _generate_physical_result_card(self):
+        """Generates the actual Entrance Test Result Card PDF using the 'Entrance Test Result Card' print format."""
+        try:
+            if self.entrance_test_result_card and self.entrance_test_result_card.startswith("/private/files/"):
                 old_file_url = self.entrance_test_result_card
                 frappe.db.delete("File", {"file_url": old_file_url})
-                self.entrance_test_result_card = None
-
-            # Using the Print Format name as requested (Configurable way)
+            
+            frappe.flags.ignore_print_permissions = True
             pdf_content = frappe.get_print(
                 self.doctype,
                 self.name,
@@ -120,6 +129,7 @@ class EntranceTestSeatAllocation(Document):
             _file.save(ignore_permissions=True)
             
             self.db_set("entrance_test_result_card", _file.file_url)
+            frappe.db.commit()
             return _file.file_url
             
         except Exception:
@@ -236,13 +246,23 @@ def bulk_download_all_records(names):
     if not names:
         frappe.throw("No records selected for download.")
 
+    total = len(names)
     zip_buffer = io.BytesIO()
     found_files = 0
 
-    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-        for name in names:
+    frappe.publish_progress(0, title=_("Bulk Download"), description=_("Starting..."))
+
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as zip_file:
+        for idx, name in enumerate(names, start=1):
             doc = frappe.get_doc("Entrance Test Seat Allocation", name)
             applicant_id = doc.applicant or doc.name
+
+            pct = int((idx / total) * 100)
+            frappe.publish_progress(
+                pct,
+                title=_("Bulk Download"),
+                description=_("Processing {0} of {1}: {2}").format(idx, total, applicant_id)
+            )
             
             def add_admit_to_zip(field, suffix=""):
                 nonlocal found_files
@@ -276,20 +296,30 @@ def bulk_download_all_records(names):
             if doc.is_rescheduled and doc.re_allocation_status in ["Allocated", "Reallocated"]:
                 add_admit_to_zip("re_admit_card_download", suffix="_Rescheduled")
 
-            # 2. Result Card
-            # Only add if result is declared or at least one score exists
+            # Result Card — only if result is declared or at least one score exists
             if doc.result_status or doc.total_marks_secured_in_part_a_b:
                 if not doc.entrance_test_result_card:
                     doc.generate_result_card()
                 
                 file_url = doc.entrance_test_result_card
-                if file_url:
+                fpath = None
+                
+                if file_url and file_url.startswith("/private/files/"):
                     fname = file_url.split('/')[-1]
                     fpath = get_file_path(fname)
-                    if os.path.exists(fpath):
-                        zip_path = f"{applicant_id}/Entrance_Test_Result_Card.pdf"
-                        zip_file.write(fpath, arcname=zip_path)
-                        found_files += 1
+                    
+                if not file_url or file_url.startswith("/api/method/") or (fpath and not os.path.exists(fpath)):
+                    file_url = doc._generate_physical_result_card()
+                    if file_url and file_url.startswith("/private/files/"):
+                        fname = file_url.split('/')[-1]
+                        fpath = get_file_path(fname)
+
+                if file_url and fpath and os.path.exists(fpath):
+                    zip_path = f"{applicant_id}/Entrance_Test_Result_Card.pdf"
+                    zip_file.write(fpath, arcname=zip_path)
+                    found_files += 1
+
+    frappe.publish_progress(100, title=_("Bulk Download"), description=_("Finalizing archive..."))
 
     if found_files == 0:
         frappe.throw("No documents (Admit Cards or Results) found for the selected records.")
@@ -1030,18 +1060,24 @@ def get_applicant_count(academic_year=None, admission_cycle=None, program_level=
     filters_absent["entrance_test_status"] = "Absent"
     absent = frappe.db.count("Entrance Test Seat Allocation", filters=filters_absent)
 
+    filters_unpublished = filters.copy()
+    filters_unpublished["result_published"] = 0
+    filters_unpublished["entrance_test_status"] = ["in", ["Attended", "Absent"]]
+    unpublished = frappe.db.count("Entrance Test Seat Allocation", filters=filters_unpublished)
+
     return {
         "total": total,
         "attended": attended,
-        "absent": absent
+        "absent": absent,
+        "unpublished": unpublished
     }
 
 @frappe.whitelist()
 def get_unpublished_applicants_for_dialog(
     academic_year=None, admission_cycle=None, program_level=None, applicant_type=None, program=None,
     filter_applicant=None, filter_candidate_name=None, filter_entrance_test_status=None,
-    filter_status=None, filter_admission_status=None,
-    limit_start=0, limit_page_length=20
+    filter_status=None, filter_admission_status=None, filter_program=None,
+    limit_start=0, limit_page_length=20, fetch_all_names=0
 ):
     """
     Returns a paginated list of applicants whose results are not yet published.
@@ -1073,6 +1109,11 @@ def get_unpublished_applicants_for_dialog(
         filters["result_status"] = filter_status
     if filter_admission_status:
         filters["admission_status"] = filter_admission_status
+    if filter_program:
+        filters["program"] = filter_program
+
+    if int(fetch_all_names) == 1:
+        return [r.name for r in frappe.get_all("Entrance Test Seat Allocation", filters=filters, fields=["name"], order_by="creation desc")]
 
     # Get data
     records = frappe.get_all(
@@ -1090,9 +1131,27 @@ def get_unpublished_applicants_for_dialog(
     # Get total count for pagination
     total_count = frappe.db.count("Entrance Test Seat Allocation", filters=filters)
     
+    # Get unique programs for dropdown before applying table-specific filters (so dropdown doesn't disappear when selected)
+    # Wait, we want dropdown options based on the global filters, not table filters.
+    global_filters = {"result_published": 0}
+    if academic_year: global_filters["academic_year"] = academic_year
+    if admission_cycle: global_filters["admission_cycle"] = admission_cycle
+    if program_level: global_filters["program_level"] = program_level
+    if program: global_filters["program"] = program
+    if applicant_type == "Domestic Applicants": global_filters["is_international_applicant"] = 0
+    elif applicant_type == "International Applicants": global_filters["is_international_applicant"] = 1
+        
+    unique_programs = [r.program for r in frappe.get_all(
+        "Entrance Test Seat Allocation",
+        filters=global_filters,
+        fields=["program"],
+        distinct=1
+    ) if r.program]
+    
     return {
         "records": records,
-        "total_count": total_count
+        "total_count": total_count,
+        "unique_programs": sorted(unique_programs)
     }
 
 

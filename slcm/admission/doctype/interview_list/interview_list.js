@@ -145,10 +145,13 @@ function _show_slot_dialog(frm, applicants, staff_list) {
         return applicants.filter(a => {
             const id_match = !applicant_filters.applicant_id || (a.applicant_id || "").toLowerCase().includes(applicant_filters.applicant_id);
             const name_match = !applicant_filters.candidate_name || (a.candidate_name || "").toLowerCase().includes(applicant_filters.candidate_name);
-            const prog_match = !applicant_filters.programme || (a.program || "").toLowerCase().includes(applicant_filters.programme);
+            const prog_match = !applicant_filters.programme || (a.program || "").toLowerCase() === applicant_filters.programme;
             return id_match && name_match && prog_match;
         });
     }
+
+    const unique_programmes = [...new Set(applicants.map(a => a.program).filter(Boolean))].sort();
+    const programme_options = unique_programmes.map(p => `<option value="${p}">${p}</option>`).join('');
 
     let d = new frappe.ui.Dialog({
         title: __("Allocate Interview Slots"),
@@ -287,8 +290,10 @@ function _show_slot_dialog(frm, applicants, staff_list) {
                                                style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; font-weight:normal; outline:none; background:#ffffff; box-shadow:inset 0 1px 2px rgba(0,0,0,0.03);">
                                     </th>
                                     <th style="padding:4px 6px;">
-                                        <input type="text" id="filter-programme" placeholder="${__("Filter Programme...")}" 
-                                               style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; font-weight:normal; outline:none; background:#ffffff; box-shadow:inset 0 1px 2px rgba(0,0,0,0.03);">
+                                        <select id="filter-programme" style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; font-weight:normal; outline:none; background:#ffffff; box-shadow:inset 0 1px 2px rgba(0,0,0,0.03);">
+                                            <option value="">${__("All Programmes")}</option>
+                                            ${programme_options}
+                                        </select>
                                     </th>
                                     <th style="padding:4px 6px;"></th>
                                 </tr>
@@ -520,7 +525,9 @@ function _show_slot_dialog(frm, applicants, staff_list) {
         } else {
             $wrapper.find("#sel-count").text(`${sel_count} of ${total_count} selected`);
         }
-        const all_selected = total_count > 0 && sel_count === total_count;
+        
+        const filtered = get_filtered_applicants();
+        const all_selected = filtered.length > 0 && filtered.every(a => selected_applicant_names.has(a.name));
         $wrapper.find("#select-all-chk").prop("checked", all_selected);
     }
 
@@ -574,10 +581,11 @@ function _show_slot_dialog(frm, applicants, staff_list) {
     });
 
     $wrapper.find("#select-all-chk").on("change", function () {
+        const filtered = get_filtered_applicants();
         if (this.checked) {
-            applicants.forEach(a => selected_applicant_names.add(a.name));
+            filtered.forEach(a => selected_applicant_names.add(a.name));
         } else {
-            selected_applicant_names.clear();
+            filtered.forEach(a => selected_applicant_names.delete(a.name));
         }
         render_applicant_page();
     });
@@ -604,7 +612,7 @@ function _show_slot_dialog(frm, applicants, staff_list) {
         }
     });
 
-    $wrapper.on("input keyup search", "#filter-applicant-id, #filter-candidate-name, #filter-programme", function () {
+    $wrapper.on("input keyup search change", "#filter-applicant-id, #filter-candidate-name, #filter-programme", function () {
         applicant_filters.applicant_id = $wrapper.find("#filter-applicant-id").val().toLowerCase().trim();
         applicant_filters.candidate_name = $wrapper.find("#filter-candidate-name").val().toLowerCase().trim();
         applicant_filters.programme = $wrapper.find("#filter-programme").val().toLowerCase().trim();
