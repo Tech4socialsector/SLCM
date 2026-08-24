@@ -26,6 +26,14 @@ frappe.ui.form.on("Fee Structure", {
                 });
             }
         }
+        // Disable past dates in the datepicker for due_date_for_confirmation_fee
+        frm.fields_dict.due_date_for_confirmation_fee.datepicker.update({
+            minDate: new Date(frappe.datetime.get_today())
+        });
+        // Disable past dates in the datepicker for valid_until
+        frm.fields_dict.valid_until.datepicker.update({
+            minDate: new Date(frappe.datetime.get_today())
+        });
     },
 
     valid_from: function (frm) {

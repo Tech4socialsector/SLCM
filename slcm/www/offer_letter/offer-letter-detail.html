@@ -647,7 +647,7 @@ _pc.mission_text) or '' %}
 				>
 					<div
 						class="spinner-border"
-						style="width: 3rem; height: 3rem; color: var(--primary); border-color: var(--primary);"
+						style="width: 3rem; height: 3rem; color: var(--primary);"
                         role="status"
                     ></div>
 					<h4 class="mt-4 font-weight-bold text-white" id="processing-msg" style="color: white !important;">
@@ -1191,7 +1191,7 @@ _pc.mission_text) or '' %}
                         <table style="width: 100%; border-collapse: collapse; text-align: left;">
                             <thead>
                                 <tr style="border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 0.85rem;">
-                                    <th style="padding: 12px 12px 12px 0; font-weight: 600;">#</th>
+                                    <th style="padding: 12px 12px 12px 0; font-weight: 600;">No</th>
                                     <th style="padding: 12px; font-weight: 600;">{{ _("Fee Component") }}</th>
                                     <th style="padding: 12px; font-weight: 600; text-align: right;">{{ _("Amount (₹)") }}</th>
                                     ${(is_conf_paid || is_full_paid) ? `<th style="padding: 12px 0 12px 12px; font-weight: 600; text-align: center;">{{ _("Status") }}</th>` : ''}
@@ -1314,7 +1314,7 @@ _pc.mission_text) or '' %}
 
                                     <!-- Step 1 (always shown): Accept the Offer -->
                                     <div style="display: flex; gap: 16px; align-items: flex-start; position: relative; z-index: 1;">
-                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: ${s_accepted ? '#dcfce7' : '#fefce8'}; border: 1px solid ${s_accepted ? '#16a34a' : 'var(--primary)'}; color: ${s_accepted ? '#16a34a' : '#ca8a04'}; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;">${s_accepted ? '<span class="material-symbols-outlined" style="font-size:14px;">check</span>' : '1'}</div>
+                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: ${s_accepted ? '#dcfce7' : '#fefce8'}; border: 1px solid ${s_accepted ? '#16a34a' : 'var(--primary)'}; color: ${s_accepted ? '#16a34a' : 'var(--primary)'}; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;">${s_accepted ? '<span class="material-symbols-outlined" style="font-size:14px;">check</span>' : '1'}</div>
                                         <div style="font-size: 0.9rem; color: #475569; line-height: 1.5;">{{ _("Review and accept the offer to secure your seat.") }}</div>
                                     </div>
 

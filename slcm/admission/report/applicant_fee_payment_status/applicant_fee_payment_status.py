@@ -17,11 +17,11 @@ def get_columns() -> list[dict]:
 	"""Return columns for the report."""
 	return [
 		{
-			"label": _("ID"),
-			"fieldname": "name",
+			"label": _("Admission Year"),
+			"fieldname": "admission_year",
 			"fieldtype": "Link",
-			"options": "Applicant Fee Assignment",
-			"width": 140
+			"options": "Admission Year",
+			"width": 120
 		},
 		{
 			"label": _("Applicant ID"),
@@ -31,18 +31,24 @@ def get_columns() -> list[dict]:
 			"width": 140
 		},
 		{
+			"label": _("Email Address"),
+			"fieldname": "email",
+			"fieldtype": "Data",
+			"width": 180
+		},
+		{
+			"label": _("Mobile Number"),
+			"fieldname": "mobile_number",
+			"fieldtype": "Data",
+			"width": 140
+		},
+		{
 			"label": _("Candidate Name"),
 			"fieldname": "applicant_name",
 			"fieldtype": "Data",
 			"width": 180
 		},
-		{
-			"label": _("Academic Year"),
-			"fieldname": "academic_year",
-			"fieldtype": "Link",
-			"options": "Academic Year",
-			"width": 120
-		},
+
 		{
 			"label": _("Programme"),
 			"fieldname": "program",
@@ -63,6 +69,24 @@ def get_columns() -> list[dict]:
 			"width": 100
 		},
 		{
+			"label": _("Fee Type"),
+			"fieldname": "fee_type",
+			"fieldtype": "Data",
+			"width": 140
+		},
+		{
+			"label": _("Payment Date"),
+			"fieldname": "payment_date",
+			"fieldtype": "Date",
+			"width": 120
+		},
+		{
+			"label": _("Transaction ID"),
+			"fieldname": "transaction_id",
+			"fieldtype": "Data",
+			"width": 160
+		},
+		{
 			"label": _("Payable Amount"),
 			"fieldname": "final_payable_amount",
 			"fieldtype": "Currency",
@@ -79,51 +103,85 @@ def get_columns() -> list[dict]:
 			"fieldname": "pending_amount",
 			"fieldtype": "Currency",
 			"width": 120
-		},
-		{
-			"label": _("Fee Invoice"),
-			"fieldname": "fee_invoice",
-			"fieldtype": "Link",
-			"options": "Fee Invoice",
-			"width": 140
 		}
 	]
-
 
 def _sum_receipts_by_offer(offer_letters: list[str]) -> dict[str, float]:
 	if not offer_letters:
 		return {}
 	placeholders = ", ".join(["%s"] * len(offer_letters))
-	rows = frappe.db.sql(
+	legacy_rows = frappe.db.sql(
 		f"""
-		SELECT offer_letter, SUM(total_amount) AS total_amount
+		SELECT offer_letter as ref_name, SUM(total_amount) AS total_amount, transaction_id, payment_date
 		FROM `tabApplicant Payment Receipt`
 		WHERE docstatus = 1 AND offer_letter IN ({placeholders})
-		GROUP BY offer_letter
+		GROUP BY offer_letter, transaction_id, payment_date
 		""",
 		tuple(offer_letters),
 		as_dict=True,
 	)
-	return {r.offer_letter: flt(r.total_amount) for r in rows}
+
+	pr_rows = frappe.db.sql(
+		f"""
+		SELECT reference_name as ref_name, SUM(amount) AS total_amount, transaction_id, DATE(creation) as payment_date
+		FROM `tabPayment Request`
+		WHERE status = 'Paid' AND reference_doctype = 'Offer Letter' AND reference_name IN ({placeholders})
+		GROUP BY reference_name, transaction_id, DATE(creation)
+		""",
+		tuple(offer_letters),
+		as_dict=True,
+	)
+
+	result = {}
+	for r in legacy_rows + pr_rows:
+		if r.ref_name not in result:
+			result[r.ref_name] = {"total_amount": 0.0, "transaction_ids": [], "payment_dates": []}
+		result[r.ref_name]["total_amount"] += flt(r.total_amount)
+		if r.get("transaction_id"):
+			result[r.ref_name]["transaction_ids"].append(str(r.transaction_id))
+		if r.get("payment_date"):
+			result[r.ref_name]["payment_dates"].append(r.payment_date)
+	return result
 
 
 def _sum_application_fee_receipts_by_applicant(applicants: list[str]) -> dict[str, float]:
 	if not applicants:
 		return {}
 	placeholders = ", ".join(["%s"] * len(applicants))
-	rows = frappe.db.sql(
+	legacy_rows = frappe.db.sql(
 		f"""
-		SELECT applicant, SUM(total_amount) AS total_amount
+		SELECT applicant as ref_name, SUM(total_amount) AS total_amount, transaction_id, payment_date
 		FROM `tabApplicant Payment Receipt`
 		WHERE docstatus = 1
 			AND applicant IN ({placeholders})
 			AND IFNULL(offer_letter, '') = ''
-		GROUP BY applicant
+		GROUP BY applicant, transaction_id, payment_date
 		""",
 		tuple(applicants),
 		as_dict=True,
 	)
-	return {r.applicant: flt(r.total_amount) for r in rows}
+
+	pr_rows = frappe.db.sql(
+		f"""
+		SELECT reference_name as ref_name, SUM(amount) AS total_amount, transaction_id, DATE(creation) as payment_date
+		FROM `tabPayment Request`
+		WHERE status = 'Paid' AND reference_doctype = 'Applicant' AND reference_name IN ({placeholders})
+		GROUP BY reference_name, transaction_id, DATE(creation)
+		""",
+		tuple(applicants),
+		as_dict=True,
+	)
+
+	result = {}
+	for r in legacy_rows + pr_rows:
+		if r.ref_name not in result:
+			result[r.ref_name] = {"total_amount": 0.0, "transaction_ids": [], "payment_dates": []}
+		result[r.ref_name]["total_amount"] += flt(r.total_amount)
+		if r.get("transaction_id"):
+			result[r.ref_name]["transaction_ids"].append(str(r.transaction_id))
+		if r.get("payment_date"):
+			result[r.ref_name]["payment_dates"].append(r.payment_date)
+	return result
 
 
 def get_data(filters: dict | None) -> list[dict]:
@@ -132,28 +190,29 @@ def get_data(filters: dict | None) -> list[dict]:
 	query_filters = {}
 
 	ft = filters.get("fee_type")
-	if ft is None:
-		query_filters["fee_type"] = "Admission Fee"
-	elif ft == "":
-		pass
-	else:
+	if ft:
 		query_filters["fee_type"] = ft
 
-	if filters.get("academic_year"):
-		query_filters["academic_year"] = filters.get("academic_year")
+	if filters.get("admission_year"):
+		query_filters["applicant.admission_year"] = filters.get("admission_year")
 	if filters.get("program"):
 		query_filters["program"] = filters.get("program")
-	if filters.get("status"):
-		query_filters["status"] = filters.get("status")
+	req_status = filters.get("status")
+	if req_status:
+		if req_status == "Paid":
+			query_filters["status"] = ["in", ["Paid", "Converted"]]
+		elif req_status == "Pending":
+			query_filters["status"] = "Assigned"
+		elif req_status == "Partially Paid":
+			query_filters["status"] = "Partially Paid"
+	else:
+		query_filters["status"] = ["not in", ["Draft", "Cancelled"]]
+
 	if filters.get("applicant"):
 		query_filters["applicant"] = filters.get("applicant")
 
-	if filters.get("from_date") and filters.get("to_date"):
-		query_filters["assignment_date"] = ["between", [filters.get("from_date"), filters.get("to_date")]]
-	elif filters.get("from_date"):
-		query_filters["assignment_date"] = [">=", filters.get("from_date")]
-	elif filters.get("to_date"):
-		query_filters["assignment_date"] = ["<=", filters.get("to_date")]
+	# Date filters are applied IN MEMORY after global payment allocation
+	# to avoid corrupting the payment pool math.
 
 	data = frappe.get_all(
 		"Applicant Fee Assignment",
@@ -161,8 +220,10 @@ def get_data(filters: dict | None) -> list[dict]:
 		fields=[
 			"name",
 			"applicant",
+			"applicant.admission_year",
+			"applicant.email",
+			"applicant.mobile_number",
 			"applicant_name",
-			"academic_year",
 			"program",
 			"assignment_date",
 			"status",
@@ -171,6 +232,7 @@ def get_data(filters: dict | None) -> list[dict]:
 			"final_payable_amount",
 			"fee_invoice",
 			"offer_letter",
+			"payment_date",
 		],
 		order_by="assignment_date asc",
 	)
@@ -198,18 +260,23 @@ def get_data(filters: dict | None) -> list[dict]:
 	allocated_offer: dict[str, float] = {}
 	allocated_applicant: dict[str, float] = {}
 
-	ordered = sorted(data, key=lambda x: x.assignment_date or "")
+	import datetime
+	ordered = sorted(data, key=lambda x: x.assignment_date or datetime.date.min)
 	for row in ordered:
 		total = flt(row.get("final_payable_amount") or 0)
+		pool_dict = {}
+		
 		if row.get("fee_invoice"):
 			paid_for_this = invoice_paid_map.get(row.fee_invoice, 0)
 		elif (row.get("fee_type") or "") == "Application Fee":
-			pool = applicant_paid_map.get(row.applicant, 0)
+			pool_dict = applicant_paid_map.get(row.applicant, {})
+			pool = pool_dict.get("total_amount", 0)
 			available = max(0, pool - allocated_applicant.get(row.applicant, 0))
 			paid_for_this = min(total, available)
 			allocated_applicant[row.applicant] = allocated_applicant.get(row.applicant, 0) + paid_for_this
 		elif row.get("offer_letter"):
-			pool = offer_paid_map.get(row.offer_letter, 0)
+			pool_dict = offer_paid_map.get(row.offer_letter, {})
+			pool = pool_dict.get("total_amount", 0)
 			available = max(0, pool - allocated_offer.get(row.offer_letter, 0))
 			paid_for_this = min(total, available)
 			allocated_offer[row.offer_letter] = allocated_offer.get(row.offer_letter, 0) + paid_for_this
@@ -218,6 +285,12 @@ def get_data(filters: dict | None) -> list[dict]:
 
 		row["paid_amount"] = paid_for_this
 		row["pending_amount"] = max(0, total - paid_for_this)
+		
+		if pool_dict.get("transaction_ids"):
+			row["transaction_id"] = ", ".join(list(set(pool_dict["transaction_ids"])))
+		
+		if not row.get("payment_date") and pool_dict.get("payment_dates"):
+			row["payment_date"] = max(pool_dict["payment_dates"])
 
 		if row["paid_amount"] >= total and row.status not in ["Paid", "Cancelled", "Converted"] and total > 0:
 			row["status"] = "Paid"
@@ -227,14 +300,41 @@ def get_data(filters: dict | None) -> list[dict]:
 		):
 			row["status"] = "Partially Paid"
 
-	data.sort(key=lambda x: x.assignment_date or "", reverse=True)
-	return data
+		if row["status"] == "Converted":
+			row["status"] = "Paid"
+		elif row["status"] == "Assigned":
+			row["status"] = "Pending"
+
+	# Now apply date filters in memory
+	filtered_data = []
+	from_date_obj = None
+	to_date_obj = None
+	
+	if filters.get("from_date"):
+		from_date_obj = frappe.utils.getdate(filters.get("from_date"))
+	if filters.get("to_date"):
+		to_date_obj = frappe.utils.getdate(filters.get("to_date"))
+
+	for row in data:
+		dt = row.get("assignment_date")
+		if not dt:
+			if from_date_obj or to_date_obj:
+				continue
+		else:
+			if from_date_obj and dt < from_date_obj:
+				continue
+			if to_date_obj and dt > to_date_obj:
+				continue
+		filtered_data.append(row)
+
+	filtered_data.sort(key=lambda x: x.assignment_date or datetime.date.min, reverse=True)
+	return filtered_data
 
 
 def get_chart(data: list[dict]) -> dict:
 	"""Return chart data showing Total Paid vs Total Pending."""
 	if not data:
-		return {}
+		return None
 
 	total_paid = sum(flt(row.get("paid_amount") or 0) for row in data)
 	total_pending = sum(flt(row.get("pending_amount") or 0) for row in data)
@@ -264,13 +364,13 @@ def get_report_summary(data: list[dict]) -> list[dict]:
 		{
 			"value": total_count,
 			"indicator": "Blue",
-			"label": _("Total Assignments"),
+			"label": _("Total No Of Invoice"),
 			"datatype": "Int",
 		},
 		{
 			"value": total_amount,
 			"indicator": "Orange",
-			"label": _("Total Amount Assigned"),
+			"label": _("Total Invoice Amount"),
 			"datatype": "Currency",
 		},
 		{
