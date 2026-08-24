@@ -137,6 +137,32 @@ class OfferNotificationService:
                         "fname": f"Offer_Letter_{offer_doc.applicant}.pdf",
                         "fcontent": pdf_content
                     }]
+            elif status in ["Confirmation Fee Paid", "Full Fee Paid"]:
+                # Fetch the most recent submitted receipt for this offer
+                receipt_name = frappe.db.get_value(
+                    "Applicant Payment Receipt", 
+                    {"offer_letter": offer_doc.name, "docstatus": 1}, 
+                    "name", 
+                    order_by="creation desc"
+                )
+                if receipt_name:
+                    pf_name = frappe.db.get_value("Applicant Payment Receipt", receipt_name, "payment_receipt_template")
+                    
+                    if not pf_name or not frappe.db.exists("Print Format", pf_name):
+                        pf_name = frappe.get_meta("Applicant Payment Receipt").default_print_format
+                        
+                    if pf_name and frappe.db.exists("Print Format", pf_name):
+                        try:
+                            html = frappe.get_print("Applicant Payment Receipt", receipt_name, pf_name)
+                            from frappe.utils.pdf import get_pdf
+                            pdf_content = get_pdf(html)
+                            if pdf_content:
+                                attachments = [{
+                                    "fname": f"Payment_Receipt_{receipt_name}.pdf",
+                                    "fcontent": pdf_content
+                                }]
+                        except Exception as e:
+                            frappe.log_error(f"Failed to generate receipt PDF for {receipt_name}: {str(e)}", "Offer Notification Service")
 
             sender_email = None
             if tpl.get("email_account"):
