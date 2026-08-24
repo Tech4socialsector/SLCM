@@ -1,43 +1,35 @@
 {
- "chart_name": "Applicant Fee Payment Status",
+ "based_on": "",
+ "chart_name": "Applicant Fee Scheduled",
  "chart_type": "Report",
- "creation": "2026-08-24 16:00:21.530119",
+ "creation": "2026-08-24 16:05:16.731169",
  "currency": "INR",
  "docstatus": 0,
  "doctype": "Dashboard Chart",
+ "document_type": "",
  "dynamic_filters_json": "{}",
  "filters_json": "{\"fee_type\":\"\"}",
  "group_by_type": "Count",
  "idx": 0,
  "is_public": 1,
  "is_standard": 1,
- "modified": "2026-08-24 16:02:54.799825",
+ "modified": "2026-08-24 16:14:44.606465",
  "modified_by": "Administrator",
  "module": "Admission",
- "name": "Applicant Fee Payment Status",
+ "name": "Applicant Fee Scheduled",
  "number_of_groups": 0,
  "owner": "Administrator",
+ "parent_document_type": "",
  "report_name": "Applicant Fee Payment Status",
  "roles": [],
- "show_values_over_chart": 1,
+ "show_values_over_chart": 0,
+ "source": "",
  "time_interval": "Yearly",
  "timeseries": 0,
  "timespan": "Last Year",
- "type": "Donut",
+ "type": "Heatmap",
  "use_report_chart": 1,
- "x_field": "program",
- "y_axis": [
-  {
-   "color": "#449CF0",
-   "y_field": "final_payable_amount"
-  },
-  {
-   "color": "#29CD42",
-   "y_field": "paid_amount"
-  },
-  {
-   "color": "#ECAD4B",
-   "y_field": "pending_amount"
-  }
- ]
+ "value_based_on": "",
+ "x_field": "fee_type",
+ "y_axis": []
 }

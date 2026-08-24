@@ -364,13 +364,13 @@ def get_report_summary(data: list[dict]) -> list[dict]:
 		{
 			"value": total_count,
 			"indicator": "Blue",
-			"label": _("Total Assignments"),
+			"label": _("Total No Of Invoice"),
 			"datatype": "Int",
 		},
 		{
 			"value": total_amount,
 			"indicator": "Orange",
-			"label": _("Total Amount Assigned"),
+			"label": _("Total Invoice Amount"),
 			"datatype": "Currency",
 		},
 		{
