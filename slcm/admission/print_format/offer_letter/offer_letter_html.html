@@ -16,6 +16,43 @@
      8. Logo given fixed box + block centering so it can't drift
    ═══════════════════════════════════════════════════════════════════════ #}
 
+
+
+{# ── 0. GLOBAL CONFIGURABLE VARIABLES (UPDATE YEARLY) ── #}
+{% set static_base_url = frappe.utils.get_url() %}
+
+{% set var_registration_date = "29 June 2026" %}
+{% set var_orientation_date = "30 June 2026" %}
+{% set var_classes_begin_date = "1 July 2026" %}
+{% set var_bachelors_deadline = "31 December 2026" %}
+
+{% set var_ba_fin_aid_deadline = "07 July 2026" %}
+{% set var_llb_fin_aid_deadline = "19 June 2026" %}
+{% set var_mpp_fin_aid_deadline = "07 July 2026" %}
+
+{% set var_fin_aid_decision_date = "31 July 2026" %}
+
+{% set var_ba_housing_fee = "1,32,800" %}
+{% set var_llb_housing_fee = "1,88,200" %}
+{% set var_mpp_housing_fee = "1,88,200" %}
+
+{% set var_ba_tuition_fee = "3,18,200" %}
+{% set var_llb_tuition_fee = "3,18,200" %}
+{% set var_mpp_tuition_fee = "3,18,200" %}
+
+{% set var_ba_scst_total = "4,83,700" %}
+{% set var_ba_gen_total = "4,88,600" %}
+
+{% set var_llb_scst_total = "5,39,100" %}
+{% set var_llb_gen_total = "5,44,000" %}
+
+{% set var_mpp_scst_total = "5,39,100" %}
+{% set var_mpp_gen_total = "5,44,000" %}
+
+{% set var_admission_fee = "13,900" %}
+{% set var_scst_deposit = "18,800" %}
+{% set var_gen_deposit = "23,700" %}
+
 {# ── 1. FETCH LINKED DOCUMENTS ── #}
 {% set campus = frappe.get_doc("Campus", doc.campus) if doc.campus else None %}
 {% set applicant = frappe.get_doc("Applicant", doc.applicant) if doc.applicant else None %}
@@ -247,8 +284,8 @@
 .bold { font-weight: 700; }
 
 /* ---------- Appendix titles ---------- */
-.app-title { text-align: center; font-size: 12pt; font-weight: 700; margin: 12px 0 4px; }
-.app-subtitle { text-align: center; font-size: 11pt; font-weight: 700; margin: 0 0 16px; }
+.app-title { text-align: center; font-size: 12pt; font-weight: 700; margin: 12px 0 4px;color: #900; }
+.app-subtitle { text-align: center; font-size: 11pt; font-weight: 700; margin: 0 0 16px;color: #900; }
 
 /* ---------- FIX #2: CSS-counter based numbered lists -------------------
    Native <ol><li> markers get clipped by wkhtmltopdf once they reach two
@@ -329,15 +366,17 @@
   <div class="lh">
     {% set pf_logo = frappe.db.get_value('Print Format', 'Offer Letter', 'logo') %}
     {% if pf_logo %}
+      {% set pf_logo_url = (static_base_url ~ pf_logo) if pf_logo.startswith('/') else pf_logo %}
       <div style="text-align: center; margin-bottom: 10px;">
-        <img src="{{ pf_logo }}" alt="Logo" style="max-width: 100%; height: auto; margin-top: 15px;">
+        <img src="{{ pf_logo_url }}" alt="Logo" style="max-width: 100%; height: auto; margin-top: 15px;">
       </div>
     {% else %}
       <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 2px;">
         <tr>
           <td style="width: 22%; text-align: left; vertical-align: middle; padding: 0;">
             {% if campus and campus.logo %}
-              <img src="{{ campus.logo }}" alt="Logo" style="max-width: 120px; height: auto;">
+              {% set campus_logo_url = (static_base_url ~ campus.logo) if campus.logo.startswith('/') else campus.logo %}
+              <img src="{{ campus_logo_url }}" alt="Logo" style="max-width: 120px; height: auto;">
             {% endif %}
           </td>
           <td style="width: 78%; text-align: center; vertical-align: middle; padding: 0;">
@@ -369,7 +408,7 @@
   </p>
 
   <ol class="step-list">
-    <li>You will need to log in to the Admissions Portal (https://nlsatadmissions.nls.ac.in/) to accept the provisional offer of admission. The steps you need to follow are detailed in Appendix I.</li>
+    <li>You will need to log in to the <a href="https://app.nls.ac.in/admission/login#login">Admissions Portal</a> to accept the provisional offer of admission. The steps you need to follow are detailed in Appendix I.</li>
     <li>In order to confirm this provisional offer, you must pay Rs. {{ confirmation_fee_amt }} as a confirmation fee by {{ confirmation_deadline }}. The full fees applicable to the individual candidate for the academic year {{ academic_yr }} will have to be paid by {{ full_fee_deadline }}. Failure to pay the confirmation fee will result in the withdrawal of the admission offer. The fees schedule for all {% if is_mpp %}two{% else %}three{% endif %} years of study is given in Appendix II.</li>
     <li>The University is dedicated to ensuring that students admitted to an academic programme are provided with necessary support to study at NLSIU, irrespective of financial constraints. The Financial Aid Policy sets out the University's approach to delivering on this commitment. All candidates admitted to NLSIU are eligible for the PM Vidyalaxmi Scheme, which provides collateral-free and guarantor-free education loans. Candidates may additionally apply for financial aid from the University. The note on financial aid in Appendix III details this policy.</li>
     <li>This offer is contingent upon the verification of particulars furnished in the application form. In the next few days, you may receive an email from the NLSIU admissions team if there are queries on the information and documents submitted along with your application. Submitting incomplete, invalid, or false information/documents shall result in the withdrawal of the provisional offer of admission. A list of documents required is given in Appendix IV.</li>
@@ -406,15 +445,17 @@
   <div class="lh">
     {% set pf_logo = frappe.db.get_value('Print Format', 'Offer Letter', 'logo') %}
     {% if pf_logo %}
+      {% set pf_logo_url = (static_base_url ~ pf_logo) if pf_logo.startswith('/') else pf_logo %}
       <div style="text-align: center; margin-bottom: 10px;">
-        <img src="{{ pf_logo }}" alt="Logo" style="max-width: 100%; height: auto; margin-top: 15px;">
+        <img src="{{ pf_logo_url }}" alt="Logo" style="max-width: 100%; height: auto; margin-top: 15px;">
       </div>
     {% else %}
       <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 2px;">
         <tr>
           <td style="width: 22%; text-align: left; vertical-align: middle; padding: 0;">
             {% if campus and campus.logo %}
-              <img src="{{ campus.logo }}" alt="Logo" style="max-width: 120px; height: auto;">
+              {% set campus_logo_url = (static_base_url ~ campus.logo) if campus.logo.startswith('/') else campus.logo %}
+              <img src="{{ campus_logo_url }}" alt="Logo" style="max-width: 120px; height: auto;">
             {% endif %}
           </td>
           <td style="width: 78%; text-align: center; vertical-align: middle; padding: 0;">
@@ -436,7 +477,7 @@
   <p class="app-subtitle">Steps to Accept the Provisional Offer of Admission</p>
 
   <ol class="step-list">
-    <li>Login into the Admission Portal.</li>
+    <li>Login into the <a style="text-decoration:underline;color:#900;" href="https://app.nls.ac.in/admission/login#login">Admission Portal</a>.</li>
     <li>Click on the button "Accept Offer of Admission."</li>
     <li>On the next page, you will have an option of selecting whether you would like to apply for "{{ housing_option_label }}". If you select "Yes", then the housing fees will be added to your fees. If you do not want {% if is_ba %}university housing{% else %}"off campus accommodation"{% endif %}, you may select "no"</li>
     <li>Click the "Make Payment" button, to pay an admission confirmation fee of Rs. {{ confirmation_fee_amt }} only. Follow the instructions to make the payment. You need to make the confirmation payment latest by 11:59 PM on {{ confirmation_deadline }}.</li>
@@ -463,15 +504,17 @@
   <div class="lh">
     {% set pf_logo = frappe.db.get_value('Print Format', 'Offer Letter', 'logo') %}
     {% if pf_logo %}
+      {% set pf_logo_url = (static_base_url ~ pf_logo) if pf_logo.startswith('/') else pf_logo %}
       <div style="text-align: center; margin-bottom: 10px;">
-        <img src="{{ pf_logo }}" alt="Logo" style="max-width: 100%; height: auto; margin-top: 15px;">
+        <img src="{{ pf_logo_url }}" alt="Logo" style="max-width: 100%; height: auto; margin-top: 15px;">
       </div>
     {% else %}
       <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 2px;">
         <tr>
           <td style="width: 22%; text-align: left; vertical-align: middle; padding: 0;">
             {% if campus and campus.logo %}
-              <img src="{{ campus.logo }}" alt="Logo" style="max-width: 120px; height: auto;">
+              {% set campus_logo_url = (static_base_url ~ campus.logo) if campus.logo.startswith('/') else campus.logo %}
+              <img src="{{ campus_logo_url }}" alt="Logo" style="max-width: 120px; height: auto;">
             {% endif %}
           </td>
           <td style="width: 78%; text-align: center; vertical-align: middle; padding: 0;">
@@ -492,39 +535,45 @@
   <p class="app-title">Appendix II:</p>
   <p class="app-subtitle">{{ fee_table_title }}</p>
 
+  {% if is_ba or is_llb or is_mpp %}
   <table class="fee-table">
     <thead>
       <tr>
         <th style="width:30%;">Fee Component</th>
         <th>Year 1</th>
-        <th>Year 2 {% if prog_duration >= 3 %}– Year {{ prog_duration }}{% endif %}</th>
+        <th>Year 2</th>
+        {% if not is_mpp %}<th>Year 3</th>{% endif %}
         <th>Total Programme Fees</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <td>Admission Fee (One-time)</td>
-        <td>Rs. {{ admission_fee }}/-</td>
+        <td>Rs. {{ var_admission_fee }}/-</td>
         <td>—</td>
-        <td>Rs. {{ admission_fee }}/-</td>
+        {% if not is_mpp %}<td>—</td>{% endif %}
+        <td>Rs. {{ var_admission_fee }}/-</td>
       </tr>
       <tr>
         <td>Tuition &amp; Facilities Fee (Annual)</td>
-        <td>Rs. {{ tuition_fee }}/-</td>
-        <td>Rs. {{ tuition_fee }}/- per year</td>
-        <td>Rs. {{ total_tuition_all }}/-</td>
+        <td>Rs. {{ var_ba_tuition_fee }}/-</td>
+        <td>Rs. {{ var_ba_tuition_fee }}/-</td>
+        {% if not is_mpp %}<td>Rs. {{ var_ba_tuition_fee }}/-</td>{% endif %}
+        <td>Rs. {% if is_mpp %}6,36,400{% else %}9,54,600{% endif %}/-</td>
       </tr>
       <tr>
-        <td>{{ housing_fee_label }} (Annual, includes meals)</td>
-        <td>Rs. {{ housing_fee }}/-</td>
-        <td>Rs. {{ housing_fee }}/- per year</td>
-        <td>Rs. {{ total_housing_all }}/-</td>
+        <td>{% if is_ba %}Housing Fee{% else %}Off-Campus Housing Fee{% endif %} (Annual, includes meals)</td>
+        <td>Rs. {% if is_ba %}{{ var_ba_housing_fee }}{% else %}{{ var_llb_housing_fee }}{% endif %}/-</td>
+        <td>Rs. {% if is_ba %}{{ var_ba_housing_fee }}{% else %}{{ var_llb_housing_fee }}{% endif %}/-</td>
+        {% if not is_mpp %}<td>Rs. {% if is_ba %}{{ var_ba_housing_fee }}{% else %}{{ var_llb_housing_fee }}{% endif %}/-</td>{% endif %}
+        <td>Rs. {% if is_ba %}3,98,400{% elif is_mpp %}3,76,400{% else %}5,64,600{% endif %}/-</td>
       </tr>
       <tr style="font-weight:700;">
         <td>Total Cost to Student</td>
-        <td>Rs. {{ total_y1 }}/-</td>
-        <td>Rs. {{ total_yN }}/- per year (Yr 2 onward)</td>
-        <td>Rs. {{ total_programme }}/-</td>
+        <td>Rs. {% if is_ba %}4,64,900{% else %}5,20,300{% endif %}/-</td>
+        <td>Rs. {% if is_ba %}4,51,000{% else %}5,06,400{% endif %}/-</td>
+        {% if not is_mpp %}<td>Rs. {% if is_ba %}4,51,000{% else %}5,06,400{% endif %}/-</td>{% endif %}
+        <td>Rs. {% if is_ba %}13,66,900{% elif is_mpp %}10,26,700{% else %}15,51,900{% endif %}/-</td>
       </tr>
     </tbody>
   </table>
@@ -532,18 +581,21 @@
   <table class="fee-table" style="margin-top:12px;">
     <thead>
       <tr>
-        <th style="width:40%;">Deposits (one-time, Year 1 only)</th>
-        <th>Amount</th>
+        <th style="width:40%;">Deposits</th>
+        <th>{% if is_ba %}Refundable Deposit (One-time) for SC/ST Students{% else %}Amount{% endif %}</th>
+        {% if not is_ba %}<th></th><th></th>{% endif %}
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td>Refundable Deposit for SC/ST Students</td>
-        <td>Rs. {{ scst_deposit }}/-</td>
+        <td>Refundable Deposit (One-time) for SC/ST Students</td>
+        <td>Rs. {{ var_scst_deposit }}/-</td>
+        {% if not is_ba %}<td>—</td><td>—</td>{% endif %}
       </tr>
       <tr>
-        <td>Refundable Deposit for General and Other Categories</td>
-        <td>Rs. {{ gen_deposit }}/-</td>
+        <td>Refundable Deposit (One-time) for General and Other Categ</td>
+        <td>Rs. {{ var_gen_deposit }}/-</td>
+        {% if not is_ba %}<td>—</td><td>—</td>{% endif %}
       </tr>
     </tbody>
   </table>
@@ -551,22 +603,23 @@
   <div class="fee-note">
     <p><strong>Note:</strong></p>
     <ul>
-      <li>A 'one-time admission fee' of Rs {{ admission_fee }} will be collected at the time of admission.</li>
-      {% if is_mpp %}
-      <li>{{ housing_fee_label }} will only be collected for candidates who apply for university housing.</li>
+      <li>A 'one-time admission fee' of Rs {{ var_admission_fee }} will be collected at the time of admission.</li>
+      {% if not is_ba %}
+      <li>Off-campus Housing Fee will only be collected for candidates who apply for university housing.</li>
       {% endif %}
-      <li>A refundable security deposit of Rs. {{ scst_deposit }} for SC/ST category students and Rs. {{ gen_deposit }} for other students will be collected at the time of admission. The security deposit will be refunded upon graduation or withdrawal from the programme, subject to deductions towards applicable convocation fees, certificate issuance fees, and any outstanding dues.</li>
-      <li>The {{ housing_includes_label }} includes a meal plan covering breakfast, lunch, dinner and an evening snack.</li>
+      <li>A refundable security deposit of Rs. {{ var_scst_deposit }} for SC/ST category students and Rs. {{ var_gen_deposit }} for other students will be collected at the time of admission. The security deposit will be refunded upon graduation or withdrawal from the programme, subject to deductions towards applicable convocation fees, certificate issuance fees, and any outstanding dues.</li>
+      <li>The {% if is_ba %}Housing Fee{% else %}Off-Campus Housing Fee{% endif %} includes a meal plan covering breakfast, lunch, dinner and an evening snack.</li>
     </ul>
   </div>
 
   <p class="para" style="margin-top:12px;">
-    {% if is_mpp %}
-    The total fees payable (including deposits) for students who opt for accommodation by students for the first year before {{ full_fee_deadline }} in the SC/ST category is <strong>Rs. {{ total_scst_y1 }}</strong> and by students in the general and other categories is <strong>Rs. {{ total_gen_y1 }}</strong>.
-    {% else %}
-    The total fees payable by students for the first year before {{ full_fee_deadline }} in the SC/ST category is <strong>Rs. {{ total_scst_y1 }}</strong> and by students in the general and other categories is <strong>Rs. {{ total_gen_y1 }}</strong>.
-    {% endif %}
+    The total fees payable {% if is_mpp %}(including deposits) for students who opt for accommodation by students {% else %}by students {% endif %}for the first year before {{ full_fee_deadline }} in the SC/ST category is <strong>Rs. {% if is_ba %}{{ var_ba_scst_total }}{% else %}{{ var_llb_scst_total }}{% endif %}</strong> and by students in the general and other categories is <strong>Rs. {% if is_ba %}{{ var_ba_gen_total }}{% else %}{{ var_llb_gen_total }}{% endif %}</strong>.
   </p>
+  {% else %}
+  <p class="para" style="margin-top:12px; font-weight: bold; text-align: center; font-size: 11pt;">
+    Please refer to the NLS website <a href="https://www.nls.ac.in/programme">https://www.nls.ac.in/programme</a> for detailed fee structures.
+  </p>
+  {% endif %}
 </div>
 
 {# ══════════════════════════════════════════════════════════════════════ #}
@@ -577,15 +630,17 @@
   <div class="lh">
     {% set pf_logo = frappe.db.get_value('Print Format', 'Offer Letter', 'logo') %}
     {% if pf_logo %}
+      {% set pf_logo_url = (static_base_url ~ pf_logo) if pf_logo.startswith('/') else pf_logo %}
       <div style="text-align: center; margin-bottom: 10px;">
-        <img src="{{ pf_logo }}" alt="Logo" style="max-width: 100%; height: auto; margin-top: 15px;">
+        <img src="{{ pf_logo_url }}" alt="Logo" style="max-width: 100%; height: auto; margin-top: 15px;">
       </div>
     {% else %}
       <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 2px;">
         <tr>
           <td style="width: 22%; text-align: left; vertical-align: middle; padding: 0;">
             {% if campus and campus.logo %}
-              <img src="{{ campus.logo }}" alt="Logo" style="max-width: 120px; height: auto;">
+              {% set campus_logo_url = (static_base_url ~ campus.logo) if campus.logo.startswith('/') else campus.logo %}
+              <img src="{{ campus_logo_url }}" alt="Logo" style="max-width: 120px; height: auto;">
             {% endif %}
           </td>
           <td style="width: 78%; text-align: center; vertical-align: middle; padding: 0;">
@@ -604,17 +659,17 @@
   </div>
 
   <p class="app-title">Appendix III</p>
-  <p class="app-subtitle">Financial Aid and Scholarships</p>
+  <p class="app-subtitle" style="margin-bottom:12px;">Financial Aid and Scholarships</p>
 
-  <p class="para">Students are admitted to NLSIU based on their academic performance in the admission process. The University has adopted an inclusion policy that ensures that students from diverse social, linguistic and economic backgrounds from across India benefit from a rigorous and transformative education. The admission process does not take into account the financial background of the applicant. Student fees for on-campus academic programmes cover only part of the actual cost of education, with the University subsidising the remaining cost. Further, the University is dedicated to ensuring that students admitted to an academic programme are provided with necessary support to continue their studies, irrespective of financial constraints. The Financial Aid Policy sets out the University's approach to delivering on this commitment.</p>
+  <p class="para">Students are admitted to NLSIU based on their academic performance in the admission process. The University has adopted an inclusion policy that ensures that students from diverse social, linguistic and economic backgrounds from across India benefit from a rigorous and transformative education. The admission process does not take into account the financial background of the applicant. Student fees for on-campus academic programmes cover only part of the actual cost of education, with the University subsidising the remaining cost. Further, the University is dedicated to ensuring that students admitted to an academic programme are provided with necessary support to continue their studies, irrespective of financial constraints. The <a href="https://www.nls.ac.in/information/students/financial-aid-for-students/financial-aid-policy/" style="font-weight:700; color:#900;">Financial Aid Policy</a> sets out the University's approach to delivering on this commitment.</p>
 
-  <p class="para">Students whose gross family income is less than Rs. 8,00,000 per annum are eligible to apply for financial aid by the university. Before submitting their application for University's financial aid, candidates must apply under the PM Vidyalaxmi Scheme. NLSIU has been recognised by the Government of India under the PM-Vidyalaxmi Scheme as one of the leading higher educational institutions in the country. The PM Vidyalaxmi Scheme provides collateral-free and guarantor-free education loans to meritorious students in top institutions in India. There is no income limit to apply for this scheme, and loans up to Rs. 30 lakhs can be availed. Partial and full interest subvention is available for lower annual family incomes.</p>
+  <p class="para">Students whose gross family income is less than Rs. 8,00,000 per annum are eligible to apply for financial aid by the university. Before submitting their application for University's financial aid, candidates <strong>must</strong> apply under the <strong>PM Vidyalaxmi Scheme</strong>. NLSIU has been recognised by the Government of India under the PM-Vidyalaxmi Scheme as one of the leading higher educational institutions in the country. The PM Vidyalaxmi Scheme provides collateral-free and guarantor-free education loans to meritorious students in top institutions in India. There is no income limit to apply for this scheme, and loans up to Rs. 30 lakhs can be availed. Partial and full interest subvention is available for lower annual family incomes.</p>
 
-  <p class="para">The application to PM Vidyalaxmi Scheme must be filled through the official PM Vidyalaxmi Portal: https://pmvidyalaxmi.co.in before applying for financial aid with the University. For detailed guidelines &amp; process, please visit PM Vidyalaxmi Scheme section of the universities scholarship page. A copy of the education loan application must be submitted along with the application for university financial aid. This is a pre-condition for applying for financial aid through the University. In the absence of this document, the financial aid process will be kept in abeyance.</p>
+  <p class="para">The application to PM Vidyalaxmi Scheme must be filled through the official PM Vidyalaxmi Portal: <span style="font-weight:700; color:#900; text-decoration:underline;">https://pmvidyalaxmi.co.in</span> before applying for financial aid with the University. For detailed guidelines &amp; process, please visit <span style="font-weight:700; color:#900; text-decoration:underline;">PM Vidyalaxmi Scheme</span> section of the universities scholarship page. A copy of the education loan application must be submitted along with the application for university financial aid. This is a pre-condition for applying for financial aid through the University. In the absence of this document, the financial aid process will be kept in abeyance.</p>
 
-  <p class="para">Candidates who wish to apply for financial assistance under the University's Financial Aid Policy are required to submit their application for financial aid on or before <strong>{{ financial_aid_deadline }}, 11.59 p.m.</strong> The University will communicate its decision on the financial aid applications by 31 July 2026. Students who are provided financial aid shall have their fee reimbursed up to the extent of the aid provided. Application for financial aid does not exempt you from payment of the full fees before {{ full_fee_deadline }}.</p>
+  <p class="para">Candidates who wish to apply for financial assistance under the University's Financial Aid Policy are required to submit their application for financial aid on or before {{ financial_aid_deadline }}. The University will communicate its decision on the financial aid applications by {{ var_fin_aid_decision_date }}. Students who are provided financial aid shall have their fee reimbursed up to the extent of the aid provided. Application for financial aid does not exempt you from payment of the full fees before {{ full_fee_deadline }}.</p>
 
-  <p class="para">Students who have been admitted to NLSIU may also be eligible for a number of scholarships sponsored by the central and state governments as well as private organisations. NLSIU has curated a list of some such scholarships for the benefit of candidates. Students may also visit the National Scholarship Portal for more information. For further assistance in this regard, please contact nlsiuscholarship@nls.ac.in.</p>
+  <p class="para">Students who have been admitted to NLSIU may also be eligible for a number of scholarships sponsored by the central and state governments as well as private organisations. NLSIU has curated a <span style="font-weight:700; color:#900; text-decoration:underline;">list of some such scholarships</span> for the benefit of candidates. Students may also visit the <span style="font-weight:700; color:#900; text-decoration:underline;">National Scholarship Portal</span> for more information. For further assistance in this regard, please contact <span style="font-weight:700; color:#900; text-decoration:underline;">nlsiuscholarship@nls.ac.in</span>.</p>
 </div>
 
 {# ══════════════════════════════════════════════════════════════════════ #}
@@ -625,15 +680,17 @@
   <div class="lh">
     {% set pf_logo = frappe.db.get_value('Print Format', 'Offer Letter', 'logo') %}
     {% if pf_logo %}
+      {% set pf_logo_url = (static_base_url ~ pf_logo) if pf_logo.startswith('/') else pf_logo %}
       <div style="text-align: center; margin-bottom: 10px;">
-        <img src="{{ pf_logo }}" alt="Logo" style="max-width: 100%; height: auto; margin-top: 15px;">
+        <img src="{{ pf_logo_url }}" alt="Logo" style="max-width: 100%; height: auto; margin-top: 15px;">
       </div>
     {% else %}
       <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 2px;">
         <tr>
           <td style="width: 22%; text-align: left; vertical-align: middle; padding: 0;">
             {% if campus and campus.logo %}
-              <img src="{{ campus.logo }}" alt="Logo" style="max-width: 120px; height: auto;">
+              {% set campus_logo_url = (static_base_url ~ campus.logo) if campus.logo.startswith('/') else campus.logo %}
+              <img src="{{ campus_logo_url }}" alt="Logo" style="max-width: 120px; height: auto;">
             {% endif %}
           </td>
           <td style="width: 78%; text-align: center; vertical-align: middle; padding: 0;">
@@ -698,15 +755,17 @@
   <div class="lh">
     {% set pf_logo = frappe.db.get_value('Print Format', 'Offer Letter', 'logo') %}
     {% if pf_logo %}
+      {% set pf_logo_url = (static_base_url ~ pf_logo) if pf_logo.startswith('/') else pf_logo %}
       <div style="text-align: center; margin-bottom: 10px;">
-        <img src="{{ pf_logo }}" alt="Logo" style="max-width: 100%; height: auto; margin-top: 15px;">
+        <img src="{{ pf_logo_url }}" alt="Logo" style="max-width: 100%; height: auto; margin-top: 15px;">
       </div>
     {% else %}
       <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 2px;">
         <tr>
           <td style="width: 22%; text-align: left; vertical-align: middle; padding: 0;">
             {% if campus and campus.logo %}
-              <img src="{{ campus.logo }}" alt="Logo" style="max-width: 120px; height: auto;">
+              {% set campus_logo_url = (static_base_url ~ campus.logo) if campus.logo.startswith('/') else campus.logo %}
+              <img src="{{ campus_logo_url }}" alt="Logo" style="max-width: 120px; height: auto;">
             {% endif %}
           </td>
           <td style="width: 78%; text-align: center; vertical-align: middle; padding: 0;">
@@ -749,7 +808,7 @@
 
   <p class="para"><strong>Application</strong></p>
 
-  <p class="para">If you wish to apply for University residence, you may indicate this preference in the application portal. The full off-campus housing fee of Rs. {{ housing_fee }}/- will then be included in your fee invoice and will have to be paid before {{ full_fee_deadline }}.</p>
+  <p class="para">If you wish to apply for University residence, you may indicate this preference in the application portal. The full {% if not is_ba %}off-campus {% endif %}housing fee of Rs. {% if is_ba %}{{ var_ba_housing_fee }}{% else %}{{ var_llb_housing_fee }}{% endif %}/- will then be included in your fee invoice and will have to be paid before {{ full_fee_deadline }}.</p>
 
   <p class="para">Please note that applying for University residence and paying the accommodation fees, does not guarantee allotment. While the University endeavours to expand its residential capacity, it is unable to guarantee housing at this time. Allocation will be made only at the time of registration and will depend on availability at that stage. If a student is not allotted University residence, the off campus housing fee paid will be refunded. However, a student who has been allotted university residences will not be refunded the amount in case of withdrawal, since the amount goes to a third-party service provider.</p>
   {% endif %}
@@ -767,15 +826,17 @@
   <div class="lh">
     {% set pf_logo = frappe.db.get_value('Print Format', 'Offer Letter', 'logo') %}
     {% if pf_logo %}
+      {% set pf_logo_url = (static_base_url ~ pf_logo) if pf_logo.startswith('/') else pf_logo %}
       <div style="text-align: center; margin-bottom: 10px;">
-        <img src="{{ pf_logo }}" alt="Logo" style="max-width: 100%; height: auto; margin-top: 15px;">
+        <img src="{{ pf_logo_url }}" alt="Logo" style="max-width: 100%; height: auto; margin-top: 15px;">
       </div>
     {% else %}
       <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 2px;">
         <tr>
           <td style="width: 22%; text-align: left; vertical-align: middle; padding: 0;">
             {% if campus and campus.logo %}
-              <img src="{{ campus.logo }}" alt="Logo" style="max-width: 120px; height: auto;">
+              {% set campus_logo_url = (static_base_url ~ campus.logo) if campus.logo.startswith('/') else campus.logo %}
+              <img src="{{ campus_logo_url }}" alt="Logo" style="max-width: 120px; height: auto;">
             {% endif %}
           </td>
           <td style="width: 78%; text-align: center; vertical-align: middle; padding: 0;">
@@ -1000,7 +1061,7 @@
     {% if is_pg %}
     <p class="faq-a">Candidates who have not yet received their Bachelor's degree certificate or final transcript must submit a declaration stating that the certificate/transcript will be submitted on or before {{ bachelors_deadline }}. Admission will remain provisional until the final degree certificate and marks transcript showing that the candidate meets the eligibility criteria are submitted.</p>
     {% else %}
-    <p class="faq-a">Candidates who have written their Class XII examination in 2026 and not yet received their Class XII marksheet/certificate shall submit a Declaration to the effect that the Class XII Marksheet/Certificate shall be submitted on or before December 31, 2026 and that admission will remain provisional until the submission of certificate and marksheet indicating that the candidate has met the eligibility criteria. Submission of digilocker print out will not be sufficient. They will have to submit the official certificate by December 31, 2026.</p>
+    <p class="faq-a">Candidates who have written their Class XII examination in 2026 and not yet received their Class XII marksheet/certificate shall submit <a href="https://docs.google.com/document/d/1BEL4LUKpN1t-XyZMpc-z8La3v_-2NeHYQbxskhWJ8ss/edit?tab=t.0">a Declaration</a> to the effect that the Class XII Marksheet/Certificate shall be submitted on or before December 31, 2026 and that admission will remain provisional until the submission of certificate and marksheet indicating that the candidate has met the eligibility criteria. Submission of digilocker print out will not be sufficient. They will have to submit the official certificate by December 31, 2026.</p>
     {% endif %}
   </div>
 
