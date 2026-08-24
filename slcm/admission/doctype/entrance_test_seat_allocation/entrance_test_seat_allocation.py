@@ -338,6 +338,386 @@ def bulk_download_all_records(names):
 
 
 @frappe.whitelist()
+def download_centre_list_excel(
+    academic_year=None,
+    admission_cycle=None,
+    program_level=None,
+    program=None,
+    applicant_type=None,
+    entrance_test_city=None,
+    center_name=None
+):
+    """
+    Generates per-centre Excel sheets (one sheet = one centre) bundled in a single ZIP.
+
+    Columns per sheet:
+        Candidate Name, Programme, Email, Gender,
+        Entrance Test Name, Entrance Test Provider,
+        Centre Name, Centre Address, Admit Card Number,
+        Entrance Test Status, Part-A Total Mark Scored, Part-A All India Rank,
+        Part-A Shortlisted Status, Part-B Total Marks Scored, Part-B All India Rank,
+        Total Marks Secured (Part A+B), Percentage, Cumulative Rank,
+        Entrance Test Percentile, Status (Result), Admission Status
+    """
+    import io
+    import zipfile
+    import xlsxwriter
+    from frappe.utils.file_manager import save_file
+
+    # ── Filters ────────────────────────────────────────────────────────────────
+    filters = {}
+    if academic_year:
+        filters["academic_year"] = academic_year
+    if admission_cycle:
+        filters["admission_cycle"] = admission_cycle
+    if program_level:
+        filters["program_level"] = program_level
+    if program:
+        filters["program"] = program
+    if applicant_type == "Domestic Applicants":
+        filters["is_international_applicant"] = 0
+    elif applicant_type == "International Applicants":
+        filters["is_international_applicant"] = 1
+
+    # If city filter is set, resolve the set of centres belonging to that city
+    if entrance_test_city and entrance_test_city not in ("(All Cities)", ""):
+        city_providers = frappe.get_all(
+            "Entrance Test Provider",
+            filters={"city": entrance_test_city},
+            fields=["center_name"],
+            limit_page_length=0
+        )
+        city_centres = [p.center_name for p in city_providers if p.center_name]
+        if city_centres:
+            if center_name:
+                # Intersect: specific centre must also be in that city
+                if center_name in city_centres:
+                    filters["center_name"] = center_name
+                else:
+                    frappe.throw(_("The selected Centre does not belong to the selected City."))
+            else:
+                filters["center_name"] = ["in", city_centres]
+        else:
+            frappe.throw(_("No centres found for the selected Entrance Test City."))
+    elif center_name:
+        filters["center_name"] = center_name
+
+    # ── Fetch Records ──────────────────────────────────────────────────────────
+    records = frappe.get_all(
+        "Entrance Test Seat Allocation",
+        filters=filters,
+        fields=[
+            "name", "applicant", "candidate_name", "program", "email", "gender",
+            "entrance_test_name", "entrance_test_provider",
+            "center_name", "center_address", "admit_card_number",
+            # Result tab fields (exclude result_published)
+            "entrance_test_status",
+            "part_a_total_marks_scored", "part_a_all_india_rank", "shortlisted_status",
+            "part_b_total_marks_scored", "part_b_all_india_rank",
+            "total_marks_secured_in_part_a_b", "percentage", "entrance_test_rank",
+            "percentile", "result_status", "admission_status"
+        ],
+        order_by="center_name asc, candidate_name asc"
+    )
+
+    if not records:
+        frappe.throw(_("No applicant records found matching the selected filters."))
+
+    # ── Build center_name → city lookup from Entrance Test Provider ────────────
+    all_providers = frappe.get_all(
+        "Entrance Test Provider",
+        fields=["center_name", "city"],
+        limit_page_length=0
+    )
+    centre_to_city = {
+        p.center_name: (p.city or "Unassigned").strip()
+        for p in all_providers
+    }
+
+    # ── Group: City → Centre → [records] ──────────────────────────────────────
+    from collections import OrderedDict
+    city_groups = OrderedDict()
+    for rec in records:
+        c_name = (rec.center_name or "Unassigned").strip()
+        city   = centre_to_city.get(c_name, "Unassigned")
+        city_groups.setdefault(city, OrderedDict())
+        city_groups[city].setdefault(c_name, []).append(rec)
+
+    total_centres_count = sum(len(centres) for centres in city_groups.values())
+
+    # ── Excel Column Definitions ───────────────────────────────────────────────
+    COLUMNS = [
+        ("S.No",                          10),
+        ("Application Number",            20),
+        ("Candidate Name",                25),
+        ("Programme",                     20),
+        ("Email",                         30),
+        ("Gender",                        12),
+        ("Entrance Test Name",            25),
+        ("Entrance Test Provider",        25),
+        ("Centre Name",                   25),
+        ("Centre Address",                35),
+        ("Admit Card Number",             20),
+        # Result fields
+        ("Entrance Test Status",          20),
+        ("Part-A Mark Scored",            18),
+        ("Part-A All India Rank",         20),
+        ("Part-A Shortlisted Status",     22),
+        ("Part-B Mark Scored",            18),
+        ("Part-B All India Rank",         20),
+        ("Total Marks (Part A+B)",        22),
+        ("Percentage (%)",                15),
+        ("Cumulative Rank",               16),
+        ("Percentile",                    14),
+        ("Result Status",                 16),
+        ("Admission Status",              22),
+    ]
+
+    def _safe_path(name):
+        """Strip characters not allowed in ZIP path components."""
+        return (
+            name
+            .replace("/", "-").replace("\\", "-")
+            .replace(":", "-").replace("*", "")
+            .replace("?", "").replace('"', "")
+            .replace("<", "").replace(">", "")
+            .replace("|", "")
+        ).strip() or "Unnamed"
+
+    def _build_worksheet(workbook, centre_name_key, rows):
+        """Create and populate a single worksheet for one centre."""
+        safe_sheet = centre_name_key[:31].replace("/", "-").replace("\\", "-").replace(":", "-").replace("*", "-").replace("?", "-").replace("[", "(").replace("]", ")")
+        worksheet = workbook.add_worksheet(safe_sheet)
+
+        title_fmt = workbook.add_format({
+            "bold": True, "font_size": 13,
+            "bg_color": "#1E3A8A", "font_color": "#FFFFFF",
+            "align": "center", "valign": "vcenter", "border": 1
+        })
+        header_fmt = workbook.add_format({
+            "bold": True, "bg_color": "#1E40AF", "font_color": "#FFFFFF",
+            "border": 1, "align": "center", "valign": "vcenter", "text_wrap": True
+        })
+        cell_fmt = workbook.add_format({"border": 1, "valign": "vcenter"})
+        num_fmt  = workbook.add_format({"border": 1, "num_format": "0.00", "valign": "vcenter"})
+        int_fmt  = workbook.add_format({"border": 1, "num_format": "0", "valign": "vcenter"})
+        alt_cell = workbook.add_format({"border": 1, "valign": "vcenter", "bg_color": "#EFF6FF"})
+        alt_num  = workbook.add_format({"border": 1, "num_format": "0.00", "valign": "vcenter", "bg_color": "#EFF6FF"})
+        alt_int  = workbook.add_format({"border": 1, "num_format": "0", "valign": "vcenter", "bg_color": "#EFF6FF"})
+
+        num_cols = len(COLUMNS)
+        worksheet.merge_range(0, 0, 0, num_cols - 1,
+            f"Centre: {centre_name_key}  |  Total Applicants: {len(rows)}", title_fmt)
+        worksheet.set_row(0, 22)
+
+        for col_idx, (col_label, col_width) in enumerate(COLUMNS):
+            worksheet.write(1, col_idx, col_label, header_fmt)
+            worksheet.set_column(col_idx, col_idx, col_width)
+        worksheet.set_row(1, 32)
+
+        float_cols = {12, 15, 17, 18, 20}
+        int_cols   = {13, 16, 19}
+
+        for row_idx, rec in enumerate(rows, start=2):
+            is_alt    = (row_idx % 2 == 0)
+            base_cell = alt_cell if is_alt else cell_fmt
+            base_num  = alt_num  if is_alt else num_fmt
+            base_int  = alt_int  if is_alt else int_fmt
+
+            row_data = [
+                row_idx - 1,
+                rec.applicant or rec.name,
+                rec.candidate_name or "",
+                rec.program or "",
+                rec.email or "",
+                rec.gender or "",
+                rec.entrance_test_name or "",
+                rec.entrance_test_provider or "",
+                rec.center_name or "",
+                rec.center_address or "",
+                rec.admit_card_number or "",
+                rec.entrance_test_status or "",
+                rec.part_a_total_marks_scored or 0,
+                rec.part_a_all_india_rank or 0,
+                rec.shortlisted_status or "",
+                rec.part_b_total_marks_scored or 0,
+                rec.part_b_all_india_rank or 0,
+                rec.total_marks_secured_in_part_a_b or 0,
+                rec.percentage or 0,
+                rec.entrance_test_rank or 0,
+                rec.percentile or 0,
+                rec.result_status or "",
+                rec.admission_status or "",
+            ]
+
+            for col_idx, val in enumerate(row_data):
+                if col_idx in float_cols:
+                    worksheet.write_number(row_idx, col_idx, float(val or 0), base_num)
+                elif col_idx in int_cols:
+                    worksheet.write_number(row_idx, col_idx, int(val or 0), base_int)
+                else:
+                    worksheet.write(row_idx, col_idx, str(val) if val is not None else "", base_cell)
+
+    # ── Build ZIP: City/Centre.xlsx ────────────────────────────────────────────
+    zip_buffer = io.BytesIO()
+
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as zip_file:
+        for city_name in sorted(city_groups.keys()):
+            centres_in_city = city_groups[city_name]
+            safe_city = _safe_path(city_name)
+
+            for centre_name_key in sorted(centres_in_city.keys()):
+                rows = centres_in_city[centre_name_key]
+
+                wb_buffer = io.BytesIO()
+                workbook  = xlsxwriter.Workbook(wb_buffer, {"constant_memory": True, "in_memory": True})
+                _build_worksheet(workbook, centre_name_key, rows)
+                workbook.close()
+
+                safe_centre = _safe_path(centre_name_key)
+                # Path inside ZIP: CityName/CentreName.xlsx
+                zip_entry = f"{safe_city}/{safe_centre}.xlsx"
+                zip_file.writestr(zip_entry, wb_buffer.getvalue())
+
+
+    # ── Save & Return ZIP ──────────────────────────────────────────────────────
+    ts = frappe.utils.now_datetime().strftime("%Y%m%d_%H%M%S")
+    zip_filename = f"Centre_List_{ts}.zip"
+
+    # Attach to the first matching record (arbitrary anchor)
+    anchor = records[0].name if records else "Entrance Test Seat Allocation"
+    saved = save_file(
+        zip_filename,
+        zip_buffer.getvalue(),
+        "Entrance Test Seat Allocation",
+        anchor,
+        is_private=1
+    )
+
+    return {
+        "file_url": saved.file_url,
+        "filename": zip_filename,
+        "total_centres": total_centres_count,
+        "total_applicants": len(records)
+    }
+
+
+@frappe.whitelist()
+def get_centre_list_preview(
+    academic_year=None,
+    admission_cycle=None,
+    program_level=None,
+    program=None,
+    applicant_type=None,
+    center_name=None,
+    entrance_test_city=None
+):
+    """
+    Returns a lightweight preview for the Centre List Download dialog:
+    { total_applicants: int, total_cities: int, centres: [{ name: str, count: int }, ...] }
+    """
+    # Build center_name → city lookup
+    all_providers = frappe.get_all(
+        "Entrance Test Provider",
+        fields=["center_name", "city"],
+        limit_page_length=0
+    )
+    centre_to_city = {p.center_name: (p.city or "Unassigned").strip() for p in all_providers}
+
+    filters = {}
+    if academic_year:
+        filters["academic_year"] = academic_year
+    if admission_cycle:
+        filters["admission_cycle"] = admission_cycle
+    if program_level:
+        filters["program_level"] = program_level
+    if program:
+        filters["program"] = program
+
+    if applicant_type == "Domestic Applicants":
+        filters["is_international_applicant"] = 0
+    elif applicant_type == "International Applicants":
+        filters["is_international_applicant"] = 1
+
+    # Resolve city → centres filter
+    if entrance_test_city and entrance_test_city not in ("(All Cities)", ""):
+        city_providers = [p.center_name for p in all_providers if (p.city or "").strip() == entrance_test_city and p.center_name]
+        if city_providers:
+            if center_name and center_name not in ("(All Centres)", ""):
+                filters["center_name"] = center_name if center_name in city_providers else "__none__"
+            else:
+                filters["center_name"] = ["in", city_providers]
+        else:
+            return {"total_applicants": 0, "total_cities": 0, "centres": []}
+    elif center_name and center_name not in ("(All Centres)", ""):
+        filters["center_name"] = center_name
+
+    records = frappe.get_all(
+        "Entrance Test Seat Allocation",
+        filters=filters,
+        fields=["name", "center_name"],
+        order_by="center_name asc"
+    )
+
+    if not records:
+        return {"total_applicants": 0, "total_cities": 0, "centres": []}
+
+    # Group by centre name and count unique cities
+    counts = {}
+    cities_seen = set()
+    for r in records:
+        key = (r.center_name or "Unassigned").strip()
+        counts[key] = counts.get(key, 0) + 1
+        cities_seen.add(centre_to_city.get(key, "Unassigned"))
+
+    centres = [{"name": k, "count": v} for k, v in sorted(counts.items(), key=lambda x: x[0])]
+
+    return {
+        "total_applicants": len(records),
+        "total_cities": len(cities_seen),
+        "centres": centres
+    }
+
+
+@frappe.whitelist()
+def get_cities_for_filter(academic_year=None, admission_cycle=None):
+    """
+    Returns the list of Entrance Test City names that have at least one
+    Entrance Test Provider with records in the current ETSA data.
+    Used to populate the City filter dropdown in the Centre List Download dialog.
+    """
+    # Get all distinct center_names for the given AY + AC
+    et_filters = {}
+    if academic_year:
+        et_filters["academic_year"] = academic_year
+    if admission_cycle:
+        et_filters["admission_cycle"] = admission_cycle
+
+    centre_records = frappe.get_all(
+        "Entrance Test Seat Allocation",
+        filters=et_filters,
+        fields=["center_name"],
+        distinct=True,
+        limit_page_length=0
+    )
+    centre_names = list({r.center_name for r in centre_records if r.center_name})
+
+    if not centre_names:
+        return {"cities": []}
+
+    # Look up city for each centre via Entrance Test Provider
+    providers = frappe.get_all(
+        "Entrance Test Provider",
+        filters={"center_name": ["in", centre_names]},
+        fields=["center_name", "city"],
+        limit_page_length=0
+    )
+    cities = sorted({(p.city or "").strip() for p in providers if (p.city or "").strip()})
+
+    return {"cities": cities}
+
+
+@frappe.whitelist()
 def update_ranks_by_category(academic_year, admission_cycle, program_level, entrance_test_list=None, program=None, applicant_type=None):
     """
     Ranks applicants based on total_marks_secured_in_part_a_b for a given batch and sends result emails.
