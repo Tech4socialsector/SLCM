@@ -267,6 +267,134 @@ def get_sync_status(job_id=None):
 
 
 @frappe.whitelist()
+def sync_single_payment_settlement(pr_name):
+    """
+    Manually synchronize Razorpay settlement information
+    for a single Payment Request.
+    """
+    import requests
+    import datetime
+    from slcm.api.razorpay_webhook import complete_payment_settlement
+    from frappe import _
+
+    pr = frappe.get_doc("Payment Request", pr_name)
+
+    if not pr.razorpay_payment_id:
+        frappe.throw(_("No Razorpay Payment ID found on this Payment Request."))
+
+    if pr.gateway_status != "captured":
+        frappe.throw(_("Settlement can only be checked for a captured payment."))
+
+    settings = frappe.get_single("Razorpay Settings")
+    auth = (settings.api_key, settings.get_password("api_secret"))
+
+    # 1. Fetch payment
+    payment_url = f"{RAZORPAY_BASE}/payments/{pr.razorpay_payment_id}"
+    response = requests.get(payment_url, auth=auth, timeout=30)
+    
+    if not response.ok:
+        frappe.throw(_("Failed to fetch payment from Razorpay: {0}").format(response.status_code))
+
+    payment = response.json()
+
+    # 2. Validate payment ownership
+    if payment.get("id") != pr.razorpay_payment_id:
+        frappe.throw(_("Payment ID mismatch."))
+
+    if payment.get("order_id") != pr.razorpay_order_id:
+        frappe.throw(_("Razorpay Order ID mismatch."))
+
+    if payment.get("status") != "captured":
+        frappe.throw(_("Payment is not captured. Settlement cannot be confirmed."))
+
+    # 3. Check settlement via recon/combined
+    payment_ts = payment.get("created_at")
+    dt = datetime.datetime.fromtimestamp(payment_ts)
+    
+    # We must scan recon/combined for the month the payment was made
+    recon_url = f"{RAZORPAY_BASE}/settlements/recon/combined"
+    
+    skip = 0
+    settlement_id = None
+    found_item = None
+    
+    while True:
+        recon_resp = requests.get(recon_url, auth=auth, params={"year": dt.year, "month": dt.month, "count": 100, "skip": skip}, timeout=30)
+        if not recon_resp.ok:
+            break
+            
+        items = recon_resp.json().get("items", [])
+        if not items:
+            break
+            
+        for item in items:
+            if item.get("entity_id") == pr.razorpay_payment_id or item.get("payment_id") == pr.razorpay_payment_id:
+                settlement_id = item.get("settlement_id")
+                found_item = item
+                break
+                
+        if settlement_id:
+            break
+            
+        if len(items) < 100:
+            break
+        skip += 100
+
+
+    if not settlement_id:
+        return {
+            "status": "pending",
+            "message": _("This payment has not been included in a Razorpay settlement yet.")
+        }
+
+    # 4. Fetch settlement
+    settlement_url = f"{RAZORPAY_BASE}/settlements/{settlement_id}"
+    settlement_response = requests.get(settlement_url, auth=auth, timeout=30)
+
+    if not settlement_response.ok:
+        frappe.throw(_("Failed to fetch settlement from Razorpay: {0}").format(settlement_response.status_code))
+
+    settlement = settlement_response.json()
+
+    # 5. Validate settlement
+    if settlement.get("id") != settlement_id:
+        frappe.throw(_("Settlement ID mismatch."))
+
+    settlement_status = settlement.get("status")
+    if settlement_status != "processed":
+        return {
+            "status": settlement_status,
+            "message": _("Settlement {0} is currently {1}.").format(settlement_id, settlement_status)
+        }
+
+    # 6. Complete settlement
+    created_at = settlement.get("created_at")
+    settlement_date = None
+    if created_at:
+        try:
+            settlement_date = datetime.datetime.utcfromtimestamp(int(created_at)).date()
+        except Exception:
+            pass
+
+    settlement_payload = {
+        "id": settlement_id,
+        "utr": settlement.get("utr") or "",
+        "status": settlement_status,
+        "settlement_date": settlement_date,
+    }
+
+    complete_payment_settlement("Payment Request", pr.name, found_item, settlement_payload)
+
+    return {
+        "status": "success",
+        "message": _("Settlement {0} synchronized successfully.").format(settlement_id),
+        "settlement_id": settlement_id,
+        "utr": settlement.get("utr")
+    }
+
+
+
+@frappe.whitelist()
 def run_sync(from_date=None, to_date=None):
     """
     Sync settlement data into FLE Payment Log using /v1/settlements/recon/combined.
@@ -291,10 +419,7 @@ def run_sync(from_date=None, to_date=None):
 
     setl_by_id = {s["id"]: s for s in settlements if s.get("id")}
 
-    # ── Step 2: build FLE Payment Log lookup maps ─────────────────────────────
-    # Map 1: pay_xxx → log name  (from transaction_id field directly)
-    # Map 2: pay_xxx → log name  (extracted from gateway_response JSON)
-    # Map 3: order_id → log name (from gateway_response JSON)
+    # ── Step 2: build lookup maps ─────────────────────────────
     fle_rows = frappe.db.sql(
         """
         SELECT name, transaction_id, paid_amount, settlement_id, gateway_response
@@ -302,47 +427,62 @@ def run_sync(from_date=None, to_date=None):
         """,
         as_dict=True,
     )
+    pr_rows = frappe.db.sql(
+        """
+        SELECT name, razorpay_payment_id, transaction_id, amount as paid_amount, settlement_id, gateway_response
+        FROM `tabPayment Request`
+        WHERE status = 'Paid'
+        """,
+        as_dict=True,
+    )
 
-    by_tid      = {}   # pay_xxx  → name
-    by_gw_pay   = {}   # pay_xxx  → name  (from gateway_response)
-    by_order_id = {}   # order_id → name  (from gateway_response)
+    by_tid      = {}   # pay_xxx  → (name, target_doctype)
+    by_gw_pay   = {}   # pay_xxx  → (name, target_doctype)
+    by_order_id = {}   # order_id → (name, target_doctype)
 
-    for r in fle_rows:
-        # Direct transaction_id
-        tid = (r.transaction_id or "").strip()
-        if tid and tid.startswith("pay_") and tid not in by_tid:
-            by_tid[tid] = r.name
+    def process_rows(rows, target_doctype):
+        for r in rows:
+            # Direct transaction_id or razorpay_payment_id
+            tid = (r.get("transaction_id") or "").strip()
+            rzp_pid = (r.get("razorpay_payment_id") or "").strip()
+            
+            pay_id = rzp_pid if rzp_pid.startswith("pay_") else tid
+            if pay_id and pay_id.startswith("pay_") and pay_id not in by_tid:
+                by_tid[pay_id] = (r.name, target_doctype)
 
-        # Parse gateway_response for pay_xxx and order_id
-        gw_pay = gw_order = ""
-        if r.gateway_response:
-            try:
-                gw = json.loads(r.gateway_response)
-                # Integration Request format: {"razorpay_payment_id": "pay_xxx", "razorpay_order_id": "order_xxx"}
-                gw_pay   = (gw.get("razorpay_payment_id") or "").strip()
-                gw_order = (gw.get("razorpay_order_id")   or "").strip()
-                # Webhook format: payload.payment.entity.id
-                if not gw_pay:
-                    gw_pay = (
-                        gw.get("payload", {})
-                           .get("payment", {})
-                           .get("entity", {})
-                           .get("id") or ""
-                    ).strip()
-                if not gw_order:
-                    gw_order = (
-                        gw.get("payload", {})
-                           .get("payment", {})
-                           .get("entity", {})
-                           .get("order_id") or ""
-                    ).strip()
-            except Exception:
-                pass
+            # Parse gateway_response for pay_xxx and order_id
+            gw_pay = gw_order = ""
+            if r.gateway_response:
+                try:
+                    gw = json.loads(r.gateway_response)
+                    # Integration Request format: {"razorpay_payment_id": "pay_xxx", "razorpay_order_id": "order_xxx"}
+                    gw_pay   = (gw.get("razorpay_payment_id") or "").strip()
+                    gw_order = (gw.get("razorpay_order_id")   or "").strip()
+                    # Webhook format: payload.payment.entity.id
+                    if not gw_pay:
+                        gw_pay = (
+                            gw.get("payload", {})
+                               .get("payment", {})
+                               .get("entity", {})
+                               .get("id") or ""
+                        ).strip()
+                    if not gw_order:
+                        gw_order = (
+                            gw.get("payload", {})
+                               .get("payment", {})
+                               .get("entity", {})
+                               .get("order_id") or ""
+                        ).strip()
+                except Exception:
+                    pass
 
-        if gw_pay and gw_pay.startswith("pay_") and gw_pay not in by_gw_pay:
-            by_gw_pay[gw_pay] = r.name
-        if gw_order and gw_order not in by_order_id:
-            by_order_id[gw_order] = r.name
+            if gw_pay and gw_pay.startswith("pay_") and gw_pay not in by_gw_pay:
+                by_gw_pay[gw_pay] = (r.name, target_doctype)
+            if gw_order and gw_order not in by_order_id:
+                by_order_id[gw_order] = (r.name, target_doctype)
+
+    process_rows(fle_rows, "FLE Payment Log")
+    process_rows(pr_rows, "Payment Request")
 
     # ── Step 3: determine year-months to query recon ──────────────────────────
     year_months = set()
@@ -367,7 +507,7 @@ def run_sync(from_date=None, to_date=None):
     updated_names  = set()   # avoid double-updating the same log row
 
     def _resolve_log(item):
-        """Try all matching strategies; return (log_name, pay_id) or (None, '')."""
+        """Try all matching strategies; return (log_name, target_doctype, pay_id) or (None, None, '')."""
         pay_id = (
             item.get("entity_id")
             or item.get("payment_id")
@@ -377,14 +517,14 @@ def run_sync(from_date=None, to_date=None):
         order_id = (item.get("order_id") or "").strip()
 
         if pay_id:
-            name = by_tid.get(pay_id) or by_gw_pay.get(pay_id)
-            if name:
-                return name, pay_id
+            res = by_tid.get(pay_id) or by_gw_pay.get(pay_id)
+            if res:
+                return res[0], res[1], pay_id
         if order_id:
-            name = by_order_id.get(order_id)
-            if name:
-                return name, pay_id
-        return None, pay_id
+            res = by_order_id.get(order_id)
+            if res:
+                return res[0], res[1], pay_id
+        return None, None, pay_id
 
     for year, month in year_months:
         skip = 0
@@ -416,17 +556,18 @@ def run_sync(from_date=None, to_date=None):
                 if entity_type and entity_type not in ("payment", ""):
                     continue
 
-                log_name, pay_id = _resolve_log(item)
+                log_name, target_doctype, pay_id = _resolve_log(item)
 
                 if not log_name:
                     recon_skipped += 1
                     if pay_id:
                         frappe.logger().debug(
-                            f"sync_settlements: no FLE match for pay_id={pay_id}"
+                            f"sync_settlements: no match for pay_id={pay_id}"
                         )
                     continue
 
-                if log_name in updated_names:
+                key = (log_name, target_doctype)
+                if key in updated_names:
                     continue
 
                 # Settlement metadata
@@ -443,21 +584,28 @@ def run_sync(from_date=None, to_date=None):
                     except Exception:
                         pass
 
+                gross_paise  = int(item.get("amount") or 0)
                 fee_paise    = int(item.get("fee")    or item.get("fees") or 0)
                 tax_paise    = int(item.get("tax")    or 0)
-                credit_paise = int(item.get("credit") or item.get("amount") or 0)
+                net_paise    = int(item.get("credit") or 0)
 
-                frappe.db.set_value("FLE Payment Log", log_name, {
+                fields_to_update = {
                     "settlement_id":     sid,
                     "settlement_utr":    utr,
                     "settlement_date":   settlement_date,
                     "settlement_status": status,
-                    "gateway_fees":      round(fee_paise    / 100, 2),
-                    "gateway_tax":       round(tax_paise    / 100, 2),
-                    "net_settled":       round(credit_paise / 100, 2),
-                }, update_modified=False)
+                    "gateway_fees":      round(fee_paise / 100, 2),
+                    "gateway_tax":       round(tax_paise / 100, 2),
+                    "net_settled":       round(net_paise / 100, 2) if net_paise else round((gross_paise - fee_paise - tax_paise) / 100, 2),
+                }
 
-                updated_names.add(log_name)
+                if target_doctype == "Payment Request":
+                    fields_to_update["settlement_amount"] = round(gross_paise / 100, 2)
+                    fields_to_update["settlement_response"] = json.dumps(item, indent=4)
+
+                frappe.db.set_value(target_doctype, log_name, fields_to_update, update_modified=False)
+
+                updated_names.add(key)
                 total_updated += 1
                 recon_matched += 1
 
@@ -487,10 +635,25 @@ def run_sync(from_date=None, to_date=None):
             """,
             as_dict=True,
         )
-        for row in utr_rows:
-            if row.name in updated_names:
+        pr_utr_rows = frappe.db.sql(
+            """
+            SELECT name, settlement_utr
+            FROM `tabPayment Request`
+            WHERE settlement_utr IS NOT NULL
+              AND settlement_utr != ''
+              AND (settlement_id IS NULL OR settlement_id = '')
+              AND status = 'Paid'
+            """,
+            as_dict=True,
+        )
+        all_utr_rows = [(r.name, r.settlement_utr, "FLE Payment Log") for r in utr_rows] + \
+                       [(r.name, r.settlement_utr, "Payment Request") for r in pr_utr_rows]
+
+        for row_name, row_utr, t_doctype in all_utr_rows:
+            key = (row_name, t_doctype)
+            if key in updated_names:
                 continue
-            s = utr_to_settlement.get(row.settlement_utr)
+            s = utr_to_settlement.get(row_utr)
             if not s:
                 continue
 
@@ -504,13 +667,13 @@ def run_sync(from_date=None, to_date=None):
                 except Exception:
                     pass
 
-            frappe.db.set_value("FLE Payment Log", row.name, {
+            frappe.db.set_value(t_doctype, row_name, {
                 "settlement_id":     sid,
                 "settlement_date":   settlement_date,
                 "settlement_status": status,
             }, update_modified=False)
 
-            updated_names.add(row.name)
+            updated_names.add(key)
             fallback_updated += 1
 
     frappe.db.commit()
