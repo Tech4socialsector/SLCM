@@ -23,7 +23,7 @@ import requests
 from frappe import _
 
 RAZORPAY_BASE   = "https://api.razorpay.com/v1"
-PAGE_SIZE       = 100
+PAGE_SIZE       = 10
 RECON_PAGE_SIZE = 1000
 
 

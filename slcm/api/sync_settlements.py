@@ -392,6 +392,20 @@ def sync_single_payment_settlement(pr_name):
         "utr": settlement.get("utr")
     }
 
+@frappe.whitelist()
+def enqueue_bulk_sync():
+    """
+    Queue the run_sync method in the background for bulk updating
+    all past Payment Requests without freezing the browser.
+    """
+    frappe.enqueue(
+        "slcm.api.sync_settlements.run_sync",
+        queue="long",
+        timeout=3600,
+        from_date=None,
+        to_date=None
+    )
+    return True
 
 
 @frappe.whitelist()
