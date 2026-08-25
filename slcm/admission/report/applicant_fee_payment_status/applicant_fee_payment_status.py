@@ -230,7 +230,6 @@ def get_data(filters: dict | None) -> list[dict]:
 			"fee_type",
 			"total_amount",
 			"final_payable_amount",
-			"fee_invoice",
 			"offer_letter",
 			"payment_date",
 		],

@@ -29,7 +29,7 @@
    "fieldname": "admission_cycle",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Admission cycle",
+   "label": "Admission Cycle",
    "options": "Admission Cycle",
    "reqd": 1
   },
@@ -52,7 +52,7 @@
   {
    "fieldname": "reservation_category",
    "fieldtype": "Table",
-   "label": "Reservation category",
+   "label": "Reservation Category",
    "options": "Rule Mapping Category"
   },
   {
@@ -89,7 +89,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-30 14:23:46.889442",
+ "modified": "2026-08-25 15:16:25.934943",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Eligibility Rule Mapping",
