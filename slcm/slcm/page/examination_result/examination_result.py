@@ -1231,10 +1231,17 @@ def get_marks_for_students(course, exam_plan, student_ids):
 		)
 		_failed_grade_set = {r[0] for r in fg if r[0]}
 
-	def _arrear_marker(student, grade):
+	def _arrear_marker(student, grade, row=None):
 		reg_cnt = reg_count_map.get(student, 0)
 		is_fail = bool(grade and grade in _failed_grade_set) if _failed_grade_set else False
 		total = reg_cnt + (1 if is_fail else 0)
+		
+		if row:
+			updated = row.get("updated_final_marks") or 0.0
+			original = row.get("total_marks") or 0.0
+			if updated > original:
+				return "I"
+
 		if total >= 3:
 			return "RR"
 		elif total >= 1:
@@ -1261,7 +1268,7 @@ def get_marks_for_students(course, exam_plan, student_ids):
 			"improvement_grade":    row["improvement_grade"] or "",
 			"improvement_applied":  int(row["improvement_applied"] or 0),
 			"re_exam_grade":        row["re_exam_grade"] or "",
-			"arrear_marker":        _arrear_marker(s, row["grade"] or ""),
+			"arrear_marker":        _arrear_marker(s, row["grade"] or "", row),
 			"entries":              {},
 		}
 
@@ -2612,31 +2619,51 @@ def import_marks_excel(course, exam_plan, file_url):
 		{"schema": csa_row},
 		as_dict=True,
 	)
+	for col in schema_cols:
+		col["is_reexam"] = False
 
-	# Build label → schema col lookup (strip/normalise spaces around colon)
+	reexam_cols = frappe.db.sql(
+		"""
+		SELECT src.component, src.assessment_type, eat.type_name, src.label, src.maximum_marks
+		FROM `tabSchema Reexam Config` src
+		LEFT JOIN `tabExam Assessment Type` eat ON eat.name = src.assessment_type
+		WHERE src.parent = %(schema)s ORDER BY src.idx ASC
+		""",
+		{"schema": csa_row},
+		as_dict=True,
+	)
+	for col in reexam_cols:
+		col["is_reexam"] = True
+
+	schema_cols.extend(reexam_cols)
+
+	# Build label → schema col lookup
 	label_to_col = {}
 	for col in schema_cols:
 		lbl  = col.get("label") or col.get("type_name") or col.get("assessment_type") or ""
 		maxm = col.get("maximum_marks") or 0
-		# Accept both "Max: N" and "Max:N" formats
-		label_to_col[f"{lbl} (Max: {maxm})"] = col
-		label_to_col[f"{lbl} (Max:{maxm})"]  = col
+		is_rx = col.get("is_reexam", False)
+		# Use a tuple (is_reexam, label_string) to prevent collision between regular and re-exam columns
+		label_to_col[(is_rx, f"{lbl} (Max: {maxm})")] = col
+		label_to_col[(is_rx, f"{lbl} (Max:{maxm})")]  = col
 
 	# ── Build per-column mapping from rows 2 and 3 ────────────────────────────
-	# col_field_map: col_index (0-based) → (component, assessment_type, db_field)
-	# db_field is "marks" or "revaluation_marks"; "total_marks" cols are skipped
-	#
-	# NOTE: non-project columns have rows 2+3 merged in the exported file, so
-	# ws.cell(3,c).value is None for those columns. We handle this by mapping the
-	# column directly to "marks" as soon as we see the label in row 2.
 	col_field_map = {}
 	current_proj_info = None  # (component, assessment_type) — only set for project blocks
+	current_r1_is_reexam = False
+
 	for c in range(1, ws.max_column + 1):
+		r1 = str(ws.cell(1, c).value or "").strip()
 		r2 = str(ws.cell(2, c).value or "").strip()
 		r3 = str(ws.cell(3, c).value or "").strip().lower()
 
-		if r2 and r2 in label_to_col:
-			sc = label_to_col[r2]
+		if r1:
+			current_r1_is_reexam = r1.endswith("(Re-Exam)")
+
+		# Look up using the tuple
+		sc = label_to_col.get((current_r1_is_reexam, r2))
+
+		if r2 and sc:
 			is_proj = (sc.get("type_name") or sc.get("label") or "").lower() == "project"
 			if is_proj:
 				# Project block: sub-columns are mapped via row 3 in subsequent cols
@@ -2927,18 +2954,52 @@ def import_reexam_marks_excel(course, exam_plan, file_url):
 		# Update updated_final_marks field
 		frappe.db.set_value("Student Course Marks", scm_name, "updated_final_marks", marks_val)
 
-		# Also update the re-exam marks in Student Marks Entry (if exists)
-		reexam_entry = frappe.db.get_value(
-			"Student Marks Entry",
-			{
-				"parent": scm_name,
-				"component": "Re exam",
-				"assessment_type": ["like", "%Supplementary%"]
-			},
-			"name"
+		# Dynamically fetch re-exam config for component and assessment_type
+		csa_row = frappe.db.get_value(
+			"Course Schema Assignment",
+			{"course": course, "exam_plan": exam_plan},
+			"evaluation_schema",
 		)
-		if reexam_entry:
-			frappe.db.set_value("Student Marks Entry", reexam_entry, "marks", marks_val)
+		reexam_config = frappe.db.get_value(
+			"Schema Reexam Config",
+			{"parent": csa_row},
+			["component", "assessment_type"],
+			as_dict=True
+		) if csa_row else None
+		
+		if reexam_config:
+			r_comp = reexam_config.get("component")
+			r_atype = reexam_config.get("assessment_type")
+			reexam_entry = frappe.db.get_value(
+				"Student Marks Entry",
+				{
+					"parent": scm_name,
+					"component": r_comp,
+					"assessment_type": r_atype
+				},
+				"name"
+			)
+			if reexam_entry:
+				frappe.db.set_value("Student Marks Entry", reexam_entry, "marks", marks_val)
+			else:
+				frappe.db.sql(
+					"""
+					INSERT INTO `tabStudent Marks Entry`
+					(name, creation, modified, modified_by, owner,
+					 parent, parenttype, parentfield, component, assessment_type, marks)
+					VALUES (%(nm)s, NOW(), NOW(), %(usr)s, %(usr)s,
+					        %(par)s, 'Student Course Marks', 'marks_entries',
+					        %(comp)s, %(atype)s, %(val)s)
+					""",
+					{
+						"nm":   frappe.generate_hash("", 10),
+						"usr":  frappe.session.user,
+						"par":  scm_name,
+						"comp": r_comp,
+						"atype": r_atype,
+						"val":  marks_val,
+					},
+				)
 
 		# Recalculate grade based on new marks
 		_recalculate_grade_for_reexam(scm_name, marks_val, course, exam_plan)
