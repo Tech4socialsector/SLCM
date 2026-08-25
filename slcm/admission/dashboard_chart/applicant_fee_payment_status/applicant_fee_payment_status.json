@@ -1,17 +1,17 @@
 {
  "chart_name": "Applicant Fee Payment Status",
  "chart_type": "Report",
- "creation": "2026-03-03 15:15:00",
- "currency": "",
- "custom_options": "{\"type\": \"donut\", \"height\": 300}",
+ "creation": "2026-08-24 16:00:21.530119",
+ "currency": "INR",
  "docstatus": 0,
  "doctype": "Dashboard Chart",
- "filters_json": "{\"fee_type\":\"Admission Fee\"}",
+ "dynamic_filters_json": "{}",
+ "filters_json": "{\"fee_type\":\"\"}",
  "group_by_type": "Count",
  "idx": 0,
  "is_public": 1,
- "is_standard": 0,
- "modified": "2026-03-03 15:40:42.134684",
+ "is_standard": 1,
+ "modified": "2026-08-24 16:02:54.799825",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Applicant Fee Payment Status",
@@ -23,7 +23,21 @@
  "time_interval": "Yearly",
  "timeseries": 0,
  "timespan": "Last Year",
- "type": "Heatmap",
+ "type": "Donut",
  "use_report_chart": 1,
- "y_axis": []
+ "x_field": "program",
+ "y_axis": [
+  {
+   "color": "#449CF0",
+   "y_field": "final_payable_amount"
+  },
+  {
+   "color": "#29CD42",
+   "y_field": "paid_amount"
+  },
+  {
+   "color": "#ECAD4B",
+   "y_field": "pending_amount"
+  }
+ ]
 }
