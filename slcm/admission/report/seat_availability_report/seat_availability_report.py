@@ -166,18 +166,22 @@ def get_data(filters):
             remainder = max(0, total_intake - sum_vertical)
             cat_capacities["General"] = remainder
 
-            # Fetch relevant Seat Allocation(s)
+            # Fetch relevant Seat Allocation (exclude Superseded, pick most recent active)
             sa_filters = {
                 "docstatus": ["<", 2],
                 "campus": campus,
                 "admission_cycle": cycle,
                 "program": program,
-                "status": ["in", ["Allocated", "Published"]]
+                "status": ["!=", "Superseded"]
             }
             
-            # Aggregate stats across all relevant seat allocations for this combo
-            # (In case there are multiple rounds stored in separate docs)
-            all_sas = frappe.get_all("Seat Allocation", filters=sa_filters, pluck="name")
+            raw_sas = frappe.get_all("Seat Allocation", 
+                filters=sa_filters, 
+                fields=["name", "status", "modified"],
+                order_by="modified desc"
+            )
+            
+            all_sas = [raw_sas[0].name] if raw_sas else []
             
             stats = {} # { category: { allocated: X, waitlisted: Y, pwd: Z, women: W, karnataka: K } }
             
