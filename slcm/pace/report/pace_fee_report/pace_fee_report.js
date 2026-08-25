@@ -41,10 +41,10 @@ frappe.query_reports["PACE Fee Report"] = {
 			"fieldname": "fee_component",
 			"label": __("Fee Component"),
 			"fieldtype": "Link",
-			"options": "PACE Fee Component"
+			"options": "PACE Fee Component List"
 		}
 	],
-	"formatter": function(value, row, column, data, default_formatter) {
+	"formatter": function (value, row, column, data, default_formatter) {
 		value = default_formatter(value, row, column, data);
 
 		if (column.fieldname == "status") {
@@ -67,12 +67,12 @@ frappe.query_reports["PACE Fee Report"] = {
 
 		return value;
 	},
-	"onload": function(report) {
+	"onload": function (report) {
 		// Add prominent Export to Excel button
-		report.page.add_inner_button(__("Export to Excel"), function() {
+		report.page.add_inner_button(__("Export to Excel"), function () {
 			// Get validated visible indexes
 			let visible_idx = report.get_validated_visible_indexes() || [];
-			
+
 			const filters = report.get_filter_values(true);
 			const applied_filters = report.get_applied_filters(filters);
 
@@ -99,7 +99,7 @@ frappe.query_reports["PACE Fee Report"] = {
 
 			// Show a premium, beautiful animated progress bar
 			frappe.show_progress(__("Exporting to Excel"), 10, 100, __("Preparing report data..."));
-			
+
 			setTimeout(() => {
 				frappe.show_progress(__("Exporting to Excel"), 50, 100, __("Generating Excel spreadsheet..."));
 			}, 600);
@@ -110,7 +110,7 @@ frappe.query_reports["PACE Fee Report"] = {
 
 			setTimeout(() => {
 				frappe.show_progress(__("Exporting to Excel"), 100, 100, __("Download Started!"));
-				
+
 				// Trigger standard Frappe file download directly without dialog
 				open_url_post(frappe.request.url, args);
 
