@@ -41,7 +41,7 @@ frappe.query_reports["PACE Fee Report"] = {
 			"fieldname": "fee_component",
 			"label": __("Fee Component"),
 			"fieldtype": "Link",
-			"options": "PACE Fee Component"
+			"options": "PACE Fee Component List"
 		}
 	],
 	"formatter": function(value, row, column, data, default_formatter) {
