@@ -87,6 +87,54 @@ def get_columns() -> list[dict]:
 			"width": 160
 		},
 		{
+			"label": _("Settlement ID"),
+			"fieldname": "settlement_id",
+			"fieldtype": "Data",
+			"width": 150
+		},
+		{
+			"label": _("Settlement UTR"),
+			"fieldname": "settlement_utr",
+			"fieldtype": "Data",
+			"width": 150
+		},
+		{
+			"label": _("Settlement Date"),
+			"fieldname": "settlement_date",
+			"fieldtype": "Datetime",
+			"width": 150
+		},
+		{
+			"label": _("Settlement Status"),
+			"fieldname": "settlement_status",
+			"fieldtype": "Data",
+			"width": 120
+		},
+		{
+			"label": _("Settlement Amount"),
+			"fieldname": "settlement_amount",
+			"fieldtype": "Currency",
+			"width": 120
+		},
+		{
+			"label": _("Gateway Fees"),
+			"fieldname": "gateway_fees",
+			"fieldtype": "Currency",
+			"width": 120
+		},
+		{
+			"label": _("Gateway Tax"),
+			"fieldname": "gateway_tax",
+			"fieldtype": "Currency",
+			"width": 120
+		},
+		{
+			"label": _("Net Settled"),
+			"fieldname": "net_settled",
+			"fieldtype": "Currency",
+			"width": 120
+		},
+		{
 			"label": _("Payable Amount"),
 			"fieldname": "final_payable_amount",
 			"fieldtype": "Currency",
@@ -211,6 +259,18 @@ def get_data(filters: dict | None) -> list[dict]:
 	if filters.get("applicant"):
 		query_filters["applicant"] = filters.get("applicant")
 
+	if filters.get("fee_component"):
+		component_assignments = frappe.get_all(
+			"Applicant Fee Component Child",
+			filters={"fee_component": filters.get("fee_component"), "parenttype": "Applicant Fee Assignment"},
+			fields=["parent"]
+		)
+		parents = [d.parent for d in component_assignments]
+		if parents:
+			query_filters["name"] = ["in", parents]
+		else:
+			return []
+
 	# Date filters are applied IN MEMORY after global payment allocation
 	# to avoid corrupting the payment pool math.
 
@@ -262,6 +322,27 @@ def get_data(filters: dict | None) -> list[dict]:
 
 	import datetime
 	ordered = sorted(data, key=lambda x: x.assignment_date or datetime.date.min)
+	
+	all_t_ids = []
+	for p_dict in list(offer_paid_map.values()) + list(applicant_paid_map.values()):
+		all_t_ids.extend(p_dict.get("transaction_ids", []))
+	
+	all_t_ids = list(set([str(t) for t in all_t_ids if t]))
+	
+	pr_details = {}
+	if all_t_ids:
+		prs = frappe.get_all(
+			"Payment Request",
+			filters={"transaction_id": ["in", all_t_ids], "docstatus": 1},
+			fields=[
+				"transaction_id", "settlement_id", "settlement_utr", 
+				"settlement_date", "settlement_status", "settlement_amount", 
+				"gateway_fees", "gateway_tax", "net_settled"
+			]
+		)
+		for pr in prs:
+			pr_details[pr.transaction_id] = pr
+
 	for row in ordered:
 		total = flt(row.get("final_payable_amount") or 0)
 		pool_dict = {}
@@ -287,7 +368,19 @@ def get_data(filters: dict | None) -> list[dict]:
 		row["pending_amount"] = max(0, total - paid_for_this)
 		
 		if pool_dict.get("transaction_ids"):
-			row["transaction_id"] = ", ".join(list(set(pool_dict["transaction_ids"])))
+			t_ids = list(set(pool_dict["transaction_ids"]))
+			row["transaction_id"] = ", ".join(t_ids)
+			latest_t_id = t_ids[-1] if t_ids else None
+			if latest_t_id and latest_t_id in pr_details:
+				pr = pr_details[latest_t_id]
+				row["settlement_id"] = pr.settlement_id
+				row["settlement_utr"] = pr.settlement_utr
+				row["settlement_date"] = pr.settlement_date
+				row["settlement_status"] = pr.settlement_status
+				row["settlement_amount"] = pr.settlement_amount
+				row["gateway_fees"] = pr.gateway_fees
+				row["gateway_tax"] = pr.gateway_tax
+				row["net_settled"] = pr.net_settled
 		
 		if not row.get("payment_date") and pool_dict.get("payment_dates"):
 			row["payment_date"] = max(pool_dict["payment_dates"])
