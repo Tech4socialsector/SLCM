@@ -41,6 +41,12 @@ frappe.query_reports["Applicant Fee Payment Status"] = {
             "label": __("Applicant"),
             "fieldtype": "Link",
             "options": "Applicant"
+        },
+        {
+            "fieldname": "fee_component",
+            "label": __("Fee Component"),
+            "fieldtype": "Link",
+            "options": "Fee Component"
         }
     ],
     "formatter": function (value, row, column, data, default_formatter) {
