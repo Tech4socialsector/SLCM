@@ -155,9 +155,9 @@ def get_data(filters):
                 
                 # If total intake is overridden, prioritize percentage to scale seats
                 if is_overridden and v.percentage:
-                    v_seats = math.floor(total_intake * (float(v.percentage) / 100.0))
+                    v_seats = math.floor((total_intake * (float(v.percentage) / 100.0)) + 0.5)
                 else:
-                    v_seats = int(v.seats or 0) or math.floor(total_intake * (float(v.percentage or 0) / 100.0))
+                    v_seats = int(v.seats or 0) or math.floor((total_intake * (float(v.percentage or 0) / 100.0)) + 0.5)
                 
                 cat_capacities[v_name] = v_seats
                 sum_vertical += v_seats

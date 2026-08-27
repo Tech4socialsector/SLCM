@@ -809,7 +809,7 @@ def _populate_category_lists(doc):
                     if any(c.category_name in v_cat for c in policy.compartmental_reservations):
                         continue
                     v_info = category_mapping[v_cat]
-                    seats = int((v_info["seats"] * percentage) / 100.0)
+                    seats = math.floor(((v_info["seats"] * percentage) / 100.0) + 0.5)
                     req = total_eligible_summary if (is_shortlist and multiplier == 0) else int(seats * multiplier)
                     comp_name = f"{comp_cat} {v_cat}"
                     category_mapping[comp_name] = {
@@ -999,10 +999,21 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
         for comp in policy.compartmental_reservations:
             comp_cat = comp.category_name
             percentage = comp.percentage or 25.0
+            total_policy_seats = sum(v_info.get("original_seats", 0) for v_info in vertical_targets.values())
+            tot_comp_seats = math.floor(((total_policy_seats * percentage) / 100.0) + 0.5)
+            reserved_comp_sum = 0
             
-            for v_cat, v_info in vertical_targets.items():
+            for v_cat in [c for c in vertical_targets.keys() if c != "General"]:
+                v_info = vertical_targets[v_cat]
+                v_seats = v_info.get("original_seats", 0)
+                exact_c = (v_seats * percentage) / 100.0
+                if exact_c % 1 >= 0.5 and v_seats >= 18:
+                    comp_seats = math.floor(exact_c + 0.5)
+                else:
+                    comp_seats = math.floor(exact_c)
+                reserved_comp_sum += comp_seats
+                
                 target_key = (comp_cat, v_cat)
-                comp_seats = int((v_info["original_seats"] * percentage) / 100.0)
                 comp_target_seats = total_eligible_count if (is_shortlist_phase and multiplier == 0) else (int(comp_seats * multiplier) if is_shortlist_phase else comp_seats)
                 compartmental_targets[target_key] = {
                     "category": comp_cat,
@@ -1010,6 +1021,15 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                     "original_seats": comp_seats,
                     "filled": 0
                 }
+            
+            gen_comp_seats = max(0, tot_comp_seats - reserved_comp_sum)
+            gen_target_seats = total_eligible_count if (is_shortlist_phase and multiplier == 0) else (int(gen_comp_seats * multiplier) if is_shortlist_phase else gen_comp_seats)
+            compartmental_targets[(comp_cat, "General")] = {
+                "category": comp_cat,
+                "seats": gen_target_seats,
+                "original_seats": gen_comp_seats,
+                "filled": 0
+            }
 
         horizontal_targets = {}
         for h in policy.horizontal_reservations:
@@ -1897,13 +1917,28 @@ def execute_part_a_shortlisting(doc):
                 break
 
         policy_seats = {v.category_name or "General": v.seats or 0 for v in policy.categories}
-        for cat in vertical_cats:
+        total_p_seats = sum(policy_seats.values())
+        tot_comp_policy_seats = math.floor(((total_p_seats * comp_percentage) / 100.0) + 0.5)
+        reserved_comp_sum_stg1 = 0
+
+        for cat in [c for c in vertical_cats if c != "General"]:
             v_seats = policy_seats.get(cat, 0)
-            comp_seats = int((v_seats * comp_percentage) / 100.0)
+            exact_c = (v_seats * comp_percentage) / 100.0
+            if exact_c % 1 >= 0.5 and v_seats >= 18:
+                comp_seats = math.floor(exact_c + 0.5)
+            else:
+                comp_seats = math.floor(exact_c)
+            reserved_comp_sum_stg1 += comp_seats
             if multiplier == 0:
                 targets[cat][comp_key] = total_eligible_count
             else:
                 targets[cat][comp_key] = int(comp_seats * multiplier)
+
+        gen_comp_seats_stg1 = max(0, tot_comp_policy_seats - reserved_comp_sum_stg1)
+        if multiplier == 0:
+            targets["General"][comp_key] = total_eligible_count
+        else:
+            targets["General"][comp_key] = int(gen_comp_seats_stg1 * multiplier)
 
         # 3. Horizontal reservations (Women, PWD)
         for h in policy.horizontal_reservations:
