@@ -35,6 +35,15 @@ frappe.ui.form.on("Fee Demand", {
 			}, __("Actions"));
 		}
 
+		// ── Mark Dues Cleared (single) ──────────────────────────────────────
+		const clearable = !["Paid", "Cancelled", "Waived"].includes(frm.doc.status)
+			&& flt(frm.doc.outstanding_amount) > 0;
+		if (clearable && frappe.user.has_role(["System Manager", "Campus Admin"])) {
+			frm.add_custom_button(__("Mark Dues Cleared"), () => {
+				_fd_open_mark_cleared_dialog([frm.doc.name], () => frm.reload_doc());
+			}, __("Actions"));
+		}
+
 		// ── Download Receipt button (only when paid) ───────────────────────
 		if (["Paid", "Partially Paid"].includes(frm.doc.status)) {
 			const rcpt_btn = frm.add_custom_button(__("⬇ Download Receipt"), () => {
@@ -289,6 +298,69 @@ function _show_demand_payment_logs_dialog(frm) {
 			);
 		},
 	});
+}
+
+/* ── Mark Dues Cleared — shared dialog (used by form + list view) ──────────── */
+function _fd_open_mark_cleared_dialog(demand_names, on_done) {
+	if (!demand_names || !demand_names.length) return;
+
+	const dialog = new frappe.ui.Dialog({
+		title: __("Mark Dues Cleared — {0} Demand(s)", [demand_names.length]),
+		fields: [
+			{
+				fieldtype: "HTML",
+				fieldname: "info_html",
+				options: `<div style="margin-bottom:10px;color:#6b7280;font-size:13px;">
+					${__("This records a Fee Payment for the outstanding amount of the selected "
+						+ "demand(s) and submits it, so status, receipts and payment history stay "
+						+ "consistent with the normal payment flow.")}
+				</div>`,
+			},
+			{
+				fieldtype: "Select",
+				fieldname: "payment_mode",
+				label: __("Payment Mode"),
+				options: ["Cash", "Bank Transfer", "Cheque", "Credit Card", "Debit Card", "Online Payment", "Other"],
+				default: "Cash",
+				reqd: 1,
+			},
+			{
+				fieldtype: "Small Text",
+				fieldname: "remarks",
+				label: __("Remarks"),
+				default: __("Dues marked cleared administratively."),
+			},
+		],
+		primary_action_label: __("Mark Cleared"),
+		primary_action(values) {
+			dialog.set_primary_action(__("Processing…"), () => {});
+			frappe.call({
+				method: "slcm.slcm.doctype.fee_demand.fee_demand.mark_dues_cleared",
+				args: {
+					demand_names: demand_names,
+					payment_mode: values.payment_mode,
+					remarks: values.remarks,
+				},
+				callback(r) {
+					dialog.hide();
+					const res = r.message || {};
+					const cleared = res.cleared_demands || [];
+					const skipped = res.skipped_demands || [];
+					let msg = __("{0} demand(s) marked cleared via {1} payment(s).",
+						[cleared.length, (res.created_payments || []).length]);
+					if (skipped.length) {
+						msg += " " + __("{0} demand(s) were skipped (already settled).", [skipped.length]);
+					}
+					frappe.show_alert({ message: msg, indicator: "green" });
+					if (on_done) on_done(res);
+				},
+				error() {
+					dialog.set_primary_action(__("Mark Cleared"), () => dialog.primary_action(dialog.get_values()));
+				},
+			});
+		},
+	});
+	dialog.show();
 }
 
 // ── Local render helpers (no dependency on student_master.js) ─────────────────
