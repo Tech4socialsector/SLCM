@@ -277,6 +277,6 @@
  "module": "Admission",
  "name": "Settings",
  "owner": "Administrator",
- "standard": 1,
+ "standard": 0,
  "title": "Settings"
 }

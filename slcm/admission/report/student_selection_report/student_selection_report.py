@@ -111,8 +111,8 @@ def get_columns():
     ]
 
 def get_data(filters):
-    # 1. Resolve relevant Seat Allocations
-    sa_filters = {"docstatus": ["<", 2]}
+    # 1. Resolve relevant Seat Allocations (exclude Superseded)
+    sa_filters = {"docstatus": ["<", 2], "status": ["!=", "Superseded"]}
     
     if filters.get("admission_cycle"):
         sa_filters["admission_cycle"] = filters.get("admission_cycle")
@@ -131,15 +131,11 @@ def get_data(filters):
     )
 
     if raw_allocations:
-        # Dedup: keep only the most relevant per (campus, cycle, level, program)
+        # Dedup: keep the newest non-superseded allocation per (campus, cycle, level, program)
         dedup_map = {}
-        status_priority = {"Published": 2, "Allocated": 1, "Draft": 0}
         for sa in raw_allocations:
             key = (sa.campus, sa.admission_cycle, sa.program_level, sa.get("program"))
-            existing = dedup_map.get(key)
-            curr_prio = status_priority.get(sa.status, -1)
-            prev_prio = status_priority.get(existing.status, -1) if existing else -1
-            if not existing or curr_prio > prev_prio:
+            if key not in dedup_map:
                 dedup_map[key] = sa
 
         sa_names = [sa.name for sa in dedup_map.values()]
@@ -342,7 +338,7 @@ def get_report_summary(data, filters):
     ]
 
 def get_vacant_seats(filters):
-    sa_filters = {"docstatus": ["<", 2]}
+    sa_filters = {"docstatus": ["<", 2], "status": ["!=", "Superseded"]}
     if filters.get("admission_cycle"):
         sa_filters["admission_cycle"] = filters.get("admission_cycle")
     elif filters.get("admission_year"):
@@ -362,13 +358,9 @@ def get_vacant_seats(filters):
 
     if raw_allocations:
         dedup_map = {}
-        status_priority = {"Published": 2, "Allocated": 1, "Draft": 0}
         for sa in raw_allocations:
             key = (sa.campus, sa.admission_cycle, sa.program_level, sa.get("program"))
-            existing = dedup_map.get(key)
-            curr_prio = status_priority.get(sa.status, -1)
-            prev_prio = status_priority.get(existing.status, -1) if existing else -1
-            if not existing or curr_prio > prev_prio:
+            if key not in dedup_map:
                 dedup_map[key] = sa
 
         target_sas = list(dedup_map.values())

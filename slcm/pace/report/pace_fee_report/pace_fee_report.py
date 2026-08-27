@@ -108,6 +108,54 @@ def get_columns() -> list[dict]:
 			"fieldname": "transaction_id",
 			"fieldtype": "Data",
 			"width": 180
+		},
+		{
+			"label": _("Settlement ID"),
+			"fieldname": "settlement_id",
+			"fieldtype": "Data",
+			"width": 150
+		},
+		{
+			"label": _("Settlement UTR"),
+			"fieldname": "settlement_utr",
+			"fieldtype": "Data",
+			"width": 150
+		},
+		{
+			"label": _("Settlement Date"),
+			"fieldname": "settlement_date",
+			"fieldtype": "Datetime",
+			"width": 150
+		},
+		{
+			"label": _("Settlement Status"),
+			"fieldname": "settlement_status",
+			"fieldtype": "Data",
+			"width": 120
+		},
+		{
+			"label": _("Settlement Amount"),
+			"fieldname": "settlement_amount",
+			"fieldtype": "Currency",
+			"width": 120
+		},
+		{
+			"label": _("Gateway Fees"),
+			"fieldname": "gateway_fees",
+			"fieldtype": "Currency",
+			"width": 120
+		},
+		{
+			"label": _("Gateway Tax"),
+			"fieldname": "gateway_tax",
+			"fieldtype": "Currency",
+			"width": 120
+		},
+		{
+			"label": _("Net Settled"),
+			"fieldname": "net_settled",
+			"fieldtype": "Currency",
+			"width": 120
 		}
 	]
 
@@ -123,6 +171,17 @@ def get_data(filters: dict | None) -> list[dict]:
 		query_filters["fee_type"] = filters.get("fee_type")
 	if filters.get("academic_year"):
 		query_filters["academic_year"] = filters.get("academic_year")
+	if filters.get("fee_component"):
+		component_assignments = frappe.get_all(
+			"PACE Fee Component",
+			filters={"fee_component": filters.get("fee_component"), "parenttype": "PACE Applicant Fee Assignment"},
+			fields=["parent"]
+		)
+		parents = [d.parent for d in component_assignments]
+		if parents:
+			query_filters["name"] = ["in", parents]
+		else:
+			return []
 
 	# Exclude inactive/draft/cancelled assignments by default
 	query_filters["status"] = ["not in", ["Draft", "Cancelled", "Withdrawn", "Rejected"]]
@@ -164,6 +223,7 @@ def get_data(filters: dict | None) -> list[dict]:
 	# Fetch receipts for paid amounts
 	assignment_names = [a.name for a in assignments]
 	receipts = {}
+	all_t_ids = []
 	if assignment_names:
 		receipt_records = frappe.get_all(
 			"PACE Receipt",
@@ -184,6 +244,28 @@ def get_data(filters: dict | None) -> list[dict]:
 				receipts[fa]["payment_dates"].append(r.payment_date)
 			if r.transaction_id:
 				receipts[fa]["transaction_ids"].append(r.transaction_id)
+				all_t_ids.append(r.transaction_id)
+
+	for row in assignments:
+		t_id = row.get("transaction_id")
+		if t_id:
+			all_t_ids.append(t_id)
+
+	all_t_ids = list(set(all_t_ids))
+	
+	pr_details = {}
+	if all_t_ids:
+		prs = frappe.get_all(
+			"Payment Request",
+			filters={"transaction_id": ["in", all_t_ids], "docstatus": 1},
+			fields=[
+				"transaction_id", "settlement_id", "settlement_utr", 
+				"settlement_date", "settlement_status", "settlement_amount", 
+				"gateway_fees", "gateway_tax", "net_settled"
+			]
+		)
+		for pr in prs:
+			pr_details[pr.transaction_id] = pr
 
 	data = []
 	for row in assignments:
@@ -199,7 +281,19 @@ def get_data(filters: dict | None) -> list[dict]:
 		t_ids = receipt_info.get("transaction_ids", [])
 
 		row["payment_date"] = dates[-1] if dates else row.get("payment_date")
+		latest_t_id = t_ids[-1] if t_ids else row.get("transaction_id")
 		row["transaction_id"] = ", ".join(t_ids) if t_ids else row.get("transaction_id")
+
+		if latest_t_id and latest_t_id in pr_details:
+			pr = pr_details[latest_t_id]
+			row["settlement_id"] = pr.settlement_id
+			row["settlement_utr"] = pr.settlement_utr
+			row["settlement_date"] = pr.settlement_date
+			row["settlement_status"] = pr.settlement_status
+			row["settlement_amount"] = pr.settlement_amount
+			row["gateway_fees"] = pr.gateway_fees
+			row["gateway_tax"] = pr.gateway_tax
+			row["net_settled"] = pr.net_settled
 
 		db_status = row.status
 		if db_status in ["Paid", "Enrolled", "Converted"]:

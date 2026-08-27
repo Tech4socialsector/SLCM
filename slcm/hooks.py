@@ -206,8 +206,14 @@ fixtures = [
                 "Applicant Not Started Application Reminder",
                 "Applicant Draft Application Reminder",
                 "Applicant Fee Payment Pending Reminder",
-                "Applicant Application Rejected",
-                "Admission Fee Pending Reminder"
+                "Admission Fee Pending Reminder",
+                "NLSAT Offer Letter",
+                "NLSAT Offer Accepted",
+                "NLSAT Offer Rejected",
+                "NLSAT Confirmation Fee Paid",
+                "Admission Full Fee Invoice",
+                "NLSAT Full Fee Paid",
+                "NLSAT Offer Expired / Withdrawn"
             ]]
         ]
     },

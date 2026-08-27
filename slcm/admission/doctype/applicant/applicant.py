@@ -435,7 +435,7 @@ class Applicant(Document):
         )
         just_submitted = (
             (not old_status or old_status == "Draft" or old_status not in APPLICATION_SUBMITTED_STATUSES)
-            and self.status in APPLICATION_SUBMITTED_STATUSES
+            and self.status == "Submitted"
             and (self.is_new() or self.has_value_changed("status"))
         )
 
