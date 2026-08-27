@@ -15,6 +15,7 @@
   "status",
   "section_concession",
   "concession_type",
+  "scholarship_for",
   "waiver_mode",
   "waiver_value",
   "waiver_amount",
@@ -99,6 +100,15 @@
    "label": "Concession Type",
    "options": "\nScholarship\nMerit\nSC/ST\nEWS\nStaff Ward\nOther",
    "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.concession_type==\"Scholarship\"",
+   "fieldname": "scholarship_for",
+   "fieldtype": "Select",
+   "label": "Scholarship For",
+   "mandatory_depends_on": "eval:doc.concession_type==\"Scholarship\"",
+   "options": "\nTuition\nAccommodation\nStipend\nMess/Food\nTransport\nBooks & Stationery\nOther",
+   "in_list_view": 0
   },
   {
    "fieldname": "waiver_mode",

@@ -51,7 +51,9 @@ def execute():
 	# Existing HD Ticket rows stored the raw issue name (e.g. "Plumbing")
 	# from the old Select field. Rewrite them to the new composite Link
 	# name (e.g. "Facilities-Plumbing") so they still resolve correctly.
-	if frappe.db.has_column("HD Ticket", "custom_type_of_issue"):
+	# Skip entirely on sites where the Helpdesk app isn't installed, since
+	# `tabHD Ticket` won't exist there.
+	if frappe.db.table_exists("HD Ticket") and frappe.db.has_column("HD Ticket", "custom_type_of_issue"):
 		for ticket_type, issues in ISSUE_OPTIONS.items():
 			for issue_name in issues:
 				frappe.db.sql(
