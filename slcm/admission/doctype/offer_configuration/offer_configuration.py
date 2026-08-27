@@ -14,6 +14,8 @@ def validate_offer_config_fee_deadlines(config, program=None):
     """
     if isinstance(config, str):
         config = frappe.get_doc("Offer Configuration", config)
+    if hasattr(config, "is_active") and not config.is_active:
+        return
     rows = getattr(config, "fee_structure", None) or []
     if not rows:
         return
@@ -67,7 +69,8 @@ class OfferConfiguration(Document):
 
     def validate(self):
         self.validate_single_config()
-        validate_offer_config_fee_deadlines(self)
+        if self.is_active:
+            validate_offer_config_fee_deadlines(self)
 
     def validate_single_config(self):
         existing = frappe.get_all(

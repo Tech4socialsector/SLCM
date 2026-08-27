@@ -37,7 +37,9 @@
   "column_break_usow",
   "gateway_fees",
   "gateway_tax",
-  "net_settled"
+  "net_settled",
+  "settlement_amount",
+  "settlement_response"
  ],
  "fields": [
   {
@@ -106,6 +108,7 @@
   {
    "fieldname": "transaction_id",
    "fieldtype": "Data",
+   "in_standard_filter": 1,
    "label": "Transaction ID",
    "read_only": 1
   },
@@ -196,6 +199,7 @@
   {
    "fieldname": "settlement_id",
    "fieldtype": "Data",
+   "in_standard_filter": 1,
    "label": "Settlement ID",
    "read_only": 1
   },
@@ -214,6 +218,7 @@
   {
    "fieldname": "settlement_status",
    "fieldtype": "Select",
+   "in_standard_filter": 1,
    "label": "Settlement Status",
    "options": "\nPending\nProcessing\nSettled\nFailed",
    "read_only": 1
@@ -256,7 +261,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-22 12:11:17.887637",
+ "modified": "2026-08-25 12:04:39.653031",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Payment Request",

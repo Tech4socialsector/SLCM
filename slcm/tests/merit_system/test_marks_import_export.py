@@ -42,6 +42,21 @@ class TestEntranceTestMarksImportExport(IntegrationTestCase):
                 app_doc.name = app_id
                 app_doc.db_insert()
 
+        if not frappe.db.exists("Entrance Test List", "TEST-LIST-001"):
+            doc_etl = frappe.get_doc({
+                "doctype": "Entrance Test List",
+                "program": "BA LLB",
+                "campus": "Main Campus"
+            })
+            doc_etl.name = "TEST-LIST-001"
+            doc_etl.flags.ignore_links = True
+            doc_etl.flags.ignore_mandatory = True
+            doc_etl.db_insert()
+            
+        from unittest.mock import patch
+        self.patcher = patch("frappe.model.document.Document._validate_links")
+        self.patcher.start()
+
         # Create applicant 1 seat allocation
         if not frappe.db.exists("Entrance Test Seat Allocation", {"applicant": self.app_no_1}):
             doc1 = frappe.get_doc({
@@ -88,7 +103,7 @@ class TestEntranceTestMarksImportExport(IntegrationTestCase):
             self.alloc2 = doc2
         else:
             self.alloc2 = frappe.get_doc("Entrance Test Seat Allocation", {"applicant": self.app_no_2})
-        frappe.db.set_value("Entrance Test Seat Allocation", self.alloc2.name, "shortlisted_status", "No")
+        frappe.db.set_value("Entrance Test Seat Allocation", self.alloc2.name, "shortlisted_status", "Rejected")
 
 
 
@@ -101,6 +116,8 @@ class TestEntranceTestMarksImportExport(IntegrationTestCase):
         # Restore global search updates
         from frappe.model import document as doc_mod
         doc_mod.update_global_search = self._orig_update_global_search
+        
+        self.patcher.stop()
 
     def test_export_template_columns(self):
         """Test exporting marks template returns exact 10 columns."""
@@ -144,35 +161,38 @@ class TestEntranceTestMarksImportExport(IntegrationTestCase):
 
     def test_import_part_a_and_part_b_non_destructive(self):
         """Test importing Part A and Part B marks updates DB without overwriting existing data with blanks."""
-        csv_content = (
-            "Application Number,Applicant Name,Program,Entrance Test Status,Shortlisted,Part A Marks,Part B Marks,Status\n"
-            f"{self.app_no_1},Candidate One,BA LLB,Present,Yes,88.5,,Pass\n"
-            f"{self.app_no_2},Candidate Two,BA LLB,Present,No,,65.0,Pass\n"
-        )
+        
+        from unittest.mock import patch
+        with patch("frappe.model.document.Document.save_version") as mock_save_version:
+            csv_content = (
+                "Application Number,Applicant Name,Program,ET Presence,Shortlisted,Part A Marks,Part B Marks,Status\n"
+                f"{self.app_no_1},Candidate One,BA LLB,Present,Yes,88.5,,Pass\n"
+                f"{self.app_no_2},Candidate Two,BA LLB,Present,No,,65.0,Pass\n"
+            )
+    
+            saved_file = frappe.utils.file_manager.save_file(
+                "test_import_marks.csv",
+                csv_content.encode("utf-8"),
+                "Entrance Test Seat Allocation",
+                self.alloc1.name,
+                is_private=1
+            )
+    
+            import_res = import_entrance_test_marks_file(file_url=saved_file.file_url)
+    
+            assert import_res["success_count"] == 2
+            assert import_res["updated_count"] == 2
+            assert import_res["error_count"] == 0
 
-        saved_file = frappe.utils.file_manager.save_file(
-            "test_import_marks.csv",
-            csv_content.encode("utf-8"),
-            "Entrance Test Seat Allocation",
-            self.alloc1.name,
-            is_private=1
-        )
-
-        import_res = import_entrance_test_marks_file(file_url=saved_file.file_url)
-
-        assert import_res["success_count"] == 2
-        assert import_res["updated_count"] == 2
-        assert import_res["error_count"] == 0
-
-        # Reload records and check
-        doc1 = frappe.get_doc("Entrance Test Seat Allocation", self.alloc1.name)
-        assert doc1.part_a_total_marks_scored == 88.5
-        # Part B should NOT be overwritten with blank; stays original 40.0
-        assert doc1.part_b_total_marks_scored == 40.0
-        assert doc1.total_marks_secured_in_part_a_b == 128.5
-
-        doc2 = frappe.get_doc("Entrance Test Seat Allocation", self.alloc2.name)
-        # Part A should NOT be overwritten with blank; stays original 50.0
-        assert doc2.part_a_total_marks_scored == 50.0
-        assert doc2.part_b_total_marks_scored == 65.0
-        assert doc2.total_marks_secured_in_part_a_b == 115.0
+            # Reload records and check
+            doc1 = frappe.get_doc("Entrance Test Seat Allocation", self.alloc1.name)
+            assert doc1.part_a_total_marks_scored == 88.5
+            # Part B should NOT be overwritten with blank; stays original 40.0
+            assert doc1.part_b_total_marks_scored == 40.0
+            assert doc1.total_marks_secured_in_part_a_b == 128.5
+    
+            doc2 = frappe.get_doc("Entrance Test Seat Allocation", self.alloc2.name)
+            # Part A should NOT be overwritten with blank; stays original 50.0
+            assert doc2.part_a_total_marks_scored == 50.0
+            assert doc2.part_b_total_marks_scored == 65.0
+            assert doc2.total_marks_secured_in_part_a_b == 115.0
