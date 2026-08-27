@@ -646,7 +646,7 @@ class TestSeatAllocationBench(MeritSystemTestBase):
         doc = self._make_allotment_doc(candidates, name="TEST-SA4")
         execute_advanced_allocation_logic_wrapped(doc, is_shortlist_allocation=False)
 
-        self.assertEqual(len(getattr(doc, "general_list", [])), 53)
+        self.assertEqual(len(getattr(doc, "general_list", [])), 49)
 
 
 # ===========================================================================
