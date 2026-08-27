@@ -121,26 +121,12 @@ class PACEApplication(Document):
             )
 
     def validate_programme_change(self):
-        if self.is_new():
-            return
-
-        doc_before_save = self.get_doc_before_save()
-        if not doc_before_save:
-            return
-
-        old_programme = getattr(doc_before_save, "programme", None)
-        if old_programme and self.programme != old_programme:
-            # Check if there is a Paid assignment for Course Fee
-            paid_assignment = frappe.db.exists("PACE Applicant Fee Assignment", {
-                "applicant": self.name,
-                "fee_type": "Course Fee",
-                "status": "Paid"
-            })
-            if paid_assignment:
-                frappe.throw(
-                    _("The programme cannot be changed because the Course Fee has already been paid."),
-                    title=_("Course Fee Already Paid")
-                )
+        """
+        Programme change validation.
+        Programme change on PACE Application is allowed at any stage.
+        If the Course Fee is already Paid/Enrolled/Converted, the Fee Assignment will not be altered.
+        """
+        pass
 
     def handle_programme_change(self):
         if self.is_new():
@@ -152,11 +138,11 @@ class PACEApplication(Document):
 
         old_programme = getattr(doc_before_save, "programme", None)
         if old_programme and self.programme != old_programme:
-            # 1. Update existing Course Fee assignment if it exists and is unpaid
+            # 1. Update existing Course Fee assignment ONLY if it exists and is UNPAID (not Paid, Enrolled, or Converted)
             assignment_name = frappe.db.get_value("PACE Applicant Fee Assignment", {
                 "applicant": self.name,
                 "fee_type": "Course Fee",
-                "status": ["!=", "Paid"]
+                "status": ["not in", ["Paid", "Enrolled", "Converted"]]
             }, "name")
 
             if assignment_name:
@@ -225,8 +211,12 @@ class PACEApplication(Document):
             if verification_name:
                 frappe.db.set_value("PACE Document Verification", verification_name, "programme", self.programme)
 
-            # 3. If application is Verified but no assignment existed, generate a new fee assignment
-            if not assignment_name and self.status in ["Verified", "Payment Pending"]:
+            # 3. If application is Verified but no assignment exists at all, generate a new fee assignment
+            has_any_assignment = frappe.db.exists("PACE Applicant Fee Assignment", {
+                "applicant": self.name,
+                "fee_type": "Course Fee"
+            })
+            if not has_any_assignment and self.status in ["Verified", "Payment Pending"]:
                 from slcm.pace.utils import create_pace_fee_assignment
                 create_pace_fee_assignment(self.name)
 
