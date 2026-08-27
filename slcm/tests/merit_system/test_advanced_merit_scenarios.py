@@ -662,7 +662,7 @@ class IntegrationTestAdvancedMeritScenarios(IntegrationTestCase):
         doc_sp, doc_ml = self._run_full_pipeline(rows)
 
         allocated = [r for r in doc_ml.merit_applicants if r.allocation_type in ["Open", "Reserved"]]
-        self.assertIn(len(allocated), [116, 119, 120], f"Total allocated seats must be 116-120, got {len(allocated)}")
+        self.assertIn(len(allocated), [118, 119, 120], f"Total allocated seats must be 118-120, got {len(allocated)}")
 
     def test_pwd_minimum_6_seats(self):
         """F.2: Verify PWD gets minimum 6 seats."""
