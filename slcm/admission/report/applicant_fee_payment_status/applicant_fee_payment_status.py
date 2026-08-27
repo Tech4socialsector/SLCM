@@ -160,10 +160,10 @@ def _sum_receipts_by_offer(offer_letters: list[str]) -> dict[str, float]:
 	placeholders = ", ".join(["%s"] * len(offer_letters))
 	legacy_rows = frappe.db.sql(
 		f"""
-		SELECT offer_letter as ref_name, SUM(total_amount) AS total_amount, transaction_id, payment_date
+		SELECT offer_letter as ref_name, SUM(total_amount) AS total_amount
 		FROM `tabApplicant Payment Receipt`
 		WHERE docstatus = 1 AND offer_letter IN ({placeholders})
-		GROUP BY offer_letter, transaction_id, payment_date
+		GROUP BY offer_letter
 		""",
 		tuple(offer_letters),
 		as_dict=True,
@@ -171,10 +171,10 @@ def _sum_receipts_by_offer(offer_letters: list[str]) -> dict[str, float]:
 
 	pr_rows = frappe.db.sql(
 		f"""
-		SELECT reference_name as ref_name, SUM(amount) AS total_amount, transaction_id, DATE(creation) as payment_date
+		SELECT reference_name as ref_name, SUM(amount) AS total_amount
 		FROM `tabPayment Request`
-		WHERE status = 'Paid' AND reference_doctype = 'Offer Letter' AND reference_name IN ({placeholders})
-		GROUP BY reference_name, transaction_id, DATE(creation)
+		WHERE status = \'Paid\' AND reference_doctype = \'Offer Letter\' AND reference_name IN ({placeholders})
+		GROUP BY reference_name
 		""",
 		tuple(offer_letters),
 		as_dict=True,
@@ -183,12 +183,9 @@ def _sum_receipts_by_offer(offer_letters: list[str]) -> dict[str, float]:
 	result = {}
 	for r in legacy_rows + pr_rows:
 		if r.ref_name not in result:
-			result[r.ref_name] = {"total_amount": 0.0, "transaction_ids": [], "payment_dates": []}
+			result[r.ref_name] = {"total_amount": 0.0}
 		result[r.ref_name]["total_amount"] += flt(r.total_amount)
-		if r.get("transaction_id"):
-			result[r.ref_name]["transaction_ids"].append(str(r.transaction_id))
-		if r.get("payment_date"):
-			result[r.ref_name]["payment_dates"].append(r.payment_date)
+		
 	return result
 
 
@@ -198,12 +195,12 @@ def _sum_application_fee_receipts_by_applicant(applicants: list[str]) -> dict[st
 	placeholders = ", ".join(["%s"] * len(applicants))
 	legacy_rows = frappe.db.sql(
 		f"""
-		SELECT applicant as ref_name, SUM(total_amount) AS total_amount, transaction_id, payment_date
+		SELECT applicant as ref_name, SUM(total_amount) AS total_amount
 		FROM `tabApplicant Payment Receipt`
 		WHERE docstatus = 1
 			AND applicant IN ({placeholders})
-			AND IFNULL(offer_letter, '') = ''
-		GROUP BY applicant, transaction_id, payment_date
+			AND IFNULL(offer_letter, \'\') = \'\'
+		GROUP BY applicant
 		""",
 		tuple(applicants),
 		as_dict=True,
@@ -211,10 +208,10 @@ def _sum_application_fee_receipts_by_applicant(applicants: list[str]) -> dict[st
 
 	pr_rows = frappe.db.sql(
 		f"""
-		SELECT reference_name as ref_name, SUM(amount) AS total_amount, transaction_id, DATE(creation) as payment_date
+		SELECT reference_name as ref_name, SUM(amount) AS total_amount
 		FROM `tabPayment Request`
-		WHERE status = 'Paid' AND reference_doctype = 'Applicant' AND reference_name IN ({placeholders})
-		GROUP BY reference_name, transaction_id, DATE(creation)
+		WHERE status = \'Paid\' AND reference_doctype = \'Applicant\' AND reference_name IN ({placeholders})
+		GROUP BY reference_name
 		""",
 		tuple(applicants),
 		as_dict=True,
@@ -223,12 +220,9 @@ def _sum_application_fee_receipts_by_applicant(applicants: list[str]) -> dict[st
 	result = {}
 	for r in legacy_rows + pr_rows:
 		if r.ref_name not in result:
-			result[r.ref_name] = {"total_amount": 0.0, "transaction_ids": [], "payment_dates": []}
+			result[r.ref_name] = {"total_amount": 0.0}
 		result[r.ref_name]["total_amount"] += flt(r.total_amount)
-		if r.get("transaction_id"):
-			result[r.ref_name]["transaction_ids"].append(str(r.transaction_id))
-		if r.get("payment_date"):
-			result[r.ref_name]["payment_dates"].append(r.payment_date)
+		
 	return result
 
 
@@ -292,6 +286,7 @@ def get_data(filters: dict | None) -> list[dict]:
 			"final_payable_amount",
 			"offer_letter",
 			"payment_date",
+			"transaction_id",
 		],
 		order_by="assignment_date asc",
 	)
@@ -322,11 +317,7 @@ def get_data(filters: dict | None) -> list[dict]:
 	import datetime
 	ordered = sorted(data, key=lambda x: x.assignment_date or datetime.date.min)
 	
-	all_t_ids = []
-	for p_dict in list(offer_paid_map.values()) + list(applicant_paid_map.values()):
-		all_t_ids.extend(p_dict.get("transaction_ids", []))
-	
-	all_t_ids = list(set([str(t) for t in all_t_ids if t]))
+	all_t_ids = list({str(row.transaction_id) for row in data if row.get("transaction_id")})
 	
 	pr_details = {}
 	if all_t_ids:
@@ -366,23 +357,16 @@ def get_data(filters: dict | None) -> list[dict]:
 		row["paid_amount"] = paid_for_this
 		row["pending_amount"] = max(0, total - paid_for_this)
 		
-		if pool_dict.get("transaction_ids"):
-			t_ids = list(set(pool_dict["transaction_ids"]))
-			row["transaction_id"] = ", ".join(t_ids)
-			latest_t_id = t_ids[-1] if t_ids else None
-			if latest_t_id and latest_t_id in pr_details:
-				pr = pr_details[latest_t_id]
-				row["settlement_id"] = pr.settlement_id
-				row["settlement_utr"] = pr.settlement_utr
-				row["settlement_date"] = pr.settlement_date
-				row["settlement_status"] = pr.settlement_status
-				row["settlement_amount"] = pr.settlement_amount
-				row["gateway_fees"] = pr.gateway_fees
-				row["gateway_tax"] = pr.gateway_tax
-				row["net_settled"] = pr.net_settled
-		
-		if not row.get("payment_date") and pool_dict.get("payment_dates"):
-			row["payment_date"] = max(pool_dict["payment_dates"])
+		if row.get("transaction_id") and row.transaction_id in pr_details:
+			pr = pr_details[row.transaction_id]
+			row["settlement_id"] = pr.settlement_id
+			row["settlement_utr"] = pr.settlement_utr
+			row["settlement_date"] = pr.settlement_date
+			row["settlement_status"] = pr.settlement_status
+			row["settlement_amount"] = pr.settlement_amount
+			row["gateway_fees"] = pr.gateway_fees
+			row["gateway_tax"] = pr.gateway_tax
+			row["net_settled"] = pr.net_settled
 
 		if row["paid_amount"] >= total and row.status not in ["Paid", "Cancelled", "Converted"] and total > 0:
 			row["status"] = "Paid"
