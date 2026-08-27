@@ -1473,13 +1473,17 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
             for h_info in ordered_h_cats:
                 h_cat = h_info["name"]
                 h_filled = len([a for a in allocated_list if _has_trait(a.applicant_id, h_cat)])
-                append_sum(h_cat, h_info.get("original_seats", 0), h_info["seats"], h_filled)
+                h_w_filled = len([a for a in applicants_list if getattr(a, status_field, "") == "Waitlisted" and _has_trait(a.applicant_id, h_cat, is_shortlist_allocation)])
+                h_w_req = h_info.get("waitlist_seats", 0)
+                append_sum(h_cat, h_info.get("original_seats", 0), h_info["seats"], h_filled, h_w_filled, h_w_req)
             
             # 3. Compartmental Breakdown
             for (comp_cat, v_cat), target in compartmental_targets.items():
                 if target["original_seats"] > 0:
                     filled_in_v = len([a for a in allocated_list if a.vertical_category == v_cat and _has_trait(a.applicant_id, comp_cat)])
-                    append_sum(f"{comp_cat} ({v_cat})", target["original_seats"], target["seats"], filled_in_v)
+                    w_filled_in_v = len([a for a in applicants_list if getattr(a, status_field, "") == "Waitlisted" and (getattr(a, "vertical_category", "") or getattr(a, "actual_category", "")) == v_cat and _has_trait(a.applicant_id, comp_cat, is_shortlist_allocation)])
+                    w_req_in_v = vertical_targets.get(v_cat, {}).get("compartmentalized_waitlist_seats", 0)
+                    append_sum(f"{comp_cat} ({v_cat})", target["original_seats"], target["seats"], filled_in_v, w_filled_in_v, w_req_in_v)
             
             # 4. Compartmental (Common)
             for comp_row in policy.compartmental_reservations:
@@ -1487,8 +1491,13 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                 total_orig = sum(t["original_seats"] for (cc, vc), t in compartmental_targets.items() if cc == comp_cat)
                 total_req = sum(t["seats"] for (cc, vc), t in compartmental_targets.items() if cc == comp_cat)
                 total_filled = len([a for a in allocated_list if _has_trait(a.applicant_id, comp_cat)])
+                total_w_filled = len([a for a in applicants_list if getattr(a, status_field, "") == "Waitlisted" and _has_trait(a.applicant_id, comp_cat, is_shortlist_allocation)])
+                total_w_req = sum(v_info.get("compartmentalized_waitlist_seats", 0) for v_cat, v_info in vertical_targets.items() if (v_info.get("compartmentalized_category") == comp_cat or comp_cat in (v_info.get("compartmentalized_category") or "")))
+                if total_w_req == 0 and getattr(comp_row, "waitlist_seats", 0):
+                    total_w_req = comp_row.waitlist_seats
                 if total_req > 0:
-                    append_sum(f"{comp_cat} (Common)", total_orig, total_req, total_filled)
+                    append_sum(f"{comp_cat} (Common)", total_orig, total_req, total_filled, total_w_filled, total_w_req)
+
 
 
     _publish_allocation_progress(doc, 100, "Finalized!", status="Completed")

@@ -164,10 +164,25 @@ class SeatAllocation(Document):
             comp_types = [c.name for c in db_cats_all if c.reservation_type == "Compartmentalised Horizontal"]
             horiz_types = [c.name for c in db_cats_all if c.reservation_type == "Horizontal"]
             
+            policy = None
+            if self.program and self.admission_cycle:
+                policy_name = frappe.db.get_value("Programme Reservation Policy", {
+                    "admission_cycle": self.admission_cycle,
+                    "program": self.program
+                }, "name")
+                if policy_name:
+                    policy = frappe.get_doc("Programme Reservation Policy", policy_name)
+
+            policy_v_map = {p_row.category_name: p_row for p_row in (policy.categories if policy else [])}
+            policy_h_map = {p_row.category_name: p_row for p_row in (policy.horizontal_reservations if policy else [])}
+            policy_c_map = {p_row.category_name: p_row for p_row in (policy.compartmental_reservations if policy else [])}
+
             for row in self.category_summary:
                 cat = row.category
                 matching_apps = []
                 is_comp = False
+                w_req_val = None
+
                 for comp_name in comp_types:
                     if cat.startswith(f"{comp_name} ") or cat.startswith(f"{comp_name}("):
                         v_name = cat[len(comp_name):].strip("() ")
@@ -176,12 +191,19 @@ class SeatAllocation(Document):
                                 x for x in self.selection_applicant
                                 if comp_name in get_applicant_categories(x.applicant_id)
                             ]
+                            if policy:
+                                comp_w_sum = sum(int(p_row.compartmentalized_waitlist_seats or 0) for p_row in (policy.categories or []) if (p_row.compartmentalized_category == comp_name or comp_name in (p_row.compartmentalized_category or "")))
+                                if not comp_w_sum and comp_name in policy_c_map:
+                                    comp_w_sum = int(policy_c_map[comp_name].waitlist_seats or 0)
+                                w_req_val = comp_w_sum
                         else:
                             matching_apps = [
                                 x for x in self.selection_applicant
                                 if (getattr(x, "vertical_category", "") or getattr(x, "actual_category", "")) == v_name
                                 and comp_name in get_applicant_categories(x.applicant_id)
                             ]
+                            if policy and v_name in policy_v_map:
+                                w_req_val = int(policy_v_map[v_name].compartmentalized_waitlist_seats or 0)
                         is_comp = True
                         break
                 
@@ -194,6 +216,8 @@ class SeatAllocation(Document):
                         matching_allocated = [
                             x for x in matching_apps if x.selection_status in selection_statuses
                         ]
+                        if policy and cat in policy_h_map:
+                            w_req_val = int(policy_h_map[cat].waitlist_seats or 0)
                     else:
                         matching_apps = [
                             x for x in self.selection_applicant
@@ -204,6 +228,9 @@ class SeatAllocation(Document):
                             x for x in self.selection_applicant
                             if getattr(x, "vertical_category", "") == cat and x.selection_status in selection_statuses
                         ]
+                        if policy and cat in policy_v_map:
+                            p_v = policy_v_map[cat]
+                            w_req_val = int(p_v.waitlist_seats or 0) + int(p_v.compartmentalized_waitlist_seats or 0)
                 else:
                     matching_allocated = [
                         x for x in matching_apps if x.selection_status in selection_statuses
@@ -214,6 +241,8 @@ class SeatAllocation(Document):
                 row.actually_waitlisted = len([x for x in matching_apps if x.selection_status == "Waitlisted"])
                 row.actually_rejected = len([x for x in matching_apps if x.selection_status in rejection_statuses])
                 row.vacant_seats = max(0, (row.required or row.seats or 0) - row.actually_allocated)
+                if w_req_val is not None:
+                    row.waitlist_required = w_req_val
 
         # Always enforce ascending sort by overall rank before saving
         if self.selection_applicant:
