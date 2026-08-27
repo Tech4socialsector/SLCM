@@ -189,7 +189,7 @@
     {% for t in all_transcripts %}
     <div class="doc-card">
       <div class="doc-main">
-        <div class="doc-title">{{ t.transcript_type or "Transcript" }} Transcript</div>
+        <div class="doc-title">{% if t.transcript_type == "Final" %}Provisional Transcript{% else %}{{ t.transcript_type or "Transcript" }} Transcript{% endif %}</div>
         <div class="doc-meta">
           {{ t.name }}
           {% if t.generation_date %} · Generated {{ frappe.utils.formatdate(t.generation_date, "dd MMM yyyy") }}{% endif %}

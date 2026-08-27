@@ -42,6 +42,8 @@ class TranscriptRequest(Document):
         new_status = self.status
 
         if old_status == new_status:
+            if prev_status.payment_status != self.payment_status:
+                self._sync_helpdesk_ticket()
             return
 
         if new_status == "Approved" and not self.approval_email_sent:
@@ -52,6 +54,28 @@ class TranscriptRequest(Document):
 
         elif new_status in ("Generated", "Delivered") and not self.transcript_ready_email_sent:
             self._notify_on_ready()
+
+        self._sync_helpdesk_ticket()
+
+    def _sync_helpdesk_ticket(self):
+        """
+        Mirror status/payment changes onto the linked HD Ticket (set when this
+        request was created from a "Transcript Request" Helpdesk ticket), so
+        agents can track everything from the Helpdesk queue without opening
+        this doctype directly.
+        """
+        if not self.helpdesk_ticket:
+            return
+        if not frappe.db.exists("HD Ticket", self.helpdesk_ticket):
+            return
+
+        try:
+            from helpdesk.api.nls_student import sync_transcript_status_to_ticket
+            sync_transcript_status_to_ticket(self)
+        except ImportError:
+            pass
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "Transcript Request → HD Ticket sync failed")
 
     def _notify_on_approval(self):
         try:

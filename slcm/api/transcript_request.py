@@ -119,6 +119,36 @@ def _owned_request(request_name, student_name):
     return doc
 
 
+def _set_status(request_name, updates):
+    """
+    Write status/payment_status fields via a raw db.set_value (as this whole
+    module does throughout — Transcript Request rows change fast during
+    checkout and don't need a full Document.save() round-trip), then sync
+    the change to a linked Helpdesk ticket if one exists.
+
+    Document.on_update() is NOT called by db.set_value, so every status
+    mutation in this file must go through here rather than calling
+    frappe.db.set_value directly — otherwise a ticket-linked request would
+    silently stop reflecting status in the Helpdesk queue.
+    """
+    frappe.db.set_value("Transcript Request", request_name, updates)
+    _sync_helpdesk_ticket(request_name)
+
+
+def _sync_helpdesk_ticket(request_name):
+    helpdesk_ticket = frappe.db.get_value("Transcript Request", request_name, "helpdesk_ticket")
+    if not helpdesk_ticket:
+        return
+    try:
+        from helpdesk.api.nls_student import sync_transcript_status_to_ticket
+        doc = frappe.get_doc("Transcript Request", request_name)
+        sync_transcript_status_to_ticket(doc)
+    except ImportError:
+        pass
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Transcript Request → HD Ticket sync failed")
+
+
 def _set_payment_fields(request_name, razorpay_status, gateway_response=None, extra=None):
     """
     Update both payment status fields atomically from a Razorpay gateway status.
@@ -136,7 +166,7 @@ def _set_payment_fields(request_name, razorpay_status, gateway_response=None, ex
         )
     if extra:
         updates.update(extra)
-    frappe.db.set_value("Transcript Request", request_name, updates)
+    _set_status(request_name, updates)
 
 
 def _get_student_email(student_name):
@@ -221,6 +251,20 @@ def get_fee_preview(transcript_type, num_copies=1, urgency="Normal"):
 def create_request(transcript_type, num_copies=1, purpose="",
                    delivery_mode="Soft Copy (PDF)", urgency="Normal"):
     """Create a new Transcript Request for the logged-in student."""
+    return _create_request(
+        transcript_type, num_copies=num_copies, purpose=purpose,
+        delivery_mode=delivery_mode, urgency=urgency,
+    )
+
+
+def _create_request(transcript_type, num_copies=1, purpose="",
+                    delivery_mode="Soft Copy (PDF)", urgency="Normal",
+                    helpdesk_ticket=None):
+    """
+    Shared implementation behind create_request(). helpdesk_ticket links the
+    resulting doc back to the HD Ticket it was raised from (Helpdesk
+    "Transcript Request" ticket type), so status updates can sync back.
+    """
     student_name = _require_student()
 
     valid_types = ["Interim Transcript", "Final Transcript", "Consolidated Marksheet",
@@ -274,6 +318,7 @@ def create_request(transcript_type, num_copies=1, purpose="",
         "delivery_mode": delivery_mode or "Soft Copy (PDF)",
         "urgency": urgency or "Normal",
         "requested_on": today(),
+        "helpdesk_ticket": helpdesk_ticket or None,
     })
     doc.insert(ignore_permissions=True)
     frappe.db.commit()
@@ -296,6 +341,7 @@ def create_request(transcript_type, num_copies=1, purpose="",
         "payment_required": bool(doc.payment_required),
         "fee_amount": doc.fee_amount or 0,
         "transcript_type": transcript_type,
+        "num_copies": doc.num_copies,
     }
 
 
@@ -461,7 +507,7 @@ def confirm_payment(request_name, razorpay_payment_id,
         if tr_doc_name:
             new_status = "Generated"
 
-    frappe.db.set_value("Transcript Request", request_name, "status", new_status)
+    _set_status(request_name, {"status": new_status})
     frappe.db.commit()
 
     return {
@@ -486,12 +532,12 @@ def record_payment_failure(request_name, error_description=""):
     if req.payment_status == "Paid":
         return {"success": True}  # already paid, ignore
 
+    # Keep request status as "Payment Pending" – student can retry
     _set_payment_fields(
         request_name, "failed",
         gateway_response={"error_description": error_description or "Payment failed at gateway"},
+        extra={"status": "Payment Pending"},
     )
-    # Keep request status as "Payment Pending" – student can retry
-    frappe.db.set_value("Transcript Request", request_name, "status", "Payment Pending")
     frappe.db.commit()
     return {"success": True, "payment_status": "Payment Failed"}
 
@@ -524,13 +570,59 @@ def get_my_requests():
 
 
 @frappe.whitelist()
+def get_unlinked_paid_request():
+    """
+    Returns the student's most recent Transcript Request left over from an
+    interrupted Helpdesk pay-first attempt, if any — confirm_payment()
+    succeeded (payment_status "Paid", status advanced to "Submitted") but
+    the browser closed/reloaded/lost connection before the ticket-creation
+    step that normally runs right after did.
+
+    helpdesk_ticket is only ever set once a ticket actually claims the
+    request (see create_transcript_request_on_ticket /
+    _link_prepaid_transcript_request on the Helpdesk side), so "still
+    unlinked" is what marks this as interrupted rather than completed.
+
+    status is restricted to exactly "Submitted" — the one status
+    confirm_payment() can leave an unlinked, Paid request in without
+    auto-approval having already generated something. This deliberately
+    excludes Generated/Delivered/Under Review/Approved/Rejected/Cancelled:
+    those mean either auto-approval already produced a transcript for it,
+    or an admin has since acted on it — a same-session interruption can't
+    reach those states, so a request sitting there is an old, already
+    fulfilled/handled record from a different flow (the student portal page
+    predates helpdesk_ticket entirely) that must never be silently
+    resurrected into an unrelated new ticket.
+
+    Used by the Helpdesk New Ticket form to resume instead of re-charging:
+    if this returns a request, the payment panel shows it as already paid
+    and skips straight to letting the student fill in Subject/Description.
+    """
+    student_name = _require_student()
+    row = frappe.db.get_value(
+        "Transcript Request",
+        {
+            "student": student_name,
+            "helpdesk_ticket": ["is", "not set"],
+            "status": "Submitted",
+            "payment_status": "Paid",
+        },
+        ["name", "transcript_type", "num_copies", "purpose", "delivery_mode",
+         "fee_amount", "payment_required", "payment_reference"],
+        as_dict=True,
+        order_by="creation desc",
+    )
+    return row
+
+
+@frappe.whitelist()
 def cancel_request(request_name):
     """Allow student to cancel a Draft or Payment Pending request."""
     student_name = _require_student()
     req = _owned_request(request_name, student_name)
     if req.status not in ("Draft", "Payment Pending"):
         frappe.throw(_("Only Draft or Payment Pending requests can be cancelled."))
-    frappe.db.set_value("Transcript Request", request_name, "status", "Cancelled")
+    _set_status(request_name, {"status": "Cancelled"})
     frappe.db.commit()
     return {"success": True}
 
