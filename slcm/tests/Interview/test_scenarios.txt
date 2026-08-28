@@ -1,7 +1,8 @@
 ===============================================================================
 SLCM ADMISSION MODULE — INTERVIEW SYSTEM TEST SCENARIO REFERENCE
 ===============================================================================
-
+To Run the Test:
+        bench --site <your-site-name> run-tests --module slcm.tests.Interview.test_interview
 -------------------------------------------------------------------------------
 MODULE 1: RATIO VALIDATION & AUTO CODE
 -------------------------------------------------------------------------------
