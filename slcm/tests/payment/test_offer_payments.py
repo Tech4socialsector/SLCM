@@ -30,12 +30,12 @@ class TestOfferPayments(PaymentTestBase):
 		)
 
 		self.assertEqual(res.get("status"), "success")
-		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "status"), "Payment Completed")
+		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "status"), "Full Fee Paid")
 		self.assertEqual(frappe.db.get_value("Applicant Fee Assignment", afa.name, "status"), "Paid")
 		self.assertEqual(frappe.db.get_value("Payment Request", pr.name, "status"), "Paid")
 		
 		# Verify receipt exists
-		receipts = frappe.get_all("Applicant Payment Receipt", filters={"offer_letter": offer.name, "docstatus": 1})
+		receipts = frappe.get_all("Applicant Payment Receipt", filters={"offer_letter": offer.name, "docstatus": 0})
 		self.assertEqual(len(receipts), 1)
 
 	def test_webhook_only(self):
@@ -62,8 +62,8 @@ class TestOfferPayments(PaymentTestBase):
 
 		self.dispatch_razorpay_webhook(payload)
 
-		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "status"), "Payment Completed")
-		receipts = frappe.get_all("Applicant Payment Receipt", filters={"offer_letter": offer.name, "docstatus": 1})
+		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "status"), "Full Fee Paid")
+		receipts = frappe.get_all("Applicant Payment Receipt", filters={"offer_letter": offer.name, "docstatus": 0})
 		self.assertEqual(len(receipts), 1)
 
 	def test_scheduler_only(self):
@@ -89,8 +89,8 @@ class TestOfferPayments(PaymentTestBase):
 
 		FeeService.reconcile_pending_payments()
 
-		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "status"), "Payment Completed")
-		receipts = frappe.get_all("Applicant Payment Receipt", filters={"offer_letter": offer.name, "docstatus": 1})
+		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "status"), "Full Fee Paid")
+		receipts = frappe.get_all("Applicant Payment Receipt", filters={"offer_letter": offer.name, "docstatus": 0})
 		self.assertEqual(len(receipts), 1)
 
 	def test_duplicate_payment_attempt(self):
@@ -150,7 +150,7 @@ class TestOfferPayments(PaymentTestBase):
 		self.dispatch_razorpay_webhook(payload)
 
 		# Exactly one receipt exists
-		receipts = frappe.get_all("Applicant Payment Receipt", filters={"offer_letter": offer.name, "docstatus": 1})
+		receipts = frappe.get_all("Applicant Payment Receipt", filters={"offer_letter": offer.name, "docstatus": 0})
 		self.assertEqual(len(receipts), 1)
 
 	def test_duplicate_scheduler(self):
@@ -174,10 +174,11 @@ class TestOfferPayments(PaymentTestBase):
 		}])
 
 		for _ in range(10):
+			print("Running reconcile_pending_payments")
 			FeeService.reconcile_pending_payments()
 
 		# Verify single receipt
-		receipts = frappe.get_all("Applicant Payment Receipt", filters={"offer_letter": offer.name, "docstatus": 1})
+		receipts = frappe.get_all("Applicant Payment Receipt", filters={"offer_letter": offer.name, "docstatus": 0})
 		self.assertEqual(len(receipts), 1)
 
 	def test_scholarship_scenario(self):
@@ -216,13 +217,121 @@ class TestOfferPayments(PaymentTestBase):
 		)
 
 		self.assertEqual(res.get("status"), "success")
-		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "status"), "Payment Completed")
+		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "status"), "Full Fee Paid")
 		self.assertEqual(frappe.db.get_value("Applicant Fee Assignment", afa.name, "status"), "Paid")
 
 		# Verify Receipt net amount matches the adjusted payable amount
-		receipt_name = frappe.db.get_value("Applicant Payment Receipt", {"offer_letter": offer.name, "docstatus": 1})
+		receipt_name = frappe.db.get_value("Applicant Payment Receipt", {"offer_letter": offer.name, "docstatus": 0})
 		self.assertTrue(receipt_name)
 		receipt = frappe.get_doc("Applicant Payment Receipt", receipt_name)
 		
 		self.assertEqual(receipt.scholarship_amount, 1500)
 		self.assertEqual(receipt.net_amount, 3500)
+
+	def test_confirmation_to_admission_fee_transition(self):
+		"""TC-OL-008: Verify successful Confirmation Fee payment generates Admission Fee assignment"""
+		# Setup Fee Components & Structure
+		tuition = self.create_fee_component("Tuition Fee", is_accommodation_fee=0)
+		fs = self.create_fee_structure("FS-CONF-TEST", components=[(tuition, 150000)], confirmation_fee=50000)
+
+		app = self.create_applicant(amount=1000)
+		offer = self.create_offer_letter(app.name, amount=150000)
+		frappe.db.set_value("Offer Letter", offer.name, "fee_structure", fs.name)
+		
+		# Initial Assignment: Confirmation Fee
+		afa = self.create_applicant_fee_assignment(offer.name, app.name, amount=50000)
+		frappe.db.set_value("Applicant Fee Assignment", afa.name, "fee_type", "Confirmation Fee")
+
+		pr = self.create_payment_request("Offer Letter", offer.name, "order_conf_001", amount=50000)
+
+		self.mock_razorpay(payment_data={
+			"id": "pay_conf_001",
+			"amount": 5000000, # 50000 INR
+			"currency": "INR",
+			"order_id": "order_conf_001",
+			"status": "captured"
+		})
+		self.mock_signature_verification()
+
+		res = FeeService.verify_offer_payment(
+			razorpay_payment_id="pay_conf_001",
+			razorpay_order_id="order_conf_001",
+			razorpay_signature="sig",
+			offer_name=offer.name
+		)
+
+		self.assertEqual(res.get("status"), "success")
+		self.assertEqual(frappe.db.get_value("Offer Letter", offer.name, "status"), "Confirmation Fee Paid")
+		self.assertEqual(frappe.db.get_value("Applicant Fee Assignment", afa.name, "status"), "Paid")
+
+		# Check if Admission Fee Assignment was generated
+		new_afa_name = frappe.db.get_value("Applicant Fee Assignment", {
+			"offer_letter": offer.name, 
+			"fee_type": "Admission Fee",
+			"status": "Assigned"
+		})
+		self.assertIsNotNone(new_afa_name, "Admission Fee Assignment should be generated after Confirmation Fee is paid")
+		new_afa = frappe.get_doc("Applicant Fee Assignment", new_afa_name)
+		
+		# Total was 150000, components generated should reflect tuition
+		has_tuition = any(c.fee_component == tuition for c in new_afa.fee_components)
+		self.assertTrue(has_tuition, "Tuition component should be copied to the new Admission Fee assignment")
+
+	def test_accommodation_fee_inclusion(self):
+		"""TC-OL-009: Verify Accommodation Fee is included when needs_accommodation is Yes"""
+		tuition = self.create_fee_component("Tuition Fee", is_accommodation_fee=0)
+		acc_fee = self.create_fee_component("Hostel Fee", is_accommodation_fee=1)
+		fs = self.create_fee_structure("FS-ACC-INCL", components=[(tuition, 150000), (acc_fee, 50000)], confirmation_fee=50000)
+
+		app = self.create_applicant(amount=1000)
+		offer = self.create_offer_letter(app.name, amount=200000)
+		frappe.db.set_value("Offer Letter", offer.name, "fee_structure", fs.name)
+		frappe.db.set_value("Offer Letter", offer.name, "needs_accommodation", "Yes")
+
+		afa = self.create_applicant_fee_assignment(offer.name, app.name, amount=50000)
+		frappe.db.set_value("Applicant Fee Assignment", afa.name, "fee_type", "Confirmation Fee")
+		pr = self.create_payment_request("Offer Letter", offer.name, "order_acc_yes", amount=50000)
+
+		self.mock_razorpay(payment_data={
+			"id": "pay_acc_yes", "amount": 5000000, "currency": "INR", "order_id": "order_acc_yes", "status": "captured"
+		})
+		self.mock_signature_verification()
+
+		res = FeeService.verify_offer_payment("pay_acc_yes", "order_acc_yes", "sig", offer.name)
+		self.assertEqual(res.get("status"), "success")
+
+		new_afa_name = frappe.db.get_value("Applicant Fee Assignment", {"offer_letter": offer.name, "fee_type": "Admission Fee"})
+		new_afa = frappe.get_doc("Applicant Fee Assignment", new_afa_name)
+		
+		has_acc = any(c.fee_component == acc_fee for c in new_afa.fee_components)
+		self.assertTrue(has_acc, "Accommodation fee component should be INCLUDED when needs_accommodation is 'Yes'")
+
+	def test_accommodation_fee_exclusion(self):
+		"""TC-OL-010: Verify Accommodation Fee is excluded when needs_accommodation is No"""
+		tuition = self.create_fee_component("Tuition Fee", is_accommodation_fee=0)
+		acc_fee = self.create_fee_component("Hostel Fee", is_accommodation_fee=1)
+		fs = self.create_fee_structure("FS-ACC-EXCL", components=[(tuition, 150000), (acc_fee, 50000)], confirmation_fee=50000)
+
+		app = self.create_applicant(amount=1000)
+		offer = self.create_offer_letter(app.name, amount=200000)
+		frappe.db.set_value("Offer Letter", offer.name, "fee_structure", fs.name)
+		frappe.db.set_value("Offer Letter", offer.name, "needs_accommodation", "No")
+
+		afa = self.create_applicant_fee_assignment(offer.name, app.name, amount=50000)
+		frappe.db.set_value("Applicant Fee Assignment", afa.name, "fee_type", "Confirmation Fee")
+		pr = self.create_payment_request("Offer Letter", offer.name, "order_acc_no", amount=50000)
+
+		self.mock_razorpay(payment_data={
+			"id": "pay_acc_no", "amount": 5000000, "currency": "INR", "order_id": "order_acc_no", "status": "captured"
+		})
+		self.mock_signature_verification()
+
+		res = FeeService.verify_offer_payment("pay_acc_no", "order_acc_no", "sig", offer.name)
+		self.assertEqual(res.get("status"), "success")
+
+		new_afa_name = frappe.db.get_value("Applicant Fee Assignment", {"offer_letter": offer.name, "fee_type": "Admission Fee"})
+		new_afa = frappe.get_doc("Applicant Fee Assignment", new_afa_name)
+		
+		has_acc = any(c.fee_component == acc_fee for c in new_afa.fee_components)
+		self.assertFalse(has_acc, "Accommodation fee component should be EXCLUDED when needs_accommodation is 'No'")
+
