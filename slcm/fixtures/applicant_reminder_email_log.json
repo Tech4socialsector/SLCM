@@ -1,5 +1,6 @@
 [
  {
+  "admission_cycle": null,
   "docstatus": 0,
   "doctype": "Applicant Reminder Email Log",
   "email_account": null,
@@ -17,6 +18,7 @@
   "subject": "Regarding Your Application — NLS Admissions"
  },
  {
+  "admission_cycle": null,
   "docstatus": 0,
   "doctype": "Applicant Reminder Email Log",
   "email_account": null,
@@ -34,6 +36,7 @@
   "subject": "Regarding Your Application — NLS Admissions"
  },
  {
+  "admission_cycle": null,
   "docstatus": 0,
   "doctype": "Applicant Reminder Email Log",
   "email_account": null,

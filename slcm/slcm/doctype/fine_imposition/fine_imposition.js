@@ -31,6 +31,29 @@ frappe.ui.form.on("Fine Imposition", {
 					[frappe.datetime.str_to_user(frm.doc.applied_on)]),
 				"green"
 			);
+
+			frm.add_custom_button(__("Reverse Fine"), () => {
+				frappe.confirm(
+					__("This will cancel every Fine demand created by this record that hasn't been "
+						+ "paid yet (demands with partial payment are left untouched and logged as errors). "
+						+ "Continue?"),
+					() => {
+						frappe.show_alert({ message: __("Reversing fine..."), indicator: "blue" });
+						frm.call("reverse_fine").then(() => {
+							frm.reload_doc();
+							frappe.show_alert({ message: __("Fine reversed."), indicator: "green" });
+						});
+					}
+				);
+			});
+		}
+
+		if (frm.doc.status === "Reversed") {
+			frm.set_intro(
+				__("This Fine Imposition was reversed on {0}.",
+					[frappe.datetime.str_to_user(frm.doc.reversed_on)]),
+				"grey"
+			);
 		}
 	},
 });

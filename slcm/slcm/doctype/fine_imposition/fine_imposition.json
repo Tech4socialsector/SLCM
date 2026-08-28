@@ -28,6 +28,8 @@
   "applied_on",
   "applied_by",
   "column_break_status",
+  "reversed_on",
+  "reversed_by",
   "total_demands_affected",
   "total_fine_amount",
   "section_log",
@@ -147,7 +149,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Draft\nApplied",
+   "options": "Draft\nApplied\nReversed",
    "read_only": 1,
    "reqd": 1
   },
@@ -167,6 +169,19 @@
   {
    "fieldname": "column_break_status",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reversed_on",
+   "fieldtype": "Datetime",
+   "label": "Reversed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reversed_by",
+   "fieldtype": "Link",
+   "label": "Reversed By",
+   "options": "User",
+   "read_only": 1
   },
   {
    "fieldname": "total_demands_affected",
@@ -248,6 +263,10 @@
   {
    "color": "Green",
    "title": "Applied"
+  },
+  {
+   "color": "Grey",
+   "title": "Reversed"
   }
  ],
  "title_field": "from_date"

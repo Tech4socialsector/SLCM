@@ -7,6 +7,7 @@ from frappe.model.document import Document
 from frappe.utils import flt, getdate, now_datetime
 
 from slcm.slcm.fee.fee_demand_utils import create_event_demand
+from slcm.slcm.fee.event_hooks import _cancel_demand_for_trigger
 
 
 class FineImposition(Document):
@@ -64,6 +65,20 @@ class FineImposition(Document):
 			"total_demands_affected": self.total_demands_affected,
 			"total_fine_amount": self.total_fine_amount,
 		}
+
+	@frappe.whitelist()
+	def reverse_fine(self):
+		if self.status != "Applied":
+			frappe.throw(_("Only an Applied Fine Imposition can be reversed."))
+
+		_cancel_demand_for_trigger("Fine Imposition", self.name)
+
+		self.status = "Reversed"
+		self.reversed_on = now_datetime()
+		self.reversed_by = frappe.session.user
+		self.save(ignore_permissions=True)
+
+		return {"status": self.status}
 
 	def _compute_fine_amount(self, outstanding_amount):
 		if self.fine_type == "Flat Amount":
