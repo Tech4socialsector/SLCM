@@ -150,8 +150,7 @@
   {
    "fieldname": "fee_receipt",
    "fieldtype": "Attach",
-   "label": "Fee Receipt",
-   "read_only": 1
+   "label": "Fee Receipt"
   },
   {
    "fieldname": "last_course_fee_reminder_sent",
