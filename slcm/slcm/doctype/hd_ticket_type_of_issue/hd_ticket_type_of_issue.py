@@ -1,5 +1,5 @@
 import frappe
 from frappe.model.document import Document
 
-class HDTicketTypeOfIssueAssignmentRule(Document):
+class HDTicketTypeOfIssue(Document):
 	pass

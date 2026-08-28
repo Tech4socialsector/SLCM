@@ -139,6 +139,8 @@
   "fee_invoices",
   "fee_payment_log_section",
   "fee_payment_log",
+  "stipend_log_section",
+  "stipend_log",
   "bank_details_section",
   "bank_name",
   "ifsc_code",
@@ -440,6 +442,18 @@
    "fieldtype": "Table",
    "label": "Payment Log",
    "options": "Student Fee Payment Log",
+   "read_only": 1
+  },
+  {
+   "fieldname": "stipend_log_section",
+   "fieldtype": "Section Break",
+   "label": "Stipend Log"
+  },
+  {
+   "fieldname": "stipend_log",
+   "fieldtype": "Table",
+   "label": "Stipend Log",
+   "options": "Student Stipend Log",
    "read_only": 1
   },
   {

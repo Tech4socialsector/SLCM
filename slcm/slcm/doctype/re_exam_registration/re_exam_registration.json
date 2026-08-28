@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "autoname": "format:REX-{exam_plan}-{YYYY}-{#####}",
  "creation": "2026-04-24 00:00:00",
  "doctype": "DocType",
@@ -90,7 +91,7 @@
   }
  ],
  "links": [],
- "modified": "2026-04-27 05:28:10.945194",
+ "modified": "2026-08-28 10:27:02.870134",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Re Exam Registration",

@@ -234,7 +234,7 @@
   },
   {
    "depends_on": "eval:doc.student",
-   "fetch_from": "student.programme",
+   "fetch_from": "student.batch",
    "fieldname": "programme",
    "fieldtype": "Link",
    "label": "Batch",

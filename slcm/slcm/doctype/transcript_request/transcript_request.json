@@ -43,7 +43,8 @@
   "transcript_ready_email_sent",
   "section_remarks",
   "admin_remarks",
-  "student_notes"
+  "student_notes",
+  "helpdesk_ticket"
  ],
  "fields": [
   {
@@ -130,10 +131,11 @@
    "read_only": 1
   },
   {
-   "fetch_from": "student.programme",
+   "fetch_from": "student.programme_of_study",
    "fieldname": "programme",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Programme",
+   "options": "Programme",
    "read_only": 1
   },
   {
@@ -294,6 +296,14 @@
    "fieldtype": "Small Text",
    "label": "Student Notes",
    "read_only": 1
+  },
+  {
+   "fieldname": "helpdesk_ticket",
+   "fieldtype": "Link",
+   "label": "Helpdesk Ticket",
+   "options": "HD Ticket",
+   "read_only": 1,
+   "description": "Set when this request was raised from the Helpdesk portal, so status updates sync back to the ticket."
   }
  ],
  "links": [],

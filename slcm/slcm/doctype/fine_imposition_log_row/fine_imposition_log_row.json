@@ -1,0 +1,65 @@
+{
+ "actions": [],
+ "creation": "2026-08-27 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "source_fee_demand",
+  "outstanding_amount",
+  "fine_amount",
+  "fine_demand"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Student",
+   "options": "Student Master",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_fee_demand",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Outstanding Fee Demand",
+   "options": "Fee Demand",
+   "read_only": 1
+  },
+  {
+   "fieldname": "outstanding_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Outstanding Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fine_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Fine Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fine_demand",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Fine Demand Created",
+   "options": "Fee Demand",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-08-27 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Fine Imposition Log Row",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

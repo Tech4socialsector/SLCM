@@ -1350,6 +1350,28 @@ def _append_payment_log(student_name, event_type, **kwargs):
         frappe.log_error(frappe.get_traceback(), f"Payment log insert failed — {student_name}")
 
 
+def _append_stipend_log(student_name, stipend_payment_doc, status):
+    """Insert a Student Stipend Log row directly, bypassing SM validate."""
+    try:
+        row = frappe.get_doc({
+            "doctype":        "Student Stipend Log",
+            "parent":         student_name,
+            "parenttype":     "Student Master",
+            "parentfield":    "stipend_log",
+            "stipend_payment": stipend_payment_doc.name,
+            "academic_year":  stipend_payment_doc.academic_year,
+            "academic_term":  stipend_payment_doc.academic_term,
+            "stipend_type":   stipend_payment_doc.stipend_type,
+            "amount":         flt(stipend_payment_doc.amount),
+            "payment_date":   stipend_payment_doc.payment_date,
+            "status":         status,
+            "remarks":        stipend_payment_doc.remarks or "",
+        })
+        row.insert(ignore_permissions=True)
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), f"Stipend log insert failed — {student_name}")
+
+
 def _get_request_ip():
     """Return the client IP from the current Frappe request, or empty string."""
     try:
