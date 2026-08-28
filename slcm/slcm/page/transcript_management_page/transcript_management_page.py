@@ -139,7 +139,7 @@ def _build_filters(search="", programme="", course="", academic_year="", batch="
         params["search"] = f"%{search}%"
 
     if programme:
-        conditions.append("sm.programme = %(programme)s")
+        conditions.append("sm.programme_of_study = %(programme)s")
         params["programme"] = programme
 
     if department:
@@ -147,7 +147,7 @@ def _build_filters(search="", programme="", course="", academic_year="", batch="
         params["department"] = department
 
     if batch:
-        conditions.append("sm.batch_year = %(batch)s")
+        conditions.append("sm.programme = %(batch)s")
         params["batch"] = batch
 
     if academic_year:
@@ -222,8 +222,8 @@ def get_students(
             sm.registration_id,
             sm.email,
             sm.passport_size_photo                              AS photo,
-            sm.programme,
-            sm.batch_year,
+            sm.programme_of_study                               AS programme,
+            sm.programme                                        AS batch_year,
             sm.current_term,
             sm.academic_year,
             sm.department,
@@ -258,11 +258,11 @@ def get_students(
         prog_ids = list({s["programme"] for s in students if s.get("programme")})
         if prog_ids:
             rows = frappe.db.sql(
-                "SELECT name, cohort_name FROM `tabBatch` WHERE name IN %(ids)s",
+                "SELECT name, program_name FROM `tabProgramme` WHERE name IN %(ids)s",
                 {"ids": prog_ids},
                 as_dict=True,
             )
-            prog_names = {r["name"]: r["cohort_name"] for r in rows}
+            prog_names = {r["name"]: r["program_name"] for r in rows}
 
     # ── Fetch department display names ─────────────────────────────────────────
     dept_names = {}
@@ -408,7 +408,7 @@ def get_transcript_stats(search="", programme="", course="", academic_year="",
 def get_filter_options():
     """Return filter dropdown options: programmes, departments, academic_years, batches, courses, student_statuses."""
     programmes = frappe.db.sql(
-        "SELECT name, cohort_name FROM `tabBatch` ORDER BY cohort_name ASC LIMIT 500",
+        "SELECT name, program_name FROM `tabProgramme` ORDER BY program_name ASC LIMIT 500",
         as_dict=True,
     )
     departments = frappe.db.sql(
@@ -421,10 +421,11 @@ def get_filter_options():
         " ORDER BY academic_year DESC LIMIT 50",
         as_dict=True,
     )
+    # Batch options come from Batch itself, not the stale/unpopulated
+    # Student Master.batch_year column — students link to their Batch via the
+    # (confusingly named) Student Master.programme field.
     batches = frappe.db.sql(
-        "SELECT DISTINCT batch_year FROM `tabStudent Master`"
-        " WHERE batch_year IS NOT NULL AND batch_year != ''"
-        " ORDER BY batch_year DESC LIMIT 50",
+        "SELECT name, batch_name FROM `tabBatch` ORDER BY batch_name ASC LIMIT 500",
         as_dict=True,
     )
     courses = frappe.db.sql(
@@ -438,7 +439,7 @@ def get_filter_options():
         "programmes":       programmes,
         "departments":      departments,
         "academic_years":   [r["academic_year"] for r in academic_years],
-        "batches":          [r["batch_year"] for r in batches],
+        "batches":          batches,
         "courses":          courses,
         "student_statuses": student_statuses,
     }
@@ -817,7 +818,7 @@ def get_requests(
         conditions.append("tr.payment_status = %(payment_status)s")
         params["payment_status"] = payment_status
     if programme:
-        conditions.append("sm.programme = %(programme)s")
+        conditions.append("sm.programme_of_study = %(programme)s")
         params["programme"] = programme
     if department:
         conditions.append("sm.department = %(department)s")
@@ -826,7 +827,7 @@ def get_requests(
         conditions.append("sm.academic_year = %(academic_year)s")
         params["academic_year"] = academic_year
     if batch:
-        conditions.append("sm.batch_year = %(batch)s")
+        conditions.append("sm.programme = %(batch)s")
         params["batch"] = batch
 
     where = "WHERE 1=1" + ("" if not conditions else " AND " + " AND ".join(conditions))
@@ -841,8 +842,8 @@ def get_requests(
             sm.registration_id,
             sm.email,
             sm.passport_size_photo                             AS photo,
-            sm.programme,
-            sm.batch_year,
+            sm.programme_of_study                              AS programme,
+            sm.programme                                       AS batch_year,
             sm.academic_year,
             sm.department,
             tr.transcript_type,
@@ -886,10 +887,10 @@ def get_requests(
     prog_names = {}
     if prog_ids:
         prows = frappe.db.sql(
-            "SELECT name, cohort_name FROM `tabBatch` WHERE name IN %(ids)s",
+            "SELECT name, program_name FROM `tabProgramme` WHERE name IN %(ids)s",
             {"ids": prog_ids}, as_dict=True,
         )
-        prog_names = {p["name"]: p["cohort_name"] for p in prows}
+        prog_names = {p["name"]: p["program_name"] for p in prows}
 
     for r in rows:
         r["programme_name"] = prog_names.get(r.get("programme"), r.get("programme") or "")

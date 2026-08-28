@@ -908,7 +908,7 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 				const stat_sel   = $(wrapper).find("#tm-f-status");
 
 				(r.message.programmes || []).forEach(p => {
-					const label = p.cohort_name || p.name;
+					const label = p.program_name || p.name;
 					state._prog_labels[p.name] = label;
 					prog_sel.append(`<option value="${p.name}">${frappe.utils.escape_html(label)}</option>`);
 				});
@@ -925,7 +925,8 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 					yr_sel.append(`<option value="${y}">${frappe.utils.escape_html(y)}</option>`);
 				});
 				(r.message.batches || []).forEach(b => {
-					bat_sel.append(`<option value="${b}">${frappe.utils.escape_html(b)}</option>`);
+					const label = b.batch_name || b.name;
+					bat_sel.append(`<option value="${b.name}">${frappe.utils.escape_html(label)}</option>`);
 				});
 				(r.message.student_statuses || []).forEach(s => {
 					stat_sel.append(`<option value="${s}">${frappe.utils.escape_html(s)}</option>`);
