@@ -637,3 +637,50 @@ def send_course_fee_reminder_system_notification(doc, admission_close_date):
 			}).insert(ignore_permissions=True)
 	except Exception:
 		frappe.log_error(traceback.format_exc(), f"PACE Course Fee Reminder Notification Failed: {doc.name}")
+
+
+@frappe.whitelist()
+def sync_razorpay_amount(assignment_name):
+	assignment = frappe.get_doc("PACE Applicant Fee Assignment", assignment_name)
+	if assignment.status != "Paid":
+		frappe.throw("Can only sync amount for Paid assignments.")
+	
+	pr_list = frappe.get_all(
+		"Payment Request",
+		filters={
+			"reference_doctype": "PACE Applicant Fee Assignment",
+			"reference_name": assignment.name,
+			"status": "Paid",
+			"docstatus": 1
+		},
+		fields=["name", "amount", "transaction_id", "gateway_response"]
+	)
+	
+	if not pr_list:
+		frappe.throw("No paid Payment Request found for this assignment.")
+		
+	pr_data = pr_list[0]
+	amount_to_set = None
+	if pr_data.get("gateway_response"):
+		import json
+		try:
+			resp_dict = json.loads(pr_data.gateway_response)
+			if "amount" in resp_dict:
+				amount_to_set = float(resp_dict["amount"]) / 100.0
+		except Exception:
+			pass
+	
+	if not amount_to_set:
+		amount_to_set = pr_data.get("amount")
+		
+	if amount_to_set and float(amount_to_set) > 0:
+		frappe.db.set_value(
+			"PACE Applicant Fee Assignment", 
+			assignment.name, 
+			"razorpay_paid_amount", 
+			amount_to_set, 
+			update_modified=False
+		)
+		return True
+	else:
+		frappe.throw("Could not determine valid amount from Payment Request.")
