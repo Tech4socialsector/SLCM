@@ -1,0 +1,307 @@
+===============================================================================
+               SLCM ADMISSION ELIGIBILITY EVALUATION SYSTEM
+                        COMPLETE TEST SCENARIOS GUIDE
+===============================================================================
+To run the test :
+bench --site <your-site-name> run-tests --module slcm.tests.eligiblity.test_eligibility
+
+ABOUT THIS DOCUMENT:
+--------------------
+This document explains all test scenarios for the SLCM Eligibility System in simple,
+easy-to-understand plain language. Anyone—developers, testers, project managers, or 
+administrators—can read this file to understand how eligibility works and how every 
+single test scenario validates the software.
+
+Target Modules & DocTypes:
+- Eligibility Rule
+- Eligibility Rule Mapping
+- National Test
+- National Test Exemption Rule
+- Eligibility Allowed Degree
+- Eligibility Evaluation
+- Applicant (Eligibility Validation Engine)
+
+
+===============================================================================
+SECTION 1: HOW ELIGIBILITY CHECKING WORKS (SIMPLE EXPLANATION)
+===============================================================================
+
+When a student applies for a program (like B.Tech or M.Tech), the system automatically 
+checks if the student meets all eligibility conditions. 
+
+Here is the step-by-step journey:
+
+1. PRE-CHECK:
+   The system makes sure basic info is present (Campus, Admission Cycle, Academic Year, 
+   and Program). If any of these are missing, checking stops.
+
+2. STEP 0 - NATIONAL TEST EXEMPTION (VIP PASS):
+   If the student took a recognized National Test (like JEE Main or GATE) and scored 
+   high enough:
+   - If the rule says "Overrides Academic Rule", the student is declared ELIGIBLE 
+     immediately! High school or degree marks are not even checked.
+   - If it doesn't override, the student gets exam/interview exemptions, but academic 
+     marks are still checked in Step 1.
+
+3. STEP 1 - FIND ELIGIBILITY RULES:
+   The system looks for active rules matching the student's Campus, Admission Cycle, 
+   Program, and Category (Domestic vs International student).
+   - If NO rules are configured for the program, the program is open to everyone 
+     and the student is declared ELIGIBLE.
+
+4. STEP 2 - RESERVATION CATEGORY & MARKS CHECK:
+   - If the student belongs to a reserved category (like OBC-NCL, SC, ST, PWD), the 
+     system applies the lower percentage/CGPA requirement for that category first.
+   - If the student has no reserved category, the standard General requirement is checked.
+   - The system verifies:
+     a) HSC (12th) percentage & SSLC (10th) percentage.
+     b) HSC stream (e.g. Science/PCM vs Arts).
+     c) UG / PG degree CGPA and studied subjects.
+
+5. STEP 3 - FINAL RESULT & SAVING:
+   - ELIGIBLE: Student passes. Result is saved to the database.
+   - INELIGIBLE: Student fails. System writes a detailed explanation of why they failed, 
+     saves the record to the database, and shows a popup alert explaining the reason 
+     along with alternative programs the student CAN join.
+
+
+===============================================================================
+SECTION 2: ALL 33 TEST SCENARIOS (EASY TO READ)
+===============================================================================
+
+-------------------------------------------------------------------------------
+MODULE 1: ELIGIBILITY RULE CREATION & VALIDATION
+-------------------------------------------------------------------------------
+
+[TC-ELIG-001] Rule Code Auto-Generation
+- What we test: When a new rule is created, the system must automatically generate 
+  a rule code like ER-001, ER-002, etc.
+- Test Data: Rule Name = "B.Tech Science Min 60%"
+- Expected Result: System saves the rule and assigns a unique code starting with "ER-".
+
+[TC-ELIG-002] Missing Required Fields
+- What we test: Creating a rule without filling required fields (like Rule Name or Rule Type).
+- Test Data: Rule with blank name.
+- Expected Result: System blocks saving and shows an error asking for missing fields.
+
+[TC-ELIG-003] Duplicate Rule Name Prevention
+- What we test: Creating two rules with the exact same name.
+- Test Data: Two rules named "UG CS CGPA Rule".
+- Expected Result: System blocks the second rule and throws a duplicate error.
+
+
+-------------------------------------------------------------------------------
+MODULE 2: NATIONAL TEST MASTER DATA
+-------------------------------------------------------------------------------
+
+[TC-ELIG-004] Creating National Entrance Exams
+- What we test: Adding national exams (like JEE Main, CLAT, CAT, GATE) to the system.
+- Test Data: Exam Name = "JEE Main 2026"
+- Expected Result: Exam is saved successfully. Attempting to add "JEE Main 2026" 
+  again is blocked.
+
+
+-------------------------------------------------------------------------------
+MODULE 3: NATIONAL TEST EXEMPTION RULES
+-------------------------------------------------------------------------------
+
+[TC-ELIG-005] Exemption Code Auto-Generation
+- What we test: Creating a national test exemption rule automatically generates a code 
+  containing the Year and Campus (e.g., 2026-2027-Main Campus-TE-001).
+- Test Data: Campus = "Main Campus", Year = "2026-2027", Exam = "JEE Main 2026"
+- Expected Result: Rule is created with code format "2026-2027-Main Campus-TE-001".
+
+[TC-ELIG-006] Missing Campus or Year on Exemption Rule
+- What we test: Trying to save an exemption rule without selecting Campus or Year.
+- Expected Result: System blocks save and says "Academic Year and Campus are required".
+
+
+-------------------------------------------------------------------------------
+MODULE 4: RULE MAPPING & APPLICANT TYPES
+-------------------------------------------------------------------------------
+
+[TC-ELIG-007] Inactive Rule Mapping (Turned Off Rule)
+- What we test: If a rule mapping is turned OFF (Is Active = No), it should not block students.
+- Test Data: Rule requiring 99% marks, but set to Inactive (0). Student has 50%.
+- Expected Result: Inactive rule is ignored. Student is marked ELIGIBLE.
+
+[TC-ELIG-008] Domestic vs International Student Rules
+- What we test: Indian students should be checked against Domestic rules, and foreign 
+  students against International rules.
+- Test Data: Indian student (Foreign National = No) with 55% marks. Domestic rule = 50%, 
+  International rule = 90%.
+- Expected Result: Student is checked against Domestic rule (50%) and marked ELIGIBLE. 
+  International rule is ignored.
+
+
+-------------------------------------------------------------------------------
+MODULE 5: RESERVED CATEGORIES & PRIORITY ENGINE
+-------------------------------------------------------------------------------
+
+[TC-ELIG-009] Reserved Category Lower Cutoff (Single Category)
+- What we test: A student in a reserved category (e.g. OBC-NCL) gets the lower cutoff mark.
+- Test Data: General Cutoff = 60%, OBC-NCL Cutoff = 50%. Student is OBC-NCL with 52%.
+- Expected Result: Student passes using the OBC-NCL cutoff (52% >= 50%) and is marked ELIGIBLE.
+
+[TC-ELIG-010] Multi-Category Priority Selection (e.g. SC + PWD)
+- What we test: When a student belongs to multiple categories (e.g. SC and PWD), 
+  the system evaluates the highest priority category first.
+- Test Data: Priority 1 = SC (45%), Priority 2 = PWD (40%). Student has 46%.
+- Expected Result: System evaluates Priority 1 (SC: 46% >= 45%) first and marks student 
+  ELIGIBLE under SC category.
+
+
+-------------------------------------------------------------------------------
+MODULE 6: NATIONAL TEST EXEMPTION IN ACTION
+-------------------------------------------------------------------------------
+
+[TC-ELIG-011] National Test Overriding School Marks
+- What we test: High score in JEE Main overrides poor 12th class marks if rule has "Overrides Academic Rule".
+- Test Data: 12th class marks = 40% (Fails 60% requirement), but JEE Main score = 85% (Passes 80% cutoff).
+- Expected Result: Student is marked ELIGIBLE immediately. 12th class marks are bypassed.
+
+
+-------------------------------------------------------------------------------
+MODULE 7: CLASS 12th MARKS & STREAM CHECKS
+-------------------------------------------------------------------------------
+
+[TC-ELIG-012] Valid 12th and 10th Class Marks (Passing Case)
+- What we test: Student meets both 12th (HSC) and 10th (SSLC) percentage requirements.
+- Test Data: 12th = 75% (Req: 60%), 10th = 70% (Req: 50%).
+- Expected Result: Student is marked ELIGIBLE.
+
+[TC-ELIG-013] Failing 12th Class Marks
+- What we test: Student fails 12th class percentage requirement.
+- Test Data: 12th = 55% (Req: 60%).
+- Expected Result: System rejects application (INELIGIBLE) and explains 12th marks shortfall.
+
+[TC-ELIG-014] Failing 10th Class Marks
+- What we test: Student passes 12th class but fails 10th class percentage requirement.
+- Test Data: 12th = 75% (Req: 60%), 10th = 45% (Req: 50%).
+- Expected Result: System rejects application (INELIGIBLE) and explains 10th marks shortfall.
+
+[TC-ELIG-015] Exact Cutoff Marks (Boundary Testing)
+- What we test: Student scores EXACTLY the required percentage (e.g. 60.00%).
+- Test Data: Case A = 60.00%, Case B = 59.99%.
+- Expected Result: Case A (60.00%) passes. Case B (59.99%) is rejected.
+
+[TC-ELIG-016] 12th Class Stream Checking (PCM Science vs Arts)
+- What we test: B.Tech requires Science (PCM/PCMB). Arts student should be rejected.
+- Test Data: Case A = PCMB student, Case B = Arts student.
+- Expected Result: Case A passes. Case B is rejected with message stating Arts stream is not allowed.
+
+
+-------------------------------------------------------------------------------
+MODULE 8: DEGREE MARKS & ALLOWED DEGREES (UG & PG)
+-------------------------------------------------------------------------------
+
+[TC-ELIG-017] Undergraduate Degree & Branch Checking for M.Tech
+- What we test: M.Tech in CS requires B.Tech in CS with min 6.5 CGPA.
+- Test Data: Case A = B.Tech CS (CGPA 7.5), Case B = B.A English (CGPA 9.0).
+- Expected Result: Case A passes. Case B is rejected because B.A English is not an allowed degree.
+
+[TC-ELIG-018] Multiple Degrees (Evaluating Highest CGPA)
+- What we test: Student completed two degrees (B.Sc 5.5 CGPA & B.Tech 8.0 CGPA).
+- Expected Result: System evaluates the highest CGPA (8.0) and marks student ELIGIBLE.
+
+
+-------------------------------------------------------------------------------
+MODULE 9: DATABASE SAVING & FRAUD PREVENTION
+-------------------------------------------------------------------------------
+
+[TC-ELIG-019] Saving Ineligible Result Before Error Popup
+- What we test: Even if an application fails and shows an error popup, the rejection 
+  record MUST be saved in the database so administrative records are never lost.
+- Expected Result: Evaluation status "Ineligible" is permanently saved in the database.
+
+[TC-ELIG-020] Preventing Duplicate Evaluation Records
+- What we test: Checking eligibility multiple times for the same student updates the 
+  existing evaluation record instead of creating duplicate rows.
+- Expected Result: Database maintains exactly 1 evaluation record per student.
+
+
+-------------------------------------------------------------------------------
+MODULE 10: AUTOMATIC STUDENT STATUS UPDATES
+-------------------------------------------------------------------------------
+
+[TC-ELIG-021] Updating Student Status for Exempted Candidates
+- What we test: Students who qualify for entrance exam or interview exemptions get 
+  their status automatically updated in bulk.
+- Expected Result: Student status updates to "Excempted Entrance Test And Interview".
+
+
+-------------------------------------------------------------------------------
+MODULE 11: WEB PORTAL ONLINE APPLICATION CHECKS
+-------------------------------------------------------------------------------
+
+[TC-ELIG-022] Smooth Web Form Validation (No Crash)
+- What we test: Online student portal checks eligibility quietly via AJAX without 
+  crashing or throwing raw error screens.
+- Expected Result: Evaluation status is set to Ineligible safely without breaking the webpage.
+
+[TC-ELIG-023] Suggesting Alternative Eligible Programs
+- What we test: When a student fails eligibility for B.Tech CS, the portal suggests 
+  other available programs they DO qualify for (e.g. B.Sc IT or B.Tech Civil).
+- Expected Result: System returns a list of alternative eligible programs for the student.
+
+
+-------------------------------------------------------------------------------
+MODULE 12: ADVANCED EDGE CASES & TECHNICAL VALIDATIONS
+-------------------------------------------------------------------------------
+
+[TC-ELIG-024] Missing or Zero Marks
+- What we test: Student leaves marks empty or enters 0.
+- Expected Result: System marks student INELIGIBLE with explanation "marks were not found or are zero".
+
+[TC-ELIG-025] Clean Error Message Formatting
+- What we test: Failure explanations do not repeat duplicate sentences.
+- Expected Result: Clean, single-line error summary shown to the user.
+
+[TC-ELIG-026] PG Degree CGPA Category Override
+- What we test: PG programs check PG CGPA against category overrides (e.g., SC 6.0 CGPA vs General 7.0 CGPA).
+- Expected Result: SC student with 6.2 PG CGPA passes as ELIGIBLE.
+
+[TC-ELIG-027] Program State Immutability
+- What we test: Checking alternative program options during evaluation does not accidentally 
+  change the student's actual selected program.
+- Expected Result: Student's original program choice remains untouched.
+
+[TC-ELIG-028] Female Candidate Reservation ("Women" Category)
+- What we test: Selecting Gender = Female automatically includes the "Women" reservation category.
+- Expected Result: "Women" category is derived and applied.
+
+[TC-ELIG-029] EWS, PWD, and Karnataka Category Derivations
+- What we test: Checking EWS, PWD, or Karnataka flags correctly activates respective category rules.
+- Expected Result: Derived categories contain EWS, PWD, and Karnataka.
+
+[TC-ELIG-030] Program Level Filter in Bulk Status Updates
+- What we test: Bulk status update for "Undergraduate" does not accidentally alter "Postgraduate" applicants.
+- Expected Result: Only Undergraduate applicants are updated.
+
+[TC-ELIG-031] Highest Score Cutoff Rule Selection
+- What we test: When multiple national test rules match an exam, the system applies the 
+  one with the highest required percentage.
+- Expected Result: Highest cutoff rule is selected.
+
+[TC-ELIG-032] Relational Operators (= and <=)
+- What we test: Verifying exact equality (=) and maximum threshold (<=) operators.
+- Expected Result: Operators evaluate correctly according to standard math rules.
+
+[TC-ELIG-033] Single Exemption Status Resolution
+- What we test: Verifying status text for Entrance Test Only vs Interview Only exemptions.
+- Expected Result: Correct status ("Entrance Test Exempted" or "Interview Excempted") applied.
+
+
+===============================================================================
+SECTION 3: HOW TO RUN AUTOMATED TESTS ON BENCH
+===============================================================================
+
+To run all 33 automated Python unit tests on your site, open your shell terminal and run:
+
+    bench --site <your-site-name> run-tests --module slcm.tests.eligiblity.test_eligibility
+
+Replace <your-site-name> with your active Frappe site name (e.g. slcm.com).
+
+===============================================================================
+                               END OF GUIDE
+===============================================================================
