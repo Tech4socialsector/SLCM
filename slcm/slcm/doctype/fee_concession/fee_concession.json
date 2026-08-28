@@ -1,7 +1,8 @@
 {
  "actions": [],
+ "allow_import": 1,
  "autoname": "CON-.YYYY.-.#####",
- "creation": "2026-05-22 15:00:00.000000",
+ "creation": "2026-05-22 15:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -107,8 +108,7 @@
    "fieldtype": "Select",
    "label": "Scholarship For",
    "mandatory_depends_on": "eval:doc.concession_type==\"Scholarship\"",
-   "options": "\nTuition\nAccommodation\nStipend\nMess/Food\nTransport\nBooks & Stationery\nOther",
-   "in_list_view": 0
+   "options": "\nTuition\nAccommodation\nStipend\nMess/Food\nTransport\nBooks & Stationery\nOther"
   },
   {
    "fieldname": "waiver_mode",
@@ -166,7 +166,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-22 15:00:00.000000",
+ "modified": "2026-08-28 10:28:28.975990",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Fee Concession",
@@ -174,6 +174,8 @@
  "owner": "Administrator",
  "permissions": [
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -184,13 +186,12 @@
    "role": "System Manager",
    "share": 1,
    "submit": 1,
-   "cancel": 1,
-   "amend": 1,
    "write": 1
   },
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
-   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
@@ -199,8 +200,6 @@
    "role": "Campus Admin",
    "share": 1,
    "submit": 1,
-   "cancel": 1,
-   "amend": 1,
    "write": 1
   }
  ],

@@ -1,7 +1,8 @@
 {
  "actions": [],
+ "allow_import": 1,
  "autoname": "CRN-.YYYY.-.#####",
- "creation": "2026-05-23 10:00:00.000000",
+ "creation": "2026-05-23 10:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -18,7 +19,8 @@
   "section_remarks",
   "remarks",
   "section_adjustments",
-  "adjustments"
+  "adjustments",
+  "amended_from"
  ],
  "fields": [
   {
@@ -124,7 +126,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-23 10:00:00.000000",
+ "modified": "2026-08-28 10:28:55.796048",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Credit Note",
@@ -132,6 +134,7 @@
  "owner": "Administrator",
  "permissions": [
   {
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -142,12 +145,11 @@
    "role": "System Manager",
    "share": 1,
    "submit": 1,
-   "cancel": 1,
    "write": 1
   },
   {
+   "cancel": 1,
    "create": 1,
-   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
@@ -156,7 +158,6 @@
    "role": "Campus Admin",
    "share": 1,
    "submit": 1,
-   "cancel": 1,
    "write": 1
   }
  ],
