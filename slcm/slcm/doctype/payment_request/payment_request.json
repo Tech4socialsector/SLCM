@@ -34,6 +34,7 @@
   "settlement_utr",
   "settlement_date",
   "settlement_status",
+  "gateway_settlement_status",
   "column_break_usow",
   "gateway_fees",
   "gateway_tax",
@@ -216,6 +217,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "settlement_status",
    "fieldtype": "Select",
    "in_standard_filter": 1,
@@ -257,11 +259,19 @@
   {
    "fieldname": "column_break_usow",
    "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "gateway_settlement_status",
+   "fieldtype": "Select",
+   "label": "Gateway Settlement Status",
+   "options": "\ncreated\nprocessed\nfailed",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-25 12:04:39.653031",
+ "modified": "2026-08-27 15:48:40.393883",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Payment Request",

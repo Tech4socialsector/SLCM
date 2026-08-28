@@ -361,11 +361,9 @@ def sync_single_payment_settlement(pr_name):
         frappe.throw(_("Settlement ID mismatch."))
 
     settlement_status = settlement.get("status")
-    if settlement_status != "processed":
-        return {
-            "status": settlement_status,
-            "message": _("Settlement {0} is currently {1}.").format(settlement_id, settlement_status)
-        }
+    
+    # Let it fall through to complete_payment_settlement to update DB
+    # even if status is created or failed.
 
     # 6. Complete settlement
     created_at = settlement.get("created_at")
@@ -385,9 +383,10 @@ def sync_single_payment_settlement(pr_name):
 
     complete_payment_settlement("Payment Request", pr.name, found_item, settlement_payload)
 
+    msg = _("Settlement {0} synchronized successfully. Status: {1}").format(settlement_id, settlement_status.title())
     return {
         "status": "success",
-        "message": _("Settlement {0} synchronized successfully.").format(settlement_id),
+        "message": msg,
         "settlement_id": settlement_id,
         "utr": settlement.get("utr")
     }
@@ -409,9 +408,9 @@ def enqueue_bulk_sync():
 
 
 @frappe.whitelist()
-def run_sync(from_date=None, to_date=None):
+def run_sync(from_date=None, to_date=None, skip_fle=False):
     """
-    Sync settlement data into FLE Payment Log using /v1/settlements/recon/combined.
+    Sync settlement data using /v1/settlements/recon/combined.
     from_date / to_date limit which settlements are fetched (YYYY-MM-DD strings).
     """
     import json
@@ -434,18 +433,23 @@ def run_sync(from_date=None, to_date=None):
     setl_by_id = {s["id"]: s for s in settlements if s.get("id")}
 
     # ── Step 2: build lookup maps ─────────────────────────────
-    fle_rows = frappe.db.sql(
-        """
-        SELECT name, transaction_id, paid_amount, settlement_id, gateway_response
-        FROM `tabFLE Payment Log`
-        """,
-        as_dict=True,
-    )
+    if not skip_fle:
+        fle_rows = frappe.db.sql(
+            """
+            SELECT name, transaction_id, paid_amount, settlement_id, gateway_response
+            FROM `tabFLE Payment Log`
+            WHERE payment_status IN ('Authorized', 'Captured') AND (settlement_status IS NULL OR settlement_status != 'processed')
+            """,
+            as_dict=True,
+        )
+    else:
+        fle_rows = []
+        
     pr_rows = frappe.db.sql(
         """
         SELECT name, razorpay_payment_id, transaction_id, amount as paid_amount, settlement_id, gateway_response
         FROM `tabPayment Request`
-        WHERE status = 'Paid'
+        WHERE status = 'Paid' AND (settlement_status IS NULL OR settlement_status != 'processed')
         """,
         as_dict=True,
     )
@@ -681,11 +685,25 @@ def run_sync(from_date=None, to_date=None):
                 except Exception:
                     pass
 
-            frappe.db.set_value(t_doctype, row_name, {
+            fields_to_update = {
                 "settlement_id":     sid,
                 "settlement_date":   settlement_date,
-                "settlement_status": status,
-            }, update_modified=False)
+            }
+
+            if t_doctype == "Payment Request":
+                fields_to_update["gateway_settlement_status"] = status
+                if status == "processed":
+                    fields_to_update["settlement_status"] = "Settled"
+                elif status == "created":
+                    fields_to_update["settlement_status"] = "Processing"
+                elif status == "failed":
+                    fields_to_update["settlement_status"] = "Failed"
+                else:
+                    fields_to_update["settlement_status"] = "Pending"
+            else:
+                fields_to_update["settlement_status"] = status
+
+            frappe.db.set_value(t_doctype, row_name, fields_to_update, update_modified=False)
 
             updated_names.add(key)
             fallback_updated += 1
@@ -757,3 +775,17 @@ def _fetch_all_settlements(auth, from_date=None, to_date=None):
     return settlements
 
 
+def daily_sync_settlements():
+    """
+    Daily background cron job to sync settlements for both Payment Requests and FLE Payment Logs.
+    Fetches settlements from the last 5 days to safely account for bank holidays and weekends.
+    """
+    from datetime import datetime, timedelta
+    
+    today = datetime.now()
+    five_days_ago = today - timedelta(days=5)
+    
+    from_date_str = five_days_ago.strftime("%Y-%m-%d")
+    to_date_str = today.strftime("%Y-%m-%d")
+    
+    run_sync(from_date=from_date_str, to_date=to_date_str, skip_fle=False)

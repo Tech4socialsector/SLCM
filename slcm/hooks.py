@@ -585,6 +585,8 @@ scheduler_events = {
 		# floor once their Academic Term has ended (see programme_chair_decision,
 		# which no longer checks this at approval time).
 		"slcm.slcm.doctype.student_attendance_condonation.student_attendance_condonation.auto_reject_below_attendance_floor",
+		# Background sync for settlements if webhooks fail
+		"slcm.api.sync_settlements.daily_sync_settlements",
 	]
 }
 

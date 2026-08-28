@@ -1885,12 +1885,14 @@ class FeeService:
             try:
                 frappe.db.savepoint(savepoint)
                 result = reconcile_payment_request_record(pr_data, rzp_client)
+                print(f"Result for {pr_data.name} is {result}")
                 if result == "captured":
                     frappe.logger().info(
                         f"Reconciliation Scheduler: completed PR={pr_data.name}"
                     )
             except Exception:
                 frappe.db.rollback(save_point=savepoint)
+                import traceback; print(f"Exception in reconcile_pending_payments for {pr_data.name}:\n", traceback.format_exc())
                 frappe.log_error(
                     frappe.get_traceback(),
                     f"Reconciliation Scheduler Failed for PR={pr_data.name}",

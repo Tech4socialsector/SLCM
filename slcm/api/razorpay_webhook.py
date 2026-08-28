@@ -399,11 +399,12 @@ def complete_payment_settlement(target_doctype, log_name, item, settlement_paylo
 	tax_paise    = int(item.get("tax") or 0)
 	net_paise    = int(item.get("credit") or 0)
 
+	gateway_status = settlement_payload.get("status") or "processed"
+
 	fields_to_update = {
 		"settlement_id":     settlement_payload.get("id"),
 		"settlement_utr":    settlement_payload.get("utr") or "",
 		"settlement_date":   settlement_payload.get("settlement_date"),
-		"settlement_status": settlement_payload.get("status") or "processed",
 		"gateway_fees":      round(fee_paise / 100, 2),
 		"gateway_tax":       round(tax_paise / 100, 2),
 		"net_settled":       round(net_paise / 100, 2) if net_paise else round((gross_paise - fee_paise - tax_paise) / 100, 2),
@@ -412,6 +413,19 @@ def complete_payment_settlement(target_doctype, log_name, item, settlement_paylo
 	if target_doctype == "Payment Request":
 		fields_to_update["settlement_amount"] = round(gross_paise / 100, 2)
 		fields_to_update["settlement_response"] = json.dumps(item, indent=4)
+		fields_to_update["gateway_settlement_status"] = gateway_status
+		
+		# Map to Payment Request internal select options
+		if gateway_status == "processed":
+			fields_to_update["settlement_status"] = "Settled"
+		elif gateway_status == "created":
+			fields_to_update["settlement_status"] = "Processing"
+		elif gateway_status == "failed":
+			fields_to_update["settlement_status"] = "Failed"
+		else:
+			fields_to_update["settlement_status"] = "Pending"
+	else:
+		fields_to_update["settlement_status"] = gateway_status
 
 	frappe.db.set_value(target_doctype, log_name, fields_to_update)
 
