@@ -47,14 +47,14 @@ class TestInterviewSystem(FrappeTestCase):
 	def cleanup_test_records(self):
 		"""Clean up all temporary test documents via direct SQL to leave DB 100% clean."""
 		frappe.db.sql("DELETE FROM `tabNotification Log` WHERE subject LIKE 'New Interview Assignment%' OR subject LIKE 'Interview Slot%'")
-		frappe.db.sql("DELETE FROM `tabInterview Seat Allocation` WHERE interview_list LIKE 'IVL-%' OR applicant LIKE 'TEST-APP-%' OR applicant LIKE 'APP-2026-%' OR staff_name LIKE 'TEST-STAFF-%'")
-		frappe.db.sql("DELETE FROM `tabInterview Applicant` WHERE parent LIKE 'IVL-%' OR applicant_id LIKE 'TEST-APP-%' OR applicant_id LIKE 'APP-2026-%'")
-		frappe.db.sql("DELETE FROM `tabInterview List` WHERE name LIKE 'IVL-%'")
+		frappe.db.sql("DELETE FROM `tabInterview Seat Allocation` WHERE interview_list LIKE 'IVL-TEST-%' OR applicant LIKE 'TEST-APP-%' OR staff_name LIKE 'TEST-STAFF-%'")
+		frappe.db.sql("DELETE FROM `tabInterview Applicant` WHERE parent LIKE 'IVL-TEST-%' OR applicant_id LIKE 'TEST-APP-%'")
+		frappe.db.sql("DELETE FROM `tabInterview List` WHERE name LIKE 'IVL-TEST-%' OR campus = 'TEST-INT-Main Campus'")
 		frappe.db.sql("DELETE FROM `tabInterview Configuration` WHERE configuration_code LIKE 'TEST-%' OR name LIKE 'TEST-INT-%' OR campus = 'TEST-INT-Main Campus'")
 		frappe.db.sql("DELETE FROM `tabInterview Staff Member` WHERE staff_name LIKE 'TEST-STAFF-%'")
-		frappe.db.sql("DELETE FROM `tabEntrance Test Seat Allocation` WHERE applicant LIKE 'TEST-APP-%' OR applicant LIKE 'APP-2026-%'")
-		frappe.db.sql("DELETE FROM `tabEligibility Evaluation` WHERE applicant_name LIKE 'TEST-APP-%' OR applicant_name LIKE 'APP-2026-%'")
-		frappe.db.sql("DELETE FROM `tabApplicant` WHERE name LIKE 'TEST-APP-%' OR name LIKE 'APP-2026-%'")
+		frappe.db.sql("DELETE FROM `tabEntrance Test Seat Allocation` WHERE applicant LIKE 'TEST-APP-%'")
+		frappe.db.sql("DELETE FROM `tabEligibility Evaluation` WHERE applicant_name LIKE 'TEST-APP-%'")
+		frappe.db.sql("DELETE FROM `tabApplicant` WHERE name LIKE 'TEST-APP-%'")
 		frappe.db.sql("DELETE FROM `tabProgramme Reservation Policy` WHERE program LIKE 'TEST-INT-%'")
 		frappe.db.commit()
 
