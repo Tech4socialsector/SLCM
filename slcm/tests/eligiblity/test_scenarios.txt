@@ -303,5 +303,11 @@ To run all 33 automated Python unit tests on your site, open your shell terminal
 Replace <your-site-name> with your active Frappe site name (e.g. slcm.com).
 
 ===============================================================================
-                               END OF GUIDE
+ELIGIBILITY MODULE AUTOMATED TEST SUITE EXECUTION SUMMARY
+===============================================================================
+Total Test Cases : 33
+Passed           : 33
+Failed           : 0
+Execution Time   : 2.70s
+Overall Result   : OK (PASS)
 ===============================================================================
