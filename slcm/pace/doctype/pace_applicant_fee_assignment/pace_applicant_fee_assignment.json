@@ -45,7 +45,6 @@
    "in_standard_filter": 1,
    "label": "Application",
    "options": "PACE Application",
-   "read_only": 1,
    "reqd": 1
   },
   {
@@ -54,15 +53,13 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Applicant Name",
-   "read_only": 1
+   "label": "Applicant Name"
   },
   {
    "fieldname": "fee_structure",
    "fieldtype": "Link",
    "label": "Fee Structure",
-   "options": "PACE Fee Structure",
-   "read_only": 1
+   "options": "PACE Fee Structure"
   },
   {
    "fieldname": "nationality_type",
@@ -70,8 +67,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Nationality Type",
-   "options": "Indian\nForeign",
-   "read_only": 1
+   "options": "Indian\nForeign"
   },
   {
    "fieldname": "column_break_1",
@@ -84,8 +80,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Fee Type",
-   "options": "Application Fee\nCourse Fee",
-   "read_only": 1
+   "options": "Application Fee\nCourse Fee"
   },
   {
    "fieldname": "program",
@@ -99,8 +94,7 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Academic Year",
-   "options": "Academic Year",
-   "read_only": 1
+   "options": "Academic Year"
   },
   {
    "default": "INR",
@@ -121,7 +115,6 @@
    "fieldtype": "Date",
    "in_list_view": 1,
    "label": "Assignment Date",
-   "read_only": 1,
    "reqd": 1
   },
   {
@@ -142,8 +135,7 @@
    "fieldname": "fee_invoice",
    "fieldtype": "Link",
    "label": "Fee Invoice",
-   "options": "Fee Invoice",
-   "read_only": 1
+   "options": "Fee Invoice"
   },
   {
    "fieldname": "transaction_id",
@@ -158,8 +150,7 @@
   {
    "fieldname": "fee_receipt",
    "fieldtype": "Attach",
-   "label": "Fee Receipt",
-   "read_only": 1
+   "label": "Fee Receipt"
   },
   {
    "fieldname": "last_course_fee_reminder_sent",
@@ -173,16 +164,14 @@
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Total Amount",
-   "options": "currency",
-   "read_only": 1
+   "options": "currency"
   },
   {
    "allow_on_submit": 1,
    "fieldname": "final_payable_amount",
    "fieldtype": "Currency",
    "label": "Final Payable Amount",
-   "options": "currency",
-   "read_only": 1
+   "options": "currency"
   },
   {
    "fieldname": "fee_components_section",
@@ -217,7 +206,7 @@
   }
  ],
  "links": [],
- "modified": "2026-06-17 09:23:13.520043",
+ "modified": "2026-08-28 10:54:07.499986",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Applicant Fee Assignment",
