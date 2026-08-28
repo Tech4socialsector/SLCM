@@ -26,39 +26,47 @@ class OfferNotificationService:
         portal_notification_content = None
         category = "Offer Letter"
 
+        program_name = frappe.db.get_value("Programme", offer_doc.program, "program_name") or offer_doc.program
+        
+        # Try to get the Admission Fee amount from Applicant Fee Assignment
+        full_fee_amount = frappe.db.get_value("Applicant Fee Assignment", {"offer_letter": offer_doc.name, "fee_type": "Admission Fee"}, "final_payable_amount")
+        formatted_full_fee = frappe.format_value(full_fee_amount, {"fieldtype": "Currency"}) if full_fee_amount else ""
+
         # Rule 3: Use specific email fields based on status
         if new_status == "Issued":
             email_template_field = "offer_issued_email"
             portal_notification_subject = _("Admission Offer Issued")
-            portal_notification_content = _("You have received an admission offer for {0}. Please check your email and portal for details.").format(offer_doc.program)
+            portal_notification_content = _("You have received an admission offer for {0}. Please check your email and portal for details.").format(program_name)
         elif new_status == "Accepted":
             email_template_field = "offer_accepted_email"
             portal_notification_subject = _("Admission Offer Accepted")
-            portal_notification_content = _("You have successfully accepted the admission offer for {0}.").format(offer_doc.program)
+            portal_notification_content = _("You have successfully accepted the admission offer for {0}.").format(program_name)
         elif new_status == "Confirmation Fee Paid":
             email_template_field = "confirmation_fee_email"
-            portal_notification_subject = _("Admission Fee Payment Completed")
+            portal_notification_subject = _("Confirmation Fee Payment Completed")
             payable = frappe.format_value(offer_doc.payable_amount, offer_doc.meta.get_field("payable_amount"), offer_doc) if offer_doc.payable_amount else ""
-            portal_notification_content = _("Your payment of {0} for {1} has been received successfully.").format(payable, offer_doc.program)
+            portal_notification_content = _("Your payment of {0} for {1} has been received successfully.").format(payable, program_name)
             category = "Fee"
         elif new_status == "Full Fee Paid":
             email_template_field = "full_fee_email"
-            portal_notification_subject = _("Admission Fee Payment Completed")
-            payable = frappe.format_value(offer_doc.payable_amount, offer_doc.meta.get_field("payable_amount"), offer_doc) if offer_doc.payable_amount else ""
-            portal_notification_content = _("Your payment of {0} for {1} has been received successfully.").format(payable, offer_doc.program)
+            portal_notification_subject = _("Full Fee Payment Completed")
+            if formatted_full_fee:
+                portal_notification_content = _("Your payment of {0} for {1} has been received successfully.").format(formatted_full_fee, program_name)
+            else:
+                portal_notification_content = _("Your full fee payment for {0} has been received successfully.").format(program_name)
             category = "Fee"
         elif new_status == "Rejected":
             email_template_field = "offer_rejected_email"
             portal_notification_subject = _("Admission Offer Rejected")
-            portal_notification_content = _("You have rejected the admission offer for {0}.").format(offer_doc.program)
+            portal_notification_content = _("You have rejected the admission offer for {0}.").format(program_name)
         elif new_status == "Expired":
             email_template_field = "offer_expired_withdraw_email"
             portal_notification_subject = _("Admission Offer Expired")
-            portal_notification_content = _("Your admission offer for {0} has expired as the payment deadline has passed.").format(offer_doc.program)
+            portal_notification_content = _("Your admission offer for {0} has expired as the payment deadline has passed.").format(program_name)
         elif new_status == "Withdrawn":
             email_template_field = "offer_expired_withdraw_email"
             portal_notification_subject = _("Admission Offer Withdrawn")
-            portal_notification_content = _("Your admission offer for {0} has been withdrawn.").format(offer_doc.program)
+            portal_notification_content = _("Your admission offer for {0} has been withdrawn.").format(program_name)
         else:
             return
 
@@ -129,6 +137,32 @@ class OfferNotificationService:
                         "fname": f"Offer_Letter_{offer_doc.applicant}.pdf",
                         "fcontent": pdf_content
                     }]
+            elif status in ["Confirmation Fee Paid", "Full Fee Paid"]:
+                # Fetch the most recent submitted receipt for this offer
+                receipt_name = frappe.db.get_value(
+                    "Applicant Payment Receipt", 
+                    {"offer_letter": offer_doc.name, "docstatus": 1}, 
+                    "name", 
+                    order_by="creation desc"
+                )
+                if receipt_name:
+                    pf_name = frappe.db.get_value("Applicant Payment Receipt", receipt_name, "payment_receipt_template")
+                    
+                    if not pf_name or not frappe.db.exists("Print Format", pf_name):
+                        pf_name = frappe.get_meta("Applicant Payment Receipt").default_print_format
+                        
+                    if pf_name and frappe.db.exists("Print Format", pf_name):
+                        try:
+                            html = frappe.get_print("Applicant Payment Receipt", receipt_name, pf_name)
+                            from frappe.utils.pdf import get_pdf
+                            pdf_content = get_pdf(html)
+                            if pdf_content:
+                                attachments = [{
+                                    "fname": f"Payment_Receipt_{receipt_name}.pdf",
+                                    "fcontent": pdf_content
+                                }]
+                        except Exception as e:
+                            frappe.log_error(f"Failed to generate receipt PDF for {receipt_name}: {str(e)}", "Offer Notification Service")
 
             sender_email = None
             if tpl.get("email_account"):
@@ -149,8 +183,7 @@ class OfferNotificationService:
             # is attached to a document. We delete it here to prevent a duplicate, ugly UI notification 
             # with the full email body, since we manually create a much cleaner one earlier in process_status_change.
             frappe.db.delete("Notification Log", {
-                "document_type": "Offer Letter",
-                "document_name": offer_doc.name,
+                "document_type": "Communication",
                 "subject": subject
             })
             

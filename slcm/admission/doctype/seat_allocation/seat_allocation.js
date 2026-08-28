@@ -459,13 +459,9 @@ frappe.ui.form.on("Seat Allocation", {
                                     process_next();
                                 },
                                 error: (err) => {
-                                    error_count++;
-                                    summary_log.push({
-                                        applicant: payload.applicant,
-                                        error: __("Unexpected Server Error")
-                                    });
-                                    processed++;
-                                    process_next();
+                                    frappe.hide_progress();
+                                    // Stop loop on server error to prevent spamming modals
+                                    return;
                                 }
                             });
                         };

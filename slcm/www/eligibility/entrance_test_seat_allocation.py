@@ -252,3 +252,69 @@ def get_admit_card_html(doc, is_rescheduled):
                 return frappe.render_template(html_template, {"doc": doc, "get_file_b64": get_file_b64})
 
     frappe.throw(_("Admit Card Print Format could not be loaded."))
+
+
+@frappe.whitelist(allow_guest=True)
+def download_result_card(allocation_name=None, **kwargs):
+    if not allocation_name:
+        allocation_name = kwargs.get("allocation_name") or frappe.form_dict.get("allocation_name")
+
+    if not allocation_name:
+        frappe.throw(_("Missing parameter: allocation_name"), frappe.DataError)
+
+    user = frappe.session.user
+    if user == "Guest":
+        frappe.throw(_("Please login to proceed"), frappe.PermissionError)
+
+    allocation_name = str(allocation_name).strip().strip('"').strip("'")
+
+    applicant_name = frappe.db.get_value("Applicant", {"email": user}, "name")
+    alloc_data = frappe.db.get_value("Entrance Test Seat Allocation", allocation_name, ["applicant", "email"], as_dict=True)
+    
+    if not alloc_data:
+        frappe.throw(_(f"Entrance Test Seat Allocation record not found for name: '{allocation_name}'"), frappe.DoesNotExistError)
+
+    is_authorized = False
+    if applicant_name and alloc_data.applicant == applicant_name:
+        is_authorized = True
+    elif alloc_data.email and alloc_data.email.strip().lower() == user.strip().lower():
+        is_authorized = True
+    else:
+        user_roles = frappe.get_roles(user)
+        if any(role in user_roles for role in ["System Manager", "Entrance Test Admin", "Exam Cell"]):
+            is_authorized = True
+
+    if not is_authorized:
+        frappe.throw(_("You are not authorized to access this result card."), frappe.PermissionError)
+
+    doc = frappe.get_doc("Entrance Test Seat Allocation", allocation_name)
+    
+    if doc.result_published != 1:
+        frappe.throw(_("Result Card is only available after results are published."))
+
+    stored_file_url = doc.entrance_test_result_card
+
+    if stored_file_url and stored_file_url.startswith("/private/files/"):
+        try:
+            file_doc = frappe.get_doc("File", {"file_url": stored_file_url})
+            frappe.local.response.filename = f"Result_Card_{doc.applicant}.pdf"
+            frappe.local.response.filecontent = file_doc.get_content()
+            frappe.local.response.type = "download"
+            return
+        except Exception:
+            pass
+
+    # Generate physical file now
+    physical_file_url = doc._generate_physical_result_card()
+    
+    if physical_file_url and physical_file_url.startswith("/private/files/"):
+        try:
+            file_doc = frappe.get_doc("File", {"file_url": physical_file_url})
+            frappe.local.response.filename = f"Result_Card_{doc.applicant}.pdf"
+            frappe.local.response.filecontent = file_doc.get_content()
+            frappe.local.response.type = "download"
+            return
+        except Exception:
+            pass
+            
+    frappe.throw(_("PDF generation failed for result card."))

@@ -527,6 +527,11 @@ function _csm_open(exam_plan, exam_name) {
 /* ── Extract a readable message from a failed frappe.call ─── */
 function _csm_error_message(r) {
 	try {
+		// If r is a jqXHR object, the actual response JSON is in r.responseJSON
+		if (r && r.responseJSON) {
+			r = r.responseJSON;
+		}
+		
 		if (r && r._server_messages) {
 			const msgs = JSON.parse(r._server_messages);
 			if (msgs && msgs.length) {
@@ -875,20 +880,23 @@ function _csm_show_map_panel(exam_plan, selected, $ov) {
 		});
 
 		const $btn = $bd.find('.csm-pnl-apply').prop('disabled', true).text('Saving…');
+		
+		const showError = r => {
+			$btn.prop('disabled', false).text('Apply');
+			const { title, message } = _csm_error_message(r);
+			$bd.find('.csm-change-confirm').remove();
+			$bd.find('.csm-panel-section:first').prepend(
+				`<div class="csm-change-confirm" style="background:#fee2e2;border-color:#fca5a5;color:#991b1b;margin-bottom:10px;"><b>${_esc(title)}:</b> ${_esc(message)}</div>`
+			);
+		};
+
 		frappe.call({
 			method: 'slcm.slcm.doctype.exam_plan.exam_plan_api.save_course_schema',
 			args: { exam_plan, assignments: JSON.stringify(assignments), reason: reason || '' },
-			error: r => {
-				$btn.prop('disabled', false).text('Apply');
-				const { title, message } = _csm_error_message(r);
-				frappe.msgprint({ title, message, indicator: 'red' });
-			},
+			error: r => showError(r),
 			callback: r => {
 				if (r && r.exc) {
-					$btn.prop('disabled', false).text('Apply');
-					const { title, message } = _csm_error_message(r);
-					frappe.msgprint({ title, message, indicator: 'red' });
-					return;
+					return showError(r);
 				}
 				// Update DOM directly (fast path)
 				selected.forEach(course => {
@@ -995,7 +1003,10 @@ function _csm_show_unmap_panel(exam_plan, selected, $ov) {
 		const onError = r => {
 			$btn.prop('disabled', false).text('Confirm Unmap');
 			const { title, message } = _csm_error_message(r);
-			frappe.msgprint({ title, message, indicator: 'red' });
+			$bd.find('.csm-change-confirm').remove();
+			$bd.find('.csm-panel-warn').after(
+				`<div class="csm-change-confirm" style="background:#fee2e2;border-color:#fca5a5;color:#991b1b;margin-bottom:10px;padding:8px;border-radius:4px;border:1px solid;"><b>${_esc(title)}:</b> ${_esc(message)}</div>`
+			);
 		};
 
 		const done = r => {

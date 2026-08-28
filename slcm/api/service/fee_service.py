@@ -448,7 +448,8 @@ class FeeService:
         if assignment_name:
             frappe.db.set_value("Applicant Fee Assignment", assignment_name, {
                 "status": "Paid",
-                "payment_date": frappe.utils.today()
+                "payment_date": frappe.utils.today(),
+                "transaction_id": razorpay_payment_id
             })
             fee_type = frappe.db.get_value("Applicant Fee Assignment", assignment_name, "fee_type")
             is_confirmation = (fee_type == "Confirmation Fee")
@@ -1466,7 +1467,9 @@ class FeeService:
         FeeService._generate_application_fee_receipt(applicant_doc, razorpay_payment_id, "Online")
 
         from slcm.api.service.application_fee_service import sync_application_fee_assignment_for_applicant
-        sync_application_fee_assignment_for_applicant(applicant_doc.name)
+        assignment_name = sync_application_fee_assignment_for_applicant(applicant_doc.name)
+        if assignment_name:
+            frappe.db.set_value("Applicant Fee Assignment", assignment_name, "transaction_id", razorpay_payment_id)
 
         applicant_doc.reload()
         if applicant_doc.status == "Submitted":

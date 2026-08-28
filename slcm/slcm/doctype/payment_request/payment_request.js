@@ -22,5 +22,24 @@ frappe.ui.form.on("Payment Request", {
                 });
             });
         }
+
+        if (!frm.is_new() && frm.doc.gateway_status === "captured" && frm.doc.settlement_status != "processed") {
+            frm.add_custom_button(__("Sync Settlement"), function() {
+                frappe.call({
+                    method: "slcm.api.sync_settlements.sync_single_payment_settlement",
+                    args: {
+                        pr_name: frm.doc.name
+                    },
+                    freeze: true,
+                    freeze_message: __("Checking Razorpay settlement..."),
+                    callback: function(r) {
+                        if (r.message) {
+                            frappe.msgprint(r.message.message || __("Settlement synchronized."));
+                            frm.reload_doc();
+                        }
+                    }
+                });
+            }).addClass("btn-primary");
+        }
 	},
 });
