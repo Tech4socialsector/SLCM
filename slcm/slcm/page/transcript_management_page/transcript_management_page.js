@@ -490,116 +490,17 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 						<span id="tm-filter-count" class="tm-filter-badge" style="display:none;">0</span>
 					</button>
 
-					<!-- Generate split dropdown -->
-					<div class="tm-dropdown" id="tm-gen-dropdown">
-						<div class="tm-split-group">
-							<button type="button" class="tm-btn tm-btn-primary" id="tm-gen-quick-btn"
-								title="${__("Generate for selected students")}">
-								<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
-									fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-									<polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
-									<polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
-								</svg>
-								${__("Generate")}
-							</button>
-							<button type="button" class="tm-btn tm-btn-primary" id="tm-gen-caret-btn"
-								title="${__("More generate options")}">
-								<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24"
-									fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-									<polyline points="6 9 12 15 18 9"/>
-								</svg>
-							</button>
-						</div>
-						<ul class="tm-dropdown-menu" id="tm-gen-menu">
-							<li class="tm-menu-label">${__("Selected Students")}</li>
-							<li><a id="tm-gen-interim" href="#">
-								<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-								${__("Generate Interim Transcript")}
-							</a></li>
-							<li><a id="tm-gen-final" href="#">
-								<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="8 17 10 19 14 15"/></svg>
-								${__("Generate Provisional Transcript")}
-							</a></li>
-							<li class="tm-divider"></li>
-							<li class="tm-menu-label">${__("All Filtered Students")}</li>
-							<li><a id="tm-gen-all-interim" href="#">
-								<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-								${__("Interim – All Filtered")}
-							</a></li>
-							<li><a id="tm-gen-all-final" href="#">
-								<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="8 11 10 13 14 9"/></svg>
-								${__("Final – All Filtered")}
-							</a></li>
-						</ul>
-					</div>
-
-					<!-- Download split dropdown -->
-					<div class="tm-dropdown" id="tm-dl-dropdown">
-						<div class="tm-split-group">
-							<button type="button" class="tm-btn tm-btn-outline" id="tm-dl-quick-btn"
-								title="${__("Download for selected student")}">
-								<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
-									fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-									<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-									<polyline points="7 10 12 15 17 10"/>
-									<line x1="12" y1="15" x2="12" y2="3"/>
-								</svg>
-								${__("Download")}
-							</button>
-							<button type="button" class="tm-btn tm-btn-outline" id="tm-dl-caret-btn">
-								<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24"
-									fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-									<polyline points="6 9 12 15 18 9"/>
-								</svg>
-							</button>
-						</div>
-						<ul class="tm-dropdown-menu" id="tm-dl-menu">
-							<li class="tm-menu-label">${__("Download Transcript")}</li>
-							<li><a id="tm-dl-interim" href="#">
-								<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-								${__("Download Interim Transcript")}
-							</a></li>
-							<li><a id="tm-dl-final" href="#">
-								<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-								${__("Download Provisional Transcript")}
-							</a></li>
-						</ul>
-					</div>
-
-					<!-- Year-based transcript actions -->
-					<div class="tm-dropdown" id="tm-year-dropdown">
-						<button type="button" class="tm-btn tm-btn-outline" id="tm-year-btn"
-							title="${__("Year-based transcript options")}">
-							<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
-								fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-								<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-								<polyline points="14 2 14 8 20 8"/>
-								<line x1="8" y1="13" x2="16" y2="13"/>
-								<line x1="8" y1="17" x2="14" y2="17"/>
-							</svg>
-							${__("Year-Based")}
-							<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24"
-								fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-								<polyline points="6 9 12 15 18 9"/>
-							</svg>
-						</button>
-						<ul class="tm-dropdown-menu" id="tm-year-menu">
-							<li class="tm-menu-label">${__("Year-Based Transcript")}</li>
-							<li><a id="tm-dl-year-based" href="#">
-								<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-								${__("Download Year-Based Transcript")}
-							</a></li>
-							<li><a id="tm-customize-year-based" href="#">
-								<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-								${__("Customize Year-Based Layout")}
-							</a></li>
-							<li class="tm-menu-label" style="margin-top:6px;">${__("Compact Format")}</li>
-							<li><a id="tm-dl-compact" href="#">
-								<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-								${__("Download Compact Transcript")}
-							</a></li>
-						</ul>
-					</div>
+					<!-- Compact transcript download -->
+					<button type="button" class="tm-btn tm-btn-outline" id="tm-dl-compact"
+						title="${__("Download Compact Transcript")}">
+						<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+							fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+							<polyline points="7 10 12 15 17 10"/>
+							<line x1="12" y1="15" x2="12" y2="3"/>
+						</svg>
+						${__("Download Compact")}
+					</button>
 
 					<!-- Templates / Settings -->
 					<button id="tm-settings-btn" class="tm-btn tm-btn-default"
@@ -821,13 +722,6 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 		</div>
 	`);
 
-	// ── Dropdown close-on-outside-click ───────────────────────────────────────
-	$(document).on("click.tm", function (e) {
-		if (!$(e.target).closest("#tm-gen-dropdown, #tm-dl-dropdown, #tm-year-dropdown").length) {
-			$(wrapper).find(".tm-dropdown-menu").removeClass("open");
-		}
-	});
-
 	// ── Event Bindings ─────────────────────────────────────────────────────────
 
 	// Search debounce
@@ -844,37 +738,6 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 	// Filter panel toggle
 	$(wrapper).on("click", "#tm-filter-btn", function () {
 		$(wrapper).find("#tm-filter-panel").slideToggle(180);
-	});
-
-	// Generate caret → open dropdown
-	$(wrapper).on("click", "#tm-gen-caret-btn", function (e) {
-		e.stopPropagation();
-		$(wrapper).find("#tm-dl-menu, #tm-year-menu").removeClass("open");
-		$(wrapper).find("#tm-gen-menu").toggleClass("open");
-	});
-	// Generate main button → quick shortcut (interim for selection)
-	$(wrapper).on("click", "#tm-gen-quick-btn", function () {
-		$(wrapper).find("#tm-gen-menu").removeClass("open");
-		handle_generate("Interim", false);
-	});
-
-	// Download caret
-	$(wrapper).on("click", "#tm-dl-caret-btn", function (e) {
-		e.stopPropagation();
-		$(wrapper).find("#tm-gen-menu, #tm-year-menu").removeClass("open");
-		$(wrapper).find("#tm-dl-menu").toggleClass("open");
-	});
-	// Download main button → quick shortcut (final)
-	$(wrapper).on("click", "#tm-dl-quick-btn", function () {
-		$(wrapper).find("#tm-dl-menu").removeClass("open");
-		handle_download("Final");
-	});
-
-	// Year-based menu
-	$(wrapper).on("click", "#tm-year-btn", function (e) {
-		e.stopPropagation();
-		$(wrapper).find("#tm-gen-menu, #tm-dl-menu").removeClass("open");
-		$(wrapper).find("#tm-year-menu").toggleClass("open");
 	});
 
 	// Apply filters
@@ -926,18 +789,8 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 		update_selection_bar();
 	});
 
-	// Generate actions
-	$(wrapper).on("click", "#tm-gen-interim",     function (e) { e.preventDefault(); $(wrapper).find("#tm-gen-menu").removeClass("open"); handle_generate("Interim", false); });
-	$(wrapper).on("click", "#tm-gen-final",       function (e) { e.preventDefault(); $(wrapper).find("#tm-gen-menu").removeClass("open"); handle_generate("Final", false); });
-	$(wrapper).on("click", "#tm-gen-all-interim", function (e) { e.preventDefault(); $(wrapper).find("#tm-gen-menu").removeClass("open"); handle_generate("Interim", true); });
-	$(wrapper).on("click", "#tm-gen-all-final",   function (e) { e.preventDefault(); $(wrapper).find("#tm-gen-menu").removeClass("open"); handle_generate("Final", true); });
-
-	// Download actions
-	$(wrapper).on("click", "#tm-dl-interim", function (e) { e.preventDefault(); $(wrapper).find("#tm-dl-menu").removeClass("open"); handle_download("Interim"); });
-	$(wrapper).on("click", "#tm-dl-final",   function (e) { e.preventDefault(); $(wrapper).find("#tm-dl-menu").removeClass("open"); handle_download("Final"); });
-	$(wrapper).on("click", "#tm-dl-year-based",       function (e) { e.preventDefault(); $(wrapper).find("#tm-year-menu").removeClass("open"); handle_year_based_download(); });
-	$(wrapper).on("click", "#tm-customize-year-based", function (e) { e.preventDefault(); $(wrapper).find("#tm-year-menu").removeClass("open"); frappe.set_route("Form", "Transcript Settings"); });
-	$(wrapper).on("click", "#tm-dl-compact",           function (e) { e.preventDefault(); $(wrapper).find("#tm-year-menu").removeClass("open"); handle_compact_download(); });
+	// Year-based dropdown action
+	$(wrapper).on("click", "#tm-dl-compact", function () { handle_compact_download(); });
 
 	// Settings / Templates
 	$(wrapper).on("click", "#tm-settings-btn", function () {

@@ -7,6 +7,50 @@ from collections import defaultdict
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
+def _build_student_filter(exam_plan, search="", inst_programmes="", inst_batches=""):
+	"""Build the WHERE clause fragment + params for filtering students in an exam plan."""
+	params = {"exam_plan": exam_plan}
+	extra_cond = ""
+	if search:
+		extra_cond += (
+			" AND (sm.registration_id LIKE %(search)s"
+			" OR sm.first_name LIKE %(search)s"
+			" OR sm.last_name LIKE %(search)s)"
+		)
+		params["search"] = f"%{search}%"
+
+	f_programmes = frappe.parse_json(inst_programmes) if inst_programmes else []
+	f_batches    = frappe.parse_json(inst_batches)    if inst_batches    else []
+	if f_programmes:
+		placeholders = ",".join([f"%(prog_{i})s" for i in range(len(f_programmes))])
+		extra_cond += f" AND sm.programme_of_study IN ({placeholders})"
+		for i, v in enumerate(f_programmes):
+			params[f"prog_{i}"] = v
+	if f_batches:
+		placeholders = ",".join([f"%(batch_{i})s" for i in range(len(f_batches))])
+		extra_cond += f" AND sm.batch_year IN ({placeholders})"
+		for i, v in enumerate(f_batches):
+			params[f"batch_{i}"] = v
+
+	return extra_cond, params
+
+
+def _get_matching_student_ids(exam_plan, search="", inst_programmes="", inst_batches=""):
+	"""Return all student ids enrolled in the exam plan that match the given filters (no pagination)."""
+	extra_cond, params = _build_student_filter(exam_plan, search, inst_programmes, inst_batches)
+	rows = frappe.db.sql(
+		f"""
+		SELECT DISTINCT scm.student AS student
+		FROM `tabStudent Course Marks` scm
+		INNER JOIN `tabStudent Master` sm ON sm.name = scm.student
+		WHERE scm.exam_plan = %(exam_plan)s
+		{extra_cond}
+		""",
+		params, as_dict=True,
+	)
+	return [r["student"] for r in rows]
+
+
 def _compute_term_gpa(exam_plan, student_names, students, force_recompute=False):
 	"""Compute SGPA, term percentage and cumulative GPA for each student in-place."""
 	if not student_names:
@@ -25,7 +69,7 @@ def _compute_term_gpa(exam_plan, student_names, students, force_recompute=False)
 			scm.enrollment_status,
 			COALESCE(c.credit_value, 0)                                     AS credit_value,
 			COALESCE(gs.maximum_marks, 100)                                 AS maximum_marks,
-			COALESCE(gsc.grade_point, 0)                                    AS grade_point,
+			gsc.grade_point                                                 AS grade_point,
 			COALESCE(gsc.failed, 0)                                         AS is_failed
 		FROM `tabStudent Course Marks` scm
 		LEFT JOIN `tabCourse` c ON c.name = scm.course
@@ -86,10 +130,15 @@ def _compute_term_gpa(exam_plan, student_names, students, force_recompute=False)
 		total_count   = len(marks)
 
 		for m in marks:
-			if m["consider_for_sgpa"] and m["final_grade"] and m["credit_value"]:
+			# grade_point is NULL when the grade couldn't be resolved against the
+			# course's Grading Schema Component (e.g. no Course Schema Assignment,
+			# or the grade string doesn't match any component) — such a course must
+			# be excluded from the weighted average rather than silently treated as
+			# grade_point 0, which would drag the GPA down to a false low value.
+			if m["consider_for_sgpa"] and m["final_grade"] and m["credit_value"] and m["grade_point"] is not None:
 				weighted_gp   += float(m["grade_point"]) * float(m["credit_value"])
 				total_credits += float(m["credit_value"])
-			if m["final_grade"] and m["credit_value"]:
+			if m["final_grade"] and m["credit_value"] and m["grade_point"] is not None:
 				all_weighted_gp += float(m["grade_point"]) * float(m["credit_value"])
 				all_credits     += float(m["credit_value"])
 			if m["final_grade"]:
@@ -125,7 +174,7 @@ def _compute_cumulative_stats(student_id):
 			scm.enrollment_status,
 			COALESCE(c.credit_value, 0)                                     AS credit_value,
 			COALESCE(gs.maximum_marks, 100)                                 AS maximum_marks,
-			COALESCE(gsc.grade_point, 0)                                    AS grade_point
+			gsc.grade_point                                                 AS grade_point
 		FROM `tabStudent Course Marks` scm
 		LEFT JOIN `tabCourse` c ON c.name = scm.course
 		LEFT JOIN `tabCourse Schema Assignment` csa
@@ -147,7 +196,7 @@ def _compute_cumulative_stats(student_id):
 	total_max = 0.0
 
 	for m in marks_rows:
-		if m["consider_for_sgpa"] and m["final_grade"] and m["credit_value"]:
+		if m["consider_for_sgpa"] and m["final_grade"] and m["credit_value"] and m["grade_point"] is not None:
 			weighted_gp += float(m["grade_point"]) * float(m["credit_value"])
 			total_credits += float(m["credit_value"])
 		if m["final_grade"]:
@@ -170,13 +219,24 @@ def _compute_cumulative_stats(student_id):
 	return cgpa, cpct
 
 @frappe.whitelist()
-def generate_term_results(exam_plan, student_names, action):
+def generate_term_results(exam_plan, student_names, action, select_all=0,
+                           exclude_students="[]", search="", inst_programmes="", inst_batches=""):
 	import json
-	student_list = json.loads(student_names)
-	if not student_list:
-		student_list = [r["student"] for r in frappe.db.sql("SELECT DISTINCT student FROM `tabStudent Course Marks` WHERE exam_plan=%s", exam_plan, as_dict=True)]
+
+	if frappe.utils.cint(select_all):
+		exclude_list = set(json.loads(exclude_students) or [])
+		student_list = [
+			s for s in _get_matching_student_ids(exam_plan, search, inst_programmes, inst_batches)
+			if s not in exclude_list
+		]
 		if not student_list:
 			return
+	else:
+		student_list = json.loads(student_names)
+		if not student_list:
+			student_list = [r["student"] for r in frappe.db.sql("SELECT DISTINCT student FROM `tabStudent Course Marks` WHERE exam_plan=%s", exam_plan, as_dict=True)]
+			if not student_list:
+				return
 
 	# compute dynamic term gpa
 	students = frappe.db.sql(
@@ -225,7 +285,7 @@ def generate_term_results(exam_plan, student_names, action):
 			cgpa, cpct = _compute_cumulative_stats(student_id)
 
 			if action == "cumulative_gpa":
-				frappe.db.set_value("Student Result Publish", doc_name, "cumulative_gpa", cgpa, update_modified=False)
+				frappe.db.set_value("Student Result Publish", doc_name, "cumulative_gpa", cgpa or 0, update_modified=False)
 				if cgpa is not None and cgpa > 0:
 					frappe.db.set_value("Student Master", student_id, "current_cgpa", cgpa, update_modified=False)
 			else:
@@ -234,7 +294,7 @@ def generate_term_results(exam_plan, student_names, action):
 				)
 				scale_pct = lookup_percentage_for_cgpa(cgpa) if cgpa is not None else None
 				final_pct = scale_pct if scale_pct is not None else cpct
-				frappe.db.set_value("Student Result Publish", doc_name, "cumulative_percentage", final_pct, update_modified=False)
+				frappe.db.set_value("Student Result Publish", doc_name, "cumulative_percentage", final_pct or 0, update_modified=False)
 				if final_pct is not None and final_pct > 0:
 					frappe.db.set_value("Student Master", student_id, "cumulative_percentage", final_pct, update_modified=False)
 	
@@ -269,7 +329,7 @@ def download_consolidated_report(exam_plan="", search="", inst_programmes="", in
 		params["academic_year"] = academic_year
 
 	if trimester:
-		where_cond += " AND sm.current_term = %(trimester)s"
+		where_cond += " AND sm.academic_term = %(trimester)s"
 		params["trimester"] = trimester
 
 	if batch:
@@ -315,9 +375,8 @@ def download_consolidated_report(exam_plan="", search="", inst_programmes="", in
 			sm.academic_year,
 			coh.program AS programme_name,
 			sm.specialisation,
-			sm.batch_year,
-			sm.current_term AS trimester,
-			at.term_name AS term,
+			sm.programme AS batch_year,
+			sm.academic_term AS trimester,
 			c.course_code,
 			c.course_name,
 			'' AS course_registration_type,
@@ -340,8 +399,6 @@ def download_consolidated_report(exam_plan="", search="", inst_programmes="", in
 		FROM `tabStudent Course Marks` scm
 		INNER JOIN `tabStudent Master` sm ON sm.name = scm.student
 		LEFT JOIN `tabBatch` coh ON coh.name = sm.programme
-		LEFT JOIN `tabExam Plan` ep ON ep.name = scm.exam_plan
-		LEFT JOIN `tabAcademic Term` at ON at.name = ep.term
 		LEFT JOIN `tabCourse` c ON c.name = scm.course
 		LEFT JOIN `tabCourse Schema Assignment` csa ON csa.exam_plan = scm.exam_plan AND csa.course = scm.course
 		LEFT JOIN `tabGrading Schema Component` gsc ON gsc.parent = csa.grade_schema AND gsc.grade = COALESCE(NULLIF(scm.grade,''), NULL)
@@ -351,9 +408,12 @@ def download_consolidated_report(exam_plan="", search="", inst_programmes="", in
 		ORDER BY c.course_name ASC, sm.registration_id ASC
 		""", params, as_dict=True)
 
+	if not rows:
+		frappe.throw("No records found for the selected filters. Try widening the Exam Plan, Academic Year, Programme, Trimester or Batch selection.")
+
 	headers = [
 		"Registration ID", "Student Name", "Academic Year", "Programme Name",
-		"Programme Specialization", "Batch Year", "Trimester", "Term",
+		"Programme Specialization", "Batch", "Trimester",
 		"Course Code", "Course Name", "Course Registration Type", "Exam Type",
 		"Evaluation Schema", "Grade Schema", "Total Marks", "Grade", "Grade Points",
 		"Is Failed", "Attendance Status", "Consider For SGPA Calculation",
@@ -370,7 +430,6 @@ def download_consolidated_report(exam_plan="", search="", inst_programmes="", in
 			r.get("specialisation"),
 			r.get("batch_year"),
 			r.get("trimester"),
-			r.get("term"),
 			r.get("course_code"),
 			r.get("course_name"),
 			r.get("course_registration_type"),
@@ -558,28 +617,7 @@ def get_term_students(exam_plan, search="", page=1, page_length=20,
 	}
 	sort_col = sort_col_map.get(sort_by, "sm.registration_id")
 
-	f_programmes = frappe.parse_json(inst_programmes) if inst_programmes else []
-	f_batches    = frappe.parse_json(inst_batches)    if inst_batches    else []
-
-	params       = {"exam_plan": exam_plan}
-	extra_cond   = ""
-	if search:
-		extra_cond += (
-			" AND (sm.registration_id LIKE %(search)s"
-			" OR sm.first_name LIKE %(search)s"
-			" OR sm.last_name LIKE %(search)s)"
-		)
-		params["search"] = f"%{search}%"
-	if f_programmes:
-		placeholders = ",".join([f"%(prog_{i})s" for i in range(len(f_programmes))])
-		extra_cond += f" AND sm.programme_of_study IN ({placeholders})"
-		for i, v in enumerate(f_programmes):
-			params[f"prog_{i}"] = v
-	if f_batches:
-		placeholders = ",".join([f"%(batch_{i})s" for i in range(len(f_batches))])
-		extra_cond += f" AND sm.batch_year IN ({placeholders})"
-		for i, v in enumerate(f_batches):
-			params[f"batch_{i}"] = v
+	extra_cond, params = _build_student_filter(exam_plan, search, inst_programmes, inst_batches)
 
 	students = frappe.db.sql(
 		f"""
@@ -657,8 +695,10 @@ def get_student_courses(exam_plan, student):
 			scm.grade                                                         AS regular_grade,
 			COALESCE(scm.total_marks, 0)                                      AS regular_marks,
 			scm.moderated_grade,
-			COALESCE(scm.updated_grade, '')                                   AS reexam_grade,
-			COALESCE(scm.updated_final_marks, 0)                              AS reexam_marks,
+			CASE WHEN COALESCE(scm.re_exam_grade, '') != ''
+			     THEN COALESCE(scm.updated_grade, '') ELSE '' END              AS reexam_grade,
+			CASE WHEN COALESCE(scm.re_exam_grade, '') != ''
+			     THEN COALESCE(scm.updated_final_marks, 0) ELSE 0 END          AS reexam_marks,
 			scm.consider_for_sgpa,
 			scm.enrollment_status,
 			scm.attendance_status,
