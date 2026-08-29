@@ -154,6 +154,7 @@ def get_transcript_context(student_id):
             ON csa.exam_plan = scm.exam_plan AND csa.course = scm.course
         LEFT JOIN `tabGrading Schema Component` gsc
             ON gsc.parent = csa.grade_schema
+            AND gsc.parentfield = 'grades'
             AND gsc.grade = COALESCE(NULLIF(scm.updated_grade, ''), NULLIF(scm.grade, ''))
         WHERE scm.student = %(student)s
           AND COALESCE(scm.enrollment_status, '') NOT IN ('Dropped', 'Detained', 'Migrated')
@@ -496,6 +497,7 @@ def get_year_based_transcript_context(student_id):
             ON csa.exam_plan = scm.exam_plan AND csa.course = scm.course
         LEFT JOIN `tabGrading Schema Component` gsc
             ON gsc.parent = csa.grade_schema
+            AND gsc.parentfield = 'grades'
             AND gsc.grade = COALESCE(NULLIF(scm.updated_grade, ''), NULLIF(scm.grade, ''))
         WHERE scm.student = %(student)s
           AND COALESCE(scm.enrollment_status, '') NOT IN ('Dropped', 'Detained', 'Migrated')

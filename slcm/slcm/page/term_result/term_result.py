@@ -401,8 +401,12 @@ def download_consolidated_report(exam_plan="", search="", inst_programmes="", in
 		LEFT JOIN `tabBatch` coh ON coh.name = sm.batch
 		LEFT JOIN `tabCourse` c ON c.name = scm.course
 		LEFT JOIN `tabCourse Schema Assignment` csa ON csa.exam_plan = scm.exam_plan AND csa.course = scm.course
-		LEFT JOIN `tabGrading Schema Component` gsc ON gsc.parent = csa.grade_schema AND gsc.grade = COALESCE(NULLIF(scm.grade,''), NULL)
-		LEFT JOIN `tabGrading Schema Component` gsc2 ON gsc2.parent = csa.grade_schema AND gsc2.grade = COALESCE(NULLIF(scm.updated_grade,''), NULL)
+		LEFT JOIN `tabGrading Schema Component` gsc
+			ON gsc.parent = csa.grade_schema AND gsc.parentfield = 'grades'
+			AND gsc.grade = COALESCE(NULLIF(scm.grade,''), NULL)
+		LEFT JOIN `tabGrading Schema Component` gsc2
+			ON gsc2.parent = csa.grade_schema AND gsc2.parentfield = 'grades'
+			AND gsc2.grade = COALESCE(NULLIF(scm.updated_grade,''), NULL)
 		LEFT JOIN `tabStudent Result Publish` srp ON srp.exam_plan = scm.exam_plan AND srp.student = scm.student
 		WHERE {where_cond}
 		ORDER BY c.course_name ASC, sm.registration_id ASC
@@ -712,6 +716,7 @@ def get_student_courses(exam_plan, student):
 		LEFT JOIN `tabGrading Schema` gs ON gs.name = csa.grade_schema
 		LEFT JOIN `tabGrading Schema Component` gsc
 			ON gsc.parent = csa.grade_schema
+			AND gsc.parentfield = 'grades'
 			AND gsc.grade = COALESCE(NULLIF(scm.updated_grade,''), NULLIF(scm.grade,''))
 		WHERE scm.exam_plan = %(exam_plan)s
 		  AND scm.student   = %(student)s
