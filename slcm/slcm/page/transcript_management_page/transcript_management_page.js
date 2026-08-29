@@ -432,27 +432,6 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 			}
 			.tm-sel-label { font-size: 13px; color: rgba(255,255,255,0.7); }
 			.tm-sel-divider { width: 1px; height: 24px; background: rgba(255,255,255,0.15); margin: 0 4px; }
-			.tm-sel-action {
-				display: inline-flex; align-items: center; gap: 6px;
-				padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
-				cursor: pointer; border: 1.5px solid transparent; transition: all 0.15s;
-				white-space: nowrap;
-			}
-			.tm-sel-interim {
-				background: rgba(251,191,36,0.15); color: #fbbf24;
-				border-color: rgba(251,191,36,0.3);
-			}
-			.tm-sel-interim:hover { background: rgba(251,191,36,0.25); }
-			.tm-sel-final {
-				background: rgba(59,130,246,0.15); color: #60a5fa;
-				border-color: rgba(59,130,246,0.3);
-			}
-			.tm-sel-final:hover { background: rgba(59,130,246,0.25); }
-			.tm-sel-year {
-				background: rgba(16,185,129,0.15); color: #34d399;
-				border-color: rgba(16,185,129,0.3);
-			}
-			.tm-sel-year:hover { background: rgba(16,185,129,0.25); }
 			.tm-sel-clear {
 				margin-left: auto;
 				background: none; border: 1.5px solid rgba(255,255,255,0.2);
@@ -706,18 +685,6 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 			<span id="tm-sel-count" class="tm-sel-count">0</span>
 			<span class="tm-sel-label">${__("selected")}</span>
 			<div class="tm-sel-divider"></div>
-			<button id="tm-sel-gen-interim" class="tm-sel-action tm-sel-interim">
-				<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-				${__("Generate Interim")}
-			</button>
-			<button id="tm-sel-gen-final" class="tm-sel-action tm-sel-final">
-				<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="8 17 10 19 14 15"/></svg>
-				${__("Generate Final")}
-			</button>
-			<button id="tm-sel-year" class="tm-sel-action tm-sel-year">
-				<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-				${__("Year-Based PDF")}
-			</button>
 			<button id="tm-sel-clear" class="tm-sel-clear">✕ ${__("Clear selection")}</button>
 		</div>
 	`);
@@ -840,15 +807,6 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 	});
 
 	// ── Selection bar actions ──────────────────────────────────────────────────
-	$(wrapper).on("click", "#tm-sel-gen-interim", function () {
-		handle_generate("Interim", false);
-	});
-	$(wrapper).on("click", "#tm-sel-gen-final", function () {
-		handle_generate("Final", false);
-	});
-	$(wrapper).on("click", "#tm-sel-year", function () {
-		handle_year_based_download();
-	});
 	$(wrapper).on("click", "#tm-sel-clear", function () {
 		state.selected.clear();
 		$(wrapper).find(".tm-row-check").prop("checked", false);
@@ -1293,51 +1251,6 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 		return [...state.selected];
 	}
 
-	function handle_generate(type, all_filtered) {
-		if (all_filtered) {
-			const filterDesc = build_filter_description();
-			const msg = filterDesc
-				? __("Generate {0} Transcript for ALL students matching: {1}?", [type, filterDesc])
-				: __("Generate {0} Transcript for ALL {1} students?", [type, state.total]);
-
-			frappe.confirm(msg, function () {
-				frappe.call({
-					method: "slcm.slcm.page.transcript_management_page.transcript_management_page.get_students",
-					args: {
-						search:         state.search,
-						programme:      state.programme,
-						course:         state.course,
-						academic_year:  state.academic_year,
-						batch:          state.batch,
-						student_status: state.student_status,
-						department:     state.department,
-						page:           1,
-						page_length:    10000,
-						sort_by:        "registration_id",
-						sort_order:     "asc",
-					},
-					callback: function (r) {
-						if (!r.message || !r.message.students.length) {
-							frappe.msgprint(__("No students found to generate transcripts for."));
-							return;
-						}
-						do_generate(r.message.students.map(s => s.student), type);
-					}
-				});
-			});
-		} else {
-			const students = get_selected_students();
-			if (!students.length) {
-				frappe.msgprint(__("Please select at least one student, or use 'Generate – All Filtered' from the dropdown."));
-				return;
-			}
-			frappe.confirm(
-				__("Generate {0} Transcript for {1} selected student(s)?", [type, students.length]),
-				function () { do_generate(students, type); }
-			);
-		}
-	}
-
 	function do_generate(students, type) {
 		frappe.call({
 			method: "slcm.slcm.page.transcript_management_page.transcript_management_page.generate_transcript",
@@ -1401,35 +1314,6 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 		});
 	}
 
-	function handle_year_based_download() {
-		const students = get_selected_students();
-		if (!students.length) {
-			frappe.msgprint(__("Please select a student to download the year-based transcript."));
-			return;
-		}
-		if (students.length > 1) {
-			frappe.msgprint(__("Please select only one student at a time for year-based transcript download."));
-			return;
-		}
-
-		frappe.call({
-			method: "slcm.slcm.page.transcript_management_page.transcript_management_page.download_year_based_transcript",
-			args: { student: students[0] },
-			callback: function (r) {
-				if (r.message && r.message.print_url) {
-					window.open(r.message.print_url, "_blank");
-				}
-			},
-			error: function () {
-				frappe.msgprint({
-					title: __("Year-Based Transcript"),
-					message: __("Could not prepare the year-based transcript. Please check Transcript Settings and try again."),
-					indicator: "orange",
-				});
-			}
-		});
-	}
-
 	function handle_compact_download() {
 		const students = get_selected_students();
 		if (!students.length) {
@@ -1458,18 +1342,6 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 				});
 			}
 		});
-	}
-
-	function build_filter_description() {
-		const parts = [];
-		if (state.search)         parts.push(`"${state.search}"`);
-		if (state.programme)      parts.push(__("Programme") + ": " + (state._prog_labels[state.programme] || state.programme));
-		if (state.department)     parts.push(__("Dept") + ": " + (state._dept_labels[state.department] || state.department));
-		if (state.course)         parts.push(__("Course") + ": " + state.course);
-		if (state.academic_year)  parts.push(__("Year") + ": " + state.academic_year);
-		if (state.batch)          parts.push(__("Batch") + ": " + state.batch);
-		if (state.student_status) parts.push(__("Status") + ": " + state.student_status);
-		return parts.join(", ");
 	}
 
 	// ── Initial Load ───────────────────────────────────────────────────────────

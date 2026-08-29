@@ -333,7 +333,7 @@ def download_consolidated_report(exam_plan="", search="", inst_programmes="", in
 		params["trimester"] = trimester
 
 	if batch:
-		where_cond += " AND sm.programme = %(batch)s"
+		where_cond += " AND sm.batch = %(batch)s"
 		params["batch"] = batch
 
 	if year:
@@ -375,7 +375,7 @@ def download_consolidated_report(exam_plan="", search="", inst_programmes="", in
 			sm.academic_year,
 			coh.program AS programme_name,
 			sm.specialisation,
-			sm.programme AS batch_year,
+			sm.batch AS batch_year,
 			sm.academic_term AS trimester,
 			c.course_code,
 			c.course_name,
@@ -398,7 +398,7 @@ def download_consolidated_report(exam_plan="", search="", inst_programmes="", in
 			srp.cumulative_gpa AS cgpa
 		FROM `tabStudent Course Marks` scm
 		INNER JOIN `tabStudent Master` sm ON sm.name = scm.student
-		LEFT JOIN `tabBatch` coh ON coh.name = sm.programme
+		LEFT JOIN `tabBatch` coh ON coh.name = sm.batch
 		LEFT JOIN `tabCourse` c ON c.name = scm.course
 		LEFT JOIN `tabCourse Schema Assignment` csa ON csa.exam_plan = scm.exam_plan AND csa.course = scm.course
 		LEFT JOIN `tabGrading Schema Component` gsc ON gsc.parent = csa.grade_schema AND gsc.grade = COALESCE(NULLIF(scm.grade,''), NULL)
