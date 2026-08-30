@@ -34,102 +34,23 @@ function _trigger_manual_reminders(frm, is_rejection_only = false) {
             ? __("This will immediately send rejection emails to all eligible applicants whose cycle has ended. Do you want to continue?")
             : __("This will immediately send reminder emails to all eligible applicants for the selected active reminder types. Do you want to continue?"),
         function () {
-            // Show progress dialog
-            const dialog = new frappe.ui.Dialog({
-                title: is_rejection_only ? __("Sending Rejection Emails...") : __("Sending Reminder Emails..."),
-                fields: [{
-                    fieldtype: "HTML",
-                    fieldname: "progress_area"
-                }]
-            });
-
-            dialog.show();
-            dialog.get_field("progress_area").$wrapper.html(
-                `<div class="text-muted" style="padding: 15px 0;">
-                    <i class="fa fa-spinner fa-spin"></i> &nbsp;Processing reminders, please wait&hellip;
-                </div>`
-            );
-
-            frappe.realtime.on("applicant_reminder_progress", function (data) {
-                if (data.title === "Applicant Reminders" && data.progress) {
-                    const [done, total] = data.progress;
-                    const pct = total ? Math.round((done / total) * 100) : 0;
-                    dialog.get_field("progress_area").$wrapper.html(
-                        `<div style="padding: 10px 0;">
-                            <div class="progress" style="height:18px;">
-                                <div class="progress-bar" role="progressbar"
-                                     style="width:${pct}%; background-color:#920c24;">
-                                    ${pct}%
-                                </div>
-                            </div>
-                            <p class="text-muted" style="margin-top:8px;">${data.description || ""}</p>
-                        </div>`
-                    );
-                }
-            });
-
             frappe.call({
                 method: "slcm.admission.doctype.applicant_reminder_email_configuration.applicant_reminder_email_configuration.trigger_manual_reminders",
                 args: { reminders: active_reminders, is_rejection_only: is_rejection_only },
-                freeze: false,
+                freeze: true,
+                freeze_message: __("Queuing task..."),
                 callback(r) {
-                    frappe.realtime.off("applicant_reminder_progress");
-
-                    if (r.message && r.message.status === "success") {
-                        dialog.get_field("progress_area").$wrapper.html(
-                            `<div style="padding: 10px 0;">
-                                <div class="progress" style="height:18px;">
-                                    <div class="progress-bar progress-bar-success" role="progressbar"
-                                         style="width:100%; background-color:#28a745;">
-                                        100%
-                                    </div>
-                                </div>
-                                <p class="text-success" style="margin-top:8px;"><strong><i class="fa fa-check"></i> &nbsp;Completed Successfully!</strong></p>
-                            </div>`
-                        );
-                    }
-
-                    setTimeout(() => {
-                        dialog.hide();
-                        
-                        if (r.message && r.message.status === "success") {
-                            const count = r.message.sent_count;
-                            let msg_dialog;
-                            if (count > 0) {
-                                msg_dialog = frappe.msgprint({
-                                    title: __("Reminders Sent"),
-                                    message: __("{0} reminder email(s) have been queued successfully.", [count]),
-                                    indicator: "green"
-                                });
-                            } else {
-                                msg_dialog = frappe.msgprint({
-                                    title: __("No Emails Sent"),
-                                    message: r.message.message || __("All eligible recipients have already received their reminders today, or there are no eligible recipients."),
-                                    indicator: "orange"
-                                });
-                            }
-                            
-                            if (msg_dialog) {
-                                setTimeout(() => {
-                                    msg_dialog.hide();
-                                }, 3000);
-                            }
-                        }
-                    }, 3000);
+                    frappe.show_alert({
+                        message: r.message.message || __("Reminder emails are being processed in the background."),
+                        indicator: "green"
+                    }, 5);
                 },
                 error() {
-                    frappe.realtime.off("applicant_reminder_progress");
-                    dialog.hide();
-                    let err_dialog = frappe.msgprint({
+                    frappe.msgprint({
                         title: __("Error"),
-                        message: __("An error occurred while sending reminders. Please check the Error Log for details."),
+                        message: __("An error occurred while queuing the reminders. Please check the Error Log for details."),
                         indicator: "red"
                     });
-                    if (err_dialog) {
-                        setTimeout(() => {
-                            err_dialog.hide();
-                        }, 3000);
-                    }
                 }
             });
         }
