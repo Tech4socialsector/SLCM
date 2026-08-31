@@ -15,6 +15,24 @@ frappe.ui.form.on("PACE Applicant Fee Assignment", {
 			}).addClass("btn-primary");
 		}
 
+		if (frm.doc.status === "Paid" && (!frm.doc.razorpay_paid_amount || frm.doc.razorpay_paid_amount == 0)) {
+			frm.add_custom_button(__("Sync Razorpay Amount"), function() {
+				frappe.call({
+					method: "slcm.pace.doctype.pace_applicant_fee_assignment.pace_applicant_fee_assignment.sync_razorpay_amount",
+					args: {
+						assignment_name: frm.doc.name
+					},
+					callback: function(r) {
+						if (!r.exc) {
+							frappe.msgprint(__("Razorpay amount synced successfully."));
+							frm.reload_doc();
+						}
+					}
+				});
+			}, __("Actions"));
+		}
+
+
 
 
 		if (["Paid", "Enrolled", "Converted"].includes(frm.doc.status)) {

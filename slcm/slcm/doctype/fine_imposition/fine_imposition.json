@@ -1,0 +1,273 @@
+{
+ "actions": [],
+ "allow_import": 0,
+ "allow_rename": 0,
+ "autoname": "FINE-.YYYY.-.#####",
+ "creation": "2026-08-27 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_criteria",
+  "from_date",
+  "to_date",
+  "demand_type_filter",
+  "column_break_crit",
+  "programme",
+  "academic_year",
+  "min_outstanding_amount",
+  "section_rule",
+  "fine_type",
+  "flat_amount",
+  "percentage",
+  "column_break_rule",
+  "max_fine_amount",
+  "fee_component",
+  "due_days",
+  "section_status",
+  "status",
+  "applied_on",
+  "applied_by",
+  "column_break_status",
+  "reversed_on",
+  "reversed_by",
+  "total_demands_affected",
+  "total_fine_amount",
+  "section_log",
+  "fine_log"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_criteria",
+   "fieldtype": "Section Break",
+   "label": "Selection Criteria"
+  },
+  {
+   "description": "Outstanding Fee Demands with a Due Date in this range will be considered.",
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "From Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "to_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "To Date",
+   "reqd": 1
+  },
+  {
+   "description": "Leave blank to consider all demand types. \"Fine\" is always excluded to avoid fining a fine.",
+   "fieldname": "demand_type_filter",
+   "fieldtype": "Select",
+   "label": "Demand Type",
+   "options": "\nAcademic\nExamination\nService\nHostel\nDeposit\nOther"
+  },
+  {
+   "fieldname": "column_break_crit",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "programme",
+   "fieldtype": "Link",
+   "label": "Programme",
+   "options": "Programme"
+  },
+  {
+   "fieldname": "academic_year",
+   "fieldtype": "Link",
+   "label": "Academic Year",
+   "options": "Academic Year"
+  },
+  {
+   "default": "0",
+   "description": "Only demands with outstanding amount greater than or equal to this will be fined.",
+   "fieldname": "min_outstanding_amount",
+   "fieldtype": "Currency",
+   "label": "Minimum Outstanding Amount"
+  },
+  {
+   "fieldname": "section_rule",
+   "fieldtype": "Section Break",
+   "label": "Fine Rule"
+  },
+  {
+   "default": "Percentage of Outstanding",
+   "fieldname": "fine_type",
+   "fieldtype": "Select",
+   "label": "Fine Type",
+   "options": "Flat Amount\nPercentage of Outstanding",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.fine_type==\"Flat Amount\"",
+   "fieldname": "flat_amount",
+   "fieldtype": "Currency",
+   "label": "Flat Fine Amount",
+   "mandatory_depends_on": "eval:doc.fine_type==\"Flat Amount\""
+  },
+  {
+   "depends_on": "eval:doc.fine_type==\"Percentage of Outstanding\"",
+   "fieldname": "percentage",
+   "fieldtype": "Percent",
+   "label": "Percentage of Outstanding Amount",
+   "mandatory_depends_on": "eval:doc.fine_type==\"Percentage of Outstanding\""
+  },
+  {
+   "fieldname": "column_break_rule",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Optional cap on the fine amount per demand. Leave blank for no cap.",
+   "fieldname": "max_fine_amount",
+   "fieldtype": "Currency",
+   "label": "Maximum Fine Amount (per demand)"
+  },
+  {
+   "fieldname": "fee_component",
+   "fieldtype": "Link",
+   "label": "Fine Fee Component",
+   "options": "Fee Component",
+   "reqd": 1
+  },
+  {
+   "default": "15",
+   "fieldname": "due_days",
+   "fieldtype": "Int",
+   "label": "Due Days (for the new Fine demand)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_status",
+   "fieldtype": "Section Break",
+   "label": "Status"
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nApplied\nReversed",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "applied_on",
+   "fieldtype": "Datetime",
+   "label": "Applied On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "applied_by",
+   "fieldtype": "Link",
+   "label": "Applied By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reversed_on",
+   "fieldtype": "Datetime",
+   "label": "Reversed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reversed_by",
+   "fieldtype": "Link",
+   "label": "Reversed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_demands_affected",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Demands Affected",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_fine_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Total Fine Amount",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_log",
+   "fieldtype": "Section Break",
+   "label": "Applied Fines"
+  },
+  {
+   "fieldname": "fine_log",
+   "fieldtype": "Table",
+   "label": "Fine Log",
+   "options": "Fine Imposition Log Row",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-08-27 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Fine Imposition",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Campus Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts Manager",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [
+  {
+   "color": "Orange",
+   "title": "Draft"
+  },
+  {
+   "color": "Green",
+   "title": "Applied"
+  },
+  {
+   "color": "Grey",
+   "title": "Reversed"
+  }
+ ],
+ "title_field": "from_date"
+}

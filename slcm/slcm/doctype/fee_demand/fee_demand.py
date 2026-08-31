@@ -119,3 +119,65 @@ class FeeDemand(Document):
 			row.insert(ignore_permissions=True)
 		except Exception:
 			pass
+
+
+@frappe.whitelist()
+def mark_dues_cleared(demand_names, payment_mode="Cash", remarks=None):
+	"""
+	Administrative "dues cleared" action for one or more Fee Demands.
+
+	Records a real Fee Payment for each affected student's outstanding
+	demands (grouped by student, since Fee Payment is per-student) and
+	submits it, so the demand's status/outstanding, receipt generation,
+	and payment logs all flow through the existing, already-validated
+	payment pipeline instead of hand-editing amounts/status here.
+	"""
+	if isinstance(demand_names, str):
+		demand_names = frappe.parse_json(demand_names)
+	if not demand_names:
+		frappe.throw(_("Please select at least one Fee Demand."))
+
+	demands = frappe.get_all(
+		"Fee Demand",
+		filters={"name": ["in", demand_names]},
+		fields=["name", "student", "description", "fee_component", "outstanding_amount", "status"],
+	)
+	if not demands:
+		frappe.throw(_("No valid Fee Demand records found."))
+
+	clearable = [
+		d for d in demands
+		if d.status not in ("Paid", "Cancelled", "Waived") and flt(d.outstanding_amount) > 0
+	]
+	skipped = [d.name for d in demands if d not in clearable]
+	if not clearable:
+		frappe.throw(_("None of the selected demands have an outstanding amount to clear."))
+
+	by_student = {}
+	for d in clearable:
+		by_student.setdefault(d.student, []).append(d)
+
+	created = []
+	for student, rows in by_student.items():
+		payment = frappe.new_doc("Fee Payment")
+		payment.student = student
+		payment.payment_date = today()
+		payment.payment_mode = payment_mode
+		payment.amount = sum(flt(r.outstanding_amount) for r in rows)
+		payment.remarks = remarks or _("Dues marked cleared administratively.")
+		for r in rows:
+			payment.append("payment_demands", {
+				"fee_demand": r.name,
+				"demand_description": r.description or r.fee_component,
+				"outstanding_amount": r.outstanding_amount,
+				"amount_allocated": r.outstanding_amount,
+			})
+		payment.insert(ignore_permissions=True)
+		payment.submit()
+		created.append(payment.name)
+
+	return {
+		"created_payments": created,
+		"cleared_demands": [d.name for d in clearable],
+		"skipped_demands": skipped,
+	}

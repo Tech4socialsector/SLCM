@@ -1,9 +1,8 @@
 {
  "actions": [],
- "allow_import": 0,
- "allow_rename": 0,
+ "allow_import": 1,
  "autoname": "FDGL-.YYYY.-.#####",
- "creation": "2026-05-21 10:00:00.000000",
+ "creation": "2026-05-21 10:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -99,10 +98,10 @@
    "read_only": 1
   },
   {
+   "collapsible": 1,
    "fieldname": "section_rows",
    "fieldtype": "Section Break",
-   "label": "Per-Student Results",
-   "collapsible": 1
+   "label": "Per-Student Results"
   },
   {
    "fieldname": "result_rows",
@@ -113,7 +112,7 @@
   }
  ],
  "links": [],
- "modified": "2026-05-21 10:00:00.000000",
+ "modified": "2026-08-28 10:27:49.971930",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Fee Demand Generation Log",
@@ -122,7 +121,6 @@
  "permissions": [
   {
    "create": 1,
-   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
@@ -133,20 +131,15 @@
    "write": 1
   },
   {
-   "create": 0,
-   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "Campus Admin",
-   "share": 1,
-   "write": 0
+   "share": 1
   },
   {
-   "create": 0,
-   "delete": 0,
    "read": 1,
    "report": 1,
    "role": "Accounts Manager"

@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "autoname": "NLS-RPT-.#####",
  "creation": "2026-06-02 16:46:10.635072",
  "doctype": "DocType",
@@ -55,10 +56,11 @@
    "read_only": 1
   },
   {
-   "fetch_from": "student.programme",
+   "fetch_from": "student.programme_of_study",
    "fieldname": "programme",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Programme",
+   "options": "Programme",
    "read_only": 1
   },
   {
@@ -176,7 +178,7 @@
   }
  ],
  "links": [],
- "modified": "2026-06-02 16:50:07.276693",
+ "modified": "2026-08-28 10:28:09.326328",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Fee Receipt",

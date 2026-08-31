@@ -2952,7 +2952,7 @@ def import_reexam_marks_excel(course, exam_plan, file_url):
 			continue
 
 		# Update updated_final_marks field
-		frappe.db.set_value("Student Course Marks", scm_name, "updated_final_marks", marks_val)
+		# frappe.db.set_value("Student Course Marks", scm_name, "updated_final_marks", marks_val)
 
 		# Dynamically fetch re-exam config for component and assessment_type
 		csa_row = frappe.db.get_value(
@@ -3002,7 +3002,7 @@ def import_reexam_marks_excel(course, exam_plan, file_url):
 				)
 
 		# Recalculate grade based on new marks
-		_recalculate_grade_for_reexam(scm_name, marks_val, course, exam_plan)
+		_recalculate_student_marks(scm_name, course, exam_plan)
 		updated += 1
 
 	frappe.db.commit()

@@ -1071,11 +1071,32 @@ def complete_pace_payment(assignment, gateway, razorpay_order_id, razorpay_payme
     """
     from slcm.pace.api import _update_pace_payment_request
 
-    assignment.status = "Paid"
-    assignment.transaction_id = razorpay_payment_id
-    assignment.payment_date = now_datetime().date()
-    assignment.flags.ignore_permissions = True
-    assignment.save(ignore_permissions=True)
+    try:
+        assignment.status = "Paid"
+        assignment.transaction_id = razorpay_payment_id
+        assignment.payment_date = now_datetime().date()
+        
+        pr_amt = None
+        if response_data and isinstance(response_data, dict) and "amount" in response_data:
+            pr_amt = float(response_data["amount"]) / 100.0
+
+        pr_name = frappe.db.get_value("Payment Request", {"reference_name": assignment.name, "docstatus": 1, "status": "Paid"})
+        if not pr_amt and pr_name:
+            pr_amt = frappe.db.get_value("Payment Request", pr_name, "amount")
+            
+        if pr_amt and float(pr_amt) > 0:
+            assignment.razorpay_paid_amount = pr_amt
+        else:
+            frappe.log_error(f"Reconciliation: unable to get valid amount from response or PR {pr_name}.", "PACE Reconciliation Sync Warning")
+                
+        assignment.flags.ignore_permissions = True
+        assignment.save(ignore_permissions=True)
+    except Exception as e:
+        error_log = frappe.log_error(
+            message=frappe.get_traceback(),
+            title=f"Failed to update PACE Fee Assignment {assignment.name} during Reconciliation"
+        )
+        frappe.db.set_value("PACE Applicant Fee Assignment", assignment.name, "error_log", error_log.name)
     
     _update_pace_payment_request(
         assignment,
