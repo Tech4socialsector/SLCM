@@ -74,11 +74,12 @@ def get_context(context):
     active_cycle = None
     context.show_register_tab = False
     context.display_year = ""
-    context.admission_closed_message = _("PACE admission closed for the academic year.")
+    context.admission_closed_message = _("Admission is currently closed.")
 
     try:
         active_year = frappe.get_all("Academic Year", filters={"status": "Active"}, fields=["name"], limit=1)
         if active_year:
+            context.admission_closed_message = _("Admission for the Academic year {0} is closed now.").format(active_year[0].name)
             context.display_year = active_year[0].name
             admission_recs = frappe.get_all(
                 "PACE Admission",
