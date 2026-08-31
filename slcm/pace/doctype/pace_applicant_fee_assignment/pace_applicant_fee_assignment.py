@@ -450,57 +450,7 @@ def send_course_fee_reminders(current_item=0, total_items=0):
 
 		from slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration import should_send_reminder, is_reminder_enabled
 
-		if today_date > close_date:
-			# After closing date, reject applications if reminder is Active.
-			if not should_send_reminder("course_fee", data.last_course_fee_reminder_sent, admission_data.admission_close_date):
-				continue
 
-			# Rejection logic
-			app_doc = frappe.get_doc("PACE Application", data.applicant)
-			
-			from slcm.pace.doctype.pace_application.pace_application import send_pace_rejection_email, send_pace_rejection_system_notification
-			
-			# Determine reason based on fee type
-			if data.fee_type == "Course Fee":
-				reason = "Failure to complete course fee payment before the deadline."
-			else:
-				reason = "Failure to complete application fee payment before the deadline."
-
-			# Case A: Application is not yet rejected
-			if app_doc.status != "Rejected":
-				if send_pace_rejection_email(app_doc, admission_data.admission_close_date, reason):
-					send_pace_rejection_system_notification(app_doc, admission_data.admission_close_date)
-					app_doc.db_set("status", "Rejected")
-					
-					# Update PACE Document Verification Status if it exists
-					verification_name = frappe.db.get_value("PACE Document Verification", {"application": app_doc.name}, "name")
-					if verification_name:
-						frappe.db.set_value("PACE Document Verification", verification_name, "status", "Rejected")
-					
-					# Update ALL pending Fee Assignments for this applicant to 'Rejected'
-					frappe.db.set_value("PACE Applicant Fee Assignment", {"applicant": app_doc.name, "status": ["in", ["Draft", "Assigned"]]}, "status", "Rejected", update_modified=False)
-					
-					frappe.db.commit()
-					sent_count += 1
-			else:
-				# Case B: Application already rejected (e.g. by another process)
-				# Ensure this specific assignment is cleaned up
-				if data.status != "Rejected":
-					frappe.db.set_value("PACE Applicant Fee Assignment", data.name, "status", "Rejected", update_modified=False)
-					frappe.db.commit()
-					sent_count += 1
-				
-				# Check if rejection email was EVER sent/logged for this application
-				# If not, send it now to ensure the applicant is notified
-				rejection_logged = frappe.db.exists("PACE Reminder Email Log", {
-					"reference_name": app_doc.name,
-					"reminder_type": "Application Rejection"
-				})
-				if not rejection_logged:
-					send_pace_rejection_email(app_doc, admission_data.admission_close_date, reason)
-					frappe.db.commit()
-
-			continue
 
 		# Check if reminder should be sent based on interval and status
 		if data.fee_type == "Course Fee":
