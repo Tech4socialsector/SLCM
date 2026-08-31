@@ -1118,7 +1118,7 @@ def send_document_reminders(current_item=0, total_items=0):
         "status": "Provisionally Submitted"
     }, fields=["name", "email_address", "first_name", "last_name", "programme", 
               "student_signature", "ug_degree_certificate", "govt_id", 
-              "last_reminder_sent"])
+              "last_reminder_sent"], limit=0)
 
     sent_count = 0
     total_apps = len(applications)
@@ -1489,7 +1489,7 @@ def send_correction_reminders(current_item=0, total_items=0):
     # Find applications that are Returned for Correction
     applications = frappe.get_all("PACE Application", filters={
         "status": "Returned for Correction"
-    }, fields=["name", "email_address", "first_name", "last_name", "programme"])
+    }, fields=["name", "email_address", "first_name", "last_name", "programme"], limit=0)
 
     sent_count = 0
     total_apps = len(applications)
@@ -1691,7 +1691,7 @@ def send_payment_reminders(current_item=0, total_items=0):
     # Find applications that are Submitted
     applications = frappe.get_all("PACE Application", filters={
         "status": "Submitted"
-    }, fields=["name", "email_address", "first_name", "last_name", "programme", "application_remainder_sent_on"])
+    }, fields=["name", "email_address", "first_name", "last_name", "programme", "application_remainder_sent_on"], limit=0)
 
     sent_count = 0
     
@@ -1895,7 +1895,7 @@ def send_daily_pace_application_reminders(current_item=0, total_items=0):
     formatted_close_date = formatdate(admission_close_date)
 
     # Get all users with role "PACE Applicant"
-    users = frappe.get_all("Has Role", filters={"role": "PACE Applicant"}, fields=["parent"])
+    users = frappe.get_all("Has Role", filters={"role": "PACE Applicant"}, fields=["parent"], limit=0)
     user_emails = list(set([u.parent for u in users]))
     
     if not user_emails:
@@ -1918,7 +1918,8 @@ def send_daily_pace_application_reminders(current_item=0, total_items=0):
             # Check for PACE Application
             applications = frappe.get_all("PACE Application", 
                 filters={"email_address": email}, 
-                fields=["name", "status"]
+                fields=["name", "status"],
+                limit=0
             )
             
             user_doc = frappe.get_doc("User", email)
@@ -1938,7 +1939,8 @@ def send_daily_pace_application_reminders(current_item=0, total_items=0):
                         "reference_doctype": "User",
                         "reference_name": email,
                     },
-                    fields=["pace_admission"]
+                    fields=["pace_admission"],
+                    limit=0
                 )
                 belong_to_other_cycle = False
                 for log in previous_logs:
