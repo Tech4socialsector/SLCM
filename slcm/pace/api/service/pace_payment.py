@@ -185,7 +185,6 @@ def _update_pace_payment_request(
             update_data["razorpay_payment_id"] = payment_id
     else:
         if failure_reason:
-            update_data["status"] = "Failed"
             update_data["failure_message"] = failure_reason
             update_data["gateway_status"] = "failed"
         if transaction_id:

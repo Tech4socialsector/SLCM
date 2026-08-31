@@ -852,7 +852,7 @@ def log_pace_payment_gateway_closed(
             parsed_error.get("step")
         )
     )
-    pr_status = "Failed" if is_gateway_failure else "Requested"
+    pr_status = "Requested"
     failure_reason_for_pr = failure_message if is_gateway_failure else None
 
     from slcm.pace.api import _update_pace_payment_request

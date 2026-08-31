@@ -321,7 +321,6 @@ def reconcile_payment_request_record(pr_row, rzp_client=None):
 			"Payment Request",
 			pr_row.get("name"),
 			{
-				"status": "Failed",
 				"gateway_status": "failed",
 				"failure_message": failed_payment.get("error_description")
 				or _("Payment failed at gateway"),
