@@ -135,6 +135,17 @@
   {
    "child": 1,
    "collapsible": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Applicant User States",
+   "link_to": "PACE Applicant Registration Status",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
    "icon": "file-cog",
    "indent": 0,
    "keep_closed": 0,
@@ -248,7 +259,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-06-20 22:06:47.590767",
+ "modified": "2026-08-31 13:49:25.781534",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE",
