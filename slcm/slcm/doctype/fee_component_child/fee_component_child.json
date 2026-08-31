@@ -34,7 +34,6 @@
    "read_only": 1
   },
   {
-   "fetch_from": "fee_component.amount",
    "fieldname": "amount",
    "fieldtype": "Currency",
    "in_list_view": 1,

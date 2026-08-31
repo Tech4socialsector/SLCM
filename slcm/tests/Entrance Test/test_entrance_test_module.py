@@ -4,6 +4,8 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.exceptions import ValidationError, UniqueValidationError
 
 class TestEntranceTestModule(FrappeTestCase):
+
+    # bench --site slcm run-tests --module "slcm.tests.Entrance Test.test_entrance_test_module"
     @classmethod
     def setUpClass(cls):
         try:
@@ -605,11 +607,14 @@ class TestEntranceTestModule(FrappeTestCase):
 
         # Mock PDF generation
         def mock_get_pdf(html, options=None):
-            return b"mock pdf content"
+            return b"%PDF-1.4\n%EOF\n"
 
         import slcm.admission.doctype.entrance_test_list.entrance_test_list as etl_module
+        import frappe.core.doctype.file.file as file_module
         original_get_pdf = etl_module.get_pdf
+        original_pdf_contains_js = file_module.pdf_contains_js
         etl_module.get_pdf = mock_get_pdf
+        file_module.pdf_contains_js = lambda content: False
         
         try:
             generate_and_store_admit_card(alloc.name, html_content="<html>Fake admit card</html>")
@@ -621,6 +626,7 @@ class TestEntranceTestModule(FrappeTestCase):
             self.assertEqual(alloc.admit_card_generated, 1)
         finally:
             etl_module.get_pdf = original_get_pdf
+            file_module.pdf_contains_js = original_pdf_contains_js
 
     def test_tc_adm_ent_028_confirm_preference(self):
         from slcm.admission.doctype.entrance_test_list.entrance_test_list import confirm_applicant_preference
@@ -630,7 +636,11 @@ class TestEntranceTestModule(FrappeTestCase):
         alloc = frappe.new_doc("Entrance Test Seat Allocation")
         alloc.applicant = "APP-TEST-028"
         alloc.candidate_name = "Confirm Test"
-        alloc.allocation_status = "Pending Applicant Selection"
+        alloc.allocation_status = "Preferences Assigned"
+        alloc.academic_year = self.academic_year
+        alloc.admission_cycle = self.admission_cycle
+        alloc.program = self.program_level  # or just use any program if needed
+        alloc.campus = self.campus
         alloc.flags.ignore_mandatory = True
         alloc.flags.ignore_links = True
         alloc.insert(ignore_permissions=True)
@@ -638,7 +648,7 @@ class TestEntranceTestModule(FrappeTestCase):
         prov = self._create_valid_provider("Confirm Center 28", capacity=2)
         
         res = confirm_applicant_preference(alloc.name, prov.name)
-        self.assertEqual(res.get("status"), "success")
+        self.assertEqual(res.get("center_name"), prov.center_name)
         
         alloc.reload()
         self.assertEqual(alloc.allocation_status, "Allocated")
@@ -659,7 +669,7 @@ class TestEntranceTestModule(FrappeTestCase):
             alloc.admission_cycle = self.admission_cycle
             alloc.program_level = self.program_level
             alloc.entrance_test_status = "Attended"
-            alloc.total_marks_secured_in_part_a_b = s
+            alloc.part_a_total_marks_scored = s
             alloc.flags.ignore_mandatory = True
             alloc.flags.ignore_links = True
             alloc.insert(ignore_permissions=True)

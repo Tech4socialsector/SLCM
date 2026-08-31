@@ -2,9 +2,12 @@ import frappe
 from frappe import _
 
 def execute(filters=None):
+	if not filters:
+		filters = {}
 	columns = get_columns()
 	data = get_data(filters)
-	return columns, data, None, None, None
+	chart = get_chart(data)
+	return columns, data, None, chart
 
 def get_columns():
 	return [
@@ -62,3 +65,34 @@ def get_data(filters):
 	""", values, as_dict=1)
 
 	return data
+
+def get_chart(data):
+	if not data:
+		return None
+		
+	labels = []
+	values = []
+	
+	for row in data:
+		labels.append(row.get("period"))
+		values.append(row.get("count"))
+		
+	return {
+		"data": {
+			"labels": labels,
+			"datasets": [
+				{
+					"name": _("Applications"),
+					"values": values
+				}
+			]
+		},
+		"type": "line",
+		"height": 300,
+		"colors": ["#1a73e8"],
+		"lineOptions": {
+			"regionFill": 1,
+			"spline": 1,
+			"dotSize": 6
+		}
+	}

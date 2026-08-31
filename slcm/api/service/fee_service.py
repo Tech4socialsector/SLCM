@@ -46,33 +46,6 @@ class FeeService:
         return get_datetime(valid_until) if valid_until else None
 
     @staticmethod
-    def extended_fee_deadline(fee_structure_name):
-        """Updates payment deadline for all active Offer Letters linked to this Fee Structure."""
-        if not fee_structure_name:
-            return
-            
-        valid_until = frappe.db.get_value("Fee Structure", fee_structure_name, "valid_until")
-        if not valid_until:
-            return
-
-        new_deadline = get_datetime(valid_until)
-        
-        offers = frappe.get_all("Offer Letter", filters={
-            "fee_structure": fee_structure_name,
-            "status": ["in", ["Draft", "Issued"]]
-        }, fields=["name"])
-        
-        for entry in offers:
-            doc = frappe.get_doc("Offer Letter", entry.name)
-            if doc.payment_deadline != new_deadline:
-                doc.payment_deadline = new_deadline
-                doc.ignore_lock = True
-                doc.add_comment("Comment", _("Payment deadline automatically syncronized to {0} due to Fee Structure update.").format(
-                    frappe.utils.format_datetime(new_deadline)
-                ))
-                doc.save(ignore_permissions=True)
-
-    @staticmethod
     def _calculate_and_freeze_fees(fee_structure_name, is_foreign=False):
         """
         Financial Logic: Calculates fees and returns a structured dict.

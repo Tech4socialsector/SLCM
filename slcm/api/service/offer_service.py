@@ -749,9 +749,6 @@ class OfferService:
     def _calculate_deadline(fee_structure_name):
         return FeeService._calculate_deadline(fee_structure_name)
 
-    @staticmethod
-    def extended_fee_deadline(fee_structure_name):
-        return FeeService.extended_fee_deadline(fee_structure_name)
 
     
     @staticmethod
@@ -1173,9 +1170,6 @@ class OfferService:
         }
 
 
-@frappe.whitelist()
-def extended_fee_deadline():
-    return OfferService.extended_fee_deadline()
 
 @frappe.whitelist()
 def generate_offer(applicant, campus, program, cycle, admission_year=None):
