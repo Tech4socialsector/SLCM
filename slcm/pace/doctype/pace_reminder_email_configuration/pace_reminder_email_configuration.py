@@ -67,9 +67,9 @@ def should_send_reminder(reminder_type, last_sent_date, admission_close_date=Non
                 return False
             return True
             
-        # If today is after the close date, return True (for rejection logic to use)
+        # If today is after the close date, return False (do not send any reminders or trigger rejection)
         if today_date > close_date:
-            return True
+            return False
 
     # 3. Same-day Safety Check for normal intervals
     if last_sent_date and getdate(last_sent_date) == today_date:
