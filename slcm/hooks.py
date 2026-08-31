@@ -290,6 +290,12 @@ fixtures = [
             "Venue Bookings by Venue Type",
         ]]]
     },
+    {
+        "doctype": "Dashboard",
+        "filters": [["name", "in", [
+            "Admission"
+        ]]]
+    },
     # --- Kanban Board ---
     {
         "doctype": "Kanban Board",

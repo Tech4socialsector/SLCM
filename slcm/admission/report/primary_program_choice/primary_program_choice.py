@@ -78,7 +78,10 @@ def get_columns() -> list[dict]:
 
 def get_data(filters: dict | None) -> list[dict]:
 	"""Return data for the report based on filters."""
-	query_filters = {}
+	query_filters = {"docstatus": ["<", 2]}
+	
+	if not filters:
+		filters = {}
 
 	if filters.get("admission_year"):
 		query_filters["admission_year"] = filters.get("admission_year")
@@ -133,12 +136,8 @@ def get_chart(data: list[dict]) -> dict:
 			"labels": list(program_counts.keys()),
 			"datasets": [{"name": _("Applicants"), "values": list(program_counts.values())}],
 		},
-		"type": "line",
-		"colors": ["#1a73e8"],
-		"lineOptions": {
-			"regionFill": 1,
-			"spline": 1
-		}
+		"type": "bar",
+		"colors": chart_colors
 	}
 
 
