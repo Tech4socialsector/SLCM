@@ -963,7 +963,6 @@ class FeeService:
                 update_data["gateway_status"] = "captured"
                 update_data["paid_on"] = frappe.utils.nowdate()
             elif failure_reason:
-                update_data["status"] = "Failed"
                 update_data["failure_message"] = failure_reason
 
             if payment_id:
@@ -1007,7 +1006,6 @@ class FeeService:
                 pr.gateway_status = "captured"
 
             if failure_reason:
-                pr.status = "Failed"
                 pr.failure_message = failure_reason
 
             frappe.flags.payment_request_status_from_backend = True
@@ -1285,7 +1283,6 @@ class FeeService:
                     update_data["transaction_id"] = payment_id
                     update_data["razorpay_payment_id"] = payment_id
             elif failure_reason:
-                update_data["status"] = "Failed"
                 update_data["failure_message"] = failure_reason
                 update_data["gateway_status"] = "failed"
             if response_data:
@@ -1327,7 +1324,6 @@ class FeeService:
                     if payment_id:
                         pr.razorpay_payment_id = payment_id
                 if failure_reason:
-                    pr.status = "Failed"
                     pr.failure_message = failure_reason
                     pr.gateway_status = "failed"
                 pr.save(ignore_permissions=True)
@@ -1819,7 +1815,7 @@ class FeeService:
             else:
                 err_msg = str(error_data)
                 
-            pr_status = "Failed" if is_gateway_failure else "Requested"
+            pr_status = "Requested"
             
             FeeService._update_payment_request_for_applicant(
                 applicant, gateway, order_id, pr_status, failure_reason=err_msg, response_data=error_data

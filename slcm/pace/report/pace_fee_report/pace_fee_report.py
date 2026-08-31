@@ -201,6 +201,7 @@ def get_data(filters: dict | None) -> list[dict]:
 			"final_payable_amount",
 			"transaction_id",
 			"payment_date",
+			"razorpay_paid_amount",
 		],
 		order_by="assignment_date desc"
 	)
@@ -295,25 +296,27 @@ def get_data(filters: dict | None) -> list[dict]:
 			row["gateway_tax"] = pr.gateway_tax
 			row["net_settled"] = pr.net_settled
 
+		# Use razorpay_paid_amount if available, fallback to receipt paid amount
+		actual_paid = flt(row.get("razorpay_paid_amount"))
 		db_status = row.status
 		if db_status in ["Paid", "Enrolled", "Converted"]:
-			row["paid_amount"] = payable
-			row["pending_amount"] = 0.0
+			row["paid_amount"] = actual_paid
+			row["pending_amount"] = max(0.0, payable - row["paid_amount"]) if row["paid_amount"] else 0.0
 			row["status"] = _("Paid")
 		elif db_status == "Partially Paid":
-			row["paid_amount"] = paid
-			row["pending_amount"] = max(0.0, payable - paid)
+			row["paid_amount"] = actual_paid
+			row["pending_amount"] = max(0.0, payable - actual_paid)
 			row["status"] = _("Pending")
-		elif paid >= payable and payable > 0:
-			row["paid_amount"] = paid
+		elif actual_paid >= payable and payable > 0:
+			row["paid_amount"] = actual_paid
 			row["pending_amount"] = 0.0
 			row["status"] = _("Paid")
-		elif 0 < paid < payable:
-			row["paid_amount"] = paid
-			row["pending_amount"] = max(0.0, payable - paid)
+		elif 0 < actual_paid < payable:
+			row["paid_amount"] = actual_paid
+			row["pending_amount"] = max(0.0, payable - actual_paid)
 			row["status"] = _("Pending")
 		else:
-			row["paid_amount"] = paid
+			row["paid_amount"] = actual_paid
 			row["pending_amount"] = payable
 			row["status"] = _("Assigned")
 
