@@ -126,13 +126,7 @@ class FeeStructure(Document):
         self.total_amount_for_foreign = total_foreign
 
     def on_update(self):
-        # Extend offer letter fee deadline when valid_until changes
-        if self.has_value_changed("valid_until") and self.valid_until:
-            OfferService.extended_fee_deadline(self.name)
-            frappe.msgprint(
-                _("Fee Structure Valid Until date & Extended Fee Deadline for offer letter updated successfully."),
-                indicator="green",
-            )
+
 
         # Trigger background student fee sync when Student fee structure becomes active
         # or its validity dates / total amount change
