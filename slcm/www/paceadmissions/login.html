@@ -1003,10 +1003,15 @@ function lpTab(t, opts) {
   t = t || 'login';
   var pLogin = document.getElementById('panel-login');
   var pReg = document.getElementById('panel-register');
+  var pRegClosed = document.getElementById('panel-register-closed');
   var pForgot = document.getElementById('panel-forgot');
   
   if (pLogin) pLogin.style.display = t==='login' ? '' : 'none';
-  if (pReg) pReg.style.display = t==='register' ? '' : 'none';
+  if (pReg) {
+    pReg.style.display = t==='register' ? '' : 'none';
+  } else if (pRegClosed) {
+    pRegClosed.style.display = t==='register' ? '' : 'none';
+  }
   if (pForgot) pForgot.style.display = t==='forgot' ? '' : 'none';
   
   var tLogin = document.getElementById('tab-login');
@@ -1599,7 +1604,7 @@ document.addEventListener('DOMContentLoaded', function() {
   initDatePager();
   
   function checkHash() {
-    var isClosed = {{ 'true' if (is_closed or portal_disable_signup) else 'false' }};
+    var isClosed = {{ 'true' if not show_register_tab else 'false' }};
     var defaultTab = isClosed ? 'login' : 'register';
     var h = (window.location.hash || '').replace(/^#/, '');
     if (!h || h === defaultTab) {
