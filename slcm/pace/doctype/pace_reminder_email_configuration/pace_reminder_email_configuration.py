@@ -90,8 +90,7 @@ def should_send_reminder(reminder_type, last_sent_date, admission_close_date=Non
 @frappe.whitelist()
 def trigger_manual_reminders(reminders):
     """
-    Manually triggers the selected reminder tasks and returns the total count of emails sent.
-    'reminders' is a list of fieldnames from the configuration DocType.
+    Enqueues the manual reminder task to run in the background.
     """
     if isinstance(reminders, str):
         import json
@@ -99,6 +98,24 @@ def trigger_manual_reminders(reminders):
 
     if not reminders:
         return {"status": "success", "sent_count": 0}
+
+    frappe.enqueue(
+        "slcm.pace.doctype.pace_reminder_email_configuration.pace_reminder_email_configuration.run_manual_reminders_in_background",
+        queue="long",
+        timeout=3600,
+        reminders=reminders,
+        user=frappe.session.user
+    )
+    return {
+        "status": "queued",
+        "message": frappe._("Reminder emails are being processed in the background. You can safely close or refresh this page. You will receive an alert once completed.")
+    }
+
+def run_manual_reminders_in_background(reminders, user):
+    """
+    Runs the manual reminders in a background worker to avoid timeouts.
+    """
+    frappe.set_user(user)
 
     from slcm.pace.doctype.pace_application.pace_application import (
         send_daily_pace_application_reminders,
@@ -114,8 +131,7 @@ def trigger_manual_reminders(reminders):
     total_items = 0
 
     if "enable_application_reminder" in reminders or "enable_draft_reminder" in reminders:
-        # User emails count
-        users = frappe.get_all("Has Role", filters={"role": "PACE Applicant"}, fields=["parent"])
+        users = frappe.get_all("Has Role", filters={"role": "PACE Applicant"}, fields=["parent"], limit=0)
         user_emails = list(set([u.parent for u in users]))
         count = len(user_emails)
         tasks_with_counts.append({"task": send_daily_pace_application_reminders, "count": count})
@@ -162,11 +178,13 @@ def trigger_manual_reminders(reminders):
         except Exception:
             frappe.log_error(frappe.get_traceback(), f"Manual Reminder Trigger Failed for {task.__name__}")
     
-    if total_sent == 0:
-        return {
-            "status": "success", 
-            "message": frappe._("No reminder emails were sent. All eligible recipients have already received their reminders today."), 
-            "sent_count": 0
-        }
-
-    return {"status": "success", "sent_count": total_sent}
+    # Send final success alert directly to the user via sockets
+    frappe.publish_realtime(
+        "msgprint",
+        {
+            "message": frappe._("Background Task Completed: {0} reminder email(s) sent successfully.").format(total_sent) if total_sent > 0 else frappe._("Background Task Completed: No reminder emails were sent. All eligible recipients have already received their reminders today."),
+            "title": "PACE Reminders",
+            "indicator": "green" if total_sent > 0 else "orange"
+        },
+        user=user
+    )

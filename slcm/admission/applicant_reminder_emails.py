@@ -142,7 +142,7 @@ def send_not_started_reminders(current_item=0, total_items=0, is_rejection_only=
         return 0
 
     # All users with Applicant role
-    users = frappe.get_all("Has Role", filters={"role": "Applicant"}, fields=["parent"])
+    users = frappe.get_all("Has Role", filters={"role": "Applicant"}, fields=["parent"], limit=0)
     user_emails = list(set([u.parent for u in users]))
 
     # Emails that already have at least one Applicant record
@@ -151,13 +151,15 @@ def send_not_started_reminders(current_item=0, total_items=0, is_rejection_only=
         filters={"admission_cycle": cycle_name},
         fields=["user_id"],
         pluck="user_id",
+        limit=0,
     )
     existing_set = set(existing)
 
     already_rejected = frappe.get_all(
         "Applicant Reminder Email Log",
         filters={"reminder_type": "Not Started Application Rejected"},
-        pluck="recipient"
+        pluck="recipient",
+        limit=0
     )
     already_rejected_set = set(already_rejected)
 
@@ -167,7 +169,7 @@ def send_not_started_reminders(current_item=0, total_items=0, is_rejection_only=
 
     for i, email in enumerate(user_emails):
         if total_items > 0:
-            frappe.publish_realtime("applicant_reminder_progress", {
+            frappe.publish_realtime("progress", {
                 "progress": [current_item + i, total_items],
                 "title": "Applicant Reminders",
                 "description": f"Not Started Reminders: {email}"
@@ -192,7 +194,8 @@ def send_not_started_reminders(current_item=0, total_items=0, is_rejection_only=
                     "reference_doctype": "User",
                     "reference_name": email,
                 },
-                fields=["admission_cycle"]
+                fields=["admission_cycle"],
+                limit=0
             )
             belong_to_other_cycle = False
             for log in previous_logs:
@@ -303,6 +306,7 @@ def send_draft_applicant_reminders(current_item=0, total_items=0, is_rejection_o
         "Applicant",
         filters={"status": "Draft", "admission_cycle": cycle_name},
         fields=["name", "email", "candidate_name", "program", "last_draft_reminder_sent"],
+        limit=0,
     )
 
     template_name = "Applicant Draft Application Reminder"
@@ -311,7 +315,7 @@ def send_draft_applicant_reminders(current_item=0, total_items=0, is_rejection_o
 
     for i, app in enumerate(applications):
         if total_items > 0:
-            frappe.publish_realtime("applicant_reminder_progress", {
+            frappe.publish_realtime("progress", {
                 "progress": [current_item + i, total_items],
                 "title": "Applicant Reminders",
                 "description": f"Draft Reminders: {app.name}",
@@ -432,6 +436,7 @@ def send_unpaid_fee_reminders(current_item=0, total_items=0, is_rejection_only=F
             "application_fee_status": ["in", ["Pending", "Requested"]],
         },
         fields=["name", "email", "candidate_name", "program", "application_fee_amount", "last_fee_reminder_sent"],
+        limit=0,
     )
 
     template_name = "Applicant Fee Payment Pending Reminder"
@@ -440,7 +445,7 @@ def send_unpaid_fee_reminders(current_item=0, total_items=0, is_rejection_only=F
 
     for i, app in enumerate(applications):
         if total_items > 0:
-            frappe.publish_realtime("applicant_reminder_progress", {
+            frappe.publish_realtime("progress", {
                 "progress": [current_item + i, total_items],
                 "title": "Applicant Reminders",
                 "description": f"Unpaid Fee Reminders: {app.name}",
@@ -558,7 +563,8 @@ def send_admission_fee_reminders(current_item=0, total_items=0, is_rejection_onl
             "fee_type": "Admission Fee",
             "status": "Assigned"
         },
-        fields=["name", "applicant", "applicant_name", "academic_year", "program"]
+        fields=["name", "applicant", "applicant_name", "academic_year", "program"],
+        limit=0
     )
 
     template_name = "Admission Fee Pending Reminder"
@@ -567,7 +573,7 @@ def send_admission_fee_reminders(current_item=0, total_items=0, is_rejection_onl
 
     for i, assignment in enumerate(fee_assignments):
         if total_items > 0:
-            frappe.publish_realtime("applicant_reminder_progress", {
+            frappe.publish_realtime("progress", {
                 "progress": [current_item + i, total_items],
                 "title": "Applicant Reminders",
                 "description": f"Admission Fee Reminders: {assignment.applicant}",

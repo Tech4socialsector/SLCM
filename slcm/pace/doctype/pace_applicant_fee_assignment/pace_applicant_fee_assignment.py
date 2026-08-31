@@ -418,7 +418,7 @@ def send_course_fee_reminders(current_item=0, total_items=0):
 	assignments = frappe.get_all("PACE Applicant Fee Assignment", filters={
 		"status": "Assigned",
 		"fee_type": "Course Fee"
-	}, fields=["name", "applicant", "applicant_name", "program", "academic_year", "last_course_fee_reminder_sent", "fee_type"])
+	}, fields=["name", "applicant", "applicant_name", "program", "academic_year", "last_course_fee_reminder_sent", "fee_type"], limit=0)
 
 	sent_count = 0
 	for i, data in enumerate(assignments):
@@ -666,7 +666,9 @@ def sync_razorpay_amount(assignment_name):
 		try:
 			resp_dict = json.loads(pr_data.gateway_response)
 			if "amount" in resp_dict:
-				amount_to_set = float(resp_dict["amount"]) / 100.0
+				raw_amount = float(resp_dict["amount"])
+				fee = float(resp_dict.get("fee") or 0)
+				amount_to_set = (raw_amount - fee) / 100.0
 		except Exception:
 			pass
 	

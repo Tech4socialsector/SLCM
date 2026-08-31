@@ -60,6 +60,8 @@ frappe.ui.form.on("PACE Applicant Fee Assignment", {
 				args: {
 					assignment_name: frm.doc.name
 				},
+				freeze: true,
+				freeze_message: __("Initializing Payment Gateway..."),
 				callback: function(r) {
 					if (r.message) {
 						const data = r.message;
@@ -79,6 +81,8 @@ frappe.ui.form.on("PACE Applicant Fee Assignment", {
 										razorpay_signature: response.razorpay_signature,
 										assignment_name: frm.doc.name
 									},
+									freeze: true,
+									freeze_message: __("Verifying Payment..."),
 									callback: function(res) {
 										if (res.message && res.message.status === "success") {
 											frappe.msgprint(__("Payment Successful"));
@@ -97,7 +101,9 @@ frappe.ui.form.on("PACE Applicant Fee Assignment", {
 						};
 
 						if (typeof Razorpay === 'undefined') {
+							frappe.dom.freeze(__("Loading Checkout..."));
 							$.getScript('https://checkout.razorpay.com/v1/checkout.js', function () {
+								frappe.dom.unfreeze();
 								const rzp = new Razorpay(options);
 								rzp.open();
 							});

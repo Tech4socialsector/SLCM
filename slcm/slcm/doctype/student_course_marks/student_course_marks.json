@@ -11,6 +11,7 @@
   "course_offering",
   "course",
   "student",
+  "student_id",
   "evaluation_schema",
   "col_break_1",
   "total_marks",
@@ -72,6 +73,14 @@
    "label": "Student",
    "options": "Student Master",
    "reqd": 1
+  },
+  {
+   "fetch_from": "student.registration_id",
+   "fieldname": "student_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Student ID",
+   "read_only": 1
   },
   {
    "fieldname": "evaluation_schema",

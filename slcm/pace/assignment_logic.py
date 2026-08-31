@@ -371,7 +371,7 @@ def get_overdue_for_verifier(verifier=None, show_all_pending=False):
         filters=filters, 
         or_filters=or_filters,
         fields=["name", "applicant_name", "application", "assigned_verifier", "due_date", "is_overdue"],
-        order_by="due_date asc")
+        order_by="due_date asc", limit=0)
 
 @frappe.whitelist()
 def transfer_verifications(from_verifier, to_verifier, names=None):
@@ -399,7 +399,7 @@ def transfer_verifications(from_verifier, to_verifier, names=None):
             names = json.loads(names)
         filters["name"] = ["in", names]
 
-    records = frappe.get_all("PACE Document Verification", filters=filters, fields=["name", "application"])
+    records = frappe.get_all("PACE Document Verification", filters=filters, fields=["name", "application"], limit=0)
 
     count = 0
     assigned_docs = []
@@ -570,7 +570,7 @@ def check_overdue_verifications(current_item=0, total_items=0):
     # 1. Get ALL Pending records to process in a single loop
     records = frappe.get_all("PACE Document Verification", filters={
         "status": "Pending"
-    }, fields=["name", "assigned_verifier", "application", "due_date", "status", "due_email_sent_on", "last_pending_reminder_sent_on", "is_overdue"])
+    }, fields=["name", "assigned_verifier", "application", "due_date", "status", "due_email_sent_on", "last_pending_reminder_sent_on", "is_overdue"], limit=0)
 
     if not records:
         return 0
