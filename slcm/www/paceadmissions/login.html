@@ -553,11 +553,11 @@ function gtag_report_conversion(url) {
       <button type="button" class="lp-tab{% if not show_register_tab %} active{% endif %}" id="tab-login" onclick="lpTab('login')">Login</button>
     </div>
     
-    {% if is_closed %}
+    {% if is_closed or not show_register_tab %}
     <div style="background: #fee2e2; color: #991b1b; padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 400; margin-bottom: 24px; border: 1px solid #fecaca; display: flex; align-items: center; gap: 10px;">
         <span class="material-symbols-outlined" style="font-size: 20px;">info</span>
         <div>
-            <div style="font-weight: 400; margin-bottom: 2px;">Admission for PACE {{ display_year }} is closed now. Please check back later.</div>
+            <div style="font-weight: 400; margin-bottom: 2px;">{{ admission_closed_message }}</div>
         </div>
     </div>
     {% endif %}

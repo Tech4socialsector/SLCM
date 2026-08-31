@@ -74,12 +74,14 @@ def get_context(context):
     context.is_closed = True
     context.display_year = ""
     context.show_register_tab = False
-    context.admission_closed_message = _("NLSAT admission closed for the academic year.")
+    context.admission_closed_message = _("Admission is currently closed.")
     try:
         active_year = frappe.db.get_value("Academic Year", {"status": "Active"}, "name")
         if not active_year:
             recent = frappe.get_all("Academic Year", fields=["name"], order_by="creation desc", limit=1)
             active_year = recent[0].name if recent else "2026-2027"
+
+        context.admission_closed_message = _("Admission for the Academic year {0} is closed now.").format(active_year)
 
         active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active", "academic_year": active_year}, "name")
         if not active_cycle_name:
