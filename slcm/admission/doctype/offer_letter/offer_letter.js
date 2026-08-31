@@ -5,6 +5,17 @@ frappe.ui.form.on("Offer Letter", {
 
     refresh(frm) {
 
+        // Disable past dates in the datepicker for offer_expiry_date
+        frm.fields_dict.payment_deadline.datepicker.update({
+            minDate: new Date(frappe.datetime.get_today())
+        });
+        frm.fields_dict.offer_acceptance_deadline.datepicker.update({
+            minDate: new Date(frappe.datetime.get_today())
+        });
+        frm.fields_dict.confirmation_fee_deadline.datepicker.update({
+            minDate: new Date(frappe.datetime.get_today())
+        });
+
         if (frm.doc.rendered_content) {
             // Force the field to display as rendered HTML instead of an editor or raw code
             frm.set_df_property('rendered_content', 'fieldtype', 'HTML');
@@ -167,18 +178,6 @@ frappe.ui.form.on("Offer Letter", {
                 });
             }, __('Actions'));
         }
-    },
-    onload: function (frm) {
-        // Disable past dates in the payment_deadline datepicker
-        frm.set_df_property('payment_deadline', 'datepicker_options', {
-            minDate: frappe.datetime.now_date()
-        });
-        frm.set_df_property('offer_acceptance_deadline', 'datepicker_options', {
-            minDate: frappe.datetime.now_date()
-        });
-        frm.set_df_property('confirmation_fee_deadline', 'datepicker_options', {
-            minDate: frappe.datetime.now_date()
-        });
     },
 
     validate(frm) {

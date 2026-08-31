@@ -43,8 +43,8 @@ class PaymentTestBase(unittest.TestCase):
 		# Dynamic patch for get_password to skip signature validation by default in webhooks
 		self.orig_get_password = frappe.model.base_document.BaseDocument.get_password
 		def custom_get_password(doc_self, fieldname="password", raise_exception=True):
-			if fieldname == "webhook_secret" and not getattr(self, "_validate_webhook_signature", False):
-				return None
+			if fieldname == "webhook_secret":
+				return "dummy_secret"
 			return self.orig_get_password(doc_self, fieldname=fieldname, raise_exception=raise_exception)
 
 		patcher = patch('frappe.model.base_document.BaseDocument.get_password', new=custom_get_password)
@@ -246,9 +246,23 @@ class PaymentTestBase(unittest.TestCase):
 		self.academic_year = "2026-27"
 		self.admission_cycle = "2026-May To June"
 
-		# Deactivate existing active PACE Admissions and Admission Years to avoid single active conflicts
+		# Deactivate existing active PACE Admissions, Admission Years and Fee Structures to avoid single active conflicts
 		frappe.db.sql("UPDATE `tabPACE Admission` SET status = 'Closed' WHERE status = 'Active'")
 		frappe.db.sql("UPDATE `tabAdmission Year` SET is_active = 0 WHERE is_active = 1")
+		frappe.db.sql("UPDATE `tabFee Structure` SET status = 'Inactive' WHERE status = 'Active'")
+		
+		# Setup Razorpay Settings bypassing validation
+		for field, value in {
+			'api_key': 'test_key',
+			'api_secret': 'test_secret',
+			'webhook_secret': 'test_secret'
+		}.items():
+			frappe.db.sql("""
+				INSERT INTO `tabSingles` (doctype, field, value)
+				VALUES ('Razorpay Settings', %s, %s)
+				ON DUPLICATE KEY UPDATE value=%s
+			""", (field, value, value))
+		
 		frappe.db.commit()
 
 		# Ensure Academic Year exists and is Active
@@ -261,12 +275,18 @@ class PaymentTestBase(unittest.TestCase):
 		else:
 			frappe.db.set_value("Academic Year", self.academic_year, "status", "Active")
 
-		# Ensure Admission Year and Campus exist for Link validation
+		# Ensure Admission Year, Cycle and Campus exist for Link validation
 		if not frappe.db.exists("Admission Year", self.academic_year):
 			ay = frappe.new_doc("Admission Year")
 			ay.year = self.academic_year
 			ay.insert(ignore_permissions=True, ignore_mandatory=True)
 			self.test_docs.append(ay)
+
+		if not frappe.db.exists("Admission Cycle", self.admission_cycle):
+			ac = frappe.new_doc("Admission Cycle")
+			ac.cycle_name = self.admission_cycle
+			ac.insert(ignore_permissions=True, ignore_mandatory=True)
+			self.test_docs.append(ac)
 
 		if not frappe.db.exists("Campus", "Bengaluru"):
 			c = frappe.new_doc("Campus")
@@ -315,11 +335,10 @@ class PaymentTestBase(unittest.TestCase):
 		# Ensure Razorpay settings doc exists and set dummy credentials
 		settings = frappe.get_doc("Razorpay Settings")
 		settings.api_key = "rzp_test_t2c16e5FQHvi6D"
+		settings.api_secret = "NSVlhjaeUvoeweYNhaygaXat"
+		settings.webhook_secret = "dummy_secret"
+		settings.flags.ignore_mandatory = True
 		settings.save(ignore_permissions=True)
-
-		from frappe.utils.password import set_encrypted_password
-		set_encrypted_password("Razorpay Settings", "Razorpay Settings", "NSVlhjaeUvoeweYNhaygaXat", "api_secret")
-		set_encrypted_password("Razorpay Settings", "Razorpay Settings", "dummy_secret", "webhook_secret")
 
 	def register_doc(self, doc):
 		self.test_docs.append(doc)
@@ -343,6 +362,34 @@ class PaymentTestBase(unittest.TestCase):
 		return self.register_doc(app)
 
 	def create_offer_letter(self, applicant_name, amount=5000):
+		fc_name = frappe.db.get_value("Fee Component", {"component_name": "Admission Fee"}, "name")
+		if not fc_name:
+			fc = frappe.new_doc("Fee Component")
+			fc.component_name = "Admission Fee"
+			fc.amount = amount
+			fc.insert(ignore_permissions=True, ignore_mandatory=True)
+			self.test_docs.append(fc)
+			fc_name = fc.name
+
+		if not frappe.db.exists("Fee Structure", "FS-2026-00003"):
+			fs = frappe.new_doc("Fee Structure")
+			fs.fee_structure = "FS-2026-00003"
+			fs.academic_year = self.academic_year
+			fs.program = "Master’s Programme in Public Policy"
+			fs.total_amount_for_indian = 5000
+			fs.append("fee_components_for_indian", {
+				"fee_component": fc_name,
+				"amount": 5000,
+				"total_amount": 5000
+			})
+			# Bypass autoname using rename_doc
+			fs.flags.ignore_mandatory = True
+			fs.insert(ignore_permissions=True, ignore_mandatory=True)
+			if fs.name != "FS-2026-00003":
+				frappe.rename_doc("Fee Structure", fs.name, "FS-2026-00003", force=True, ignore_if_exists=True)
+				fs = frappe.get_doc("Fee Structure", "FS-2026-00003")
+			self.test_docs.append(fs)
+
 		offer = frappe.new_doc("Offer Letter")
 		offer.applicant = applicant_name
 		offer.program = "Master’s Programme in Public Policy"
@@ -366,11 +413,18 @@ class PaymentTestBase(unittest.TestCase):
 				amount_inr = afa_amount
 		return amount_inr, int(amount_inr * 100)
 
-	def create_applicant_fee_assignment(self, offer_name, applicant_name, amount=5000):
+	def create_applicant_fee_assignment(self, offer_name, applicant_name, fee_type="Confirmation Fee", amount=5000):
+		existing = frappe.db.get_value("Applicant Fee Assignment", {"offer_letter": offer_name, "status": "Assigned"}, "name")
+		if existing:
+			afa = frappe.get_doc("Applicant Fee Assignment", existing)
+			if amount is not None:
+				afa.db_set("final_payable_amount", amount)
+			return self.register_doc(afa)
+
 		afa = frappe.new_doc("Applicant Fee Assignment")
-		afa.applicant = applicant_name
-		afa.fee_type = "Admission Fee"
 		afa.offer_letter = offer_name
+		afa.applicant = applicant_name
+		afa.fee_type = fee_type
 		afa.academic_year = self.academic_year
 		afa.admission_cycle = self.admission_cycle
 		afa.program = "Master’s Programme in Public Policy"
@@ -452,6 +506,47 @@ class PaymentTestBase(unittest.TestCase):
 		pr.submit()
 		return self.register_doc(pr)
 
+	def create_fee_component(self, name, amount=1000, is_accommodation_fee=0):
+		existing = frappe.db.get_value("Fee Component", {"component_name": name}, "name")
+		if existing:
+			# Ensure existing component has the correct amount
+			frappe.db.set_value("Fee Component", existing, "amount", amount)
+			return existing
+
+		fc = frappe.new_doc("Fee Component")
+		fc.component_name = name
+		fc.amount = amount
+		fc.is_accommodation_fee = is_accommodation_fee
+		fc.insert(ignore_permissions=True, ignore_mandatory=True)
+		self.test_docs.append(fc)
+		return fc.name
+
+	def create_fee_structure(self, name, components=None, confirmation_fee=0):
+		components = components or []
+		fs = frappe.new_doc("Fee Structure")
+		fs.fee_structure = name
+		fs.academic_year = self.academic_year
+		fs.program = f"Program {name}"
+		fs.is_confirmation_fee_applicable = 1 if confirmation_fee > 0 else 0
+		fs.confirmation_fee_amount = confirmation_fee
+		total = 0
+		for comp_name, amt in components:
+			fs.append("fee_components_for_indian", {
+				"fee_component": comp_name,
+				"amount": amt,
+				"total_amount": amt
+			})
+			total += amt
+		fs.total_amount_for_indian = total
+		fs.flags.ignore_mandatory = True
+		fs.flags.ignore_validate = True
+		fs.flags.ignore_links = True
+		fs.insert(ignore_permissions=True, ignore_mandatory=True)
+		if fs.name != name:
+			frappe.rename_doc("Fee Structure", fs.name, name, force=True, ignore_if_exists=True)
+			fs = frappe.get_doc("Fee Structure", name)
+		return self.register_doc(fs)
+
 	def mock_razorpay(self, payment_data=None, payments_list=None, order_data=None):
 		# Instantiate a mock client with desired return values
 		mock_client = MockRazorpayClient(payment_data=payment_data, payments_list=payments_list, order_data=order_data)
@@ -475,9 +570,14 @@ class PaymentTestBase(unittest.TestCase):
 
 	def dispatch_razorpay_webhook(self, payload):
 		from slcm.api.razorpay_webhook import handle_razorpay_webhook
-
+		import hmac, hashlib, json
+		
 		self.bind_webhook_request(payload)
-		with patch("frappe.get_request_header", return_value=None):
+		raw_data = json.dumps(payload).encode("utf-8")
+		# Provide the correct HMAC signature based on dummy_secret
+		secret = b"dummy_secret"
+		correct_sig = hmac.new(secret, raw_data, hashlib.sha256).hexdigest()
+		with patch("frappe.get_request_header", return_value=correct_sig):
 			handle_razorpay_webhook()
 
 	def mock_signature_verification(self):

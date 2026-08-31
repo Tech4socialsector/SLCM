@@ -148,6 +148,15 @@ function _show_allocation_dialog(frm, applicants, providers) {
     let applicant_current_page = 1;
     const applicant_page_size = 10;
 
+    const unique_programme_levels = [...new Set(applicants.map(a => a.program_level).filter(Boolean))].sort();
+    const unique_programmes = [...new Set(applicants.map(a => a.program).filter(Boolean))].sort();
+
+    const prog_level_options = `<option value="">${__("All Levels")}</option>` + 
+        unique_programme_levels.map(l => `<option value="${l}">${l}</option>`).join("");
+        
+    const prog_options = `<option value="">${__("All Programmes")}</option>` + 
+        unique_programmes.map(p => `<option value="${p}">${p}</option>`).join("");
+
     function get_filtered_providers() {
         let list = providers;
         if (center_pwd_only) {
@@ -334,12 +343,14 @@ function _show_allocation_dialog(frm, applicants, providers) {
                                                style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; font-weight:normal; outline:none; background:#ffffff; box-shadow:inset 0 1px 2px rgba(0,0,0,0.03);">
                                     </th>
                                     <th style="padding:4px 6px;">
-                                        <input type="text" id="filter-programme-level" placeholder="${__("Filter Level...")}" 
-                                               style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; font-weight:normal; outline:none; background:#ffffff; box-shadow:inset 0 1px 2px rgba(0,0,0,0.03);">
+                                        <select id="filter-programme-level" style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; font-weight:normal; outline:none; background:#ffffff; box-shadow:inset 0 1px 2px rgba(0,0,0,0.03);">
+                                            ${prog_level_options}
+                                        </select>
                                     </th>
                                     <th style="padding:4px 6px;">
-                                        <input type="text" id="filter-programme" placeholder="${__("Filter Programme...")}" 
-                                               style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; font-weight:normal; outline:none; background:#ffffff; box-shadow:inset 0 1px 2px rgba(0,0,0,0.03);">
+                                        <select id="filter-programme" style="width:100%; border:1px solid #cbd5e1; border-radius:14px; padding:3px 10px; font-size:11px; font-weight:normal; outline:none; background:#ffffff; box-shadow:inset 0 1px 2px rgba(0,0,0,0.03);">
+                                            ${prog_options}
+                                        </select>
                                     </th>
                                 </tr>
                             </thead>
@@ -364,13 +375,15 @@ function _show_allocation_dialog(frm, applicants, providers) {
                 return;
             }
 
-            if (!selected_applicant_names.size) {
-                frappe.msgprint(__("Please select at least one applicant."));
+            const filtered_applicant_names = new Set(get_filtered_applicants().map(a => a.name));
+            const selected_applicants = Array.from(selected_applicant_names).filter(name => filtered_applicant_names.has(name));
+
+            if (!selected_applicants.length) {
+                frappe.msgprint(__("Please select at least one applicant from the current filter."));
                 return;
             }
 
             const selected_providers = Array.from(selected_provider_names);
-            const selected_applicants = Array.from(selected_applicant_names);
 
             // Check seat availability first and show confirmation dialog for both types
             frappe.call({
@@ -489,8 +502,8 @@ function _show_allocation_dialog(frm, applicants, providers) {
         return applicants.filter(a => {
             const id_match = !applicant_filters.applicant_id || (a.applicant_id || "").toLowerCase().includes(applicant_filters.applicant_id);
             const name_match = !applicant_filters.candidate_name || (a.candidate_name || "").toLowerCase().includes(applicant_filters.candidate_name);
-            const level_match = !applicant_filters.programme_level || (a.program_level || "").toLowerCase().includes(applicant_filters.programme_level);
-            const prog_match = !applicant_filters.programme || (a.program || "").toLowerCase().includes(applicant_filters.programme);
+            const level_match = !applicant_filters.programme_level || (a.program_level || "").toLowerCase() === applicant_filters.programme_level;
+            const prog_match = !applicant_filters.programme || (a.program || "").toLowerCase() === applicant_filters.programme;
             
             let pwd_match = true;
             if (applicant_filters.pwd_only) {
@@ -690,7 +703,7 @@ function _show_allocation_dialog(frm, applicants, providers) {
         render_applicant_page();
     });
 
-    $wrapper.on("input keyup search", "#filter-applicant-id, #filter-candidate-name, #filter-programme-level, #filter-programme", function () {
+    $wrapper.on("input keyup search change", "#filter-applicant-id, #filter-candidate-name, #filter-programme-level, #filter-programme", function () {
         applicant_filters.applicant_id = $wrapper.find("#filter-applicant-id").val().toLowerCase().trim();
         applicant_filters.candidate_name = $wrapper.find("#filter-candidate-name").val().toLowerCase().trim();
         applicant_filters.programme_level = $wrapper.find("#filter-programme-level").val().toLowerCase().trim();
@@ -712,9 +725,9 @@ function _show_allocation_dialog(frm, applicants, providers) {
 
     $wrapper.find("#select-all-chk").on("change", function () {
         if (this.checked) {
-            applicants.forEach(a => selected_applicant_names.add(a.name));
+            get_filtered_applicants().forEach(a => selected_applicant_names.add(a.name));
         } else {
-            selected_applicant_names.clear();
+            get_filtered_applicants().forEach(a => selected_applicant_names.delete(a.name));
         }
         render_applicant_page();
     });
@@ -744,7 +757,7 @@ function _show_allocation_dialog(frm, applicants, providers) {
     d.fields_dict.auto_select_count.$input.on("input", function () {
         let val = parseInt($(this).val()) || 0;
         selected_applicant_names.clear();
-        applicants.slice(0, val).forEach(a => selected_applicant_names.add(a.name));
+        get_filtered_applicants().slice(0, val).forEach(a => selected_applicant_names.add(a.name));
         render_applicant_page();
     });
 }

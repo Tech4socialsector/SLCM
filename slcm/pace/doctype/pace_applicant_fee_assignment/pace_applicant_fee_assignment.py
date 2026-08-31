@@ -418,7 +418,7 @@ def send_course_fee_reminders(current_item=0, total_items=0):
 	assignments = frappe.get_all("PACE Applicant Fee Assignment", filters={
 		"status": "Assigned",
 		"fee_type": "Course Fee"
-	}, fields=["name", "applicant", "applicant_name", "program", "academic_year", "last_course_fee_reminder_sent", "fee_type"])
+	}, fields=["name", "applicant", "applicant_name", "program", "academic_year", "last_course_fee_reminder_sent", "fee_type"], limit=0)
 
 	sent_count = 0
 	for i, data in enumerate(assignments):

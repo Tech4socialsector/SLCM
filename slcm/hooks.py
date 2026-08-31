@@ -192,6 +192,7 @@ fixtures = [
                 "HD Ticket SLA Escalation - New Agent",
                 "HD Ticket SLA Escalation - Previous Agent",
                 "HD Ticket SLA Escalation - Max Hops Reached",
+                "SLA Breach Reminder",
                 "Venue Booking - New Request (Admin)",
                 "Venue Booking - Status Update (Requester)",
                 "Venue Booking - Swap Request Decision (Requester)",
@@ -205,8 +206,14 @@ fixtures = [
                 "Applicant Not Started Application Reminder",
                 "Applicant Draft Application Reminder",
                 "Applicant Fee Payment Pending Reminder",
-                "Applicant Application Rejected",
-                "Admission Fee Pending Reminder"
+                "Admission Fee Pending Reminder",
+                "NLSAT Offer Letter",
+                "NLSAT Offer Accepted",
+                "NLSAT Offer Rejected",
+                "NLSAT Confirmation Fee Paid",
+                "Admission Full Fee Invoice",
+                "NLSAT Full Fee Paid",
+                "NLSAT Offer Expired / Withdrawn"
             ]]
         ]
     },
@@ -327,7 +334,7 @@ fixtures = [
     # --- Transcript Print Format ---
     {
         "doctype": "Print Format",
-        "filters": [["name", "in", ["Student Transcript", "Seat Allocation Result Notification"]]]
+        "filters": [["name", "in", ["Student Transcript", "Seat Allocation Result Notification","NLSAT Offer Letter"]]]
     },
     {
         "doctype": "Venue Type",
@@ -361,7 +368,8 @@ doc_events = {
     },
     "HD Ticket": {
         "before_insert": "slcm.api.helpdesk_assignment.prefill_student_context_before_insert",
-        "before_validate": "slcm.api.helpdesk_assignment.apply_default_email_team"
+        "before_validate": "slcm.api.helpdesk_assignment.apply_default_email_team",
+        "validate": "slcm.api.helpdesk_facility_visit.validate_preferred_visit_slot"
     },
     "User": {
         "before_insert": "slcm.api.user_events.user_before_insert",
@@ -577,17 +585,26 @@ scheduler_events = {
 		# floor once their Academic Term has ended (see programme_chair_decision,
 		# which no longer checks this at approval time).
 		"slcm.slcm.doctype.student_attendance_condonation.student_attendance_condonation.auto_reject_below_attendance_floor",
+		# Background sync for settlements if webhooks fail
+		"slcm.api.sync_settlements.daily_sync_settlements",
 	]
 }
+
+# Administrator holds every Role (including our portal roles below) per
+# frappe.get_roles()'s special-case, so without this it would be sent to
+# whichever portal role_home_page entry is checked first instead of /app.
+get_website_user_home_page = "slcm.utils.auth_routing.get_website_user_home_page"
 
 # Role-based home page — portal users must not land on /desk (no desk_access)
 role_home_page = {
     "slcm_Faculty": "/faculty-portal",
+    "slcm_Student": "/student-portal",
     "slcm_parent": "/parent-portal",
 }
 
 # Website
 website_route_rules = [
+    {"from_route": "/portal-login", "to_route": "portal-login/login"},
     {"from_route": "/admission/login", "to_route": "admission/login"},
     {"from_route": "/applicant-dashboard", "to_route": "applicant_dashboard"},
     {"from_route": "/admission/<name>", "to_route": "admission/program_detail"},

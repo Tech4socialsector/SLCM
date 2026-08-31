@@ -230,7 +230,9 @@ class FeeService:
         
         is_confirmation = (assignment.fee_type == "Confirmation Fee")
         if is_confirmation:
-            frappe.db.set_value("Offer Letter", offer_name, "status", "Confirmation Fee Paid")
+            offer_to_save = frappe.get_doc("Offer Letter", offer_name)
+            offer_to_save.status = "Confirmation Fee Paid"
+            offer_to_save.save(ignore_permissions=True)
             OfferService.update_applicant_status(assignment.applicant, status="Confirmation Fee Paid")
             # Generate the next assignment for Full Fee
             next_assignment = frappe.new_doc("Applicant Fee Assignment")
@@ -269,22 +271,11 @@ class FeeService:
             next_assignment.insert(ignore_permissions=True)
             next_assignment.submit()
         else:
-            frappe.db.set_value("Offer Letter", offer_name, "status", "Full Fee Paid")
+            offer_to_save = frappe.get_doc("Offer Letter", offer_name)
+            offer_to_save.status = "Full Fee Paid"
+            offer_to_save.save(ignore_permissions=True)
             OfferService.update_applicant_status(assignment.applicant, status="Full Fee Paid")
 
-        from slcm.admission.utils.notifications import log_communication
-        log_communication(
-            applicant=assignment.applicant,
-            communication_type="Portal Notification",
-            category="Fee",
-            subject=_("Admission Fee Payment Completed"),
-            content=_("Your payment of {0} for {1} has been received successfully.").format(
-                frappe.format_value(offer_doc.payable_amount, offer_doc.meta.get_field("payable_amount"), offer_doc),
-                offer_doc.program
-            ),
-            reference_doctype="Offer Letter",
-            reference_name=offer_doc.name
-        )
 
         # Generate Receipt
         return FeeService.generate_receipt(
@@ -457,17 +448,17 @@ class FeeService:
         if assignment_name:
             frappe.db.set_value("Applicant Fee Assignment", assignment_name, {
                 "status": "Paid",
-                "payment_date": frappe.utils.today()
+                "payment_date": frappe.utils.today(),
+                "transaction_id": razorpay_payment_id
             })
             fee_type = frappe.db.get_value("Applicant Fee Assignment", assignment_name, "fee_type")
             is_confirmation = (fee_type == "Confirmation Fee")
 
         from slcm.api.service.offer_service import OfferService
         if is_confirmation:
-            frappe.db.set_value("Offer Letter", offer_doc.name, {
-                "status": "Confirmation Fee Paid",
-                "confirmation_fee_paid_on": frappe.utils.today()
-            })
+            offer_doc.status = "Confirmation Fee Paid"
+            offer_doc.confirmation_fee_paid_on = frappe.utils.today()
+            offer_doc.save(ignore_permissions=True)
             OfferService.update_applicant_status(offer_doc.applicant, status="Confirmation Fee Paid")
             
             # Generate the next assignment for Full Fee
@@ -508,10 +499,9 @@ class FeeService:
             next_assignment.insert(ignore_permissions=True)
             next_assignment.submit()
         else:
-            frappe.db.set_value("Offer Letter", offer_doc.name, {
-                "status": "Full Fee Paid",
-                "full_fee_paid_on": frappe.utils.today()
-            })
+            offer_doc.status = "Full Fee Paid"
+            offer_doc.full_fee_paid_on = frappe.utils.today()
+            offer_doc.save(ignore_permissions=True)
             OfferService.update_applicant_status(offer_doc.applicant, status="Full Fee Paid")
             
         # 2. Update Payment Request
@@ -1477,7 +1467,9 @@ class FeeService:
         FeeService._generate_application_fee_receipt(applicant_doc, razorpay_payment_id, "Online")
 
         from slcm.api.service.application_fee_service import sync_application_fee_assignment_for_applicant
-        sync_application_fee_assignment_for_applicant(applicant_doc.name)
+        assignment_name = sync_application_fee_assignment_for_applicant(applicant_doc.name)
+        if assignment_name:
+            frappe.db.set_value("Applicant Fee Assignment", assignment_name, "transaction_id", razorpay_payment_id)
 
         applicant_doc.reload()
         if applicant_doc.status == "Submitted":
@@ -1893,12 +1885,14 @@ class FeeService:
             try:
                 frappe.db.savepoint(savepoint)
                 result = reconcile_payment_request_record(pr_data, rzp_client)
+                print(f"Result for {pr_data.name} is {result}")
                 if result == "captured":
                     frappe.logger().info(
                         f"Reconciliation Scheduler: completed PR={pr_data.name}"
                     )
             except Exception:
                 frappe.db.rollback(save_point=savepoint)
+                import traceback; print(f"Exception in reconcile_pending_payments for {pr_data.name}:\n", traceback.format_exc())
                 frappe.log_error(
                     frappe.get_traceback(),
                     f"Reconciliation Scheduler Failed for PR={pr_data.name}",

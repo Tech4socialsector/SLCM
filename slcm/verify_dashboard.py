@@ -51,7 +51,7 @@ fac = frappe.get_doc("Faculty", FACULTY_NAME_DOC)
 fac_display = f"{fac.first_name or ''} {fac.last_name or ''}".strip()
 pending_venues = frappe.db.count(
     "Venue Booking",
-    filters={"requester_name": ["in", [FACULTY_NAME_DOC, fac_display, fac.email or ""]], "status": "Pending"},
+    filters={"requester_name": ["in", [FACULTY_NAME_DOC, fac_display, fac.email or ""]], "status": "Pending Allotment"},
 )
 
 pending_cond = frappe.db.count(

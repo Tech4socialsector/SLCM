@@ -70,7 +70,7 @@ class TestSeatAllocation:
             # Depending on how it's stored in the dict
             assert c.get("vertical_category") == "General" or c.get("allocation_type") == "Open"
 
-    def test_seat_allocation_tied_at_rank_120_includes_all_ties(self, mock_policy, monkeypatch):
+    def test_seat_allocation_tied_at_rank_boundary_strictly_truncates(self, mock_policy, monkeypatch):
         doc = MockDoc("Merit List", "Test Allocation 4", program="BA", admission_cycle="2026", merit_processing_stage="Final Allotment Ranking")
         # 60 candidates total, 49 general seats. 
         # Make rank 49 tied.
@@ -113,12 +113,12 @@ class TestSeatAllocation:
         ms._rank_applicants(candidates, use_advanced_ranking=True, processing_stage="Final Allotment Ranking")
         ms.execute_advanced_allocation_logic(doc, is_shortlist_allocation=False)
         
-        # Under the new tie-breaking rules, all candidates tied at the cutoff rank are allocated.
+        # Under the new tie-breaking rules, candidates tied at the cutoff rank are STRICTLY truncated.
         general_list = getattr(doc, "general_list", [])
-        assert len(general_list) == 53
+        assert len(general_list) == 49
 
-    def test_seat_allocation_10_seats_with_3_ties_at_10th_rank(self, mock_policy, monkeypatch):
-        # Scenario requested by user: 10 seats available, 3 candidates tied at 10th rank -> all 3 allocated (total 12 allocated)
+    def test_seat_allocation_tied_at_10th_rank_strictly_truncates(self, mock_policy, monkeypatch):
+        # Scenario requested by user: 10 seats available, 3 candidates tied at 10th rank -> strictly cut off at exactly 10 allocated
         doc = MockDoc("Merit List", "Test Allocation 10 Seats", program="BA", admission_cycle="2026", merit_processing_stage="Final Allotment Ranking")
         
         # Override policy category seats to 10 for General
@@ -156,9 +156,7 @@ class TestSeatAllocation:
         ms.execute_advanced_allocation_logic(doc, is_shortlist_allocation=False)
         
         general_list = getattr(doc, "general_list", [])
-        # All 9 top candidates + all 3 tied candidates at rank 10 = 12 total allocated
-        assert len(general_list) == 12
-        allocated_ranks = [c.get("overall_rank") for c in general_list]
-        assert allocated_ranks.count(10) == 3
+        # Strict truncation ensures exactly 10 seats are allocated
+        assert len(general_list) == 10
 
 

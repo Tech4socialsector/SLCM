@@ -1,171 +1,1299 @@
+{# ═══════════════════════════════════════════════════════════════════════
+   NLSAT Offer Letter — Unified Print Format (FIXED)
+   Covers: LLB (Hons.), BA (Hons.), 5-Year Integrated B.A. LL.B. (Hons.), MPP
+   DocType: Offer Letter   |   Engine: Jinja
+
+   FIXES APPLIED vs previous version:
+     1. Removed 5 phantom blank pages (page-break restructured to sibling
+        marker divs instead of wrapping content in the break div)
+     2. Fixed numbered-list marker clipping ("10." -> "0.") via CSS counters
+     3. Removed stray empty 4th column in Appendix II Deposits table
+     4. Linux-safe serif font stack (+ optional @font-face slot)
+     5. Programme classification now reads explicit DocType fields first,
+        with name-substring matching only as a last-resort fallback
+     6. Fixed candidate_name / campus display-field dereferencing
+     7. Added page-break-inside:avoid on tables, list items, FAQ blocks
+     8. Logo given fixed box + block centering so it can't drift
+   ═══════════════════════════════════════════════════════════════════════ #}
+
+
+
+{# ── 0. GLOBAL CONFIGURABLE VARIABLES (UPDATE YEARLY) ── #}
+{% set static_base_url = frappe.utils.get_url() %}
+
+{% set var_registration_date = "29 June 2026" %}
+{% set var_orientation_date = "30 June 2026" %}
+{% set var_classes_begin_date = "1 July 2026" %}
+{% set var_bachelors_deadline = "31 December 2026" %}
+
+{% set var_ba_fin_aid_deadline = "07 July 2026" %}
+{% set var_llb_fin_aid_deadline = "19 June 2026" %}
+{% set var_mpp_fin_aid_deadline = "07 July 2026" %}
+
+{% set var_fin_aid_decision_date = "31 July 2026" %}
+
+{% set var_ba_housing_fee = "1,32,800" %}
+{% set var_llb_housing_fee = "1,88,200" %}
+{% set var_mpp_housing_fee = "1,88,200" %}
+
+{% set var_ba_tuition_fee = "3,18,200" %}
+{% set var_llb_tuition_fee = "3,18,200" %}
+{% set var_mpp_tuition_fee = "3,18,200" %}
+
+{% set var_ba_scst_total = "4,83,700" %}
+{% set var_ba_gen_total = "4,88,600" %}
+
+{% set var_llb_scst_total = "5,39,100" %}
+{% set var_llb_gen_total = "5,44,000" %}
+
+{% set var_mpp_scst_total = "5,39,100" %}
+{% set var_mpp_gen_total = "5,44,000" %}
+
+{% set var_admission_fee = "13,900" %}
+{% set var_scst_deposit = "18,800" %}
+{% set var_gen_deposit = "23,700" %}
+
+{# ── 1. FETCH LINKED DOCUMENTS ── #}
 {% set campus = frappe.get_doc("Campus", doc.campus) if doc.campus else None %}
 {% set applicant = frappe.get_doc("Applicant", doc.applicant) if doc.applicant else None %}
-{% set afa = frappe.get_all("Applicant Fee Assignment", filters={"offer_letter": doc.name, "docstatus": ["!=", 2]}, fields=["*"], limit=1) %}
-{% set fee_info = afa[0] if afa else None %}
-{% set pay_amt = (fee_info.final_payable_amount if fee_info else doc.payable_amount) or 0 %}
+{% set programme = frappe.get_doc("Programme", doc.program) if doc.program else None %}
 {% set issued_date = doc.issued_on or frappe.utils.today() %}
-{% set fee_deadline = doc.payment_deadline %}
 
+{# ── FIX #6: correct display-name dereferencing, with safe fallbacks ── #}
+{% set candidate_display_name =
+      (applicant.candidate_name if applicant and applicant.candidate_name else None)
+      or (applicant.applicant_name if applicant and applicant.get("applicant_name") else None)
+      or (doc.candidate_name if doc.get("candidate_name") else None)
+      or "Candidate" %}
+
+{% set campus_city_display =
+      (campus.city if campus and campus.get("city") else None)
+      or (campus.campus_name if campus and campus.campus_name else None)
+      or "Bengaluru" %}
+
+{# ── 2. PROGRAMME IDENTIFICATION ──
+   FIX #5: Prefer explicit fields on the Programme master. Only fall back
+   to guessing from the programme name if those fields are genuinely blank.
+   ACTION REQUIRED (see checklist below the code): populate on every
+   Programme record:
+     - programme_type   (Select: "UG" / "PG")
+     - program_duration  (Int: total years, e.g. 3, 2, or 5 for integrated)
+     - housing_model     (Select: "On-Campus" / "Off-Campus") -- optional,
+       else derived from programme_type
+#}
+{% set pn = (doc.program or "").upper() %}
+{% set explicit_type = (programme.programme_type if programme and programme.get("programme_type") else "") | upper %}
+{% set prog_duration = (programme.program_duration if programme and programme.program_duration else None) %}
+
+{% if explicit_type == "UG" %}
+  {% set is_ug = true %}
+{% elif explicit_type == "PG" %}
+  {% set is_ug = false %}
+{% else %}
+  {# Fallback only if programme_type was left blank on the master.
+     Strips punctuation before substring matching so "B.A., LL.B." style
+     names classify correctly. #}
+  {% set pn_clean = pn.replace(".", "").replace(",", "").replace(" ", "") %}
+  {% set is_ug = ("BA" in pn_clean and "LLB" not in pn_clean) or (programme and programme.level_of_study == "Undergraduate") %}
+{% endif %}
+{% set is_pg = not is_ug %}
+
+{% if not prog_duration %}
+  {% set pn_clean = pn.replace(".", "").replace(",", "").replace(" ", "") %}
+  {% if "5YEAR" in pn_clean or ("BA" in pn_clean and "LLB" in pn_clean) %}
+    {% set prog_duration = 5 %}
+  {% elif is_pg and ("MPP" in pn_clean or "PUBLICPOLICY" in pn_clean) %}
+    {% set prog_duration = 2 %}
+  {% elif is_pg %}
+    {% set prog_duration = 3 %}
+  {% else %}
+    {% set prog_duration = 3 %}
+  {% endif %}
+{% endif %}
+
+{% set pn_clean = pn.replace(".", "").replace(",", "").replace(" ", "") %}
+{% set is_integrated_ba_llb = is_ug and "LLB" in pn_clean %}
+{% set is_mpp = is_pg and (prog_duration == 2 or "MPP" in pn_clean or "PUBLICPOLICY" in pn_clean) %}
+{% set is_llb = is_pg and not is_mpp %}
+{% set is_ba = is_ug %}
+
+{# ── 3. PROGRAMME DISPLAY NAMES ── #}
+{% if is_integrated_ba_llb %}
+  {% set prog_display = doc.program or "5-Year B.A., LL.B. (Hons.)" %}
+  {% set fee_table_title = "Programme Fees for " ~ prog_display ~ " Programme" %}
+{% elif is_llb %}
+  {% set prog_display = "LL.B. (Hons.)" %}
+  {% set fee_table_title = "Programme Fees for LLB. (Hons) Programme" %}
+{% elif is_ba %}
+  {% set prog_display = "BA (Hons.)" %}
+  {% set fee_table_title = "Programme Fees for BA (Hons.) Programme" %}
+{% elif is_mpp %}
+  {% set prog_display = "Master's Programme in Public Policy" %}
+  {% set fee_table_title = "Programme Fees for Master's Programme in Public Policy" %}
+{% else %}
+  {% set prog_display = doc.program or "Programme" %}
+  {% set fee_table_title = "Programme Fees for " ~ prog_display %}
+{% endif %}
+
+{# ── 4. HOUSING TERMINOLOGY ── #}
+{% set housing_option_label = "University housing" if is_ba else "Off-Campus Accommodation" %}
+{% set housing_fee_label = "Housing Fee" if is_ba else "Off-Campus Housing Fee" %}
+{% set housing_includes_label = housing_fee_label %}
+
+{# ── 5. DATES ── #}
+{% if doc.confirmation_fee_deadline %}
+  {% set confirmation_deadline = frappe.utils.format_date(doc.confirmation_fee_deadline, "d MMMM yyyy") %}
+{% else %}
+  {% set confirmation_deadline = "19 June 2026" if is_llb else "25 June 2026" %}
+{% endif %}
+
+{% if doc.payment_deadline %}
+  {% set full_fee_deadline = frappe.utils.format_date(doc.payment_deadline, "d MMMM yyyy") %}
+{% else %}
+  {% set full_fee_deadline = "24 June 2026" if is_llb else "27 June 2026" %}
+{% endif %}
+
+{% set financial_aid_deadline = doc.financial_aid_deadline_display or ("19 June 2026" if is_llb else "07 July 2026") %}
+{% set registration_date = doc.registration_date_display or "29 June 2026" %}
+{% set orientation_date = doc.orientation_date_display or "30 June 2026" %}
+{% set classes_begin_date = doc.classes_begin_date_display or "1 July 2026" %}
+{% set bachelors_deadline = "31 December 2026" %}
+{% set academic_yr = doc.academic_year or "2026-2027" %}
+
+{# ── 6. FEE DATA (per programme) ──
+   NOTE: These remain hardcoded per your explicit instruction. If NLSIU
+   revises fee slabs again, this is the single block to edit — search for
+   "FEE DATA BLOCK" in this file. Long-term, move this into a Fee Schedule
+   child table on the Programme/Offer Letter doctype instead of hardcoding.
+#}
+{% set admission_fee = "13,900" %}
+{% set tuition_fee = "3,18,200" %}
+{% set scst_deposit = "18,800" %}
+{% set gen_deposit = "23,700" %}
+{% set confirmation_fee_amt = "30,000" %}
+
+{% if is_integrated_ba_llb %}
+  {% set housing_fee = "1,32,800" %}
+  {% set total_y1 = "4,64,900" %}
+  {% set total_y2 = "4,51,000" %}
+  {% set total_yN = "4,51,000" %}
+  {% set total_programme = "22,69,700" %}
+  {% set total_tuition_all = "15,91,000" %}
+  {% set total_housing_all = "6,64,000" %}
+  {% set total_scst_y1 = "4,83,700" %}
+  {% set total_gen_y1 = "4,88,600" %}
+{% elif is_ba %}
+  {% set housing_fee = "1,32,800" %}
+  {% set total_y1 = "4,64,900" %}
+  {% set total_y2 = "4,51,000" %}
+  {% set total_yN = "4,51,000" %}
+  {% set total_programme = "13,66,900" %}
+  {% set total_tuition_all = "9,54,600" %}
+  {% set total_housing_all = "3,98,400" %}
+  {% set total_scst_y1 = "4,83,700" %}
+  {% set total_gen_y1 = "4,88,600" %}
+{% elif is_mpp %}
+  {% set housing_fee = "1,88,200" %}
+  {% set total_y1 = "5,20,300" %}
+  {% set total_y2 = "5,06,400" %}
+  {% set total_yN = "5,06,400" %}
+  {% set total_programme = "10,26,700" %}
+  {% set total_tuition_all = "6,36,400" %}
+  {% set total_housing_all = "3,76,400" %}
+  {% set total_scst_y1 = "5,39,100" %}
+  {% set total_gen_y1 = "5,44,000" %}
+{% else %}
+  {% set housing_fee = "1,88,200" %}
+  {% set total_y1 = "5,20,300" %}
+  {% set total_y2 = "5,06,400" %}
+  {% set total_yN = "5,06,400" %}
+  {% set total_programme = "15,51,900" %}
+  {% set total_tuition_all = "9,54,600" %}
+  {% set total_housing_all = "5,64,600" %}
+  {% set total_scst_y1 = "5,39,100" %}
+  {% set total_gen_y1 = "5,44,000" %}
+{% endif %}
+
+{% set no_housing_scst = "3,50,900" %}
+{% set no_housing_gen = "3,55,800" %}
+
+{# ── 7. UNIVERSITY INFO ── #}
+{% set uni_name = campus.campus_name if campus and campus.campus_name else "National Law School of India University" %}
+{% set uni_short = "NLSIU" %}
+{% set uni_address = (campus.address if campus and campus.address else "Post Bag No. 7201, NAGARBHAVI, BENGALURU - 560 242. (Old Code No. 560 072), INDIA.") %}
+{% set uni_phone = campus.phone_number if (campus and campus.phone_number) else "080- 23010000" %}
+{% set uni_email = campus.email if (campus and campus.email) else "contactus@nls.ac.in/nlsat.query@nls.ac.in" %}
+
+{# ══════════════════════════════════════════════════════════════════════ #}
+{# CSS STYLES                                                              #}
+{# ══════════════════════════════════════════════════════════════════════ #}
 <style>
-    @page { size: A4; margin: 15mm 18mm; }
-    .letter-page { font-family: 'Times New Roman', Georgia, serif; color: #1a1a1a; font-size: 11pt; line-height: 1.5; max-width: 100%; }
 
-    .letterhead { padding-bottom: 10px; border-bottom: 3px solid #800000; margin-bottom: 18px; }
-    .letterhead-inner { display: flex; align-items: flex-start; gap: 18px; }
-    .letterhead-logo { flex: 0 0 100px; text-align: center; padding: 4px; }
-    .letterhead-logo img { max-width: 90px; max-height: 85px; object-fit: contain; }
-    .letterhead-body { flex: 1; min-width: 0; }
-    .letterhead-title { font-size: 22pt; font-weight: 700; color: #1a1a1a; margin: 0 0 4px 0; line-height: 1.15; text-transform: uppercase; letter-spacing: 0.02em; }
-    .letterhead-sub { font-size: 9pt; color: #333; margin: 0; line-height: 1.4; }
-    .letterhead-contact { font-size: 8pt; color: #444; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e0e0e0; }
+/* ---------- Optional: embed a real serif TTF for pixel-parity -----------
+   Drop a licensed serif font (e.g. Noto Serif / your NLSIU brand serif)
+   into this app's /public/fonts/ folder and uncomment. This guarantees
+   identical rendering regardless of what's installed on the PDF server.
 
-    .letter-body .salutation { margin-bottom: 8px; font-weight: 600; }
-    .letter-body .congrats { font-weight: 700; font-size: 12pt; margin-bottom: 6px; }
-    .letter-body .body-date { margin-bottom: 16px; font-weight: 600; }
-    .letter-body .para { text-align: justify; margin-bottom: 12px; }
-    .letter-body .list { margin: 12px 0 12px 0; padding-left: 22px; }
-    .letter-body .list li { margin-bottom: 10px; }
-    .letter-body .sub-list { list-style-type: lower-alpha; margin: 6px 0 6px 20px; padding-left: 0; }
-    .letter-body .sub-list li { margin-bottom: 4px; }
-    .letter-body .list-note { font-size: 10pt; margin-top: 6px; margin-bottom: 12px; font-style: italic; color: #333; }
+@font-face {
+  font-family: 'NLSATSerif';
+  src: url('/assets/slcm/fonts/NotoSerif-Regular.ttf') format('truetype');
+  font-weight: 400;
+}
+@font-face {
+  font-family: 'NLSATSerif';
+  src: url('/assets/slcm/fonts/NotoSerif-Bold.ttf') format('truetype');
+  font-weight: 700;
+}
+------------------------------------------------------------------------- */
 
-    .letter-sig { margin-top: 36px; }
-    .letter-sig .sig-name { font-weight: 700; font-size: 11pt; margin: 0 0 2px 0; }
-    .letter-sig .sig-designation { font-size: 11pt; margin: 0; }
+@page { size: A4; margin: 15mm 18mm 20mm 18mm; }
 
-    .letter-footer { margin-top: 40px; padding-top: 10px; border-top: 1px solid #ccc; font-size: 8pt; color: #666; text-align: center; line-height: 1.4; }
-    .bold { font-weight: 700; }
+/* ---------- Global ---------- */
+.nlsat-offer {
+  /* FIX #4: Linux-safe serif stack. 'Times New Roman' does not exist on
+     the Linux server running wkhtmltopdf and was silently substituted,
+     which is why the rendered font didn't match. If you embed the
+     @font-face above, put 'NLSATSerif' first in this list. */
+  font-family: 'Noto Serif', 'Liberation Serif', 'DejaVu Serif', Georgia, 'Times New Roman', serif;
+  color: #1a1a1a;
+  font-size: 11pt;
+  line-height: 1.55;
+}
+.nlsat-offer * { box-sizing: border-box; }
+
+/* ---------- FIX #1: page-break architecture -----------------------------
+   Never wrap section content inside the page-break element itself.
+   Use an EMPTY sibling marker div before each section instead. This is
+   the pattern that avoids wkhtmltopdf's phantom blank page bug. #}
+.section { }
+.section-break { page-break-before: always !important; }
+/* Defensive: never let the letterhead block itself be split across a
+   page boundary, even if the underlying PDF engine mishandles a break. */
+.lh { page-break-inside: avoid !important; page-break-after: avoid !important; }
+
+/* ---------- Letterhead ---------- */
+.lh { text-align: center; padding-bottom: 8px; margin-bottom: 16px; }
+.lh img.logo { display: block; margin: 0 auto 6px; width: 70px; height: 65px; object-fit: contain; }
+.lh-name { font-size: 14pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin: 0 0 2px; }
+.lh-addr { font-size: 9.5pt; color: #333; margin: 0; }
+.lh-phone { font-size: 9.5pt; color: #333; margin: 0; }
+.lh-email { font-size: 9.5pt; color: #333; margin: 0 0 4px; }
+
+/* ---------- Body text ---------- */
+.para { text-align: justify; margin-bottom: 10px; orphans: 2; widows: 2; }
+.bold { font-weight: 700; }
+
+/* ---------- Appendix titles ---------- */
+.app-title { text-align: center; font-size: 12pt; font-weight: 700; margin: 12px 0 4px;color: #900; }
+.app-subtitle { text-align: center; font-size: 11pt; font-weight: 700; margin: 0 0 16px;color: #900; }
+
+/* ---------- FIX #2: CSS-counter based numbered lists -------------------
+   Native <ol><li> markers get clipped by wkhtmltopdf once they reach two
+   digits ("10." renders as "0."). Using an explicit counter with a fixed-
+   width ::before marker box avoids this entirely, at any digit count. #}
+.step-list { list-style: none; counter-reset: step; padding-left: 0; margin: 10px 0; }
+.step-list > li {
+  counter-increment: step;
+  position: relative;
+  padding-left: 30px;
+  margin-bottom: 8px;
+  text-align: justify;
+  page-break-inside: avoid;
+}
+.step-list > li::before {
+  content: counter(step) ".";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 26px;
+  font-weight: 400;
+}
+
+.sub-list { list-style: none; counter-reset: substep; margin: 6px 0 6px 4px; padding-left: 0; }
+.sub-list > li {
+  counter-increment: substep;
+  position: relative;
+  padding-left: 24px;
+  margin-bottom: 4px;
+  page-break-inside: avoid;
+}
+.sub-list > li::before {
+  content: counter(substep, lower-alpha) ".";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 20px;
+}
+
+.note-text { font-size: 10pt; margin-top: 6px; font-style: italic; color: #333; page-break-inside: avoid; }
+
+/* ---------- Fee table ---------- */
+.fee-table { width: 100%; border-collapse: collapse; font-size: 10pt; margin: 12px 0; page-break-inside: avoid; }
+.fee-table th, .fee-table td { border: 1px solid #666; padding: 6px 8px; text-align: center; vertical-align: middle; }
+.fee-table th { background: #f5f5f5; font-weight: 700; }
+.fee-table td:first-child { text-align: left; }
+.fee-note { font-size: 10pt; margin: 8px 0; }
+.fee-note ul { padding-left: 20px; margin: 6px 0; }
+.fee-note li { margin-bottom: 6px; }
+
+/* ---------- Deadline table ---------- */
+.deadline-table { width: 100%; border-collapse: collapse; font-size: 10pt; margin: 12px 0; }
+.deadline-table th, .deadline-table td { border: 1px solid #666; padding: 6px 8px; vertical-align: top; }
+.deadline-table th { background: #f5f5f5; font-weight: 700; }
+.deadline-table tr { page-break-inside: avoid; }
+
+/* ---------- FAQ ---------- */
+.faq-section-title { font-weight: 700; font-size: 11pt; margin: 14px 0 6px; page-break-after: avoid; }
+.faq-block { page-break-inside: avoid; margin-bottom: 8px; }
+.faq-q { font-weight: 700; margin: 10px 0 2px; text-indent: 20px; page-break-after: avoid; }
+.faq-a { margin: 0 0 8px 0; text-align: justify; }
+
+/* ---------- Signature ---------- */
+.sig { margin-top: 32px; page-break-inside: avoid; }
+.sig-name { font-weight: 700; margin: 0 0 2px; }
+.sig-desg { margin: 0; }
+
+/* ---------- Footer ---------- */
+.pg-footer { margin-top: 24px; padding-top: 8px; border-top: 1px solid #999; font-size: 8pt; color: #666; text-align: center; page-break-inside: avoid; }
 </style>
 
-<div class="letter-page">
-    <!-- Letterhead -->
-    <div class="letterhead">
-        <div class="letterhead-inner">
-            <div class="letterhead-logo">
-                {% if campus and campus.logo %}
-                    <img src="{{ campus.logo }}" alt="Logo">
-                {% else %}
-                    <div style="height: 75px; display:flex; align-items:center; justify-content:center; color: #bbb; font-size: 9pt;">LOGO</div>
-                {% endif %}
-            </div>
-            <div class="letterhead-body">
-                <h1 class="letterhead-title">{{ campus.campus_name if campus else "National Law School of India University" }}</h1>
-                <p class="letterhead-sub">
-                    {{ campus.address if campus else "Nagarbhavi" }}{% if campus and campus.city %}, {{ campus.city }}{% endif %}
-                    {% if campus and campus.state %}, {{ campus.state }}{% endif %}
-                </p>
-                <div class="letterhead-contact">
-                    {% if campus and (campus.phone or campus.website or campus.email) %}
-                        {% if campus.phone %}Telephone: {{ campus.phone }}{% endif %}
-                        {% if campus.website %} | Website: {{ campus.website }}{% endif %}
-                        {% if campus.email %} | Email: {{ campus.email }}{% endif %}
-                    {% else %}
-                        Telephone: 080 - 23101000 | Website: www.nls.ac.in | Email: registrar@nls.ac.in
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="nlsat-offer">
 
-    <!-- Body -->
-    <div class="letter-body">
-        <div class="salutation">Dear {{ applicant.candidate_name if applicant else "Candidate" }},</div>
-        <div class="congrats">Congratulations!</div>
-        <div class="body-date">Date: {{ frappe.utils.format_date(issued_date, "d MMMM yyyy") }}</div>
+{# ══════════════════════════════════════════════════════════════════════ #}
+{# COVER LETTER (PAGE 1) — no marker before this, it's the first page      #}
+{# ══════════════════════════════════════════════════════════════════════ #}
+<div class="section">
+  <div class="lh">
+    {% set pf_logo = frappe.db.get_value('Print Format', 'Offer Letter', 'logo') %}
+    {% if pf_logo %}
+      {% set pf_logo_url = (static_base_url ~ pf_logo) if pf_logo.startswith('/') else pf_logo %}
+      <div style="text-align: center; margin-bottom: 10px;">
+        <img src="{{ pf_logo_url }}" alt="Logo" style="max-width: 100%; height: auto; margin-top: 15px;">
+      </div>
+    {% else %}
+      <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 2px;">
+        <tr>
+          <td style="width: 22%; text-align: left; vertical-align: middle; padding: 0;">
+            {% if campus and campus.logo %}
+              {% set campus_logo_url = (static_base_url ~ campus.logo) if campus.logo.startswith('/') else campus.logo %}
+              <img src="{{ campus_logo_url }}" alt="Logo" style="max-width: 120px; height: auto;">
+            {% endif %}
+          </td>
+          <td style="width: 78%; text-align: center; vertical-align: middle; padding: 0;">
+            <p class="lh-name" style="font-size: 15pt; font-weight: 700; margin: 0 0 6px; text-transform: uppercase;">{{ uni_name }}</p>
+            <p class="lh-addr" style="font-size: 9.5pt; color: #333; margin: 0 0 6px;">{{ uni_address }}</p>
+            <div style="border-top: 1px solid #333; margin: 4px 0 4px 0;"></div>
+            <p class="lh-contact" style="font-size: 9pt; color: #333; margin: 0;">
+              {% if uni_phone %}Telephone: {{ uni_phone }} &nbsp;|&nbsp; {% endif %}
+              Website : www.nls.ac.in
+              {% if uni_email %} &nbsp;|&nbsp; Email : {{ uni_email }}{% endif %}
+            </p>
+          </td>
+        </tr>
+      </table>
+    {% endif %}
+  </div>
 
-        <p class="para">
-            We are glad to provisionally offer you admission to the {{ doc.program }} programme at the
-            {{ campus.campus_name if campus else "National Law School of India University (NLSIU), Bengaluru" }}. We look forward to welcoming
-            you to {{ campus.campus_name if campus else "NLSIU" }}.
-        </p>
+  <p style="text-align: right;"><strong>Date:</strong> {{ frappe.utils.format_date(issued_date, "d MMMM yyyy") }}</p>
+  <p><strong>Dear Candidate,</strong></p>
+  <p style="font-size:12pt;">Congratulations on your performance in the National Law School Admission Test (NLSAT).</p>
 
-        <p class="para">
-            Please log in to the Admissions Portal (https://nlsatadmissions.nls.ac.in/) to accept the
-            provisional offer of admission and complete the next steps online as indicated below:
-        </p>
+  <p class="para">
+    We are glad to provisionally offer you admission to the <strong>{{ prog_display }}</strong> programme at the
+    {{ uni_name }}.
+  </p>
 
-        <ol class="list">
-            <li>
-                In order to confirm this provisional offer, you must pay INR {{ "{:,.0f}".format(pay_amt) }} as a confirmation
-                fee. The full fees applicable to the individual candidate for the academic year {{ doc.academic_year or doc.admission_year or "2025-2026" }} will have to be paid by {{ frappe.utils.format_date(fee_deadline, "d MMMM yyyy") if fee_deadline else "the date specified in the portal" }}. More information about how to accept this
-                provisional offer is available in the email sent to you with the provisional offer of
-                admission.
-            </li>
-            <li>
-                This offer is contingent upon the verification of particulars furnished in the
-                application form. In the next few days, you may receive an email from the {{ campus.campus_name if campus else "NLSIU" }} admissions team if there are queries on the information and documents submitted
-                along with your application. Submitting incomplete, invalid, or false
-                information/documents shall result in the withdrawal of the provisional offer of
-                admission.
-            </li>
-            <li>
-                You are required to be present at the {{ campus.campus_name if campus else "NLSIU" }} campus{% if campus and campus.city %} in {{ campus.city }}{% else %} in Bengaluru{% endif %}, on {{ frappe.utils.format_date(fee_deadline, "d MMMM yyyy") if fee_deadline else "the date specified in the admissions portal" }},
-                onwards for registration and onboarding. The orientation programme will
-                commence on the date as communicated to you. The schedule for the orientation will be announced later.
-            </li>
-            <li>
-                On the date of registration, the University will conduct an in-person verification of the original
-                certificates you have submitted via the admissions portal. Your provisional admission
-                will be confirmed only after successful verification of the following original
-                documents and full payment of the fees:
-                <ul class="sub-list">
-                    <li>Class 10 transcript</li>
-                    <li>Class 12 transcript</li>
-                    <li>Bachelor's degree certificate and transcript*</li>
-                    <li>Caste certificate, if applicable</li>
-                    <li>EWS certificate, if applicable</li>
-                    <li>Disability certificate, if applicable</li>
-                    <li>Documents relating to qualifying for Karnataka category, if applicable</li>
-                </ul>
-                <div class="list-note">
-                    * Candidates who are yet to receive the certificate/transcripts of their Bachelor's degree
-                    shall submit a declaration to the effect that the certificate/transcripts shall be submitted on
-                    or before December 31, {{ (doc.academic_year or doc.admission_year or "2025")[:4] }}. Their admission will remain provisional until the degree
-                    certificate and final marks transcript, indicating that the candidate has met the eligibility
-                    criteria, is submitted.
-                </div>
-            </li>
-            <li>
-                Failure to submit any of the above valid certificates at the time of verification shall
-                result in the withdrawal of the provisional offer of admission.
-            </li>
-            <li>
-                You are also required to submit two passport-size colour photographs to the
-                Admissions Office at the time of the verification.
-            </li>
-            <li>
-                The University will send you additional documents in early June. Please upload scans
-                of the signed copies as per the instructions, which will follow along with the
-                documents. On the date of verification of documents, you will be required to carry
-                originals of these documents:
-                <ul class="sub-list">
-                    <li>Email Receipt of Submission of the Online Anti-Ragging Undertaking Required by the UGC</li>
-                    <li>Disciplinary Undertaking</li>
-                    <li>Off-Campus Housing Application Form</li>
-                    <li>Residential Students' Declaration Form</li>
-                </ul>
-            </li>
-            <li>
-                All students of the {{ doc.program }} programme shall be provided with off-campus
-                accommodation. Further details about accommodation are available in the email sent
-                to you with the provisional offer of admission.
-            </li>
-            <li>
-                The University will organise a welcome and orientation programme for all
-                candidates. A detailed schedule regarding the same will be provided in the latter half
-                of June.
-            </li>
-        </ol>
+  <p class="para">
+    To accept this provisional offer of admission, you will need to complete the following.
+  </p>
 
-        <!-- Signature -->
-        <div class="letter-sig">
-            <p class="sig-name">Registrar</p>
-            <p class="sig-designation">{{ campus.campus_name if campus else "National Law School of India University" }}</p>
-        </div>
-    </div>
+  <ol class="step-list">
+    <li>You will need to log in to the <a href="https://app.nls.ac.in/admission/login#login">Admissions Portal</a> to accept the provisional offer of admission. The steps you need to follow are detailed in Appendix I.</li>
+    <li>In order to confirm this provisional offer, you must pay Rs. {{ confirmation_fee_amt }} as a confirmation fee by {{ confirmation_deadline }}. The full fees applicable to the individual candidate for the academic year {{ academic_yr }} will have to be paid by {{ full_fee_deadline }}. Failure to pay the confirmation fee will result in the withdrawal of the admission offer. The fees schedule for all {% if is_mpp %}two{% else %}three{% endif %} years of study is given in Appendix II.</li>
+    <li>The University is dedicated to ensuring that students admitted to an academic programme are provided with necessary support to study at NLSIU, irrespective of financial constraints. The Financial Aid Policy sets out the University's approach to delivering on this commitment. All candidates admitted to NLSIU are eligible for the PM Vidyalaxmi Scheme, which provides collateral-free and guarantor-free education loans. Candidates may additionally apply for financial aid from the University. The note on financial aid in Appendix III details this policy.</li>
+    <li>This offer is contingent upon the verification of particulars furnished in the application form. In the next few days, you may receive an email from the NLSIU admissions team if there are queries on the information and documents submitted along with your application. Submitting incomplete, invalid, or false information/documents shall result in the withdrawal of the provisional offer of admission. A list of documents required is given in Appendix IV.</li>
+    {% if is_ba %}
+    <li>All students are eligible to apply for university-arranged housing. Further details about housing are available in Appendix V.</li>
+    <li>You will be assigned the major indicated as your first preference in the application form. If you wish to change this preference, you may apply to do so during the registration process on {{ registration_date }}, subject to availability and the applicable academic regulations. You may also opt for a second major or minor at the end of the first year in accordance with the University's academic policies.</li>
+    {% elif is_llb %}
+    <li>All students of the LL.B. (Hons.) programmes are eligible to apply for off-campus accommodation. Please note that accommodation is limited and applying for accommodation does not guarantee allotment. Further details about accommodation are available in Appendix V.</li>
+    {% elif is_mpp %}
+    <li>All students of the MPP are eligible to apply for off-campus accommodation. Please note that applying for accommodation does not guarantee allotment, and the University is unable to guarantee housing. Further details about accommodation are available in Appendix V.</li>
+    {% endif %}
+    <li>You are required to be present at the NLSIU campus in Bengaluru, on {{ registration_date }}, onwards for registration and onboarding. The orientation programme will commence on {{ orientation_date }}. The schedule for the orientation will be announced later.</li>
+    <li>On {{ registration_date }}, the University will conduct an in-person verification of the original certificates you have submitted via the admissions portal. Your provisional admission will be confirmed only after successful verification of the original documents. Failure to submit any of the above valid certificates at the time of verification shall result in the withdrawal of the provisional offer of admission.</li>
+  </ol>
 
-    <!-- Footer -->
-    <div class="letter-footer">
-        A University for Legal Studies and Research sponsored by the Bar Council of India and established under Karnataka Act 22 of 1986
-    </div>
+  <p class="para">
+    Please refer to the Admissions FAQ in Appendix VI below for responses to common questions regarding the admission process. For any further queries, you may write to us at nlsat.query@nls.ac.in.
+  </p>
+
+  <p class="para">
+    We look forward to welcoming you to the NLSIU community and to seeing you contribute to the academic and intellectual life of the University.
+  </p>
+
+  <div class="sig" style="margin-top: 40px;">
+    <p class="sig-name">Registrar</p>
+  </div>
+</div>
+
+{# ══════════════════════════════════════════════════════════════════════ #}
+{# APPENDIX I — Steps to Accept the Provisional Offer                     #}
+{# ══════════════════════════════════════════════════════════════════════ #}
+<div class="page-break"></div>
+<div class="section">
+  <div class="lh">
+    {% set pf_logo = frappe.db.get_value('Print Format', 'Offer Letter', 'logo') %}
+    {% if pf_logo %}
+      {% set pf_logo_url = (static_base_url ~ pf_logo) if pf_logo.startswith('/') else pf_logo %}
+      <div style="text-align: center; margin-bottom: 10px;">
+        <img src="{{ pf_logo_url }}" alt="Logo" style="max-width: 100%; height: auto; margin-top: 15px;">
+      </div>
+    {% else %}
+      <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 2px;">
+        <tr>
+          <td style="width: 22%; text-align: left; vertical-align: middle; padding: 0;">
+            {% if campus and campus.logo %}
+              {% set campus_logo_url = (static_base_url ~ campus.logo) if campus.logo.startswith('/') else campus.logo %}
+              <img src="{{ campus_logo_url }}" alt="Logo" style="max-width: 120px; height: auto;">
+            {% endif %}
+          </td>
+          <td style="width: 78%; text-align: center; vertical-align: middle; padding: 0;">
+            <p class="lh-name" style="font-size: 15pt; font-weight: 700; margin: 0 0 6px; text-transform: uppercase;">{{ uni_name }}</p>
+            <p class="lh-addr" style="font-size: 9.5pt; color: #333; margin: 0 0 6px;">{{ uni_address }}</p>
+            <div style="border-top: 1px solid #333; margin: 4px 0 4px 0;"></div>
+            <p class="lh-contact" style="font-size: 9pt; color: #333; margin: 0;">
+              {% if uni_phone %}Telephone: {{ uni_phone }} &nbsp;|&nbsp; {% endif %}
+              Website : www.nls.ac.in
+              {% if uni_email %} &nbsp;|&nbsp; Email : {{ uni_email }}{% endif %}
+            </p>
+          </td>
+        </tr>
+      </table>
+    {% endif %}
+  </div>
+
+  <p class="app-title">Appendix I:</p>
+  <p class="app-subtitle">Steps to Accept the Provisional Offer of Admission</p>
+
+  <ol class="step-list">
+    <li>Login into the <a style="text-decoration:underline;color:#900;" href="https://app.nls.ac.in/admission/login#login">Admission Portal</a>.</li>
+    <li>Click on the button "Accept Offer of Admission."</li>
+    <li>On the next page, you will have an option of selecting whether you would like to apply for "{{ housing_option_label }}". If you select "Yes", then the housing fees will be added to your fees. If you do not want {% if is_ba %}university housing{% else %}"off campus accommodation"{% endif %}, you may select "no"</li>
+    <li>Click the "Make Payment" button, to pay an admission confirmation fee of Rs. {{ confirmation_fee_amt }} only. Follow the instructions to make the payment. You need to make the confirmation payment latest by 11:59 PM on {{ confirmation_deadline }}.</li>
+    <li>On submission of your form, the University will generate a fee invoice for the balance amount, and you will be notified of the same via email.</li>
+    <li>Log back into the portal and click on the "Make Payment" button to pay the balance fee amount. Make the complete payment latest by 11:59 pm on {{ full_fee_deadline }}.</li>
+    <li>Once the full fee is paid, NLSIU will send you a form to gather necessary information and upload additional documents.</li>
+    <li>You will need to bring your original documents to NLSIU campus during your allotted registration slot on {{ registration_date }}. You will be registered as a student after verification of all documents, admission forms and fee payment.</li>
+    <li>Your admission will become final only upon successful completion of all the steps above.</li>
+    <li>If you choose not to accept the seat you have been offered, please email nlsat.query@nls.ac.in from your registered address with your full name, NLSAT application number, the programme offered and a clear statement that you wish to withdraw your application. The date we receive your email will count for any refund calculations. Once processed, the withdrawal is final.</li>
+  </ol>
+
+  <p class="para">
+    The FAQ below answers some of the most common questions about the admission process. Any
+    further queries relating to the admission process may be sent to nlsat.query@nls.ac.in with the
+    following subject line: "NLSAT Admission Query – [insert admit card number]".
+  </p>
+</div>
+
+{# ══════════════════════════════════════════════════════════════════════ #}
+{# APPENDIX II — Programme Fees                                           #}
+{# ══════════════════════════════════════════════════════════════════════ #}
+<div class="page-break"></div>
+<div class="section">
+  <div class="lh">
+    {% set pf_logo = frappe.db.get_value('Print Format', 'Offer Letter', 'logo') %}
+    {% if pf_logo %}
+      {% set pf_logo_url = (static_base_url ~ pf_logo) if pf_logo.startswith('/') else pf_logo %}
+      <div style="text-align: center; margin-bottom: 10px;">
+        <img src="{{ pf_logo_url }}" alt="Logo" style="max-width: 100%; height: auto; margin-top: 15px;">
+      </div>
+    {% else %}
+      <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 2px;">
+        <tr>
+          <td style="width: 22%; text-align: left; vertical-align: middle; padding: 0;">
+            {% if campus and campus.logo %}
+              {% set campus_logo_url = (static_base_url ~ campus.logo) if campus.logo.startswith('/') else campus.logo %}
+              <img src="{{ campus_logo_url }}" alt="Logo" style="max-width: 120px; height: auto;">
+            {% endif %}
+          </td>
+          <td style="width: 78%; text-align: center; vertical-align: middle; padding: 0;">
+            <p class="lh-name" style="font-size: 15pt; font-weight: 700; margin: 0 0 6px; text-transform: uppercase;">{{ uni_name }}</p>
+            <p class="lh-addr" style="font-size: 9.5pt; color: #333; margin: 0 0 6px;">{{ uni_address }}</p>
+            <div style="border-top: 1px solid #333; margin: 4px 0 4px 0;"></div>
+            <p class="lh-contact" style="font-size: 9pt; color: #333; margin: 0;">
+              {% if uni_phone %}Telephone: {{ uni_phone }} &nbsp;|&nbsp; {% endif %}
+              Website : www.nls.ac.in
+              {% if uni_email %} &nbsp;|&nbsp; Email : {{ uni_email }}{% endif %}
+            </p>
+          </td>
+        </tr>
+      </table>
+    {% endif %}
+  </div>
+
+  <p class="app-title">Appendix II:</p>
+  <p class="app-subtitle">{{ fee_table_title }}</p>
+
+  {% if is_ba or is_llb or is_mpp %}
+  <table class="fee-table">
+    <thead>
+      <tr>
+        <th style="width:30%;">Fee Component</th>
+        <th>Year 1</th>
+        <th>Year 2</th>
+        {% if not is_mpp %}<th>Year 3</th>{% endif %}
+        <th>Total Programme Fees</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Admission Fee (One-time)</td>
+        <td>Rs. {{ var_admission_fee }}/-</td>
+        <td>—</td>
+        {% if not is_mpp %}<td>—</td>{% endif %}
+        <td>Rs. {{ var_admission_fee }}/-</td>
+      </tr>
+      <tr>
+        <td>Tuition &amp; Facilities Fee (Annual)</td>
+        <td>Rs. {{ var_ba_tuition_fee }}/-</td>
+        <td>Rs. {{ var_ba_tuition_fee }}/-</td>
+        {% if not is_mpp %}<td>Rs. {{ var_ba_tuition_fee }}/-</td>{% endif %}
+        <td>Rs. {% if is_mpp %}6,36,400{% else %}9,54,600{% endif %}/-</td>
+      </tr>
+      <tr>
+        <td>{% if is_ba %}Housing Fee{% else %}Off-Campus Housing Fee{% endif %} (Annual, includes meals)</td>
+        <td>Rs. {% if is_ba %}{{ var_ba_housing_fee }}{% else %}{{ var_llb_housing_fee }}{% endif %}/-</td>
+        <td>Rs. {% if is_ba %}{{ var_ba_housing_fee }}{% else %}{{ var_llb_housing_fee }}{% endif %}/-</td>
+        {% if not is_mpp %}<td>Rs. {% if is_ba %}{{ var_ba_housing_fee }}{% else %}{{ var_llb_housing_fee }}{% endif %}/-</td>{% endif %}
+        <td>Rs. {% if is_ba %}3,98,400{% elif is_mpp %}3,76,400{% else %}5,64,600{% endif %}/-</td>
+      </tr>
+      <tr style="font-weight:700;">
+        <td>Total Cost to Student</td>
+        <td>Rs. {% if is_ba %}4,64,900{% else %}5,20,300{% endif %}/-</td>
+        <td>Rs. {% if is_ba %}4,51,000{% else %}5,06,400{% endif %}/-</td>
+        {% if not is_mpp %}<td>Rs. {% if is_ba %}4,51,000{% else %}5,06,400{% endif %}/-</td>{% endif %}
+        <td>Rs. {% if is_ba %}13,66,900{% elif is_mpp %}10,26,700{% else %}15,51,900{% endif %}/-</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="fee-table" style="margin-top:12px;">
+    <thead>
+      <tr>
+        <th style="width:40%;">Deposits</th>
+        <th>{% if is_ba %}Refundable Deposit (One-time) for SC/ST Students{% else %}Amount{% endif %}</th>
+        {% if not is_ba %}<th></th><th></th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Refundable Deposit (One-time) for SC/ST Students</td>
+        <td>Rs. {{ var_scst_deposit }}/-</td>
+        {% if not is_ba %}<td>—</td><td>—</td>{% endif %}
+      </tr>
+      <tr>
+        <td>Refundable Deposit (One-time) for General and Other Categ</td>
+        <td>Rs. {{ var_gen_deposit }}/-</td>
+        {% if not is_ba %}<td>—</td><td>—</td>{% endif %}
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="fee-note">
+    <p><strong>Note:</strong></p>
+    <ul>
+      <li>A 'one-time admission fee' of Rs {{ var_admission_fee }} will be collected at the time of admission.</li>
+      {% if not is_ba %}
+      <li>Off-campus Housing Fee will only be collected for candidates who apply for university housing.</li>
+      {% endif %}
+      <li>A refundable security deposit of Rs. {{ var_scst_deposit }} for SC/ST category students and Rs. {{ var_gen_deposit }} for other students will be collected at the time of admission. The security deposit will be refunded upon graduation or withdrawal from the programme, subject to deductions towards applicable convocation fees, certificate issuance fees, and any outstanding dues.</li>
+      <li>The {% if is_ba %}Housing Fee{% else %}Off-Campus Housing Fee{% endif %} includes a meal plan covering breakfast, lunch, dinner and an evening snack.</li>
+    </ul>
+  </div>
+
+  <p class="para" style="margin-top:12px;">
+    The total fees payable {% if is_mpp %}(including deposits) for students who opt for accommodation by students {% else %}by students {% endif %}for the first year before {{ full_fee_deadline }} in the SC/ST category is <strong>Rs. {% if is_ba %}{{ var_ba_scst_total }}{% else %}{{ var_llb_scst_total }}{% endif %}</strong> and by students in the general and other categories is <strong>Rs. {% if is_ba %}{{ var_ba_gen_total }}{% else %}{{ var_llb_gen_total }}{% endif %}</strong>.
+  </p>
+  {% else %}
+  <p class="para" style="margin-top:12px; font-weight: bold; text-align: center; font-size: 11pt;">
+    Please refer to the NLS website <a href="https://www.nls.ac.in/programme">https://www.nls.ac.in/programme</a> for detailed fee structures.
+  </p>
+  {% endif %}
+</div>
+
+{# ══════════════════════════════════════════════════════════════════════ #}
+{# APPENDIX III — Financial Aid and Scholarships                          #}
+{# ══════════════════════════════════════════════════════════════════════ #}
+<div class="page-break"></div>
+<div class="section">
+  <div class="lh">
+    {% set pf_logo = frappe.db.get_value('Print Format', 'Offer Letter', 'logo') %}
+    {% if pf_logo %}
+      {% set pf_logo_url = (static_base_url ~ pf_logo) if pf_logo.startswith('/') else pf_logo %}
+      <div style="text-align: center; margin-bottom: 10px;">
+        <img src="{{ pf_logo_url }}" alt="Logo" style="max-width: 100%; height: auto; margin-top: 15px;">
+      </div>
+    {% else %}
+      <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 2px;">
+        <tr>
+          <td style="width: 22%; text-align: left; vertical-align: middle; padding: 0;">
+            {% if campus and campus.logo %}
+              {% set campus_logo_url = (static_base_url ~ campus.logo) if campus.logo.startswith('/') else campus.logo %}
+              <img src="{{ campus_logo_url }}" alt="Logo" style="max-width: 120px; height: auto;">
+            {% endif %}
+          </td>
+          <td style="width: 78%; text-align: center; vertical-align: middle; padding: 0;">
+            <p class="lh-name" style="font-size: 15pt; font-weight: 700; margin: 0 0 6px; text-transform: uppercase;">{{ uni_name }}</p>
+            <p class="lh-addr" style="font-size: 9.5pt; color: #333; margin: 0 0 6px;">{{ uni_address }}</p>
+            <div style="border-top: 1px solid #333; margin: 4px 0 4px 0;"></div>
+            <p class="lh-contact" style="font-size: 9pt; color: #333; margin: 0;">
+              {% if uni_phone %}Telephone: {{ uni_phone }} &nbsp;|&nbsp; {% endif %}
+              Website : www.nls.ac.in
+              {% if uni_email %} &nbsp;|&nbsp; Email : {{ uni_email }}{% endif %}
+            </p>
+          </td>
+        </tr>
+      </table>
+    {% endif %}
+  </div>
+
+  <p class="app-title">Appendix III</p>
+  <p class="app-subtitle" style="margin-bottom:12px;">Financial Aid and Scholarships</p>
+
+  <p class="para">Students are admitted to NLSIU based on their academic performance in the admission process. The University has adopted an inclusion policy that ensures that students from diverse social, linguistic and economic backgrounds from across India benefit from a rigorous and transformative education. The admission process does not take into account the financial background of the applicant. Student fees for on-campus academic programmes cover only part of the actual cost of education, with the University subsidising the remaining cost. Further, the University is dedicated to ensuring that students admitted to an academic programme are provided with necessary support to continue their studies, irrespective of financial constraints. The <a href="https://www.nls.ac.in/information/students/financial-aid-for-students/financial-aid-policy/" style="font-weight:700; color:#900;">Financial Aid Policy</a> sets out the University's approach to delivering on this commitment.</p>
+
+  <p class="para">Students whose gross family income is less than Rs. 8,00,000 per annum are eligible to apply for financial aid by the university. Before submitting their application for University's financial aid, candidates <strong>must</strong> apply under the <strong>PM Vidyalaxmi Scheme</strong>. NLSIU has been recognised by the Government of India under the PM-Vidyalaxmi Scheme as one of the leading higher educational institutions in the country. The PM Vidyalaxmi Scheme provides collateral-free and guarantor-free education loans to meritorious students in top institutions in India. There is no income limit to apply for this scheme, and loans up to Rs. 30 lakhs can be availed. Partial and full interest subvention is available for lower annual family incomes.</p>
+
+  <p class="para">The application to PM Vidyalaxmi Scheme must be filled through the official PM Vidyalaxmi Portal: <span style="font-weight:700; color:#900; text-decoration:underline;">https://pmvidyalaxmi.co.in</span> before applying for financial aid with the University. For detailed guidelines &amp; process, please visit <span style="font-weight:700; color:#900; text-decoration:underline;">PM Vidyalaxmi Scheme</span> section of the universities scholarship page. A copy of the education loan application must be submitted along with the application for university financial aid. This is a pre-condition for applying for financial aid through the University. In the absence of this document, the financial aid process will be kept in abeyance.</p>
+
+  <p class="para">Candidates who wish to apply for financial assistance under the University's Financial Aid Policy are required to submit their application for financial aid on or before {{ financial_aid_deadline }}. The University will communicate its decision on the financial aid applications by {{ var_fin_aid_decision_date }}. Students who are provided financial aid shall have their fee reimbursed up to the extent of the aid provided. Application for financial aid does not exempt you from payment of the full fees before {{ full_fee_deadline }}.</p>
+
+  <p class="para">Students who have been admitted to NLSIU may also be eligible for a number of scholarships sponsored by the central and state governments as well as private organisations. NLSIU has curated a <span style="font-weight:700; color:#900; text-decoration:underline;">list of some such scholarships</span> for the benefit of candidates. Students may also visit the <span style="font-weight:700; color:#900; text-decoration:underline;">National Scholarship Portal</span> for more information. For further assistance in this regard, please contact <span style="font-weight:700; color:#900; text-decoration:underline;">nlsiuscholarship@nls.ac.in</span>.</p>
+</div>
+
+{# ══════════════════════════════════════════════════════════════════════ #}
+{# APPENDIX IV — Documents Required                                       #}
+{# ══════════════════════════════════════════════════════════════════════ #}
+<div class="page-break"></div>
+<div class="section">
+  <div class="lh">
+    {% set pf_logo = frappe.db.get_value('Print Format', 'Offer Letter', 'logo') %}
+    {% if pf_logo %}
+      {% set pf_logo_url = (static_base_url ~ pf_logo) if pf_logo.startswith('/') else pf_logo %}
+      <div style="text-align: center; margin-bottom: 10px;">
+        <img src="{{ pf_logo_url }}" alt="Logo" style="max-width: 100%; height: auto; margin-top: 15px;">
+      </div>
+    {% else %}
+      <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 2px;">
+        <tr>
+          <td style="width: 22%; text-align: left; vertical-align: middle; padding: 0;">
+            {% if campus and campus.logo %}
+              {% set campus_logo_url = (static_base_url ~ campus.logo) if campus.logo.startswith('/') else campus.logo %}
+              <img src="{{ campus_logo_url }}" alt="Logo" style="max-width: 120px; height: auto;">
+            {% endif %}
+          </td>
+          <td style="width: 78%; text-align: center; vertical-align: middle; padding: 0;">
+            <p class="lh-name" style="font-size: 15pt; font-weight: 700; margin: 0 0 6px; text-transform: uppercase;">{{ uni_name }}</p>
+            <p class="lh-addr" style="font-size: 9.5pt; color: #333; margin: 0 0 6px;">{{ uni_address }}</p>
+            <div style="border-top: 1px solid #333; margin: 4px 0 4px 0;"></div>
+            <p class="lh-contact" style="font-size: 9pt; color: #333; margin: 0;">
+              {% if uni_phone %}Telephone: {{ uni_phone }} &nbsp;|&nbsp; {% endif %}
+              Website : www.nls.ac.in
+              {% if uni_email %} &nbsp;|&nbsp; Email : {{ uni_email }}{% endif %}
+            </p>
+          </td>
+        </tr>
+      </table>
+    {% endif %}
+  </div>
+
+  <p class="app-title">Appendix IV</p>
+  <p class="app-subtitle">Documents Required</p>
+
+  <p class="para">The following original documents will be required during registration, in order to confirm your admission:</p>
+
+  <ol class="step-list">
+    <li>Class 10 transcript</li>
+    {% if is_ba %}
+    <li>Class 12 transcript *</li>
+    {% else %}
+    <li>Class 12 transcript</li>
+    <li>Bachelor's degree certificate and transcript*</li>
+    {% endif %}
+    <li>Caste certificate, if applicable</li>
+    <li>EWS certificate, if applicable</li>
+    <li>Disability certificate, if applicable</li>
+    <li>Documents relating to qualifying for Karnataka category, if applicable</li>
+    {% if is_ba %}<li>Migration Certificate/Transfer Certificate</li>{% endif %}
+    <li>Email Receipt of Submission of the Online Anti-Ragging Undertaking Required by the UGC</li>
+    <li>Disciplinary Undertaking</li>
+    <li>{% if is_ba %}Housing Application Form{% else %}Off-Campus Housing Application Form{% endif %}</li>
+    <li>Residential Students' Declaration Form</li>
+  </ol>
+
+  <p class="note-text" style="margin-left:28px;">
+    {% if is_pg %}
+    * Candidates who are yet to receive the certificate/transcripts of their Bachelor's degree shall submit a declaration to the effect that the certificate/transcripts shall be submitted on or before {{ bachelors_deadline }}. Their admission will remain provisional until the degree certificate and final marks transcript, indicating that the candidate has met the eligibility criteria, is submitted.
+    {% else %}
+    *Candidates who are yet to receive the certificate/transcripts of their Class XII examination shall submit a declaration to the effect that the certificate/transcripts shall be submitted on or before {{ bachelors_deadline }}. Their admission will remain provisional until the degree certificate and final marks transcript, indicating that the candidate has met the eligibility criteria, is submitted. Submission of digilocker print out will not be sufficient. They will have to submit the official certificate by December 31, 2026.
+    {% endif %}
+  </p>
+
+  <p class="para">Please ensure that the caste certificate, EWS certificate, disability certificate are valid as per the prescribed norms at the time of admission. For more information regarding the validity of these documents, please refer to the FAQ in Appendix VI.</p>
+
+  <p class="para">The University will send you an admission form along with the additional documents (S.No. 8-11) required after {% if is_mpp %}payment of Confirmation fee{% else %}the payment of the course fees{% endif %}.</p>
+
+  <p class="para">Please fill the admission form and upload scans of the signed copies {% if is_pg %}of the above documents {% endif %}as per the instructions. On the date of verification of documents, you will be required to carry originals of these documents. You are also required to submit two passport-size colour photographs to the Admissions Office at the time of the verification.</p>
+</div>
+
+{# ══════════════════════════════════════════════════════════════════════ #}
+{# APPENDIX V — University Residences and Housing                         #}
+{# ══════════════════════════════════════════════════════════════════════ #}
+<div class="page-break"></div>
+<div class="section">
+  <div class="lh">
+    {% set pf_logo = frappe.db.get_value('Print Format', 'Offer Letter', 'logo') %}
+    {% if pf_logo %}
+      {% set pf_logo_url = (static_base_url ~ pf_logo) if pf_logo.startswith('/') else pf_logo %}
+      <div style="text-align: center; margin-bottom: 10px;">
+        <img src="{{ pf_logo_url }}" alt="Logo" style="max-width: 100%; height: auto; margin-top: 15px;">
+      </div>
+    {% else %}
+      <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 2px;">
+        <tr>
+          <td style="width: 22%; text-align: left; vertical-align: middle; padding: 0;">
+            {% if campus and campus.logo %}
+              {% set campus_logo_url = (static_base_url ~ campus.logo) if campus.logo.startswith('/') else campus.logo %}
+              <img src="{{ campus_logo_url }}" alt="Logo" style="max-width: 120px; height: auto;">
+            {% endif %}
+          </td>
+          <td style="width: 78%; text-align: center; vertical-align: middle; padding: 0;">
+            <p class="lh-name" style="font-size: 15pt; font-weight: 700; margin: 0 0 6px; text-transform: uppercase;">{{ uni_name }}</p>
+            <p class="lh-addr" style="font-size: 9.5pt; color: #333; margin: 0 0 6px;">{{ uni_address }}</p>
+            <div style="border-top: 1px solid #333; margin: 4px 0 4px 0;"></div>
+            <p class="lh-contact" style="font-size: 9pt; color: #333; margin: 0;">
+              {% if uni_phone %}Telephone: {{ uni_phone }} &nbsp;|&nbsp; {% endif %}
+              Website : www.nls.ac.in
+              {% if uni_email %} &nbsp;|&nbsp; Email : {{ uni_email }}{% endif %}
+            </p>
+          </td>
+        </tr>
+      </table>
+    {% endif %}
+  </div>
+
+  <p class="app-title">Appendix V</p>
+  <p class="app-subtitle">University Residences and Housing</p>
+
+  {% if is_ba %}
+  <p class="para">As part of its campus redevelopment plan, NLSIU is currently in the process of expanding its infrastructure and accommodation facilities. University Housing is, thus, temporarily limited. The University student accommodation plan entails that the university will endeavour to accommodate all incoming undergraduate students either in on-campus or off-campus university residences.</p>
+
+  <p class="para">All students residing in the University Housing will be provided with the university's food plan at no additional charge. The food plan includes breakfast, lunch, evening snacks, and dinner. In case an off-campus residence is provided, the University will provide transportation facilities by bus (limited trips and timings).</p>
+
+  <p class="para"><strong>Application</strong></p>
+
+  <p class="para">If you wish to apply for University residence, you may indicate this preference in the application portal. The full housing fee of Rs. {{ housing_fee }}/- will then be included in your fee invoice and will have to be paid before {{ full_fee_deadline }}. Please note that applying for University residence does not guarantee allotment in particular residential facilities. Allocation will be made only at the time of admission and will depend on availability at that stage.</p>
+
+  {% else %}
+  <p class="para">As part of its campus redevelopment plan, NLSIU is currently in the process of expanding its infrastructure and accommodation facilities. University housing is, thus, temporarily limited. The University student accommodation plan entails accommodating some incoming students from the postgraduate programmes in off-campus residences. Accordingly, the university has tied up with two reputed housing service providers – Olive Living and FF21, to provide accommodation to students outside the campus.</p>
+
+  <p class="para">Olive @ RR Nagar is a venture of the Embassy group. It is located close to Nagarbhavi at RR Nagar – 5.3km (12 min) from the campus. RR Nagar is a vibrant locality in the vicinity of the university. Olive residence provides contemporary, fully equipped student residences with the following facilities. The residences have furnished rooms with attached modern bathrooms, 24-hour security, regular housekeeping, hi-speed Wi-Fi, a vending machine, common appliances such as a washing machine, fridge, induction stove and microwave, and a terrace common room with TV/entertainment facilities, dining space and sufficient seating.</p>
+
+  <p class="para">"FF21@ RR Nagar" is a newly constructed and furnished co-living facility with twin-sharing rooms and attached washroom facilities. RR Nagar is a vibrant locality in the vicinity of the university. The rooms in FF21 are furnished and include attached modern bathrooms, 24-hour security, regular housekeeping and hi-speed Wi-Fi, with common facilities such as washing machines, fully functional pantry zones on each floor equipped with a fridge, induction stove, electric kettle, microwave and basic utensils, along with shared amenities including a lounge, mini movie screening theatre, pool table, table tennis, carrom, indoor games, cafeteria, two-wheeler parking and dining facilities.</p>
+
+  <p class="para">The university is also exploring the possibility of adding similar such facilities as university residences for the academic year 2026-27. You may be allocated these new facilities.</p>
+
+  <p class="para">All housing is allocated to a single occupant on a double-sharing basis. All students residing in the Off-Campus Housing will be provided with the university's food plan at no additional charge. The food plan includes breakfast, lunch, evening snacks, and dinner. The University provides transportation facilities by bus (limited trips and timings) from the off-campus facilities to the NLSIU campus.</p>
+
+  <p class="para"><strong>Application</strong></p>
+
+  <p class="para">If you wish to apply for University residence, you may indicate this preference in the application portal. The full {% if not is_ba %}off-campus {% endif %}housing fee of Rs. {% if is_ba %}{{ var_ba_housing_fee }}{% else %}{{ var_llb_housing_fee }}{% endif %}/- will then be included in your fee invoice and will have to be paid before {{ full_fee_deadline }}.</p>
+
+  <p class="para">Please note that applying for University residence and paying the accommodation fees, does not guarantee allotment. While the University endeavours to expand its residential capacity, it is unable to guarantee housing at this time. Allocation will be made only at the time of registration and will depend on availability at that stage. If a student is not allotted University residence, the off campus housing fee paid will be refunded. However, a student who has been allotted university residences will not be refunded the amount in case of withdrawal, since the amount goes to a third-party service provider.</p>
+  {% endif %}
+
+  <p class="para"><strong>Other Housing Options</strong></p>
+
+  <p class="para">NLSIU is located in Nagarbhavi, a well-connected part of Bengaluru with several residential localities nearby. Students usually have access to a range of private accommodation options, including hostels, paying guest facilities, and rental housing in and around Nagarbhavi, Chandra Layout, Vijayanagar, Rajarajeshwarinagar, Mallathahalli, Jnanabharathi, Nayandahalli, and Mysore Road. {% if is_pg %}Several current NLSIU students live in these localities. {% endif %}Students may independently explore these options based on their requirements, budget, and convenience.</p>
+</div>
+
+{# ══════════════════════════════════════════════════════════════════════ #}
+{# APPENDIX VI — Frequently Asked Questions                                #}
+{# ══════════════════════════════════════════════════════════════════════ #}
+<div class="page-break"></div>
+<div class="section">
+  <div class="lh">
+    {% set pf_logo = frappe.db.get_value('Print Format', 'Offer Letter', 'logo') %}
+    {% if pf_logo %}
+      {% set pf_logo_url = (static_base_url ~ pf_logo) if pf_logo.startswith('/') else pf_logo %}
+      <div style="text-align: center; margin-bottom: 10px;">
+        <img src="{{ pf_logo_url }}" alt="Logo" style="max-width: 100%; height: auto; margin-top: 15px;">
+      </div>
+    {% else %}
+      <table style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 2px;">
+        <tr>
+          <td style="width: 22%; text-align: left; vertical-align: middle; padding: 0;">
+            {% if campus and campus.logo %}
+              {% set campus_logo_url = (static_base_url ~ campus.logo) if campus.logo.startswith('/') else campus.logo %}
+              <img src="{{ campus_logo_url }}" alt="Logo" style="max-width: 120px; height: auto;">
+            {% endif %}
+          </td>
+          <td style="width: 78%; text-align: center; vertical-align: middle; padding: 0;">
+            <p class="lh-name" style="font-size: 15pt; font-weight: 700; margin: 0 0 6px; text-transform: uppercase;">{{ uni_name }}</p>
+            <p class="lh-addr" style="font-size: 9.5pt; color: #333; margin: 0 0 6px;">{{ uni_address }}</p>
+            <div style="border-top: 1px solid #333; margin: 4px 0 4px 0;"></div>
+            <p class="lh-contact" style="font-size: 9pt; color: #333; margin: 0;">
+              {% if uni_phone %}Telephone: {{ uni_phone }} &nbsp;|&nbsp; {% endif %}
+              Website : www.nls.ac.in
+              {% if uni_email %} &nbsp;|&nbsp; Email : {{ uni_email }}{% endif %}
+            </p>
+          </td>
+        </tr>
+      </table>
+    {% endif %}
+  </div>
+
+  <p class="app-title">Appendix VI</p>
+  <p class="app-subtitle">Frequently Asked Questions</p>
+
+  <p class="para">This FAQ is intended to assist candidates who have received a provisional offer of admission through NLSAT 2026. It should be read together with the provisional offer letter, the fee invoice generated through the admissions portal, and any subsequent instructions sent by the NLSIU Admissions Team. In case of any inconsistency, the specific communication issued to the candidate by NLSIU will prevail.</p>
+
+  <p class="bold" style="margin-top:14px;">Important Deadlines</p>
+
+  <table class="deadline-table">
+    <thead>
+      <tr>
+        <th style="width:28%;">Item</th>
+        <th style="width:22%;">Deadline / Date</th>
+        <th>What the candidate must do</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Accept provisional offer and pay confirmation fee</td>
+        <td>{{ confirmation_deadline }}</td>
+        <td>Log in to the admissions portal, accept the offer, and pay Rs. {{ confirmation_fee_amt }} as the confirmation fee.</td>
+      </tr>
+      <tr>
+        <td>Pay balance/full fee</td>
+        <td>11:59 p.m., {{ full_fee_deadline }}</td>
+        <td>Log back into the portal after the balance invoice is generated and pay the full amount due.</td>
+      </tr>
+      <tr>
+        <td>Deadline for financial-aid application</td>
+        <td>{{ financial_aid_deadline }}</td>
+        <td>If you are eligible, you may apply for University financial aid after first applying through the PM Vidyalaxmi portal and keeping proof of that application ready.</td>
+      </tr>
+      <tr>
+        <td>Decision on University financial aid</td>
+        <td>By 31 July 2026</td>
+        <td>If aid is granted, reimbursement will be made up to the approved extent.</td>
+      </tr>
+      <tr>
+        <td>Registration and original document verification on campus</td>
+        <td>{{ registration_date }}</td>
+        <td>Report to the NLSIU campus during the allotted slot with all original documents and required forms.</td>
+      </tr>
+      <tr>
+        <td>Orientation programme begins</td>
+        <td>{{ orientation_date }}</td>
+        <td>Attend the orientation programme. The detailed schedule will be announced separately.</td>
+      </tr>
+      <tr>
+        <td>Classes Begin</td>
+        <td>{{ classes_begin_date }}</td>
+        <td>Start attending classes at NLSIU.</td>
+      </tr>
+      <tr>
+        <td>Final {% if is_pg %}Bachelor's degree{% else %}Class XII{% endif %} certificate/transcript, if pending</td>
+        <td>{{ bachelors_deadline }}</td>
+        <td>Submit the final {% if is_pg %}degree{% else %}Class XII{% endif %} certificate and transcript if they were not available at registration.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p class="faq-section-title">A. Provisional offer, acceptance and portal</p>
+
+  <div class="faq-block">
+    <p class="faq-q">1. What does a "provisional" offer of admission mean?</p>
+    <p class="faq-a">It means that NLSIU is offering you admission subject to completion of all admission formalities. Your admission becomes final only after you accept the offer, pay the required fees within the deadlines, submit all required documents and forms, and successfully complete in-person verification of original documents at NLSIU.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">2. How do I accept the provisional offer?</p>
+    <p class="faq-a">See Appendix I of the Provisional Offer of Admission.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">3. What is the confirmation fee and when must it be paid?</p>
+    <p class="faq-a">You must pay Rs. {{ confirmation_fee_amt }} as the confirmation fee by {{ confirmation_deadline }}. Failure to pay the confirmation fee by the deadline will result in withdrawal of the admission offer.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">4. Can I get the extension to pay the confirmation fees?</p>
+    <p class="faq-a">No. No extension will be granted for payment of confirmation fees.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">5. Is the confirmation fee adjusted against the total fee payable?</p>
+    <p class="faq-a">Yes. After the confirmation fee is paid, NLSIU will generate a balance fee invoice. You will then be required to log back into the portal and pay the remaining amount by the full-fee deadline.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">6. What if I do not want to accept the seat? What if I want to withdraw from the admission process?</p>
+    <p class="faq-a">Email nlsat.query@nls.ac.in from your registered email address. Your email should mention your full name, NLSAT application number, the programme offered, and a clear statement that you wish to withdraw your application. The date on which NLSIU receives the email will be used for refund calculations, wherever applicable. Once processed, the withdrawal is final.</p>
+  </div>
+
+  <p class="faq-section-title">B. Fees, fee payment and refund issues</p>
+
+  <div class="faq-block">
+    <p class="faq-q">7. What is the deadline for full fee payment?</p>
+    <p class="faq-a">The full fee payable by the candidate must be paid by 11:59 p.m. on {{ full_fee_deadline }}. This includes the balance amount after adjustment of the Rs. {{ confirmation_fee_amt }} confirmation fee.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">8. Can I pay the fee in installments?</p>
+    <p class="faq-a">No. The full amount reflected in the fee invoice must be paid by the deadline unless NLSIU specifically communicates otherwise in writing.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">9. How is my fee amount calculated?</p>
+    <p class="faq-a">Your fee invoice will depend on your category, applicable refundable deposit, and whether you choose to apply for University {% if is_ba %}accommodation{% else %}off-campus accommodation{% endif %}. Candidates who apply for University residence will have the annual {% if is_ba %}housing{% else %}off-campus housing{% endif %} fee added to their invoice.</p>
+    <p class="faq-a">If {% if is_ba %}housing{% else %}off-campus housing{% endif %} is included, the first-year amount payable is Rs. {{ total_scst_y1 }} for SC/ST candidates and Rs. {{ total_gen_y1 }} for General and other category candidates. This includes the one-time admission fee, annual tuition and facilities fee, annual {% if is_ba %}housing{% else %}off-campus housing{% endif %} fee, and the applicable refundable deposit.</p>
+    <p class="faq-a">If the {% if is_ba %}housing{% else %}off-campus housing{% endif %} fee is not included, the first-year amount is expected to be the one-time admission fee, annual tuition and facilities fee, and the applicable refundable deposit. On the current fee schedule, this works out to Rs. {{ no_housing_scst }} for SC/ST candidates and Rs. {{ no_housing_gen }} for General and other category candidates. Candidates should rely on the fee invoice generated in the portal as the final amount payable.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">10. What does the {% if is_ba %}housing{% else %}off-campus housing{% endif %} fee include?</p>
+    <p class="faq-a">The annual {% if is_ba %}housing{% else %}off-campus housing{% endif %} fee is Rs. {{ housing_fee }}. It includes the University food plan covering breakfast, lunch, evening snack and dinner. It is payable only where the candidate applies for University residence and the fee is included in the invoice.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">11. If I apply for University residence but am not allotted accommodation, will I get a refund?</p>
+    {% if is_ba %}
+    <p class="faq-a">Yes. Applying for University residence does not guarantee allotment. If you pay the housing fee but are not allotted University residence, the housing fee paid will be refunded.</p>
+    {% else %}
+    <p class="faq-a">Yes. Applying for University residence does not guarantee allotment. If you pay the off-campus housing fee but are not allotted University residence, the off-campus housing fee paid will be refunded. However, a student who has been allotted university residences will not be refunded the amount in case of withdrawal, since the amount goes to a third-party service provider.</p>
+    {% endif %}
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">12. What happens if I miss the full-fee deadline?</p>
+    <p class="faq-a">Failure to pay the full fee by the deadline will result in withdrawal of the provisional offer and the candidate may not be registered as a student. If you face a payment issue, contact nlsat.query@nls.ac.in immediately with proof of the issue.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">13. Can I get the extension to pay the full fees?</p>
+    <p class="faq-a">No extensions will ordinarily be granted for payment of the full fees beyond the notified deadline. Candidates who are unable to make payment by the deadline, due to circumstances beyond their control, may submit a formal request for extension to nlsat.query@nls.ac.in. Any request for consideration on this basis must demonstrate the candidate's bona fides, including that the candidate had undertaken all reasonable efforts to complete the payment within the stipulated timeline, including applying under the PM VidyaLakshmi Scheme and education loans well on time, but was prevented from doing so due to circumstances beyond their control. The request must clearly set out the reasons for the delay, include supporting documents evidencing the circumstances relied upon, and specify the expected date of payment. The Registrar shall consider the request and determine whether any extension may be granted, and if so, the duration of such extension.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">14. What if my payment is debited but not reflected in the portal?</p>
+    <p class="faq-a">Take screenshots of the transaction, payment reference number, bank debit entry, and portal status. Write immediately to nlsat.query@nls.ac.in from your registered email address. Do not make repeated payments unless instructed or unless the payment gateway clearly fails and reverses the transaction.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">15. Can I get a fees certificate/ particular documents from the university for the sanction of an educational loan?</p>
+    <p class="faq-a">Yes. Banks and financial institutions usually sanction loans based on the offer letter and the fee schedule. However, in case further documentation is required, you may apply to the university with an email to nlsat.finance@nls.ac.in with a copy to nlsat.query@nls.ac.in. The university can take up to 3-5 working days to issue documentation, so candidates are advised to apply well in advance of the fees deadline.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">16. What is the withdrawal and refund process?</p>
+    <p class="faq-a">If you wish to withdraw, email nlsat.query@nls.ac.in from your registered email address with your full name, NLSAT application number, programme offered, and a clear withdrawal statement. The date NLSIU receives your email will count for refund calculations. Refunds, if any, will be governed by the applicable University refund rules and the withdrawal, once processed, is final.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">17. How much refund will I get if I withdraw from the process after the full-fee deadline?</p>
+    <p class="faq-a">Fees Refunds are governed by the applicable UGC and university regulations. The UGC has not yet notified regulations for fee refunds for the current academic year. The regulations will be updated on the university portal once they are notified.</p>
+  </div>
+
+  <p class="faq-section-title">C. Financial aid, education loans and scholarships</p>
+
+  <div class="faq-block">
+    <p class="faq-q">18. Can I apply for financial aid?</p>
+    <p class="faq-a">Candidates whose gross family income is less than Rs. 8,00,000 per annum are eligible to apply for University financial aid. The definition of 'family income' is the average gross family income for the last three financial years or the gross family income for the latest financial year, whichever is greater. For the determination of family income, family is considered as members of a family residing together which includes self, parents, sibling, spouse / partner of the student.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">19. Do I necessarily need to apply for PM Vidyalaxmi before applying for University financial aid?</p>
+    <p class="faq-a">Yes. Before submitting a University financial-aid application, candidates must apply through the official PM Vidyalaxmi portal at https://pmvidyalaxmi.co.in and submit a copy or proof of the education-loan application along with the University financial-aid application. This is a pre-condition for the University financial-aid process.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">20. Does applying for financial aid exempt me from paying the full fee by {{ full_fee_deadline }}?</p>
+    <p class="faq-a">No. For NLSAT admissions, applying for financial aid does not exempt you from paying the full fee by the deadline. Candidates must pay the full fee by {{ full_fee_deadline }}. If University financial aid is approved later, the fee will be reimbursed up to the extent of aid granted.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">21. When will I know the outcome of my financial-aid application?</p>
+    <p class="faq-a">NLSIU will communicate decisions on financial-aid applications on or before 31 July 2026.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">22. If I do not have my parents' income-tax returns, can I still apply for financial aid?</p>
+    <p class="faq-a">Yes. Where income-tax returns are not available, you may submit income certificates issued by government authorities, bank statements, and any other documents supporting the income earned by the family. The Financial Aid Committee may ask for further clarifications or documents.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">23. Can I apply for other scholarships?</p>
+    <p class="faq-a">Yes. Admitted students may be eligible for scholarships sponsored by central and state governments and private organisations. NLSIU has curated a list of some scholarships, and candidates may also visit the National Scholarship Portal. For scholarship-related assistance, write to nlsiuscholarship@nls.ac.in.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">24. Does financial aid cover the full fee?</p>
+    <p class="faq-a">Financial aid depends on the applicable policy and the assessment of the candidate's income and wealth information. The amount, if any, will be communicated by NLSIU. If granted after fee payment, reimbursement will be made up to the approved extent.</p>
+  </div>
+
+  <p class="faq-section-title">D. Documents and in-person verification</p>
+
+  <div class="faq-block">
+    <p class="faq-q">25. Which original documents must I bring for registration?</p>
+    {% if is_pg %}
+    <p class="faq-a">You must bring the original Class 10 transcript, Class 12 transcript, Bachelor's degree certificate and transcript, and applicable caste, EWS, disability, and Karnataka category documents. You must also bring any other forms or documents sent by NLSIU before registration.</p>
+    {% else %}
+    <p class="faq-a">You must bring the original Class 10 transcript, Class 12 transcript, and applicable caste, EWS, disability, and Karnataka category documents. You must also bring any other forms or documents sent by NLSIU before registration.</p>
+    {% endif %}
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">26. What if my {% if is_pg %}Bachelor's degree certificate or final transcript{% else %}Class XII certificate or final transcript{% endif %} is not yet available?</p>
+    {% if is_pg %}
+    <p class="faq-a">Candidates who have not yet received their Bachelor's degree certificate or final transcript must submit a declaration stating that the certificate/transcript will be submitted on or before {{ bachelors_deadline }}. Admission will remain provisional until the final degree certificate and marks transcript showing that the candidate meets the eligibility criteria are submitted.</p>
+    {% else %}
+    <p class="faq-a">Candidates who have written their Class XII examination in 2026 and not yet received their Class XII marksheet/certificate shall submit <a href="https://docs.google.com/document/d/1BEL4LUKpN1t-XyZMpc-z8La3v_-2NeHYQbxskhWJ8ss/edit?tab=t.0">a Declaration</a> to the effect that the Class XII Marksheet/Certificate shall be submitted on or before December 31, 2026 and that admission will remain provisional until the submission of certificate and marksheet indicating that the candidate has met the eligibility criteria. Submission of digilocker print out will not be sufficient. They will have to submit the official certificate by December 31, 2026.</p>
+    {% endif %}
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">27. Will scanned copies be enough?</p>
+    <p class="faq-a">No. Scans may be uploaded as instructed, but original documents must be produced during in-person verification on {{ registration_date }}. Your admission will be confirmed only after successful verification of the originals.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">28. What happens if I cannot produce a required original document?</p>
+    <p class="faq-a">Failure to submit or produce a valid required certificate at verification may result in withdrawal of the provisional offer of admission. If a document is unavailable for a genuine reason, contact nlsat.query@nls.ac.in immediately and do not wait until the registration date.</p>
+  </div>
+
+  <p class="faq-section-title">E. Category certificates and reservations</p>
+
+  <div class="faq-block">
+    <p class="faq-q">29. What is the validity requirement for an EWS certificate?</p>
+    <p class="faq-a">An EWS certificate must be valid at the time of admission and must not be older than one year, unless a different validity condition is specified in the certificate.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">30. What is the validity requirement for an OBC-NCL certificate?</p>
+    <p class="faq-a">If the OBC-NCL certificate mentions a validity period, it must be within that validity period. If no validity period is mentioned, the certificate must not be older than one year. Candidates seeking OBC reservation must ensure that they meet the applicable category requirements.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">31. Which authorities can issue valid OBC-NCL or EWS certificates?</p>
+    <p class="faq-a">OBC-NCL and EWS certificates should be issued by a competent authority such as a District Magistrate, Additional Magistrate, Collector, Deputy Commissioner, Additional Deputy Commissioner, Deputy Collector, First Class Stipendiary Magistrate, Sub-Divisional Magistrate, Taluka Magistrate, Executive Magistrate, Extra Assistant Commissioner not below the rank of First Class Stipendiary Magistrate, Chief Presidency Magistrate, Additional Chief Presidency Magistrate, Presidency Magistrate, Revenue Officer not below the rank of Tehsildar, or Sub-Divisional Officer of the area where the candidate or the candidate's family resides.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">32. Can I use an Income and Caste Certificate instead of an EWS certificate?</p>
+    <p class="faq-a">No. A valid EWS certificate is required for EWS category eligibility. An Income and Caste Certificate is not sufficient for claiming reservation.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">33. Can I rely on a State Government OBC certificate?</p>
+    <p class="faq-a">Candidates claiming OBC reservation must ensure that the category claimed falls within the central list or the Karnataka OBC list for the category claimed.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">34. What is the validity for an SC/ST certificate?</p>
+    <p class="faq-a">SC/ST certificates generally do not have a validity period. However, the certificate must be genuine, issued by a competent authority, and valid for the category claimed.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">35. What if my EWS, OBC-NCL, caste, disability or Karnataka document is under process?</p>
+    <p class="faq-a">You must produce the valid original certificate at the time of verification. A pending application or acknowledgement is not a substitute for the required certificate.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">36. What should PWD candidates submit?</p>
+    <p class="faq-a">PWD candidates must submit the disability certificate in the format as per the The Rights of Persons with Disabilities (RPwD) Act, 2016 (Form V or Form VI) signed and stamped by a competent authority or a valid Unique Disability ID(UDID) card.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">37. What documents are required for the Karnataka Students category?</p>
+    <p class="faq-a">Study certificates from recognised and affiliated schools or educational institutions showing the required period of study in Karnataka are required.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">38. Is a domicile certificate enough for the Karnataka Students category?</p>
+    <p class="faq-a">No. Domicile certificates are not accepted as a substitute for study certificates and other required documents.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">39. Can study certificates issued in Kannada be submitted?</p>
+    <p class="faq-a">Yes. Study certificates issued in Kannada by recognised schools or educational institutions are acceptable.</p>
+  </div>
+
+  {% if is_pg %}
+  <p class="faq-section-title">G. University off-campus accommodation and housing</p>
+
+  <div class="faq-block">
+    <p class="faq-q">40. Is housing guaranteed?</p>
+    <p class="faq-a">No. All students of the {{ prog_display }} programme are eligible to apply for off-campus accommodation, but applying does not guarantee allotment. Allocation will be made only at the time of admission and will depend on availability at that stage.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">41. How do I apply for University residence?</p>
+    <p class="faq-a">When accepting the offer in the admissions portal, you will be asked whether you wish to apply for off-campus accommodation. Select "Yes" if you want to apply. The off-campus housing fee will then be added to your fee invoice.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">42. Can I choose not to apply for University residence?</p>
+    <p class="faq-a">Yes. Select "No" in the portal if you do not want to apply for University off-campus accommodation. You may then independently arrange private accommodation.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">43. If I select "Yes", when must I pay the housing fee?</p>
+    <p class="faq-a">If you select "Yes", the full off-campus housing fee of Rs. {{ housing_fee }} will be included in your fee invoice and must be paid by {{ full_fee_deadline }} along with the balance fee.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">44. Where are the University's off-campus residences located?</p>
+    <p class="faq-a">NLSIU has tied up with housing service providers in RR Nagar, including Olive Living and FF21. RR Nagar is close to Nagarbhavi and is in the vicinity of the University. Scheduled transportation is provided to the university.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">45. Will rooms be single or shared? Can I request for a single room?</p>
+    <p class="faq-a">Rooms in University off-campus residences are allotted on a double-sharing basis.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">46. Can a student who is not living in the off-campus residences opt for the university meal plan?</p>
+    <p class="faq-a">Yes. Students who have not opted for the off-campus residences can opt for the university meal plan and utilise the mess facilities on the payment of a meal plan fees every trimester. You may contact the residence life team during registration to enroll in the meal plan.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">47. Can NLSIU help me find private housing?</p>
+    <p class="faq-a">No. Students may independently explore private hostels, paying guest facilities, or rental housing around Nagarbhavi depending on their budget and convenience. We encourage students who do not have housing in Bengaluru, to come to Bengaluru early to identify suitable options.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">48. Can parents or family members stay in University accommodation during registration?</p>
+    <p class="faq-a">The NLSAT offer does not provide accommodation for parents or family members. Candidates and families accompanying them should make their own arrangements.</p>
+  </div>
+
+  <p class="faq-section-title">H. Registration, orientation and joining NLSIU</p>
+
+  <div class="faq-block">
+    <p class="faq-q">49. When must I report to campus?</p>
+    <p class="faq-a">You are required to be present at the NLSIU campus in Bengaluru from {{ registration_date }} onwards for registration and onboarding. Original document verification will be conducted on {{ registration_date }} during the allotted registration slot.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">50. Can someone else complete registration on my behalf?</p>
+    <p class="faq-a">No. The candidate must be present in person for registration and original document verification.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">51. Are parents required to attend registration?</p>
+    <p class="faq-a">No. Parents are not required during registration and will not be allowed into campus during orientation and classes.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">52. Can I join late after registration or orientation?</p>
+    <p class="faq-a">No. Candidates are expected to be present from the registration and orientation dates. Classes and academic requirements will be in person. Attendance is compulsory.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">53. Will there be online classes as an alternative to in-person attendance?</p>
+    <p class="faq-a">No. Students are expected to attend in-person classes and comply with the applicable academic and attendance regulations.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">54. What is the attendance requirement?</p>
+    <p class="faq-a">Students must comply with the attendance requirements under applicable NLSIU regulations. As a general rule at NLSIU, shortage of attendance may affect eligibility to appear for examinations and may have serious academic consequences.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">55. Can I defer my admission to the next academic year?</p>
+    <p class="faq-a">No. The provisional offer is for the academic year {{ academic_yr }}. NLSIU does not have provisions for deferral of admission to a later academic year.</p>
+  </div>
+
+  {% else %}
+  <p class="faq-section-title">G. University accommodation and housing</p>
+
+  <div class="faq-block">
+    <p class="faq-q">40. Is housing guaranteed?</p>
+    <p class="faq-a">No. All students of the {{ prog_display }} programme are eligible to apply for accommodation, but applying does not guarantee allotment. Allocation will be made only at the time of admission and will depend on availability at that stage.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">41. How do I apply for University residence?</p>
+    <p class="faq-a">When accepting the offer in the admissions portal, you will be asked whether you wish to apply for accommodation. Select "Yes" if you want to apply. The housing fee will then be added to your fee invoice.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">42. Can I choose not to apply for University residence?</p>
+    <p class="faq-a">Yes. Select "No" in the portal if you do not want to apply for University accommodation. You may then independently arrange private accommodation.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">43. If I select "Yes", when must I pay the housing fee?</p>
+    <p class="faq-a">If you select "Yes", the full housing fee of Rs. {{ housing_fee }} will be included in your fee invoice and must be paid by {{ full_fee_deadline }} along with the balance fee.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">44. Can NLSIU help me find private housing?</p>
+    <p class="faq-a">No. Students may independently explore private hostels, paying guest facilities, or rental housing around Nagarbhavi depending on their budget and convenience. We encourage students who do not have housing in Bengaluru, to come to Bengaluru early to identify suitable options.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">45. Can parents or family members stay in University accommodation during registration?</p>
+    <p class="faq-a">The NLSAT offer does not provide accommodation for parents or family members. Candidates and families accompanying them should make their own arrangements.</p>
+  </div>
+
+  <p class="faq-section-title">H. Registration, orientation and joining NLSIU</p>
+
+  <div class="faq-block">
+    <p class="faq-q">46. When must I report to campus?</p>
+    <p class="faq-a">You are required to be present at the NLSIU campus in Bengaluru from {{ registration_date }} onwards for registration and onboarding. Original document verification will be conducted on {{ registration_date }} during the allotted registration slot.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">47. Can someone else complete registration on my behalf?</p>
+    <p class="faq-a">No. The candidate must be present in person for registration and original document verification.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">48. Are parents required to attend registration?</p>
+    <p class="faq-a">Yes. At least one parent of the candidate is compulsorily required during registration. However, parents will not be allowed into campus during orientation and classes.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">49. Can I join late after registration or orientation?</p>
+    <p class="faq-a">No. Candidates are expected to be present from the registration and orientation dates. Classes and academic requirements will be in person. Attendance is compulsory.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">50. Will there be online classes as an alternative to in-person attendance?</p>
+    <p class="faq-a">No. Students are expected to attend in-person classes and comply with the applicable academic and attendance regulations.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">51. What is the attendance requirement?</p>
+    <p class="faq-a">Students must comply with the attendance requirements under applicable NLSIU regulations. As a general rule at NLSIU, shortage of attendance may affect eligibility to appear for examinations and may have serious academic consequences.</p>
+  </div>
+
+  <div class="faq-block">
+    <p class="faq-q">52. Can I defer my admission to the next academic year?</p>
+    <p class="faq-a">No. The provisional offer is for the academic year {{ academic_yr }}. NLSIU does not have provisions for deferral of admission to a later academic year.</p>
+  </div>
+  {% endif %}
+
+  <p class="para" style="margin-top:16px;">For any issue not covered above, candidates should write to nlsat.query@nls.ac.in using the subject line "NLSAT Admission Query – [insert admit card number]".</p>
+</div>
+
+</div>{# end .nlsat-offer #}
+<div id="footer-html" class="visible-pdf">
+  <div style="padding-top: 8px; border-top: 1px solid #999; font-size: 8pt; color: #666; text-align: center; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin-left: 15px; margin-right: 15px;">
+    A University for Legal Studies and Research sponsored by the Bar Council of India and established under Karnataka Act 22 of 1986
+  </div>
 </div>

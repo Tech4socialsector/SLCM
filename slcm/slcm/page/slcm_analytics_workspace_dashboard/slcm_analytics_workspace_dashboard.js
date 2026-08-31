@@ -37,6 +37,8 @@ const SAWD_PALETTE = {
 		'Accepted':       '#059669',
 		'Rejected':       '#dc2626',
 		'Pending':        '#d97706',
+		'Allotted':          '#059669',
+		'Pending Allotment': '#d97706',
 	},
 };
 

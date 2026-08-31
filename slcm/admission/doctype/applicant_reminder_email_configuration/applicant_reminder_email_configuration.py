@@ -93,8 +93,7 @@ def should_send_reminder(reminder_type, last_sent_date, cycle_end_date=None):
 @frappe.whitelist()
 def trigger_manual_reminders(reminders, is_rejection_only=False):
     """
-    Whitelisted: triggered from the JS "Send Reminders" button.
-    reminders: JSON list of enabled fieldnames to process.
+    Enqueues the manual reminder task to run in the background.
     """
     if isinstance(reminders, str):
         import json
@@ -104,6 +103,26 @@ def trigger_manual_reminders(reminders, is_rejection_only=False):
 
     if not reminders:
         return {"status": "success", "sent_count": 0}
+
+    frappe.enqueue(
+        "slcm.admission.doctype.applicant_reminder_email_configuration.applicant_reminder_email_configuration.run_manual_reminders_in_background",
+        queue="long",
+        timeout=3600,
+        reminders=reminders,
+        is_rejection_only=is_rejection_only,
+        user=frappe.session.user
+    )
+    return {
+        "status": "queued",
+        "message": frappe._("Reminder emails are being processed in the background. You can safely close or refresh this page. You will receive an alert once completed.")
+    }
+
+
+def run_manual_reminders_in_background(reminders, is_rejection_only, user):
+    """
+    Runs the manual reminders in a background worker to avoid timeouts.
+    """
+    frappe.set_user(user)
 
     from slcm.admission.applicant_reminder_emails import (
         send_not_started_reminders,
@@ -116,7 +135,7 @@ def trigger_manual_reminders(reminders, is_rejection_only=False):
     total_items = 0
 
     if "enable_not_started_reminder" in reminders:
-        users = frappe.get_all("Has Role", filters={"role": "Applicant"}, fields=["parent"])
+        users = frappe.get_all("Has Role", filters={"role": "Applicant"}, fields=["parent"], limit=0)
         count = len(list(set([u.parent for u in users])))
         tasks_with_counts.append({"task": send_not_started_reminders, "count": count})
         total_items += count
@@ -153,12 +172,18 @@ def trigger_manual_reminders(reminders, is_rejection_only=False):
         except Exception:
             frappe.log_error(frappe.get_traceback(), f"Manual Reminder Trigger Failed: {item['task'].__name__}")
 
+    # Send final success alert directly to the user via sockets
     if total_sent == 0:
-        msg = frappe._("No eligible applicant is rejected at this time.") if is_rejection_only else frappe._("No reminder emails were sent. All eligible recipients may have already received their reminders today.")
-        return {
-            "status": "success",
-            "message": msg,
-            "sent_count": 0
-        }
+        msg = frappe._("Background Task Completed: No eligible applicant is rejected at this time.") if is_rejection_only else frappe._("Background Task Completed: No reminder emails were sent. All eligible recipients may have already received their reminders today.")
+    else:
+        msg = frappe._("Background Task Completed: {0} reminder email(s) sent successfully.").format(total_sent)
 
-    return {"status": "success", "sent_count": total_sent}
+    frappe.publish_realtime(
+        "msgprint",
+        {
+            "message": msg,
+            "title": "Applicant Reminders",
+            "indicator": "green" if total_sent > 0 else "orange"
+        },
+        user=user
+    )

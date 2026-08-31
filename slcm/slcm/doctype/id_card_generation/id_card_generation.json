@@ -160,7 +160,7 @@
   },
   {
    "depends_on": "eval:doc.card_type == 'Student'",
-   "fetch_from": "student.programme",
+   "fetch_from": "student.batch",
    "fieldname": "batch",
    "fieldtype": "Link",
    "in_list_view": 1,

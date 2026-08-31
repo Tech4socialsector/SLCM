@@ -37,12 +37,25 @@
   </div>
   <iframe
     id="hd-frame"
-    src="/helpdesk"
+    src=""
     style="width:100%;border:none;min-height:80vh;display:none;flex:1;"
     title="Helpdesk"
     allow="same-origin"
     onload="hdFrameReady()"
   ></iframe>
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var ticket = params.get('ticket');
+      var frame = document.getElementById('hd-frame');
+      if (!frame) return;
+      if (ticket) {
+        frame.src = '/helpdesk/tickets/' + encodeURIComponent(ticket);
+      } else {
+        frame.src = '/helpdesk/tickets';
+      }
+    })();
+  </script>
 </div>
 
 {% else %}

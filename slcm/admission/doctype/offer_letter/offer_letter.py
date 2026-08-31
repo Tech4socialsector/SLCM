@@ -66,6 +66,15 @@ class OfferLetter(Document):
         # We use flags to pass audit data from validate to on_update to avoid redundant logic
         print("on update called for offer letter")
 
+        old_doc = self.get_doc_before_save()
+        old_status = old_doc.status if old_doc else None
+        
+        if old_status != self.status:
+            try:
+                from slcm.api.service.offer_notification import OfferNotificationService
+                OfferNotificationService.process_status_change(self, old_status, self.status)
+            except Exception as e:
+                frappe.log_error(f"Notification Error for {self.name}: {str(e)}", "Offer Notification")
 
         self.sync_status_to_seat_allocation()
 
@@ -107,6 +116,12 @@ class OfferLetter(Document):
                     other_doc = frappe.get_doc("Offer Letter", other_name)
                     other_doc.status = "Withdrawn"
                     other_doc.db_set("status", "Withdrawn")
+                    
+                    try:
+                        from slcm.api.service.offer_notification import OfferNotificationService
+                        OfferNotificationService.process_status_change(other_doc, "Issued", "Withdrawn")
+                    except Exception as e:
+                        frappe.log_error(f"Notification Error for {other_name}: {str(e)}", "Offer Notification")
                     
                     # Manually trigger sync since we used db_set to avoid full validation hooks
                     other_doc.sync_status_to_seat_allocation()

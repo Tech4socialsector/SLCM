@@ -6,6 +6,7 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "payment_details_tab",
   "reference_doctype",
   "reference_name",
   "email_to",
@@ -26,7 +27,20 @@
   "column_break_gateway_2",
   "paid_on",
   "webhook_received",
-  "amended_from"
+  "amended_from",
+  "settlement_details_tab",
+  "settlement_section",
+  "settlement_id",
+  "settlement_utr",
+  "settlement_date",
+  "settlement_status",
+  "gateway_settlement_status",
+  "column_break_usow",
+  "gateway_fees",
+  "gateway_tax",
+  "net_settled",
+  "settlement_amount",
+  "settlement_response"
  ],
  "fields": [
   {
@@ -95,6 +109,7 @@
   {
    "fieldname": "transaction_id",
    "fieldtype": "Data",
+   "in_standard_filter": 1,
    "label": "Transaction ID",
    "read_only": 1
   },
@@ -166,11 +181,97 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "payment_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Payment Details"
+  },
+  {
+   "fieldname": "settlement_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Settlement Details"
+  },
+  {
+   "fieldname": "settlement_section",
+   "fieldtype": "Section Break",
+   "label": "Settlement Details"
+  },
+  {
+   "fieldname": "settlement_id",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Settlement ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "settlement_utr",
+   "fieldtype": "Data",
+   "label": "UTR Number",
+   "read_only": 1
+  },
+  {
+   "fieldname": "settlement_date",
+   "fieldtype": "Datetime",
+   "label": "Settled At",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "settlement_status",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Settlement Status",
+   "options": "\nPending\nProcessing\nSettled\nFailed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "settlement_amount",
+   "fieldtype": "Currency",
+   "label": "Settlement Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "gateway_fees",
+   "fieldtype": "Currency",
+   "label": "Gateway Fees (INR)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "gateway_tax",
+   "fieldtype": "Currency",
+   "label": "Gateway Tax (INR)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "net_settled",
+   "fieldtype": "Currency",
+   "label": "Net Settled (INR)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "settlement_response",
+   "fieldtype": "Code",
+   "label": "Gateway Settlement Response",
+   "options": "JSON",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_usow",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "gateway_settlement_status",
+   "fieldtype": "Select",
+   "label": "Gateway Settlement Status",
+   "options": "\ncreated\nprocessed\nfailed",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-17 12:59:15.285829",
+ "modified": "2026-08-27 15:48:40.393883",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Payment Request",

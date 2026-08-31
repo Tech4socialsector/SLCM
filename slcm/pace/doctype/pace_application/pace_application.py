@@ -121,26 +121,12 @@ class PACEApplication(Document):
             )
 
     def validate_programme_change(self):
-        if self.is_new():
-            return
-
-        doc_before_save = self.get_doc_before_save()
-        if not doc_before_save:
-            return
-
-        old_programme = getattr(doc_before_save, "programme", None)
-        if old_programme and self.programme != old_programme:
-            # Check if there is a Paid assignment for Course Fee
-            paid_assignment = frappe.db.exists("PACE Applicant Fee Assignment", {
-                "applicant": self.name,
-                "fee_type": "Course Fee",
-                "status": "Paid"
-            })
-            if paid_assignment:
-                frappe.throw(
-                    _("The programme cannot be changed because the Course Fee has already been paid."),
-                    title=_("Course Fee Already Paid")
-                )
+        """
+        Programme change validation.
+        Programme change on PACE Application is allowed at any stage.
+        If the Course Fee is already Paid/Enrolled/Converted, the Fee Assignment will not be altered.
+        """
+        pass
 
     def handle_programme_change(self):
         if self.is_new():
@@ -152,11 +138,11 @@ class PACEApplication(Document):
 
         old_programme = getattr(doc_before_save, "programme", None)
         if old_programme and self.programme != old_programme:
-            # 1. Update existing Course Fee assignment if it exists and is unpaid
+            # 1. Update existing Course Fee assignment ONLY if it exists and is UNPAID (not Paid, Enrolled, or Converted)
             assignment_name = frappe.db.get_value("PACE Applicant Fee Assignment", {
                 "applicant": self.name,
                 "fee_type": "Course Fee",
-                "status": ["!=", "Paid"]
+                "status": ["not in", ["Paid", "Enrolled", "Converted"]]
             }, "name")
 
             if assignment_name:
@@ -225,8 +211,12 @@ class PACEApplication(Document):
             if verification_name:
                 frappe.db.set_value("PACE Document Verification", verification_name, "programme", self.programme)
 
-            # 3. If application is Verified but no assignment existed, generate a new fee assignment
-            if not assignment_name and self.status in ["Verified", "Payment Pending"]:
+            # 3. If application is Verified but no assignment exists at all, generate a new fee assignment
+            has_any_assignment = frappe.db.exists("PACE Applicant Fee Assignment", {
+                "applicant": self.name,
+                "fee_type": "Course Fee"
+            })
+            if not has_any_assignment and self.status in ["Verified", "Payment Pending"]:
                 from slcm.pace.utils import create_pace_fee_assignment
                 create_pace_fee_assignment(self.name)
 
@@ -1128,7 +1118,7 @@ def send_document_reminders(current_item=0, total_items=0):
         "status": "Provisionally Submitted"
     }, fields=["name", "email_address", "first_name", "last_name", "programme", 
               "student_signature", "ug_degree_certificate", "govt_id", 
-              "last_reminder_sent"])
+              "last_reminder_sent"], limit=0)
 
     sent_count = 0
     total_apps = len(applications)
@@ -1499,7 +1489,7 @@ def send_correction_reminders(current_item=0, total_items=0):
     # Find applications that are Returned for Correction
     applications = frappe.get_all("PACE Application", filters={
         "status": "Returned for Correction"
-    }, fields=["name", "email_address", "first_name", "last_name", "programme"])
+    }, fields=["name", "email_address", "first_name", "last_name", "programme"], limit=0)
 
     sent_count = 0
     total_apps = len(applications)
@@ -1701,7 +1691,7 @@ def send_payment_reminders(current_item=0, total_items=0):
     # Find applications that are Submitted
     applications = frappe.get_all("PACE Application", filters={
         "status": "Submitted"
-    }, fields=["name", "email_address", "first_name", "last_name", "programme", "application_remainder_sent_on"])
+    }, fields=["name", "email_address", "first_name", "last_name", "programme", "application_remainder_sent_on"], limit=0)
 
     sent_count = 0
     
@@ -1905,7 +1895,7 @@ def send_daily_pace_application_reminders(current_item=0, total_items=0):
     formatted_close_date = formatdate(admission_close_date)
 
     # Get all users with role "PACE Applicant"
-    users = frappe.get_all("Has Role", filters={"role": "PACE Applicant"}, fields=["parent"])
+    users = frappe.get_all("Has Role", filters={"role": "PACE Applicant"}, fields=["parent"], limit=0)
     user_emails = list(set([u.parent for u in users]))
     
     if not user_emails:
@@ -1928,7 +1918,8 @@ def send_daily_pace_application_reminders(current_item=0, total_items=0):
             # Check for PACE Application
             applications = frappe.get_all("PACE Application", 
                 filters={"email_address": email}, 
-                fields=["name", "status"]
+                fields=["name", "status"],
+                limit=0
             )
             
             user_doc = frappe.get_doc("User", email)
@@ -1948,7 +1939,8 @@ def send_daily_pace_application_reminders(current_item=0, total_items=0):
                         "reference_doctype": "User",
                         "reference_name": email,
                     },
-                    fields=["pace_admission"]
+                    fields=["pace_admission"],
+                    limit=0
                 )
                 belong_to_other_cycle = False
                 for log in previous_logs:

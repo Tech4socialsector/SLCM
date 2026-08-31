@@ -110,8 +110,8 @@ def get_context(context):
 
         context.venue_bookings = venue_bookings
         context.total_count     = len(venue_bookings)
-        context.pending_count   = sum(1 for b in venue_bookings if b.status == "Pending")
-        context.approved_count  = sum(1 for b in venue_bookings if b.status == "Approved")
+        context.pending_count   = sum(1 for b in venue_bookings if b.status == "Pending Allotment")
+        context.approved_count  = sum(1 for b in venue_bookings if b.status == "Allotted")
         context.rejected_count  = sum(1 for b in venue_bookings if b.status == "Rejected")
         context.cancelled_count = sum(1 for b in venue_bookings if b.status == "Cancelled")
         context.venue_types     = VENUE_TYPES

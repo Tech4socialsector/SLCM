@@ -45,10 +45,6 @@
  ],
  "charts": [
   {
-   "chart": "Applicant Fee Payment",
-   "width": "Full"
-  },
-  {
    "chart": "Primary Program Choice",
    "width": "Full"
   },
@@ -57,7 +53,19 @@
    "width": "Half"
   },
   {
-   "chart": "Applicant Fee Status",
+   "chart": "Applicant Fee Payment",
+   "width": "Half"
+  },
+  {
+   "chart": "Pending Fees by Programme",
+   "width": "Full"
+  },
+  {
+   "chart": "Fee Collections Over Time",
+   "width": "Half"
+  },
+  {
+   "chart": "Revenue Collected by Fee Type",
    "width": "Half"
   }
  ],
@@ -67,8 +75,8 @@
  "doctype": "Dashboard",
  "idx": 0,
  "is_default": 0,
- "is_standard": 1,
- "modified": "2026-07-14 15:16:32.929790",
+ "is_standard": 0,
+ "modified": "2026-08-22 16:24:29.740496",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission",

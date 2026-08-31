@@ -1,6 +1,5 @@
 [
  {
-  "__unsaved": 1,
   "admission_fee_reminder_interval": 1,
   "docstatus": 0,
   "doctype": "Applicant Reminder Email Configuration",
@@ -10,7 +9,7 @@
   "enable_draft_reminder": "Active",
   "enable_not_started_reminder": "Active",
   "enable_unpaid_fee_reminder": "Active",
-  "modified": null,
+  "modified": "2026-08-27 17:28:23.400280",
   "name": "Applicant Reminder Email Configuration",
   "not_started_rejection_reason": "Your registration has been closed as you did not start your application before the admission cycle closing date.",
   "not_started_reminder_interval": 1,

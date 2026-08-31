@@ -522,7 +522,7 @@
             <option value="Interim Transcript">Interim Transcript</option>
             {% endif %}
             {% if settings.allow_final %}
-            <option value="Final Transcript">Final Transcript{% if settings.restrict_final_to_graduates %} — Graduation only{% endif %}</option>
+            <option value="Final Transcript">Provisional Transcript{% if settings.restrict_final_to_graduates %} — Graduation only{% endif %}</option>
             {% endif %}
             {% if settings.allow_marksheet %}
             <option value="Consolidated Marksheet">Consolidated Marksheet — Graduation only</option>
@@ -533,28 +533,6 @@
             {% if settings.allow_digital %}
             <option value="Digital Transcript">Digital Transcript (PDF)</option>
             {% endif %}
-          </select>
-        </div>
-      </div>
-
-      <div class="sp-form-row" style="margin-bottom:16px;">
-        {# Copies #}
-        <div class="sp-form-group" style="margin-bottom:0;">
-          <label class="sp-form-label">Number of Copies</label>
-          <div class="tr-stepper">
-            <button type="button" class="tr-stepper-btn" onclick="changeCopies(-1)">−</button>
-            <input type="number" id="tr-copies" class="tr-stepper-input"
-                   value="1" min="1" max="10" oninput="onFormChange()">
-            <button type="button" class="tr-stepper-btn" onclick="changeCopies(1)">+</button>
-          </div>
-        </div>
-
-        {# Processing Speed #}
-        <div class="sp-form-group" style="margin-bottom:0;">
-          <label class="sp-form-label">Processing Speed</label>
-          <select id="tr-urgency" class="sp-form-control" onchange="onFormChange()">
-            <option value="Normal">Normal — {{ settings.max_processing_days or 5 }} working days</option>
-            <option value="Urgent">Urgent — {{ settings.urgent_processing_days or 2 }} days{% if settings.urgent_fee and settings.urgent_fee > 0 %} (+₹{{ "{:.0f}".format(settings.urgent_fee) }}){% endif %}</option>
           </select>
         </div>
       </div>
@@ -572,7 +550,7 @@
 
         {# Purpose #}
         <div class="sp-form-group" style="margin-bottom:0;">
-          <label class="sp-form-label">Purpose <span style="color:var(--sp-text-4);font-weight:400;text-transform:none;">(optional)</span></label>
+          <label class="sp-form-label">Purpose <span class="sp-required">*</span></label>
           <input type="text" id="tr-purpose" class="sp-form-control"
                  placeholder="e.g. Visa application, job offer…" maxlength="300">
         </div>
@@ -663,19 +641,7 @@
     </div>
     {% endif %}
 
-    {# Quick Guide #}
-    <div style="background:var(--sp-primary-light);border:1px solid var(--sp-primary-mid);border-radius:var(--sp-radius);padding:14px 16px;">
-      <div style="font-size:11px;font-weight:700;color:var(--sp-primary);text-transform:uppercase;letter-spacing:0.06em;display:flex;align-items:center;gap:6px;margin-bottom:10px;">
-        <span class="sp-ms" style="font-size:14px;">lightbulb</span>
-        Quick Guide
-      </div>
-      <div style="font-size:12px;color:var(--sp-text-2);line-height:1.9;">
-        <div>• <strong>Interim</strong> — available anytime</div>
-        <div>• <strong>Final</strong> — after programme completion</div>
-        <div>• <strong>Normal</strong> — {{ settings.max_processing_days or 5 }} working days</div>
-        <div>• <strong>Urgent</strong> — {{ settings.urgent_processing_days or 2 }} working days</div>
-      </div>
-    </div>
+  </div>
 
   </div>
 </div>
@@ -711,9 +677,6 @@
             {{ r.transcript_type }}
           </span>
           <span style="font-size:11px;color:var(--sp-text-4);font-family:monospace;">{{ r.name }}</span>
-          {% if r.num_copies > 1 %}
-          <span style="font-size:11px;background:#f1f5f9;padding:2px 8px;border-radius:12px;color:var(--sp-text-2);">{{ r.num_copies }} copies</span>
-          {% endif %}
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
           {# Status badge #}
@@ -783,7 +746,6 @@
         <div class="tr-meta">
           <span>Date: <strong>{{ frappe.utils.formatdate(r.requested_on,"d MMM yyyy") if r.requested_on else "—" }}</strong></span>
           <span>Delivery: <strong>{{ r.delivery_mode }}</strong></span>
-          <span>Speed: <strong>{{ r.urgency }}</strong></span>
           {% if r.payment_required %}
           <span>
             Fee: <strong style="color:{{ '#15803d' if r.payment_status=='Paid' else ('#dc2626' if r.payment_status in ('Payment Failed','Payment Cancelled') else '#b45309') }};">
@@ -849,7 +811,7 @@
         <span class="sp-ms">schedule</span>
         <div>
           <div class="tr-help-title">Processing Time</div>
-          <div class="tr-help-desc">Normal requests take {{ settings.max_processing_days or 5 }} working days. Urgent requests are processed in {{ settings.urgent_processing_days or 2 }} working days.</div>
+          <div class="tr-help-desc">Requests are processed within {{ settings.max_processing_days or 5 }} working days.</div>
         </div>
       </div>
       <div class="tr-help-item">
@@ -918,14 +880,6 @@
           <div class="tr-receipt-row">
             <span>Request ID</span>
             <span id="pm-req" style="font-family:monospace;font-size:11px;">—</span>
-          </div>
-          <div class="tr-receipt-row">
-            <span>Number of Copies</span>
-            <span id="pm-copies">—</span>
-          </div>
-          <div class="tr-receipt-row">
-            <span>Processing Speed</span>
-            <span id="pm-urgency">—</span>
           </div>
         </div>
 
@@ -1060,11 +1014,11 @@ let _req = null;  // { name, amount, type, copies, urgency }
 /* ── Fee calculation ────────────────────────────── */
 function _calcFee() {
   const type   = document.getElementById('tr-type').value;
-  const copies = Math.max(1, parseInt(document.getElementById('tr-copies').value) || 1);
-  const urgent = document.getElementById('tr-urgency').value === 'Urgent';
+  const copies = 1;
+  const urgent = false;
   const per    = FEE_CFG.fees[type] || 0;
   const base   = per * copies;
-  const sur    = urgent ? FEE_CFG.urgent_fee : 0;
+  const sur    = 0;
   const sub    = base + sur;
   const tax    = Math.round(sub * FEE_CFG.tax_pct / 100 * 100) / 100;
   return { per, base, sur, tax, total: sub + tax, copies, type };
@@ -1089,19 +1043,18 @@ function _updateSidebar() {
 
 function onFormChange() { _updateSidebar(); }
 
-function changeCopies(d) {
-  const el = document.getElementById('tr-copies');
-  el.value = Math.max(1, Math.min(10, (parseInt(el.value) || 1) + d));
-  onFormChange();
-}
-
 /* ── Submit form → create_request ───────────────── */
 function submitRequest() {
   const type     = document.getElementById('tr-type').value;
-  const copies   = parseInt(document.getElementById('tr-copies').value) || 1;
+  const copies   = 1;
   const purpose  = document.getElementById('tr-purpose').value.trim();
   const delivery = document.getElementById('tr-delivery').value;
-  const urgency  = document.getElementById('tr-urgency').value;
+  const urgency  = 'Normal';
+
+  if (!purpose) {
+    _formMsg(false, 'Please provide a purpose.');
+    return;
+  }
 
   const btns = ['tr-submit-d','tr-submit-m'].map(id => document.getElementById(id)).filter(Boolean);
   const payHtml  = '<span class="sp-ms">payment</span> Review & Pay Securely';
@@ -1115,7 +1068,7 @@ function submitRequest() {
       btns.forEach(b => { b.disabled = false; b.innerHTML = FEE_CFG.enabled ? payHtml : freeHtml; });
       if (!res) return;
       if (res.payment_required && FEE_CFG.enabled) {
-        openPaymentModal(res.name, res.fee_amount, res.transcript_type, copies, urgency);
+        openPaymentModal(res.name, res.fee_amount, res.transcript_type);
       } else {
         showToast('Request submitted! ID: ' + res.name, 'ok');
         setTimeout(function() { location.reload(); }, 1800);
@@ -1133,21 +1086,16 @@ function submitRequest() {
    ════════════════════════════════════════════════ */
 
 /* Open modal — called from form submit (5 args) or history "Pay" button (3 args) */
-function openPaymentModal(name, amount, type, copies, urgency) {
-  const c = copies || 1;
-  const u = urgency || 'Normal';
-  _req = { name, amount, type, copies: c, urgency: u };
+function openPaymentModal(name, amount, type) {
+  _req = { name, amount, type };
 
   // Amount spotlight
   document.getElementById('pm-amount-big').textContent = _fmt(Math.round(amount));
-  document.getElementById('pm-amount-sub').textContent =
-    (c > 1 ? c + ' copies · ' : '') + type;
+  document.getElementById('pm-amount-sub').textContent = type;
 
   // Details table
   document.getElementById('pm-type').textContent    = type;
   document.getElementById('pm-req').textContent     = name;
-  document.getElementById('pm-copies').textContent  = copies ? c + ' cop' + (c === 1 ? 'y' : 'ies') : '—';
-  document.getElementById('pm-urgency').textContent = copies ? u : '—';
 
   _setState('summary');
   document.getElementById('tr-modal-wrap').classList.add('open');

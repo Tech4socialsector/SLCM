@@ -130,11 +130,11 @@ class OfferService:
         config = OfferService.get_config(admission_year, cycle, campus)
         resolved_cycle = config.admission_cycle
 
-        validate_offer_config_fee_deadlines(config)
+        validate_offer_config_fee_deadlines(config, program=program)
 
         # --- PRE-FLIGHT CHECKS (Before Transaction) ---
-        if not config.email_template:
-            throw(_("Email Template is missing in Offer Configuration {0}").format(config.name))
+        if not config.offer_issued_email:
+            throw(_("Email Template For Offer Issued is missing in Offer Configuration {0}").format(config.name))
         
         applicant_email = frappe.db.get_value("Applicant", applicant, "email")
         if not applicant_email:
@@ -297,8 +297,7 @@ class OfferService:
             if config.pdf_format:
                 OfferService._generate_offer_pdf(offer, config.pdf_format)
             
-            # Send offer letter email to applicant (offer_letter_pdf is now set on the object)
-            OfferService._send_offer_letter_email(offer, config.email_template)
+            # Send offer letter email logic is now handled by OfferNotificationService via on_update hooks
             
             offer.status = "Issued"
             offer.save(ignore_permissions=True)
@@ -353,16 +352,7 @@ class OfferService:
             if needs_accommodation:
                 frappe.db.set_value("Applicant", offer.applicant, "needs_accommodation", needs_accommodation)
 
-            from slcm.admission.utils.notifications import log_communication
-            log_communication(
-                applicant=offer.applicant,
-                communication_type="Portal Notification",
-                category="Offer Letter",
-                subject=_("Admission Offer Accepted"),
-                content=_("You have successfully accepted the admission offer for {0}.").format(offer.program),
-                reference_doctype="Offer Letter",
-                reference_name=offer.name
-            )
+
 
         # Always try to ensure fee assignment exists if it's accepted
         OfferService.create_fee_assignment_from_offer(offer)
@@ -428,16 +418,7 @@ class OfferService:
         offer.status = "Rejected"
         offer.save(ignore_permissions=True)
 
-        from slcm.admission.utils.notifications import log_communication
-        log_communication(
-            applicant=offer.applicant,
-            communication_type="Portal Notification",
-            category="Offer Letter",
-            subject=_("Admission Offer Rejected"),
-            content=_("You have rejected the admission offer for {0}. Reason: {1}").format(offer.program, reason or _("Not specified")),
-            reference_doctype="Offer Letter",
-            reference_name=offer.name
-        )
+
         return True
 
     @staticmethod
@@ -497,16 +478,7 @@ class OfferService:
 
                 doc.save(ignore_permissions=True)
                 
-                from slcm.admission.utils.notifications import log_communication
-                log_communication(
-                    applicant=doc.applicant,
-                    communication_type="Portal Notification",
-                    category="Offer Letter",
-                    subject=_("Admission Offer Expired"),
-                    content=_("Your admission offer for {0} has expired as the payment deadline has passed.").format(doc.program),
-                    reference_doctype="Offer Letter",
-                    reference_name=doc.name
-                )
+
                 
                 processed += 1
                 
@@ -640,6 +612,11 @@ class OfferService:
             except Exception as e:
                 frappe.db.rollback()
                 error_msg = str(e) or "Unknown Server Error"
+                
+                # If it's a configuration error regarding deadlines, throw it properly so the UI halts
+                if "Deadline cannot be in the past" in error_msg:
+                    frappe.throw(error_msg)
+                    
                 results["errors"].append({"applicant": str(data.get("applicant") if isinstance(data, dict) else data), "error": error_msg})
                 frappe.log_error(f"Bulk Offer Generation Error for {str(data)}: {error_msg}", "Offer Service")
         
@@ -782,69 +759,7 @@ class OfferService:
         return FeeService._calculate_and_freeze_fees(fee_structure_name, is_foreign=is_foreign)
 
     @staticmethod
-    def _send_offer_letter_email(offer, email_template):
-        """Sends the offer letter email to the applicant."""
-        if not email_template or not offer.applicant:
-            return
-
-        applicant_email = frappe.db.get_value("Applicant", offer.applicant, "email")
-        if not applicant_email:
-            frappe.log_error(f"Email not found for Applicant {offer.applicant}", "Offer Email Error")
-            return
-
-        tpl = frappe.get_doc("Email Template", email_template)
-        
-        # Prepare context with full objects for template rendering
-        context = OfferService._get_template_context(offer)
-        
-        subject = frappe.render_template(tpl.subject, context)
-        message = frappe.render_template(tpl.response, context)
-
-        attachments = []
-        if offer.offer_letter_pdf:
-            try:
-                # Use standard way to get file from URL or filters
-                file_doc = frappe.get_doc("File", {
-                    "attached_to_doctype": "Offer Letter",
-                    "attached_to_name": offer.name,
-                    "attached_to_field": "offer_letter_pdf"
-                })
-                attachments.append({
-                    "fname": file_doc.file_name,
-                    "fcontent": file_doc.get_content()
-                })
-            except Exception as e:
-                frappe.log_error(f"Failed to attach PDF to email for {offer.name}: {str(e)}")
-
-        sender = None
-        if tpl.get("email_account"):
-            sender = frappe.db.get_value("Email Account", tpl.email_account, "email_id")
-
-        cc_list = []
-        if tpl.get("cc"):
-            cc_val = tpl.get("cc")
-            cc_list = [c.strip() for c in cc_val.replace(";", ",").split(",") if c.strip()]
-
-        frappe.sendmail(
-            sender=sender,
-            recipients=[applicant_email],
-            cc=cc_list if cc_list else None,
-            subject=subject,
-            message=message,
-            attachments=attachments
-        )
-
-        # Log offer communication
-        from slcm.admission.utils.notifications import log_communication
-        log_communication(
-            applicant=offer.applicant,
-            communication_type="Email",
-            category="Offer Letter",
-            subject=subject,
-            content=message,
-            reference_doctype="Offer Letter",
-            reference_name=offer.name
-        )
+    # Removed _send_offer_letter_email
 
 
 

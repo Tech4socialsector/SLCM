@@ -230,6 +230,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 		.er2-as-badge     { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
 		.er2-arrear-badge { background:#fff7ed; color:#9a3412; border:1px solid #fed7aa; font-style:italic; cursor:pointer; }
 		.er2-arrear-badge:hover { background:#fed7aa; }
+		.er2-improved-badge { background:#dcfce7; color:#14532d; border:1px solid #4ade80; font-style:normal; font-weight:800; cursor:pointer; }
+		.er2-improved-badge:hover { background:#bbf7d0; }
 		.er2-improv-badge { background:#dcfce7; color:#14532d; border:1px solid #4ade80; font-weight:800; }
 
 		/* Repeat exam dialog */
@@ -2190,7 +2192,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 			});
 
 			var mfaStr    = sm.mfa === 'Yes' ? ' <sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '';
-			var arrearStr = (sm.arrear_marker && sm.mfa !== 'Yes')
+			var improvedStr = (sm.arrear_marker === 'I') ? ' <sup class="er2-ann-badge er2-improved-badge">I</sup>' : '';
+			var arrearStr = (sm.arrear_marker && sm.arrear_marker !== 'I' && sm.mfa !== 'Yes')
 				? ' <sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm.arrear_marker) + '</sup>' : '';
 
 			// Grade section — attendance shortage (computed from Attendance
@@ -2209,7 +2212,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					'value="' + frappe.utils.escape_html(gradeVal) + '" placeholder="—" ' + (isAS ? 'readonly title="Grade withheld — attendance below the required minimum (see Attendance Settings)"' : '') + ' ' +
 					'style="width:60px;height:26px;border:1.5px solid ' + gradeBorderColor + ';border-radius:6px;padding:0 6px;font-size:12px;font-weight:700;text-align:center;outline:none;color:' + gradeColor + ';' + (isAS ? 'background:#fffbeb;' : '') + '">' +
 					(sm.mfa === 'Yes' ? '<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '') +
-					(sm.arrear_marker && sm.mfa !== 'Yes' ? '<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm.arrear_marker) + '</sup>' : '') +
+					(sm.arrear_marker && sm.arrear_marker !== 'I' && sm.mfa !== 'Yes' ? '<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm.arrear_marker) + '</sup>' : '') +
 					'</span></td>';
 			} else {
 				cells += '<td style="font-weight:700;color:' + gradeColor + ';" class="er2-grade-cell" data-student="' + frappe.utils.escape_html(s.student) + '" title="' + (isAS ? 'Grade withheld — attendance below the required minimum' : '') + '">' + frappe.utils.escape_html(gradeVal || '—') + mfaStr + arrearStr + '</td>';
@@ -2256,14 +2259,14 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 
 			// Notes cell — explains arrear/MFA override situation
 			var notesTxt = '';
-			if (sm.arrear_marker && sm.mfa === 'Yes') {
+			if (sm.arrear_marker && sm.arrear_marker !== 'I' && sm.mfa === 'Yes') {
 				notesTxt = 'Arrear (' + frappe.utils.escape_html(sm.arrear_marker) + ') exists; MFA applied';
-			} else if (sm.arrear_marker) {
+			} else if (sm.arrear_marker && sm.arrear_marker !== 'I') {
 				notesTxt = 'Arrear (' + frappe.utils.escape_html(sm.arrear_marker) + ') pending';
 			}
 			cells += '<td class="er2-status-col" style="text-align:left;min-width:160px;font-size:11px;color:' +
-				(sm.arrear_marker && sm.mfa === 'Yes' ? '#92400e' : sm.arrear_marker ? '#9a3412' : '#64748b') + ';' +
-				(sm.arrear_marker && sm.mfa === 'Yes' ? 'background:#fef9c3;' : sm.arrear_marker ? 'background:#fff7ed;' : '') +
+				(sm.arrear_marker && sm.arrear_marker !== 'I' && sm.mfa === 'Yes' ? '#92400e' : (sm.arrear_marker && sm.arrear_marker !== 'I') ? '#9a3412' : '#64748b') + ';' +
+				(sm.arrear_marker && sm.arrear_marker !== 'I' && sm.mfa === 'Yes' ? 'background:#fef9c3;' : (sm.arrear_marker && sm.arrear_marker !== 'I') ? 'background:#fff7ed;' : '') +
 				'">' + notesTxt + '</td>';
 
 			// Re-Exam cells
@@ -2291,6 +2294,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 				cells += '<td style="padding:4px 6px;text-align:center;" class="er2-rxg-cell" data-student="' +
 					frappe.utils.escape_html(s.student) + '">' +
 					'<span class="er2-rxg-box">' + frappe.utils.escape_html(rxGradeVal || '—') + '</span>' +
+					improvedStr +
 					'</td>';
 			}
 
@@ -2328,10 +2332,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 					'<input type="text" class="er2-ug-input" data-student="' + stu_ug + '" ' +
 					'value="' + frappe.utils.escape_html(ugRaw) + '" placeholder="—" ' + (isAS ? 'readonly' : '') + ' ' +
 					'style="width:60px;height:26px;border:1.5px solid #c7d2fe;border-radius:6px;padding:0 6px;font-size:12px;font-weight:700;text-align:center;outline:none;color:#3730a3;' + (isAS ? 'background:#fffbeb;' : '') + '">' +
-					mfaStr + arrearStr + impStr +
+					mfaStr + arrearStr + impStr + improvedStr +
 					'</span></td>';
 			} else {
-				cells += '<td style="font-weight:700;color:#3730a3;text-align:center;" class="er2-ug-cell" data-student="' + stu_ug + '">' + frappe.utils.escape_html(ugVal) + mfaStr + arrearStr + impStr + '</td>';
+				cells += '<td style="font-weight:700;color:#3730a3;text-align:center;" class="er2-ug-cell" data-student="' + stu_ug + '">' + frappe.utils.escape_html(ugVal) + mfaStr + arrearStr + impStr + improvedStr + '</td>';
 			}
 
 			rows += '<tr class="er2-mrow" data-student="' + frappe.utils.escape_html(s.student) + '">' + cells + '</tr>';
@@ -2419,8 +2423,10 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 								var isMFA2    = sm_ref.mfa === 'Yes';
 								var isAS2     = !!sm_ref.attendance_shortage || sm_ref.attendance_status === 'Attendance Shortage';
 								var mStr      = isMFA2 ? ' <sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '';
-								var arrStr    = sm_ref.arrear_marker
+								var arrStr    = (sm_ref.arrear_marker && sm_ref.arrear_marker !== 'I')
 									? ' <sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm_ref.arrear_marker) + '</sup>' : '';
+								var impStrNew = (sm_ref.arrear_marker === 'I')
+									? ' <sup class="er2-ann-badge er2-improved-badge">I</sup>' : '';
 								// Attendance shortage replaces the grade text itself with "AS"
 								// (rather than annotating it) — see render_marks_table().
 								var gradeDisp = isAS2 ? 'AS' : (grade || '');
@@ -2434,7 +2440,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 									$gi.prop('readonly', isAS2);
 									$gc.find('sup').remove();
 									if (isMFA2) $gi.after('<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>');
-									if (sm_ref.arrear_marker) $gi.after('<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm_ref.arrear_marker) + '</sup>');
+									if (sm_ref.arrear_marker && sm_ref.arrear_marker !== 'I') $gi.after('<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm_ref.arrear_marker) + '</sup>');
 								} else {
 									$gc.html(frappe.utils.escape_html(gradeDisp || '—') + mStr + arrStr);
 								}
@@ -2448,13 +2454,18 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 									$ugInput.prop('readonly', isAS2);
 									$ugCell.find('sup').remove();
 									if (isMFA2) $ugInput.after('<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>');
-									if (sm_ref.arrear_marker) $ugInput.after('<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm_ref.arrear_marker) + '</sup>');
+									if (sm_ref.arrear_marker && sm_ref.arrear_marker !== 'I') $ugInput.after('<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(sm_ref.arrear_marker) + '</sup>');
+								if (sm_ref.arrear_marker === 'I') $ugInput.after('<sup class="er2-ann-badge er2-improved-badge">I</sup>');
 								} else {
 									$ugCell.html(frappe.utils.escape_html(ugDisp || '—') + mStr + arrStr);
 								}
 								var rxGrade = r.message.re_exam_grade;
-								$mtable.find('.er2-rxg-cell[data-student="' + student + '"] .er2-rxg-box')
-									.text(rxGrade || '—');
+								var $rxgCell = $mtable.find('.er2-rxg-cell[data-student="' + student + '"]');
+								$rxgCell.find('.er2-rxg-box').text(rxGrade || '—');
+								$rxgCell.find('.er2-improved-badge').remove();
+								if (sm_ref.arrear_marker === 'I') {
+									$rxgCell.append(impStrNew);
+								}
 								// Update state
 								if (!S.marks[student]) S.marks[student] = { entries: {} };
 								if (!S.marks[student].entries) S.marks[student].entries = {};
@@ -2521,7 +2532,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 							var isAS   = !!S.marks[student].attendance_shortage || S.marks[student].attendance_status === 'Attendance Shortage';
 							var arrMk  = S.marks[student].arrear_marker || '';
 							var mStr   = isMFA  ? ' <sup class="er2-ann-badge er2-mfa-badge">MFA</sup>' : '';
-							var arStr  = arrMk  ? ' <sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(arrMk) + '</sup>' : '';
+							var arStr  = (arrMk && arrMk !== 'I') ? ' <sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(arrMk) + '</sup>' : '';
+							var impStrN2 = (arrMk === 'I') ? ' <sup class="er2-ann-badge er2-improved-badge">I</sup>' : '';
 							var tg    = isAS ? 'AS' : (S.marks[student].grade || '—');
 							var ug    = isAS ? 'AS' : (S.marks[student].updated_grade || '—');
 							var $gc2  = $tr.find('.er2-grade-cell');
@@ -2531,7 +2543,7 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 								$gi2.prop('readonly', isAS);
 								$gc2.find('sup').remove();
 								if (isMFA) $gi2.after('<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>');
-								if (arrMk) $gi2.after('<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(arrMk) + '</sup>');
+								if (arrMk && arrMk !== 'I') $gi2.after('<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(arrMk) + '</sup>');
 							} else {
 								$gc2.html(frappe.utils.escape_html(tg) + mStr + arStr);
 							}
@@ -2542,7 +2554,8 @@ frappe.pages['examination-result'].on_page_load = function (wrapper) {
 								$ugI.prop('readonly', isAS);
 								$ugC.find('sup').remove();
 								if (isMFA) $ugI.after('<sup class="er2-ann-badge er2-mfa-badge">MFA</sup>');
-								if (arrMk) $ugI.after('<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(arrMk) + '</sup>');
+								if (arrMk && arrMk !== 'I') $ugI.after('<sup class="er2-ann-badge er2-arrear-badge">' + frappe.utils.escape_html(arrMk) + '</sup>');
+								if (arrMk === 'I') $ugI.after('<sup class="er2-ann-badge er2-improved-badge">I</sup>');
 							} else {
 								$ugC.html(frappe.utils.escape_html(ug) + mStr + arStr);
 							}

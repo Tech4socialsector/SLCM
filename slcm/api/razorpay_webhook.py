@@ -338,6 +338,13 @@ def handle_settlement_processed(payload):
 		frappe.logger().error("Razorpay Webhook: API credentials not configured in Razorpay Settings")
 		return
 
+	settlement_payload = {
+		"id": settlement_id,
+		"utr": utr,
+		"status": settlement_status,
+		"settlement_date": settlement_date,
+	}
+
 	# Fetch per-payment recon (paginated; max 1000 per call)
 	recon_items = _fetch_settlement_recon(settlement_id, api_key, api_secret)
 
@@ -351,34 +358,77 @@ def handle_settlement_processed(payload):
 		if not rzp_payment_id:
 			continue
 
+		# Try FLE Payment Log first
 		log_name = frappe.db.get_value(
 			"FLE Payment Log",
 			{"transaction_id": rzp_payment_id},
 			"name"
 		)
+		target_doctype = "FLE Payment Log"
+
+		if not log_name:
+			# Try Payment Request
+			log_name = frappe.db.get_value(
+				"Payment Request",
+				{"razorpay_payment_id": rzp_payment_id, "status": "Paid"},
+				"name"
+			)
+			if not log_name:
+				log_name = frappe.db.get_value(
+					"Payment Request",
+					{"transaction_id": rzp_payment_id, "status": "Paid"},
+					"name"
+				)
+			target_doctype = "Payment Request"
+
 		if not log_name:
 			continue
 
-		# Per-payment recon amounts (paise → rupees)
-		fee_paise    = item.get("fee") or 0
-		tax_paise    = item.get("tax") or 0
-		# Razorpay recon: credit = gross received, debit = refund debited
-		credit_paise = item.get("credit") or item.get("amount") or 0
-
-		frappe.db.set_value("FLE Payment Log", log_name, {
-			"settlement_id":     settlement_id,
-			"settlement_utr":    utr,
-			"settlement_date":   settlement_date,
-			"settlement_status": settlement_status,
-			"gateway_fees":      round(fee_paise / 100, 2),
-			"gateway_tax":       round(tax_paise / 100, 2),
-			"net_settled":       round(credit_paise / 100, 2),
-		})
+		complete_payment_settlement(target_doctype, log_name, item, settlement_payload)
 		updated += 1
 
 	frappe.logger().info(
 		f"Razorpay settlement {settlement_id} (UTR: {utr}): updated {updated} FLE Payment Log records."
 	)
+
+def complete_payment_settlement(target_doctype, log_name, item, settlement_payload):
+	"""Shared helper to update Payment Request or FLE Payment Log with settlement data."""
+	import json
+	gross_paise  = int(item.get("amount") or 0)
+	fee_paise    = int(item.get("fee") or 0)
+	tax_paise    = int(item.get("tax") or 0)
+	net_paise    = int(item.get("credit") or 0)
+
+	gateway_status = settlement_payload.get("status") or "processed"
+
+	fields_to_update = {
+		"settlement_id":     settlement_payload.get("id"),
+		"settlement_utr":    settlement_payload.get("utr") or "",
+		"settlement_date":   settlement_payload.get("settlement_date"),
+		"gateway_fees":      round(fee_paise / 100, 2),
+		"gateway_tax":       round(tax_paise / 100, 2),
+		"net_settled":       round(net_paise / 100, 2) if net_paise else round((gross_paise - fee_paise - tax_paise) / 100, 2),
+	}
+
+	if target_doctype == "Payment Request":
+		fields_to_update["settlement_amount"] = round(gross_paise / 100, 2)
+		fields_to_update["settlement_response"] = json.dumps(item, indent=4)
+		fields_to_update["gateway_settlement_status"] = gateway_status
+		
+		# Map to Payment Request internal select options
+		if gateway_status == "processed":
+			fields_to_update["settlement_status"] = "Settled"
+		elif gateway_status == "created":
+			fields_to_update["settlement_status"] = "Processing"
+		elif gateway_status == "failed":
+			fields_to_update["settlement_status"] = "Failed"
+		else:
+			fields_to_update["settlement_status"] = "Pending"
+	else:
+		fields_to_update["settlement_status"] = gateway_status
+
+	frappe.db.set_value(target_doctype, log_name, fields_to_update)
+
 
 
 def _fetch_settlement_recon(settlement_id, api_key, api_secret):

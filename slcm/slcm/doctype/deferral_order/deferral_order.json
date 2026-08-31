@@ -1,7 +1,8 @@
 {
  "actions": [],
+ "allow_import": 1,
  "autoname": "DEF-.YYYY.-.#####",
- "creation": "2026-05-22 14:00:00.000000",
+ "creation": "2026-05-22 14:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -13,7 +14,8 @@
   "programme",
   "deferral_reason",
   "gap_year_fee",
-  "remarks"
+  "remarks",
+  "amended_from"
  ],
  "fields": [
   {
@@ -52,10 +54,11 @@
    "reqd": 1
   },
   {
-   "fetch_from": "student.programme",
+   "fetch_from": "student.programme_of_study",
    "fieldname": "programme",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Programme",
+   "options": "Programme",
    "read_only": 1
   },
   {
@@ -75,11 +78,21 @@
    "fieldname": "remarks",
    "fieldtype": "Small Text",
    "label": "Remarks"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Deferral Order",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-22 14:00:00.000000",
+ "modified": "2026-08-28 10:26:35.024283",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Deferral Order",
@@ -101,7 +114,6 @@
   },
   {
    "create": 1,
-   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,

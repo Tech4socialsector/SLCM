@@ -94,6 +94,16 @@ def get_data(filters):
     room_filters = {"is_booking_allowed": 1}
     if filters.get("venue_type"):
         room_filters["room_type"] = filters["venue_type"]
+    if filters.get("room"):
+        room_filters["name"] = filters["room"]
+    if filters.get("block"):
+        room_filters["block"] = filters["block"]
+    if filters.get("min_capacity"):
+        room_filters["seating_capacity"] = [">=", int(filters["min_capacity"])]
+    if filters.get("floor"):
+        room_filters["floor"] = ["like", "%{0}%".format(filters["floor"])]
+    if filters.get("facilities"):
+        room_filters["facilities"] = ["like", "%{0}%".format(filters["facilities"])]
 
     rooms = frappe.get_all(
         "Room",
@@ -109,7 +119,7 @@ def get_data(filters):
             start_datetime, end_datetime
         FROM `tabVenue Booking`
         WHERE
-            status IN ('Approved', 'Pending')
+            status IN ('Allotted', 'Pending Allotment')
             AND start_datetime < %(to_dt)s
             AND end_datetime   > %(from_dt)s
     """, {"from_dt": from_dt, "to_dt": to_dt}, as_dict=True)
@@ -153,6 +163,20 @@ def get_data(filters):
                 "booking_status":  "",
                 "event_name":      "",
             })
+
+    if filters.get("booked_by"):
+        booked_by = filters["booked_by"].lower()
+        data = [
+            r for r in data
+            if r["availability"] == "Booked" and booked_by in (r["booked_by"] or "").lower()
+        ]
+
+    if filters.get("availability_status"):
+        data = [r for r in data if r["availability"] == filters["availability_status"]]
+
+    if filters.get("booked_by") or filters.get("availability_status"):
+        available_count = sum(1 for r in data if r["availability"] == "Available")
+        booked_count = len({r["room"] for r in data if r["availability"] == "Booked"})
 
     # Sort: Available first, then Booked
     data.sort(key=lambda r: (0 if r["availability"] == "Available" else 1, r["venue_type"], r["room_name"]))

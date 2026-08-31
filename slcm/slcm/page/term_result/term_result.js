@@ -285,6 +285,8 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 		search_timer: null,
 		inst_filter:  { programmes: [], batches: [] },
 		inst_options: null,
+		select_all_matching: false,
+		excluded_students:   {},
 	};
 
 	// ── Render shell ──────────────────────────────────────────────────────────
@@ -409,6 +411,11 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 
 				<!-- Table (horizontally scrollable) -->
 				<div class="tr-table-card">
+					<div class="tr-select-banner" id="tr-select-banner" style="display:none;padding:8px 16px;background:#eef2ff;border-bottom:1px solid #e0e7ff;font-size:12.5px;color:#4338ca;align-items:center;gap:6px;">
+						<span id="tr-select-banner-text"></span>
+						<a href="javascript:void(0)" id="tr-select-all-link" style="font-weight:700;text-decoration:underline;"></a>
+						<a href="javascript:void(0)" id="tr-select-clear-link" style="margin-left:auto;font-weight:700;text-decoration:underline;">Clear selection</a>
+					</div>
 					<div class="tr-table-scroll">
 						<div id="tr-table-body"></div>
 					</div>
@@ -439,6 +446,10 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 	var $sortBy     = $body.find('#tr-sort-by');
 	var $sortDir    = $body.find('#tr-sort-dir');
 	var $statCards  = $body.find('#tr-stat-cards');
+	var $selBanner     = $body.find('#tr-select-banner');
+	var $selBannerText = $body.find('#tr-select-banner-text');
+	var $selAllLink    = $body.find('#tr-select-all-link');
+	var $selClearLink  = $body.find('#tr-select-clear-link');
 
 	// ── Load Exam Plans ───────────────────────────────────────────────────────
 	frappe.call({
@@ -462,6 +473,7 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 		S.search      = '';
 		S.inst_filter = { programmes: [], batches: [] };
 		S.inst_options = null;
+		resetSelection();
 		$search.val('');
 		$body.find('#tr-inst-filter-btn').removeClass('xif-btn-active').find('.xif-count').remove();
 		if (S.exam_plan) {
@@ -480,6 +492,7 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 		S.search_timer = setTimeout(function () {
 			S.search = $search.val().trim();
 			S.page = 1;
+			resetSelection();
 			loadStudents();
 		}, 350);
 	});
@@ -519,6 +532,33 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 			frappe.show_alert({message:'Please select an Exam Plan first.', indicator:'orange'});
 			return;
 		}
+
+		if (S.select_all_matching) {
+			var matchCount = Math.max(0, S.total - Object.keys(S.excluded_students).length);
+			frappe.confirm('Are you sure you want to generate ' + actionName + ' for ' + matchCount + ' student(s) matching the current filters?', function() {
+				frappe.call({
+					method: 'slcm.slcm.page.term_result.term_result.generate_term_results',
+					args: {
+						exam_plan:        S.exam_plan,
+						student_names:    '[]',
+						action:           action,
+						select_all:       1,
+						exclude_students: JSON.stringify(Object.keys(S.excluded_students)),
+						search:           S.search,
+						inst_programmes:  JSON.stringify(S.inst_filter.programmes),
+						inst_batches:     JSON.stringify(S.inst_filter.batches),
+					},
+					freeze: true,
+					freeze_message: 'Generating ' + actionName + '...',
+					callback: function(r) {
+						frappe.show_alert({message: actionName + ' generated successfully!', indicator:'green'});
+						loadStudents();
+					}
+				});
+			});
+			return;
+		}
+
 		var selected = [];
 		$tableBody.find('.tr-row-chk:checked').each(function() {
 			selected.push($(this).data('student'));
@@ -675,7 +715,23 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 					headers: { 'X-Frappe-CSRF-Token': frappe.csrf_token || '' }
 				})
 				.then(function(res) {
-					if (!res.ok) throw new Error('Server error: ' + res.status);
+					if (!res.ok) {
+						return res.json().catch(function () { return {}; }).then(function (errBody) {
+							var msg = 'Server error: ' + res.status;
+							try {
+								if (errBody && errBody._server_messages) {
+									var arr = JSON.parse(errBody._server_messages);
+									if (arr && arr.length) {
+										var first = JSON.parse(arr[0]);
+										msg = first.message || msg;
+									}
+								} else if (errBody && errBody.exception) {
+									msg = errBody.exception.split(': ').pop();
+								}
+							} catch (e) { /* fall back to generic message */ }
+							throw new Error(msg);
+						});
+					}
 					return res.blob();
 				})
 				.then(function(blob) {
@@ -873,8 +929,10 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 				? s.course_count + ' &nbsp;<a class="tr-view-link tr-view-courses" data-student="' + frappe.utils.escape_html(s.student) + '" data-name="' + frappe.utils.escape_html(s.student_name) + '">View</a>'
 				: '—';
 
+			var rowChecked = S.select_all_matching && !S.excluded_students[s.student];
+
 			return '<tr>' +
-				'<td style="width:40px;"><input type="checkbox" class="tr-row-chk" data-student="' + frappe.utils.escape_html(s.student) + '" style="accent-color:#4f46e5;cursor:pointer;"></td>' +
+				'<td style="width:40px;"><input type="checkbox" class="tr-row-chk" data-student="' + frappe.utils.escape_html(s.student) + '"' + (rowChecked ? ' checked' : '') + ' style="accent-color:#4f46e5;cursor:pointer;"></td>' +
 				'<td style="min-width:200px;">' +
 					'<div style="display:flex;align-items:center;gap:10px;">' +
 					'<div class="tr-savatar ' + avClass + '">' + avatar + '</div>' +
@@ -894,9 +952,13 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 			'</tr>';
 		});
 
+		var allOnPageChecked = S.students.length > 0 && S.students.every(function (s) {
+			return S.select_all_matching && !S.excluded_students[s.student];
+		});
+
 		var thead = '<table class="tr-table">' +
 			'<thead><tr>' +
-			'<th style="width:40px;"><input type="checkbox" id="tr-chk-all" style="accent-color:#4f46e5;cursor:pointer;"></th>' +
+			'<th style="width:40px;"><input type="checkbox" id="tr-chk-all"' + (allOnPageChecked ? ' checked' : '') + ' style="accent-color:#4f46e5;cursor:pointer;"></th>' +
 			'<th>Student</th>' +
 			'<th>Programme</th>' +
 			'<th class="center">Courses</th>' +
@@ -911,9 +973,27 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 		$tableBody.html(thead);
 		$pagBar.show();
 
-		// Select all checkbox
+		if (S.select_all_matching) {
+			showMatchingBanner();
+		} else {
+			hideSelectBanner();
+		}
+
+		// Select all checkbox (current page)
 		$tableBody.find('#tr-chk-all').on('change', function () {
-			$tableBody.find('.tr-row-chk').prop('checked', $(this).is(':checked'));
+			var checked = $(this).is(':checked');
+			$tableBody.find('.tr-row-chk').prop('checked', checked);
+			if (checked) {
+				S.excluded_students = {};
+				if (S.select_all_matching || S.total <= S.students.length) {
+					S.select_all_matching = true;
+					showMatchingBanner();
+				} else {
+					showPageSelectedBanner();
+				}
+			} else {
+				resetSelection();
+			}
 		});
 
 		// Add spin keyframe if not present
@@ -924,6 +1004,60 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 			document.head.appendChild(ss);
 		}
 	}
+
+	// ── Multi-page selection ("select all matching") ────────────────────────
+	function resetSelection() {
+		S.select_all_matching = false;
+		S.excluded_students   = {};
+		hideSelectBanner();
+	}
+
+	function hideSelectBanner() {
+		$selBanner.hide();
+	}
+
+	function showPageSelectedBanner() {
+		$selBannerText.text('All ' + S.students.length + ' students on this page are selected.');
+		$selAllLink.text('Select all ' + S.total + ' students that match this search').show();
+		$selBanner.css('display', 'flex');
+	}
+
+	function showMatchingBanner() {
+		var count = Math.max(0, S.total - Object.keys(S.excluded_students).length);
+		$selBannerText.text('All ' + count + ' students that match this search are selected.');
+		$selAllLink.hide();
+		$selBanner.css('display', 'flex');
+	}
+
+	// Row checkbox toggled — delegated so it keeps working across re-renders
+	$tableBody.on('change', '.tr-row-chk', function () {
+		var student = $(this).data('student');
+		var checked = $(this).is(':checked');
+		if (S.select_all_matching) {
+			if (checked) {
+				delete S.excluded_students[student];
+			} else {
+				S.excluded_students[student] = true;
+			}
+			showMatchingBanner();
+		}
+		var $rows = $tableBody.find('.tr-row-chk');
+		$tableBody.find('#tr-chk-all').prop('checked', $rows.length > 0 && $rows.length === $rows.filter(':checked').length);
+	});
+
+	$selAllLink.on('click', function () {
+		S.select_all_matching = true;
+		S.excluded_students   = {};
+		$tableBody.find('.tr-row-chk').prop('checked', true);
+		$tableBody.find('#tr-chk-all').prop('checked', true);
+		showMatchingBanner();
+	});
+
+	$selClearLink.on('click', function () {
+		resetSelection();
+		$tableBody.find('.tr-row-chk').prop('checked', false);
+		$tableBody.find('#tr-chk-all').prop('checked', false);
+	});
 
 	// ── Render pagination ────────────────────────────────────────────────────
 	function renderPagination() {
@@ -1153,6 +1287,7 @@ frappe.pages['term-result'].on_page_load = function (wrapper) {
 		$modal.find('.xif-apply').on('click', function () {
 			S.inst_filter = { programmes: sel.programmes, batches: sel.batches };
 			S.page = 1;
+			resetSelection();
 			var total = count_all();
 			var $btn = $body.find('#tr-inst-filter-btn');
 			if (total) {

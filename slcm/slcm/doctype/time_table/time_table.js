@@ -51,37 +51,95 @@ frappe.ui.form.on('Time Table', {
 
                 const dialog = new frappe.ui.Dialog({
                     title: __('Apply to Future Occurrences'),
-                    fields: [
+                                        fields: [
                         {
                             fieldtype: 'HTML',
                             options: `<p>${__('This will update')} <b>${info.count}</b> ${__('occurrence(s) — today and every future date in this series. Past dates are left untouched.')}</p>`
                         },
                         {
+                            fieldtype: 'Section Break',
+                            label: __('Faculty')
+                        },
+                        {
+                            fieldname: 'instructor',
+                            fieldtype: 'Link',
+                            options: 'Faculty',
+                            label: __('Faculty'),
+                            default: frm.doc.instructor
+                        },
+                        {
+                            fieldtype: 'Section Break',
+                            label: __('Schedule')
+                        },
+                        {
+                            fieldname: 'schedule_date',
+                            fieldtype: 'Date',
+                            label: __('Schedule Date'),
+                            default: frm.doc.schedule_date
+                        },
+                        {
                             fieldname: 'venue',
                             fieldtype: 'Link',
                             options: 'Venue Master',
-                            label: __('New Venue'),
+                            label: __('Venue'),
                             default: frm.doc.venue
                         },
                         {
                             fieldname: 'from_time',
                             fieldtype: 'Time',
-                            label: __('New From Time'),
-                            default: frm.doc.from_time
+                            label: __('From Time'),
+                            default: frm.doc.from_time ? frm.doc.from_time.padStart(8, '0') : ''
                         },
                         {
                             fieldname: 'to_time',
                             fieldtype: 'Time',
-                            label: __('New To Time'),
-                            default: frm.doc.to_time
+                            label: __('To Time'),
+                            default: frm.doc.to_time ? frm.doc.to_time.padStart(8, '0') : ''
+                        },
+                        {
+                            fieldtype: 'Section Break',
+                            label: __('Repeat Settings')
+                        },
+                        {
+                            fieldname: 'repeat_frequency',
+                            fieldtype: 'Select',
+                            label: __('Repeat'),
+                            options: 'Never\nDaily\nWeekly\nMonthly',
+                            default: frm.doc.repeat_frequency
+                        },
+                        {
+                            fieldname: 'repeats_till',
+                            fieldtype: 'Date',
+                            label: __('Repeats Till'),
+                            depends_on: 'eval:doc.repeat_frequency && doc.repeat_frequency != "Never"',
+                            default: frm.doc.repeats_till
+                        },
+                        {
+                            fieldtype: 'Section Break',
+                            label: __('Display Settings')
+                        },
+                        {
+                            fieldname: 'title',
+                            fieldtype: 'Data',
+                            label: __('Title'),
+                            default: frm.doc.title
+                        },
+                        {
+                            fieldname: 'color',
+                            fieldtype: 'Color',
+                            label: __('Color'),
+                            default: frm.doc.color
                         }
                     ],
                     primary_action_label: __('Apply'),
                     primary_action: function (values) {
                         const updates = {};
-                        if (values.venue && values.venue !== frm.doc.venue) updates.venue = values.venue;
-                        if (values.from_time && values.from_time !== frm.doc.from_time) updates.from_time = values.from_time;
-                        if (values.to_time && values.to_time !== frm.doc.to_time) updates.to_time = values.to_time;
+                        const check_fields = ['instructor', 'schedule_date', 'venue', 'from_time', 'to_time', 'repeat_frequency', 'repeats_till', 'title', 'color'];
+                        check_fields.forEach(f => {
+                            if (values[f] !== undefined && values[f] !== frm.doc[f]) {
+                                updates[f] = values[f];
+                            }
+                        });
 
                         if (!Object.keys(updates).length) {
                             frappe.msgprint(__('No changes were made.'));
@@ -225,7 +283,7 @@ frappe.ui.form.on('Time Table', {
 
             // Calculate difference in milliseconds and convert to hours
             const diff_ms = to_date - from_date;
-            const duration_hours = diff_ms / (1000 * 60 * 60);
+            const hours = Math.floor(diff_ms / (1000 * 60 * 60)); const minutes = Math.floor((diff_ms % (1000 * 60 * 60)) / (1000 * 60)); const duration_hours = hours + (minutes / 100);
 
             // Set the duration field (rounded to 2 decimal places)
             frm.set_value('duration_hours', parseFloat(duration_hours.toFixed(2)));

@@ -93,14 +93,23 @@ class EntranceTestSeatAllocation(Document):
                     self.append("category", {"category": cat})
 
     def generate_result_card(self):
-        """Generates the Entrance Test Result Card PDF using the 'Entrance Test Result Card' print format."""
+        """Generates the dummy URL for Entrance Test Result Card."""
         try:
-            if self.entrance_test_result_card:
+            dummy_url = f"/api/method/slcm.www.eligibility.entrance_test_seat_allocation.download_result_card?allocation_name={self.name}"
+            self.db_set("entrance_test_result_card", dummy_url)
+            return dummy_url
+        except Exception:
+            frappe.log_error(traceback.format_exc(), f"Result Card Dummy URL Generation Failed: {self.name}")
+            return None
+
+    def _generate_physical_result_card(self):
+        """Generates the actual Entrance Test Result Card PDF using the 'Entrance Test Result Card' print format."""
+        try:
+            if self.entrance_test_result_card and self.entrance_test_result_card.startswith("/private/files/"):
                 old_file_url = self.entrance_test_result_card
                 frappe.db.delete("File", {"file_url": old_file_url})
-                self.entrance_test_result_card = None
-
-            # Using the Print Format name as requested (Configurable way)
+            
+            frappe.flags.ignore_print_permissions = True
             pdf_content = frappe.get_print(
                 self.doctype,
                 self.name,
@@ -120,6 +129,7 @@ class EntranceTestSeatAllocation(Document):
             _file.save(ignore_permissions=True)
             
             self.db_set("entrance_test_result_card", _file.file_url)
+            frappe.db.commit()
             return _file.file_url
             
         except Exception:
@@ -154,7 +164,7 @@ class EntranceTestSeatAllocation(Document):
                         should_regenerate = True
                         break
                         
-            if should_regenerate:
+            if should_regenerate and not self.flags.ignore_admit_card_generation:
                 from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
                 generate_and_store_admit_card(self, is_rescheduled=is_rescheduled)
 
@@ -236,31 +246,49 @@ def bulk_download_all_records(names):
     if not names:
         frappe.throw("No records selected for download.")
 
+    total = len(names)
     zip_buffer = io.BytesIO()
     found_files = 0
 
-    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-        for name in names:
+    frappe.publish_progress(0, title=_("Bulk Download"), description=_("Starting..."))
+
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as zip_file:
+        for idx, name in enumerate(names, start=1):
             doc = frappe.get_doc("Entrance Test Seat Allocation", name)
             applicant_id = doc.applicant or doc.name
+
+            pct = int((idx / total) * 100)
+            frappe.publish_progress(
+                pct,
+                title=_("Bulk Download"),
+                description=_("Processing {0} of {1}: {2}").format(idx, total, applicant_id)
+            )
             
-            # 1. Admit Card Helper
             def add_admit_to_zip(field, suffix=""):
                 nonlocal found_files
-                if not getattr(doc, field):
-                    from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
-                    is_re = (field == "re_admit_card_download")
-                    generate_and_store_admit_card(doc, is_rescheduled=is_re)
-                    doc.reload()
                 
                 file_url = getattr(doc, field)
-                if file_url:
+                fpath = None
+                
+                if file_url and file_url.startswith("/private/files/"):
                     fname = file_url.split('/')[-1]
                     fpath = get_file_path(fname)
-                    if os.path.exists(fpath):
-                        zip_path = f"{applicant_id}/Admit_Card{suffix}.pdf"
-                        zip_file.write(fpath, arcname=zip_path)
-                        found_files += 1
+                    
+                # If there is no URL, or if it is a dynamic API URL, or the physical file is missing
+                if not file_url or file_url.startswith("/api/method/") or (fpath and not os.path.exists(fpath)):
+                    from slcm.admission.doctype.entrance_test_list.entrance_test_list import generate_and_store_admit_card
+                    is_re = (field == "re_admit_card_download")
+                    file_url = generate_and_store_admit_card(doc, is_rescheduled=is_re)
+                    doc.reload()
+                    
+                    if file_url and file_url.startswith("/private/files/"):
+                        fname = file_url.split('/')[-1]
+                        fpath = get_file_path(fname)
+                
+                if file_url and fpath and os.path.exists(fpath):
+                    zip_path = f"{applicant_id}/Admit_Card{suffix}.pdf"
+                    zip_file.write(fpath, arcname=zip_path)
+                    found_files += 1
 
             # Process Admit Cards
             if doc.allocation_status in ["Allocated", "Reallocated"]:
@@ -268,20 +296,30 @@ def bulk_download_all_records(names):
             if doc.is_rescheduled and doc.re_allocation_status in ["Allocated", "Reallocated"]:
                 add_admit_to_zip("re_admit_card_download", suffix="_Rescheduled")
 
-            # 2. Result Card
-            # Only add if result is declared or at least one score exists
+            # Result Card — only if result is declared or at least one score exists
             if doc.result_status or doc.total_marks_secured_in_part_a_b:
                 if not doc.entrance_test_result_card:
                     doc.generate_result_card()
                 
                 file_url = doc.entrance_test_result_card
-                if file_url:
+                fpath = None
+                
+                if file_url and file_url.startswith("/private/files/"):
                     fname = file_url.split('/')[-1]
                     fpath = get_file_path(fname)
-                    if os.path.exists(fpath):
-                        zip_path = f"{applicant_id}/Entrance_Test_Result_Card.pdf"
-                        zip_file.write(fpath, arcname=zip_path)
-                        found_files += 1
+                    
+                if not file_url or file_url.startswith("/api/method/") or (fpath and not os.path.exists(fpath)):
+                    file_url = doc._generate_physical_result_card()
+                    if file_url and file_url.startswith("/private/files/"):
+                        fname = file_url.split('/')[-1]
+                        fpath = get_file_path(fname)
+
+                if file_url and fpath and os.path.exists(fpath):
+                    zip_path = f"{applicant_id}/Entrance_Test_Result_Card.pdf"
+                    zip_file.write(fpath, arcname=zip_path)
+                    found_files += 1
+
+    frappe.publish_progress(100, title=_("Bulk Download"), description=_("Finalizing archive..."))
 
     if found_files == 0:
         frappe.throw("No documents (Admit Cards or Results) found for the selected records.")
@@ -297,6 +335,386 @@ def bulk_download_all_records(names):
     )
 
     return saved_zip.file_url
+
+
+@frappe.whitelist()
+def download_centre_list_excel(
+    academic_year=None,
+    admission_cycle=None,
+    program_level=None,
+    program=None,
+    applicant_type=None,
+    entrance_test_city=None,
+    center_name=None
+):
+    """
+    Generates per-centre Excel sheets (one sheet = one centre) bundled in a single ZIP.
+
+    Columns per sheet:
+        Candidate Name, Programme, Email, Gender,
+        Entrance Test Name, Entrance Test Provider,
+        Centre Name, Centre Address, Admit Card Number,
+        Entrance Test Status, Part-A Total Mark Scored, Part-A All India Rank,
+        Part-A Shortlisted Status, Part-B Total Marks Scored, Part-B All India Rank,
+        Total Marks Secured (Part A+B), Percentage, Cumulative Rank,
+        Entrance Test Percentile, Status (Result), Admission Status
+    """
+    import io
+    import zipfile
+    import xlsxwriter
+    from frappe.utils.file_manager import save_file
+
+    # ── Filters ────────────────────────────────────────────────────────────────
+    filters = {}
+    if academic_year:
+        filters["academic_year"] = academic_year
+    if admission_cycle:
+        filters["admission_cycle"] = admission_cycle
+    if program_level:
+        filters["program_level"] = program_level
+    if program:
+        filters["program"] = program
+    if applicant_type == "Domestic Applicants":
+        filters["is_international_applicant"] = 0
+    elif applicant_type == "International Applicants":
+        filters["is_international_applicant"] = 1
+
+    # If city filter is set, resolve the set of centres belonging to that city
+    if entrance_test_city and entrance_test_city not in ("(All Cities)", ""):
+        city_providers = frappe.get_all(
+            "Entrance Test Provider",
+            filters={"city": entrance_test_city},
+            fields=["center_name"],
+            limit_page_length=0
+        )
+        city_centres = [p.center_name for p in city_providers if p.center_name]
+        if city_centres:
+            if center_name:
+                # Intersect: specific centre must also be in that city
+                if center_name in city_centres:
+                    filters["center_name"] = center_name
+                else:
+                    frappe.throw(_("The selected Centre does not belong to the selected City."))
+            else:
+                filters["center_name"] = ["in", city_centres]
+        else:
+            frappe.throw(_("No centres found for the selected Entrance Test City."))
+    elif center_name:
+        filters["center_name"] = center_name
+
+    # ── Fetch Records ──────────────────────────────────────────────────────────
+    records = frappe.get_all(
+        "Entrance Test Seat Allocation",
+        filters=filters,
+        fields=[
+            "name", "applicant", "candidate_name", "program", "email", "gender",
+            "entrance_test_name", "entrance_test_provider",
+            "center_name", "center_address", "admit_card_number",
+            # Result tab fields (exclude result_published)
+            "entrance_test_status",
+            "part_a_total_marks_scored", "part_a_all_india_rank", "shortlisted_status",
+            "part_b_total_marks_scored", "part_b_all_india_rank",
+            "total_marks_secured_in_part_a_b", "percentage", "entrance_test_rank",
+            "percentile", "result_status", "admission_status"
+        ],
+        order_by="center_name asc, candidate_name asc"
+    )
+
+    if not records:
+        frappe.throw(_("No applicant records found matching the selected filters."))
+
+    # ── Build center_name → city lookup from Entrance Test Provider ────────────
+    all_providers = frappe.get_all(
+        "Entrance Test Provider",
+        fields=["center_name", "city"],
+        limit_page_length=0
+    )
+    centre_to_city = {
+        p.center_name: (p.city or "Unassigned").strip()
+        for p in all_providers
+    }
+
+    # ── Group: City → Centre → [records] ──────────────────────────────────────
+    from collections import OrderedDict
+    city_groups = OrderedDict()
+    for rec in records:
+        c_name = (rec.center_name or "Unassigned").strip()
+        city   = centre_to_city.get(c_name, "Unassigned")
+        city_groups.setdefault(city, OrderedDict())
+        city_groups[city].setdefault(c_name, []).append(rec)
+
+    total_centres_count = sum(len(centres) for centres in city_groups.values())
+
+    # ── Excel Column Definitions ───────────────────────────────────────────────
+    COLUMNS = [
+        ("S.No",                          10),
+        ("Application Number",            20),
+        ("Candidate Name",                25),
+        ("Programme",                     20),
+        ("Email",                         30),
+        ("Gender",                        12),
+        ("Entrance Test Name",            25),
+        ("Entrance Test Provider",        25),
+        ("Centre Name",                   25),
+        ("Centre Address",                35),
+        ("Admit Card Number",             20),
+        # Result fields
+        ("Entrance Test Status",          20),
+        ("Part-A Mark Scored",            18),
+        ("Part-A All India Rank",         20),
+        ("Part-A Shortlisted Status",     22),
+        ("Part-B Mark Scored",            18),
+        ("Part-B All India Rank",         20),
+        ("Total Marks (Part A+B)",        22),
+        ("Percentage (%)",                15),
+        ("Cumulative Rank",               16),
+        ("Percentile",                    14),
+        ("Result Status",                 16),
+        ("Admission Status",              22),
+    ]
+
+    def _safe_path(name):
+        """Strip characters not allowed in ZIP path components."""
+        return (
+            name
+            .replace("/", "-").replace("\\", "-")
+            .replace(":", "-").replace("*", "")
+            .replace("?", "").replace('"', "")
+            .replace("<", "").replace(">", "")
+            .replace("|", "")
+        ).strip() or "Unnamed"
+
+    def _build_worksheet(workbook, centre_name_key, rows):
+        """Create and populate a single worksheet for one centre."""
+        safe_sheet = centre_name_key[:31].replace("/", "-").replace("\\", "-").replace(":", "-").replace("*", "-").replace("?", "-").replace("[", "(").replace("]", ")")
+        worksheet = workbook.add_worksheet(safe_sheet)
+
+        title_fmt = workbook.add_format({
+            "bold": True, "font_size": 13,
+            "bg_color": "#1E3A8A", "font_color": "#FFFFFF",
+            "align": "center", "valign": "vcenter", "border": 1
+        })
+        header_fmt = workbook.add_format({
+            "bold": True, "bg_color": "#1E40AF", "font_color": "#FFFFFF",
+            "border": 1, "align": "center", "valign": "vcenter", "text_wrap": True
+        })
+        cell_fmt = workbook.add_format({"border": 1, "valign": "vcenter"})
+        num_fmt  = workbook.add_format({"border": 1, "num_format": "0.00", "valign": "vcenter"})
+        int_fmt  = workbook.add_format({"border": 1, "num_format": "0", "valign": "vcenter"})
+        alt_cell = workbook.add_format({"border": 1, "valign": "vcenter", "bg_color": "#EFF6FF"})
+        alt_num  = workbook.add_format({"border": 1, "num_format": "0.00", "valign": "vcenter", "bg_color": "#EFF6FF"})
+        alt_int  = workbook.add_format({"border": 1, "num_format": "0", "valign": "vcenter", "bg_color": "#EFF6FF"})
+
+        num_cols = len(COLUMNS)
+        worksheet.merge_range(0, 0, 0, num_cols - 1,
+            f"Centre: {centre_name_key}  |  Total Applicants: {len(rows)}", title_fmt)
+        worksheet.set_row(0, 22)
+
+        for col_idx, (col_label, col_width) in enumerate(COLUMNS):
+            worksheet.write(1, col_idx, col_label, header_fmt)
+            worksheet.set_column(col_idx, col_idx, col_width)
+        worksheet.set_row(1, 32)
+
+        float_cols = {12, 15, 17, 18, 20}
+        int_cols   = {13, 16, 19}
+
+        for row_idx, rec in enumerate(rows, start=2):
+            is_alt    = (row_idx % 2 == 0)
+            base_cell = alt_cell if is_alt else cell_fmt
+            base_num  = alt_num  if is_alt else num_fmt
+            base_int  = alt_int  if is_alt else int_fmt
+
+            row_data = [
+                row_idx - 1,
+                rec.applicant or rec.name,
+                rec.candidate_name or "",
+                rec.program or "",
+                rec.email or "",
+                rec.gender or "",
+                rec.entrance_test_name or "",
+                rec.entrance_test_provider or "",
+                rec.center_name or "",
+                rec.center_address or "",
+                rec.admit_card_number or "",
+                rec.entrance_test_status or "",
+                rec.part_a_total_marks_scored or 0,
+                rec.part_a_all_india_rank or 0,
+                rec.shortlisted_status or "",
+                rec.part_b_total_marks_scored or 0,
+                rec.part_b_all_india_rank or 0,
+                rec.total_marks_secured_in_part_a_b or 0,
+                rec.percentage or 0,
+                rec.entrance_test_rank or 0,
+                rec.percentile or 0,
+                rec.result_status or "",
+                rec.admission_status or "",
+            ]
+
+            for col_idx, val in enumerate(row_data):
+                if col_idx in float_cols:
+                    worksheet.write_number(row_idx, col_idx, float(val or 0), base_num)
+                elif col_idx in int_cols:
+                    worksheet.write_number(row_idx, col_idx, int(val or 0), base_int)
+                else:
+                    worksheet.write(row_idx, col_idx, str(val) if val is not None else "", base_cell)
+
+    # ── Build ZIP: City/Centre.xlsx ────────────────────────────────────────────
+    zip_buffer = io.BytesIO()
+
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as zip_file:
+        for city_name in sorted(city_groups.keys()):
+            centres_in_city = city_groups[city_name]
+            safe_city = _safe_path(city_name)
+
+            for centre_name_key in sorted(centres_in_city.keys()):
+                rows = centres_in_city[centre_name_key]
+
+                wb_buffer = io.BytesIO()
+                workbook  = xlsxwriter.Workbook(wb_buffer, {"constant_memory": True, "in_memory": True})
+                _build_worksheet(workbook, centre_name_key, rows)
+                workbook.close()
+
+                safe_centre = _safe_path(centre_name_key)
+                # Path inside ZIP: CityName/CentreName.xlsx
+                zip_entry = f"{safe_city}/{safe_centre}.xlsx"
+                zip_file.writestr(zip_entry, wb_buffer.getvalue())
+
+
+    # ── Save & Return ZIP ──────────────────────────────────────────────────────
+    ts = frappe.utils.now_datetime().strftime("%Y%m%d_%H%M%S")
+    zip_filename = f"Centre_List_{ts}.zip"
+
+    # Attach to the first matching record (arbitrary anchor)
+    anchor = records[0].name if records else "Entrance Test Seat Allocation"
+    saved = save_file(
+        zip_filename,
+        zip_buffer.getvalue(),
+        "Entrance Test Seat Allocation",
+        anchor,
+        is_private=1
+    )
+
+    return {
+        "file_url": saved.file_url,
+        "filename": zip_filename,
+        "total_centres": total_centres_count,
+        "total_applicants": len(records)
+    }
+
+
+@frappe.whitelist()
+def get_centre_list_preview(
+    academic_year=None,
+    admission_cycle=None,
+    program_level=None,
+    program=None,
+    applicant_type=None,
+    center_name=None,
+    entrance_test_city=None
+):
+    """
+    Returns a lightweight preview for the Centre List Download dialog:
+    { total_applicants: int, total_cities: int, centres: [{ name: str, count: int }, ...] }
+    """
+    # Build center_name → city lookup
+    all_providers = frappe.get_all(
+        "Entrance Test Provider",
+        fields=["center_name", "city"],
+        limit_page_length=0
+    )
+    centre_to_city = {p.center_name: (p.city or "Unassigned").strip() for p in all_providers}
+
+    filters = {}
+    if academic_year:
+        filters["academic_year"] = academic_year
+    if admission_cycle:
+        filters["admission_cycle"] = admission_cycle
+    if program_level:
+        filters["program_level"] = program_level
+    if program:
+        filters["program"] = program
+
+    if applicant_type == "Domestic Applicants":
+        filters["is_international_applicant"] = 0
+    elif applicant_type == "International Applicants":
+        filters["is_international_applicant"] = 1
+
+    # Resolve city → centres filter
+    if entrance_test_city and entrance_test_city not in ("(All Cities)", ""):
+        city_providers = [p.center_name for p in all_providers if (p.city or "").strip() == entrance_test_city and p.center_name]
+        if city_providers:
+            if center_name and center_name not in ("(All Centres)", ""):
+                filters["center_name"] = center_name if center_name in city_providers else "__none__"
+            else:
+                filters["center_name"] = ["in", city_providers]
+        else:
+            return {"total_applicants": 0, "total_cities": 0, "centres": []}
+    elif center_name and center_name not in ("(All Centres)", ""):
+        filters["center_name"] = center_name
+
+    records = frappe.get_all(
+        "Entrance Test Seat Allocation",
+        filters=filters,
+        fields=["name", "center_name"],
+        order_by="center_name asc"
+    )
+
+    if not records:
+        return {"total_applicants": 0, "total_cities": 0, "centres": []}
+
+    # Group by centre name and count unique cities
+    counts = {}
+    cities_seen = set()
+    for r in records:
+        key = (r.center_name or "Unassigned").strip()
+        counts[key] = counts.get(key, 0) + 1
+        cities_seen.add(centre_to_city.get(key, "Unassigned"))
+
+    centres = [{"name": k, "count": v} for k, v in sorted(counts.items(), key=lambda x: x[0])]
+
+    return {
+        "total_applicants": len(records),
+        "total_cities": len(cities_seen),
+        "centres": centres
+    }
+
+
+@frappe.whitelist()
+def get_cities_for_filter(academic_year=None, admission_cycle=None):
+    """
+    Returns the list of Entrance Test City names that have at least one
+    Entrance Test Provider with records in the current ETSA data.
+    Used to populate the City filter dropdown in the Centre List Download dialog.
+    """
+    # Get all distinct center_names for the given AY + AC
+    et_filters = {}
+    if academic_year:
+        et_filters["academic_year"] = academic_year
+    if admission_cycle:
+        et_filters["admission_cycle"] = admission_cycle
+
+    centre_records = frappe.get_all(
+        "Entrance Test Seat Allocation",
+        filters=et_filters,
+        fields=["center_name"],
+        distinct=True,
+        limit_page_length=0
+    )
+    centre_names = list({r.center_name for r in centre_records if r.center_name})
+
+    if not centre_names:
+        return {"cities": []}
+
+    # Look up city for each centre via Entrance Test Provider
+    providers = frappe.get_all(
+        "Entrance Test Provider",
+        filters={"center_name": ["in", centre_names]},
+        fields=["center_name", "city"],
+        limit_page_length=0
+    )
+    cities = sorted({(p.city or "").strip() for p in providers if (p.city or "").strip()})
+
+    return {"cities": cities}
 
 
 @frappe.whitelist()
@@ -1022,18 +1440,24 @@ def get_applicant_count(academic_year=None, admission_cycle=None, program_level=
     filters_absent["entrance_test_status"] = "Absent"
     absent = frappe.db.count("Entrance Test Seat Allocation", filters=filters_absent)
 
+    filters_unpublished = filters.copy()
+    filters_unpublished["result_published"] = 0
+    filters_unpublished["entrance_test_status"] = ["in", ["Attended", "Absent"]]
+    unpublished = frappe.db.count("Entrance Test Seat Allocation", filters=filters_unpublished)
+
     return {
         "total": total,
         "attended": attended,
-        "absent": absent
+        "absent": absent,
+        "unpublished": unpublished
     }
 
 @frappe.whitelist()
 def get_unpublished_applicants_for_dialog(
     academic_year=None, admission_cycle=None, program_level=None, applicant_type=None, program=None,
     filter_applicant=None, filter_candidate_name=None, filter_entrance_test_status=None,
-    filter_status=None, filter_admission_status=None,
-    limit_start=0, limit_page_length=20
+    filter_status=None, filter_admission_status=None, filter_program=None,
+    limit_start=0, limit_page_length=20, fetch_all_names=0
 ):
     """
     Returns a paginated list of applicants whose results are not yet published.
@@ -1065,6 +1489,11 @@ def get_unpublished_applicants_for_dialog(
         filters["result_status"] = filter_status
     if filter_admission_status:
         filters["admission_status"] = filter_admission_status
+    if filter_program:
+        filters["program"] = filter_program
+
+    if int(fetch_all_names) == 1:
+        return [r.name for r in frappe.get_all("Entrance Test Seat Allocation", filters=filters, fields=["name"], order_by="creation desc")]
 
     # Get data
     records = frappe.get_all(
@@ -1082,9 +1511,27 @@ def get_unpublished_applicants_for_dialog(
     # Get total count for pagination
     total_count = frappe.db.count("Entrance Test Seat Allocation", filters=filters)
     
+    # Get unique programs for dropdown before applying table-specific filters (so dropdown doesn't disappear when selected)
+    # Wait, we want dropdown options based on the global filters, not table filters.
+    global_filters = {"result_published": 0}
+    if academic_year: global_filters["academic_year"] = academic_year
+    if admission_cycle: global_filters["admission_cycle"] = admission_cycle
+    if program_level: global_filters["program_level"] = program_level
+    if program: global_filters["program"] = program
+    if applicant_type == "Domestic Applicants": global_filters["is_international_applicant"] = 0
+    elif applicant_type == "International Applicants": global_filters["is_international_applicant"] = 1
+        
+    unique_programs = [r.program for r in frappe.get_all(
+        "Entrance Test Seat Allocation",
+        filters=global_filters,
+        fields=["program"],
+        distinct=1
+    ) if r.program]
+    
     return {
         "records": records,
-        "total_count": total_count
+        "total_count": total_count,
+        "unique_programs": sorted(unique_programs)
     }
 
 
@@ -1121,14 +1568,21 @@ def reject_and_allocate_applicants(applicants, providers, allocation_type=None, 
         _send_allocation_email = None
 
     for i, name in enumerate(applicants):
-        percent = (float(i + 1) / total * 100)
-        frappe.publish_progress(
-            percent, 
-            title=_("Rejecting and Allocating..."), 
-            description=f"Processing {i + 1} of {total}"
-        )
+        percent = round(float(i + 1) / total * 100, 1)
 
         doc = frappe.get_doc("Entrance Test Seat Allocation", name)
+
+        frappe.publish_realtime(
+            event="entrance_test_seat_allocation_progress",
+            message={
+                "progress": percent,
+                "current": i + 1,
+                "total": total,
+                "allocated_count": count,
+                "applicant_name": getattr(doc, "candidate_name", "Unknown") or "Unknown"
+            },
+            user=frappe.session.user
+        )
 
         # 1. Update the existing record directly (no new record creation)
         old_provider = doc.entrance_test_provider
@@ -1200,6 +1654,14 @@ def reject_and_allocate_applicants(applicants, providers, allocation_type=None, 
             # Compute new seat number based on provider's current reserved_seats + 1
             new_reserved = (pdoc.reserved_seats or 0) + 1
             doc.seat_number = f"{new_reserved:02d}"
+            
+            try:
+                from slcm.admission.doctype.entrance_test_list.entrance_test_list import _generate_admit_card_number
+                admit_card_number = _generate_admit_card_number(doc, is_rescheduled=False)
+                if admit_card_number:
+                    doc.admit_card_number = admit_card_number
+            except Exception:
+                pass
         else:
             doc.entrance_test_provider = None
             doc.center_name = None
@@ -1216,7 +1678,14 @@ def reject_and_allocate_applicants(applicants, providers, allocation_type=None, 
                     "preference_order": idx
                 })
 
+        # Prevent on_update hook from synchronously generating the admit card
+        doc.flags.ignore_admit_card_generation = True
         doc.save(ignore_permissions=True)
+        
+        # Assign a dynamic URL for lazy PDF generation
+        if allocation_type == "Allocate Directly" or not allocation_type:
+            dummy_url = f"/api/method/slcm.www.eligibility.entrance_test_seat_allocation.download_admit_card?allocation_name={doc.name}"
+            frappe.db.set_value(doc.doctype, doc.name, "admit_card_download", dummy_url)
 
         # 2. Decrement capacity for the chosen provider only if Allocated Directly
         if allocation_type == "Allocate Directly" or not allocation_type:

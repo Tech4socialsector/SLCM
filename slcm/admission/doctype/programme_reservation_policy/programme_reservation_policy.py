@@ -315,6 +315,27 @@ class ProgrammeReservationPolicy(Document):
         grand_total_seats = 0
         grand_total_wait = 0
 
+        # Pre-compute compartmental seats for all vertical categories
+        # Reserved categories compute seats first; General receives the remainder of total compartmental quota
+        comp_seats_map = {}
+        for c in compartment:
+            tot_c_seats = math.floor((int(self.total_seats or 0) * ((c.percentage or 0) / 100.0)) + 0.5)
+            reserved_c_sum = 0
+            for v in vertical:
+                v_cat = v.category_name or "General"
+                if v_cat == "General":
+                    continue
+                v_total = int(v.seats or 0)
+                exact_c = (v_total * ((c.percentage or 0) / 100.0))
+                if exact_c % 1 >= 0.5 and v_total >= 18:
+                    c_val = math.floor(exact_c + 0.5)
+                else:
+                    c_val = math.floor(exact_c)
+                comp_seats_map[(v_cat, c.name)] = c_val
+                reserved_c_sum += c_val
+            
+            comp_seats_map[("General", c.name)] = max(0, tot_c_seats - reserved_c_sum)
+
         for v in vertical:
             pct = int(v.percentage) if float(v.percentage or 0).is_integer() else v.percentage
             pct_str = f" ({pct}%)" if pct else ""
@@ -329,7 +350,7 @@ class ProgrammeReservationPolicy(Document):
             comp_cells_html = ""
 
             for c in compartment:
-                c_seats = math.floor(v_total * ((c.percentage or 0) / 100.0))
+                c_seats = comp_seats_map.get((v_name, c.name), math.floor((v_total * ((c.percentage or 0) / 100.0)) + 0.5))
                 comp_sum_seats += c_seats
 
                 comp_wait_row = 0

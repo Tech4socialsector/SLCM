@@ -441,7 +441,7 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
         fields=[
             "name", "applicant", "candidate_name", "program", "program_level",
             "part_a_total_marks_scored", "part_b_total_marks_scored",
-            "shortlisted_status", "percentile", "gender"
+            "shortlisted_status", "gender"
         ]
     ) if applicant_names else []
     etsa_map = {r.name: r for r in etsa_records}
@@ -526,7 +526,7 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
             "ug_cgpa": ug_avg,
             "pg_cgpa": pg_avg,
             "date_of_birth": applicant_doc.get("date_of_birth"),
-            "percentile_score": etsa_doc.get("percentile") or 0,
+            "percentile_score": 0,
             "part_b_not_appeared": processing_stage != "Part A Ranking" and not etsa_part_b_shortlisted
         })
         
@@ -589,7 +589,7 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
     # Always use advanced ranking/allocation logic
     _rank_applicants(merit.merit_applicants, use_advanced_ranking=True, processing_stage=processing_stage)
     
-    # Calculate and persist percentiles for each program group separately.
+    # Calculate percentiles for each program group separately.
     grouped_by_program = {}
     for row in merit.merit_applicants:
         grouped_by_program.setdefault(row.program, []).append(row)
@@ -809,7 +809,7 @@ def _populate_category_lists(doc):
                     if any(c.category_name in v_cat for c in policy.compartmental_reservations):
                         continue
                     v_info = category_mapping[v_cat]
-                    seats = int((v_info["seats"] * percentage) / 100.0)
+                    seats = math.floor(((v_info["seats"] * percentage) / 100.0) + 0.5)
                     req = total_eligible_summary if (is_shortlist and multiplier == 0) else int(seats * multiplier)
                     comp_name = f"{comp_cat} {v_cat}"
                     category_mapping[comp_name] = {
@@ -943,7 +943,7 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
     for row in applicants_list:
         grouped_by_program.setdefault(row.program, []).append(row)
 
-    # Calculate and persist percentiles for each program group separately.
+    # Calculate percentiles for each program group separately.
     # This must happen before the percentile eligibility filter below.
     if getattr(doc, "doctype", "") != "Seat Allocation":
         for _prog_applicants in grouped_by_program.values():
@@ -999,10 +999,21 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
         for comp in policy.compartmental_reservations:
             comp_cat = comp.category_name
             percentage = comp.percentage or 25.0
+            total_policy_seats = sum(v_info.get("original_seats", 0) for v_info in vertical_targets.values())
+            tot_comp_seats = math.floor(((total_policy_seats * percentage) / 100.0) + 0.5)
+            reserved_comp_sum = 0
             
-            for v_cat, v_info in vertical_targets.items():
+            for v_cat in [c for c in vertical_targets.keys() if c != "General"]:
+                v_info = vertical_targets[v_cat]
+                v_seats = v_info.get("original_seats", 0)
+                exact_c = (v_seats * percentage) / 100.0
+                if exact_c % 1 >= 0.5 and v_seats >= 18:
+                    comp_seats = math.floor(exact_c + 0.5)
+                else:
+                    comp_seats = math.floor(exact_c)
+                reserved_comp_sum += comp_seats
+                
                 target_key = (comp_cat, v_cat)
-                comp_seats = int((v_info["original_seats"] * percentage) / 100.0)
                 comp_target_seats = total_eligible_count if (is_shortlist_phase and multiplier == 0) else (int(comp_seats * multiplier) if is_shortlist_phase else comp_seats)
                 compartmental_targets[target_key] = {
                     "category": comp_cat,
@@ -1010,6 +1021,15 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                     "original_seats": comp_seats,
                     "filled": 0
                 }
+            
+            gen_comp_seats = max(0, tot_comp_seats - reserved_comp_sum)
+            gen_target_seats = total_eligible_count if (is_shortlist_phase and multiplier == 0) else (int(gen_comp_seats * multiplier) if is_shortlist_phase else gen_comp_seats)
+            compartmental_targets[(comp_cat, "General")] = {
+                "category": comp_cat,
+                "seats": gen_target_seats,
+                "original_seats": gen_comp_seats,
+                "filled": 0
+            }
 
         horizontal_targets = {}
         for h in policy.horizontal_reservations:
@@ -1453,13 +1473,17 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
             for h_info in ordered_h_cats:
                 h_cat = h_info["name"]
                 h_filled = len([a for a in allocated_list if _has_trait(a.applicant_id, h_cat)])
-                append_sum(h_cat, h_info.get("original_seats", 0), h_info["seats"], h_filled)
+                h_w_filled = len([a for a in applicants_list if getattr(a, status_field, "") == "Waitlisted" and _has_trait(a.applicant_id, h_cat, is_shortlist_allocation)])
+                h_w_req = h_info.get("waitlist_seats", 0)
+                append_sum(h_cat, h_info.get("original_seats", 0), h_info["seats"], h_filled, h_w_filled, h_w_req)
             
             # 3. Compartmental Breakdown
             for (comp_cat, v_cat), target in compartmental_targets.items():
                 if target["original_seats"] > 0:
                     filled_in_v = len([a for a in allocated_list if a.vertical_category == v_cat and _has_trait(a.applicant_id, comp_cat)])
-                    append_sum(f"{comp_cat} ({v_cat})", target["original_seats"], target["seats"], filled_in_v)
+                    w_filled_in_v = len([a for a in applicants_list if getattr(a, status_field, "") == "Waitlisted" and (getattr(a, "vertical_category", "") or getattr(a, "actual_category", "")) == v_cat and _has_trait(a.applicant_id, comp_cat, is_shortlist_allocation)])
+                    w_req_in_v = vertical_targets.get(v_cat, {}).get("compartmentalized_waitlist_seats", 0)
+                    append_sum(f"{comp_cat} ({v_cat})", target["original_seats"], target["seats"], filled_in_v, w_filled_in_v, w_req_in_v)
             
             # 4. Compartmental (Common)
             for comp_row in policy.compartmental_reservations:
@@ -1467,8 +1491,13 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                 total_orig = sum(t["original_seats"] for (cc, vc), t in compartmental_targets.items() if cc == comp_cat)
                 total_req = sum(t["seats"] for (cc, vc), t in compartmental_targets.items() if cc == comp_cat)
                 total_filled = len([a for a in allocated_list if _has_trait(a.applicant_id, comp_cat)])
+                total_w_filled = len([a for a in applicants_list if getattr(a, status_field, "") == "Waitlisted" and _has_trait(a.applicant_id, comp_cat, is_shortlist_allocation)])
+                total_w_req = sum(v_info.get("compartmentalized_waitlist_seats", 0) for v_cat, v_info in vertical_targets.items() if (v_info.get("compartmentalized_category") == comp_cat or comp_cat in (v_info.get("compartmentalized_category") or "")))
+                if total_w_req == 0 and getattr(comp_row, "waitlist_seats", 0):
+                    total_w_req = comp_row.waitlist_seats
                 if total_req > 0:
-                    append_sum(f"{comp_cat} (Common)", total_orig, total_req, total_filled)
+                    append_sum(f"{comp_cat} (Common)", total_orig, total_req, total_filled, total_w_filled, total_w_req)
+
 
 
     _publish_allocation_progress(doc, 100, "Finalized!", status="Completed")
@@ -1510,12 +1539,7 @@ def _check_percentile_eligibility(app, vertical_targets, horizontal_targets=None
     # Rule: If multiple thresholds apply (e.g. General 75% + PWD 40%), the most lenient (minimum) applies
     threshold = min(thresholds) if thresholds else 0
         
-    percentile = float(getattr(app, "percentile_score", 0) or 0)
-    if not percentile and getattr(app, "applicant_id", None):
-        er_percentile = frappe.db.get_value("Entrance Test Seat Allocation", {"applicant": app.applicant_id}, "percentile")
-        if er_percentile is not None:
-            percentile = float(er_percentile)
-            
+    percentile = float(getattr(app, "percentile_score", 0) or (app.get("percentile_score") if isinstance(app, dict) else 0) or 0)
     return percentile >= threshold
 
 def _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies=None, reason=None):
@@ -1653,9 +1677,9 @@ def _execute_candidate_displacement(in_cand, out_cand, allocated_list, unallocat
 def _calculate_and_sync_percentiles(applicants, is_shortlist=False):
     """
     Calculates percentiles based on the current pool of applicants and 
-    updates the Eligibility Result records in the database.
+    assigns `percentile_score` on each applicant record in memory for merit / shortlisting processing.
 
-    Formula: (# candidates with score <= this candidate's score) / (total candidates) * 100
+    Formula: (# candidates with score < this candidate's score) / (total candidates) * 100
 
     Score field used:
     - Shortlisting stage:  nlsat_part_a_score  (Part A)
@@ -1692,43 +1716,15 @@ def _calculate_and_sync_percentiles(applicants, is_shortlist=False):
     if total_count == 0:
         return
 
-    # 3. Calculate cumulative percentiles and persist
-    updates = []  # (applicant_id, percentile)
+    # 3. Calculate percentiles and assign to applicant objects in memory
     for app in applicants:
         score = _get_score(app)
         count_le = bisect.bisect_left(all_scores, score)  # # scores < this score
-        percentile = round((count_le / total_count) * 100, 4)
+        percentile = round((count_le / total_count) * 100, 5)
         if isinstance(app, dict):
             app["percentile_score"] = percentile
-            app_id = app.get("applicant_id")
         else:
             app.percentile_score = percentile
-            app_id = getattr(app, "applicant_id", None)
-
-        if app_id:
-            updates.append((app_id, percentile))
-
-    # 4. Bulk update Entrance Test Seat Allocation in batches to prevent database lock contention.
-    if getattr(frappe, "db", None) and updates:
-        batch_size = 500
-        for i in range(0, len(updates), batch_size):
-            batch = updates[i:i + batch_size]
-            when_clauses = " ".join(["WHEN %s THEN %s" for _ in batch])
-            params = []
-            for app_id, pct in batch:
-                params.extend([app_id, pct])
-            app_ids = tuple(app_id for app_id, _ in batch)
-            params.extend(app_ids)
-            in_placeholders = ", ".join(["%s"] * len(app_ids))
-            sql = f"""
-                UPDATE `tabEntrance Test Seat Allocation`
-                SET percentile = CASE name {when_clauses} END
-                WHERE name IN ({in_placeholders})
-            """
-            frappe.db.sql(sql, params)
-
-        if hasattr(frappe.db, "commit"):
-            frappe.db.commit()
 
 
 
@@ -1930,13 +1926,28 @@ def execute_part_a_shortlisting(doc):
                 break
 
         policy_seats = {v.category_name or "General": v.seats or 0 for v in policy.categories}
-        for cat in vertical_cats:
+        total_p_seats = sum(policy_seats.values())
+        tot_comp_policy_seats = math.floor(((total_p_seats * comp_percentage) / 100.0) + 0.5)
+        reserved_comp_sum_stg1 = 0
+
+        for cat in [c for c in vertical_cats if c != "General"]:
             v_seats = policy_seats.get(cat, 0)
-            comp_seats = int((v_seats * comp_percentage) / 100.0)
+            exact_c = (v_seats * comp_percentage) / 100.0
+            if exact_c % 1 >= 0.5 and v_seats >= 18:
+                comp_seats = math.floor(exact_c + 0.5)
+            else:
+                comp_seats = math.floor(exact_c)
+            reserved_comp_sum_stg1 += comp_seats
             if multiplier == 0:
                 targets[cat][comp_key] = total_eligible_count
             else:
                 targets[cat][comp_key] = int(comp_seats * multiplier)
+
+        gen_comp_seats_stg1 = max(0, tot_comp_policy_seats - reserved_comp_sum_stg1)
+        if multiplier == 0:
+            targets["General"][comp_key] = total_eligible_count
+        else:
+            targets["General"][comp_key] = int(gen_comp_seats_stg1 * multiplier)
 
         # 3. Horizontal reservations (Women, PWD)
         for h in policy.horizontal_reservations:
@@ -2277,17 +2288,41 @@ def execute_part_a_shortlisting(doc):
         s_list = shortlists[cat_name]
         if not s_list:
             continue
-        lowest_score = min(float(getattr(x, "nlsat_part_a_score", 0) or 0) for x in s_list)
+        
         current_selected_ids = {x.applicant_id for x in get_all_selected()}
         
         tie_candidates = []
         for cand in eligible_applicants:
             if cand.applicant_id in current_selected_ids:
                 continue
+                
+            if cat_name != "General" and cand.actual_category != cat_name:
+                continue
+                
             cand_score = float(getattr(cand, "nlsat_part_a_score", 0) or 0)
-            if abs(cand_score - lowest_score) < 0.0001:
-                if cat_name == "General" or cand.actual_category == cat_name:
-                    tie_candidates.append(cand)
+            
+            # Check if cand ties with any valid candidate in s_list
+            is_tied = False
+            for s in s_list:
+                s_score = float(getattr(s, "nlsat_part_a_score", 0) or 0)
+                if abs(cand_score - s_score) < 0.0001:
+                    s_remarks = getattr(s, "remarks", "") or ""
+                    
+                    # Ensure cand has the same sub-quota traits if s used them to get in
+                    valid_tie = True
+                    if comp_cat and comp_cat in s_remarks and not cand.is_karnataka:
+                        valid_tie = False
+                    if "PWD" in s_remarks and not cand.is_pwd:
+                        valid_tie = False
+                    if "Women" in s_remarks and not cand.is_female:
+                        valid_tie = False
+                        
+                    if valid_tie:
+                        is_tied = True
+                        break
+            
+            if is_tied:
+                tie_candidates.append(cand)
                     
         for tie_cand in tie_candidates:
             tie_cand.remarks = f"Shortlisted under {cat_name} List due to Cutoff Score Tie (Score: {getattr(tie_cand, 'nlsat_part_a_score', '')}, Part A Rank #{getattr(tie_cand, 'shortlist_rank', '')})"

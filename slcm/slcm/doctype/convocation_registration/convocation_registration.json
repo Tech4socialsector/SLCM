@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "creation": "2026-05-23 10:47:34.093187",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -96,7 +97,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-02 16:13:43.993002",
+ "modified": "2026-08-28 10:27:26.462096",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Convocation Registration",

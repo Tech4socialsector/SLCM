@@ -1,25 +1,37 @@
 import json
 import frappe
+from datetime import timedelta
+from dateutil.relativedelta import relativedelta
 from frappe.model.document import Document
 from frappe import _
-from frappe.utils import get_datetime
+from frappe.utils import get_datetime, getdate
 from frappe.email.doctype.email_template.email_template import get_email_template
+
+WEEKDAY_FIELDS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+
+STATUS_PENDING = "Pending Allotment"
+STATUS_ALLOTTED = "Allotted"
+STATUS_REJECTED = "Rejected"
+STATUS_CANCELLED = "Cancelled"
 
 
 class VenueBooking(Document):
 	def before_insert(self):
 		self._set_requester_info()
+		self.created_by = frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user
+		self.created_on = frappe.utils.now()
 
 	def validate(self):
 		self.validate_dates()
+		self.validate_recurrence_settings()
 		self.check_availability()
 		self._protect_status_field()
 
 	def _protect_status_field(self):
 		"""Prevent non-admin users from changing the status field directly."""
 		if self.is_new():
-			# New docs always start as Pending — reset if someone tried to set it
-			self.status = "Pending"
+			# New docs always start as Pending Allotment — reset if someone tried to set it
+			self.status = STATUS_PENDING
 			return
 
 		admin_roles = {"System Manager", "Administrator", "slcm_Registrar"}
@@ -37,10 +49,31 @@ class VenueBooking(Document):
 
 	def after_insert(self):
 		_notify_admin_new_booking(self)
+		if self.is_recurring and not self.parent_booking:
+			self.create_recurring_bookings()
 
 	def validate_dates(self):
 		if get_datetime(self.start_datetime) >= get_datetime(self.end_datetime):
 			frappe.throw(_("End Date & Time must be after Start Date & Time"))
+
+	def validate_recurrence_settings(self):
+		"""Validate the recurrence fields on the series' parent booking.
+		Generated occurrences carry parent_booking and never re-recurse, so they
+		skip this entirely."""
+		if not self.is_recurring or self.parent_booking:
+			return
+
+		if not self.recurrence_frequency:
+			frappe.throw(_("Please select a Repeat Frequency for the recurring booking."))
+
+		if not self.recurrence_end_date:
+			frappe.throw(_("Please specify a 'Repeat Until' date for the recurring booking."))
+
+		if getdate(self.recurrence_end_date) < getdate(self.start_datetime):
+			frappe.throw(_("'Repeat Until' date cannot be before the Start Date & Time."))
+
+		if self.recurrence_frequency == "Weekly" and not any(self.get(f) for f in WEEKDAY_FIELDS):
+			frappe.throw(_("Please select at least one day of the week to repeat on."))
 
 	def check_availability(self):
 		if not self.venue:
@@ -69,6 +102,91 @@ class VenueBooking(Document):
 		if overlap:
 			frappe.throw(_("Venue {0} is already booked during this period (Ref: {1})").format(
 				self.venue, overlap[0][0]))
+
+	def create_recurring_bookings(self):
+		"""Generate the remaining occurrences of a recurring series. Each occurrence
+		is its own independent Venue Booking (own Pending status, own approval),
+		linked back to this one via parent_booking. Dates that conflict with an
+		existing booking are skipped rather than aborting the whole series."""
+		if frappe.db.exists("Venue Booking", {"parent_booking": self.name}):
+			return  # already generated (defensive — after_insert only fires once)
+
+		start = get_datetime(self.start_datetime)
+		duration = get_datetime(self.end_datetime) - start
+		range_end = getdate(self.recurrence_end_date)
+
+		selected_weekdays = None
+		if self.recurrence_frequency == "Daily":
+			step = timedelta(days=1)
+		elif self.recurrence_frequency == "Weekly":
+			step = timedelta(days=1)  # walk day-by-day, keep only selected weekdays
+			selected_weekdays = {i for i, f in enumerate(WEEKDAY_FIELDS) if self.get(f)}
+		elif self.recurrence_frequency == "Monthly":
+			step = relativedelta(months=1)
+		else:
+			return
+
+		candidate_starts = []
+		current = start + step
+		while getdate(current) <= range_end:
+			if selected_weekdays is None or current.weekday() in selected_weekdays:
+				candidate_starts.append(current)
+			current += step
+
+		if not candidate_starts:
+			return
+
+		# Batch-fetch existing bookings for this venue across the whole range up
+		# front, instead of one query per candidate date.
+		existing = frappe.get_all(
+			"Venue Booking",
+			filters={
+				"venue": self.venue,
+				"name": ["!=", self.name],
+				"docstatus": ["<", 2],
+				"status": ["not in", ["Cancelled", "Rejected"]],
+				"start_datetime": ["<", max(c + duration for c in candidate_starts)],
+				"end_datetime": [">", min(candidate_starts)],
+			},
+			fields=["name", "start_datetime", "end_datetime"],
+		)
+		existing = [
+			(get_datetime(e.start_datetime), get_datetime(e.end_datetime)) for e in existing
+		]
+
+		created_count = 0
+		conflict_count = 0
+		for occ_start in candidate_starts:
+			occ_end = occ_start + duration
+			if any(occ_start < e_end and occ_end > e_start for e_start, e_end in existing):
+				conflict_count += 1
+				continue
+
+			occurrence = frappe.copy_doc(self)
+			occurrence.start_datetime = occ_start
+			occurrence.end_datetime = occ_end
+			occurrence.parent_booking = self.name
+			occurrence.status = STATUS_PENDING
+			occurrence.is_recurring = 0
+			occurrence.recurrence_frequency = None
+			occurrence.recurrence_end_date = None
+			for f in WEEKDAY_FIELDS:
+				occurrence.set(f, 0)
+			occurrence.insert(ignore_permissions=True)
+
+			existing.append((occ_start, occ_end))
+			created_count += 1
+
+		if created_count:
+			message = _("Created {0} recurring booking(s) for this venue.").format(created_count)
+			if conflict_count:
+				message += " " + _("Skipped {0} date(s) due to venue conflicts.").format(conflict_count)
+			frappe.msgprint(message, indicator="green" if not conflict_count else "orange", alert=True)
+		elif conflict_count:
+			frappe.msgprint(
+				_("Could not create any recurring bookings — all {0} date(s) conflicted with existing bookings.").format(conflict_count),
+				indicator="red", alert=True,
+			)
 
 	def _set_requester_info(self):
 		"""Auto-fill requester_name and requester_type from the logged-in user."""
@@ -182,30 +300,32 @@ def get_venue_query(doctype, txt, searchfield, start, page_len, filters):
 def approve_booking(booking_name, admin_remarks=None):
 	_require_admin()
 	booking = frappe.get_doc("Venue Booking", booking_name)
-	if booking.status != "Pending":
-		frappe.throw(_("Only Pending bookings can be approved."))
+	if booking.status != STATUS_PENDING:
+		frappe.throw(_("Only bookings Pending Allotment can be allotted."))
 	frappe.db.set_value("Venue Booking", booking_name, {
-		"status": "Approved",
-		"admin_remarks": admin_remarks or ""
+		"status": STATUS_ALLOTTED,
+		"admin_remarks": admin_remarks or "",
+		**_reply_meta()
 	})
 	frappe.db.commit()
-	_notify_requester(booking_name, "Approved", admin_remarks)
-	return {"status": "Approved"}
+	_notify_requester(booking_name, STATUS_ALLOTTED, admin_remarks)
+	return {"status": STATUS_ALLOTTED}
 
 
 @frappe.whitelist()
 def reject_booking(booking_name, admin_remarks=None):
 	_require_admin()
 	booking = frappe.get_doc("Venue Booking", booking_name)
-	if booking.status != "Pending":
-		frappe.throw(_("Only Pending bookings can be rejected."))
+	if booking.status != STATUS_PENDING:
+		frappe.throw(_("Only bookings Pending Allotment can be rejected."))
 	frappe.db.set_value("Venue Booking", booking_name, {
-		"status": "Rejected",
-		"admin_remarks": admin_remarks or ""
+		"status": STATUS_REJECTED,
+		"admin_remarks": admin_remarks or "",
+		**_reply_meta()
 	})
 	frappe.db.commit()
-	_notify_requester(booking_name, "Rejected", admin_remarks)
-	return {"status": "Rejected"}
+	_notify_requester(booking_name, STATUS_REJECTED, admin_remarks)
+	return {"status": STATUS_REJECTED}
 
 
 @frappe.whitelist()
@@ -216,11 +336,21 @@ def cancel_booking(booking_name, admin_remarks=None):
 		frappe.throw(_("Booking is already cancelled."))
 	frappe.db.set_value("Venue Booking", booking_name, {
 		"status": "Cancelled",
-		"admin_remarks": admin_remarks or ""
+		"admin_remarks": admin_remarks or "",
+		**_reply_meta()
 	})
 	frappe.db.commit()
 	_notify_requester(booking_name, "Cancelled", admin_remarks)
 	return {"status": "Cancelled"}
+
+
+def _reply_meta():
+	"""replied_by/replied_on stamp for whichever admin action (Allot/Reject/Cancel)
+	is changing the booking's status."""
+	return {
+		"replied_by": frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user,
+		"replied_on": frappe.utils.now(),
+	}
 
 
 @frappe.whitelist()
@@ -531,20 +661,20 @@ def _notify_requester(booking_name, new_status, admin_remarks=None):
 			return
 
 		status_colors = {
-			"Approved": "#166534",
-			"Rejected": "#991b1b",
-			"Cancelled": "#374151",
+			STATUS_ALLOTTED: "#166534",
+			STATUS_REJECTED: "#991b1b",
+			STATUS_CANCELLED: "#374151",
 		}
 		status_bg = {
-			"Approved": "#f0fdf4",
-			"Rejected": "#fef2f2",
-			"Cancelled": "#f3f4f6",
+			STATUS_ALLOTTED: "#f0fdf4",
+			STATUS_REJECTED: "#fef2f2",
+			STATUS_CANCELLED: "#f3f4f6",
 		}
 		color = status_colors.get(new_status, "#374151")
 		bg    = status_bg.get(new_status, "#f3f4f6")
 		footer_note = (
 			"Your booking is confirmed. Please ensure the venue is kept clean after use."
-			if new_status == "Approved"
+			if new_status == STATUS_ALLOTTED
 			else "If you have any questions, please contact the administration."
 		)
 

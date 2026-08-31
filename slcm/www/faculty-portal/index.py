@@ -189,7 +189,7 @@ def get_context(context):
             fac_display = f"{faculty.first_name or ''} {faculty.last_name or ''}".strip()
             pending_venues = frappe.db.count(
                 "Venue Booking",
-                filters={"requester_name": ["in", [faculty_name, fac_display, faculty.email or ""]], "status": "Pending"},
+                filters={"requester_name": ["in", [faculty_name, fac_display, faculty.email or ""]], "status": "Pending Allotment"},
             )
         except Exception:
             pending_venues = 0
