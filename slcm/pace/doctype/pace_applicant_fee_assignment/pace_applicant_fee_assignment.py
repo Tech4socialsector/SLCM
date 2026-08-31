@@ -666,7 +666,9 @@ def sync_razorpay_amount(assignment_name):
 		try:
 			resp_dict = json.loads(pr_data.gateway_response)
 			if "amount" in resp_dict:
-				amount_to_set = float(resp_dict["amount"]) / 100.0
+				raw_amount = float(resp_dict["amount"])
+				fee = float(resp_dict.get("fee") or 0)
+				amount_to_set = (raw_amount - fee) / 100.0
 		except Exception:
 			pass
 	

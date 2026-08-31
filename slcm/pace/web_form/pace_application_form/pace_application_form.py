@@ -1078,7 +1078,9 @@ def complete_pace_payment(assignment, gateway, razorpay_order_id, razorpay_payme
         
         pr_amt = None
         if response_data and isinstance(response_data, dict) and "amount" in response_data:
-            pr_amt = float(response_data["amount"]) / 100.0
+            raw_amount = float(response_data["amount"])
+            fee = float(response_data.get("fee") or 0)
+            pr_amt = (raw_amount - fee) / 100.0
 
         pr_name = frappe.db.get_value("Payment Request", {"reference_name": assignment.name, "docstatus": 1, "status": "Paid"})
         if not pr_amt and pr_name:

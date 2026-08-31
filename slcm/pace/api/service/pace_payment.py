@@ -179,6 +179,7 @@ def _update_pace_payment_request(
     if status == "Paid":
         update_data["failure_message"] = None
         update_data["gateway_status"] = "captured"
+        update_data["paid_on"] = frappe.utils.now_datetime()
         if payment_id:
             update_data["transaction_id"] = payment_id
             update_data["razorpay_payment_id"] = payment_id
@@ -249,7 +250,9 @@ def sync_pace_payment_after_gateway_capture(pr_name):
                 try:
                     resp_dict = json.loads(pr.gateway_response)
                     if "amount" in resp_dict:
-                        pr_amt = float(resp_dict["amount"]) / 100.0
+                        raw_amount = float(resp_dict["amount"])
+                        fee = float(resp_dict.get("fee") or 0)
+                        pr_amt = (raw_amount - fee) / 100.0
                 except Exception:
                     pass
             

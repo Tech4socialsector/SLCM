@@ -29,6 +29,10 @@ class PaymentRequest(Document):
 					_("Status cannot be changed from the form. It is updated by the payment gateway webhook.")
 				)
 
+	def before_save(self):
+		if self.status == "Paid" and not self.paid_on:
+			self.paid_on = frappe.utils.now_datetime()
+
 	def on_submit(self):
 		if not self.payment_url:
 			self.get_payment_url()
