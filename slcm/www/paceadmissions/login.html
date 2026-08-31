@@ -441,6 +441,12 @@
       .lp-btn { font-size: 12px; padding: 11px; }
       .lp-support { margin-top: 30px; }
     }
+
+    .lp-admission-closed-msg {
+      background: #fee2e2; color: #991b1b; padding: 12px 16px; border-radius: 8px;
+      font-size: 13px; font-weight: 400; margin-bottom: 24px; border: 1px solid #fecaca;
+      text-align: center;
+    }
   </style>
 
 {{ get_typography_style_block(
@@ -541,18 +547,17 @@ function gtag_report_conversion(url) {
 
     <!-- Tabs -->
     <div class="lp-tabs">
-      {% if not is_closed and not portal_disable_signup %}
-      <button type="button" class="lp-tab active"        id="tab-register" onclick="lpTab('register')">Register</button>
+      {% if show_register_tab %}
+      <button type="button" class="lp-tab active" id="tab-register" onclick="lpTab('register')">Register</button>
       {% endif %}
-      <button type="button" class="lp-tab{% if is_closed or portal_disable_signup %} active{% endif %}" id="tab-login"    onclick="lpTab('login')">Login</button>
+      <button type="button" class="lp-tab{% if not show_register_tab %} active{% endif %}" id="tab-login" onclick="lpTab('login')">Login</button>
     </div>
     
     {% if is_closed %}
     <div style="background: #fee2e2; color: #991b1b; padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 400; margin-bottom: 24px; border: 1px solid #fecaca; display: flex; align-items: center; gap: 10px;">
         <span class="material-symbols-outlined" style="font-size: 20px;">info</span>
         <div>
-            <div style="font-weight: 400; margin-bottom: 2px;">Admission for PACE {{ display_year }} is closed now.</div>
-            <div style="font-weight: 400; opacity: 0.85;">Please check back later.</div>
+            <div style="font-weight: 400; margin-bottom: 2px;">Admission for PACE {{ display_year }} is closed now. Please check back later.</div>
         </div>
     </div>
     {% endif %}
@@ -611,7 +616,7 @@ function gtag_report_conversion(url) {
     </div>
 
     <!-- ── REGISTER PANEL ── -->
-    {% if not is_closed and not portal_disable_signup %}
+    {% if show_register_tab %}
     <div id="panel-register">
       <div id="lp-notify-register" class="lp-notify"></div>
 
@@ -642,6 +647,10 @@ function gtag_report_conversion(url) {
         <a href="#login" onclick="event.preventDefault(); lpTab('login');"
            style="color:var(--primary);font-weight:600;text-decoration:none;">Login</a>
       </p>
+    </div>
+    {% else %}
+    <div id="panel-register-closed" class="lp-admission-closed-msg" style="display: none;">
+      <p>{{ admission_closed_message }}</p>
     </div>
     {% endif %}
 
@@ -994,10 +1003,15 @@ function lpTab(t, opts) {
   t = t || 'login';
   var pLogin = document.getElementById('panel-login');
   var pReg = document.getElementById('panel-register');
+  var pRegClosed = document.getElementById('panel-register-closed');
   var pForgot = document.getElementById('panel-forgot');
   
   if (pLogin) pLogin.style.display = t==='login' ? '' : 'none';
-  if (pReg) pReg.style.display = t==='register' ? '' : 'none';
+  if (pReg) {
+    pReg.style.display = t==='register' ? '' : 'none';
+  } else if (pRegClosed) {
+    pRegClosed.style.display = t==='register' ? '' : 'none';
+  }
   if (pForgot) pForgot.style.display = t==='forgot' ? '' : 'none';
   
   var tLogin = document.getElementById('tab-login');
@@ -1590,7 +1604,7 @@ document.addEventListener('DOMContentLoaded', function() {
   initDatePager();
   
   function checkHash() {
-    var isClosed = {{ 'true' if (is_closed or portal_disable_signup) else 'false' }};
+    var isClosed = {{ 'true' if not show_register_tab else 'false' }};
     var defaultTab = isClosed ? 'login' : 'register';
     var h = (window.location.hash || '').replace(/^#/, '');
     if (!h || h === defaultTab) {

@@ -11,6 +11,7 @@
   "admission_year",
   "academic_year",
   "approval_reference",
+  "enable_applicant_register_tab",
   "allow_multiple_applications",
   "application_form_type",
   "enable_scholarship",
@@ -250,11 +251,18 @@
    "fieldname": "enable_scholarship",
    "fieldtype": "Check",
    "label": "Enable Scholarship"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "1",
+   "fieldname": "enable_applicant_register_tab",
+   "fieldtype": "Check",
+   "label": "Enable Applicant Register Tab"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-14 12:21:55.302238",
+ "modified": "2026-08-31 15:43:34.007023",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Admission Cycle",

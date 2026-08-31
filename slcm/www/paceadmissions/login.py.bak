@@ -83,17 +83,15 @@ def get_context(context):
             admission_recs = frappe.get_all(
                 "PACE Admission",
                 filters={"academic_year": active_year[0].name},
-                fields=["name", "admission_close_date", "status", "academic_year", "enable_applicant_register_tab"],
+                fields=["name", "admission_close_date", "status", "academic_year"],
                 limit=1
             )
             if admission_recs:
                 row = admission_recs[0]
                 context.is_closed = row.get("status") != "Active"
                 context.display_year = row.get("academic_year")
-                context.show_register_tab = (
-                    row.get("status") == "Active"
-                    and cint(row.get("enable_applicant_register_tab"))
-                    and not cint(frappe.db.get_single_value("Website Settings", "disable_signup"))
+                context.show_register_tab = (row.get("status") == "Active") and not cint(
+                    frappe.db.get_single_value("Website Settings", "disable_signup")
                 )
                 active_cycle = frappe._dict({
                     "name":                    row.get("name"),
