@@ -636,3 +636,51 @@ def sync_razorpay_amount(assignment_name):
 		return True
 	else:
 		frappe.throw("Could not determine valid amount from Payment Request.")
+
+@frappe.whitelist()
+def bulk_sync_razorpay_amount():
+	"""Sync Razorpay captured amount for all eligible PACE Applicant Fee 
+	Assignment records (status=Paid, razorpay_paid_amount=0)."""
+
+	eligible = frappe.get_all(
+		"PACE Applicant Fee Assignment",
+		filters={"status": "Paid", "razorpay_paid_amount": 0},
+		pluck="name",
+	)
+
+	total = len(eligible)
+	success_count = 0
+	failed_count = 0
+	error_title = f"Bulk Razorpay Sync Errors - {frappe.utils.now_datetime().strftime('%Y-%m-%d %H:%M:%S')}"
+
+	for idx, name in enumerate(eligible, start=1):
+		try:
+			sync_razorpay_amount(name)
+			success_count += 1
+		except Exception:
+			failed_count += 1
+			frappe.log_error(
+				title=error_title,
+				message=f"Assignment: {name}\nError: {frappe.get_traceback()}"
+			)
+		finally:
+			frappe.publish_realtime(
+				event="pace_bulk_sync_progress",
+				message={
+					"processed": idx,
+					"total": total,
+					"current": name,
+					"success_count": success_count,
+					"failed_count": failed_count,
+				},
+				user=frappe.session.user,
+			)
+
+	frappe.db.commit()
+
+	return {
+		"total": total,
+		"success_count": success_count,
+		"failed_count": failed_count,
+		"error_log_title": error_title if failed_count else None,
+	}
