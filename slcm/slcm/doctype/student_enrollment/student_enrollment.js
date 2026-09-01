@@ -54,7 +54,7 @@ frappe.ui.form.on("Student Enrollment", {
 		// 3️⃣ Fetch all Open Course Offerings for this batch directly
 		// (Course Offering's own link field is still named "cohort")
 		frappe.db.get_list("Course Offering", {
-			filters: [["cohort", "=", batch], ["status", "=", "Open"]],
+			filters: [["cohort", "=", batch], ["status", "=", "Active"]],
 			fields: ["name", "course_title"],
 		}).then((offerings) => {
 			if (!offerings.length) {

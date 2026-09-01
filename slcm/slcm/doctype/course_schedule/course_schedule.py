@@ -49,10 +49,10 @@ class CourseSchedule(Document):
 		doc.insert(ignore_permissions=True)
 
 	def get_course_offering(self):
-		# Try to find an open course offering for this course and program
+		# Try to find an active course offering for this course and program
 		filters = {
 			"course_title": self.course,
-			"status": "Open"
+			"status": "Active"
 		}
 		if self.program:
 			filters["program"] = self.program

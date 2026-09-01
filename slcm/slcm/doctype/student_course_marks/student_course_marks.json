@@ -270,7 +270,7 @@
  "unique_constraints": [
   [
    "exam_plan",
-   "course",
+   "course_offering",
    "student"
   ]
  ]
