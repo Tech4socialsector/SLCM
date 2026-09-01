@@ -58,24 +58,22 @@
   {
    "fieldname": "batch_year",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Batch Year",
    "options": "Student Batch Name"
   },
   {
+   "fetch_from": "program.level_of_study",
    "fieldname": "program_level",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Program Level",
-   "options": "\nUG\nPG\nPhD\nAll"
+   "label": "Programme Level",
+   "options": "\nUndergraduate\nPostgraduate\nResearch Course"
   },
   {
    "fieldname": "student_category",
    "fieldtype": "Select",
    "hidden": 1,
-   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Student Category",
    "options": "\nAll\nGeneral\nSC\nST\nOBC\nEWS\nNRI\nOther"
@@ -161,7 +159,6 @@
   {
    "fieldname": "term_type",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Term Type",
    "options": "\nAnnual\nSemester\nTrimester\nQuarter"
@@ -180,6 +177,7 @@
    "description": "Deadline for full fee payment",
    "fieldname": "valid_until",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "Valid Until"
   },
   {
@@ -352,12 +350,14 @@
   {
    "fieldname": "total_amount_for_indian",
    "fieldtype": "Currency",
+   "in_list_view": 1,
    "label": "Total Amount for Indian",
    "read_only": 1
   },
   {
    "fieldname": "total_amount_for_foreign",
    "fieldtype": "Currency",
+   "in_list_view": 1,
    "label": "Total Amount for Foreign",
    "read_only": 1
   },
@@ -374,7 +374,7 @@
   }
  ],
  "links": [],
- "modified": "2026-08-05 15:36:21.836872",
+ "modified": "2026-08-31 14:19:56.207220",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Fee Structure",
