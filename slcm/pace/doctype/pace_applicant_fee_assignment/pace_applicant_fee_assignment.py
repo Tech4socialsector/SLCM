@@ -592,7 +592,7 @@ def send_course_fee_reminder_system_notification(doc, admission_close_date):
 @frappe.whitelist()
 def sync_razorpay_amount(assignment_name):
 	assignment = frappe.get_doc("PACE Applicant Fee Assignment", assignment_name)
-	if assignment.status != "Paid":
+	if assignment.status not in ("Paid", "Enrolled"):
 		frappe.throw("Can only sync amount for Paid assignments.")
 	
 	pr_list = frappe.get_all(
@@ -644,7 +644,10 @@ def bulk_sync_razorpay_amount():
 
 	eligible = frappe.get_all(
 		"PACE Applicant Fee Assignment",
-		filters={"status": "Paid", "razorpay_paid_amount": 0},
+		filters={
+			"status": ["in", ["Paid", "Enrolled"]],
+			"razorpay_paid_amount": 0,
+		},
 		pluck="name",
 	)
 
