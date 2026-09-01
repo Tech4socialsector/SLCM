@@ -1385,7 +1385,7 @@ def get_programme_analytics(academic_year=None, term=None, program=None, cohort=
 	)[0][0]
 	open_offerings = frappe.db.sql(
 		f"SELECT COUNT(*) FROM `tabCourse Offering` co {co_where}"
-		+ (" AND " if co_where else " WHERE ") + "co.status = 'Open'",
+		+ (" AND " if co_where else " WHERE ") + "co.status = 'Active'",
 		co_params,
 	)[0][0]
 

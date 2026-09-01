@@ -77,5 +77,11 @@
  "row_format": "Dynamic",
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "unique_constraints": [
+  [
+   "exam_plan",
+   "course_offering"
+  ]
+ ]
 }

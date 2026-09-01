@@ -103,7 +103,7 @@ class StudentEnrollment(Document):
         if self.program and self.batch and not self.enrolled_courses:
             offerings = frappe.get_all(
                 "Course Offering",
-                filters={"cohort": self.batch, "status": "Open"},
+                filters={"cohort": self.batch, "status": "Active"},
                 fields=["name", "course_title"],
             )
             for offering in offerings:
