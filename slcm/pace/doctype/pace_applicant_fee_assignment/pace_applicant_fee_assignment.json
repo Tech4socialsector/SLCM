@@ -128,7 +128,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Draft\nAssigned\nPartially Paid\nPaid\nCancelled\nConverted\nWithdrawn\nEnrolled\nRejected",
+   "options": "Draft\nAssigned\nPartially Paid\nPaid\nCancelled\nWithdrawn\nEnrolled\nRejected",
    "permlevel": 1
   },
   {
@@ -233,7 +233,7 @@
   }
  ],
  "links": [],
- "modified": "2026-08-28 16:13:28.781894",
+ "modified": "2026-09-01 11:14:51.310670",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Applicant Fee Assignment",

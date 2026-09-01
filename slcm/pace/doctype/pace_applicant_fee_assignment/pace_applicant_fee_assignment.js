@@ -15,7 +15,7 @@ frappe.ui.form.on("PACE Applicant Fee Assignment", {
 			}).addClass("btn-primary");
 		}
 
-		if (frm.doc.status === "Paid" && (!frm.doc.razorpay_paid_amount || frm.doc.razorpay_paid_amount == 0)) {
+		if (["Paid", "Enrolled"].includes(frm.doc.status) && (!frm.doc.razorpay_paid_amount || frm.doc.razorpay_paid_amount == 0)) {
 			frm.add_custom_button(__("Sync Razorpay Amount"), function() {
 				frappe.call({
 					method: "slcm.pace.doctype.pace_applicant_fee_assignment.pace_applicant_fee_assignment.sync_razorpay_amount",
