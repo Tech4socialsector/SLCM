@@ -57,6 +57,58 @@ def after_migrate():
 
 	_ensure_day_of_week()
 	clear_grid_customizations()
+	sync_pace_number_cards()
+
+
+def sync_pace_number_cards():
+	"""
+	Ensures PACE Number Cards are synced with proper document types and standard SQL query mode.
+	Runs on every bench migrate so all team members automatically get correct cards without manual DB fixes.
+	"""
+	try:
+		# 1. Reset any old custom method overrides on PACE Number Cards
+		frappe.db.sql("""
+			UPDATE `tabNumber Card`
+			SET type = 'Document Type', method = NULL
+			WHERE module = 'PACE' AND (method LIKE '%pace_admin_dashboard%' OR method IS NOT NULL)
+		""")
+
+		# 2. Reload all PACE Number Cards from disk with force=True
+		pace_cards = [
+			"total_applications_received", "draft_applications", "submitted_applications",
+			"awaiting_verification", "applications_verified", "fee_paid_applications",
+			"students_enrolled", "returned_for_correction", "applications_rejected",
+			"withdrawn_application", "application_fees_collected", "course_fees_collected",
+			"total_fees_collected"
+		]
+		for card in pace_cards:
+			try:
+				frappe.reload_doc("pace", "number_card", card, force=True)
+			except Exception:
+				pass
+
+		# 3. Direct DB updates for specific doctype mappings
+		if frappe.db.exists("Number Card", "Applications Verified"):
+			frappe.db.set_value("Number Card", "Applications Verified", {
+				"document_type": "PACE Document Verification",
+				"filters_json": '[["PACE Document Verification","status","=","Verified"]]'
+			}, update_modified=False)
+
+		if frappe.db.exists("Number Card", "Returned For Correction"):
+			frappe.db.set_value("Number Card", "Returned For Correction", {
+				"document_type": "PACE Document Verification",
+				"filters_json": '[["PACE Document Verification","status","=","Returned for Correction"]]'
+			}, update_modified=False)
+
+		if frappe.db.exists("Number Card", "Fee Paid Applications"):
+			frappe.db.set_value("Number Card", "Fee Paid Applications", {
+				"document_type": "PACE Receipt",
+				"filters_json": '[]'
+			}, update_modified=False)
+
+		frappe.db.commit()
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "PACE Number Card Sync Error")
 
 
 def clear_grid_customizations():
