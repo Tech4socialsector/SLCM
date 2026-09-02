@@ -279,11 +279,11 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function (wrapper) {
 		if (academic_year) filters.academic_year = academic_year;
 		if (programme) filters.programme = programme;
 		if (from_date && to_date) {
-			filters.creation = ['between', [from_date + " 00:00:00", to_date + " 23:59:59"]];
+			filters.creation = ['between', [from_date, to_date]];
 		} else if (from_date) {
-			filters.creation = ['>=', from_date + " 00:00:00"];
+			filters.creation = ['>=', from_date];
 		} else if (to_date) {
-			filters.creation = ['<=', to_date + " 23:59:59"];
+			filters.creation = ['<=', to_date];
 		}
 
 		let doctype = 'PACE Application';
@@ -299,73 +299,38 @@ frappe.pages['pace-admin-dashboard'].on_page_load = function (wrapper) {
 				filters.assigned_verifier = ['is', 'not set'];
 				break;
 			case 'verified_apps':
-				doctype = 'PACE Document Verification';
 				filters.status = 'Verified';
-				delete filters.creation;
-				if (from_date && to_date) {
-					filters.verified_on = ['between', [from_date + " 00:00:00", to_date + " 23:59:59"]];
-				}
 				break;
 			case 'total_enrolled':
 				filters.status = ['in', ['Admitted', 'Enrolled']];
-				if (from_date && to_date) {
-					delete filters.creation;
-					filters.modified = ['between', [from_date + " 00:00:00", to_date + " 23:59:59"]];
-				}
 				break;
 			case 'revenue':
 				doctype = 'PACE Receipt';
+				// Copy filters to receipt if applicable, though receipts don't have all the same fields
 				filters = {};
 				if (academic_year) filters.academic_year = academic_year;
-				if (programme) filters.program = programme;
-				if (from_date && to_date) {
-					filters.payment_date = ['between', [from_date, to_date]];
-				}
 				break;
 			case 'app_revenue':
 				doctype = 'PACE Receipt';
 				filters = { fee_type: 'Application Fee' };
 				if (academic_year) filters.academic_year = academic_year;
-				if (programme) filters.program = programme;
-				if (from_date && to_date) {
-					filters.payment_date = ['between', [from_date, to_date]];
-				}
 				break;
 			case 'adm_revenue':
 				doctype = 'PACE Receipt';
 				filters = { fee_type: 'Course Fee' };
 				if (academic_year) filters.academic_year = academic_year;
-				if (programme) filters.program = programme;
-				if (from_date && to_date) {
-					filters.payment_date = ['between', [from_date, to_date]];
-				}
 				break;
 			case 'returned':
-				doctype = 'PACE Document Verification';
 				filters.status = 'Returned for Correction';
-				delete filters.creation;
-				if (from_date && to_date) {
-					filters.modified = ['between', [from_date + " 00:00:00", to_date + " 23:59:59"]];
-				}
 				break;
 			case 'fee_paid':
-				doctype = 'PACE Receipt';
-				filters = {};
-				if (academic_year) filters.academic_year = academic_year;
-				if (programme) filters.program = programme;
-				if (from_date && to_date) {
-					filters.payment_date = ['between', [from_date, to_date]];
-				}
+				filters.status = 'Fee Paid';
 				break;
 			case 'pending':
 				filters.status = ['in', ['Submitted', 'Completed', 'Under Verification']];
 				break;
 			case 'rejected':
 				filters.status = 'Rejected';
-				if (from_date && to_date) {
-					delete filters.creation;
-					filters.modified = ['between', [from_date + " 00:00:00", to_date + " 23:59:59"]];
-				}
 				break;
 			case 'draft':
 				filters.status = 'Draft';

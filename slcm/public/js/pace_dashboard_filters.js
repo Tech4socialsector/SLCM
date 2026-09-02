@@ -21,7 +21,7 @@
 				
 				if (!is_report && Array.isArray(filters)) {
 					// Handle Standard DocType Filters (Arrays)
-					apply_array_filters(filters, target_doctype, global, doc);
+					apply_array_filters(filters, target_doctype, global);
 				} else {
 					// Handle Report/Object Filters (Objects)
 					if (Array.isArray(filters)) filters = {};
@@ -32,38 +32,15 @@
 		return filters;
 	};
 
-	function apply_array_filters(filters, doctype, global, doc) {
-		const card_name = (doc && (doc.name || doc.label)) || '';
+	function apply_array_filters(filters, doctype, global) {
+		const maps = {
+			'PACE Application': { year: 'academic_year', prog: 'programme', date: 'creation', verifier: null },
+			'PACE Receipt': { year: 'academic_year', prog: 'program', date: 'payment_date', verifier: null },
+			'PACE Applicant Fee Assignment': { year: 'academic_year', prog: 'program', date: 'assignment_date', verifier: null },
+			'PACE Document Verification': { year: 'academic_year', prog: 'programme', date: 'creation', verifier: 'assigned_verifier' }
+		};
 
-		let date_field = 'creation';
-		let year_field = 'academic_year';
-		let prog_field = 'programme';
-		let verifier_field = null;
-
-		if (doctype === 'PACE Receipt') {
-			prog_field = 'program';
-			date_field = 'payment_date';
-		} else if (doctype === 'PACE Applicant Fee Assignment') {
-			prog_field = 'program';
-			date_field = 'assignment_date';
-		} else if (doctype === 'PACE Document Verification') {
-			verifier_field = 'assigned_verifier';
-			if (card_name.includes('Verified') || card_name.includes('Completed') || card_name === 'Verified') {
-				date_field = 'verified_on';
-			} else {
-				date_field = 'modified';
-			}
-		} else if (doctype === 'PACE Application') {
-			if (card_name === 'Applications Verified') {
-				date_field = 'modified';
-			} else if (card_name === 'Students Enrolled') {
-				date_field = 'modified';
-			} else if (card_name === 'Applications Rejected') {
-				date_field = 'modified';
-			} else {
-				date_field = 'creation';
-			}
-		}
+		const map = maps[doctype] || { year: null, prog: null, date: 'creation', verifier: null };
 
 		const upsert = (fieldname, op, value) => {
 			if (!fieldname) return;
@@ -78,17 +55,13 @@
 			if (!found) filters.push([doctype, fieldname, op, value]);
 		};
 
-		if (global.academic_year) upsert(year_field, '=', global.academic_year);
-		if (global.programme) upsert(prog_field, '=', global.programme);
-		if (global.assigned_verifier) upsert(verifier_field, '=', global.assigned_verifier);
+		if (global.academic_year) upsert(map.year, '=', global.academic_year);
+		if (global.programme) upsert(map.prog, '=', global.programme);
+		if (global.assigned_verifier) upsert(map.verifier, '=', global.assigned_verifier);
 		if (global.from_date || global.to_date) {
 			let start = global.from_date || '1900-01-01';
 			let end = global.to_date || '2099-12-31';
-			if (date_field === 'creation' || date_field === 'modified' || date_field === 'verified_on' || date_field === 'payment_date') {
-				if (start.length === 10) start = start + ' 00:00:00';
-				if (end.length === 10) end = end + ' 23:59:59';
-			}
-			upsert(date_field, 'between', [start, end]);
+			upsert(map.date, 'between', [start, end]);
 		}
 	}
 
@@ -161,9 +134,9 @@
 
 		if (!frappe._document_verifiers_list) {
 			frappe.call({
-				method: 'slcm.pace.api.get_verifiers',
+				method: 'slcm.pace.page.pace_admin_dashboard.pace_admin_dashboard.get_document_verifiers',
 				callback: function(r) {
-					frappe._document_verifiers_list = (r.message || []).map(x => Array.isArray(x) ? x[0] : x.name || x);
+					frappe._document_verifiers_list = r.message || [];
 				}
 			});
 		}
