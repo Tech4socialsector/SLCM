@@ -62,9 +62,10 @@ def update_applicant_status_from_evaluations(campus, academic_year, admission_cy
 		frappe.throw("Campus, Academic Year, Admission Cycle, and Program Level are required.")
 
 	
+	prog_field = "level_of_study" if frappe.get_meta("Programme").has_field("level_of_study") else "program_level"
 	programs = frappe.get_all(
 		"Programme",
-		filters={"program_level": program_level},
+		filters={prog_field: program_level},
 		pluck="name",
 	)
 	if not programs:
