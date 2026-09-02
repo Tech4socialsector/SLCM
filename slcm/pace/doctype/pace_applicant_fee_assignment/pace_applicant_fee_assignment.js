@@ -15,6 +15,24 @@ frappe.ui.form.on("PACE Applicant Fee Assignment", {
 			}).addClass("btn-primary");
 		}
 
+		if (["Paid", "Enrolled"].includes(frm.doc.status) && (!frm.doc.razorpay_paid_amount || frm.doc.razorpay_paid_amount == 0)) {
+			frm.add_custom_button(__("Sync Razorpay Amount"), function() {
+				frappe.call({
+					method: "slcm.pace.doctype.pace_applicant_fee_assignment.pace_applicant_fee_assignment.sync_razorpay_amount",
+					args: {
+						assignment_name: frm.doc.name
+					},
+					callback: function(r) {
+						if (!r.exc) {
+							frappe.msgprint(__("Razorpay amount synced successfully."));
+							frm.reload_doc();
+						}
+					}
+				});
+			}, __("Actions"));
+		}
+
+
 
 
 		if (["Paid", "Enrolled", "Converted"].includes(frm.doc.status)) {
@@ -42,6 +60,8 @@ frappe.ui.form.on("PACE Applicant Fee Assignment", {
 				args: {
 					assignment_name: frm.doc.name
 				},
+				freeze: true,
+				freeze_message: __("Initializing Payment Gateway..."),
 				callback: function(r) {
 					if (r.message) {
 						const data = r.message;
@@ -61,6 +81,8 @@ frappe.ui.form.on("PACE Applicant Fee Assignment", {
 										razorpay_signature: response.razorpay_signature,
 										assignment_name: frm.doc.name
 									},
+									freeze: true,
+									freeze_message: __("Verifying Payment..."),
 									callback: function(res) {
 										if (res.message && res.message.status === "success") {
 											frappe.msgprint(__("Payment Successful"));
@@ -79,7 +101,9 @@ frappe.ui.form.on("PACE Applicant Fee Assignment", {
 						};
 
 						if (typeof Razorpay === 'undefined') {
+							frappe.dom.freeze(__("Loading Checkout..."));
 							$.getScript('https://checkout.razorpay.com/v1/checkout.js', function () {
+								frappe.dom.unfreeze();
 								const rzp = new Razorpay(options);
 								rzp.open();
 							});

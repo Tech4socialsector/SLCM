@@ -587,3 +587,103 @@ def send_course_fee_reminder_system_notification(doc, admission_close_date):
 			}).insert(ignore_permissions=True)
 	except Exception:
 		frappe.log_error(traceback.format_exc(), f"PACE Course Fee Reminder Notification Failed: {doc.name}")
+
+
+@frappe.whitelist()
+def sync_razorpay_amount(assignment_name):
+	assignment = frappe.get_doc("PACE Applicant Fee Assignment", assignment_name)
+	if assignment.status not in ("Paid", "Enrolled"):
+		frappe.throw("Can only sync amount for Paid assignments.")
+	
+	pr_list = frappe.get_all(
+		"Payment Request",
+		filters={
+			"reference_doctype": "PACE Applicant Fee Assignment",
+			"reference_name": assignment.name,
+			"status": "Paid",
+			"docstatus": 1
+		},
+		fields=["name", "amount", "transaction_id", "gateway_response"]
+	)
+	
+	if not pr_list:
+		frappe.throw("No paid Payment Request found for this assignment.")
+		
+	pr_data = pr_list[0]
+	amount_to_set = None
+	if pr_data.get("gateway_response"):
+		import json
+		try:
+			resp_dict = json.loads(pr_data.gateway_response)
+			if "amount" in resp_dict:
+				raw_amount = float(resp_dict["amount"])
+				fee = float(resp_dict.get("fee") or 0)
+				amount_to_set = (raw_amount - fee) / 100.0
+		except Exception:
+			pass
+	
+	if not amount_to_set:
+		amount_to_set = pr_data.get("amount")
+		
+	if amount_to_set and float(amount_to_set) > 0:
+		frappe.db.set_value(
+			"PACE Applicant Fee Assignment", 
+			assignment.name, 
+			"razorpay_paid_amount", 
+			amount_to_set, 
+			update_modified=False
+		)
+		return True
+	else:
+		frappe.throw("Could not determine valid amount from Payment Request.")
+
+@frappe.whitelist()
+def bulk_sync_razorpay_amount():
+	"""Sync Razorpay captured amount for all eligible PACE Applicant Fee 
+	Assignment records (status=Paid, razorpay_paid_amount=0)."""
+
+	eligible = frappe.get_all(
+		"PACE Applicant Fee Assignment",
+		filters={
+			"status": ["in", ["Paid", "Enrolled"]],
+			"razorpay_paid_amount": 0,
+		},
+		pluck="name",
+	)
+
+	total = len(eligible)
+	success_count = 0
+	failed_count = 0
+	error_title = f"Bulk Razorpay Sync Errors - {frappe.utils.now_datetime().strftime('%Y-%m-%d %H:%M:%S')}"
+
+	for idx, name in enumerate(eligible, start=1):
+		try:
+			sync_razorpay_amount(name)
+			success_count += 1
+		except Exception:
+			failed_count += 1
+			frappe.log_error(
+				title=error_title,
+				message=f"Assignment: {name}\nError: {frappe.get_traceback()}"
+			)
+		finally:
+			frappe.publish_realtime(
+				event="pace_bulk_sync_progress",
+				message={
+					"processed": idx,
+					"total": total,
+					"current": name,
+					"success_count": success_count,
+					"failed_count": failed_count,
+				},
+				user=frappe.session.user,
+			)
+
+	frappe.db.commit()
+
+	return {
+		"total": total,
+		"success_count": success_count,
+		"failed_count": failed_count,
+		"error_log_title": error_title if failed_count else None,
+	}

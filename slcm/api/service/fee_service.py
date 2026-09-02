@@ -46,33 +46,6 @@ class FeeService:
         return get_datetime(valid_until) if valid_until else None
 
     @staticmethod
-    def extended_fee_deadline(fee_structure_name):
-        """Updates payment deadline for all active Offer Letters linked to this Fee Structure."""
-        if not fee_structure_name:
-            return
-            
-        valid_until = frappe.db.get_value("Fee Structure", fee_structure_name, "valid_until")
-        if not valid_until:
-            return
-
-        new_deadline = get_datetime(valid_until)
-        
-        offers = frappe.get_all("Offer Letter", filters={
-            "fee_structure": fee_structure_name,
-            "status": ["in", ["Draft", "Issued"]]
-        }, fields=["name"])
-        
-        for entry in offers:
-            doc = frappe.get_doc("Offer Letter", entry.name)
-            if doc.payment_deadline != new_deadline:
-                doc.payment_deadline = new_deadline
-                doc.ignore_lock = True
-                doc.add_comment("Comment", _("Payment deadline automatically syncronized to {0} due to Fee Structure update.").format(
-                    frappe.utils.format_datetime(new_deadline)
-                ))
-                doc.save(ignore_permissions=True)
-
-    @staticmethod
     def _calculate_and_freeze_fees(fee_structure_name, is_foreign=False):
         """
         Financial Logic: Calculates fees and returns a structured dict.
@@ -963,7 +936,6 @@ class FeeService:
                 update_data["gateway_status"] = "captured"
                 update_data["paid_on"] = frappe.utils.nowdate()
             elif failure_reason:
-                update_data["status"] = "Failed"
                 update_data["failure_message"] = failure_reason
 
             if payment_id:
@@ -1007,7 +979,6 @@ class FeeService:
                 pr.gateway_status = "captured"
 
             if failure_reason:
-                pr.status = "Failed"
                 pr.failure_message = failure_reason
 
             frappe.flags.payment_request_status_from_backend = True
@@ -1285,7 +1256,6 @@ class FeeService:
                     update_data["transaction_id"] = payment_id
                     update_data["razorpay_payment_id"] = payment_id
             elif failure_reason:
-                update_data["status"] = "Failed"
                 update_data["failure_message"] = failure_reason
                 update_data["gateway_status"] = "failed"
             if response_data:
@@ -1327,7 +1297,6 @@ class FeeService:
                     if payment_id:
                         pr.razorpay_payment_id = payment_id
                 if failure_reason:
-                    pr.status = "Failed"
                     pr.failure_message = failure_reason
                     pr.gateway_status = "failed"
                 pr.save(ignore_permissions=True)
@@ -1819,7 +1788,7 @@ class FeeService:
             else:
                 err_msg = str(error_data)
                 
-            pr_status = "Failed" if is_gateway_failure else "Requested"
+            pr_status = "Requested"
             
             FeeService._update_payment_request_for_applicant(
                 applicant, gateway, order_id, pr_status, failure_reason=err_msg, response_data=error_data

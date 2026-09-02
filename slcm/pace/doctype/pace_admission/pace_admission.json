@@ -14,6 +14,7 @@
   "admission_open_date",
   "admission_close_date",
   "status",
+  "enable_applicant_register_tab",
   "section_break_fwry",
   "programmes",
   "amended_from"
@@ -101,13 +102,20 @@
    "fieldname": "allow_multiple_application_per_applicant",
    "fieldtype": "Check",
    "label": "Allow Multiple Application Per Applicant"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "1",
+   "fieldname": "enable_applicant_register_tab",
+   "fieldtype": "Check",
+   "label": "Enable Applicant Register Tab"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-01 12:53:52.918126",
+ "modified": "2026-08-31 15:30:06.413214",
  "modified_by": "Administrator",
  "module": "PACE",
  "name": "PACE Admission",

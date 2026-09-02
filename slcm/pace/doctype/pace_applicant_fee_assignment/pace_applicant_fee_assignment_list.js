@@ -135,5 +135,97 @@ frappe.listview_settings['PACE Applicant Fee Assignment'] = {
 				});
 			});
 		});
+
+		listview.page.add_inner_button(__("Bulk Sync Razorpay Amount"), function() {
+			frappe.confirm(
+				__("This will sync the Razorpay captured amount for all Paid assignments with a pending sync. Continue?"),
+				function() {
+					run_bulk_sync(listview);
+				}
+			);
+		});
 	}
 };
+
+function run_bulk_sync(listview) {
+	let progress_dialog = new frappe.ui.Dialog({
+		title: __("Bulk Sync Razorpay Amount"),
+		fields: [{ fieldtype: "HTML", fieldname: "progress_area" }]
+	});
+
+	progress_dialog.fields_dict.progress_area.$wrapper.html(`
+		<div class="bulk-sync-progress">
+			<div class="progress">
+				<div class="progress-bar" role="progressbar" style="width:0%">0%</div>
+			</div>
+			<p class="text-muted small" style="margin-top:8px;">${__("Starting sync...")}</p>
+		</div>
+	`);
+	progress_dialog.show();
+
+	let realtime_handler = function(data) {
+		let pct = data.total ? Math.round((data.processed / data.total) * 100) : 0;
+		progress_dialog.$wrapper.find(".progress-bar")
+			.css("width", pct + "%")
+			.text(pct + "%");
+		progress_dialog.$wrapper.find(".text-muted").text(
+			__("Processing {0} of {1} — Success: {2}, Failed: {3}",
+				[data.processed, data.total, data.success_count, data.failed_count])
+		);
+	};
+
+	frappe.realtime.on("pace_bulk_sync_progress", realtime_handler);
+
+	frappe.call({
+		method: "slcm.pace.doctype.pace_applicant_fee_assignment.pace_applicant_fee_assignment.bulk_sync_razorpay_amount",
+		callback: function(r) {
+			frappe.realtime.off("pace_bulk_sync_progress", realtime_handler);
+			
+			// Ensure progress bar shows 100% completion before hiding
+			progress_dialog.$wrapper.find(".progress-bar").css("width", "100%").text("100%");
+			progress_dialog.$wrapper.find(".text-muted").text(__("Sync complete."));
+
+			setTimeout(() => {
+				progress_dialog.hide();
+				
+				if (!r.message) return;
+				let { total, success_count, failed_count, error_log_title } = r.message;
+
+				let summary_html = `
+					<p><b>${__("Total processed")}:</b> ${total}</p>
+					<p style="color:green;"><b>${__("Successful")}:</b> ${success_count}</p>
+					<p style="color:red;"><b>${__("Failed")}:</b> ${failed_count}</p>
+				`;
+
+				// Wait for progress_dialog's fade-out animation before showing the summary dialog
+				// to prevent Frappe backdrop stacking issues
+				setTimeout(() => {
+					let summary_dialog = new frappe.ui.Dialog({
+						title: __("Bulk Sync Complete"),
+						fields: [{ fieldtype: "HTML", fieldname: "summary", options: summary_html }],
+						primary_action_label: failed_count ? __("View Errors") : __("Close"),
+						primary_action: function() {
+							if (failed_count && error_log_title) {
+								frappe.set_route("List", "Error Log", { title: error_log_title });
+							}
+							summary_dialog.hide();
+						}
+					});
+					summary_dialog.show();
+					listview.refresh();
+				}, 500);
+			}, 600);
+		},
+		error: function() {
+			frappe.realtime.off("pace_bulk_sync_progress", realtime_handler);
+			progress_dialog.hide();
+			setTimeout(() => {
+				frappe.msgprint({
+					title: __("Bulk Sync Failed"),
+					indicator: "red",
+					message: __("The bulk sync process failed unexpectedly. Please check the Error Log.")
+				});
+			}, 500);
+		}
+	});
+}

@@ -1,6 +1,7 @@
 import frappe
 import datetime
-from frappe.utils import getdate, today, add_days
+from frappe.utils import getdate, today, add_days, cint
+from frappe import _
 
 
 def _fmt_date(date_obj):
@@ -72,11 +73,15 @@ def get_context(context):
     active_cycle = None
     context.is_closed = True
     context.display_year = ""
+    context.show_register_tab = False
+    context.admission_closed_message = _("Admission is currently closed.")
     try:
         active_year = frappe.db.get_value("Academic Year", {"status": "Active"}, "name")
         if not active_year:
             recent = frappe.get_all("Academic Year", fields=["name"], order_by="creation desc", limit=1)
             active_year = recent[0].name if recent else "2026-2027"
+
+        context.admission_closed_message = _("Admission for the Academic year {0} is closed now.").format(active_year)
 
         active_cycle_name = frappe.db.get_value("Admission Cycle", {"status": "Active", "academic_year": active_year}, "name")
         if not active_cycle_name:
@@ -95,7 +100,8 @@ def get_context(context):
                 "Admission Cycle",
                 active_cycle_name,
                 ["cycle_start_date", "cycle_end_date",
-                 "application_start_date", "application_end_date", "admission_year"],
+                 "application_start_date", "application_end_date", "admission_year",
+                 "enable_applicant_register_tab"],
                 as_dict=True,
             ) or {}
             active_cycle = frappe._dict({
@@ -107,8 +113,14 @@ def get_context(context):
             })
             context.is_closed = False
             context.display_year = row.get("admission_year") or active_year
+            context.show_register_tab = (
+                not context.is_closed
+                and cint(row.get("enable_applicant_register_tab"))
+                and not cint(frappe.db.get_single_value("Website Settings", "disable_signup"))
+            )
         else:
             context.is_closed = True
+            context.show_register_tab = False
             display_year = active_year
             if len(display_year) == 9 and display_year[4] == '-':
                 parts = display_year.split('-')
@@ -240,10 +252,8 @@ def get_context(context):
     context.no_cache   = 1
     context.csrf_token = frappe.local.session.data.csrf_token or ""
     context.title      = context.institution_name + " — Login"
-    from frappe.utils import cint
     context.portal_disable_signup = cint(frappe.db.get_single_value("Website Settings", "disable_signup"))
 
-    from frappe import _
     context.forgot_password_intro = _(
         "Enter the email you used to register. We will send a password reset link to that inbox."
     )

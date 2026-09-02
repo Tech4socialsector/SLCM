@@ -11,7 +11,6 @@
   "component_type",
   "ledger",
   "column_break_1",
-  "amount",
   "is_accommodation_fee",
   "is_taxable",
   "tax_rate",
@@ -37,12 +36,6 @@
   {
    "fieldname": "column_break_1",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "amount",
-   "fieldtype": "Currency",
-   "in_list_view": 1,
-   "label": "Amount"
   },
   {
    "default": "0",
@@ -74,7 +67,7 @@
   }
  ],
  "links": [],
- "modified": "2026-08-27 15:32:43.978096",
+ "modified": "2026-08-31 14:02:21.217327",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Fee Component",

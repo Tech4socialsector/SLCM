@@ -1049,6 +1049,43 @@ def bulk_download_all_records(names):
                         zip_file.writestr(arcname, content)
                         found_files += 1
 
+            # Fetch receipts for the applicant
+            receipts = frappe.get_all(
+                "PACE Receipt", 
+                filters={"pace_application": name}, 
+                fields=["name", "fee_type", "receipt"]
+            )
+            for receipt in receipts:
+                if receipt.receipt:
+                    # Determine filename label based on fee type
+                    if receipt.fee_type == "Application Fee":
+                        label = "Application_Fee_Receipt"
+                    elif receipt.fee_type == "Course Fee":
+                        label = "Course_Fee_Receipt"
+                    else:
+                        label = f"{str(receipt.fee_type).replace(' ', '_')}_Receipt"
+                    
+                    file_url = receipt.receipt
+                    
+                    # Get the File record to retrieve content
+                    file_record_name = frappe.db.get_value("File", {
+                        "file_url": file_url,
+                        "attached_to_doctype": "PACE Receipt",
+                        "attached_to_name": receipt.name
+                    }, "name")
+                    
+                    if not file_record_name:
+                        file_record_name = frappe.db.get_value("File", {"file_url": file_url}, "name")
+                    
+                    if file_record_name:
+                        file_doc = frappe.get_doc("File", file_record_name)
+                        content = file_doc.get_content()
+                        if content:
+                            ext = os.path.splitext(file_doc.file_name)[1]
+                            arcname = f"{folder_name}/{label}{ext}"
+                            zip_file.writestr(arcname, content)
+                            found_files += 1
+
     if found_files == 0:
         frappe.throw(_("No uploaded documents found for the selected records."))
 

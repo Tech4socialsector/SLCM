@@ -179,12 +179,12 @@ def _update_pace_payment_request(
     if status == "Paid":
         update_data["failure_message"] = None
         update_data["gateway_status"] = "captured"
+        update_data["paid_on"] = frappe.utils.now_datetime()
         if payment_id:
             update_data["transaction_id"] = payment_id
             update_data["razorpay_payment_id"] = payment_id
     else:
         if failure_reason:
-            update_data["status"] = "Failed"
             update_data["failure_message"] = failure_reason
             update_data["gateway_status"] = "failed"
         if transaction_id:
@@ -238,11 +238,39 @@ def sync_pace_payment_after_gateway_capture(pr_name):
     assignment = frappe.get_doc("PACE Applicant Fee Assignment", assignment_name, check_permission=False)
 
     if assignment.status != "Paid":
-        assignment.status = "Paid"
-        assignment.transaction_id = pr.razorpay_payment_id or pr.transaction_id
-        assignment.payment_date = pr.paid_on or now_datetime()
-        assignment.flags.ignore_permissions = True
-        assignment.save(ignore_permissions=True)
+        try:
+            assignment.status = "Paid"
+            assignment.transaction_id = pr.razorpay_payment_id or pr.transaction_id
+            assignment.payment_date = pr.paid_on or now_datetime()
+            
+            pr_amt = None
+            if pr.gateway_response:
+                import json
+                try:
+                    resp_dict = json.loads(pr.gateway_response)
+                    if "amount" in resp_dict:
+                        raw_amount = float(resp_dict["amount"])
+                        fee = float(resp_dict.get("fee") or 0)
+                        pr_amt = (raw_amount - fee) / 100.0
+                except Exception:
+                    pass
+            
+            if not pr_amt:
+                pr_amt = pr.get("amount") or 0.0
+
+            if pr_amt and float(pr_amt) > 0:
+                assignment.razorpay_paid_amount = pr_amt
+            else:
+                frappe.log_error(f"Payment Request {pr.name} has zero/missing amount.", "PACE Webhook Sync Warning")
+                
+            assignment.flags.ignore_permissions = True
+            assignment.save(ignore_permissions=True)
+        except Exception as e:
+            error_log = frappe.log_error(
+                message=frappe.get_traceback(),
+                title=f"Failed to update PACE Fee Assignment {assignment.name} from Webhook"
+            )
+            frappe.db.set_value("PACE Applicant Fee Assignment", assignment.name, "error_log", error_log.name)
 
         # Load linked PACE Application and update status
         if assignment.applicant:

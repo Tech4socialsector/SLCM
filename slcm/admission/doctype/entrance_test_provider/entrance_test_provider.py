@@ -36,6 +36,8 @@ class EntranceTestProvider(Document):
 			self.total_capacity = total_cap
 			self.reserved_seats = total_res
 			self.available_capacity = max(0, total_cap - total_res)
+		else:
+			self.available_capacity = max(0, (self.total_capacity or 0) - (self.reserved_seats or 0))
 
 
 @frappe.whitelist()
