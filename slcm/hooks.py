@@ -238,13 +238,6 @@ fixtures = [
     {
         "doctype": "Number Card",
         "filters": [["name", "in", [
-            # PACE Dashboard Cards
-            "Total Applications Received", "Draft Applications", "Submitted Applications",
-            "Awaiting Verification", "Applications Verified", "Fee Paid Applications",
-            "Students Enrolled", "Returned For Correction", "Applications Rejected",
-            "Withdrawn Application", "Application Fees Collected", "Course Fees Collected",
-            "Total Fees Collected", "Assigned Documents", "Verified Documents",
-            "Pending Documents", "Rejected Documents", "Return For Correction Documents",
             # Programme Management / Registration
             "Total Students", "Active Enrollments", "Active Programs", "Active Courses",
             "Active Cohorts", "Open Course Offerings",
