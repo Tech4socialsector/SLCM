@@ -23,7 +23,7 @@ def get_course_offering(course, program, academic_term):
 	if not course:
 		return None
 
-	filters = {"course_title": course, "status": "Open"}
+	filters = {"course_title": course, "status": "Active"}
 	if program:
 		filters["program"] = program
 	if academic_term:

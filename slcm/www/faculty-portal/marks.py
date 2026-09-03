@@ -30,10 +30,10 @@ def get_context(context):
 
         # ── Course offerings for this faculty ────────────────────────
         # course_title is the Link → Course; course_name is a Data display field
-        # Course Offering status options are only "Open" and "Closed"
+        # Course Offering status options are only "Active" and "Inactive"
         course_offerings = frappe.get_all(
             "Course Offering",
-            filters={"faculty": faculty_name, "status": "Open"},
+            filters={"faculty": faculty_name, "status": "Active"},
             fields=["name", "course_name", "course_title", "term_name", "academic_year"],
             order_by="academic_year desc, term_name asc, course_name asc",
             ignore_permissions=True,
