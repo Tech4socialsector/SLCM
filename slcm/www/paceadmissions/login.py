@@ -77,36 +77,41 @@ def get_context(context):
     context.admission_closed_message = _("Admission is currently closed.")
 
     try:
-        active_year = frappe.get_all("Academic Year", filters={"status": "Active"}, fields=["name"], limit=1)
-        if active_year:
-            context.admission_closed_message = _("Admission for the Academic year {0} is closed now.").format(active_year[0].name)
-            context.display_year = active_year[0].name
-            admission_recs = frappe.get_all(
-                "PACE Admission",
-                filters={"academic_year": active_year[0].name},
-                fields=["name", "admission_close_date", "status", "academic_year", "enable_applicant_register_tab"],
-                limit=1
+        # First check if there's any active PACE Admission
+        admission_recs = frappe.get_all(
+            "PACE Admission",
+            filters={"status": "Active"},
+            fields=["name", "admission_close_date", "status", "academic_year", "enable_applicant_register_tab"],
+            limit=1
+        )
+        
+        if admission_recs:
+            row = admission_recs[0]
+            context.is_closed = False
+            context.display_year = row.get("academic_year")
+            context.admission_closed_message = _("Admission for the Academic year {0} is closed now.").format(row.get("academic_year"))
+            context.show_register_tab = (
+                cint(row.get("enable_applicant_register_tab"))
+                and not cint(frappe.db.get_single_value("Website Settings", "disable_signup"))
             )
-            if admission_recs:
-                row = admission_recs[0]
-                context.is_closed = row.get("status") != "Active"
-                context.display_year = row.get("academic_year")
-                context.show_register_tab = (
-                    row.get("status") == "Active"
-                    and cint(row.get("enable_applicant_register_tab"))
-                    and not cint(frappe.db.get_single_value("Website Settings", "disable_signup"))
-                )
-                active_cycle = frappe._dict({
-                    "name":                    row.get("name"),
-                    "cycle_start_date":        None,
-                    "cycle_end_date":          getdate(row.get("admission_close_date")) if row.get("admission_close_date") else None,
-                    "application_start_date":  None,
-                    "application_end_date":    getdate(row.get("admission_close_date")) if row.get("admission_close_date") else None,
-                })
-            else:
-                context.is_closed = True
+            active_cycle = frappe._dict({
+                "name":                    row.get("name"),
+                "cycle_start_date":        None,
+                "cycle_end_date":          getdate(row.get("admission_close_date")) if row.get("admission_close_date") else None,
+                "application_start_date":  None,
+                "application_end_date":    getdate(row.get("admission_close_date")) if row.get("admission_close_date") else None,
+            })
         else:
+            # Fallback if no active PACE admission is found
             context.is_closed = True
+            active_year_rec = frappe.get_all("Academic Year", filters={"status": "Active"}, fields=["name"], limit=1)
+            if active_year_rec:
+                context.display_year = active_year_rec[0].name
+                context.admission_closed_message = _("Admission for the Academic year {0} is closed now.").format(active_year_rec[0].name)
+            else:
+                context.display_year = ""
+                context.admission_closed_message = _("Admission is currently closed.")
+
     except Exception:
         frappe.log_error(frappe.get_traceback(), "pace login: active_cycle fetch")
         context.is_closed = True

@@ -13,91 +13,126 @@ def get_dashboard_data(filters=None):
     
     filters = filters or {}
     
-    # Default filters (empty)
-    db_filters = {}
-    
-    if filters.get('academic_year'):
-        db_filters['academic_year'] = filters.get('academic_year')
-    if filters.get('programme'):
-        db_filters['programme'] = filters.get('programme')
-    from_date = filters.get('from_date')
-    to_date = filters.get('to_date')
-    if from_date and to_date:
-        db_filters['creation'] = ['between', [from_date, to_date]]
-    elif from_date:
-        db_filters['creation'] = ['>=', from_date]
-    elif to_date:
-        db_filters['creation'] = ['<=', to_date]
-
+    # Pass raw filters to get_kpis and get_charts so each metric uses its proper event date field
     data = {
-        "kpis": get_kpis(db_filters),
-        "charts": get_charts(db_filters),
-        "fee_summary": get_fee_summary(filters), # Use raw filters as get_fee_summary handles mapping
-        "recent_applications": get_recent_applications(db_filters),
-        "pending_work": get_pending_work(db_filters)
+        "kpis": get_kpis(filters),
+        "charts": get_charts(filters),
+        "fee_summary": get_fee_summary(filters),
+        "recent_applications": get_recent_applications(filters),
+        "pending_work": get_pending_work(filters)
     }
     
     return data
 
 def get_kpis(filters):
-    # Total Metrics
-    total_applications = frappe.db.count('PACE Application', filters)
+    raw_filters = filters or {}
+    from_date = raw_filters.get('from_date')
+    to_date = raw_filters.get('to_date')
+
+    # Datetime range bounds
+    dt_from = (from_date + " 00:00:00") if from_date else None
+    dt_to = (to_date + " 23:59:59") if to_date else None
+
+    # Application Creation Filters
+    app_creation_filters = {}
+    if raw_filters.get('academic_year'): app_creation_filters['academic_year'] = raw_filters.get('academic_year')
+    if raw_filters.get('programme'): app_creation_filters['programme'] = raw_filters.get('programme')
     
-    verified_filters = filters.copy()
-    verified_filters['status'] = 'Verified'
-    verified_apps = frappe.db.count('PACE Application', verified_filters)
-    
-    admitted_filters = filters.copy()
-    admitted_filters['status'] = ['in', ['Admitted', 'Enrolled']]
-    total_enrolled = frappe.db.count('PACE Application', admitted_filters)
-    
-    # Revenue
+    if dt_from and dt_to:
+        app_creation_filters['creation'] = ['between', [dt_from, dt_to]]
+    elif dt_from:
+        app_creation_filters['creation'] = ['>=', dt_from]
+    elif dt_to:
+        app_creation_filters['creation'] = ['<=', dt_to]
+
+    # Total Applications Received
+    total_applications = frappe.db.count('PACE Application', app_creation_filters)
+
+    # Verified Apps (PACE Document Verification on verified_on date)
+    verif_filters = {'status': 'Verified'}
+    if raw_filters.get('academic_year'): verif_filters['academic_year'] = raw_filters.get('academic_year')
+    if raw_filters.get('programme'): verif_filters['programme'] = raw_filters.get('programme')
+    if dt_from and dt_to:
+        verif_filters['verified_on'] = ['between', [dt_from, dt_to]]
+    elif dt_from:
+        verif_filters['verified_on'] = ['>=', dt_from]
+    elif dt_to:
+        verif_filters['verified_on'] = ['<=', dt_to]
+
+    verified_apps = frappe.db.count('PACE Document Verification', verif_filters)
+
+    # Total Enrolled (PACE Application on modified date)
+    enrolled_filters = {'status': ['in', ['Admitted', 'Enrolled']]}
+    if raw_filters.get('academic_year'): enrolled_filters['academic_year'] = raw_filters.get('academic_year')
+    if raw_filters.get('programme'): enrolled_filters['programme'] = raw_filters.get('programme')
+    if dt_from and dt_to:
+        enrolled_filters['modified'] = ['between', [dt_from, dt_to]]
+    elif dt_from:
+        enrolled_filters['modified'] = ['>=', dt_from]
+    elif dt_to:
+        enrolled_filters['modified'] = ['<=', dt_to]
+
+    total_enrolled = frappe.db.count('PACE Application', enrolled_filters)
+
+    # Fee Paid (PACE Receipt count on payment_date)
+    receipt_filters = {}
+    if raw_filters.get('academic_year'): receipt_filters['academic_year'] = raw_filters.get('academic_year')
+    if raw_filters.get('programme'): receipt_filters['program'] = raw_filters.get('programme')
+    if from_date and to_date:
+        receipt_filters['payment_date'] = ['between', [from_date, to_date]]
+    elif from_date:
+        receipt_filters['payment_date'] = ['>=', from_date]
+    elif to_date:
+        receipt_filters['payment_date'] = ['<=', to_date]
+
+    fee_paid_count = frappe.db.count('PACE Receipt', receipt_filters)
+
+    # Revenue Query (PACE Receipt on payment_date)
     revenue_query = """
         SELECT 
             SUM(r.amount) as total_revenue,
             SUM(CASE WHEN r.fee_type = 'Application Fee' THEN r.amount ELSE 0 END) as application_revenue,
             SUM(CASE WHEN r.fee_type = 'Course Fee' THEN r.amount ELSE 0 END) as course_revenue
         FROM `tabPACE Receipt` r
-        JOIN `tabPACE Application` a ON r.pace_application = a.name
         WHERE 1=1
     """
     query_filters = []
-    if filters.get('academic_year'):
-        revenue_query += " AND a.academic_year = %s"
-        query_filters.append(filters.get('academic_year'))
-    if filters.get('programme'):
-        revenue_query += " AND a.programme = %s"
-        query_filters.append(filters.get('programme'))
-    if filters.get('creation'):
-        revenue_query += " AND a.creation BETWEEN %s AND %s"
-        query_filters.append(filters.get('creation')[1][0])
-        query_filters.append(filters.get('creation')[1][1])
-        
+    if raw_filters.get('academic_year'):
+        revenue_query += " AND r.academic_year = %s"
+        query_filters.append(raw_filters.get('academic_year'))
+    if raw_filters.get('programme'):
+        revenue_query += " AND r.program = %s"
+        query_filters.append(raw_filters.get('programme'))
+    if from_date and to_date:
+        revenue_query += " AND r.payment_date BETWEEN %s AND %s"
+        query_filters.append(from_date)
+        query_filters.append(to_date)
+    elif from_date:
+        revenue_query += " AND r.payment_date >= %s"
+        query_filters.append(from_date)
+    elif to_date:
+        revenue_query += " AND r.payment_date <= %s"
+        query_filters.append(to_date)
+
     revenue_res = frappe.db.sql(revenue_query, tuple(query_filters), as_dict=True)
     rev = revenue_res[0] if revenue_res else {}
     total_revenue = rev.get('total_revenue') or 0
     application_revenue = rev.get('application_revenue') or 0
     course_revenue = rev.get('course_revenue') or 0
 
-    # Status breakdown for KPI Row 2
-    submitted_filters = filters.copy()
-    submitted_filters['status'] = ['in', ['Submitted', 'Completed']]
-    under_verification_filters = filters.copy()
-    under_verification_filters['status'] = 'Under Verification'
-    pending_filters = filters.copy()
-    pending_filters['status'] = ['in', ['Submitted', 'Completed', 'Under Verification']]
+    # Status breakdown
+    submitted_filters = dict(app_creation_filters, status=['in', ['Submitted', 'Completed']])
+    under_verification_filters = dict(app_creation_filters, status='Under Verification')
+    pending_filters = dict(app_creation_filters, status=['in', ['Submitted', 'Completed', 'Under Verification']])
     
-    fee_paid_filters = filters.copy()
-    fee_paid_filters['status'] = 'Fee Paid'
-    rejected_filters = filters.copy()
-    rejected_filters['status'] = 'Rejected'
-    returned_filters = filters.copy()
-    returned_filters['status'] = 'Returned for Correction'
-    
-    # Unassigned Documents (Submitted applications with no verifier)
-    unassigned_filters = filters.copy()
-    unassigned_filters['status'] = ['in', ['Submitted', 'Completed']]
-    unassigned_filters['assigned_verifier'] = ['is', 'not set']
+    rejected_filters = dict(app_creation_filters, status='Rejected')
+    returned_filters = {'status': 'Returned for Correction'}
+    if raw_filters.get('academic_year'): returned_filters['academic_year'] = raw_filters.get('academic_year')
+    if raw_filters.get('programme'): returned_filters['programme'] = raw_filters.get('programme')
+    if dt_from and dt_to:
+        returned_filters['modified'] = ['between', [dt_from, dt_to]]
+
+    unassigned_filters = dict(app_creation_filters, status=['in', ['Submitted', 'Completed']], assigned_verifier=['is', 'not set'])
 
     return {
         "total_applications": total_applications,
@@ -109,44 +144,61 @@ def get_kpis(filters):
         "submitted": frappe.db.count('PACE Application', submitted_filters),
         "under_verification": frappe.db.count('PACE Application', under_verification_filters),
         "pending": frappe.db.count('PACE Application', pending_filters),
-        "fee_paid": frappe.db.count('PACE Application', fee_paid_filters),
+        "fee_paid": fee_paid_count,
         "rejected": frappe.db.count('PACE Application', rejected_filters),
-        "returned": frappe.db.count('PACE Application', returned_filters),
+        "returned": frappe.db.count('PACE Document Verification', returned_filters),
         "unassigned": frappe.db.count('PACE Application', unassigned_filters),
-        "draft_apps": frappe.db.count('PACE Application', dict(filters, status='Draft'))
+        "draft_apps": frappe.db.count('PACE Application', dict(app_creation_filters, status='Draft'))
     }
 
 def get_charts(filters):
+    from_date = filters.get('from_date')
+    to_date = filters.get('to_date')
+
     # 1. Trend Data (Daily for last 30 days)
     trend_data = []
     for i in range(29, -1, -1):
         d = add_days(nowdate(), -i)
-        count = frappe.db.count('PACE Application', dict(filters, creation=['between', [d + " 00:00:00", d + " 23:59:59"]]))
+        count = frappe.db.count('PACE Application', {'creation': ['between', [d + " 00:00:00", d + " 23:59:59"]]})
         trend_data.append({"date": format_date(d, "dd MMM"), "value": count})
 
     # 2. Revenue by Program
-    rev_filters = filters.copy()
-    rev_where = get_where_clause(rev_filters, prefix='a')
-    if filters.get('creation'):
-        rev_where = rev_where.replace("a.creation", "r.creation")
-    
+    rev_where = ""
+    rev_params = {}
+    if filters.get('academic_year'):
+        rev_where += " AND r.academic_year = %(academic_year)s"
+        rev_params['academic_year'] = filters.get('academic_year')
+    if filters.get('programme'):
+        rev_where += " AND r.program = %(programme)s"
+        rev_params['programme'] = filters.get('programme')
+    if from_date and to_date:
+        rev_where += " AND r.payment_date BETWEEN %(from_date)s AND %(to_date)s"
+        rev_params['from_date'] = from_date
+        rev_params['to_date'] = to_date
+
     revenue_by_program = frappe.db.sql(f"""
-        SELECT a.programme as label, SUM(r.amount) as value 
+        SELECT r.program as label, SUM(r.amount) as value 
         FROM `tabPACE Receipt` r
-        JOIN `tabPACE Application` a ON r.pace_application = a.name
         WHERE 1=1 {rev_where}
-        GROUP BY a.programme
+        GROUP BY r.program
         ORDER BY value DESC
         LIMIT 20
-    """, rev_filters, as_dict=1)
+    """, rev_params, as_dict=1)
 
-    # 3. Weekly Revenue Trend (Pad with 0s to ensure line chart visibility)
-    trend_filters = filters.copy()
-    trend_where = get_where_clause(trend_filters, prefix='a')
-    if filters.get('creation'):
-        trend_where = trend_where.replace("a.creation", "r.creation")
-        
-    # Get last 5 Sundays
+    # 3. Weekly Revenue Trend
+    trend_where = ""
+    trend_params = {}
+    if filters.get('academic_year'):
+        trend_where += " AND r.academic_year = %(academic_year)s"
+        trend_params['academic_year'] = filters.get('academic_year')
+    if filters.get('programme'):
+        trend_where += " AND r.program = %(programme)s"
+        trend_params['programme'] = filters.get('programme')
+    if from_date and to_date:
+        trend_where += " AND r.payment_date BETWEEN %(from_date)s AND %(to_date)s"
+        trend_params['from_date'] = from_date
+        trend_params['to_date'] = to_date
+
     weekly_data = []
     today = getdate(nowdate())
     for i in range(4, -1, -1):
@@ -154,41 +206,53 @@ def get_charts(filters):
         week_label = format_date(sunday, "dd MMM")
         weekly_data.append({"label": week_label, "value": 0, "date": sunday})
 
-    # Fetch actual data
     res = frappe.db.sql(f"""
-        SELECT DATE_FORMAT(DATE_SUB(r.creation, INTERVAL DAYOFWEEK(r.creation) - 1 DAY), '%%d %%b') as label, 
-               SUM(r.amount) as value,
-               DATE_SUB(r.creation, INTERVAL DAYOFWEEK(r.creation) - 1 DAY) as week_start
+        SELECT DATE_FORMAT(DATE_SUB(r.payment_date, INTERVAL DAYOFWEEK(r.payment_date) - 1 DAY), '%%d %%b') as label, 
+               SUM(r.amount) as value
         FROM `tabPACE Receipt` r
-        JOIN `tabPACE Application` a ON r.pace_application = a.name
         WHERE 1=1 {trend_where}
-        GROUP BY YEARWEEK(r.creation, 0)
-        ORDER BY MIN(r.creation)
-    """, trend_filters, as_dict=1)
+        GROUP BY YEARWEEK(r.payment_date, 0)
+        ORDER BY MIN(r.payment_date)
+    """, trend_params, as_dict=1)
 
-    # Merge actual data into weekly_data
     actual_map = {row['label']: row['value'] for row in res}
     for d in weekly_data:
         if d['label'] in actual_map:
             d['value'] = actual_map[d['label']]
-    
+
     revenue_trend = weekly_data
 
-    # 4. Verifier Performance
-    perf_filters = filters.copy()
-    perf_filters['status'] = 'Verified'
+    # 4. Verifier Performance (PACE Document Verification on verified_on)
+    perf_where = " AND status = 'Verified'"
+    perf_params = {}
+    if filters.get('academic_year'):
+        perf_where += " AND academic_year = %(academic_year)s"
+        perf_params['academic_year'] = filters.get('academic_year')
+    if filters.get('programme'):
+        perf_where += " AND programme = %(programme)s"
+        perf_params['programme'] = filters.get('programme')
+    if from_date and to_date:
+        perf_where += " AND verified_on BETWEEN %(dt_from)s AND %(dt_to)s"
+        perf_params['dt_from'] = from_date + " 00:00:00"
+        perf_params['dt_to'] = to_date + " 23:59:59"
+
     verifier_perf = frappe.db.sql(f"""
         SELECT assigned_verifier as label, COUNT(*) as value 
         FROM `tabPACE Document Verification` 
-        WHERE docstatus < 2 {get_where_clause(perf_filters)}
+        WHERE docstatus < 2 {perf_where}
         AND assigned_verifier IS NOT NULL AND assigned_verifier != ''
         GROUP BY assigned_verifier
         ORDER BY value DESC
         LIMIT 20
-    """, perf_filters, as_dict=1)
+    """, perf_params, as_dict=1)
 
     # 5. Program Distribution (Applications)
-    sql_filters = filters.copy()
+    sql_filters = {}
+    if filters.get('academic_year'): sql_filters['academic_year'] = filters.get('academic_year')
+    if filters.get('programme'): sql_filters['programme'] = filters.get('programme')
+    if from_date and to_date:
+        sql_filters['creation'] = ['between', [from_date + " 00:00:00", to_date + " 23:59:59"]]
+
     program_dist = frappe.db.sql(f"""
         SELECT programme as label, COUNT(*) as value 
         FROM `tabPACE Application` 
@@ -254,8 +318,24 @@ def get_fee_summary(filters):
     }
 
 def get_recent_applications(filters):
+    raw_filters = filters or {}
+    db_filters = {}
+    if raw_filters.get('academic_year'):
+        db_filters['academic_year'] = raw_filters.get('academic_year')
+    if raw_filters.get('programme'):
+        db_filters['programme'] = raw_filters.get('programme')
+
+    from_date = raw_filters.get('from_date')
+    to_date = raw_filters.get('to_date')
+    if from_date and to_date:
+        db_filters['creation'] = ['between', [from_date + " 00:00:00", to_date + " 23:59:59"]]
+    elif from_date:
+        db_filters['creation'] = ['>=', from_date + " 00:00:00"]
+    elif to_date:
+        db_filters['creation'] = ['<=', to_date + " 23:59:59"]
+
     return frappe.get_all('PACE Application',
-        filters=filters,
+        filters=db_filters,
         fields=['name', 'applicant_name', 'programme', 'status', 'creation'],
         order_by='creation desc',
         limit=5
@@ -264,7 +344,6 @@ def get_recent_applications(filters):
 def get_pending_work(filters):
     from frappe.utils import date_diff, nowdate
     
-    # Use SQL for a cleaner join to get verification record name
     where_clause = "a.status IN ('Submitted', 'Completed', 'Under Verification', 'Returned for Correction')"
     query_filters = {}
     
@@ -274,18 +353,19 @@ def get_pending_work(filters):
     if filters.get('programme'):
         where_clause += " AND a.programme = %(programme)s"
         query_filters['programme'] = filters.get('programme')
-    if filters.get('creation'):
-        op = filters.get('creation')[0]
-        if op == 'between':
-            where_clause += " AND a.creation BETWEEN %(_creation_start)s AND %(_creation_end)s"
-            query_filters['_creation_start'] = filters.get('creation')[1][0]
-            query_filters['_creation_end'] = filters.get('creation')[1][1]
-        elif op == '>=':
-            where_clause += " AND a.creation >= %(_creation_start)s"
-            query_filters['_creation_start'] = filters.get('creation')[1]
-        elif op == '<=':
-            where_clause += " AND a.creation <= %(_creation_end)s"
-            query_filters['_creation_end'] = filters.get('creation')[1]
+    
+    from_date = filters.get('from_date')
+    to_date = filters.get('to_date')
+    if from_date and to_date:
+        where_clause += " AND a.creation BETWEEN %(_creation_start)s AND %(_creation_end)s"
+        query_filters['_creation_start'] = from_date + " 00:00:00"
+        query_filters['_creation_end'] = to_date + " 23:59:59"
+    elif from_date:
+        where_clause += " AND a.creation >= %(_creation_start)s"
+        query_filters['_creation_start'] = from_date + " 00:00:00"
+    elif to_date:
+        where_clause += " AND a.creation <= %(_creation_end)s"
+        query_filters['_creation_end'] = to_date + " 23:59:59"
 
     apps = frappe.db.sql(f"""
         SELECT 
