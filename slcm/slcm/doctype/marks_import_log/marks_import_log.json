@@ -1,0 +1,187 @@
+{
+ "actions": [],
+ "allow_bulk_edit": 1,
+ "allow_rename": 1,
+ "creation": "2026-09-03 10:21:11.023585",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "import_file",
+  "imported_by",
+  "import_date",
+  "status",
+  "total_rows",
+  "success_count",
+  "failed_count",
+  "skipped_count",
+  "missing_offerings_count",
+  "error_summary",
+  "remarks",
+  "exam_plan",
+  "evaluation_schema",
+  "exam_section",
+  "exam_component",
+  "exam_column",
+  "assessment_type",
+  "re_exam_section",
+  "re_exam_component",
+  "re_exam_column",
+  "re_exam_assessment_type"
+ ],
+ "fields": [
+  {
+   "fieldname": "import_file",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "Import File",
+   "reqd": 1
+  },
+  {
+   "default": "Administrator",
+   "fieldname": "imported_by",
+   "fieldtype": "Link",
+   "label": "Imported By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "default": "Now",
+   "fieldname": "import_date",
+   "fieldtype": "Datetime",
+   "label": "Import Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Queued\nIn Progress\nCompleted\nCompleted with Errors\nFailed"
+  },
+  {
+   "fieldname": "total_rows",
+   "fieldtype": "Int",
+   "label": "Total Rows",
+   "read_only": 1
+  },
+  {
+   "fieldname": "success_count",
+   "fieldtype": "Int",
+   "label": "Success Count",
+   "read_only": 1
+  },
+  {
+   "fieldname": "failed_count",
+   "fieldtype": "Int",
+   "label": "Failed Count",
+   "read_only": 1
+  },
+  {
+   "fieldname": "skipped_count",
+   "fieldtype": "Int",
+   "label": "Skipped Count",
+   "read_only": 1
+  },
+  {
+   "fieldname": "missing_offerings_count",
+   "fieldtype": "Int",
+   "label": "Missing Offerings Count",
+   "read_only": 1
+  },
+  {
+   "fieldname": "error_summary",
+   "fieldtype": "Small Text",
+   "label": "Error Summary",
+   "read_only": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "fieldname": "exam_plan",
+   "fieldtype": "Link",
+   "label": "Exam Plan",
+   "options": "Exam Plan"
+  },
+  {
+   "fieldname": "evaluation_schema",
+   "fieldtype": "Link",
+   "label": "Evaluation Schema",
+   "options": "Evaluation Schema"
+  },
+  {
+   "fieldname": "exam_section",
+   "fieldtype": "Section Break",
+   "label": "Exam"
+  },
+  {
+   "fieldname": "exam_component",
+   "fieldtype": "Link",
+   "label": "Exam Component",
+   "options": "Exam Component"
+  },
+  {
+   "fieldname": "exam_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "assessment_type",
+   "fieldtype": "Link",
+   "label": "Assessment Type",
+   "options": "Exam Assessment Type"
+  },
+  {
+   "fieldname": "re_exam_section",
+   "fieldtype": "Section Break",
+   "label": "Re Exam"
+  },
+  {
+   "fieldname": "re_exam_component",
+   "fieldtype": "Link",
+   "label": "Exam Component",
+   "options": "Exam Component"
+  },
+  {
+   "fieldname": "re_exam_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "re_exam_assessment_type",
+   "fieldtype": "Link",
+   "label": "Assessment Type",
+   "options": "Exam Assessment Type"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-09-03 13:40:42.159742",
+ "modified_by": "Administrator",
+ "module": "SLCM",
+ "name": "Marks Import Log",
+ "naming_rule": "Set by user",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "slcm_Registrar",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
