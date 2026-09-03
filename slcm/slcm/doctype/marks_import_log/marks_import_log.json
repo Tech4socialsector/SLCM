@@ -35,6 +35,7 @@
    "fieldtype": "Attach",
    "in_list_view": 1,
    "label": "Import File",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -58,7 +59,8 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Queued\nIn Progress\nCompleted\nCompleted with Errors\nFailed"
+   "options": "Staging\nQueued\nIn Progress\nCompleted\nCompleted with Errors\nFailed",
+   "read_only": 1
   },
   {
    "fieldname": "total_rows",
@@ -159,7 +161,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-03 13:40:42.159742",
+ "modified": "2026-09-03 16:49:06.896290",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Marks Import Log",

@@ -33,7 +33,7 @@ def parse_import_file(file_url, exam_plan, evaluation_schema, exam_component=Non
                 "assessment_type": assessment_type,
                 "re_exam_component": re_exam_component,
                 "re_exam_assessment_type": re_exam_assessment_type,
-                "status": "Queued",
+                "status": "Staging",
                 "total_rows": 0,
                 "success_count": 0,
                 "failed_count": 0,
@@ -136,9 +136,37 @@ def get_errors_page(import_log, page=1, page_size=20, status_filter=None):
 def validate_staged_rows(import_log):
     return _validate_import_log(import_log, retry_mode=False)
 
+@frappe.whitelist()
+def revalidate_import(import_log):
+    log_status = frappe.db.get_value("Marks Import Log", import_log, "status")
+    if log_status != "Staging":
+        frappe.throw("Cannot re-validate an import that has already started.")
+    return _validate_import_log(import_log, retry_mode="revalidate")
+
+@frappe.whitelist()
+def discard_import_draft(import_log):
+    if not import_log:
+        return
+    log = frappe.db.get_value("Marks Import Log", import_log, ["status", "import_file"], as_dict=True)
+    if not log:
+        return
+
+    if log.status != "Staging":
+        frappe.throw("Cannot discard an import that has already started.")
+
+    frappe.db.delete("Marks Import Log Detail", {"import_log": import_log})
+    if log.import_file:
+        file_doc = frappe.db.get_value("File", {"file_url": log.import_file}, "name")
+        if file_doc:
+            frappe.delete_doc("File", file_doc, ignore_permissions=True, force=True)
+    frappe.delete_doc("Marks Import Log", import_log, ignore_permissions=True)
+    frappe.db.commit()
+
 def _validate_import_log(import_log, retry_mode=False):
     filters = {"import_log": import_log}
-    if retry_mode:
+    if retry_mode == "revalidate":
+        pass # No status filter, check all rows
+    elif retry_mode:
         filters["status"] = ["in", ["Failed", "Missing Student", "Missing Course", "Missing Course Offering", "Duplicate (Skip)"]]
     else:
         filters["status"] = "Pending"

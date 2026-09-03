@@ -64,12 +64,41 @@ function open_marks_import_dialog() {
         },
         secondary_action_label: __('Previous'),
         secondary_action: function () {
-            if (current_step > 1 && !is_importing) {
+            if (current_step === 4 && !is_importing) {
+                d.hide();
+                if (window.cur_list) cur_list.refresh();
+            } else if (current_step > 1 && !is_importing) {
                 render_step(current_step - 1);
             } else if (current_step === 1) {
                 d.hide();
             }
         }
+    });
+
+    let original_close = d.hide;
+    d.hide = function() {
+        if ([1, 2, 3].includes(current_step) && import_log) {
+            frappe.confirm('This will discard your uploaded data and validation results. Continue?', function() {
+                frappe.call({
+                    method: "slcm.slcm.doctype.student_course_marks.marks_bulk_import.discard_import_draft",
+                    args: { import_log: import_log },
+                    callback: function(r) {
+                        import_log = null;
+                        original_close.call(d);
+                    }
+                });
+            }, function() {
+                // Cancel
+            });
+        } else if (current_step === 4 && is_importing) {
+            // Block close
+            return;
+        } else {
+            original_close.call(d);
+        }
+    };
+    d.get_close_btn().off('click').on('click', function() {
+        d.hide();
     });
 
     let step_1_controls = {};
@@ -111,6 +140,7 @@ function open_marks_import_dialog() {
 
         if (step === 1) {
             d.set_primary_action(__('Next'));
+            d.get_primary_btn().prop('disabled', false);
             d.get_secondary_btn().hide();
             d.get_close_btn().show();
 
@@ -199,7 +229,7 @@ function open_marks_import_dialog() {
 
         } else if (step === 2) {
             d.set_primary_action(__('Validate'));
-            d.get_secondary_btn().show().text(__('Previous'));
+            d.get_secondary_btn().hide();
             d.get_close_btn().show();
 
             let wrapper = $(`
@@ -252,9 +282,10 @@ function open_marks_import_dialog() {
 
             let wrapper = $(`
                 <div>
-                    <h4>Step 3: Validation Results</h4>
-                    <div id="validation-loading" class="text-muted">
-                        <i class="fa fa-spinner fa-spin"></i> Running validation rules...
+                    <h4>Step 3: Validation Summary</h4>
+                    <div id="validation-spinner" class="text-center" style="padding: 20px;">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 text-muted">Validating rows...</p>
                     </div>
                     <div id="validation-content" style="display: none;">
                         <div id="validation-summary"></div>
@@ -292,12 +323,15 @@ function open_marks_import_dialog() {
             `);
             container.append(wrapper);
             d.get_primary_btn().prop('disabled', true);
-
+            
+            let method = is_importing ? "revalidate_import" : "validate_staged_rows";
+            is_importing = false;
+            
             frappe.call({
-                method: "slcm.slcm.doctype.student_course_marks.marks_bulk_import.validate_staged_rows",
+                method: "slcm.slcm.doctype.student_course_marks.marks_bulk_import." + method,
                 args: { import_log: import_log },
                 callback: function (r) {
-                    wrapper.find('#validation-loading').hide();
+                    wrapper.find('#validation-spinner').hide();
                     wrapper.find('#validation-content').show();
                     if (r.message) render_validation_results(r.message, wrapper);
                 }
@@ -340,6 +374,36 @@ function open_marks_import_dialog() {
                 d.get_secondary_btn().prop('disabled', false);
                 d.get_close_btn().show();
             }
+        }
+        update_dialog_footer();
+    }
+
+    function update_dialog_footer() {
+        // Frappe 13+ standard Dialogs use a custom-actions div floated left
+        let custom_actions = d.footer.find('.custom-actions');
+        custom_actions.empty(); // clear existing buttons if any
+        
+        if (current_step === 2 || current_step === 3) {
+            let restart_btn = $('<button class="btn btn-danger btn-sm" style="float: left; margin-right: 10px;">Restart</button>');
+            restart_btn.on('click', function(e) {
+                e.preventDefault();
+                frappe.confirm('This will permanently delete your uploaded file and all drafted validation results. Continue?', function() {
+                    frappe.call({
+                        method: "slcm.slcm.doctype.student_course_marks.marks_bulk_import.discard_import_draft",
+                        args: { import_log: import_log },
+                        callback: function(r) {
+                            if (!r.exc) {
+                                // Successfully discarded, reset state
+                                import_log = null;
+                                selected_file_url = null;
+                                is_importing = false;
+                                render_step(1);
+                            }
+                        }
+                    });
+                });
+            });
+            custom_actions.append(restart_btn);
         }
     }
 
@@ -637,10 +701,21 @@ function open_marks_import_dialog() {
 
         let issues = res.error_count + res.missing_student_count + res.missing_course_count + res.missing_offering_count + res.skip_count;
 
-        let cb_html = `<label><input type="checkbox" id="proceed_checkbox" ${issues === 0 ? 'checked disabled' : ''}> 
-            Import ${res.valid_count} valid rows now, skip ${issues} rows with issues
-        </label>`;
+        let cb_html = `
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label><input type="checkbox" id="proceed_checkbox" ${issues === 0 ? 'checked disabled' : ''}> 
+                    Import ${res.valid_count} valid rows now, skip ${issues} rows with issues
+                </label>
+                <button class="btn btn-default btn-sm" id="revalidate-btn">Re-validate</button>
+            </div>
+        `;
         wrapper.find('#proceed-checkbox-wrapper').html(cb_html);
+        
+        wrapper.find('#revalidate-btn').on('click', function() {
+            is_importing = true; // flag to trigger revalidate
+            d.get_primary_btn().prop('disabled', true);
+            render_step(3);
+        });
 
         if (issues > 0) {
             d.get_primary_btn().prop('disabled', true);
