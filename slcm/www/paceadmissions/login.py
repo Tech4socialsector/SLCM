@@ -89,7 +89,7 @@ def get_context(context):
             row = admission_recs[0]
             context.is_closed = False
             context.display_year = row.get("academic_year")
-            context.admission_closed_message = _("Admission for the Academic year {0} is closed now.").format(row.get("academic_year"))
+            context.admission_closed_message = _("Admission for the Academic year AY {0} is closed now.").format(row.get("academic_year"))
             context.show_register_tab = (
                 cint(row.get("enable_applicant_register_tab"))
                 and not cint(frappe.db.get_single_value("Website Settings", "disable_signup"))
@@ -107,7 +107,7 @@ def get_context(context):
             active_year_rec = frappe.get_all("Academic Year", filters={"status": "Active"}, fields=["name"], limit=1)
             if active_year_rec:
                 context.display_year = active_year_rec[0].name
-                context.admission_closed_message = _("Admission for the Academic year {0} is closed now.").format(active_year_rec[0].name)
+                context.admission_closed_message = _("Admission for the Academic year AY {0} is closed now.").format(active_year_rec[0].name)
             else:
                 context.display_year = ""
                 context.admission_closed_message = _("Admission is currently closed.")
