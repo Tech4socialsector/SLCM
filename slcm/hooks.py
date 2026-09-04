@@ -96,6 +96,12 @@ fixtures = [
         "filters": [["is_standard", "=", 0]]
     },
     {
+        "doctype":"Builder Page"
+    },
+    {
+        "doctype":"Builder Component"
+    },
+    {
         "doctype": "Day of Week",
         "filters": [["name", "in", ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]]]
     },
