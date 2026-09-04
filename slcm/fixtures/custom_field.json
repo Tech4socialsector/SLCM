@@ -131,7 +131,6 @@
   "collapsible_depends_on": null,
   "columns": 0,
   "default": null,
-  "default": "Buy Now",
   "depends_on": "accept_payment",
   "description": null,
   "docstatus": 0,
