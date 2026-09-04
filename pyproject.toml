@@ -26,6 +26,7 @@ packages = ["unixodbc", "unixodbc-dev", "tdsodbc"]
 
 [tool.bench.frappe-dependencies]
 frappe = ">=15,<18"
+payments = ">=0.0.1"
 [tool.bench.dev-dependencies]
 # package_name = "~=1.1.0"
  
