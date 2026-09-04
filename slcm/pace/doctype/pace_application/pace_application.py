@@ -1044,8 +1044,8 @@ def bulk_download_all_records(names):
                     if content:
                         # Get original extension
                         ext = os.path.splitext(file_doc.file_name)[1]
-                        # Path inside the ZIP: [Applicant Name-Applicant ID] / [Label].[ext]
-                        arcname = f"{folder_name}/{label}{ext}"
+                        # Path inside the ZIP: [Applicant Name-Applicant ID] / [Applicant ID]_[Label].[ext]
+                        arcname = f"{folder_name}/{applicant_id}_{label}{ext}"
                         zip_file.writestr(arcname, content)
                         found_files += 1
 
@@ -1082,7 +1082,7 @@ def bulk_download_all_records(names):
                         content = file_doc.get_content()
                         if content:
                             ext = os.path.splitext(file_doc.file_name)[1]
-                            arcname = f"{folder_name}/{label}{ext}"
+                            arcname = f"{folder_name}/{applicant_id}_{label}{ext}"
                             zip_file.writestr(arcname, content)
                             found_files += 1
 
