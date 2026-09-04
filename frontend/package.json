@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
+  "scripts": {
+    "build": "echo 'No build step required'"
+  },
   "dependencies": {
     "vite": "^7.3.1"
   }
