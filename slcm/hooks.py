@@ -332,11 +332,16 @@ fixtures = [
     {
         "doctype": "Custom Field",
         "filters": [
-            ["dt", "not in", ["HD Ticket Type"]],
+            ["dt", "not in", ["HD Ticket Type", "HD Ticket"]],
             ["name", "!=", "Web Form-amount_field"],
         ]
     },
-    "Property Setter",
+    {
+        "doctype": "Property Setter",
+        "filters": [
+            ["doc_type", "not in", ["HD Ticket Type", "HD Ticket"]]
+        ]
+    },
     # --- Transcript Print Format ---
     {
         "doctype": "Print Format",
