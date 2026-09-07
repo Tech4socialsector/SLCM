@@ -3,6 +3,15 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
+  "modified": "2026-07-02 18:46:10.429890",
+  "name": "Withdrawn",
+  "style": "",
+  "workflow_state_name": "Withdrawn"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
   "modified": "2026-04-17 18:52:39.181746",
   "name": "Revoked",
   "style": "",
