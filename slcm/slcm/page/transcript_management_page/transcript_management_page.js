@@ -1,6 +1,13 @@
 // Copyright (c) 2026, TFSS and contributors
 // For license information, please see license.txt
 
+const TRANSCRIPT_TYPE_DISPLAY_LABELS = {
+	"Final Transcript": __("Provisional Transcript"),
+};
+function transcript_type_label(value) {
+	return TRANSCRIPT_TYPE_DISPLAY_LABELS[value] || value;
+}
+
 frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 	const page = frappe.ui.make_app_page({
 		parent: wrapper,
@@ -843,7 +850,7 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 						<select id="tm-req-f-type" class="tm-dt-select" style="height:34px;">
 							<option value="">${__("All Types")}</option>
 							<option value="Interim Transcript">${__("Interim Transcript")}</option>
-							<option value="Final Transcript">${__("Final Transcript")}</option>
+							<option value="Final Transcript">${transcript_type_label("Final Transcript")}</option>
 							<option value="Consolidated Marksheet">${__("Consolidated Marksheet")}</option>
 							<option value="Duplicate Transcript">${__("Duplicate Transcript")}</option>
 							<option value="Digital Transcript">${__("Digital Transcript")}</option>
@@ -1863,7 +1870,7 @@ frappe.pages["transcript-management-page"].on_page_load = function (wrapper) {
 							style="color:#c84630; font-weight:600; text-decoration:none;">${name}</a>
 					</td>
 					<td>${sname}<br><span style="color:#999; font-size:11px;">${frappe.utils.escape_html(row.registration_id || "")}</span></td>
-					<td>${frappe.utils.escape_html(row.transcript_type || "")}</td>
+					<td>${frappe.utils.escape_html(transcript_type_label(row.transcript_type) || "")}</td>
 					<td>${req_status_pill(row.status)}</td>
 					<td>${req_payment_pill(row.payment_status)}</td>
 					<td style="text-align:right;">${fee}</td>

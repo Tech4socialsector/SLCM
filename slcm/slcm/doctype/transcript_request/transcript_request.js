@@ -1,7 +1,24 @@
 // Copyright (c) 2026, TFSS and contributors
 // For license information, please see license.txt
 
+const TRANSCRIPT_TYPE_DISPLAY_LABELS = {
+	"Final Transcript": __("Provisional Transcript"),
+};
+
+function transcript_type_label(value) {
+	return TRANSCRIPT_TYPE_DISPLAY_LABELS[value] || value;
+}
+
 frappe.ui.form.on("Transcript Request", {
+	onload(frm) {
+		const original_options = (frm.fields_dict.transcript_type.df.options || "").split("\n");
+		frm.set_df_property(
+			"transcript_type",
+			"options",
+			original_options.map((value) => ({ value, label: transcript_type_label(value) }))
+		);
+		frm.fields_dict.transcript_type.df.formatter = (value) => transcript_type_label(value);
+	},
 	refresh(frm) {
 		if (frm.is_new()) return;
 

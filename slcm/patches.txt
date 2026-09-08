@@ -43,3 +43,4 @@ slcm.patches.v2_0.backfill_batch_enrolled_count
 slcm.patches.v2_0.consolidate_attendance_edit_log_from_stash
 slcm.patches.v2_0.merge_condonation_config_into_attendance_settings
 slcm.patches.v2_0.migrate_type_of_issue_to_link_doctype
+slcm.patches.v2_0.update_academics_issue_types
