@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none">
+  <rect width="48" height="48" rx="12" fill="#2563EB"/>
+  <g stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Monitor and clean stand -->
+    <rect x="10" y="10" width="28" height="20" rx="3" />
+    <path d="M 22 30 L 19 38 H 29 L 26 30" />
+
+    <!-- User profile avatar only -->
+    <circle cx="24" cy="17" r="3.5" />
+    <path d="M 19 26 C 19 23.5 21 21.5 24 21.5 S 29 23.5 29 26 Z" />
+  </g>
+</svg>

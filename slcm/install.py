@@ -100,3 +100,4 @@ def _ensure_day_of_week():
 		frappe.db.commit()
 	except Exception:
 		pass
+
