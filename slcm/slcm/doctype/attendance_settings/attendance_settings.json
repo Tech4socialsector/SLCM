@@ -207,7 +207,7 @@
    "label": "Level One AAD Authority"
   },
   {
-   "default": "AAD Assignment Email Template",
+   "default": "",
    "description": "Email sent to AAD upon new assignment",
    "fieldname": "l1_assignment_email_template",
    "fieldtype": "Link",
@@ -215,7 +215,7 @@
    "options": "Email Template"
   },
   {
-   "default": "AAD Approval Email Template",
+   "default": "",
    "fieldname": "l1_approval_email_template",
    "fieldtype": "Link",
    "label": "Approval Email Template",
@@ -234,7 +234,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "AAD Rejected Email Template",
+   "default": "",
    "fieldname": "l1_rejected_email_template",
    "fieldtype": "Link",
    "label": "Rejected Email Template",
@@ -265,7 +265,7 @@
    "label": "Level Two Authority"
   },
   {
-   "default": "Programme Chair Assignment Email Template",
+   "default": "",
    "description": "Email sent to Programme Chair upon new assignment",
    "fieldname": "l2_assignment_email_template",
    "fieldtype": "Link",
@@ -273,7 +273,7 @@
    "options": "Email Template"
   },
   {
-   "default": "Programme Chair Approval Email Template",
+   "default": "",
    "fieldname": "l2_approval_email_template",
    "fieldtype": "Link",
    "label": "Approval Email Template",
@@ -292,7 +292,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "Programme Chair Rejected Email Template",
+   "default": "",
    "fieldname": "l2_rejected_email_template",
    "fieldtype": "Link",
    "label": "Rejected Email Template",
