@@ -1974,29 +1974,8 @@ def execute_part_a_shortlisting(doc):
         remaining_karnataka = [x for x in eligible_applicants[targets["General"]["total"]:] if x.is_karnataka]
         to_add = remaining_karnataka[:kar_req_gen - karnataka_count]
         for kar_cand in to_add:
-            # Find and displace the lowest ranked non-Karnataka candidate in general_shortlist
-            for idx in range(len(general_shortlist) - 1, -1, -1):
-                if not general_shortlist[idx].is_karnataka:
-                    displaced_cand = general_shortlist.pop(idx)
-                    displaced_cand.remarks = f"Displaced from General shortlist to accommodate Karnataka sub-quota candidate {kar_cand.candidate_name or kar_cand.applicant_id} ({kar_cand.applicant_id})"
-                    kar_cand.remarks = f"Shortlisted under {comp_cat} General Sub-quota displacing {displaced_cand.candidate_name or displaced_cand.applicant_id} ({displaced_cand.applicant_id})"
-                    general_shortlist.append(kar_cand)
-                    break
-
-    # Ensure All-India candidates do not exceed their quota, leaving unfilled Karnataka seats vacant
-    if multiplier != 0:
-        max_ai_allowed = targets["General"]["total"] - kar_req_gen
-        ai_in_shortlist = [x for x in general_shortlist if not x.is_karnataka]
-        excess_ai = len(ai_in_shortlist) - max_ai_allowed
-        if excess_ai > 0:
-            removed_count = 0
-            for idx in range(len(general_shortlist) - 1, -1, -1):
-                if not general_shortlist[idx].is_karnataka:
-                    displaced_cand = general_shortlist.pop(idx)
-                    displaced_cand.remarks = "Displaced from General shortlist as All-India quota limit was reached for unfilled Karnataka seats"
-                    removed_count += 1
-                    if removed_count == excess_ai:
-                        break
+            kar_cand.remarks = f"Shortlisted under {comp_cat} General Sub-quota to fulfill Karnataka target"
+            general_shortlist.append(kar_cand)
 
     targets["General"]["total"] = len(general_shortlist)
 
@@ -2035,28 +2014,8 @@ def execute_part_a_shortlisting(doc):
             remaining_karnataka = [x for x in pool[total_req:] if x.is_karnataka]
             to_add = remaining_karnataka[:kar_req - karnataka_count]
             for kar_cand in to_add:
-                # Find and displace the lowest ranked non-Karnataka candidate in cat_shortlist
-                for idx in range(len(cat_shortlist) - 1, -1, -1):
-                    if not cat_shortlist[idx].is_karnataka:
-                        displaced_cand = cat_shortlist.pop(idx)
-                        displaced_cand.remarks = f"Displaced from {cat} shortlist to accommodate Karnataka sub-quota candidate {kar_cand.candidate_name or kar_cand.applicant_id} ({kar_cand.applicant_id})"
-                        kar_cand.remarks = f"Shortlisted under {comp_cat} {cat} Sub-quota displacing {displaced_cand.candidate_name or displaced_cand.applicant_id} ({displaced_cand.applicant_id})"
-                        cat_shortlist.append(kar_cand)
-                        break
-
-        # Ensure All-India candidates do not exceed their quota, leaving unfilled Karnataka seats vacant
-        max_ai_allowed = total_req - kar_req
-        ai_in_shortlist = [x for x in cat_shortlist if not x.is_karnataka]
-        excess_ai = len(ai_in_shortlist) - max_ai_allowed
-        if excess_ai > 0:
-            removed_count = 0
-            for idx in range(len(cat_shortlist) - 1, -1, -1):
-                if not cat_shortlist[idx].is_karnataka:
-                    displaced_cand = cat_shortlist.pop(idx)
-                    displaced_cand.remarks = f"Displaced from {cat} shortlist as All-India quota limit was reached for unfilled Karnataka seats"
-                    removed_count += 1
-                    if removed_count == excess_ai:
-                        break
+                kar_cand.remarks = f"Shortlisted under {comp_cat} {cat} Sub-quota to fulfill Karnataka target"
+                cat_shortlist.append(kar_cand)
 
         targets[cat]["total"] = len(cat_shortlist)
         shortlists[cat] = cat_shortlist
