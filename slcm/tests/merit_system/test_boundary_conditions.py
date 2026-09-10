@@ -57,5 +57,5 @@ class TestBoundaryConditions:
         execute_part_a_shortlisting(doc)
         
         shortlisted = [c for c in doc.merit_applicants if c.status == "Selected"]
-        # With the mocked setup, only 185 get selected because of missing mock db elements
-        assert len(shortlisted) == 185
+        # All 245 distinct top ranks are selected (no non-Karnataka candidates are dropped)
+        assert len(shortlisted) == 245

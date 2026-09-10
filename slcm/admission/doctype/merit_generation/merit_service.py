@@ -553,11 +553,8 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
             "candidate_name": app.candidate_name,
             "program": app.program,
             "program_level": app.program_level,
-            "hsc_percentage": app.get("hsc_percentage") or 0,
             "entrance_score": app.get("et_part_a_total_marks_scored") or 0,
             "interview_score": app.get("et_part_b_total_marks_scored") or 0,
-            "ug_cgpa": app.get("ug_cgpa") or 0,
-            "pg_cgpa": app.get("pg_cgpa") or 0,
             "date_of_birth": app.get("date_of_birth"),
             "total_score": total_score,
             "status": status,
@@ -606,7 +603,7 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
         
     if True:
         if processing_stage == "Final Allotment Ranking":
-            # Simple population for Final Merit (Shows everyone in their category tabs as Selected)
+            _apply_percentile_cutoffs(merit)
             _populate_category_lists(merit)
         else:
             # Shortlisting stage still needs advanced logic for multiplier targets
@@ -614,7 +611,7 @@ def generate_merit_for_level(cycle, campus, program_level, program=None, process
             _populate_category_lists(merit)
 
     merit.total_applicants = len(merit.merit_applicants)
-    merit.total_selected = len([a for a in merit.merit_applicants if a.status == "Selected" or getattr(a, "allocation_type", "") in ("Open", "Reserved")])
+    merit.total_selected = len([a for a in merit.merit_applicants if a.status == "Selected"])
     merit.total_rejected = len([a for a in merit.merit_applicants if a.status == "Rejected"])
 
     if save:
@@ -649,11 +646,15 @@ def _apply_percentile_cutoffs(doc):
         horizontal_targets[h.category_name] = {"min_percentile": h.min_percentile}
     
     for row in doc.merit_applicants:
+        # Preserve candidates already rejected for missing/0/negative Part B marks
+        if row.status == "Rejected" and row.remarks and ("Part B" in row.remarks or "not appeared" in row.remarks):
+            continue
+            
         if _check_percentile_eligibility(row, vertical_targets, horizontal_targets):
             row.status = "Selected"
         else:
             row.status = "Rejected"
-            row.remarks = f"Below minimum percentile threshold"
+            row.remarks = "Did not meet minimum percentile threshold"
 
 
 def _populate_category_lists(doc):
@@ -1401,14 +1402,17 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                         is_comp = True
                         
                     assigned = False
+                    existing_rem = getattr(w_cand, "remarks", "") or ""
                     if is_comp and v_info.get("compartmentalized_waitlist_filled", 0) < w_comp_limit:
                         assigned = True
                         v_info["compartmentalized_waitlist_filled"] = v_info.get("compartmentalized_waitlist_filled", 0) + 1
-                        w_cand.remarks = f"Waitlisted under {comp_cat} {v_cat} Sub-quota based on merit ranking (Waitlist Rank #{v_info['compartmentalized_waitlist_filled']})"
+                        waitlist_rem = f"Waitlisted under {comp_cat} {v_cat} Sub-quota based on merit ranking (Waitlist Rank #{v_info['compartmentalized_waitlist_filled']})"
+                        w_cand.remarks = f"{existing_rem} | {waitlist_rem}" if (existing_rem and "Displaced" in existing_rem) else waitlist_rem
                     elif v_info.get("waitlist_filled", 0) < w_limit:
                         assigned = True
                         v_info["waitlist_filled"] = v_info.get("waitlist_filled", 0) + 1
-                        w_cand.remarks = f"Waitlisted under {v_cat} Category based on merit ranking (Waitlist Rank #{v_info['waitlist_filled']})"
+                        waitlist_rem = f"Waitlisted under {v_cat} Category based on merit ranking (Waitlist Rank #{v_info['waitlist_filled']})"
+                        w_cand.remarks = f"{existing_rem} | {waitlist_rem}" if (existing_rem and "Displaced" in existing_rem) else waitlist_rem
                         
                     if assigned:
                         # Use _assign_seat_to_applicant to handle categorization strings
@@ -1656,17 +1660,25 @@ def _assign_seat_to_applicant(app, vertical_cat, alloc_type, allocated_list, una
     if app in unallocated:
         unallocated.remove(app)
 
-def _execute_candidate_displacement(in_cand, out_cand, allocated_list, unallocated, status_field):
+def _execute_candidate_displacement(in_cand, out_cand, allocated_list, unallocated, status_field, reason=None):
     """Simple displacement logic for Karnataka/Horizontal swaps."""
-    v_cat = out_cand.vertical_category
-    a_type = out_cand.allocation_type
+    v_cat = getattr(out_cand, "vertical_category", "") or "allocated seat"
+    a_type = getattr(out_cand, "allocation_type", "Open")
     
     setattr(out_cand, status_field, "Rejected")
     out_cand.allocation_type = "Not Allocated"
     out_cand.vertical_category = ""
+    
+    if reason:
+        out_cand.remarks = reason
+    elif not getattr(out_cand, "remarks", None):
+        in_name = getattr(in_cand, "candidate_name", None) or getattr(in_cand, "applicant_id", "")
+        out_cand.remarks = f"Displaced from {v_cat} seat by higher merit candidate {in_name} ({getattr(in_cand, 'applicant_id', '')})"
+
     if out_cand in allocated_list:
         allocated_list.remove(out_cand)
-    unallocated.append(out_cand)
+    if out_cand not in unallocated:
+        unallocated.append(out_cand)
     
     _assign_seat_to_applicant(in_cand, v_cat, a_type, allocated_list, unallocated, {"filled": 0}, status_field)
     # The {"filled": 0} is a dummy as _assign_seat_to_applicant increments it, but we are just swapping.
@@ -1974,29 +1986,8 @@ def execute_part_a_shortlisting(doc):
         remaining_karnataka = [x for x in eligible_applicants[targets["General"]["total"]:] if x.is_karnataka]
         to_add = remaining_karnataka[:kar_req_gen - karnataka_count]
         for kar_cand in to_add:
-            # Find and displace the lowest ranked non-Karnataka candidate in general_shortlist
-            for idx in range(len(general_shortlist) - 1, -1, -1):
-                if not general_shortlist[idx].is_karnataka:
-                    displaced_cand = general_shortlist.pop(idx)
-                    displaced_cand.remarks = f"Displaced from General shortlist to accommodate Karnataka sub-quota candidate {kar_cand.candidate_name or kar_cand.applicant_id} ({kar_cand.applicant_id})"
-                    kar_cand.remarks = f"Shortlisted under {comp_cat} General Sub-quota displacing {displaced_cand.candidate_name or displaced_cand.applicant_id} ({displaced_cand.applicant_id})"
-                    general_shortlist.append(kar_cand)
-                    break
-
-    # Ensure All-India candidates do not exceed their quota, leaving unfilled Karnataka seats vacant
-    if multiplier != 0:
-        max_ai_allowed = targets["General"]["total"] - kar_req_gen
-        ai_in_shortlist = [x for x in general_shortlist if not x.is_karnataka]
-        excess_ai = len(ai_in_shortlist) - max_ai_allowed
-        if excess_ai > 0:
-            removed_count = 0
-            for idx in range(len(general_shortlist) - 1, -1, -1):
-                if not general_shortlist[idx].is_karnataka:
-                    displaced_cand = general_shortlist.pop(idx)
-                    displaced_cand.remarks = "Displaced from General shortlist as All-India quota limit was reached for unfilled Karnataka seats"
-                    removed_count += 1
-                    if removed_count == excess_ai:
-                        break
+            kar_cand.remarks = f"Shortlisted under {comp_cat} General Sub-quota to fulfill Karnataka target"
+            general_shortlist.append(kar_cand)
 
     targets["General"]["total"] = len(general_shortlist)
 
@@ -2035,28 +2026,8 @@ def execute_part_a_shortlisting(doc):
             remaining_karnataka = [x for x in pool[total_req:] if x.is_karnataka]
             to_add = remaining_karnataka[:kar_req - karnataka_count]
             for kar_cand in to_add:
-                # Find and displace the lowest ranked non-Karnataka candidate in cat_shortlist
-                for idx in range(len(cat_shortlist) - 1, -1, -1):
-                    if not cat_shortlist[idx].is_karnataka:
-                        displaced_cand = cat_shortlist.pop(idx)
-                        displaced_cand.remarks = f"Displaced from {cat} shortlist to accommodate Karnataka sub-quota candidate {kar_cand.candidate_name or kar_cand.applicant_id} ({kar_cand.applicant_id})"
-                        kar_cand.remarks = f"Shortlisted under {comp_cat} {cat} Sub-quota displacing {displaced_cand.candidate_name or displaced_cand.applicant_id} ({displaced_cand.applicant_id})"
-                        cat_shortlist.append(kar_cand)
-                        break
-
-        # Ensure All-India candidates do not exceed their quota, leaving unfilled Karnataka seats vacant
-        max_ai_allowed = total_req - kar_req
-        ai_in_shortlist = [x for x in cat_shortlist if not x.is_karnataka]
-        excess_ai = len(ai_in_shortlist) - max_ai_allowed
-        if excess_ai > 0:
-            removed_count = 0
-            for idx in range(len(cat_shortlist) - 1, -1, -1):
-                if not cat_shortlist[idx].is_karnataka:
-                    displaced_cand = cat_shortlist.pop(idx)
-                    displaced_cand.remarks = f"Displaced from {cat} shortlist as All-India quota limit was reached for unfilled Karnataka seats"
-                    removed_count += 1
-                    if removed_count == excess_ai:
-                        break
+                kar_cand.remarks = f"Shortlisted under {comp_cat} {cat} Sub-quota to fulfill Karnataka target"
+                cat_shortlist.append(kar_cand)
 
         targets[cat]["total"] = len(cat_shortlist)
         shortlists[cat] = cat_shortlist

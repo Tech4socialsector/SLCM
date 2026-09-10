@@ -28,7 +28,7 @@ frappe.ui.form.on("Programme Reservation Policy", {
                 html_field.$wrapper.empty();
             }
         }
-        
+
 
         // Update Labels for Horizontal table
         frm.get_field("horizontal_reservations").grid.update_docfield_property("seats", "label", __("Target"));
@@ -97,10 +97,10 @@ frappe.ui.form.on("Programme Reservation Policy", {
             frm.add_custom_button(__("Refresh Availability"), function () {
                 frm.call("refresh_availability").then((r) => {
                     if (r.message) {
-                        frappe.show_alert({message: __("Availability Refreshed"), indicator: "green"});
+                        frappe.show_alert({ message: __("Availability Refreshed"), indicator: "green" });
                         frm.reload_doc();
                     } else {
-                        frappe.show_alert({message: __("No allocations found yet or no changes."), indicator: "orange"});
+                        frappe.show_alert({ message: __("No allocations found yet or no changes."), indicator: "orange" });
                     }
                 });
             }, __("Actions"));
@@ -113,7 +113,7 @@ frappe.ui.form.on("Programme Reservation Policy", {
         cal_percentage_seats(frm);
     },
 
-    btn_generate_matrices: function(frm) {
+    btn_generate_matrices: function (frm) {
         if (frm.is_new() || frm.is_dirty()) {
             frappe.msgprint(__("Please save the document before generating matrices."));
             return;
@@ -125,9 +125,9 @@ frappe.ui.form.on("Programme Reservation Policy", {
         frappe.call({
             method: "slcm.admission.doctype.programme_reservation_policy.programme_reservation_policy.generate_matrices",
             args: { name: frm.doc.name },
-            callback: function(r) {
+            callback: function (r) {
                 if (!r.exc) {
-                    frappe.show_alert({message: __("Matrices Generated Successfully"), indicator: "green"});
+                    frappe.show_alert({ message: __("Matrices Generated Successfully"), indicator: "green" });
                     frm.reload_doc().then(() => {
                         if (frm.doc.matrix_html) {
                             let html_field = frm.get_field("matrix_preview");
@@ -203,7 +203,7 @@ frappe.ui.form.on("Programme Reservation Sub Quota", {
 
 function cal_percentage_seats(frm) {
     const total = frm.doc.total_seats || 0;
-    
+
     // Check Vertical total percentage
     let total_v_percent = 0;
     (frm.doc.categories || []).forEach(r => {
@@ -261,14 +261,14 @@ function _show_seat_alert(frm) {
         let msg = __("Total vertical percentage {0}% exceeds 100%!", [total_v_percent.toFixed(2)]);
         if (!$("#v-percent-alert").length) {
             $('<div id="v-percent-alert" style="position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 9999; background: #fff5f5; color: #c53030; padding: 12px 24px; border-radius: 8px; border: 2px solid #feb2b2; font-weight: 800; font-size: 1.1em; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); display: flex; align-items: center; gap: 10px;">' +
-              '<span style="font-size: 1.4em;">⚠️</span>' +
-              '<span>' + msg + '</span>' +
-              '</div>').appendTo('body');
+                '<span style="font-size: 1.4em;">⚠️</span>' +
+                '<span>' + msg + '</span>' +
+                '</div>').appendTo('body');
         } else {
             $("#v-percent-alert").find('span:last').text(msg);
             $("#v-percent-alert").show();
         }
-        
+
         frm.set_intro(__("Total vertical percentage <b>{0}%</b> exceeds 100%. Please adjust.", [total_v_percent.toFixed(2)]), "red");
         frm.dashboard.set_headline_alert(
             __("Total vertical percentage {0}% exceeds 100%. Please fix.", [total_v_percent.toFixed(2)]),
