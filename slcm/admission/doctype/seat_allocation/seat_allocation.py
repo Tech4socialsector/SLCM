@@ -596,7 +596,28 @@ class SeatAllocation(Document):
         self.sync_filled_seats()
 
         if not getattr(self.flags, "is_background", False):
-            frappe.msgprint("Seat Allocation phase completed successfully.")
+            total_candidates = len(self.selection_applicant)
+            total_selected = self.total_selected or 0
+            total_waitlisted = self.total_waitlisted or 0
+            total_rejected = self.total_rejected or 0
+
+            frappe.msgprint(
+                msg=(
+                    f"Seat Allocation engine completed. Results pushed to <b><a href='/app/seat-allocation/{self.name}'>{self.name}</a></b>.<br><br>"
+                    f"<b>Summary:</b><br>"
+                    f"• Total Candidates: {total_candidates}<br>"
+                    f"• Selected: {total_selected}<br>"
+                    f"• Waitlisted: {total_waitlisted}<br>"
+                    f"• Rejected: {total_rejected}"
+                ),
+                title="Seat Allocation Completed",
+                indicator="green",
+                primary_action={
+                    "label": "View Seat Allocation",
+                    "client_action": "frappe.set_route",
+                    "args": ["Form", "Seat Allocation", self.name]
+                }
+            )
 
     @frappe.whitelist()
     def allocate_seats(self):
@@ -1140,17 +1161,166 @@ class SeatAllocation(Document):
 
 
 @frappe.whitelist()
+def build_styled_excel(workbook, sheet_name, headers, rows):
+    worksheet = workbook.add_worksheet(sheet_name)
+    worksheet.hide_gridlines(0)
+
+    header_format = workbook.add_format({
+        'bold': True,
+        'bg_color': '#166534',
+        'font_color': '#FFFFFF',
+        'font_name': 'Calibri',
+        'font_size': 11,
+        'align': 'center',
+        'valign': 'vcenter',
+        'border': 1,
+        'border_color': '#94A3B8'
+    })
+
+    cell_even_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'valign': 'vcenter',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#FFFFFF'
+    })
+
+    cell_odd_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'valign': 'vcenter',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#F8FAFC'
+    })
+
+    perc_even_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'align': 'right',
+        'valign': 'vcenter',
+        'num_format': '0.00000',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#FFFFFF'
+    })
+
+    perc_odd_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'align': 'right',
+        'valign': 'vcenter',
+        'num_format': '0.00000',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#F8FAFC'
+    })
+
+    num_even_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'align': 'right',
+        'valign': 'vcenter',
+        'num_format': '0.00',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#FFFFFF'
+    })
+
+    num_odd_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'align': 'right',
+        'valign': 'vcenter',
+        'num_format': '0.00',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#F8FAFC'
+    })
+
+    center_even_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'align': 'center',
+        'valign': 'vcenter',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#FFFFFF'
+    })
+
+    center_odd_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'align': 'center',
+        'valign': 'vcenter',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#F8FAFC'
+    })
+
+    worksheet.set_row(0, 26)
+    col_widths = [len(str(h)) for h in headers]
+    for col_idx, header in enumerate(headers):
+        worksheet.write(0, col_idx, header, header_format)
+
+    for row_idx, row in enumerate(rows, start=1):
+        worksheet.set_row(row_idx, 20)
+        is_odd = (row_idx % 2 == 1)
+        for col_idx, val in enumerate(row):
+            header_name = headers[col_idx]
+            val_str = str(val) if val is not None else ""
+            col_widths[col_idx] = max(col_widths[col_idx], len(val_str))
+
+            if "Percentile" in header_name:
+                fmt = perc_odd_format if is_odd else perc_even_format
+                try:
+                    val_num = float(val) if val is not None else 0.0
+                    worksheet.write_number(row_idx, col_idx, val_num, fmt)
+                except Exception:
+                    worksheet.write(row_idx, col_idx, val_str, fmt)
+            elif "Score" in header_name or "Marks" in header_name:
+                fmt = num_odd_format if is_odd else num_even_format
+                try:
+                    val_num = float(val) if val is not None else 0.0
+                    worksheet.write_number(row_idx, col_idx, val_num, fmt)
+                except Exception:
+                    worksheet.write(row_idx, col_idx, val_str, fmt)
+            elif "Rank" in header_name or "ID" in header_name or "Status" in header_name:
+                fmt = center_odd_format if is_odd else center_even_format
+                if isinstance(val, int):
+                    worksheet.write_number(row_idx, col_idx, val, fmt)
+                else:
+                    worksheet.write(row_idx, col_idx, val_str, fmt)
+            else:
+                fmt = cell_odd_format if is_odd else cell_even_format
+                worksheet.write(row_idx, col_idx, val_str, fmt)
+
+    for col_idx, width in enumerate(col_widths):
+        worksheet.set_column(col_idx, col_idx, max(width + 4, 12))
+
+
+@frappe.whitelist()
 def download_allocation(name):
     doc = frappe.get_doc("Seat Allocation", name)
     
     columns = [
         "Applicant ID", "Candidate Name", "Rank", "Category", "Category Rank",
-        "Part A Score", "Part B Score", "Total Score", "Selection Status",
-        "Allocated Category", "Vertical Category", "Horizontal Categories",
-        "Compartmentalized Category", "Allocation Type", "Remarks"
+        "Part A Score", "Part B Score", "Total Score", "Final Percentile",
+        "Selection Status", "Allocated Category", "Vertical Category",
+        "Horizontal Categories", "Compartmentalized Category", "Allocation Type"
     ]
     
     def get_row(candidate):
+        perc = candidate.get("percentile_score")
+        if perc is not None:
+            try:
+                perc = round(float(perc), 5)
+            except Exception:
+                pass
+        else:
+            perc = 0.0
+
         return [
             candidate.applicant_id,
             candidate.candidate_name,
@@ -1160,29 +1330,28 @@ def download_allocation(name):
             candidate.get("nlsat_part_a_score") or 0,
             candidate.get("nlsat_part_b_score") or 0,
             candidate.total_score,
+            perc,
             candidate.selection_status or "Draft",
             candidate.allocated_category or "",
             candidate.vertical_category or "",
             candidate.horizontal_categories or "",
             candidate.compartmentalized_category or "",
-            candidate.allocation_type or "Not Allocated",
-            candidate.get("remarks") or ""
+            candidate.allocation_type or "Not Allocated"
         ]
 
-    rows = [columns]
+    rows = []
     for cand in doc.selection_applicant:
         rows.append(get_row(cand))
 
-    if len(rows) <= 1:
+    if not rows:
         frappe.throw("No candidate records found in this allocation.")
 
-    from frappe.utils.xlsxutils import make_xlsx
     from io import BytesIO
     import xlsxwriter
 
     output = BytesIO()
-    workbook = xlsxwriter.Workbook(output, {"constant_memory": True})
-    make_xlsx(rows, "Seat Allocation", wb=workbook)
+    workbook = xlsxwriter.Workbook(output, {"in_memory": True})
+    build_styled_excel(workbook, "Seat Allocation", columns, rows)
     workbook.close()
     
     prog = doc.program or "Programme"
@@ -1216,20 +1385,19 @@ def download_summary(name):
             summary_row.actually_rejected
         ]
 
-    rows = [columns]
+    rows = []
     for row in doc.category_summary:
         rows.append(get_row(row))
 
-    if len(rows) <= 1:
+    if not rows:
         frappe.throw("No summary records found in this allocation.")
 
-    from frappe.utils.xlsxutils import make_xlsx
     from io import BytesIO
     import xlsxwriter
 
     output = BytesIO()
-    workbook = xlsxwriter.Workbook(output, {"constant_memory": True})
-    make_xlsx(rows, "Allocation Summary", wb=workbook)
+    workbook = xlsxwriter.Workbook(output, {"in_memory": True})
+    build_styled_excel(workbook, "Allocation Summary", columns, rows)
     workbook.close()
     
     prog = doc.program or "Programme"

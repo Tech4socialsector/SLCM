@@ -505,9 +505,8 @@ class TestBoundaryConditionsBench(MeritSystemTestBase):
         execute_part_a_shortlisting(doc)
 
         shortlisted = [c for c in doc.merit_applicants if c.status == "Selected"]
-        # Only 245 distinct top ranks; the 10 tied at 50.0 start at rank 246 — excluded
-        # With the mocked setup, only 185 get selected because of missing mock db elements (Karnataka sub-quota vacant)
-        self.assertEqual(len(shortlisted), 185)
+        # All 245 distinct top ranks are selected (no non-Karnataka candidates are dropped)
+        self.assertEqual(len(shortlisted), 245)
 
 
 # ===========================================================================

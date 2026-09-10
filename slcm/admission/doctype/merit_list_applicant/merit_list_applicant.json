@@ -1,4 +1,4 @@
- {
+{
  "actions": [],
  "allow_rename": 1,
  "creation": "2026-02-17 11:05:00",
@@ -9,12 +9,10 @@
   "applicant_id",
   "program",
   "program_level",
-  "hsc_percentage",
   "entrance_score",
   "interview_score",
-  "ug_cgpa",
-  "pg_cgpa",
   "total_score",
+  "percentile_score",
   "part_a_rank",
   "part_b_rank",
   "overall_rank",
@@ -22,7 +20,6 @@
   "category_rank",
   "status",
   "date_of_birth",
-  "percentile_score",
   "vertical_category",
   "allocation_type",
   "shortlist_category",
@@ -66,11 +63,6 @@
    "options": "Undergraduate\nPostgraduate\nResearch Course"
   },
   {
-   "fieldname": "hsc_percentage",
-   "fieldtype": "Float",
-   "label": "HSC %"
-  },
-  {
    "columns": 2,
    "fieldname": "entrance_score",
    "fieldtype": "Float",
@@ -87,22 +79,21 @@
    "precision": "2"
   },
   {
-   "fieldname": "ug_cgpa",
-   "fieldtype": "Float",
-   "label": "UG CGPA"
-  },
-  {
-   "fieldname": "pg_cgpa",
-   "fieldtype": "Float",
-   "label": "PG CGPA"
-  },
-  {
    "columns": 2,
    "fieldname": "total_score",
    "fieldtype": "Float",
    "in_list_view": 1,
    "label": "Total Marks",
    "precision": "2"
+  },
+  {
+   "columns": 2,
+   "fieldname": "percentile_score",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Final Percentile",
+   "precision": "5",
+   "read_only": 1
   },
   {
    "columns": 2,
@@ -157,12 +148,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "percentile_score",
-   "fieldtype": "Float",
-   "label": "Percentile ",
-   "read_only": 1
-  },
-  {
    "fieldname": "vertical_category",
    "fieldtype": "Data",
    "label": "Vertical Category",
@@ -206,7 +191,7 @@
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-07-21 17:31:17.729436",
+ "modified": "2026-09-10 10:35:00.000000",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit List Applicant",

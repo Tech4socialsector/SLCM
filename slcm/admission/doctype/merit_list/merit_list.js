@@ -342,7 +342,6 @@ function open_allocation_dialog(frm) {
                             message: __(`Seat Allocation <b>${r.message}</b> created successfully.`),
                             indicator: "green"
                         });
-                        frappe.set_route("Form", "Seat Allocation", r.message);
                     }
                 },
                 error() {
