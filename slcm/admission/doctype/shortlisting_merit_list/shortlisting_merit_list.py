@@ -121,6 +121,28 @@ class ShortlistingMeritList(Document):
             program=self.program,
             processing_stage="Final Allotment Ranking"
         )
+
+        total_applicants = merit_list.total_applicants or len(merit_list.merit_applicants)
+        total_selected = merit_list.total_selected or 0
+        total_rejected = merit_list.total_rejected or 0
+
+        frappe.msgprint(
+            msg=(
+                f"Final Admission Merit List generated. Results pushed to <b><a href='/app/merit-list/{merit_list.name}'>{merit_list.name}</a></b>.<br><br>"
+                f"<b>Summary:</b><br>"
+                f"• Total Applicants: {total_applicants}<br>"
+                f"• Selected: {total_selected}<br>"
+                f"• Rejected: {total_rejected}"
+            ),
+            title="Final Merit List Generated",
+            indicator="green",
+            primary_action={
+                "label": "View Final Merit List",
+                "client_action": "frappe.set_route",
+                "args": ["Form", "Merit List", merit_list.name]
+            }
+        )
+
         return merit_list.name
 
     def on_update(self):
@@ -198,18 +220,166 @@ def get_generation_progress(docname):
 
     return progress
 
+def build_styled_excel(workbook, sheet_name, headers, rows):
+    worksheet = workbook.add_worksheet(sheet_name[:31])
+    worksheet.hide_gridlines(0)
+
+    header_format = workbook.add_format({
+        'bold': True,
+        'bg_color': '#166534',
+        'font_color': '#FFFFFF',
+        'font_name': 'Calibri',
+        'font_size': 11,
+        'align': 'center',
+        'valign': 'vcenter',
+        'border': 1,
+        'border_color': '#94A3B8'
+    })
+
+    cell_even_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'valign': 'vcenter',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#FFFFFF'
+    })
+
+    cell_odd_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'valign': 'vcenter',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#F8FAFC'
+    })
+
+    perc_even_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'align': 'right',
+        'valign': 'vcenter',
+        'num_format': '0.00000',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#FFFFFF'
+    })
+
+    perc_odd_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'align': 'right',
+        'valign': 'vcenter',
+        'num_format': '0.00000',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#F8FAFC'
+    })
+
+    num_even_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'align': 'right',
+        'valign': 'vcenter',
+        'num_format': '0.00',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#FFFFFF'
+    })
+
+    num_odd_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'align': 'right',
+        'valign': 'vcenter',
+        'num_format': '0.00',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#F8FAFC'
+    })
+
+    center_even_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'align': 'center',
+        'valign': 'vcenter',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#FFFFFF'
+    })
+
+    center_odd_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'align': 'center',
+        'valign': 'vcenter',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#F8FAFC'
+    })
+
+    worksheet.set_row(0, 26)
+    col_widths = [len(str(h)) for h in headers]
+    for col_idx, header in enumerate(headers):
+        worksheet.write(0, col_idx, header, header_format)
+
+    for row_idx, row in enumerate(rows, start=1):
+        worksheet.set_row(row_idx, 20)
+        is_odd = (row_idx % 2 == 1)
+        for col_idx, val in enumerate(row):
+            header_name = headers[col_idx]
+            val_str = str(val) if val is not None else ""
+            col_widths[col_idx] = max(col_widths[col_idx], len(val_str))
+
+            if "Percentile" in header_name:
+                fmt = perc_odd_format if is_odd else perc_even_format
+                try:
+                    val_num = float(val) if val is not None else 0.0
+                    worksheet.write_number(row_idx, col_idx, val_num, fmt)
+                except Exception:
+                    worksheet.write(row_idx, col_idx, val_str, fmt)
+            elif "Score" in header_name or "Marks" in header_name:
+                fmt = num_odd_format if is_odd else num_even_format
+                try:
+                    val_num = float(val) if val is not None else 0.0
+                    worksheet.write_number(row_idx, col_idx, val_num, fmt)
+                except Exception:
+                    worksheet.write(row_idx, col_idx, val_str, fmt)
+            elif "Rank" in header_name or "ID" in header_name or "Status" in header_name:
+                fmt = center_odd_format if is_odd else center_even_format
+                if isinstance(val, int):
+                    worksheet.write_number(row_idx, col_idx, val, fmt)
+                else:
+                    worksheet.write(row_idx, col_idx, val_str, fmt)
+            else:
+                fmt = cell_odd_format if is_odd else cell_even_format
+                worksheet.write(row_idx, col_idx, val_str, fmt)
+
+    for col_idx, width in enumerate(col_widths):
+        worksheet.set_column(col_idx, col_idx, max(width + 4, 12))
+
+
 @frappe.whitelist()
 def download_merit_list(name, download_type, category=None):
     doc = frappe.get_doc("Shortlisting Merit List", name)
     
     columns = [
-        "Applicant ID", "Candidate Name", "Rank", "Candidate Category", 
+        "Applicant ID", "Candidate Name", "Part A Rank", "Candidate Category", 
         "Category Rank", "Part A Score", "Part A Percentile", "Vertical Category", 
         "Compartmentalized Category", "Horizontal Categories", 
-        "Allocation Type", "Shortlisted Category", "Shortlist Status", "Remarks"
+        "Allocation Type", "Shortlisted Category", "Shortlist Status"
     ]
     
     def get_row(candidate):
+        perc = candidate.get("percentile_score")
+        if perc is not None:
+            try:
+                perc = round(float(perc), 5)
+            except Exception:
+                pass
+        else:
+            perc = 0.0
+
         return [
             candidate.applicant_id,
             candidate.candidate_name,
@@ -217,69 +387,64 @@ def download_merit_list(name, download_type, category=None):
             candidate.actual_category,
             candidate.category_rank or "",
             candidate.nlsat_part_a_score,
-            candidate.get("percentile_score") or 0,
+            perc,
             candidate.vertical_category or "",
             candidate.compartmentalized_category or "",
             candidate.horizontal_categories or "",
             candidate.allocation_type or "Not Allocated",
             candidate.shortlist_category or "",
-            candidate.shortlist_status or "Draft",
-            candidate.get("remarks") or ""
+            candidate.shortlist_status or "Draft"
         ]
 
     xlsx_data = {}
 
     if download_type == "Overall":
-        sheet_name = "Overall Shortlisting Merit Rank List"
-        rows = [columns]
+        sheet_name = "Overall Shortlist Rank List"
+        rows = []
         for cand in doc.shortlist_applicants:
             rows.append(get_row(cand))
         xlsx_data[sheet_name] = rows
     
     elif download_type == "Category Wise":
         category_map = {
-            "General": ("Vertical Shortlisting Merit Rank List", lambda c: (c.actual_category == "General" or (c.shortlist_category and "General" in c.shortlist_category))),
-            "SC": ("SC Shortlisting Merit Rank List", lambda c: (c.actual_category == "SC" or (c.shortlist_category and "SC" in c.shortlist_category))),
-            "ST": ("ST Shortlisting Merit Rank List", lambda c: (c.actual_category == "ST" or (c.shortlist_category and "ST" in c.shortlist_category))),
-            "OBC": ("OBC Shortlisting Merit Rank List", lambda c: (c.actual_category in ["OBC-NCL", "OBC"] or (c.shortlist_category and "OBC" in c.shortlist_category))),
-            "EWS": ("EWS Shortlisting Merit Rank List", lambda c: (c.actual_category == "EWS" or (c.shortlist_category and "EWS" in c.shortlist_category))),
-            "Karnataka": ("Karnataka Shortlisting Merit Rank List", lambda c: (c.compartmentalized_category == "Karnataka" or (c.shortlist_category and "Karnataka" in c.shortlist_category) or getattr(c, "is_karnataka", False))),
-            "Women": ("Women Shortlisting Merit Rank List", lambda c: ("Women" in (c.horizontal_categories or "") or (c.shortlist_category and "Women" in c.shortlist_category) or getattr(c, "is_female", False))),
-            "PWD": ("PWD Shortlisting Merit Rank List", lambda c: ("PWD" in (c.horizontal_categories or "") or (c.shortlist_category and "PWD" in c.shortlist_category) or getattr(c, "is_pwd", False)))
+            "General": ("Vertical Shortlist Rank List", lambda c: (c.actual_category == "General" or (c.shortlist_category and "General" in c.shortlist_category))),
+            "SC": ("SC Shortlist Rank List", lambda c: (c.actual_category == "SC" or (c.shortlist_category and "SC" in c.shortlist_category))),
+            "ST": ("ST Shortlist Rank List", lambda c: (c.actual_category == "ST" or (c.shortlist_category and "ST" in c.shortlist_category))),
+            "OBC": ("OBC Shortlist Rank List", lambda c: (c.actual_category in ["OBC-NCL", "OBC"] or (c.shortlist_category and "OBC" in c.shortlist_category))),
+            "EWS": ("EWS Shortlist Rank List", lambda c: (c.actual_category == "EWS" or (c.shortlist_category and "EWS" in c.shortlist_category))),
+            "Karnataka": ("Karnataka Shortlist Rank List", lambda c: (c.compartmentalized_category == "Karnataka" or (c.shortlist_category and "Karnataka" in c.shortlist_category) or getattr(c, "is_karnataka", False))),
+            "Women": ("Women Shortlist Rank List", lambda c: ("Women" in (c.horizontal_categories or "") or (c.shortlist_category and "Women" in c.shortlist_category) or getattr(c, "is_female", False))),
+            "PWD": ("PWD Shortlist Rank List", lambda c: ("PWD" in (c.horizontal_categories or "") or (c.shortlist_category and "PWD" in c.shortlist_category) or getattr(c, "is_pwd", False)))
         }
         
         if category and category != "All":
             if category in category_map:
                 label, filter_fn = category_map.get(category)
-                rows = [columns]
+                rows = []
                 for cand in doc.shortlist_applicants:
                     if filter_fn(cand):
                         rows.append(get_row(cand))
                 xlsx_data[label] = rows
         else:
-            # All categories in separate sheets
             for cat_key, (label, filter_fn) in category_map.items():
-                cat_rows = [columns]
+                cat_rows = []
                 for cand in doc.shortlist_applicants:
                     if filter_fn(cand):
                         cat_rows.append(get_row(cand))
-                if len(cat_rows) > 1:
+                if len(cat_rows) > 0:
                     xlsx_data[label] = cat_rows
 
-    if not xlsx_data or not any(len(rows) > 1 for rows in xlsx_data.values()):
+    if not xlsx_data or not any(len(rows) > 0 for rows in xlsx_data.values()):
         frappe.throw("No candidate records found for the selected criteria. Please ensure the shortlisting logic has been run.")
 
-    from frappe.utils.xlsxutils import make_xlsx
     from io import BytesIO
     import xlsxwriter
 
     output = BytesIO()
-    # Using the same options as Frappe's make_xlsx
-    workbook = xlsxwriter.Workbook(output, {"constant_memory": True})
+    workbook = xlsxwriter.Workbook(output, {"in_memory": True})
     
     for sheet_name, rows in xlsx_data.items():
-        # make_xlsx adds a worksheet to the workbook
-        make_xlsx(rows, sheet_name, wb=workbook)
+        build_styled_excel(workbook, sheet_name, columns, rows)
     
     workbook.close()
     
