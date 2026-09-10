@@ -1,4 +1,4 @@
-frappe.query_reports["PACE Applicant Registration Status"] = {
+frappe.query_reports["Applicant Registration Status"] = {
     filters: [
         {
             fieldname: "from_date",

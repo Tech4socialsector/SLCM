@@ -67,18 +67,18 @@ def get_data(filters):
             u.creation AS created_on,
             CASE
                 WHEN EXISTS (
-                    SELECT 1 FROM `tabPACE Application` pa
-                    WHERE (pa.email_address = u.email OR pa.user_id = u.name) AND pa.status = 'Enrolled'
+                    SELECT 1 FROM `tabApplicant` pa
+                    WHERE (pa.email = u.email OR pa.user_id = u.name) AND pa.status = 'Enrolled'
                 ) THEN 'Enrolled'
                 WHEN EXISTS (
-                    SELECT 1 FROM `tabPACE Application` pa
-                    WHERE pa.email_address = u.email OR pa.user_id = u.name
+                    SELECT 1 FROM `tabApplicant` pa
+                    WHERE pa.email = u.email OR pa.user_id = u.name
                 ) THEN 'Applied'
                 ELSE 'Not Applied'
             END AS application_status
         FROM `tabUser` u
         INNER JOIN `tabHas Role` hr
-            ON hr.parent = u.name AND hr.role = 'PACE Applicant'
+            ON hr.parent = u.name AND hr.role = 'Applicant'
         WHERE {condition_str}
         ORDER BY u.full_name
     """
@@ -103,18 +103,18 @@ def get_report_summary(filters):
         SELECT
             CASE
                 WHEN EXISTS (
-                    SELECT 1 FROM `tabPACE Application` pa
-                    WHERE (pa.email_address = u.email OR pa.user_id = u.name) AND pa.status = 'Enrolled'
+                    SELECT 1 FROM `tabApplicant` pa
+                    WHERE (pa.email = u.email OR pa.user_id = u.name) AND pa.status = 'Enrolled'
                 ) THEN 'Enrolled'
                 WHEN EXISTS (
-                    SELECT 1 FROM `tabPACE Application` pa
-                    WHERE pa.email_address = u.email OR pa.user_id = u.name
+                    SELECT 1 FROM `tabApplicant` pa
+                    WHERE pa.email = u.email OR pa.user_id = u.name
                 ) THEN 'Applied'
                 ELSE 'Not Applied'
             END AS application_status
         FROM `tabUser` u
         INNER JOIN `tabHas Role` hr
-            ON hr.parent = u.name AND hr.role = 'PACE Applicant'
+            ON hr.parent = u.name AND hr.role = 'Applicant'
         WHERE {condition_str}
     """
 
@@ -126,7 +126,7 @@ def get_report_summary(filters):
     not_applied = len([r for r in rows if r.application_status == "Not Applied"])
 
     return [
-        {"value": total, "label": "Total Registered (PACE Applicant)", "datatype": "Int", "indicator": "blue"},
+        {"value": total, "label": "Total Registered (Applicant)", "datatype": "Int", "indicator": "blue"},
         {"value": applied, "label": "Registered & Applied", "datatype": "Int", "indicator": "green"},
         {"value": enrolled, "label": "Enrolled", "datatype": "Int", "indicator": "green"},
         {"value": not_applied, "label": "Registered & Not Applied", "datatype": "Int", "indicator": "red"},
