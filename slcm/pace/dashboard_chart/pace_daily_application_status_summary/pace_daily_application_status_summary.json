@@ -1,0 +1,39 @@
+{
+ "chart_name": "PACE Daily Application Status Summary",
+ "chart_type": "Report",
+ "creation": "2026-09-04 16:10:00.000000",
+ "currency": "",
+ "custom_options": "{\"type\": \"bar\", \"axisOptions\": {\"shortenYAxisNumbers\": 1}, \"height\": 260}",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart",
+ "filters_json": "{}",
+ "group_by_type": "Count",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "modified": "2026-09-04 16:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "PACE",
+ "name": "PACE Daily Application Status Summary",
+ "number_of_groups": 0,
+ "owner": "Administrator",
+ "report_name": "PACE Daily Application Status Summary",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "PACE Admission Manager"
+  },
+  {
+   "role": "Admission Admin"
+  }
+ ],
+ "show_values_over_chart": 0,
+ "time_interval": "Daily",
+ "timeseries": 0,
+ "timespan": "Last Month",
+ "type": "Bar",
+ "use_report_chart": 1,
+ "y_axis": []
+}

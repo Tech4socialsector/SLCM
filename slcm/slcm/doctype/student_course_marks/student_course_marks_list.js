@@ -150,6 +150,16 @@ function open_marks_import_dialog() {
                     <p class="text-muted">The file must have exactly matching columns.</p>
                     <p><button id="download-template" class="btn btn-primary btn-sm">Download Sample Template</button></p>
                     <div id="step1-fields"></div>
+                    <div id="parsing-loader" style="display: none; margin-top: 24px;" class="text-center">
+                        <i class="fa fa-spinner fa-spin fa-3x" style="color:#5e64ff;"></i>
+                        <p class="mt-2 text-muted" style="font-size:14px; margin-top:12px;" id="parsing-status-text">Parsing file... please wait.</p>
+                        <p style="font-size:20px; font-weight:700; color:#1F272E; margin:6px 0;" id="parsing-count-text"></p>
+                        <div style="max-width:320px; margin:10px auto;">
+                            <div class="progress" style="height:8px; border-radius:4px;">
+                                <div id="parsing-progress-bar" class="progress-bar" style="width:0%; background:#5e64ff; transition:width 0.4s;"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `);
             container.append(wrapper);
@@ -234,18 +244,26 @@ function open_marks_import_dialog() {
 
             let wrapper = $(`
                 <div>
-                    <h4>Step 2: Preview & Mapping</h4>
-                    <div style="margin-bottom: 15px;">
-                        <button id="view-full-sheet" class="btn btn-default btn-sm">View Full Sheet</button>
+                    <h4>Step 2: Preview &amp; Mapping</h4>
+                    <div id="step2-stat-cards" style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+                        <div style="flex:1; min-width:110px; background:#f0f4ff; border:1px solid #c7d2fe; border-radius:8px; padding:12px 16px;">
+                            <div style="font-size:10px; color:#6366f1; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Total Rows</div>
+                            <div id="s2-total" style="font-size:28px; font-weight:800; color:#1F272E; margin-top:4px;">—</div>
+                        </div>
+                        <div style="flex:2; min-width:150px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px 16px;">
+                            <div style="font-size:10px; color:#16a34a; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Exam Plan</div>
+                            <div id="s2-plan" style="font-size:13px; font-weight:600; color:#1F272E; margin-top:4px; word-break:break-word;">—</div>
+                        </div>
+                        <div style="flex:2; min-width:150px; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:12px 16px;">
+                            <div style="font-size:10px; color:#d97706; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Evaluation Schema</div>
+                            <div id="s2-schema" style="font-size:13px; font-weight:600; color:#1F272E; margin-top:4px; word-break:break-word;">—</div>
+                        </div>
                     </div>
-                    <p>Mapped logic overview:</p>
-                    <ul>
-                        <li><b>student</b>: resolved from Registration ID</li>
-                        <li><b>course_offering</b>: resolved from Course Code + Batch Year + Term Name</li>
-                        <li><b>exam_plan / evaluation_schema</b>: <span id="schema-display-text"></span> (applied to all rows)</li>
-                        <li><b>improvement_marks/grade</b>: computed via clearance & improvement rules</li>
-                    </ul>
-                    <h5>Parsed Rows</h5>
+                    <div style="margin-bottom:12px; display:flex; align-items:center; gap:10px;">
+                        <button id="view-full-sheet" class="btn btn-default btn-sm">View Full Sheet</button>
+                        <span class="text-muted" style="font-size:11px;">Reg ID → Student | Course Code+Batch+Term → Offering | Improvement rules auto-applied</span>
+                    </div>
+                    <h5 style="margin-bottom:8px;">Parsed Rows Preview</h5>
                     <div id="preview-table-wrapper" style="max-height: 250px; overflow: auto; border: 1px solid #d1d8dd; margin-bottom: 10px;">
                         <span class="text-muted">Loading preview...</span>
                     </div>
@@ -257,7 +275,14 @@ function open_marks_import_dialog() {
                 </div>
             `);
             container.append(wrapper);
-            wrapper.find('#schema-display-text').text(`${selected_exam_plan} / ${selected_eval_schema}`);
+            // Populate stat cards
+            wrapper.find('#s2-plan').text(selected_exam_plan || '—');
+            wrapper.find('#s2-schema').text(selected_eval_schema || '—');
+            if (import_log) {
+                frappe.db.get_value('Marks Import Log', import_log, 'total_rows', function(v) {
+                    if (v && v.total_rows != null) wrapper.find('#s2-total').text(v.total_rows.toLocaleString());
+                });
+            }
 
             wrapper.find('#view-full-sheet').on('click', function (e) {
                 e.preventDefault();
@@ -283,9 +308,15 @@ function open_marks_import_dialog() {
             let wrapper = $(`
                 <div>
                     <h4>Step 3: Validation Summary</h4>
-                    <div id="validation-spinner" class="text-center" style="padding: 20px;">
-                        <div class="spinner-border text-primary" role="status"></div>
-                        <p class="mt-2 text-muted">Validating rows...</p>
+                    <div id="validation-spinner" class="text-center" style="margin-top: 28px; padding-bottom: 20px;">
+                        <i class="fa fa-spinner fa-spin fa-3x" style="color:#5e64ff;"></i>
+                        <p class="mt-2 text-muted" style="font-size:14px; margin-top:12px;" id="validation-status-text">Validating rows... please wait</p>
+                        <p style="font-size:22px; font-weight:700; color:#1F272E; margin:6px 0;" id="validation-count-text"></p>
+                        <div style="max-width:340px; margin:10px auto;">
+                            <div class="progress" style="height:8px; border-radius:4px;">
+                                <div id="validation-progress-bar" class="progress-bar" style="width:0%; background:#5e64ff; transition:width 0.4s;"></div>
+                            </div>
+                        </div>
                     </div>
                     <div id="validation-content" style="display: none;">
                         <div id="validation-summary"></div>
@@ -324,16 +355,99 @@ function open_marks_import_dialog() {
             container.append(wrapper);
             d.get_primary_btn().prop('disabled', true);
             
-            let method = is_importing ? "revalidate_import" : "validate_staged_rows";
+            // Set up real-time event listeners BEFORE triggering validation
+            frappe.realtime.off("marks_validation_progress");
+            frappe.realtime.on("marks_validation_progress", function(data) {
+                if (data.import_log === import_log) {
+                    let pct = data.percent != null ? data.percent : (data.total > 0 ? Math.round((data.progress / data.total) * 100) : 0);
+                    wrapper.find('#validation-status-text').text('Validating rows... please wait');
+                    wrapper.find('#validation-count-text').text(`${data.progress} / ${data.total} (${pct}%)`);
+                    wrapper.find('#validation-progress-bar').css('width', pct + '%');
+                }
+            });
+            
+            frappe.realtime.off("marks_validation_complete");
+            frappe.realtime.on("marks_validation_complete", function(data) {
+                if (data.import_log === import_log) {
+                    is_validating = false;
+                    wrapper.find('#validation-spinner').hide();
+                    if (data.error) {
+                        wrapper.find('#validation-content').html(`<div class="alert alert-danger"><b>Validation Job Failed:</b><br/>${data.error}</div>`).show();
+                    } else {
+                        wrapper.find('#validation-content').show();
+                        render_validation_results(data, wrapper);
+                    }
+                }
+            });
+            
+            let is_validating = true;
+            let check_val_interval = setInterval(function() {
+                if (!is_validating) {
+                    clearInterval(check_val_interval);
+                    return;
+                }
+                frappe.db.get_value('Marks Import Log', import_log, ['status', 'success_count', 'failed_count', 'skipped_count', 'missing_offerings_count'], function(v) {
+                    if (v && v.status === 'Failed') {
+                        clearInterval(check_val_interval);
+                        if (is_validating) {
+                            is_validating = false;
+                            wrapper.find('#validation-spinner').hide();
+                            wrapper.find('#validation-content').html(`<div class="alert alert-danger"><b>Validation Job Failed.</b> Please check the system Error Log for traceback details.</div>`).show();
+                        }
+                    } else if (v && v.status === 'Validated') {
+                        clearInterval(check_val_interval);
+                        if (is_validating) {
+                            is_validating = false;
+                            wrapper.find('#validation-spinner').hide();
+                            wrapper.find('#validation-content').show();
+                            // If fallback hit, trigger the render with the saved counts
+                            frappe.call({
+                                method: 'slcm.slcm.doctype.student_course_marks.marks_bulk_import.get_errors_page',
+                                args: { import_log: import_log, page: 1, page_size: 20, status_filter: 'Missing Course Offering' },
+                                callback: function(r2) {
+                                    let missing_groups_list = [];
+                                    if (r2.message && r2.message.rows) {
+                                        // group them (we can just fetch the detailed summary from backend instead)
+                                    }
+                                    
+                                    // A simpler approach is to refresh the validation summary
+                                    // We will just do a basic render or the socket event might have caught it anyway
+                            frappe.call({
+                                method: 'slcm.slcm.doctype.student_course_marks.marks_bulk_import.get_validation_summary',
+                                args: { import_log: import_log },
+                                callback: function(r3) {
+                                    if (r3.message) {
+                                        render_validation_results(r3.message, wrapper);
+                                    }
+                                }
+                            });
+                                }
+                            });
+                        }
+                    }
+                });
+            }, 3000);
+            
+            let retry_mode = is_importing ? "revalidate" : "";
             is_importing = false;
             
             frappe.call({
-                method: "slcm.slcm.doctype.student_course_marks.marks_bulk_import." + method,
-                args: { import_log: import_log },
+                method: "slcm.slcm.doctype.student_course_marks.marks_bulk_import.start_validation",
+                args: { import_log: import_log, retry_mode: retry_mode },
                 callback: function (r) {
+                    if (r && r.exc) {
+                        is_validating = false;
+                        clearInterval(check_val_interval);
+                        wrapper.find('#validation-spinner').hide();
+                        wrapper.find('#validation-content').html('<div class="alert alert-danger"><b>Validation Error:</b><br/>The server rejected this request. Please check the Error Log.</div>').show();
+                    }
+                    // Otherwise just wait for realtime events
+                },
+                error: function() {
+                    is_validating = false;
+                    clearInterval(check_val_interval);
                     wrapper.find('#validation-spinner').hide();
-                    wrapper.find('#validation-content').show();
-                    if (r.message) render_validation_results(r.message, wrapper);
+                    wrapper.find('#validation-content').html('<div class="alert alert-danger"><b>Network Error:</b> Could not start validation. Please try again.</div>').show();
                 }
             });
 
@@ -344,8 +458,12 @@ function open_marks_import_dialog() {
             let wrapper = $(`
                 <div>
                     <h4>Step 4: Live Progress</h4>
-                    <div class="progress" style="height: 20px; margin-top: 20px;">
-                        <div id="import-progress-bar" class="progress-bar progress-bar-success" role="progressbar" style="width: 0%;">0%</div>
+                    <div id="import-step4-status" class="text-center" style="margin-top:20px; margin-bottom:8px;">
+                        <i class="fa fa-spinner fa-spin" style="color:#5e64ff;"></i>
+                        <span style="color:#8D99A6; font-size:13px; margin-left:8px;">Importing records... please wait</span>
+                    </div>
+                    <div class="progress" style="height: 26px; margin-top: 8px; border-radius:6px;">
+                        <div id="import-progress-bar" class="progress-bar progress-bar-success" role="progressbar" style="width: 0%; font-size:13px; font-weight:600; line-height:26px;">0 / 0 (0%)</div>
                     </div>
                     <div id="import-result-summary" style="margin-top: 20px; display: none;">
                         <h5 id="import-final-title">Import Completed</h5>
@@ -431,19 +549,107 @@ function open_marks_import_dialog() {
                 selected_assessment_type = asst_type;
                 selected_re_exam_component = re_exam_comp;
                 selected_re_exam_assessment_type = re_exam_asst_type;
+                
+                let container = $(d.fields_dict.step_container.wrapper).find('#step-render-area');
+                container.find('#step1-fields').hide();
+                container.find('#parsing-loader').show();
+                
+                frappe.realtime.off("marks_parsing_progress");
+                frappe.realtime.on("marks_parsing_progress", function(data) {
+                    container.find('#parsing-status-text').text('Parsing file... please wait');
+                    container.find('#parsing-count-text').text(`${data.progress} / ${data.total} rows (${data.percent || 0}%)`);
+                    container.find('#parsing-progress-bar').css('width', (data.percent || 0) + '%');
+                });
+
+                frappe.realtime.off("marks_parsing_complete");
+                frappe.realtime.on("marks_parsing_complete", function(data) {
+                    if (window.check_parse_interval) {
+                        clearInterval(window.check_parse_interval);
+                        window.check_parse_interval = null;
+                    }
+                    frappe.realtime.off("marks_parsing_progress");
+                    frappe.realtime.off("marks_parsing_complete");
+                    d.get_primary_btn().prop('disabled', false);
+                    
+                    if (data.error) {
+                        container.find('#step1-fields').show();
+                        container.find('#parsing-loader').hide();
+                        frappe.msgprint({title: data.error_title || "Error", message: data.error, indicator: "red"});
+                        return;
+                    }
+                    if (data.import_log) {
+                        import_log = data.import_log;
+                        render_step(2);
+                    }
+                });
 
                 frappe.call({
                     method: "slcm.slcm.doctype.student_course_marks.marks_bulk_import.parse_import_file",
                     args: { file_url: file, exam_plan: plan, evaluation_schema: eval_sch, exam_component: exam_comp, assessment_type: asst_type, re_exam_component: re_exam_comp, re_exam_assessment_type: re_exam_asst_type },
                     callback: function (r) {
-                        d.get_primary_btn().prop('disabled', false);
-                        if (r.message && r.message.import_log) {
+                        if (r && r.exc) {
+                            d.get_primary_btn().prop('disabled', false);
+                            frappe.realtime.off("marks_parsing_progress");
+                            frappe.realtime.off("marks_parsing_complete");
+                            container.find('#step1-fields').show();
+                            container.find('#parsing-loader').hide();
+                            return;
+                        }
+                        if (r.message && r.message.status === "parsing") {
+                            import_log = r.message.import_log;
+                            // Add polling fallback in case socket.io fails
+                            if (!window.check_parse_interval) {
+                                window.check_parse_interval = setInterval(function() {
+                                    if (!import_log) return;
+                                    frappe.db.get_value('Marks Import Log', import_log, ['status', 'total_rows'], function(v) {
+                                        if (v && v.status === 'Staging') {
+                                            clearInterval(window.check_parse_interval);
+                                            window.check_parse_interval = null;
+                                            frappe.realtime.off("marks_parsing_progress");
+                                            frappe.realtime.off("marks_parsing_complete");
+                                            d.get_primary_btn().prop('disabled', false);
+                                            render_step(2);
+                                        } else if (v && (v.status === 'Failed' || v.status === 'Completed with Errors')) {
+                                            clearInterval(window.check_parse_interval);
+                                            window.check_parse_interval = null;
+                                            frappe.realtime.off("marks_parsing_progress");
+                                            frappe.realtime.off("marks_parsing_complete");
+                                            d.get_primary_btn().prop('disabled', false);
+                                            container.find('#step1-fields').show();
+                                            container.find('#parsing-loader').hide();
+                                            frappe.msgprint({title: "Parse Failed", message: "Parsing job failed. Check Error Log.", indicator: "red"});
+                                        } else if (v && v.status === 'Parsing') {
+                                            // Fallback progress update
+                                            let progress = v.total_rows || 0;
+                                            if (progress > 0) {
+                                                container.find('#parsing-count-text').text(progress + ' rows processed...');
+                                            }
+                                        }
+                                    });
+                                }, 3000);
+                            }
+                        } else if (r.message && r.message.import_log) {
+                            d.get_primary_btn().prop('disabled', false);
+                            frappe.realtime.off("marks_parsing_progress");
+                            frappe.realtime.off("marks_parsing_complete");
                             import_log = r.message.import_log;
                             render_step(2);
+                        } else {
+                            d.get_primary_btn().prop('disabled', false);
+                            frappe.realtime.off("marks_parsing_progress");
+                            frappe.realtime.off("marks_parsing_complete");
+                            container.find('#parsing-loader').hide();
+                            container.find('#step1-fields').show();
+                            frappe.msgprint({title: "Parse Failed", message: "Failed to start parsing job.", indicator: "red"});
                         }
                     },
                     error: function () {
                         d.get_primary_btn().prop('disabled', false);
+                        frappe.realtime.off("marks_parsing_progress");
+                        frappe.realtime.off("marks_parsing_complete");
+                        container.find('#step1-fields').show();
+                        container.find('#parsing-loader').hide();
+                        frappe.msgprint({title: "Network Error", message: "Could not reach the server. Please check your connection and try again.", indicator: "red"});
                     }
                 });
             };
@@ -481,15 +687,16 @@ function open_marks_import_dialog() {
 
             function handle_progress_update(data) {
                 if (data.import_log === import_log) {
-                    let pct = data.total > 0 ? parseInt((data.progress / data.total) * 100) : 100;
+                    let pct = data.percent != null ? Math.round(data.percent) : (data.total > 0 ? Math.round((data.progress / data.total) * 100) : 100);
                     let step_container = $(d.fields_dict.step_container.wrapper).find('#step-render-area');
                     let pbar = step_container.find('#import-progress-bar');
-                    pbar.css('width', pct + '%').text(pct + '%');
+                    pbar.css('width', pct + '%').text(`${data.progress || 0} / ${data.total || 0}  (${pct}%)`);
 
                     if (data.progress >= data.total) {
                         is_importing = false;
                         d.get_secondary_btn().prop('disabled', false).text(__('Close'));
                         d.get_close_btn().show();
+                        step_container.find('#import-step4-status').hide();
 
                         step_container.find('#import-result-summary').show();
                         step_container.find('#view-log-btn').off('click').on('click', function () {
@@ -560,14 +767,24 @@ function open_marks_import_dialog() {
                 method: "slcm.slcm.doctype.student_course_marks.marks_bulk_import.start_bulk_import",
                 args: { import_log: import_log, skip_blocked: 1 },
                 callback: function (r) {
-                    if (r.exc) {
+                    if (r && r.exc) {
                         is_importing = false;
-                        d.get_primary_btn().prop('disabled', false);
+                        clearInterval(check_interval);
+                        d.get_secondary_btn().prop('disabled', false).text(__('Close'));
+                        d.get_close_btn().show();
+                        let sc = $(d.fields_dict.step_container.wrapper).find('#step-render-area');
+                        sc.find('#import-step4-status').hide();
+                        sc.find('#import-result-summary').show();
+                        sc.find('#import-final-title').html('<span class="text-danger">Import Failed to Start</span>');
+                        sc.find('#import-final-message').text('An error occurred before import could begin. Please check the Frappe Error Log.');
                     }
                 },
                 error: function() {
                     is_importing = false;
-                    d.get_primary_btn().prop('disabled', false);
+                    clearInterval(check_interval);
+                    d.get_secondary_btn().prop('disabled', false).text(__('Close'));
+                    d.get_close_btn().show();
+                    frappe.msgprint({title: "Network Error", message: "Could not start import. Please check your connection.", indicator: "red"});
                 }
             });
         }
@@ -665,20 +882,41 @@ function open_marks_import_dialog() {
     }
 
     function render_validation_results(res, wrapper) {
-        let summary = `<p>
-            <span class="badge" style="background-color: #28a745;">Valid: ${res.valid_count}</span>
-            <span class="badge" style="background-color: #ffc107; color: black;">Duplicates: ${res.skip_count}</span>
-            <span class="badge" style="background-color: #dc3545;">Errors/Missing: ${res.error_count}</span>
-            <br/><br/>
-            Missing Details: Students (${res.missing_student_count}) | Courses (${res.missing_course_count}) | Offerings (${res.missing_offering_count})
-        </p>`;
+        let cardS = 'flex:1; min-width:100px; border-radius:8px; padding:10px 12px; text-align:center;';
+        let summary = `
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+                <div style="${cardS} background:#f0fdf4; border:1px solid #bbf7d0;">
+                    <div style="font-size:9px; color:#16a34a; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Valid</div>
+                    <div style="font-size:24px; font-weight:800; color:#16a34a;">${res.valid_count || 0}</div>
+                </div>
+                <div style="${cardS} background:#fffbeb; border:1px solid #fde68a;">
+                    <div style="font-size:9px; color:#d97706; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Duplicates</div>
+                    <div style="font-size:24px; font-weight:800; color:#d97706;">${res.skip_count || 0}</div>
+                </div>
+                <div style="${cardS} background:#fef2f2; border:1px solid #fecaca;">
+                    <div style="font-size:9px; color:#dc2626; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Errors</div>
+                    <div style="font-size:24px; font-weight:800; color:#dc2626;">${res.error_count || 0}</div>
+                </div>
+                <div style="${cardS} background:#fef2f2; border:1px solid #fecaca;">
+                    <div style="font-size:9px; color:#dc2626; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Miss. Students</div>
+                    <div style="font-size:24px; font-weight:800; color:#dc2626;">${res.missing_student_count || 0}</div>
+                </div>
+                <div style="${cardS} background:#fef2f2; border:1px solid #fecaca;">
+                    <div style="font-size:9px; color:#dc2626; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Miss. Courses</div>
+                    <div style="font-size:24px; font-weight:800; color:#dc2626;">${res.missing_course_count || 0}</div>
+                </div>
+                <div style="${cardS} background:#fff7ed; border:1px solid #fed7aa;">
+                    <div style="font-size:9px; color:#ea580c; font-weight:700; text-transform:uppercase; letter-spacing:.5px;">Miss. Offerings</div>
+                    <div style="font-size:24px; font-weight:800; color:#ea580c;">${res.missing_offering_count || 0}</div>
+                </div>
+            </div>`;
         wrapper.find('#validation-summary').html(summary);
 
         if (res.missing_course_count > 0) {
-            wrapper.find('#dl-missing-courses').show().on('click', () => window.open(frappe.urllib.get_full_url('/api/method/slcm.slcm.doctype.student_course_marks.marks_bulk_import.download_missing_courses?import_log=' + import_log)));
+            wrapper.find('#dl-missing-courses').show().on('click', () => window.open(frappe.urllib.get_full_url('/api/method/slcm.slcm.doctype.student_course_marks.marks_bulk_import.download_missing_courses_template?import_log=' + import_log)));
         }
         if (res.missing_offering_count > 0) {
-            wrapper.find('#dl-missing-offerings').show().on('click', () => window.open(frappe.urllib.get_full_url('/api/method/slcm.slcm.doctype.student_course_marks.marks_bulk_import.download_missing_course_offerings?import_log=' + import_log)));
+            wrapper.find('#dl-missing-offerings').show().on('click', () => window.open(frappe.urllib.get_full_url('/api/method/slcm.slcm.doctype.student_course_marks.marks_bulk_import.download_missing_course_offerings_template?import_log=' + import_log)));
         }
         if (res.missing_student_count > 0) {
             wrapper.find('#dl-missing-students').show().on('click', () => window.open(frappe.urllib.get_full_url('/api/method/slcm.slcm.doctype.student_course_marks.marks_bulk_import.download_missing_students?import_log=' + import_log)));

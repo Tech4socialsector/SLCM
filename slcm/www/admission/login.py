@@ -98,7 +98,7 @@ def get_context(context):
             context.is_closed = False
             active_year_display = row.get("admission_year") or row.get("academic_year")
             context.display_year = active_year_display
-            context.admission_closed_message = _("Admission for the Academic year {0} is closed now.").format(active_year_display)
+            context.admission_closed_message = _("Admission for the Academic year AY {0} is closed now.").format(active_year_display)
             context.show_register_tab = (
                 not context.is_closed
                 and cint(row.get("enable_applicant_register_tab"))
@@ -119,7 +119,7 @@ def get_context(context):
                     recent = frappe.get_all("Academic Year", fields=["name"], order_by="creation desc", limit=1)
                     active_year = recent[0].name if recent else "2026-2027"
 
-            context.admission_closed_message = _("Admission for the Academic year {0} is closed now.").format(active_year)
+            context.admission_closed_message = _("Admission for the Academic year AY {0} is closed now.").format(active_year)
             
             display_year = active_year
             if len(display_year) == 9 and display_year[4] == '-':
