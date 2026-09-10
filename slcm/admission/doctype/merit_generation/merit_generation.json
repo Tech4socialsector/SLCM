@@ -42,7 +42,8 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Programme",
-   "options": "Programme"
+   "options": "Programme",
+   "reqd": 1
   },
   {
    "fieldname": "status",
@@ -61,7 +62,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-08-11 14:00:22.525986",
+ "modified": "2026-09-09 17:36:04.506274",
  "modified_by": "Administrator",
  "module": "Admission",
  "name": "Merit Generation",

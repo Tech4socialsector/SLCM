@@ -6,7 +6,7 @@ frappe.ui.form.on("Shortlisting Merit List", {
             }
 
             frm.add_custom_button(__("Generate Final Admission Merit"), function () {
-                frappe.confirm(__("This will generate the final Merit List (Part A + Part B). Continue?"), function () {
+                frappe.confirm(__("Are you sure you want to generate the Final Merit List?"), function () {
                     frappe.call({
                         method: "clear_generation_progress",
                         doc: frm.doc,
@@ -23,16 +23,12 @@ frappe.ui.form.on("Shortlisting Merit List", {
                                         frm._progress_interval = null;
                                     }
 
+                                    frappe.hide_progress();
                                     if (r.message) {
                                         frappe.show_alert({
-                                            message: __("Final Merit List generated: " + r.message),
+                                            message: __("Final Merit List generated successfully."),
                                             indicator: "green"
                                         });
-                                        frappe.set_route("Form", "Merit List", r.message).then(() => {
-                                            frappe.hide_progress();
-                                        });
-                                    } else {
-                                        frappe.hide_progress();
                                     }
                                 },
                                 error: function () {
@@ -144,11 +140,11 @@ function start_shortlist_progress_polling(frm) {
                     if (data.status === "In Progress") {
                         frappe.show_progress(__("Generating Final Merit List"), percent, 100, desc);
                     } else if (data.status === "Completed") {
-                        frappe.show_progress(__("Generating Final Merit List"), 100, 100, __("Final Merit List Generated. Redirecting..."));
                         if (frm._progress_interval) {
                             clearInterval(frm._progress_interval);
                             frm._progress_interval = null;
                         }
+                        frappe.hide_progress();
                     } else if (data.status === "Failed") {
                         if (frm._progress_interval) {
                             clearInterval(frm._progress_interval);

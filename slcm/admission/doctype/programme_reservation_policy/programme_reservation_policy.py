@@ -426,11 +426,112 @@ class ProgrammeReservationPolicy(Document):
 
         html += '</tbody></table>'
         
-        # Legend / Footnotes
+        # Legend / Footnotes for Base Seat Matrix
         html += '<div style="font-size: 11px; color: #475569; margin-top: 6px; font-style: italic;">'
         html += '*HC - Horizontal compartmentalized reservation<br>'
         html += '#H - Horizontal overall reservation'
-        html += '</div></div>'
+        html += '</div>'
+
+        # -------------------------------------------------------------
+        # Applied Reservation Matrix Table (Shortlisting Target Matrix)
+        # -------------------------------------------------------------
+        mult_val = self.get("shortlisting_multiplier")
+        multiplier = 1.0 if mult_val is None else float(mult_val)
+        mult_display = int(multiplier) if multiplier.is_integer() else multiplier
+
+        html += '<div style="margin-top: 24px; border-top: 2px dashed #cbd5e1; padding-top: 16px;">'
+        html += f'<div style="font-weight: bold; margin-bottom: 8px; font-size: 13.5px; color: #1e293b;">Applied Reservation Matrix (1:{mult_display} Ratio / Shortlisting Target Matrix):</div>'
+        html += '<table class="table table-bordered" style="width: 100%; border: 1.5px solid #1e293b; border-collapse: collapse; background-color: #fff; color: #0f172a; font-size: 13px; text-align: center; vertical-align: middle;">'
+        html += '<thead>'
+        html += '<tr style="background-color: #f8fafc;">'
+        html += '<th style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center; font-weight: bold; width: 35%;">Category</th>'
+        html += '<th style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center; font-weight: bold;">All India Students</th>'
+        
+        if has_compartment:
+            for c in compartment:
+                pct = int(c.percentage) if float(c.percentage or 0).is_integer() else c.percentage
+                pct_str = f" ({pct}% HC)" if pct else ""
+                c_name = c.category_name or ""
+                c_label = f"{c_name} Students{pct_str}" if pct_str and pct_str.strip() not in c_name else c_name
+                html += f'<th style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center; font-weight: bold;">{c_label}</th>'
+
+        html += '<th style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center; font-weight: bold; width: 15%;">Total</th>'
+        html += '</tr></thead><tbody>'
+
+        app_col_open_seats_total = 0
+        app_comp_col_seats_total = {c.name: 0 for c in compartment}
+        app_grand_total_seats = 0
+
+        for v in vertical:
+            pct = int(v.percentage) if float(v.percentage or 0).is_integer() else v.percentage
+            pct_str = f" ({pct}%)" if pct else ""
+            v_name = v.category_name or ""
+            v_label = f"{v_name}{pct_str}" if pct_str and pct_str.strip() not in v_name else v_name
+
+            v_target = v.get("shortlisting_target")
+            if not v_target:
+                v_target = int((v.seats or 0) * multiplier)
+            v_target = v_target or 0
+
+            comp_applied_sum = 0
+            comp_applied_cells_html = ""
+
+            for c in compartment:
+                c_base = comp_seats_map.get((v_name, c.name), math.floor(((v.seats or 0) * ((c.percentage or 0) / 100.0)) + 0.5))
+                c_applied = int(c_base * multiplier)
+                comp_applied_sum += c_applied
+                app_comp_col_seats_total[c.name] += c_applied
+                comp_applied_cells_html += f'<td style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center;">{c_applied}</td>'
+
+            open_applied = max(0, v_target - comp_applied_sum)
+            app_col_open_seats_total += open_applied
+            app_grand_total_seats += v_target
+
+            html += '<tr>'
+            html += f'<td style="border: 1px solid #1e293b; padding: 8px 12px; text-align: left;">{v_label}</td>'
+            html += f'<td style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center;">{open_applied}</td>'
+            if has_compartment:
+                html += comp_applied_cells_html
+            html += f'<td style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center; font-weight: bold;">{v_target}</td>'
+            html += '</tr>'
+
+        if not vertical:
+            html += '<tr><td colspan="100" style="text-align: center; padding: 12px; border: 1px solid #1e293b;">No vertical categories defined.</td></tr>'
+        else:
+            # Summary / Total Row
+            html += '<tr style="background-color: #e2e8f0; font-weight: bold;">'
+            html += '<td style="border: 1px solid #1e293b; padding: 8px 12px; text-align: left;">Total</td>'
+            html += f'<td style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center;">{app_col_open_seats_total}</td>'
+
+            if has_compartment:
+                for c in compartment:
+                    c_tot_applied = app_comp_col_seats_total[c.name]
+                    html += f'<td style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center;">{c_tot_applied}</td>'
+
+            html += f'<td style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center;">{app_grand_total_seats}</td>'
+            html += '</tr>'
+
+        # Horizontal Reservations Rows
+        for h in horizontal:
+            pct = int(h.percentage) if float(h.percentage or 0).is_integer() else h.percentage
+            pct_str = f" ({pct}% H)" if pct else ""
+            h_name = h.category_name or ""
+            h_label = f"{h_name}{pct_str}" if pct_str and pct_str.strip() not in h_name else h_name
+
+            h_target = h.get("shortlisting_target")
+            if not h_target:
+                h_target = int((h.seats or 0) * multiplier)
+            h_target = h_target or 0
+
+            html += '<tr>'
+            html += f'<td colspan="{num_cols}" style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center;">{h_label}</td>'
+            html += f'<td style="border: 1px solid #1e293b; padding: 8px 12px; text-align: center; font-weight: bold;">{h_target}</td>'
+            html += '</tr>'
+
+        html += '</tbody></table>'
+        html += '<div style="font-size: 11px; color: #475569; margin-top: 6px; font-style: italic;">'
+        html += f'*Applied seats calculated using shortlisting ratio ({mult_display}x multiplier)'
+        html += '</div></div></div>'
 
         return html
 

@@ -35,7 +35,7 @@ class MeritList(Document):
     def calculate_summary_counts(self):
         if self.merit_applicants:
             self.total_applicants = len(self.merit_applicants)
-            self.total_selected = len([a for a in self.merit_applicants if a.status == "Selected" or getattr(a, "allocation_type", "") in ("Open", "Reserved")])
+            self.total_selected = len([a for a in self.merit_applicants if a.status == "Selected"])
             self.total_rejected = len([a for a in self.merit_applicants if a.status == "Rejected"])
 
     def on_trash(self):
@@ -398,17 +398,165 @@ def unpublish_merit_list(merit_list_name):
     return {"status": "Generated"}
 
 
+def build_styled_excel(workbook, sheet_name, headers, rows):
+    worksheet = workbook.add_worksheet(sheet_name[:31])
+    worksheet.hide_gridlines(0)
+
+    header_format = workbook.add_format({
+        'bold': True,
+        'bg_color': '#166534',
+        'font_color': '#FFFFFF',
+        'font_name': 'Calibri',
+        'font_size': 11,
+        'align': 'center',
+        'valign': 'vcenter',
+        'border': 1,
+        'border_color': '#94A3B8'
+    })
+
+    cell_even_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'valign': 'vcenter',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#FFFFFF'
+    })
+
+    cell_odd_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'valign': 'vcenter',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#F8FAFC'
+    })
+
+    perc_even_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'align': 'right',
+        'valign': 'vcenter',
+        'num_format': '0.00000',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#FFFFFF'
+    })
+
+    perc_odd_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'align': 'right',
+        'valign': 'vcenter',
+        'num_format': '0.00000',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#F8FAFC'
+    })
+
+    num_even_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'align': 'right',
+        'valign': 'vcenter',
+        'num_format': '0.00',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#FFFFFF'
+    })
+
+    num_odd_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'align': 'right',
+        'valign': 'vcenter',
+        'num_format': '0.00',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#F8FAFC'
+    })
+
+    center_even_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'align': 'center',
+        'valign': 'vcenter',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#FFFFFF'
+    })
+
+    center_odd_format = workbook.add_format({
+        'font_name': 'Calibri',
+        'font_size': 10,
+        'align': 'center',
+        'valign': 'vcenter',
+        'border': 1,
+        'border_color': '#E2E8F0',
+        'bg_color': '#F8FAFC'
+    })
+
+    worksheet.set_row(0, 26)
+    col_widths = [len(str(h)) for h in headers]
+    for col_idx, header in enumerate(headers):
+        worksheet.write(0, col_idx, header, header_format)
+
+    for row_idx, row in enumerate(rows, start=1):
+        worksheet.set_row(row_idx, 20)
+        is_odd = (row_idx % 2 == 1)
+        for col_idx, val in enumerate(row):
+            header_name = headers[col_idx]
+            val_str = str(val) if val is not None else ""
+            col_widths[col_idx] = max(col_widths[col_idx], len(val_str))
+
+            if "Percentile" in header_name:
+                fmt = perc_odd_format if is_odd else perc_even_format
+                try:
+                    val_num = float(val) if val is not None else 0.0
+                    worksheet.write_number(row_idx, col_idx, val_num, fmt)
+                except Exception:
+                    worksheet.write(row_idx, col_idx, val_str, fmt)
+            elif "Score" in header_name or "Marks" in header_name:
+                fmt = num_odd_format if is_odd else num_even_format
+                try:
+                    val_num = float(val) if val is not None else 0.0
+                    worksheet.write_number(row_idx, col_idx, val_num, fmt)
+                except Exception:
+                    worksheet.write(row_idx, col_idx, val_str, fmt)
+            elif "Rank" in header_name or "ID" in header_name or "Status" in header_name:
+                fmt = center_odd_format if is_odd else center_even_format
+                if isinstance(val, int):
+                    worksheet.write_number(row_idx, col_idx, val, fmt)
+                else:
+                    worksheet.write(row_idx, col_idx, val_str, fmt)
+            else:
+                fmt = cell_odd_format if is_odd else cell_even_format
+                worksheet.write(row_idx, col_idx, val_str, fmt)
+
+    for col_idx, width in enumerate(col_widths):
+        worksheet.set_column(col_idx, col_idx, max(width + 4, 12))
+
+
 @frappe.whitelist()
 def download_merit_list(name, download_type, category=None):
     doc = frappe.get_doc("Merit List", name)
     
     columns = [
         "Applicant ID", "Candidate Name", "Rank", "Candidate Category", 
-        "Category Rank", "Part A Score", "Part B Score", "Total Score",
-        "Vertical Category", "Shortlisted Category", "Allocation Type", "Selection Status", "Remarks"
+        "Category Rank", "Part A Score", "Part B Score", "Total Score", "Final Percentile",
+        "Vertical Category", "Shortlisted Category", "Allocation Type", "Selection Status"
     ]
     
     def get_row(candidate):
+        perc = candidate.get("percentile_score")
+        if perc is not None:
+            try:
+                perc = round(float(perc), 5)
+            except Exception:
+                pass
+        else:
+            perc = 0.0
+
         return [
             candidate.applicant_id,
             candidate.candidate_name,
@@ -418,18 +566,18 @@ def download_merit_list(name, download_type, category=None):
             candidate.entrance_score or candidate.get("nlsat_part_a_score") or 0,
             candidate.interview_score or candidate.get("nlsat_part_b_score") or 0,
             candidate.total_score,
+            perc,
             candidate.vertical_category or "",
             candidate.shortlist_category or "",
             candidate.allocation_type or "Not Allocated",
-            candidate.status or "Draft",
-            candidate.get("remarks") or ""
+            candidate.status or "Draft"
         ]
 
     xlsx_data = {}
 
     if download_type == "Overall":
         sheet_name = "Overall Final Merit Rank List"
-        rows = [columns]
+        rows = []
         for cand in doc.merit_applicants:
             rows.append(get_row(cand))
         xlsx_data[sheet_name] = rows
@@ -449,33 +597,31 @@ def download_merit_list(name, download_type, category=None):
         if category and category != "All":
             if category in category_map:
                 label, filter_fn = category_map.get(category)
-                rows = [columns]
+                rows = []
                 for cand in doc.merit_applicants:
                     if filter_fn(cand):
                         rows.append(get_row(cand))
                 xlsx_data[label] = rows
         else:
-            # All categories in separate sheets
             for cat_key, (label, filter_fn) in category_map.items():
-                cat_rows = [columns]
+                cat_rows = []
                 for cand in doc.merit_applicants:
                     if filter_fn(cand):
                         cat_rows.append(get_row(cand))
-                if len(cat_rows) > 1:
+                if len(cat_rows) > 0:
                     xlsx_data[label] = cat_rows
 
-    if not xlsx_data or not any(len(rows) > 1 for rows in xlsx_data.values()):
+    if not xlsx_data or not any(len(rows) > 0 for rows in xlsx_data.values()):
         frappe.throw("No candidate records found for the selected criteria. Please ensure the merit list has been generated.")
 
-    from frappe.utils.xlsxutils import make_xlsx
     from io import BytesIO
     import xlsxwriter
 
     output = BytesIO()
-    workbook = xlsxwriter.Workbook(output, {"constant_memory": True})
+    workbook = xlsxwriter.Workbook(output, {"in_memory": True})
     
     for sheet_name, rows in xlsx_data.items():
-        make_xlsx(rows, sheet_name, wb=workbook)
+        build_styled_excel(workbook, sheet_name, columns, rows)
     
     workbook.close()
     

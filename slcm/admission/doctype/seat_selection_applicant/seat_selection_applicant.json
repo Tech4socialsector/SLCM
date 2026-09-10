@@ -118,7 +118,7 @@
   {
    "fieldname": "percentile_score",
    "fieldtype": "Float",
-   "label": "Percentile Score",
+   "label": "Final Percentile",
    "precision": "5"
   },
   {

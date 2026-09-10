@@ -14,7 +14,8 @@ dependencies = [
     "qrcode[pil]>=7.4.2",
     "Pillow>=10.2.0",
     "pypdf>=3.0.0",
-    "pyodbc>=5.0.0"
+    "pyodbc>=5.0.0",
+    "dnspython"
 ]
 
 [build-system]
@@ -26,6 +27,7 @@ packages = ["unixodbc", "unixodbc-dev", "tdsodbc"]
 
 [tool.bench.frappe-dependencies]
 frappe = ">=15,<18"
+payments = ">=0.0.1"
 [tool.bench.dev-dependencies]
 # package_name = "~=1.1.0"
  
