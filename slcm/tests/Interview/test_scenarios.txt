@@ -1,0 +1,149 @@
+===============================================================================
+SLCM ADMISSION MODULE — INTERVIEW SYSTEM TEST SCENARIO REFERENCE
+===============================================================================
+To Run the Test:
+        bench --site <your-site-name> run-tests --module slcm.tests.Interview.test_interview
+-------------------------------------------------------------------------------
+MODULE 1: RATIO VALIDATION & AUTO CODE
+-------------------------------------------------------------------------------
+
+[TC-INT-001] Ratio Format Validation (Positive Integer & Ratio X:Y)
+- What we test: Entering valid ratio formats like "3" (1:3 ratio) or "1:3".
+- Test Data: enter_domestic_ratio = "3", enter_international_ratio = "1:3"
+- Expected Result: Validation passes cleanly without throwing format error.
+
+[TC-INT-002] Invalid Ratio Format Rejection
+- What we test: Entering invalid ratio strings like "-1", "0:0", or "abc".
+- Test Data: enter_domestic_ratio = "invalid"
+- Expected Result: System throws error asking for positive integer or X:Y format.
+
+[TC-INT-003] Configuration Code Auto-Generation
+- What we test: Automatic creation of configuration code on document save.
+- Expected Result: System generates an 8-character uppercase code.
+
+
+-------------------------------------------------------------------------------
+MODULE 2: 3-SOURCE CANDIDATE POOL EXTRACTION
+-------------------------------------------------------------------------------
+
+[TC-INT-004] Source 1: Direct National Test Exemption
+- What we test: Extracting candidates with National Test exemption.
+- Test Data: Applicant with exempts_entrance_test=1, exempts_interview=0.
+- Expected Result: Candidate included in pool with source_type = "National Test (Direct)".
+
+[TC-INT-005] Source 2: Entrance Test Passers
+- What we test: Extracting candidates who passed entrance test.
+- Test Data: Entrance Test Seat Allocation with result_status = "Pass".
+- Expected Result: Candidate included in pool with source_type = "Entrance Test".
+
+[TC-INT-006] Source 3: Direct Academic Eligibility
+- What we test: Extracting candidates for programs without entrance test.
+- Test Data: Programme with entrance_test = 0, exempts_interview = 0.
+- Expected Result: Candidate included in pool with source_type = "Academic Eligibility".
+
+[TC-INT-007] Exclusion of Already Scheduled Applicants
+- What we test: Candidate already present in an Interview List is excluded.
+- Expected Result: System ignores candidate to prevent duplicate scheduling.
+
+[TC-INT-008] Exclusion of Rejected Applicants
+- What we test: Candidate with status = "Rejected" is excluded.
+- Expected Result: Rejected candidate is skipped from candidate pool.
+
+[TC-INT-009] Domestic vs International Stage Flag Filter
+- What we test: Checking program stage flags for domestic vs foreign applicants.
+- Expected Result: System checks intereview=1 for domestic, international_interview=1 for foreign.
+
+
+-------------------------------------------------------------------------------
+MODULE 3: SEAT QUOTA & RATIO CALCULATION
+-------------------------------------------------------------------------------
+
+[TC-INT-010] Domestic Applicant Quota Lookup
+- What we test: Fetching domestic total seats from Programme Reservation Policy.
+- Expected Result: System returns total_seats for domestic applicants.
+
+[TC-INT-011] International Applicant Quota Lookup
+- What we test: Fetching international total seats from Programme Reservation Policy.
+- Expected Result: System returns international_seats for foreign applicants.
+
+[TC-INT-012] Combined Both Applicants Quota Lookup
+- What we test: Summing domestic and international seats for applicant_type = "Both".
+- Expected Result: System returns total sum of domestic + international seats.
+
+[TC-INT-013] Selection Multiplier Quota Calculation
+- What we test: Calculating number of candidates to select using math.ceil(seats * multiplier).
+- Test Data: 10 seats, ratio = 3 -> 30 candidates selected.
+- Expected Result: System selects top 30 candidates.
+
+[TC-INT-014] Fetch Exempted Applicants Bypass Flag
+- What we test: Setting fetch_exempted_applicant = 1 bypasses ratio quota caps.
+- Expected Result: All eligible candidates are selected regardless of ratio cap.
+
+
+-------------------------------------------------------------------------------
+MODULE 4: RANK SORTING & TIE-BREAKING
+-------------------------------------------------------------------------------
+
+[TC-INT-015] Cumulative Rank Ascending Sort
+- What we test: Candidates are ordered primarily by cumulative_rank ascending.
+- Expected Result: Higher-ranked candidates (lower rank number) appear first.
+
+[TC-INT-016] Cutoff Boundary Equal Rank Tie-Breaking
+- What we test: Multiple candidates sharing the exact same rank at cutoff line.
+- Expected Result: All candidates tied at the cutoff rank are included in selection.
+
+
+-------------------------------------------------------------------------------
+MODULE 5: LIST GENERATION & NAMING
+-------------------------------------------------------------------------------
+
+[TC-INT-017] Zero Candidate Exception & Failure Status
+- What we test: Generating interview list when candidate pool is completely empty.
+- Expected Result: System sets status to "Failed" and throws "No Candidates Found" error.
+
+[TC-INT-018] Interview List Auto Naming Sequence
+- What we test: Automatic creation of Interview List with custom name.
+- Expected Result: Name follows pattern "IVL-{academic_year}-001".
+
+[TC-INT-019] Naming Sequence Gap Filling
+- What we test: Deleting IVL-2026-002 and creating a new list reuses number 002.
+- Expected Result: System reuses lowest available sequence number.
+
+
+-------------------------------------------------------------------------------
+MODULE 6: SLOT ALLOCATION & PANEL SAFETY
+-------------------------------------------------------------------------------
+
+[TC-INT-020] Inactive Staff Member Assignment Block
+- What we test: Allocating slots to an interviewer with is_active = 0.
+- Expected Result: System throws error stating staff member is not active.
+
+[TC-INT-021] Panel Double-Booking Overlap Prevention
+- What we test: Booking same staff member at exact same date and time twice.
+- Expected Result: System blocks allocation with overlap warning.
+
+[TC-INT-022] Program Stage Interview Enabled Check
+- What we test: Allocating slots for a program where intereview = 0.
+- Expected Result: System blocks allocation with stage disabled message.
+
+[TC-INT-023] Interview Seat Allocation Record Generation
+- What we test: Successfully allocating slots creates Interview Seat Allocation docs.
+- Expected Result: Child rows created with interview_status = "Scheduled".
+
+[TC-INT-024] Candidate Category Resolution Sync
+- What we test: Category child rows automatically populated from Applicant categories.
+- Expected Result: Derived categories stored in allocation record.
+
+[TC-INT-025] Applicant Status Propagation
+- What we test: Slot allocation updates Applicant status to "Interview Scheduled".
+- Expected Result: Applicant document status updated in database to "Interview Scheduled".
+
+===============================================================================
+TEST SUITE EXECUTION & SUMMARY RESULT
+===============================================================================
+Total Test Cases : 25
+Passed           : 25
+Failed           : 0
+Execution Time   : 2.69s
+Overall Result   : OK (PASS)
+===============================================================================
