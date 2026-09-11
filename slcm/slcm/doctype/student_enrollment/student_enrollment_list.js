@@ -7,6 +7,7 @@ frappe.listview_settings["Student Enrollment"] = {
 		$(".col-lg-2.layout-side-section").hide();
 		inject_enrollment_status_css();
 		add_listview_status_actions(listview);
+		add_promotion_buttons(listview);
 	},
 
 	get_indicator(doc) {
@@ -104,6 +105,464 @@ function update_listview_status(listview, status) {
 			});
 		}
 	);
+}
+
+/*****************************************************
+ * BULK PROMOTION
+ *****************************************************/
+function add_promotion_buttons(listview) {
+	const allowed_roles = ["System Manager", "slcm_Academic Incharge"];
+	if (!frappe.user_roles.some((r) => allowed_roles.includes(r))) return;
+
+	inject_promotion_button_css();
+
+	const $promote_btn = listview.page.add_inner_button(__("Promote Students"), () =>
+		open_promote_students_dialog(listview)
+	);
+	const $log_btn = listview.page.add_inner_button(__("View Promotion Log"), () => {
+		frappe.set_route("List", "Promotion Run");
+	});
+
+	$promote_btn.addClass("promotion-btn promotion-btn-primary").prepend('<span class="promotion-btn-icon">&#8613;</span> ');
+	$log_btn.addClass("promotion-btn promotion-btn-secondary").prepend('<span class="promotion-btn-icon">&#128203;</span> ');
+}
+
+function inject_promotion_button_css() {
+	if (document.getElementById("promotion-btn-css")) return;
+
+	const style = document.createElement("style");
+	style.id = "promotion-btn-css";
+	style.innerHTML = `
+		.promotion-btn {
+			font-weight: 600;
+			border: none !important;
+			box-shadow: none !important;
+			transition: filter 0.15s ease, transform 0.05s ease;
+		}
+		.promotion-btn:active {
+			transform: translateY(1px);
+		}
+		.promotion-btn-icon {
+			display: inline-block;
+			transform: translateY(-1px);
+		}
+		.promotion-btn-primary {
+			background-color: #1e293b !important;
+			color: #ffffff !important;
+		}
+		.promotion-btn-primary:hover {
+			background-color: #0f172a !important;
+			color: #ffffff !important;
+		}
+		.promotion-btn-secondary {
+			background-color: #334155 !important;
+			color: #e2e8f0 !important;
+		}
+		.promotion-btn-secondary:hover {
+			background-color: #1e293b !important;
+			color: #ffffff !important;
+		}
+
+		.promote-dialog .modal-dialog {
+			max-width: 780px;
+			width: 90vw;
+		}
+		.promote-dialog .modal-header {
+			background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+			border-radius: 6px 6px 0 0;
+			padding: 18px 28px;
+		}
+		.promote-dialog .modal-header .modal-title {
+			color: #ffffff;
+			font-size: 17px;
+			font-weight: 700;
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+		.promote-dialog .modal-header .btn-modal-close svg {
+			stroke: #ffffff;
+		}
+		.promote-dialog .modal-body {
+			padding: 0;
+			max-height: 72vh;
+			overflow-y: auto;
+		}
+		.promote-dialog-intro {
+			padding: 14px 28px;
+			background: #f1f5f9;
+			border-bottom: 1px solid #e2e8f0;
+			font-size: 13px;
+			line-height: 1.5;
+			color: #475569;
+			display: flex;
+			align-items: flex-start;
+			gap: 10px;
+		}
+		.promote-dialog-intro .info-icon {
+			flex-shrink: 0;
+			width: 20px;
+			height: 20px;
+			border-radius: 50%;
+			background: #cbd5e1;
+			color: #1e293b;
+			font-weight: 700;
+			font-size: 12px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			margin-top: 1px;
+		}
+		.promote-dialog .modal-body form {
+			padding: 20px 28px 6px 28px;
+		}
+		.promote-dialog .frappe-control {
+			margin-bottom: 16px;
+		}
+		.promote-dialog .form-column {
+			padding-left: 12px;
+			padding-right: 12px;
+		}
+		.promote-dialog .form-section.promote-section-card {
+			background: #f8fafc;
+			border: 1px solid #e2e8f0;
+			border-radius: 8px;
+			padding: 16px 16px 4px 16px;
+			margin-bottom: 20px;
+		}
+		.promote-dialog .form-section.promote-section-card.target {
+			background: #f0fdf4;
+			border-color: #bbf7d0;
+		}
+		.promote-dialog .form-section.promote-section-card .section-head {
+			font-size: 11.5px;
+			font-weight: 700;
+			letter-spacing: 0.06em;
+			text-transform: uppercase;
+			color: #475569;
+			border: none;
+			padding: 0 0 14px 0;
+			margin: 0;
+		}
+		.promote-dialog .form-section.promote-section-card.target .section-head {
+			color: #166534;
+		}
+		.promote-dialog .form-section:not(.promote-section-card) .section-head {
+			display: none;
+		}
+		.promote-dialog .modal-footer {
+			background: #f8fafc;
+			border-top: 1px solid #e2e8f0;
+			padding: 14px 28px;
+		}
+		.promote-dialog .modal-footer .btn-primary {
+			background-color: #1e293b;
+			border: none;
+			font-weight: 600;
+			padding: 8px 22px;
+		}
+		.promote-dialog .modal-footer .btn-primary:hover {
+			background-color: #0f172a;
+		}
+
+		.promote-review-dialog .modal-dialog {
+			max-width: 640px;
+		}
+		.promote-review-count {
+			font-weight: 400;
+			opacity: 0.8;
+			font-size: 14px;
+		}
+		.promote-review-toolbar {
+			padding: 14px 28px;
+			background: #f8fafc;
+			border-bottom: 1px solid #e2e8f0;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 16px;
+			flex-wrap: wrap;
+		}
+		.promote-select-all {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			font-weight: 600;
+			font-size: 13px;
+			color: #1e293b;
+			margin: 0;
+			cursor: pointer;
+		}
+		.promote-review-summary {
+			font-size: 12px;
+			color: #64748b;
+		}
+		.promote-review-table-wrap {
+			max-height: 55vh;
+			overflow-y: auto;
+			padding: 0 28px;
+		}
+		.promote-review-table {
+			width: 100%;
+			border-collapse: collapse;
+			font-size: 13px;
+		}
+		.promote-review-table thead th {
+			position: sticky;
+			top: 0;
+			background: #ffffff;
+			text-align: left;
+			font-size: 11px;
+			font-weight: 700;
+			letter-spacing: 0.04em;
+			text-transform: uppercase;
+			color: #64748b;
+			padding: 10px 8px;
+			border-bottom: 2px solid #e2e8f0;
+		}
+		.promote-row td {
+			padding: 10px 8px;
+			border-bottom: 1px solid #f1f5f9;
+			vertical-align: middle;
+		}
+		.promote-row:hover {
+			background: #f8fafc;
+		}
+		.promote-row-check {
+			width: 32px;
+		}
+		.promote-row-checkbox {
+			width: 15px;
+			height: 15px;
+			cursor: pointer;
+		}
+		.promote-row-name {
+			font-weight: 600;
+			color: #1e293b;
+		}
+		.promote-row-id {
+			font-size: 11px;
+			color: #94a3b8;
+		}
+		.promote-row-tag {
+			display: inline-block;
+			font-size: 11px;
+			font-weight: 600;
+			padding: 3px 9px;
+			border-radius: 20px;
+			white-space: nowrap;
+			max-width: 180px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+		.promote-row-tag.ok {
+			background: #dcfce7;
+			color: #166534;
+		}
+		.promote-row-tag.warn {
+			background: #fef3c7;
+			color: #92400e;
+		}
+		.promote-review-dialog .modal-body {
+			padding-top: 0;
+		}
+		.promote-review-dialog .modal-footer .btn-secondary {
+			font-weight: 600;
+		}
+	`;
+	document.head.appendChild(style);
+}
+
+function open_promote_students_dialog(listview) {
+	const dialog = new frappe.ui.Dialog({
+		title: `<span>&#8613;</span> ${__("Promote Students")}`,
+		fields: [
+			{
+				fieldname: "intro_html",
+				fieldtype: "HTML",
+				options: `<div class="promote-dialog-intro">
+					<span class="info-icon">i</span>
+					<span>${__(
+						"Set the criteria below, then review and pick exactly which students to promote on the next screen."
+					)}</span>
+				</div>`,
+			},
+
+			{ fieldname: "sb_source", fieldtype: "Section Break",
+				label: `&#128269; ${__("Who to promote")}`, css_class: "promote-section-card" },
+			{ fieldname: "program", label: __("Programme"), fieldtype: "Link", options: "Programme", reqd: 1 },
+			{ fieldname: "source_academic_year", label: __("Source Academic Year"), fieldtype: "Link", options: "Academic Year", reqd: 1 },
+			{ fieldname: "col_break_1", fieldtype: "Column Break" },
+			{ fieldname: "source_term", label: __("Source Term"), fieldtype: "Link", options: "Academic Term" },
+			{ fieldname: "batch", label: __("Batch"), fieldtype: "Link", options: "Batch" },
+			{ fieldname: "section", label: __("Section"), fieldtype: "Link", options: "Section" },
+
+			{ fieldname: "sb_target", fieldtype: "Section Break",
+				label: `&#127919; ${__("Promote to")}`, css_class: "promote-section-card target" },
+			{ fieldname: "target_academic_year", label: __("Target Academic Year"), fieldtype: "Link", options: "Academic Year", reqd: 1 },
+			{ fieldname: "target_term", label: __("Target Term"), fieldtype: "Link", options: "Academic Term" },
+			{ fieldname: "col_break_2", fieldtype: "Column Break" },
+			{ fieldname: "promotion_policy", label: __("Promotion Policy"), fieldtype: "Link", options: "Promotion Policy",
+				description: __("Optional — evaluates attendance, backlog, CGPA and fee-due rules, shown as a hint per student on the next screen.") },
+		],
+		size: "large",
+		primary_action_label: __("Next: Review Students"),
+		primary_action(values) {
+			frappe.call({
+				method: "slcm.slcm.doctype.promotion_run.promotion_run.preview_students",
+				args: {
+					program: values.program,
+					source_academic_year: values.source_academic_year,
+					batch: values.batch,
+					section: values.section,
+					promotion_policy: values.promotion_policy,
+				},
+				freeze: true,
+				freeze_message: __("Fetching matching students..."),
+				callback: (r) => {
+					const students = (r.message && r.message.students) || [];
+					if (!students.length) {
+						const available = (r.message && r.message.available_academic_years) || [];
+						let message = __("No Enrolled students match this Programme / Academic Year / Batch / Section combination.");
+						if (available.length) {
+							const list_html = available
+								.map((a) => `<li><b>${frappe.utils.escape_html(a.academic_year)}</b> — ${a.student_count} ${__("student(s)")}</li>`)
+								.join("");
+							message += `<br><br>${__("This Programme has Enrolled students under these Academic Year(s) instead — check for a near-duplicate name:")}<ul style="margin-top:6px;">${list_html}</ul>`;
+						}
+						frappe.msgprint({
+							title: __("No Students Found"),
+							indicator: "orange",
+							message,
+						});
+						return;
+					}
+					dialog.hide();
+					open_student_review_dialog(listview, values, students);
+				},
+			});
+		},
+	});
+
+	dialog.$wrapper.find(".modal-dialog").addClass("promote-dialog");
+	dialog.show();
+}
+
+function open_student_review_dialog(listview, criteria, students) {
+	const eligible_count = students.filter((s) => s.likely_eligible).length;
+	const rows_html = students
+		.map((s) => {
+			const status_html = s.likely_eligible
+				? `<span class="promote-row-tag ok">${__("Likely Eligible")}</span>`
+				: `<span class="promote-row-tag warn" title="${frappe.utils.escape_html(s.hint || "")}">${frappe.utils.escape_html(s.hint || __("Not Eligible"))}</span>`;
+			return `
+				<tr class="promote-row" data-enrollment="${s.enrollment}">
+					<td class="promote-row-check">
+						<input type="checkbox" class="promote-row-checkbox" ${s.likely_eligible ? "checked" : ""}>
+					</td>
+					<td>
+						<div class="promote-row-name">${frappe.utils.escape_html(s.student_name || s.student)}</div>
+						<div class="promote-row-id">${frappe.utils.escape_html(s.student)}</div>
+					</td>
+					<td>${frappe.utils.escape_html(s.batch || "")}</td>
+					<td>${status_html}</td>
+				</tr>`;
+		})
+		.join("");
+
+	const dialog = new frappe.ui.Dialog({
+		title: `<span>&#128203;</span> ${__("Review Students")} <span class="promote-review-count">(${students.length})</span>`,
+		fields: [
+			{
+				fieldname: "review_html",
+				fieldtype: "HTML",
+				options: `
+					<div class="promote-review-toolbar">
+						<label class="promote-select-all">
+							<input type="checkbox" id="promote-select-all-cb">
+							${__("Select All")}
+						</label>
+						<span class="promote-review-summary">
+							${__("{0} of {1} likely eligible (pre-selected) — deselect or select any student before promoting", [eligible_count, students.length])}
+						</span>
+					</div>
+					<div class="promote-review-table-wrap">
+						<table class="promote-review-table">
+							<thead>
+								<tr>
+									<th></th>
+									<th>${__("Student")}</th>
+									<th>${__("Batch")}</th>
+									<th>${__("Eligibility")}</th>
+								</tr>
+							</thead>
+							<tbody>${rows_html}</tbody>
+						</table>
+					</div>
+				`,
+			},
+		],
+		size: "large",
+		primary_action_label: __("Promote Selected"),
+		primary_action() {
+			const selected = Array.from(
+				dialog.$wrapper.find(".promote-row-checkbox:checked")
+			).map((cb) => $(cb).closest(".promote-row").data("enrollment"));
+
+			if (!selected.length) {
+				frappe.msgprint(__("Select at least one student to promote."));
+				return;
+			}
+
+			frappe.confirm(
+				__("Start a promotion run for {0} selected student(s)?", [selected.length]),
+				() => {
+					dialog.hide();
+					frappe.call({
+						method: "slcm.slcm.doctype.promotion_run.promotion_run.create_and_queue",
+						args: { ...criteria, student_list: selected },
+						freeze: true,
+						freeze_message: __("Queuing promotion run..."),
+						callback: (r) => {
+							if (!r.message) return;
+							const run_name = r.message;
+							frappe.show_alert({ message: __("Promotion Run {0} started", [run_name]), indicator: "blue" }, 6);
+							watch_promotion_run(run_name, listview);
+						},
+					});
+				}
+			);
+		},
+		secondary_action_label: __("Back"),
+		secondary_action() {
+			dialog.hide();
+			open_promote_students_dialog(listview);
+		},
+	});
+
+	dialog.$wrapper.find(".modal-dialog").addClass("promote-dialog promote-review-dialog");
+	dialog.show();
+
+	const $wrapper = dialog.$wrapper;
+	$wrapper.find("#promote-select-all-cb").on("change", function () {
+		$wrapper.find(".promote-row-checkbox").prop("checked", this.checked);
+	});
+}
+
+function watch_promotion_run(run_name, listview) {
+	frappe.realtime.on("promotion_run_complete", (data) => {
+		if (data.promotion_run !== run_name) return;
+		const indicator = data.status === "Completed" ? "green" :
+			data.status === "Error" ? "red" : "orange";
+		frappe.show_alert({
+			message: __("Promotion Run {0}: {1} — {2} promoted, {3} skipped", [
+				run_name, data.status, data.promoted || 0, data.skipped || 0,
+			]),
+			indicator,
+		}, 8);
+		if (listview) listview.refresh();
+		frappe.realtime.off("promotion_run_complete");
+	});
 }
 
 /*****************************************************

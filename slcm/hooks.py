@@ -108,7 +108,7 @@ fixtures = [
                 # SLCM student-lifecycle roles
                 "slcm_Student", "slcm_Faculty", "slcm_Registrar",
                 "slcm_Programme Chair", "slcm_Hostel Warden", "slcm_Hostel Admin",
-                "slcm_Placement Officer",
+                "slcm_Placement Officer", "slcm_Academic Incharge",
                 # Student Registration workflow roles
                 "slcm_REGO Officer", "slcm_FINO Officer", "slcm_Registration Officer",
                 "slcm_Documentation Officer", "slcm_IT Admin", "slcm_Registration User",
