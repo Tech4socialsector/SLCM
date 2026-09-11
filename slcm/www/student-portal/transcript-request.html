@@ -1212,13 +1212,18 @@ function _openRzpCheckout(order) {
   const rz = new Razorpay(rzpOptions);
 
   rz.on('payment.failed', function(resp) {
+    const err = resp.error || {};
     if (_req) {
       spCall('slcm.api.transcript_request.record_payment_failure', {
         request_name:      _req.name,
-        error_description: (resp.error && resp.error.description) || 'Payment failed at gateway',
+        error_description: err.description || 'Payment failed at gateway',
+        error_code:         err.code || '',
+        error_reason:       err.reason || '',
+        error_source:       err.source || '',
+        error_step:         err.step || '',
       }, function(){}, function(){});
     }
-    _payFailed((resp.error && resp.error.description) || 'Payment failed. Please try again.');
+    _payFailed(err.description || 'Payment failed. Please try again.');
   });
 
   rz.open();
