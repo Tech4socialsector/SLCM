@@ -1150,12 +1150,21 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                         
                         eligible_out = [a for a in allocated_list if a.vertical_category == v_cat and not _has_trait(a.applicant_id, comp_cat)]
                         if eligible_out:
-                            # Sort by lowest merit rank for displacement (highest rank number)
-                            eligible_out.sort(key=lambda x: -(x.overall_rank or 999999))
+                            # Sort by lowest merit rank for displacement (respecting rank order first, protecting Women/PWD on ties)
+                            eligible_out.sort(key=lambda x: (-(x.overall_rank or 999999), 1 if (_has_trait(x.applicant_id, "Women") or _has_trait(x.applicant_id, "PWD")) else 0))
                             out_cand = eligible_out[0]
+                            out_rank = getattr(out_cand, "overall_rank", None)
+                            tied_at_cutoff = [a for a in eligible_out if getattr(a, "overall_rank", None) == out_rank]
                             
                             # If in_cand is already in this vertical category, skip
                             if getattr(in_cand, "vertical_category", None) == v_cat:
+                                continue
+
+                            # If out_cand is tied at cutoff mark, do not displace! Over-allocate for in_cand cleanly
+                            if len(tied_at_cutoff) > 1:
+                                in_cand.remarks = f"Allocated seat under {comp_cat} {v_cat} Sub-quota"
+                                _assign_seat_to_applicant(in_cand, v_cat, "Open" if v_cat == "General" else "Reserved", allocated_list, unallocated, v_info, status_field)
+                                deficit -= 1
                                 continue
 
                             # If in_cand was in a reserved category, free up that reserved seat
@@ -1182,10 +1191,21 @@ def execute_advanced_allocation_logic(doc, is_shortlist_allocation=False, ignore
                         max_ai_allowed = v_info["seats"] - target_info["seats"]
                         excess_ai = len(eligible_out) - max_ai_allowed
                         if excess_ai > 0 and eligible_out:
-                            eligible_out.sort(key=lambda x: -(x.overall_rank or 999999))
-                            # We need to displace excess_ai of them so these seats remain vacant
-                            to_displace = eligible_out[:excess_ai]
-                            for out_cand in to_displace:
+                            # Respect rank order first, protect Women and PWD candidates only when ranks are tied
+                            eligible_out.sort(key=lambda x: (-(x.overall_rank or 999999), 1 if (_has_trait(x.applicant_id, "Women") or _has_trait(x.applicant_id, "PWD")) else 0))
+                            
+                            # Do not displace candidates who are tied at the cutoff mark, and do not displace higher-merit candidates instead
+                            non_tied_to_displace = []
+                            for out_cand in eligible_out:
+                                out_rank = getattr(out_cand, "overall_rank", None)
+                                tied_count = len([a for a in eligible_out if getattr(a, "overall_rank", None) == out_rank])
+                                if tied_count > 1:
+                                    break
+                                non_tied_to_displace.append(out_cand)
+                                if len(non_tied_to_displace) == excess_ai:
+                                    break
+
+                            for out_cand in non_tied_to_displace:
                                 disp_reason = f"Displaced from {v_cat} category as All-India quota limit was reached for unfilled {comp_cat} seats"
                                 _execute_recursive_displacement(out_cand, allocated_list, unallocated, vertical_targets, status_field, karnataka_vacancies, reason=disp_reason)
                         
