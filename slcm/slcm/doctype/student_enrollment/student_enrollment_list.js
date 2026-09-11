@@ -164,8 +164,8 @@ function inject_promotion_button_css() {
 		}
 
 		.promote-dialog .modal-dialog {
-			max-width: 780px;
-			width: 90vw;
+			max-width: 1100px !important;
+			width: 92vw !important;
 		}
 		.promote-dialog .modal-header {
 			background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
@@ -266,7 +266,8 @@ function inject_promotion_button_css() {
 		}
 
 		.promote-review-dialog .modal-dialog {
-			max-width: 640px;
+			max-width: 1240px !important;
+			width: 92vw !important;
 		}
 		.promote-review-count {
 			font-weight: 400;
@@ -274,7 +275,7 @@ function inject_promotion_button_css() {
 			font-size: 14px;
 		}
 		.promote-review-toolbar {
-			padding: 14px 28px;
+			padding: 14px 32px;
 			background: #f8fafc;
 			border-bottom: 1px solid #e2e8f0;
 			display: flex;
@@ -283,75 +284,62 @@ function inject_promotion_button_css() {
 			gap: 16px;
 			flex-wrap: wrap;
 		}
-		.promote-select-all {
-			display: flex;
-			align-items: center;
-			gap: 8px;
-			font-weight: 600;
-			font-size: 13px;
-			color: #1e293b;
-			margin: 0;
-			cursor: pointer;
-		}
 		.promote-review-summary {
-			font-size: 12px;
+			font-size: 12.5px;
 			color: #64748b;
+			flex: 1;
 		}
-		.promote-review-table-wrap {
-			max-height: 55vh;
-			overflow-y: auto;
-			padding: 0 28px;
+		.promote-review-summary b {
+			color: #1e293b;
 		}
-		.promote-review-table {
-			width: 100%;
-			border-collapse: collapse;
-			font-size: 13px;
-		}
-		.promote-review-table thead th {
-			position: sticky;
-			top: 0;
-			background: #ffffff;
-			text-align: left;
-			font-size: 11px;
+		.promote-review-selected-count {
+			font-size: 12.5px;
 			font-weight: 700;
-			letter-spacing: 0.04em;
-			text-transform: uppercase;
-			color: #64748b;
-			padding: 10px 8px;
-			border-bottom: 2px solid #e2e8f0;
+			color: #1e293b;
+			background: #e2e8f0;
+			padding: 4px 12px;
+			border-radius: 20px;
+			white-space: nowrap;
 		}
-		.promote-row td {
-			padding: 10px 8px;
-			border-bottom: 1px solid #f1f5f9;
-			vertical-align: middle;
+		.promote-review-datatable {
+			padding: 16px 32px 8px 32px;
 		}
-		.promote-row:hover {
-			background: #f8fafc;
+		.promote-review-datatable .dt-scrollable {
+			max-height: 55vh;
 		}
-		.promote-row-check {
-			width: 32px;
+		.promote-review-datatable .dt-row-highlight,
+		.promote-review-datatable .dt-cell:hover {
+			background-color: #f8fafc;
 		}
-		.promote-row-checkbox {
-			width: 15px;
-			height: 15px;
-			cursor: pointer;
+		.promote-review-datatable .dt-cell__content {
+			padding: 6px 12px;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
 		}
 		.promote-row-name {
 			font-weight: 600;
 			color: #1e293b;
+			font-size: 13.5px;
+			line-height: 1.3;
+			white-space: normal;
 		}
 		.promote-row-id {
 			font-size: 11px;
+			line-height: 1.3;
 			color: #94a3b8;
+			margin-top: 2px;
 		}
 		.promote-row-tag {
-			display: inline-block;
-			font-size: 11px;
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+			font-size: 11.5px;
 			font-weight: 600;
-			padding: 3px 9px;
+			padding: 4px 11px;
 			border-radius: 20px;
 			white-space: nowrap;
-			max-width: 180px;
+			max-width: 280px;
 			overflow: hidden;
 			text-overflow: ellipsis;
 		}
@@ -365,15 +353,21 @@ function inject_promotion_button_css() {
 		}
 		.promote-review-dialog .modal-body {
 			padding-top: 0;
+			padding-bottom: 4px;
 		}
 		.promote-review-dialog .modal-footer .btn-secondary {
 			font-weight: 600;
+		}
+		.promote-review-dialog .modal-footer {
+			background: #f8fafc;
+			border-top: 1px solid #e2e8f0;
+			padding: 14px 32px;
 		}
 	`;
 	document.head.appendChild(style);
 }
 
-function open_promote_students_dialog(listview) {
+function open_promote_students_dialog(listview, defaults) {
 	const dialog = new frappe.ui.Dialog({
 		title: `<span>&#8613;</span> ${__("Promote Students")}`,
 		fields: [
@@ -405,7 +399,7 @@ function open_promote_students_dialog(listview) {
 			{ fieldname: "promotion_policy", label: __("Promotion Policy"), fieldtype: "Link", options: "Promotion Policy",
 				description: __("Optional — evaluates attendance, backlog, CGPA and fee-due rules, shown as a hint per student on the next screen.") },
 		],
-		size: "large",
+		size: "extra-large",
 		primary_action_label: __("Next: Review Students"),
 		primary_action(values) {
 			frappe.call({
@@ -445,30 +439,12 @@ function open_promote_students_dialog(listview) {
 	});
 
 	dialog.$wrapper.find(".modal-dialog").addClass("promote-dialog");
+	if (defaults) dialog.set_values(defaults);
 	dialog.show();
 }
 
 function open_student_review_dialog(listview, criteria, students) {
 	const eligible_count = students.filter((s) => s.likely_eligible).length;
-	const rows_html = students
-		.map((s) => {
-			const status_html = s.likely_eligible
-				? `<span class="promote-row-tag ok">${__("Likely Eligible")}</span>`
-				: `<span class="promote-row-tag warn" title="${frappe.utils.escape_html(s.hint || "")}">${frappe.utils.escape_html(s.hint || __("Not Eligible"))}</span>`;
-			return `
-				<tr class="promote-row" data-enrollment="${s.enrollment}">
-					<td class="promote-row-check">
-						<input type="checkbox" class="promote-row-checkbox" ${s.likely_eligible ? "checked" : ""}>
-					</td>
-					<td>
-						<div class="promote-row-name">${frappe.utils.escape_html(s.student_name || s.student)}</div>
-						<div class="promote-row-id">${frappe.utils.escape_html(s.student)}</div>
-					</td>
-					<td>${frappe.utils.escape_html(s.batch || "")}</td>
-					<td>${status_html}</td>
-				</tr>`;
-		})
-		.join("");
 
 	const dialog = new frappe.ui.Dialog({
 		title: `<span>&#128203;</span> ${__("Review Students")} <span class="promote-review-count">(${students.length})</span>`,
@@ -478,36 +454,25 @@ function open_student_review_dialog(listview, criteria, students) {
 				fieldtype: "HTML",
 				options: `
 					<div class="promote-review-toolbar">
-						<label class="promote-select-all">
-							<input type="checkbox" id="promote-select-all-cb">
-							${__("Select All")}
-						</label>
 						<span class="promote-review-summary">
-							${__("{0} of {1} likely eligible (pre-selected) — deselect or select any student before promoting", [eligible_count, students.length])}
+							${__("{0} of {1} likely eligible (pre-selected)", [`<b>${eligible_count}</b>`, `<b>${students.length}</b>`])}
+							— ${__("deselect or select any student before promoting. Click a column header to sort, or type in the filter row to search.")}
 						</span>
+						<span class="promote-review-selected-count" id="promote-selected-count"></span>
 					</div>
-					<div class="promote-review-table-wrap">
-						<table class="promote-review-table">
-							<thead>
-								<tr>
-									<th></th>
-									<th>${__("Student")}</th>
-									<th>${__("Batch")}</th>
-									<th>${__("Eligibility")}</th>
-								</tr>
-							</thead>
-							<tbody>${rows_html}</tbody>
-						</table>
-					</div>
+					<div class="promote-review-datatable" id="promote-review-datatable"></div>
 				`,
 			},
 		],
-		size: "large",
+		size: "extra-large",
 		primary_action_label: __("Promote Selected"),
 		primary_action() {
-			const selected = Array.from(
-				dialog.$wrapper.find(".promote-row-checkbox:checked")
-			).map((cb) => $(cb).closest(".promote-row").data("enrollment"));
+			if (!review_datatable) return;
+			const checked_indexes = review_datatable.rowmanager.getCheckedRows();
+			const selected = checked_indexes
+				.map((idx) => students[idx])
+				.filter(Boolean)
+				.map((s) => s.enrollment);
 
 			if (!selected.length) {
 				frappe.msgprint(__("Select at least one student to promote."));
@@ -536,7 +501,7 @@ function open_student_review_dialog(listview, criteria, students) {
 		secondary_action_label: __("Back"),
 		secondary_action() {
 			dialog.hide();
-			open_promote_students_dialog(listview);
+			open_promote_students_dialog(listview, criteria);
 		},
 	});
 
@@ -544,9 +509,64 @@ function open_student_review_dialog(listview, criteria, students) {
 	dialog.show();
 
 	const $wrapper = dialog.$wrapper;
-	$wrapper.find("#promote-select-all-cb").on("change", function () {
-		$wrapper.find(".promote-row-checkbox").prop("checked", this.checked);
+	let review_datatable = null;
+
+	function update_selected_count() {
+		if (!review_datatable) return;
+		const count = review_datatable.rowmanager.getCheckedRows().length;
+		$wrapper.find("#promote-selected-count").text(__("Selected: {0}", [count]));
+	}
+
+	const columns = [
+		{ name: __("Student"), id: "student_name", width: 240 },
+		{ name: __("Batch"), id: "batch", width: 240 },
+		{ name: __("Eligibility"), id: "eligibility", width: 300 },
+	];
+
+	// Cell content is rendered as raw HTML by frappe.DataTable (no formatter needed),
+	// and inline-filter/sort operate on the stripped text of this HTML, so building the
+	// markup up front here — rather than via a per-cell `format` callback — sidesteps
+	// datatable's lack of a reliable rowIndex in that callback.
+	const rows = students.map((s) => {
+		const student_cell = `<div class="promote-row-name">${frappe.utils.escape_html(s.student_name || s.student)}</div>
+			<div class="promote-row-id">${frappe.utils.escape_html(s.student)}</div>`;
+		const eligibility_cell = s.likely_eligible
+			? `<span class="promote-row-tag ok">&#10003; ${__("Likely Eligible")}</span>`
+			: `<span class="promote-row-tag warn">&#9888; ${frappe.utils.escape_html(s.hint || __("Not Eligible"))}</span>`;
+		return [student_cell, frappe.utils.escape_html(s.batch || "—"), eligibility_cell];
 	});
+
+	// Build the DataTable after the modal's open animation/layout has settled — constructing
+	// it immediately on a still-animating/zero-size container throws inside the library's
+	// internal stylesheet setup (insertRule on a null sheet). Same workaround already used
+	// for the child DataTable in frappe's own multi_select_dialog.js.
+	setTimeout(() => {
+		review_datatable = new frappe.DataTable(
+			$wrapper.find("#promote-review-datatable").get(0),
+			{
+				columns,
+				data: rows,
+				layout: "fluid",
+				inlineFilters: true,
+				serialNoColumn: false,
+				checkboxColumn: true,
+				checkedRowStatus: false,
+				cellHeight: 54,
+				noDataMessage: __("No students to review."),
+				disableReorderColumn: true,
+				events: {
+					onCheckRow: update_selected_count,
+				},
+			}
+		);
+
+		// pre-check likely-eligible rows (row index here matches students[] order — see sort-stability note above)
+		students.forEach((s, idx) => {
+			if (s.likely_eligible) review_datatable.rowmanager.checkRow(idx, true);
+		});
+
+		update_selected_count();
+	}, 300);
 }
 
 function watch_promotion_run(run_name, listview) {
