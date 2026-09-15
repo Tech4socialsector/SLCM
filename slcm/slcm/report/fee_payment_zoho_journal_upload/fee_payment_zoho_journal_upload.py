@@ -29,7 +29,6 @@ from frappe.utils import flt, formatdate, nowdate
 # ── Constants ─────────────────────────────────────────────────────────────────
 DEFAULT_BANK_ACCOUNT = "UBI Bank General"
 DEFAULT_CASH_ACCOUNT = "Cash"
-DEFAULT_CONTACT       = "Student"
 DEFAULT_PREFIX        = "JN-FP-"
 DEFAULT_JOURNAL_TYPE  = "Both"
 DEFAULT_CURRENCY      = "INR"
@@ -47,28 +46,47 @@ PAYMENT_MODE_ACCOUNTS = {
     "Other":          DEFAULT_BANK_ACCOUNT,
 }
 
-# Zoho Books required column order — do NOT change
+# Zoho Books required column order — do NOT change.
+# NOTE: "Date of Settlement", "Settlement Reference No" and "Contact" are display
+# labels only — they still map to the same underlying values (payment_date,
+# reference_number) that Zoho's own template calls "Journal Date" and
+# "Reference Number". Renaming them here means the exported file's header row
+# will no longer match Zoho's default import template exactly.
+# "Contact" is a fixed constant value ("Frappe") on every row, by request —
+# the actual Student Master ID and display name are available separately in
+# the trailing "Student ID" / "Student Name" columns below.
+CONTACT_VALUE = "Frappe"
 ZOHO_HEADERS = [
-    "Journal Date", "Reference Number", "Journal Number Prefix",
+    "Date of Settlement", "Settlement Reference No", "Journal Number Prefix",
     "Journal Number Suffix", "Notes", "Journal Type", "Currency",
-    "Account", "Description", "Contact Name", "Debit", "Credit",
+    "Account", "Description", "Contact", "Debit", "Credit",
     "Department", "Course",
 ]
 ZOHO_FIELD_MAP = {
-    "Journal Date":          "journal_date",
-    "Reference Number":      "reference_number",
-    "Journal Number Prefix": "journal_number_prefix",
-    "Journal Number Suffix": "journal_number_suffix",
-    "Notes":                 "notes",
-    "Journal Type":          "journal_type",
-    "Currency":              "currency",
-    "Account":               "account",
-    "Description":           "description",
-    "Contact Name":          "contact_name",
-    "Debit":                 "debit",
-    "Credit":                "credit",
-    "Department":            "department",
-    "Course":                "course",
+    "Date of Settlement":      "journal_date",
+    "Settlement Reference No": "reference_number",
+    "Journal Number Prefix":   "journal_number_prefix",
+    "Journal Number Suffix":   "journal_number_suffix",
+    "Notes":                   "notes",
+    "Journal Type":            "journal_type",
+    "Currency":                "currency",
+    "Account":                 "account",
+    "Description":             "description",
+    "Contact":                 "contact_name",
+    "Debit":                   "debit",
+    "Credit":                  "credit",
+    "Department":              "department",
+    "Course":                  "course",
+}
+
+# Extra columns appended AFTER the 14 Zoho columns — for readability in Excel
+# only. Zoho's importer reads columns by position/header among the 14 above
+# and ignores anything past them, so these are safe to add without breaking
+# the Zoho Books import mapping.
+EXTRA_HEADERS = ["Student ID", "Student Name"]
+EXTRA_FIELD_MAP = {
+    "Student ID":   "student_id",
+    "Student Name": "student_display_name",
 }
 
 
@@ -77,6 +95,7 @@ ZOHO_FIELD_MAP = {
 def execute(filters=None):
     filters = filters or {}
     config  = _resolve_config(filters)
+    view    = (filters.get("view") or "Single Transactions").strip()
 
     payments = _fetch_payments(filters)
     if not payments:
@@ -84,25 +103,35 @@ def execute(filters=None):
             _("No submitted fee payments found for the selected filters."),
             indicator="orange", alert=True,
         )
-        return _get_columns(), [], None, None, []
+        return _get_columns(view), [], None, None, []
 
     rows, stats = _build_journal_rows(payments, config)
 
+    if view == "Day Transactions":
+        day_rows, day_stats = _build_day_rows(rows, config)
+        return (
+            _get_columns(view),
+            day_rows,
+            None,
+            _get_chart(_daily_totals_from_rows(day_rows)),
+            _get_report_summary(day_stats, view),
+        )
+
     return (
-        _get_columns(),
+        _get_columns(view),
         rows,
         None,
         _get_chart(stats["daily"]),
-        _get_report_summary(stats),
+        _get_report_summary(stats, view),
     )
 
 
 # ── Columns ───────────────────────────────────────────────────────────────────
 
-def _get_columns():
-    return [
-        {"label": _("Journal Date"),           "fieldname": "journal_date",          "fieldtype": "Date",     "width": 110},
-        {"label": _("Reference Number"),        "fieldname": "reference_number",      "fieldtype": "Data",     "width": 160},
+def _get_columns(view="Single Transactions"):
+    columns = [
+        {"label": _("Date of Settlement"),      "fieldname": "journal_date",          "fieldtype": "Date",     "width": 130},
+        {"label": _("Settlement Reference No"), "fieldname": "reference_number",      "fieldtype": "Data",     "width": 170},
         {"label": _("Journal Number Prefix"),   "fieldname": "journal_number_prefix", "fieldtype": "Data",     "width": 145},
         {"label": _("Journal Number Suffix"),   "fieldname": "journal_number_suffix", "fieldtype": "Int",      "width": 145},
         {"label": _("Notes"),                   "fieldname": "notes",                 "fieldtype": "Data",     "width": 340},
@@ -110,17 +139,29 @@ def _get_columns():
         {"label": _("Currency"),                "fieldname": "currency",              "fieldtype": "Data",     "width":  75},
         {"label": _("Account"),                 "fieldname": "account",               "fieldtype": "Data",     "width": 260},
         {"label": _("Description"),             "fieldname": "description",           "fieldtype": "Data",     "width": 100},
-        {"label": _("Contact Name"),            "fieldname": "contact_name",          "fieldtype": "Data",     "width": 130},
+        # "Contact" is a fixed constant value ("Frappe") on every row, by
+        # request — the actual Student Master ID/name are separate columns.
+        {"label": _("Contact"),                 "fieldname": "contact_name",          "fieldtype": "Data",     "width": 100},
         {"label": _("Debit"),                   "fieldname": "debit",                 "fieldtype": "Currency", "width": 130},
         {"label": _("Credit"),                  "fieldname": "credit",                "fieldtype": "Currency", "width": 130},
         {"label": _("Department"),              "fieldname": "department",            "fieldtype": "Data",     "width": 110},
         {"label": _("Course"),                  "fieldname": "course",                "fieldtype": "Data",     "width": 130},
         # Display-only (never exported to Zoho)
         {"label": _("Row Type"),                "fieldname": "row_type",              "fieldtype": "Data",     "width":  85},
-        {"label": _("Fee Payment"),             "fieldname": "fee_payment",           "fieldtype": "Link",     "options": "Fee Payment", "width": 130},
-        {"label": _("Student"),                 "fieldname": "student",               "fieldtype": "Link",     "options": "Student Master", "width": 130},
-        {"label": _("Payment Mode"),            "fieldname": "payment_mode",          "fieldtype": "Data",     "width": 110},
+        {"label": _("Student ID"),              "fieldname": "student_id",
+         "fieldtype": "Link" if view != "Day Transactions" else "Data",
+         "options": "Student Master" if view != "Day Transactions" else None,
+         "width": 140},
+        {"label": _("Student Name"),            "fieldname": "student_display_name",  "fieldtype": "Data",    "width": 140},
     ]
+    if view != "Day Transactions":
+        # These are per-payment concepts with no equivalent on a consolidated
+        # Day Transactions row, so they're only shown for Single Transactions.
+        columns += [
+            {"label": _("Fee Payment"), "fieldname": "fee_payment", "fieldtype": "Link", "options": "Fee Payment", "width": 130},
+            {"label": _("Payment Mode"), "fieldname": "payment_mode", "fieldtype": "Data", "width": 110},
+        ]
+    return columns
 
 
 # ── Dynamic config ────────────────────────────────────────────────────────────
@@ -264,11 +305,14 @@ def _build_journal_rows(payments, config):
             "journal_type":          DEFAULT_JOURNAL_TYPE,
             "currency":              DEFAULT_CURRENCY,
             "description":           DEFAULT_DESCRIPTION,
-            "contact_name":          p.student_name or DEFAULT_CONTACT,
+            # "Contact" is a fixed constant value on every row, by request —
+            # the actual Student Master ID/name are separate fields below.
+            "contact_name":          CONTACT_VALUE,
             "department":            p.department or config["department"],
             "course":                p.program or config["course"],
             "fee_payment":           p.fee_payment,
-            "student":               p.student,
+            "student_id":            p.student,
+            "student_display_name":  p.student_name or "",
             "payment_mode":          p.payment_mode,
         }
 
@@ -329,6 +373,113 @@ def _split_by_component(payment):
     return [(k, v) for k, v in totals.items() if abs(v) >= 0.01]
 
 
+def _build_day_rows(single_rows, config):
+    """
+    Derive the "Day Transactions" sheet from the exact same rows already
+    produced for "Single Transactions" — never re-queried or re-derived from
+    Fee Payment directly, so the two sheets can never disagree on which
+    payments are included.
+
+    One Credit row per (Date of Settlement, Account) and one Debit row per
+    (Date of Settlement, Account) — i.e. every account is consolidated across
+    all payments settled on the same day, keeping the per-account/component
+    breakdown intact while collapsing individual payments together.
+    """
+    groups = {}   # (date, row_type, account) -> accumulated amount
+    order  = []   # first-seen order of the group keys, for stable output
+
+    for r in single_rows:
+        key = (r["journal_date"], r["row_type"], r["account"])
+        if key not in groups:
+            groups[key] = {
+                "debit":  0,
+                "credit": 0,
+                "date":   r["journal_date"],
+                "account": r["account"],
+                "row_type": r["row_type"],
+                "student_ids":   [],   # first-seen order, de-duplicated
+                "student_names": [],
+            }
+            order.append(key)
+        groups[key]["debit"]  += flt(r["debit"])
+        groups[key]["credit"] += flt(r["credit"])
+        student_id   = r.get("student_id") or ""
+        student_name = r.get("student_display_name") or ""
+        if student_id and student_id not in groups[key]["student_ids"]:
+            groups[key]["student_ids"].append(student_id)
+        if student_name and student_name not in groups[key]["student_names"]:
+            groups[key]["student_names"].append(student_name)
+
+    day_rows  = []
+    suffix_by_date = {}
+    next_suffix = _next_suffix(config["prefix"])
+
+    for key in order:
+        g = groups[key]
+        date = g["date"]
+        if date not in suffix_by_date:
+            suffix_by_date[date] = next_suffix
+            next_suffix += 1
+
+        date_str = formatdate(date, "dd-MM-yyyy")
+        day_rows.append({
+            "journal_date":          date,
+            "reference_number":      f"DAY-{date_str}",
+            "journal_number_prefix": config["prefix"],
+            "journal_number_suffix": suffix_by_date[date],
+            "notes":                 f"Consolidated fee payments settled on {date_str}",
+            "journal_type":          DEFAULT_JOURNAL_TYPE,
+            "currency":              DEFAULT_CURRENCY,
+            "account":               g["account"],
+            "description":           DEFAULT_DESCRIPTION,
+            "contact_name":          CONTACT_VALUE,
+            "student_id":            _join_students(g["student_ids"]),
+            "student_display_name":  _join_students(g["student_names"]),
+            "debit":                 round(g["debit"], 2)  if g["debit"]  else 0,
+            "credit":                round(g["credit"], 2) if g["credit"] else 0,
+            "department":            "",
+            "course":                "",
+            "row_type":              g["row_type"],
+        })
+
+    day_rows.sort(key=lambda r: (r["journal_date"], r["journal_number_suffix"], r["row_type"]))
+
+    total_debit  = round(sum(r["debit"]  for r in day_rows), 2)
+    total_credit = round(sum(r["credit"] for r in day_rows), 2)
+    total_days   = len({r["journal_date"] for r in day_rows})
+
+    return day_rows, {
+        "total_days":   total_days,
+        "total_rows":   len(day_rows),
+        "total_debit":  total_debit,
+        "total_credit": total_credit,
+        "balanced":     abs(total_debit - total_credit) < 0.01,
+    }
+
+
+def _daily_totals_from_rows(rows):
+    """Sum Credit amounts per Date of Settlement, for the trend chart."""
+    totals = {}
+    for r in rows:
+        if r.get("row_type") != "Credit":
+            continue
+        key = str(r["journal_date"])
+        totals[key] = totals.get(key, 0) + flt(r["credit"])
+    return totals
+
+
+def _join_students(names):
+    """Comma-separated student names for a consolidated Day Transactions row.
+    Truncates long lists so the cell stays readable, e.g. "A, B, C +4 more".
+    """
+    if not names:
+        return "Students"
+    max_shown = 5
+    if len(names) <= max_shown:
+        return ", ".join(names)
+    return ", ".join(names[:max_shown]) + f" +{len(names) - max_shown} more"
+
+
 def _next_suffix(prefix):
     series_name = f"{prefix}.####"
     try:
@@ -342,15 +493,25 @@ def _next_suffix(prefix):
 
 # ── Summary cards ─────────────────────────────────────────────────────────────
 
-def _get_report_summary(stats):
+def _get_report_summary(stats, view="Single Transactions"):
     balanced = stats.get("balanced", False)
-    return [
+    first_card = (
         {
-            "value":     stats["total_payments"],
+            "value":     stats.get("total_days", 0),
+            "label":     _("Settlement Days"),
+            "datatype":  "Int",
+            "indicator": "Blue",
+        }
+        if view == "Day Transactions" else
+        {
+            "value":     stats.get("total_payments", 0),
             "label":     _("Fee Payments"),
             "datatype":  "Int",
             "indicator": "Blue",
-        },
+        }
+    )
+    return [
+        first_card,
         {
             "value":     stats["total_rows"],
             "label":     _("Journal Rows"),
@@ -409,7 +570,7 @@ def _format_zoho_date(val):
 def _cell(value, header):
     if value is None:
         return ""
-    if header == "Journal Date":
+    if header == "Date of Settlement":
         return _format_zoho_date(value)
     if header in ("Debit", "Credit"):
         v = flt(value)
@@ -462,7 +623,15 @@ def download_zoho_upload_file(filters=None, file_format="csv"):
     date_label = f"{from_d}_{to_d}".strip("_") or nowdate()
 
     if file_format == "xlsx":
-        content, filename, mime = _build_xlsx(rows, date_label, stats, config)
+        day_rows, day_stats = _build_day_rows(rows, config)
+        # Same source rows in both sheets — totals must reconcile by construction.
+        if round(day_stats["total_debit"] - stats["total_debit"], 2) != 0 or \
+           round(day_stats["total_credit"] - stats["total_credit"], 2) != 0:
+            frappe.throw(
+                _("Internal error — Day Transactions total does not reconcile with Single Transactions."),
+                title=_("Validation Failed"),
+            )
+        content, filename, mime = _build_xlsx(rows, day_rows, date_label, stats, day_stats, config)
     else:
         content, filename, mime = _build_csv(rows, date_label)
 
@@ -492,11 +661,13 @@ def get_dynamic_defaults():
 
 def _build_csv(rows, date_label):
     import csv
+    all_headers = ZOHO_HEADERS + EXTRA_HEADERS
+    all_field_map = {**ZOHO_FIELD_MAP, **EXTRA_FIELD_MAP}
     buf    = io.StringIO()
     writer = csv.writer(buf)
-    writer.writerow(ZOHO_HEADERS)
+    writer.writerow(all_headers)
     for r in rows:
-        writer.writerow([_cell(r.get(ZOHO_FIELD_MAP[h]), h) for h in ZOHO_HEADERS])
+        writer.writerow([_cell(r.get(all_field_map[h]), h) for h in all_headers])
     content  = buf.getvalue().encode("utf-8-sig")
     filename = f"zoho_fee_journal_{date_label}.csv"
     return content, filename, "text/csv"
@@ -504,70 +675,75 @@ def _build_csv(rows, date_label):
 
 # ── XLSX builder ──────────────────────────────────────────────────────────────
 
-def _build_xlsx(rows, date_label, stats, config):
-    try:
-        import openpyxl
-        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-        from openpyxl.utils import get_column_letter
-    except ImportError:
-        frappe.throw(_("openpyxl is not installed. Run: bench pip install openpyxl"))
+# Shared style constants (used by both data sheets and the Summary sheet)
+_PURPLE    = "5E64FF"
+_INDIGO    = "3949AB"
+_WHITE     = "FFFFFF"
+_GREEN_BG  = "E8F5E9"
+_BLUE_BG   = "E3F2FD"
+_STRIPE    = "F7F8FF"
+_TOTAL_BG  = "E8EAF6"
+_OK_CLR    = "2E7D32"
+_ERR_CLR   = "C62828"
+_BD        = "C5CAE9"
 
-    PURPLE    = "5E64FF"
-    INDIGO    = "3949AB"
-    WHITE     = "FFFFFF"
-    GREEN_BG  = "E8F5E9"
-    BLUE_BG   = "E3F2FD"
-    STRIPE    = "F7F8FF"
-    TOTAL_BG  = "E8EAF6"
-    OK_CLR    = "2E7D32"
-    ERR_CLR   = "C62828"
-    BD        = "C5CAE9"
 
-    thin_s  = Side(style="thin",   color=BD)
-    thick_s = Side(style="medium", color=PURPLE)
+def _write_journal_sheet(ws, rows, stats, title):
+    """
+    Render one Zoho-format journal sheet (header banner + column headers +
+    data rows + TOTAL row) into an already-created worksheet. Shared by the
+    "Single Transactions" and "Day Transactions" sheets so both are always
+    rendered with identical column layout and formatting.
+
+    Columns are the 14 required Zoho fields, followed by the extra
+    Student ID / Student Name columns (EXTRA_HEADERS) — Zoho's importer only
+    reads the first 14 by position, so the trailing columns are ignored by
+    Zoho but visible here for reference.
+    """
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+
+    all_headers   = ZOHO_HEADERS + EXTRA_HEADERS
+    all_field_map = {**ZOHO_FIELD_MAP, **EXTRA_FIELD_MAP}
+
+    thin_s  = Side(style="thin",   color=_BD)
+    thick_s = Side(style="medium", color=_PURPLE)
     t_bdr   = Border(left=thin_s,  right=thin_s,  top=thin_s,  bottom=thin_s)
     h_bdr   = Border(left=thick_s, right=thick_s, top=thick_s, bottom=thick_s)
 
-    n_cols     = len(ZOHO_HEADERS)
-    debit_col  = ZOHO_HEADERS.index("Debit")  + 1
-    credit_col = ZOHO_HEADERS.index("Credit") + 1
-    balanced   = stats.get("balanced", False)
+    n_cols     = len(all_headers)
+    debit_col  = all_headers.index("Debit")  + 1
+    credit_col = all_headers.index("Credit") + 1
 
-    wb = openpyxl.Workbook()
-
-    # ── Sheet 1: Journal Upload ───────────────────────────────────────────────
-    ws = wb.active
-    ws.title = "Journal Upload"
     ws.sheet_view.showGridLines = False
     ws.freeze_panes = "D3"
 
     ws.row_dimensions[1].height = 30
     ws.append([""] * n_cols)
-    tc = ws.cell(row=1, column=1,
-        value=f"Fee Payment Journal  |  Zoho Books Import  |  {date_label}")
-    tc.font      = Font(bold=True, size=10, color=WHITE, name="Calibri")
-    tc.fill      = PatternFill("solid", fgColor=PURPLE)
+    tc = ws.cell(row=1, column=1, value=title)
+    tc.font      = Font(bold=True, size=10, color=_WHITE, name="Calibri")
+    tc.fill      = PatternFill("solid", fgColor=_PURPLE)
     tc.alignment = Alignment(horizontal="left", vertical="center", indent=1)
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=n_cols)
 
     ws.row_dimensions[2].height = 34
-    ws.append(ZOHO_HEADERS)
-    for ci, h in enumerate(ZOHO_HEADERS, 1):
+    ws.append(all_headers)
+    for ci, h in enumerate(all_headers, 1):
         cell = ws.cell(row=2, column=ci)
-        cell.font      = Font(bold=True, color=WHITE, size=10, name="Calibri")
-        cell.fill      = PatternFill("solid", fgColor=INDIGO)
+        cell.font      = Font(bold=True, color=_WHITE, size=10, name="Calibri")
+        cell.fill      = PatternFill("solid", fgColor=_INDIGO if h in ZOHO_FIELD_MAP else "5C6BC0")
         cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
         cell.border    = h_bdr
 
     for ri, r in enumerate(rows, 3):
         rt = r.get("row_type", "")
-        bg = PatternFill("solid", fgColor=GREEN_BG if rt == "Credit"
-                          else BLUE_BG if rt == "Debit"
-                          else (STRIPE if ri % 2 == 0 else WHITE))
+        bg = PatternFill("solid", fgColor=_GREEN_BG if rt == "Credit"
+                          else _BLUE_BG if rt == "Debit"
+                          else (_STRIPE if ri % 2 == 0 else _WHITE))
         ws.row_dimensions[ri].height = 16
 
-        for ci, h in enumerate(ZOHO_HEADERS, 1):
-            val  = _cell(r.get(ZOHO_FIELD_MAP[h]), h)
+        for ci, h in enumerate(all_headers, 1):
+            val  = _cell(r.get(all_field_map[h]), h)
             cell = ws.cell(row=ri, column=ci, value=val)
             cell.fill = bg; cell.border = t_bdr
 
@@ -576,7 +752,7 @@ def _build_xlsx(rows, date_label, stats, config):
                                           color="1565C0" if h == "Debit" else "2E7D32")
                 cell.number_format = "#,##0.00"
                 cell.alignment     = Alignment(horizontal="right", vertical="center")
-            elif h == "Journal Date":
+            elif h == "Date of Settlement":
                 cell.font      = Font(size=9, name="Calibri")
                 cell.alignment = Alignment(horizontal="center", vertical="center")
             elif h in ("Journal Number Suffix", "Journal Type", "Currency",
@@ -587,6 +763,9 @@ def _build_xlsx(rows, date_label, stats, config):
                 clr = "6A1B9A" if rt == "Credit" else "1565C0"
                 cell.font      = Font(size=9, name="Calibri", color=clr)
                 cell.alignment = Alignment(vertical="center")
+            elif h == "Contact":
+                cell.font      = Font(size=9, name="Calibri", color="00695C")
+                cell.alignment = Alignment(vertical="center")
             else:
                 cell.font      = Font(size=9, name="Calibri")
                 cell.alignment = Alignment(vertical="center")
@@ -595,7 +774,7 @@ def _build_xlsx(rows, date_label, stats, config):
     ws.row_dimensions[total_ri].height = 22
     for ci in range(1, n_cols + 1):
         cell = ws.cell(row=total_ri, column=ci)
-        cell.fill      = PatternFill("solid", fgColor=TOTAL_BG)
+        cell.fill      = PatternFill("solid", fgColor=_TOTAL_BG)
         cell.font      = Font(bold=True, size=10, name="Calibri", color="1A237E")
         cell.border    = h_bdr
         cell.alignment = Alignment(horizontal="right", vertical="center")
@@ -607,12 +786,41 @@ def _build_xlsx(rows, date_label, stats, config):
         elif ci == credit_col:
             cell.value = stats["total_credit"]; cell.number_format = "#,##0.00"
 
-    for ci, h in enumerate(ZOHO_HEADERS, 1):
-        vals   = [str(_cell(r.get(ZOHO_FIELD_MAP[h]), h) or "") for r in rows]
+    for ci, h in enumerate(all_headers, 1):
+        vals   = [str(_cell(r.get(all_field_map[h]), h) or "") for r in rows]
         maxlen = max(len(str(h)), *(len(v) for v in vals)) if vals else len(str(h))
         ws.column_dimensions[get_column_letter(ci)].width = min(maxlen + 3, 50)
 
-    # ── Sheet 2: Summary ──────────────────────────────────────────────────────
+
+def _build_xlsx(rows, day_rows, date_label, stats, day_stats, config):
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    except ImportError:
+        frappe.throw(_("openpyxl is not installed. Run: bench pip install openpyxl"))
+
+    PURPLE, WHITE   = _PURPLE, _WHITE
+    OK_CLR, ERR_CLR = _OK_CLR, _ERR_CLR
+    balanced        = stats.get("balanced", False)
+
+    wb = openpyxl.Workbook()
+
+    # ── Sheet 1: Single Transactions ──────────────────────────────────────────
+    ws = wb.active
+    ws.title = "Single Transactions"
+    _write_journal_sheet(
+        ws, rows, stats,
+        f"Single Transactions  |  Zoho Books Import  |  {date_label}",
+    )
+
+    # ── Sheet 2: Day Transactions ─────────────────────────────────────────────
+    ws_day = wb.create_sheet("Day Transactions")
+    _write_journal_sheet(
+        ws_day, day_rows, day_stats,
+        f"Day Transactions (consolidated by Date of Settlement)  |  Zoho Books Import  |  {date_label}",
+    )
+
+    # ── Sheet 3: Summary ──────────────────────────────────────────────────────
     ws2 = wb.create_sheet("Summary")
     ws2.sheet_view.showGridLines = False
     ws2.column_dimensions["A"].width = 34
@@ -629,6 +837,11 @@ def _build_xlsx(rows, date_label, stats, config):
         top=Side(style="thin", color="CCCCCC"),  bottom=Side(style="thin", color="CCCCCC"),
     )
 
+    reconciled = (
+        round(stats["total_debit"]  - day_stats["total_debit"],  2) == 0
+        and round(stats["total_credit"] - day_stats["total_credit"], 2) == 0
+    )
+
     summary_rows = [
         ("Report Details", ""),
         ("Report Name",   "Fee Payment Zoho Journal Upload"),
@@ -641,16 +854,23 @@ def _build_xlsx(rows, date_label, stats, config):
         ("Journal Prefix",       config.get("prefix")       or DEFAULT_PREFIX),
         ("", ""),
         ("Payment Statistics", ""),
-        ("Total Fee Payments", stats["total_payments"]),
-        ("Total Journal Rows", stats["total_rows"]),
+        ("Total Fee Payments",              stats["total_payments"]),
+        ("Single Transactions — Rows",      stats["total_rows"]),
+        ("Day Transactions — Rows",         day_stats["total_rows"]),
         ("", ""),
-        ("Journal Totals", ""),
+        ("Single Transactions — Totals", ""),
         ("Total Debit",                 stats["total_debit"]),
         ("Total Credit",                stats["total_credit"]),
         ("Difference (Debit − Credit)", round(stats["total_debit"] - stats["total_credit"], 2)),
         ("", ""),
+        ("Day Transactions — Totals", ""),
+        ("Total Debit",                 day_stats["total_debit"]),
+        ("Total Credit",                day_stats["total_credit"]),
+        ("Difference (Debit − Credit)", round(day_stats["total_debit"] - day_stats["total_credit"], 2)),
+        ("", ""),
         ("Validation", ""),
-        ("Debit = Credit",   "YES — Balanced ✓" if balanced else "NO — UNBALANCED ✗"),
+        ("Debit = Credit",                     "YES — Balanced ✓" if balanced else "NO — UNBALANCED ✗"),
+        ("Single = Day Transactions Totals",   "YES — Reconciled ✓" if reconciled else "NO — MISMATCH ✗"),
         ("Ready for Import", "YES" if balanced else "NO — Fix before importing"),
     ]
 
@@ -677,6 +897,8 @@ def _build_xlsx(rows, date_label, stats, config):
             cv.number_format = "#,##0.00"; cv.font = s_val
         elif label in ("Debit = Credit", "Ready for Import"):
             cv.font = s_ok if balanced else s_err
+        elif label == "Single = Day Transactions Totals":
+            cv.font = s_ok if reconciled else s_err
         else:
             cv.font = s_val
         cv.alignment = Alignment(
@@ -692,25 +914,35 @@ def _build_xlsx(rows, date_label, stats, config):
     steps = [
         ("Zoho Books Journal Import — Step-by-step Guide", True),
         ("", False),
-        ("Step 1 — Verify data in the 'Journal Upload' sheet.", False),
-        ("Step 2 — Check 'Summary' sheet: Debit = Credit must show YES.", False),
+        ("Step 1 — Choose ONE sheet to import: 'Single Transactions' (one row", False),
+        ("per payment) or 'Day Transactions' (consolidated by settlement date).", False),
+        ("Do not import both — they represent the same payments at two levels", False),
+        ("of detail and importing both would double-count the amounts.", False),
+        ("Step 2 — Check 'Summary' sheet: Debit = Credit must show YES, and", False),
+        ("'Single = Day Transactions Totals' must show Reconciled.", False),
         ("Step 3 — In Zoho Books: Accountant → Journal → ⋮ → Import Journals.", False),
-        ("Step 4 — Upload this XLSX file (or the CSV version).", False),
+        ("Step 4 — Upload this XLSX file (or the CSV version, single-transaction only).", False),
         ("Step 5 — Map columns if prompted, preview and confirm.", False),
         ("", False),
-        ("Amount Notes", True),
-        ("Each Fee Payment produces one Credit row per Fee Component it settles", False),
+        ("Sheet Notes", True),
+        ("Single Transactions — one Credit row per Fee Component a payment settles", False),
         ("(via its linked Fee Demands), plus one Debit row for the full amount", False),
         ("against the receiving bank/cash account — always balanced per payment.", False),
+        ("Day Transactions — the same rows above, grouped by Date of Settlement", False),
+        ("and Account: all credits/debits for an account on one date become a", False),
+        ("single row. Derived directly from Single Transactions, so totals match.", False),
         ("", False),
         ("Column Reference", True),
-        ("Journal Date          — dd-MM-yyyy  (e.g. 21-02-2026)", False),
-        ("Reference Number      — Transaction reference or Fee Payment ID", False),
+        ("Date of Settlement    — dd-MM-yyyy  (e.g. 21-02-2026)", False),
+        ("Settlement Reference No — Transaction reference or Fee Payment ID", False),
         ("Journal Number Prefix — Configured prefix  (default: JN-FP-)", False),
         ("Journal Number Suffix — Auto-incremented integer", False),
         ("Notes                 — Payment date, mode, and reference", False),
         ("Account               — Must exactly match Zoho Books chart of accounts", False),
+        ("Contact               — Frappe record reference (Student Master ID), not the name", False),
         ("Debit / Credit        — Only one value per row; other is blank", False),
+        ("Student ID / Student Name — extra columns after the 14 Zoho fields;", False),
+        ("Zoho's importer ignores them, kept here for readability only.", False),
     ]
 
     for ri, (text, heading) in enumerate(steps, 1):

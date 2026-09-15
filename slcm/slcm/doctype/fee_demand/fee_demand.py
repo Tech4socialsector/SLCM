@@ -17,10 +17,11 @@ class FeeDemand(Document):
 	def _calculate_amounts(self):
 		self.original_amount = flt(self.original_amount)
 		self.waiver_amount = flt(self.waiver_amount)
+		self.penalty_amount = flt(self.penalty_amount)
 		self.paid_amount = flt(self.paid_amount)
 		self.credit_adjusted = flt(self.credit_adjusted)
 
-		self.net_payable = self.original_amount - self.waiver_amount
+		self.net_payable = self.original_amount - self.waiver_amount + self.penalty_amount
 		self.outstanding_amount = self.net_payable - self.paid_amount - self.credit_adjusted
 
 		# Prevent negative outstanding

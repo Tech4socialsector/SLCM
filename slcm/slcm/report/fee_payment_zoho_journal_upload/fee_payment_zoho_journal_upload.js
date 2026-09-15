@@ -23,6 +23,15 @@ frappe.query_reports["Fee Payment Zoho Journal Upload"] = {
 			on_change: function () { _fpzju_validate_and_refresh(); },
 		},
 		{
+			fieldname: "view",
+			label:     __("View"),
+			fieldtype: "Select",
+			options:   ["Single Transactions", "Day Transactions"],
+			default:   "Single Transactions",
+			description: __("Single Transactions: one row per payment. Day Transactions: consolidated by Date of Settlement."),
+			on_change: function () { _fpzju_safe_refresh(frappe.query_report); },
+		},
+		{
 			fieldname: "payment_mode",
 			label:     __("Payment Mode"),
 			fieldtype: "Select",
