@@ -26,6 +26,7 @@
   "section_amounts",
   "original_amount",
   "waiver_amount",
+  "penalty_amount",
   "net_payable",
   "column_break_3",
   "paid_amount",
@@ -195,6 +196,14 @@
    "fieldtype": "Currency",
    "label": "Waiver Amount",
    "in_list_view": 1
+  },
+  {
+   "default": "0",
+   "description": "Fine/late fee amount added on top of the Original Amount.",
+   "fieldname": "penalty_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Penalty Amount"
   },
   {
    "fieldname": "net_payable",
