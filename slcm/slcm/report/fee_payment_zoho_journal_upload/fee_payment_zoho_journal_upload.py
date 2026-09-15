@@ -23,8 +23,13 @@ import io
 import json
 
 import frappe
+import requests
 from frappe import _
-from frappe.utils import flt, formatdate, nowdate
+from frappe.utils import flt, formatdate, getdate, nowdate
+
+# ── Razorpay API ──────────────────────────────────────────────────────────────
+RAZORPAY_BASE = "https://api.razorpay.com/v1"
+RECON_PG_SIZE = 1000
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 DEFAULT_BANK_ACCOUNT = "UBI Bank General"
@@ -260,12 +265,155 @@ def _fetch_payments(filters):
         ):
             ledger_by_component[r.name] = r.ledger or ""
 
+    settlement_ref_by_payment_id = _lookup_razorpay_settlement_refs(payments)
+
     for p in payments:
         p["demands"]    = demands_by_payment.get(p.fee_payment, [])
         p["department"] = dept_by_program.get(p.program, "")
         p["ledger_map"] = ledger_by_component
+        p["settlement_reference"] = settlement_ref_by_payment_id.get(p.reference_number, "")
 
     return payments
+
+
+def _lookup_razorpay_settlement_refs(payments):
+    """
+    Resolve each Fee Payment's Razorpay PAYMENT id (reference_number, e.g.
+    "pay_xxx") to a real Razorpay SETTLEMENT reference (settlement_id, or
+    settlement_utr when no settlement_id is present).
+
+    Resolution order:
+      1. Live Razorpay API (/v1/settlements/recon/combined) — authoritative,
+         works for any pay_xxx regardless of which module recorded it.
+      2. Local FLE Payment Log.transaction_id — used only when the API is
+         unreachable/unconfigured, so payments already reconciled there
+         still resolve without a network call.
+
+    Returns dict: reference_number (pay_xxx) -> settlement reference string.
+    Payments with no Razorpay match (cash/cheque/bank-transfer payments, or
+    online payments not yet settled) are simply absent from the result —
+    callers fall back to the payment-level reference in that case. This
+    function never raises; a missing/invalid Razorpay configuration or API
+    failure just means the live lookup is skipped, not that the whole report
+    fails, since most payments here aren't Razorpay payments at all.
+    """
+    pay_ids = {p.reference_number for p in payments if p.reference_number}
+    if not pay_ids:
+        return {}
+
+    result = {}
+    try:
+        result = _fetch_settlement_refs_from_razorpay_api(pay_ids, payments)
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Fee Payment Zoho Journal Upload — Razorpay recon lookup")
+
+    unresolved = pay_ids - set(result.keys())
+    if unresolved and frappe.db.table_exists("FLE Payment Log"):
+        rows = frappe.db.get_all(
+            "FLE Payment Log",
+            filters={"transaction_id": ["in", list(unresolved)]},
+            fields=["transaction_id", "settlement_id", "settlement_utr"],
+        )
+        for r in rows:
+            ref = r.settlement_id or r.settlement_utr
+            if ref:
+                result[r.transaction_id] = ref
+
+    return result
+
+
+def _fetch_settlement_refs_from_razorpay_api(pay_ids, payments):
+    """
+    Call Razorpay's /v1/settlements/recon/combined for the year/months that
+    cover these payments' dates, and match items by entity_id (pay_xxx)
+    against pay_ids. Returns {} if Razorpay credentials aren't configured or
+    the API call fails outright — callers treat that as "no live match" and
+    fall back to local data, since a Fee Payment report should still work
+    for institutions that never configured Razorpay.
+    """
+    api_key, api_secret = _get_razorpay_credentials()
+    if not api_key or not api_secret:
+        return {}
+
+    auth = (api_key, api_secret)
+    year_months = _year_months_from_payments(payments)
+    if not year_months:
+        return {}
+
+    result = {}
+    for year, month in year_months:
+        skip = 0
+        while True:
+            try:
+                resp = requests.get(
+                    f"{RAZORPAY_BASE}/settlements/recon/combined",
+                    auth=auth,
+                    params={"year": year, "month": month,
+                            "count": RECON_PG_SIZE, "skip": skip},
+                    timeout=60,
+                )
+            except Exception:
+                break
+
+            if resp.status_code == 404:
+                # Recon not enabled for this account — nothing more to try.
+                return result
+            if not resp.ok:
+                break
+
+            items = resp.json().get("items") or []
+            for item in items:
+                eid = (item.get("entity_id") or item.get("payment_id") or "").strip()
+                if not eid or eid not in pay_ids or eid in result:
+                    continue
+                ref = item.get("settlement_id") or item.get("settlement_utr")
+                if ref:
+                    result[eid] = ref
+
+            if len(items) < RECON_PG_SIZE:
+                break
+            skip += RECON_PG_SIZE
+
+    return result
+
+
+def _year_months_from_payments(payments):
+    """(year, month) pairs covering every payment's date, for the recon API."""
+    year_months = set()
+    for p in payments:
+        if p.payment_date:
+            d = getdate(p.payment_date)
+            year_months.add((d.year, d.month))
+    return sorted(year_months)
+
+
+def _get_razorpay_credentials():
+    """
+    Same resolution order as razorpay_settlement_journal_upload.py: Razorpay
+    Settings doctype first, then site_config.json keys. Returns (None, None)
+    instead of throwing when nothing is configured — this report must keep
+    working for Fee Payments with no Razorpay involvement at all.
+    """
+    try:
+        settings = frappe.get_doc("Razorpay Settings")
+        key    = settings.api_key
+        secret = settings.get_password("api_secret")
+        if key and secret:
+            return key, secret
+    except Exception:
+        pass
+
+    key = secret = None
+    for k_attr in ("razorpay_api_key", "razorpay_key_id"):
+        key = frappe.conf.get(k_attr)
+        if key:
+            break
+    for s_attr in ("razorpay_api_secret", "razorpay_key_secret"):
+        secret = frappe.conf.get(s_attr)
+        if secret:
+            break
+
+    return key, secret
 
 
 # ── Journal row builder ───────────────────────────────────────────────────────
@@ -296,9 +444,16 @@ def _build_journal_rows(payments, config):
 
         daily_totals[str(p.payment_date)] = daily_totals.get(str(p.payment_date), 0) + amount
 
+        # Prefer a real Razorpay settlement reference when one was matched
+        # via FLE Payment Log; otherwise fall back to the payment-level
+        # reference (pay_xxx / bank ref) or, lastly, the Fee Payment ID.
+        settlement_reference = (
+            p.get("settlement_reference") or p.reference_number or p.fee_payment
+        )
+
         shared = {
             "journal_date":          p.payment_date,
-            "reference_number":      p.reference_number or p.fee_payment,
+            "reference_number":      settlement_reference,
             "journal_number_prefix": config["prefix"],
             "journal_number_suffix": suffix,
             "notes":                 notes,
