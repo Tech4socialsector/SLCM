@@ -202,8 +202,10 @@ def create_and_queue(program, source_academic_year, target_academic_year, source
 	the run is restricted to exactly those enrollments."""
 	_check_permission()
 
-	if not program or not source_academic_year or not target_academic_year:
-		frappe.throw(frappe._("Programme, Source Academic Year and Target Academic Year are required."))
+	if not program or not source_academic_year or not target_academic_year or not target_term:
+		frappe.throw(frappe._(
+			"Programme, Source Academic Year, Target Academic Year and Target Term are required."
+		))
 
 	if isinstance(student_list, str):
 		import json
