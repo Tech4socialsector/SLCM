@@ -116,9 +116,18 @@ function add_promotion_buttons(listview) {
 
 	inject_promotion_button_css();
 
-	const $promote_btn = listview.page.add_inner_button(__("Promote Students"), () =>
-		open_promote_students_dialog(listview)
-	);
+	const $promote_btn = listview.page.add_inner_button(__("Promote Students"), () => {
+		const selected = listview.get_checked_items();
+		if (!selected.length) {
+			frappe.msgprint({
+				title: __("No Students Selected"),
+				message: __("Check one or more Student Enrollment rows in the list before promoting."),
+				indicator: "orange",
+			});
+			return;
+		}
+		open_promote_students_dialog(listview, selected);
+	});
 	const $log_btn = listview.page.add_inner_button(__("View Promotion Log"), () => {
 		frappe.set_route("List", "Promotion Run");
 	});
@@ -363,11 +372,104 @@ function inject_promotion_button_css() {
 			border-top: 1px solid #e2e8f0;
 			padding: 14px 32px;
 		}
+
+		.promote-course-preview {
+			margin: 4px 28px 20px 28px;
+			border: 1px solid #e2e8f0;
+			border-radius: 8px;
+			overflow: hidden;
+		}
+		.promote-course-preview .pcp-head {
+			padding: 10px 16px;
+			background: #f8fafc;
+			border-bottom: 1px solid #e2e8f0;
+			font-size: 11.5px;
+			font-weight: 700;
+			letter-spacing: 0.05em;
+			text-transform: uppercase;
+			color: #475569;
+		}
+		.promote-course-preview table {
+			width: 100%;
+			border-collapse: collapse;
+			font-size: 13px;
+		}
+		.promote-course-preview th, .promote-course-preview td {
+			padding: 8px 16px;
+			text-align: left;
+			border-bottom: 1px solid #f1f5f9;
+		}
+		.promote-course-preview th {
+			color: #64748b;
+			font-weight: 600;
+			font-size: 11.5px;
+			text-transform: uppercase;
+		}
+		.promote-course-preview tbody tr:last-child td {
+			border-bottom: none;
+		}
+		.promote-course-preview .pcp-empty {
+			padding: 18px 16px;
+			text-align: center;
+			color: #94a3b8;
+			font-size: 12.5px;
+		}
 	`;
 	document.head.appendChild(style);
 }
 
-function open_promote_students_dialog(listview, defaults) {
+function open_promote_students_dialog(listview, selected) {
+	const programs = [...new Set(selected.map((s) => s.program).filter(Boolean))];
+
+	if (programs.length > 1) {
+		frappe.msgprint({
+			title: __("Multiple Programmes Selected"),
+			indicator: "orange",
+			message: __(
+				"Selected students belong to multiple Programmes ({0}). Please filter your selection to one Programme at a time before promoting.",
+				[programs.join(", ")]
+			),
+		});
+		return;
+	}
+
+	const program = programs[0];
+
+	const unbatched = selected.filter((s) => !s.batch);
+	const batched = selected.filter((s) => s.batch);
+
+	if (!batched.length) {
+		frappe.msgprint({
+			title: __("No Batch on Selected Students"),
+			indicator: "red",
+			message: __("None of the selected students have a Batch on their enrollment, so none can be promoted. Set a Batch on their Student Enrollment record first."),
+		});
+		return;
+	}
+
+	const student_list = batched.map((s) => s.name);
+
+	const proceed = () => open_promote_dialog_body(listview, selected, batched, student_list, program);
+
+	if (unbatched.length) {
+		frappe.confirm(
+			__(
+				"{0} of {1} selected student(s) have no Batch on their enrollment and cannot be promoted: {2}. Continue promoting the remaining {3} student(s)?",
+				[
+					unbatched.length,
+					selected.length,
+					unbatched.map((s) => frappe.utils.escape_html(s.student_name || s.name)).join(", "),
+					batched.length,
+				]
+			),
+			proceed
+		);
+	} else {
+		proceed();
+	}
+}
+
+function open_promote_dialog_body(listview, selected, batched, student_list, program) {
 	const dialog = new frappe.ui.Dialog({
 		title: `<span>&#8613;</span> ${__("Promote Students")}`,
 		fields: [
@@ -376,117 +478,41 @@ function open_promote_students_dialog(listview, defaults) {
 				fieldtype: "HTML",
 				options: `<div class="promote-dialog-intro">
 					<span class="info-icon">i</span>
-					<span>${__(
-						"Set the criteria below, then review and pick exactly which students to promote on the next screen."
-					)}</span>
+					<span>${__("Promoting {0} selected student(s){1}. Choose where they're being promoted to.", [
+						`<b>${batched.length}</b>`,
+						program ? __(" in <b>{0}</b>", [frappe.utils.escape_html(program)]) : "",
+					])}</span>
 				</div>`,
 			},
-
-			{ fieldname: "sb_source", fieldtype: "Section Break",
-				label: `&#128269; ${__("Who to promote")}`, css_class: "promote-section-card" },
-			{ fieldname: "program", label: __("Programme"), fieldtype: "Link", options: "Programme", reqd: 1 },
-			{ fieldname: "source_academic_year", label: __("Source Academic Year"), fieldtype: "Link", options: "Academic Year", reqd: 1 },
-			{ fieldname: "col_break_1", fieldtype: "Column Break" },
-			{ fieldname: "source_term", label: __("Source Term"), fieldtype: "Link", options: "Academic Term" },
-			{ fieldname: "batch", label: __("Batch"), fieldtype: "Link", options: "Batch" },
-			{ fieldname: "section", label: __("Section"), fieldtype: "Link", options: "Section" },
-
-			{ fieldname: "sb_target", fieldtype: "Section Break",
-				label: `&#127919; ${__("Promote to")}`, css_class: "promote-section-card target" },
 			{ fieldname: "target_academic_year", label: __("Target Academic Year"), fieldtype: "Link", options: "Academic Year", reqd: 1 },
 			{ fieldname: "target_term", label: __("Target Term"), fieldtype: "Link", options: "Academic Term", reqd: 1,
 				description: __("Required — the target Academic Year can have more than one term (e.g. multiple trimesters), so this pins down exactly which Batch to promote students into.") },
-			{ fieldname: "col_break_2", fieldtype: "Column Break" },
+			{ fieldname: "col_break_1", fieldtype: "Column Break" },
 			{ fieldname: "promotion_policy", label: __("Promotion Policy"), fieldtype: "Link", options: "Promotion Policy",
-				description: __("Optional — evaluates attendance, backlog, CGPA and fee-due rules, shown as a hint per student on the next screen.") },
-		],
-		size: "extra-large",
-		primary_action_label: __("Next: Review Students"),
-		primary_action(values) {
-			frappe.call({
-				method: "slcm.slcm.doctype.promotion_run.promotion_run.preview_students",
-				args: {
-					program: values.program,
-					source_academic_year: values.source_academic_year,
-					batch: values.batch,
-					section: values.section,
-					promotion_policy: values.promotion_policy,
-				},
-				freeze: true,
-				freeze_message: __("Fetching matching students..."),
-				callback: (r) => {
-					const students = (r.message && r.message.students) || [];
-					if (!students.length) {
-						const available = (r.message && r.message.available_academic_years) || [];
-						let message = __("No Enrolled students match this Programme / Academic Year / Batch / Section combination.");
-						if (available.length) {
-							const list_html = available
-								.map((a) => `<li><b>${frappe.utils.escape_html(a.academic_year)}</b> — ${a.student_count} ${__("student(s)")}</li>`)
-								.join("");
-							message += `<br><br>${__("This Programme has Enrolled students under these Academic Year(s) instead — check for a near-duplicate name:")}<ul style="margin-top:6px;">${list_html}</ul>`;
-						}
-						frappe.msgprint({
-							title: __("No Students Found"),
-							indicator: "orange",
-							message,
-						});
-						return;
-					}
-					dialog.hide();
-					open_student_review_dialog(listview, values, students);
-				},
-			});
-		},
-	});
+				description: __("Optional — evaluates attendance, backlog, CGPA and fee-due rules before promoting. Leave blank to promote all selected students unconditionally.") },
 
-	dialog.$wrapper.find(".modal-dialog").addClass("promote-dialog");
-	if (defaults) dialog.set_values(defaults);
-	dialog.show();
-}
-
-function open_student_review_dialog(listview, criteria, students) {
-	const eligible_count = students.filter((s) => s.likely_eligible).length;
-
-	const dialog = new frappe.ui.Dialog({
-		title: `<span>&#128203;</span> ${__("Review Students")} <span class="promote-review-count">(${students.length})</span>`,
-		fields: [
+			{ fieldname: "sb_courses", fieldtype: "Section Break", label: `&#128218; ${__("Courses in Target Term")}` },
 			{
-				fieldname: "review_html",
+				fieldname: "course_preview_html",
 				fieldtype: "HTML",
-				options: `
-					<div class="promote-review-toolbar">
-						<span class="promote-review-summary">
-							${__("{0} of {1} likely eligible (pre-selected)", [`<b>${eligible_count}</b>`, `<b>${students.length}</b>`])}
-							— ${__("deselect or select any student before promoting. Click a column header to sort, or type in the filter row to search.")}
-						</span>
-						<span class="promote-review-selected-count" id="promote-selected-count"></span>
-					</div>
-					<div class="promote-review-datatable" id="promote-review-datatable"></div>
-				`,
+				options: `<div class="promote-course-preview"><div class="pcp-empty">${__("Choose a Target Academic Year and Target Term above to preview its courses.")}</div></div>`,
 			},
 		],
 		size: "extra-large",
-		primary_action_label: __("Promote Selected"),
-		primary_action() {
-			if (!review_datatable) return;
-			const checked_indexes = review_datatable.rowmanager.getCheckedRows();
-			const selected = checked_indexes
-				.map((idx) => students[idx])
-				.filter(Boolean)
-				.map((s) => s.enrollment);
-
-			if (!selected.length) {
-				frappe.msgprint(__("Select at least one student to promote."));
-				return;
-			}
-
+		primary_action_label: __("Promote"),
+		primary_action(values) {
 			frappe.confirm(
-				__("Start a promotion run for {0} selected student(s)?", [selected.length]),
+				__("Start a promotion run for {0} selected student(s)?", [batched.length]),
 				() => {
 					dialog.hide();
 					frappe.call({
 						method: "slcm.slcm.doctype.promotion_run.promotion_run.create_and_queue",
-						args: { ...criteria, student_list: selected },
+						args: {
+							student_list,
+							target_academic_year: values.target_academic_year,
+							target_term: values.target_term,
+							promotion_policy: values.promotion_policy,
+						},
 						freeze: true,
 						freeze_message: __("Queuing promotion run..."),
 						callback: (r) => {
@@ -499,75 +525,60 @@ function open_student_review_dialog(listview, criteria, students) {
 				}
 			);
 		},
-		secondary_action_label: __("Back"),
-		secondary_action() {
-			dialog.hide();
-			open_promote_students_dialog(listview, criteria);
-		},
 	});
 
-	dialog.$wrapper.find(".modal-dialog").addClass("promote-dialog promote-review-dialog");
-	dialog.show();
+	dialog.$wrapper.find(".modal-dialog").addClass("promote-dialog");
 
-	const $wrapper = dialog.$wrapper;
-	let review_datatable = null;
+	const refresh_course_preview = () => {
+		const target_academic_year = dialog.get_value("target_academic_year");
+		const target_term = dialog.get_value("target_term");
+		const $box = dialog.$wrapper.find(".promote-course-preview");
 
-	function update_selected_count() {
-		if (!review_datatable) return;
-		const count = review_datatable.rowmanager.getCheckedRows().length;
-		$wrapper.find("#promote-selected-count").text(__("Selected: {0}", [count]));
-	}
+		if (!target_academic_year) {
+			$box.html(`<div class="pcp-empty">${__("Choose a Target Academic Year and Target Term above to preview its courses.")}</div>`);
+			return;
+		}
 
-	const columns = [
-		{ name: __("Student"), id: "student_name", width: 240 },
-		{ name: __("Batch"), id: "batch", width: 240 },
-		{ name: __("Eligibility"), id: "eligibility", width: 300 },
-	];
-
-	// Cell content is rendered as raw HTML by frappe.DataTable (no formatter needed),
-	// and inline-filter/sort operate on the stripped text of this HTML, so building the
-	// markup up front here — rather than via a per-cell `format` callback — sidesteps
-	// datatable's lack of a reliable rowIndex in that callback.
-	const rows = students.map((s) => {
-		const student_cell = `<div class="promote-row-name">${frappe.utils.escape_html(s.student_name || s.student)}</div>
-			<div class="promote-row-id">${frappe.utils.escape_html(s.student)}</div>`;
-		const eligibility_cell = s.likely_eligible
-			? `<span class="promote-row-tag ok">&#10003; ${__("Likely Eligible")}</span>`
-			: `<span class="promote-row-tag warn">&#9888; ${frappe.utils.escape_html(s.hint || __("Not Eligible"))}</span>`;
-		return [student_cell, frappe.utils.escape_html(s.batch || "—"), eligibility_cell];
-	});
-
-	// Build the DataTable after the modal's open animation/layout has settled — constructing
-	// it immediately on a still-animating/zero-size container throws inside the library's
-	// internal stylesheet setup (insertRule on a null sheet). Same workaround already used
-	// for the child DataTable in frappe's own multi_select_dialog.js.
-	setTimeout(() => {
-		review_datatable = new frappe.DataTable(
-			$wrapper.find("#promote-review-datatable").get(0),
-			{
-				columns,
-				data: rows,
-				layout: "fluid",
-				inlineFilters: true,
-				serialNoColumn: false,
-				checkboxColumn: true,
-				checkedRowStatus: false,
-				cellHeight: 54,
-				noDataMessage: __("No students to review."),
-				disableReorderColumn: true,
-				events: {
-					onCheckRow: update_selected_count,
-				},
-			}
-		);
-
-		// pre-check likely-eligible rows (row index here matches students[] order — see sort-stability note above)
-		students.forEach((s, idx) => {
-			if (s.likely_eligible) review_datatable.rowmanager.checkRow(idx, true);
+		frappe.call({
+			method: "slcm.slcm.doctype.promotion_run.promotion_run.get_target_term_courses",
+			args: { student_list, target_academic_year, target_term },
+			callback: (r) => {
+				const courses = (r.message && r.message.courses) || [];
+				const target_batches = (r.message && r.message.target_batches) || [];
+				if (!target_batches.length) {
+					$box.html(`<div class="pcp-empty">${__("No target Batch exists yet for the selected students' next term — create it first, or check back after doing so. Promotion is not blocked by this.")}</div>`);
+					return;
+				}
+				if (!courses.length) {
+					$box.html(`<div class="pcp-empty">${__("No active Course Offerings found yet for the target Batch(es): {0}. Promotion is not blocked by this.", [target_batches.join(", ")])}</div>`);
+					return;
+				}
+				const rows = courses
+					.map(
+						(c) => `<tr>
+							<td>${frappe.utils.escape_html(c.course_name || c.course || "—")}</td>
+							<td>${c.credits != null ? c.credits : "—"}</td>
+							<td>${frappe.utils.escape_html(c.batch || "—")}</td>
+						</tr>`
+					)
+					.join("");
+				$box.html(`
+					<div class="pcp-head">${__("{0} active course offering(s) in the target Batch(es)", [courses.length])}</div>
+					<table>
+						<thead><tr>
+							<th>${__("Course")}</th><th>${__("Credits")}</th><th>${__("Batch")}</th>
+						</tr></thead>
+						<tbody>${rows}</tbody>
+					</table>
+				`);
+			},
 		});
+	};
 
-		update_selected_count();
-	}, 300);
+	dialog.fields_dict.target_academic_year.df.onchange = refresh_course_preview;
+	dialog.fields_dict.target_term.df.onchange = refresh_course_preview;
+
+	dialog.show();
 }
 
 function watch_promotion_run(run_name, listview) {
@@ -583,6 +594,7 @@ function watch_promotion_run(run_name, listview) {
 		}, 8);
 		if (listview) listview.refresh();
 		frappe.realtime.off("promotion_run_complete");
+		frappe.set_route("Form", "Promotion Run", run_name);
 	});
 }
 
