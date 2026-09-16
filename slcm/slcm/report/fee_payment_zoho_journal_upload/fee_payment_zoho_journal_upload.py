@@ -3,24 +3,38 @@
 """
 Fee Payment Zoho Journal Upload Report
 
-Turns submitted Fee Payment records into a Zoho Books Journal Import file.
+Data source: the Razorpay Settlements API is the PRIMARY source of truth —
+not local Fee Payment records. Local Fee Payment is used to enrich each
+Razorpay payment with its fee-component breakdown, student name, and
+department/course. Only Razorpay payments that match a local Fee Payment
+(by reference_number) appear in this report — this is deliberately an
+SLCM fee reconciliation report, not a general Razorpay ledger, so
+unmatched Razorpay activity (other payments the account processes) never
+shows up here.
 
-Per Fee Payment:
-  1. Look up every Fee Demand it settled (via payment_demands / Fee Payment
-     Demand Row) and group the allocated amount by Fee Component.
-  2. Emit one Credit row per Fee Component (account = component's mapped
-     ledger, falling back to the component name itself).
-  3. Emit one Debit row for the full payment amount against the receiving
-     account (bank account on the payment, or the Cash account for cash
-     payments, or the configured default).
+Flow:
+  1. Fetch settlements from /v1/settlements for the date range.
+  2. Fetch per-payment recon items from /v1/settlements/recon/combined —
+     gives each settlement's individual payments (entity_id = pay_xxx).
+  3. For each recon item, look up the local Fee Payment whose
+     reference_number matches that pay_xxx (any status except Cancelled)
+     to get its fee-component breakdown via its Fee Demands. Items with no
+     local match are dropped from the report entirely.
+  4. Emit one Credit row per Fee Component per matched payment, plus one
+     Debit row per SETTLEMENT for the sum of ITS MATCHED payments only
+     (not the settlement's full Razorpay gross, which may include other,
+     unrelated payments) — one bank credit per settlement, regardless of
+     how many matched payments make it up.
 
 Journal amounts:
-  Sum of component credits == payment amount == debit amount, so every
-  payment is always balanced on its own.
+  Sum of a settlement's Credit rows == that settlement's Debit row amount,
+  so every settlement is balanced on its own.
 """
 
 import io
 import json
+import time
+from datetime import datetime, timezone
 
 import frappe
 import requests
@@ -29,27 +43,24 @@ from frappe.utils import flt, formatdate, getdate, nowdate
 
 # ── Razorpay API ──────────────────────────────────────────────────────────────
 RAZORPAY_BASE = "https://api.razorpay.com/v1"
+PAGE_SIZE     = 100
 RECON_PG_SIZE = 1000
+
+# The recon API is fetched once per calendar month covered by the date
+# range; each call takes several seconds. Months are fetched CONCURRENTLY
+# (see _fetch_recon_items) so a wide date range costs roughly one month's
+# latency, not N months' — this just bounds how many run at once so a huge
+# range (e.g. several years) doesn't open an unreasonable number of sockets.
+MAX_RECON_WORKERS = 8
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 DEFAULT_BANK_ACCOUNT = "UBI Bank General"
-DEFAULT_CASH_ACCOUNT = "Cash"
 DEFAULT_PREFIX        = "JN-FP-"
 DEFAULT_JOURNAL_TYPE  = "Both"
 DEFAULT_CURRENCY      = "INR"
 DEFAULT_DESCRIPTION   = "Fee Payment"
 DEFAULT_DEPARTMENT    = ""
 DEFAULT_COURSE        = ""
-
-PAYMENT_MODE_ACCOUNTS = {
-    "Cash":           DEFAULT_CASH_ACCOUNT,
-    "Bank Transfer":  DEFAULT_BANK_ACCOUNT,
-    "Cheque":         DEFAULT_BANK_ACCOUNT,
-    "Credit Card":    DEFAULT_BANK_ACCOUNT,
-    "Debit Card":     DEFAULT_BANK_ACCOUNT,
-    "Online Payment": DEFAULT_BANK_ACCOUNT,
-    "Other":          DEFAULT_BANK_ACCOUNT,
-}
 
 # Zoho Books required column order — do NOT change.
 # NOTE: "Date of Settlement", "Settlement Reference No" and "Contact" are display
@@ -98,19 +109,51 @@ EXTRA_FIELD_MAP = {
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def execute(filters=None):
+    # Defense in depth: frappe.desk.query_report.run() already enforces the
+    # Report doctype's `roles` list before calling execute() when the report
+    # is opened normally, but this check keeps behavior consistent with the
+    # whitelisted export/defaults endpoints below, which do NOT get that
+    # protection for free.
+    _check_report_permission()
+
     filters = filters or {}
     config  = _resolve_config(filters)
     view    = (filters.get("view") or "Single Transactions").strip()
 
-    payments = _fetch_payments(filters)
-    if not payments:
+    try:
+        settlements = _fetch_settlements(filters)
+    except frappe.ValidationError:
+        raise
+    except Exception as exc:
+        frappe.log_error(frappe.get_traceback(), "Fee Payment Zoho Journal Upload — Razorpay API")
+        frappe.throw(
+            _("Failed to fetch settlements from Razorpay: {0}").format(str(exc)),
+            title=_("API Error"),
+        )
+        return _get_columns(view), [], None, None, []
+
+    if not settlements:
         frappe.msgprint(
-            _("No submitted fee payments found for the selected filters."),
+            _("No Razorpay settlements found for the selected date range."),
             indicator="orange", alert=True,
         )
         return _get_columns(view), [], None, None, []
 
-    rows, stats = _build_journal_rows(payments, config)
+    api_key, api_secret = _get_razorpay_credentials_or_throw()
+    recon_items = _fetch_recon_items(auth=(api_key, api_secret), settlements=settlements)
+
+    fee_payment_by_pay_id = _lookup_fee_payments_by_reference(
+        {(item.get("entity_id") or item.get("payment_id") or "").strip() for item in recon_items}
+    )
+
+    rows, stats = _build_journal_rows(settlements, recon_items, fee_payment_by_pay_id, filters, config)
+
+    if not rows:
+        frappe.msgprint(
+            _("No Razorpay payments in this date range matched a local Fee Payment record."),
+            indicator="orange", alert=True,
+        )
+        return _get_columns(view), [], None, None, []
 
     if view == "Day Transactions":
         day_rows, day_stats = _build_day_rows(rows, config)
@@ -159,13 +202,6 @@ def _get_columns(view="Single Transactions"):
          "width": 140},
         {"label": _("Student Name"),            "fieldname": "student_display_name",  "fieldtype": "Data",    "width": 140},
     ]
-    if view != "Day Transactions":
-        # These are per-payment concepts with no equivalent on a consolidated
-        # Day Transactions row, so they're only shown for Single Transactions.
-        columns += [
-            {"label": _("Fee Payment"), "fieldname": "fee_payment", "fieldtype": "Link", "options": "Fee Payment", "width": 130},
-            {"label": _("Payment Mode"), "fieldname": "payment_mode", "fieldtype": "Data", "width": 110},
-        ]
     return columns
 
 
@@ -174,56 +210,312 @@ def _get_columns(view="Single Transactions"):
 def _resolve_config(filters):
     return {
         "bank_account": (filters.get("bank_account") or "").strip() or DEFAULT_BANK_ACCOUNT,
-        "cash_account": (filters.get("cash_account") or "").strip() or DEFAULT_CASH_ACCOUNT,
         "prefix":       (filters.get("journal_prefix") or "").strip() or DEFAULT_PREFIX,
         "department":   (filters.get("department") or "").strip() or DEFAULT_DEPARTMENT,
         "course":       (filters.get("course") or "").strip() or DEFAULT_COURSE,
     }
 
 
-# ── Data fetch ────────────────────────────────────────────────────────────────
+# ── Razorpay settlement fetch ─────────────────────────────────────────────────
 
-def _fetch_payments(filters):
-    conditions = ["fp.status = 'Submitted'"]
-    values = {}
+def _fetch_settlements(filters):
+    api_key, api_secret = _get_razorpay_credentials_or_throw()
+    auth    = (api_key, api_secret)
+    from_ts = _date_to_unix(filters.get("from_date"), end_of_day=False)
+    to_ts   = _date_to_unix(filters.get("to_date"),   end_of_day=True)
 
-    if filters.get("from_date"):
-        conditions.append("fp.payment_date >= %(from_date)s")
-        values["from_date"] = filters["from_date"]
-    if filters.get("to_date"):
-        conditions.append("fp.payment_date <= %(to_date)s")
-        values["to_date"] = filters["to_date"]
-    if filters.get("payment_mode"):
-        conditions.append("fp.payment_mode = %(payment_mode)s")
-        values["payment_mode"] = filters["payment_mode"]
-    if filters.get("program"):
-        conditions.append("fp.program = %(program)s")
-        values["program"] = filters["program"]
+    settlements = []
+    skip = 0
 
-    where_clause = " AND ".join(conditions)
+    while True:
+        params = {"count": PAGE_SIZE, "skip": skip}
+        if from_ts:
+            params["from"] = from_ts
+        if to_ts:
+            params["to"] = to_ts
+
+        resp = requests.get(f"{RAZORPAY_BASE}/settlements", auth=auth, params=params, timeout=30)
+        _raise_for_status(resp)
+
+        items = resp.json().get("items") or []
+        settlements.extend(items)
+
+        if len(items) < PAGE_SIZE:
+            break
+        skip += PAGE_SIZE
+
+    return settlements
+
+
+def _fetch_recon_items(auth, settlements):
+    """
+    Fetch per-payment recon from /v1/settlements/recon/combined, for the
+    year/months these settlements fall in. Each item is one payment
+    (entity_id = pay_xxx) within a settlement (settlement_id / settlement_utr).
+    Returns [] gracefully if recon isn't enabled for this account (every
+    month's call 404s).
+
+    Months are fetched CONCURRENTLY (one HTTP round-trip is the dominant
+    cost per month, and months are fully independent queries) — a 12-month
+    range takes roughly as long as the single slowest month, not 12x that,
+    so there's no need to cap how wide a date range can be.
+    """
+    if not settlements:
+        return []
+
+    target_sids = {s["id"] for s in settlements if s.get("id")}
+    utr_to_sid  = {
+        s["utr"]: s["id"]
+        for s in settlements
+        if s.get("utr") and s.get("id")
+    }
+    year_months = _year_months_from_settlements(settlements)
+    if not year_months:
+        return []
+
+    import concurrent.futures
+
+    results_by_month = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(year_months), MAX_RECON_WORKERS)) as pool:
+        futures = {
+            pool.submit(_fetch_recon_items_for_month, auth, year, month): (year, month)
+            for year, month in year_months
+        }
+        for future in concurrent.futures.as_completed(futures):
+            year, month = futures[future]
+            try:
+                results_by_month[(year, month)] = future.result()
+            except Exception as exc:
+                frappe.throw(
+                    _("Failed to fetch Razorpay reconciliation data for {0}-{1}: {2}").format(
+                        year, str(month).zfill(2), str(exc)
+                    ),
+                    title=_("API Error"),
+                )
+
+    # If every month says "recon not enabled" (404), the account simply
+    # doesn't have recon — return [] rather than treating it as an error.
+    if all(v is None for v in results_by_month.values()):
+        return []
+
+    seen_eids = set()
+    all_items = []
+
+    for year, month in year_months:
+        items = results_by_month.get((year, month)) or []
+        for item in items:
+            sid = item.get("settlement_id") or ""
+            if not sid:
+                utr = item.get("settlement_utr") or ""
+                sid = utr_to_sid.get(utr) or ""
+            if sid not in target_sids:
+                continue
+            if not item.get("settlement_id") and sid:
+                item["settlement_id"] = sid
+
+            eid = (item.get("entity_id") or item.get("payment_id") or "").strip()
+            if eid:
+                if eid in seen_eids:
+                    continue
+                seen_eids.add(eid)
+
+            all_items.append(item)
+
+    return all_items
+
+
+def _fetch_recon_items_for_month(auth, year, month):
+    """
+    Fetch every page of recon items for one (year, month). Runs inside a
+    worker thread — must not call frappe.throw/msgprint (not safe off the
+    main request thread); returns None to signal "recon not enabled this
+    month" (404), or a plain list of raw items otherwise. Pagination within
+    a month stays sequential (each page's `skip` depends on the page-size
+    check of the previous one) — only different months run concurrently.
+
+    Fetching several months concurrently can trip Razorpay's per-second
+    rate limit (HTTP 429) on whichever month's request lands last — retried
+    with backoff (honoring Retry-After when present) rather than silently
+    treated as "no more pages", which would return incomplete data for that
+    month without any error ever surfacing.
+    """
+    items_for_month = []
+    skip = 0
+    while True:
+        resp = _get_with_retry(
+            f"{RAZORPAY_BASE}/settlements/recon/combined",
+            auth=auth,
+            params={"year": year, "month": month,
+                    "count": RECON_PG_SIZE, "skip": skip},
+            timeout=60,
+        )
+
+        if resp.status_code == 404:
+            return None
+        if not resp.ok:
+            raise RuntimeError(
+                f"Razorpay recon fetch failed for {year}-{month:02d}: "
+                f"HTTP {resp.status_code} — {resp.text[:200]}"
+            )
+
+        items = resp.json().get("items") or []
+        items_for_month.extend(items)
+
+        if len(items) < RECON_PG_SIZE:
+            break
+        skip += RECON_PG_SIZE
+
+    return items_for_month
+
+
+def _get_with_retry(url, auth, params, timeout, max_retries=5):
+    """
+    GET with retry-with-backoff on HTTP 429 (rate limited), honoring the
+    Retry-After header when Razorpay sends one. Any other response
+    (success, 404, or a genuine error) is returned as-is on the first try —
+    only rate limiting is worth retrying here.
+    """
+    for attempt in range(max_retries + 1):
+        resp = requests.get(url, auth=auth, params=params, timeout=timeout)
+        if resp.status_code != 429 or attempt == max_retries:
+            return resp
+        wait = flt(resp.headers.get("Retry-After") or (attempt + 1))
+        time.sleep(min(wait, 10))
+    return resp
+
+
+def _year_months_from_settlements(settlements):
+    year_months = set()
+    for s in settlements:
+        ts = s.get("created_at")
+        if ts:
+            try:
+                dt = datetime.fromtimestamp(int(ts), tz=timezone.utc)
+                year_months.add((dt.year, dt.month))
+            except Exception:
+                pass
+    return sorted(year_months)
+
+
+def _get_razorpay_credentials_or_throw():
+    """
+    Same resolution order as razorpay_settlement_journal_upload.py: Razorpay
+    Settings doctype first, then site_config.json keys. Unlike the Fee
+    Payment lookup used to have, this report's ENTIRE dataset now comes from
+    Razorpay, so a missing configuration must stop the report with a clear
+    message rather than silently returning nothing.
+    """
+    try:
+        settings = frappe.get_doc("Razorpay Settings")
+        key    = settings.api_key
+        secret = settings.get_password("api_secret")
+        if key and secret:
+            return key, secret
+    except Exception:
+        pass
+
+    key = secret = None
+    for k_attr in ("razorpay_api_key", "razorpay_key_id"):
+        key = frappe.conf.get(k_attr)
+        if key:
+            break
+    for s_attr in ("razorpay_api_secret", "razorpay_key_secret"):
+        secret = frappe.conf.get(s_attr)
+        if secret:
+            break
+
+    if key and secret:
+        return key, secret
+
+    frappe.throw(
+        _(
+            "Razorpay API credentials not found. "
+            "Configure them in <b>Razorpay Settings</b> or in "
+            "<code>site_config.json</code> as "
+            "<code>razorpay_api_key</code> / <code>razorpay_api_secret</code>."
+        ),
+        title=_("Missing Configuration"),
+    )
+
+
+def _raise_for_status(resp):
+    if resp.status_code == 401:
+        frappe.throw(
+            _("Razorpay authentication failed. Check your API Key and Secret in <b>Razorpay Settings</b>."),
+            title=_("Authentication Error"),
+        )
+    if not resp.ok:
+        try:
+            err = resp.json().get("error", {}).get("description", resp.text[:300])
+        except Exception:
+            err = resp.text[:300]
+        frappe.throw(
+            _("Razorpay API error {0}: {1}").format(resp.status_code, err),
+            title=_("API Error"),
+        )
+
+
+def _date_to_unix(date_str, end_of_day=False):
+    if not date_str:
+        return None
+    try:
+        from datetime import time as dtime
+        d = getdate(date_str)
+        t = dtime(23, 59, 59) if end_of_day else dtime(0, 0, 0)
+        return int(datetime.combine(d, t).replace(tzinfo=timezone.utc).timestamp())
+    except Exception:
+        return None
+
+
+def _unix_to_date(ts):
+    if not ts:
+        return None
+    try:
+        return datetime.fromtimestamp(int(ts), tz=timezone.utc).date()
+    except Exception:
+        return None
+
+
+# ── Local Fee Payment enrichment ──────────────────────────────────────────────
+
+def _lookup_fee_payments_by_reference(pay_ids):
+    """
+    Find the local Fee Payment (if any) whose reference_number matches each
+    Razorpay pay_xxx, and load its fee-component breakdown, student name,
+    and department/course. Payments recorded purely in Razorpay with no
+    local Fee Payment (or vice versa) are handled by the caller — this
+    just returns whatever local matches exist.
+
+    Matches regardless of Fee Payment status (Draft included) — Razorpay
+    already settled the money, so a match shouldn't be dropped just because
+    someone hasn't clicked Submit locally yet. Only Cancelled records are
+    excluded, since those represent payments that were reversed/voided.
+
+    Returns dict: pay_xxx -> {fee_payment, student, student_name, program,
+    department, components: [(account_name, amount), ...]}
+    """
+    pay_ids = {p for p in pay_ids if p}
+    if not pay_ids:
+        return {}
 
     payments = frappe.db.sql(
-        f"""
+        """
         SELECT
             fp.name              AS fee_payment,
+            fp.reference_number  AS reference_number,
             fp.student            AS student,
             fp.student_name       AS student_name,
             fp.program            AS program,
-            fp.payment_date       AS payment_date,
-            fp.payment_mode       AS payment_mode,
-            fp.amount             AS amount,
-            fp.bank_account       AS bank_account,
-            fp.reference_number   AS reference_number,
-            fp.remarks            AS remarks
+            fp.amount             AS amount
         FROM `tabFee Payment` fp
-        WHERE {where_clause}
-        ORDER BY fp.payment_date ASC, fp.name ASC
+        WHERE fp.reference_number IN %(pay_ids)s
+          AND fp.status != 'Cancelled'
         """,
-        values,
+        {"pay_ids": list(pay_ids)},
         as_dict=True,
     )
     if not payments:
-        return []
+        return {}
 
     payment_names = [p.fee_payment for p in payments]
     demand_rows = frappe.db.sql(
@@ -240,7 +532,6 @@ def _fetch_payments(filters):
         {"names": payment_names},
         as_dict=True,
     )
-
     demands_by_payment = {}
     for row in demand_rows:
         demands_by_payment.setdefault(row.fee_payment, []).append(row)
@@ -265,195 +556,134 @@ def _fetch_payments(filters):
         ):
             ledger_by_component[r.name] = r.ledger or ""
 
-    settlement_ref_by_payment_id = _lookup_razorpay_settlement_refs(payments)
-
-    for p in payments:
-        p["demands"]    = demands_by_payment.get(p.fee_payment, [])
-        p["department"] = dept_by_program.get(p.program, "")
-        p["ledger_map"] = ledger_by_component
-        p["settlement_reference"] = settlement_ref_by_payment_id.get(p.reference_number, "")
-
-    return payments
-
-
-def _lookup_razorpay_settlement_refs(payments):
-    """
-    Resolve each Fee Payment's Razorpay PAYMENT id (reference_number, e.g.
-    "pay_xxx") to a real Razorpay SETTLEMENT reference (settlement_id, or
-    settlement_utr when no settlement_id is present).
-
-    Resolution order:
-      1. Live Razorpay API (/v1/settlements/recon/combined) — authoritative,
-         works for any pay_xxx regardless of which module recorded it.
-      2. Local FLE Payment Log.transaction_id — used only when the API is
-         unreachable/unconfigured, so payments already reconciled there
-         still resolve without a network call.
-
-    Returns dict: reference_number (pay_xxx) -> settlement reference string.
-    Payments with no Razorpay match (cash/cheque/bank-transfer payments, or
-    online payments not yet settled) are simply absent from the result —
-    callers fall back to the payment-level reference in that case. This
-    function never raises; a missing/invalid Razorpay configuration or API
-    failure just means the live lookup is skipped, not that the whole report
-    fails, since most payments here aren't Razorpay payments at all.
-    """
-    pay_ids = {p.reference_number for p in payments if p.reference_number}
-    if not pay_ids:
-        return {}
-
     result = {}
-    try:
-        result = _fetch_settlement_refs_from_razorpay_api(pay_ids, payments)
-    except Exception:
-        frappe.log_error(frappe.get_traceback(), "Fee Payment Zoho Journal Upload — Razorpay recon lookup")
-
-    unresolved = pay_ids - set(result.keys())
-    if unresolved and frappe.db.table_exists("FLE Payment Log"):
-        rows = frappe.db.get_all(
-            "FLE Payment Log",
-            filters={"transaction_id": ["in", list(unresolved)]},
-            fields=["transaction_id", "settlement_id", "settlement_utr"],
-        )
-        for r in rows:
-            ref = r.settlement_id or r.settlement_utr
-            if ref:
-                result[r.transaction_id] = ref
-
+    for p in payments:
+        demands = demands_by_payment.get(p.fee_payment, [])
+        result[p.reference_number] = {
+            "fee_payment":  p.fee_payment,
+            "student":      p.student,
+            "student_name": p.student_name or "",
+            "program":      p.program or "",
+            "department":   dept_by_program.get(p.program, ""),
+            "components":   _split_by_component(demands, ledger_by_component, flt(p.amount)),
+        }
     return result
 
 
-def _fetch_settlement_refs_from_razorpay_api(pay_ids, payments):
+def _split_by_component(demands, ledger_by_component, payment_amount):
+    """Group a payment's allocated demand amounts by Fee Component.
+    Returns a list of (account_name, amount) tuples.
     """
-    Call Razorpay's /v1/settlements/recon/combined for the year/months that
-    cover these payments' dates, and match items by entity_id (pay_xxx)
-    against pay_ids. Returns {} if Razorpay credentials aren't configured or
-    the API call fails outright — callers treat that as "no live match" and
-    fall back to local data, since a Fee Payment report should still work
-    for institutions that never configured Razorpay.
-    """
-    api_key, api_secret = _get_razorpay_credentials()
-    if not api_key or not api_secret:
-        return {}
+    totals = {}
+    for d in demands:
+        comp   = d.fee_component or d.demand_description or "Unallocated Fee"
+        ledger = ledger_by_component.get(d.fee_component, "") if d.fee_component else ""
+        account_name = ledger or comp
+        totals[account_name] = totals.get(account_name, 0) + flt(d.amount_allocated)
 
-    auth = (api_key, api_secret)
-    year_months = _year_months_from_payments(payments)
-    if not year_months:
-        return {}
+    # Guard against demand allocations not summing to the full payment amount
+    # (partial allocation / unlinked balance) — plug the gap as "Unallocated Fee"
+    allocated_total = round(sum(totals.values()), 2)
+    remainder = round(payment_amount - allocated_total, 2)
+    if abs(remainder) >= 0.01:
+        totals["Unallocated Fee"] = totals.get("Unallocated Fee", 0) + remainder
 
-    result = {}
-    for year, month in year_months:
-        skip = 0
-        while True:
-            try:
-                resp = requests.get(
-                    f"{RAZORPAY_BASE}/settlements/recon/combined",
-                    auth=auth,
-                    params={"year": year, "month": month,
-                            "count": RECON_PG_SIZE, "skip": skip},
-                    timeout=60,
-                )
-            except Exception:
-                break
-
-            if resp.status_code == 404:
-                # Recon not enabled for this account — nothing more to try.
-                return result
-            if not resp.ok:
-                break
-
-            items = resp.json().get("items") or []
-            for item in items:
-                eid = (item.get("entity_id") or item.get("payment_id") or "").strip()
-                if not eid or eid not in pay_ids or eid in result:
-                    continue
-                ref = item.get("settlement_id") or item.get("settlement_utr")
-                if ref:
-                    result[eid] = ref
-
-            if len(items) < RECON_PG_SIZE:
-                break
-            skip += RECON_PG_SIZE
-
-    return result
-
-
-def _year_months_from_payments(payments):
-    """(year, month) pairs covering every payment's date, for the recon API."""
-    year_months = set()
-    for p in payments:
-        if p.payment_date:
-            d = getdate(p.payment_date)
-            year_months.add((d.year, d.month))
-    return sorted(year_months)
-
-
-def _get_razorpay_credentials():
-    """
-    Same resolution order as razorpay_settlement_journal_upload.py: Razorpay
-    Settings doctype first, then site_config.json keys. Returns (None, None)
-    instead of throwing when nothing is configured — this report must keep
-    working for Fee Payments with no Razorpay involvement at all.
-    """
-    try:
-        settings = frappe.get_doc("Razorpay Settings")
-        key    = settings.api_key
-        secret = settings.get_password("api_secret")
-        if key and secret:
-            return key, secret
-    except Exception:
-        pass
-
-    key = secret = None
-    for k_attr in ("razorpay_api_key", "razorpay_key_id"):
-        key = frappe.conf.get(k_attr)
-        if key:
-            break
-    for s_attr in ("razorpay_api_secret", "razorpay_key_secret"):
-        secret = frappe.conf.get(s_attr)
-        if secret:
-            break
-
-    return key, secret
+    return [(k, v) for k, v in totals.items() if abs(v) >= 0.01]
 
 
 # ── Journal row builder ───────────────────────────────────────────────────────
 
-def _build_journal_rows(payments, config):
+def _build_journal_rows(settlements, recon_items, fee_payment_by_pay_id, filters, config):
+    """
+    One Credit row per Fee Component per payment, sourced only from Razorpay
+    payments that matched a local Fee Payment record (by reference_number).
+    Razorpay payments with no matching Fee Payment are excluded from the
+    report entirely — this is deliberately an SLCM fee reconciliation report,
+    not a general Razorpay ledger, so unmatched settlement noise doesn't
+    appear in the export.
+
+    One Debit row per SETTLEMENT for the sum of ITS MATCHED payments only
+    (not the settlement's full gross amount) — a settlement can include
+    other, unrelated payments this report has no business reporting on.
+    """
+    settlements_by_id = {s["id"]: s for s in settlements if s.get("id")}
+
+    # Group recon items (individual payments) by settlement_id
+    items_by_settlement = {}
+    for item in recon_items:
+        sid = item.get("settlement_id") or ""
+        if sid:
+            items_by_settlement.setdefault(sid, []).append(item)
+
     rows         = []
     suffix       = _next_suffix(config["prefix"])
     daily_totals = {}
 
-    for p in payments:
-        amount = flt(p.amount)
-        if amount <= 0:
+    for sid, items in items_by_settlement.items():
+        settlement = settlements_by_id.get(sid)
+        if not settlement:
             continue
 
-        components = _split_by_component(p)
-        if not components:
-            # No demand breakdown available — fall back to a single generic credit
-            components = [("Unallocated Fee", amount)]
+        ts = settlement.get("settlement_time") or settlement.get("created_at")
+        settlement_date = _unix_to_date(ts)
+        if not settlement_date:
+            continue
 
-        date_str = formatdate(p.payment_date, "dd-MM-yyyy")
-        notes = f"Fee payment on {date_str} via {p.payment_mode or 'Unknown'}" + (
-            f" | Ref: {p.reference_number}" if p.reference_number else ""
-        )
+        # Client-side date guard, matching the razorpay report's pattern
+        if filters.get("from_date") and settlement_date < getdate(filters["from_date"]):
+            continue
+        if filters.get("to_date") and settlement_date > getdate(filters["to_date"]):
+            continue
 
-        debit_account = (p.bank_account or "").strip() or (
-            config["cash_account"] if p.payment_mode == "Cash" else config["bank_account"]
-        )
+        utr = (settlement.get("utr") or "").strip()
+        date_str = formatdate(settlement_date, "dd-MM-yyyy")
 
-        daily_totals[str(p.payment_date)] = daily_totals.get(str(p.payment_date), 0) + amount
+        settlement_credits = []   # (account_name, amount, student_id, student_name, dept, course)
+        gross_amount = 0
 
-        # Prefer a real Razorpay settlement reference when one was matched
-        # via FLE Payment Log; otherwise fall back to the payment-level
-        # reference (pay_xxx / bank ref) or, lastly, the Fee Payment ID.
-        settlement_reference = (
-            p.get("settlement_reference") or p.reference_number or p.fee_payment
+        for item in items:
+            entity_type = (item.get("type") or item.get("entity_type") or "").lower()
+            if entity_type and entity_type not in ("payment", ""):
+                continue  # skip refunds/adjustments — only actual payments
+
+            pay_id = (item.get("entity_id") or item.get("payment_id") or "").strip()
+            amt    = round(flt(item.get("amount") or 0) / 100, 2)  # paise -> rupees
+            if amt <= 0:
+                continue
+
+            match = fee_payment_by_pay_id.get(pay_id)
+            if not match or not match["components"]:
+                # No local Fee Payment for this Razorpay payment — excluded
+                # from the report; this is a Fee Payment reconciliation
+                # report, not a general Razorpay ledger.
+                continue
+
+            gross_amount += amt
+            total_alloc = round(sum(v for _, v in match["components"]), 2)
+            # Scale each component proportionally if the recon amount and
+            # the local Fee Payment amount ever disagree, so this
+            # payment's credits still sum exactly to the recon amount.
+            scale = (amt / total_alloc) if total_alloc else 1
+            for account_name, comp_amount in match["components"]:
+                settlement_credits.append((
+                    account_name, round(comp_amount * scale, 2),
+                    match["student"], match["student_name"],
+                    match["department"], match["program"],
+                ))
+
+        if gross_amount <= 0:
+            continue
+
+        daily_totals[str(settlement_date)] = daily_totals.get(str(settlement_date), 0) + gross_amount
+
+        notes = (
+            f"Razorpay settlement on {date_str}"
+            + (f" | UTR: {utr}" if utr else "")
         )
 
         shared = {
-            "journal_date":          p.payment_date,
-            "reference_number":      settlement_reference,
+            "journal_date":          settlement_date,
+            "reference_number":      sid,
             "journal_number_prefix": config["prefix"],
             "journal_number_suffix": suffix,
             "notes":                 notes,
@@ -463,29 +693,31 @@ def _build_journal_rows(payments, config):
             # "Contact" is a fixed constant value on every row, by request —
             # the actual Student Master ID/name are separate fields below.
             "contact_name":          CONTACT_VALUE,
-            "department":            p.department or config["department"],
-            "course":                p.program or config["course"],
-            "fee_payment":           p.fee_payment,
-            "student_id":            p.student,
-            "student_display_name":  p.student_name or "",
-            "payment_mode":          p.payment_mode,
         }
 
-        for account_name, comp_amount in components:
+        for account_name, comp_amount, student_id, student_name, dept, program in settlement_credits:
             rows.append({
                 **shared,
-                "account":  account_name,
-                "debit":    0,
-                "credit":   comp_amount,
-                "row_type": "Credit",
+                "account":              account_name,
+                "debit":                0,
+                "credit":               comp_amount,
+                "department":           dept or config["department"],
+                "course":               program or config["course"],
+                "student_id":           student_id,
+                "student_display_name": student_name,
+                "row_type":             "Credit",
             })
 
         rows.append({
             **shared,
-            "account":  debit_account,
-            "debit":    amount,
-            "credit":   0,
-            "row_type": "Debit",
+            "account":              config["bank_account"],
+            "debit":                gross_amount,
+            "credit":               0,
+            "department":           config["department"],
+            "course":               config["course"],
+            "student_id":           "",
+            "student_display_name": "",
+            "row_type":             "Debit",
         })
 
         suffix += 1
@@ -497,7 +729,7 @@ def _build_journal_rows(payments, config):
     balanced     = abs(total_debit - total_credit) < 0.01
 
     stats = {
-        "total_payments": len({r["fee_payment"] for r in rows}),
+        "total_payments": len({r["reference_number"] for r in rows}),
         "total_rows":     len(rows),
         "total_debit":    total_debit,
         "total_credit":   total_credit,
@@ -505,27 +737,6 @@ def _build_journal_rows(payments, config):
         "daily":          daily_totals,
     }
     return rows, stats
-
-
-def _split_by_component(payment):
-    """Group a payment's allocated demand amounts by Fee Component.
-    Returns a list of (account_name, amount) tuples.
-    """
-    totals = {}
-    for d in payment.demands:
-        comp   = d.fee_component or d.demand_description or "Unallocated Fee"
-        ledger = payment.ledger_map.get(d.fee_component, "") if d.fee_component else ""
-        account_name = ledger or comp
-        totals[account_name] = totals.get(account_name, 0) + flt(d.amount_allocated)
-
-    # Guard against demand allocations not summing to the full payment amount
-    # (partial allocation / unlinked balance) — plug the gap as "Unallocated Fee"
-    allocated_total = round(sum(totals.values()), 2)
-    remainder = round(flt(payment.amount) - allocated_total, 2)
-    if abs(remainder) >= 0.01:
-        totals["Unallocated Fee"] = totals.get("Unallocated Fee", 0) + remainder
-
-    return [(k, v) for k, v in totals.items() if abs(v) >= 0.01]
 
 
 def _build_day_rows(single_rows, config):
@@ -660,7 +871,7 @@ def _get_report_summary(stats, view="Single Transactions"):
         if view == "Day Transactions" else
         {
             "value":     stats.get("total_payments", 0),
-            "label":     _("Fee Payments"),
+            "label":     _("Settlements"),
             "datatype":  "Int",
             "indicator": "Blue",
         }
@@ -735,12 +946,33 @@ def _cell(value, header):
 
 # ── Zoho Books export ─────────────────────────────────────────────────────────
 
+# Must match the Report doctype's own `roles` list (see
+# fee_payment_zoho_journal_upload.json). Frappe only enforces that role
+# restriction when the report is opened through the standard report-viewer
+# path (frappe.desk.query_report.run) — a whitelisted function's dotted path
+# can be called directly via /api/method/... by ANY logged-in user regardless
+# of role, since frappe.whitelist() itself has no doctype/report awareness.
+# This report exposes settlement amounts, student names, and bank account
+# details, so both entry points enforce the same roles explicitly.
+ALLOWED_ROLES = {"System Manager", "Accounts Manager", "Accounts User"}
+
+
+def _check_report_permission():
+    if not (set(frappe.get_roles(frappe.session.user)) & ALLOWED_ROLES):
+        frappe.throw(
+            _("You do not have permission to access this report."),
+            frappe.PermissionError,
+        )
+
+
 @frappe.whitelist()
 def download_zoho_upload_file(filters=None, file_format="csv"):
     """
     Generate Zoho Books–compatible journal upload file (14 columns only).
     Hard-blocks export if Debit != Credit.
     """
+    _check_report_permission()
+
     import base64
 
     if isinstance(filters, str):
@@ -750,14 +982,20 @@ def download_zoho_upload_file(filters=None, file_format="csv"):
             filters = {}
     filters = filters or {}
 
-    config   = _resolve_config(filters)
-    payments = _fetch_payments(filters)
-    if not payments:
-        frappe.throw(_("No submitted fee payments found for the selected filters."))
+    config      = _resolve_config(filters)
+    settlements = _fetch_settlements(filters)
+    if not settlements:
+        frappe.throw(_("No Razorpay settlements found for the selected date range."))
 
-    rows, stats = _build_journal_rows(payments, config)
+    api_key, api_secret = _get_razorpay_credentials_or_throw()
+    recon_items = _fetch_recon_items(auth=(api_key, api_secret), settlements=settlements)
+    fee_payment_by_pay_id = _lookup_fee_payments_by_reference(
+        {(item.get("entity_id") or item.get("payment_id") or "").strip() for item in recon_items}
+    )
+
+    rows, stats = _build_journal_rows(settlements, recon_items, fee_payment_by_pay_id, filters, config)
     if not rows:
-        frappe.throw(_("No journal rows matched the applied filters."))
+        frappe.throw(_("No Razorpay payments in this date range matched a local Fee Payment record."))
 
     if not stats["balanced"]:
         diff = round(stats["total_debit"] - stats["total_credit"], 2)
@@ -803,9 +1041,9 @@ def download_zoho_upload_file(filters=None, file_format="csv"):
 
 @frappe.whitelist()
 def get_dynamic_defaults():
+    _check_report_permission()
     return {
         "bank_account":   DEFAULT_BANK_ACCOUNT,
-        "cash_account":   DEFAULT_CASH_ACCOUNT,
         "journal_prefix": DEFAULT_PREFIX,
         "department":     DEFAULT_DEPARTMENT,
         "course":         DEFAULT_COURSE,
@@ -1005,11 +1243,10 @@ def _build_xlsx(rows, day_rows, date_label, stats, day_stats, config):
         ("", ""),
         ("Journal Configuration", ""),
         ("Default Bank Account", config.get("bank_account") or DEFAULT_BANK_ACCOUNT),
-        ("Default Cash Account", config.get("cash_account") or DEFAULT_CASH_ACCOUNT),
         ("Journal Prefix",       config.get("prefix")       or DEFAULT_PREFIX),
         ("", ""),
         ("Payment Statistics", ""),
-        ("Total Fee Payments",              stats["total_payments"]),
+        ("Total Settlements",                stats["total_payments"]),
         ("Single Transactions — Rows",      stats["total_rows"]),
         ("Day Transactions — Rows",         day_stats["total_rows"]),
         ("", ""),
@@ -1080,24 +1317,28 @@ def _build_xlsx(rows, day_rows, date_label, stats, day_stats, config):
         ("Step 5 — Map columns if prompted, preview and confirm.", False),
         ("", False),
         ("Sheet Notes", True),
-        ("Single Transactions — one Credit row per Fee Component a payment settles", False),
-        ("(via its linked Fee Demands), plus one Debit row for the full amount", False),
-        ("against the receiving bank/cash account — always balanced per payment.", False),
+        ("Data source: Razorpay Settlements API, filtered to payments that", False),
+        ("matched a local Fee Payment record (by Reference / Transaction Number).", False),
+        ("Unmatched Razorpay activity is excluded from this report entirely.", False),
+        ("Single Transactions — one Credit row per Fee Component for each matched", False),
+        ("payment within a settlement, plus one Debit row per SETTLEMENT for the", False),
+        ("sum of ITS MATCHED payments only (not the settlement's full Razorpay", False),
+        ("gross, which may include other, unrelated payments).", False),
         ("Day Transactions — the same rows above, grouped by Date of Settlement", False),
         ("and Account: all credits/debits for an account on one date become a", False),
         ("single row. Derived directly from Single Transactions, so totals match.", False),
         ("", False),
         ("Column Reference", True),
         ("Date of Settlement    — dd-MM-yyyy  (e.g. 21-02-2026)", False),
-        ("Settlement Reference No — Transaction reference or Fee Payment ID", False),
+        ("Settlement Reference No — Razorpay Settlement ID (setl_xxx)", False),
         ("Journal Number Prefix — Configured prefix  (default: JN-FP-)", False),
         ("Journal Number Suffix — Auto-incremented integer", False),
-        ("Notes                 — Payment date, mode, and reference", False),
+        ("Notes                 — Settlement date and UTR", False),
         ("Account               — Must exactly match Zoho Books chart of accounts", False),
         ("Contact               — Frappe record reference (Student Master ID), not the name", False),
         ("Debit / Credit        — Only one value per row; other is blank", False),
-        ("Student ID / Student Name — extra columns after the 14 Zoho fields;", False),
-        ("Zoho's importer ignores them, kept here for readability only.", False),
+        ("Student ID / Student Name — extra columns after the 14 Zoho fields, populated", False),
+        ("only when the payment matched a local Fee Payment record; Zoho ignores them.", False),
     ]
 
     for ri, (text, heading) in enumerate(steps, 1):
