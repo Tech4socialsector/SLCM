@@ -1137,6 +1137,9 @@ def bulk_download_all_records(names):
                 applicant_name = doc.applicant_name or f"{doc.first_name or ''} {doc.last_name or ''}".strip() or "Unknown_Applicant"
                 folder_name = f"{applicant_name}-{applicant_id}"
 
+                # Explicitly create folder entry in ZIP so extracted folder exists even if 0 files are retrieved
+                zip_file.writestr(f"{folder_name}/", "")
+
                 # Progress update every 50 records
                 if idx % 50 == 0 or idx == total_names:
                     frappe.publish_realtime("progress", {
@@ -1153,7 +1156,7 @@ def bulk_download_all_records(names):
                     if not file_url:
                         if fieldname == "admission_letter":
                             continue
-                        missing_docs.append(f"{label} (Not Uploaded)")
+                        missing_docs.append(label)
                         continue
 
                     content, ext = get_file_bytes_and_ext(file_url, file_meta_map)
@@ -1163,7 +1166,7 @@ def bulk_download_all_records(names):
                         found_files += 1
                         retrieved_docs.append(label)
                     else:
-                        missing_docs.append(f"{label} (File Missing on Server)")
+                        missing_docs.append(label)
 
                 app_receipts = receipts_by_app.get(doc.name, [])
                 for receipt in app_receipts:
@@ -1186,7 +1189,19 @@ def bulk_download_all_records(names):
                             found_files += 1
                             retrieved_docs.append(label)
                         else:
-                            missing_docs.append(f"{label} (File Missing on Server)")
+                            missing_docs.append(label)
+
+                # If no document files could be downloaded, add an explanatory text file in their folder
+                if len(retrieved_docs) == 0:
+                    txt_content = (
+                        f"Applicant ID: {applicant_id}\n"
+                        f"Applicant Name: {applicant_name}\n"
+                        f"Status: {doc.status or ''}\n\n"
+                        f"No downloadable document files were found for this applicant on the server.\n\n"
+                        f"Missing Documents Detail:\n"
+                        + "\n".join([f"- {d}" for d in missing_docs])
+                    )
+                    zip_file.writestr(f"{folder_name}/{applicant_id}_MISSING_DOCUMENTS.txt", txt_content)
 
                 report_rows.append({
                     "applicant_id": applicant_id,
