@@ -32,27 +32,10 @@ frappe.query_reports["Fee Payment Zoho Journal Upload"] = {
 			on_change: function () { _fpzju_safe_refresh(frappe.query_report); },
 		},
 		{
-			fieldname: "payment_mode",
-			label:     __("Payment Mode"),
-			fieldtype: "Select",
-			options:   ["", "Cash", "Bank Transfer", "Cheque", "Credit Card", "Debit Card", "Online Payment", "Other"],
-		},
-		{
-			fieldname: "program",
-			label:     __("Programme"),
-			fieldtype: "Link",
-			options:   "Programme",
-		},
-		{
 			fieldname: "bank_account",
 			label:     __("Default Bank Account"),
 			fieldtype: "Data",
-			description: __("Used when a payment has no bank account of its own"),
-		},
-		{
-			fieldname: "cash_account",
-			label:     __("Default Cash Account"),
-			fieldtype: "Data",
+			description: __("Zoho account credited when a settlement hits the bank"),
 		},
 		{
 			fieldname: "journal_prefix",
