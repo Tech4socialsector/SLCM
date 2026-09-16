@@ -1140,10 +1140,13 @@ def bulk_download_all_records(names):
                 # Explicitly create folder entry in ZIP so extracted folder exists even if 0 files are retrieved
                 zip_file.writestr(f"{folder_name}/", "")
 
-                # Progress update every 50 records
-                if idx % 50 == 0 or idx == total_names:
+                # Dynamic progress update step (every record for small sets, up to 50 updates for large sets)
+                progress_step = max(1, total_names // 50)
+                if idx % progress_step == 0 or idx == total_names:
+                    percent = int((idx / total_names) * 100)
                     frappe.publish_realtime("progress", {
                         "progress": [idx, total_names],
+                        "percent": percent,
                         "title": _("Exporting Attachments"),
                         "description": f"Processing {idx}/{total_names}: {applicant_name}"
                     }, user=frappe.session.user)
@@ -1203,17 +1206,18 @@ def bulk_download_all_records(names):
                     )
                     zip_file.writestr(f"{folder_name}/{applicant_id}_MISSING_DOCUMENTS.txt", txt_content)
 
-                report_rows.append({
-                    "applicant_id": applicant_id,
-                    "applicant_name": applicant_name,
-                    "programme": doc.programme or "",
-                    "email": doc.email_address or "",
-                    "mobile": doc.mobile_number or "",
-                    "status": doc.status or "",
-                    "retrieved_count": len(retrieved_docs),
-                    "missing_count": len(missing_docs),
-                    "missing_documents": ", ".join(missing_docs) if missing_docs else "None"
-                })
+                if missing_docs:
+                    report_rows.append({
+                        "applicant_id": applicant_id,
+                        "applicant_name": applicant_name,
+                        "programme": doc.programme or "",
+                        "email": doc.email_address or "",
+                        "mobile": doc.mobile_number or "",
+                        "status": doc.status or "",
+                        "retrieved_count": len(retrieved_docs),
+                        "missing_count": len(missing_docs),
+                        "missing_documents": ", ".join(missing_docs)
+                    })
 
             # Generate Excel report inside ZIP using constant memory mode
             if report_rows:
