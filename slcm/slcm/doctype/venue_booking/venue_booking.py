@@ -456,7 +456,7 @@ def _notify_requester_swap(booking_name, decision, old_room, new_room, admin_rem
         if not requester_email:
             return
 
-        new_room_name = frappe.db.get_value("Room", new_room, "room_name") or new_room or "—"
+        new_room_name = frappe.db.get_value("Venue Master", new_room, "venue_name_or_number") or new_room or "—"
         color = "#166534" if decision == "Approved" else "#991b1b"
         bg    = "#f0fdf4" if decision == "Approved" else "#fef2f2"
         body_detail = (
@@ -483,7 +483,7 @@ def _notify_requester_swap(booking_name, decision, old_room, new_room, admin_rem
             recipients=[requester_email],
             subject=rendered.get("subject"),
             message=rendered.get("message"),
-            now=True,
+            now=False,
         )
     except Exception:
         frappe.log_error(frappe.get_traceback(), "Venue Swap — Requester Notification Error")
@@ -639,7 +639,7 @@ def _notify_admin_new_booking(doc):
 			recipients=admin_emails,
 			subject=rendered.get("subject"),
 			message=rendered.get("message"),
-			now=True,
+			now=False,
 		)
 	except Exception:
 		frappe.log_error(frappe.get_traceback(), "Venue Booking — Admin Notification Error")
@@ -698,7 +698,7 @@ def _notify_requester(booking_name, new_status, admin_remarks=None):
 			recipients=[requester_email],
 			subject=rendered.get("subject"),
 			message=rendered.get("message"),
-			now=True,
+			now=False,
 		)
 	except Exception:
 		frappe.log_error(frappe.get_traceback(), "Venue Booking — Requester Notification Error")

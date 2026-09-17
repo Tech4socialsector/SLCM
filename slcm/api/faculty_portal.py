@@ -466,7 +466,7 @@ def create_venue_booking(event_name, venue_type, room, start_datetime, end_datet
     doc = frappe.new_doc("Venue Booking")
     doc.event_name = event_name
     doc.venue_type = venue_type
-    doc.room = room
+    doc.venue = room
     doc.start_datetime = start_datetime
     doc.end_datetime = end_datetime
     doc.expected_attendees = int(expected_attendees or 0)
@@ -1143,7 +1143,7 @@ def drilldown_venue_bookings():
         raw = frappe.get_all(
             "Venue Booking",
             filters={"requester_name": ["in", name_filters], "status": "Pending Allotment"},
-            fields=["name", "event_name", "venue_type", "room",
+            fields=["name", "event_name", "venue_type", "venue as room",
                     "start_datetime", "end_datetime", "expected_attendees",
                     "status", "creation"],
             order_by="start_datetime asc",
