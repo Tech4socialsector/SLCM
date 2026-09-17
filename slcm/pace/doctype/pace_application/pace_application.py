@@ -2140,10 +2140,8 @@ def withdraw_application(application_name, reason):
 	# Update Student Master status if exists
 	student_name = frappe.db.get_value("Student Master", {"application_number": application_name}, "name")
 	if student_name:
-		frappe.db.set_value("Student Master", student_name, {
-			"student_status": "Withdrawn",
-			"status_remark": reason
-		}, update_modified=True)
+		from slcm.admission.utils.withdrawal_sync import sync_student_records_for_withdrawn_application
+		sync_student_records_for_withdrawn_application(application_name, status_remark=reason)
 
 	return {
 		"status": "success",
