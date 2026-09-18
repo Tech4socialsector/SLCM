@@ -61,8 +61,8 @@
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
           <select class="fp-select" id="fp-vb-status-filter" onchange="fpFilterBookings()" style="width:auto;min-width:130px;padding:6px 10px;font-size:13px;">
             <option value="">All Status</option>
-            <option value="Pending">Pending</option>
-            <option value="Approved">Approved</option>
+            <option value="Pending Allotment">Pending</option>
+            <option value="Allotted">Approved</option>
             <option value="Rejected">Rejected</option>
           </select>
           <button class="fp-btn fp-btn-primary fp-btn-sm" onclick="fpOpenBookingForm()">
@@ -93,7 +93,7 @@
             </thead>
             <tbody>
               {% for b in my_bookings %}
-              <tr class="fp-booking-row" data-status="{{ b.status or 'Pending' }}">
+              <tr class="fp-booking-row" data-status="{{ b.status or 'Pending Allotment' }}">
                 <td style="font-weight:500;color:var(--fp-text-1);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ b.event_name }}">
                   {{ b.event_name or '—' }}
                 </td>
@@ -344,7 +344,7 @@ function fpViewBooking(name, event, room, start, end, status, remarks) {
       + '<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--fp-text-4);">' + label + '</div>'
       + '<div style="font-size:13px;font-weight:500;color:var(--fp-text-1);">' + (val || '—') + '</div></div></div>';
   }
-  var statusMap = { Pending:'fp-badge-warning', Approved:'fp-badge-success', Rejected:'fp-badge-danger', Cancelled:'fp-badge-neutral' };
+  var statusMap = { 'Pending Allotment':'fp-badge-warning', Allotted:'fp-badge-success', Rejected:'fp-badge-danger', Cancelled:'fp-badge-neutral' };
   var html = row('event', 'Event', event)
     + row('meeting_room', 'Room', room)
     + row('schedule', 'Start', start)

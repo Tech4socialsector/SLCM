@@ -1514,7 +1514,6 @@ def get_batch_filter_options():
         label = f"{display_name} ({b.get('academic_year') or ''})".strip()
         options.append({
             "batch":            b["name"],
-            "batch":        b.get("program"),
             "programme_label":  label,
             "academic_year":    b.get("academic_year") or "",
             "term_name":        b.get("academic_term") or "",

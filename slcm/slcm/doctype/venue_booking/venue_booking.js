@@ -179,7 +179,7 @@ frappe.ui.form.on('Venue Booking', {
 
             // ── Swap Request banner + actions ──────────────────────────
             if (frm.doc.swap_requested && frm.doc.swap_status === 'Pending') {
-                const reqRoom = frm.doc.swap_requested_room || '—';
+                const reqRoom = frm.doc.swap_requested_venue || '—';
                 const reqReason = frm.doc.swap_request_reason
                     ? `<br><span style="color:#555;font-size:12px;">Reason: ${frm.doc.swap_request_reason}</span>`
                     : '';
