@@ -10,6 +10,12 @@
   <div><strong>No student record found.</strong> Please contact the Registrar's Office.</div>
 </div>
 
+{% elif portal_error %}
+<div class="sp-alert sp-alert-warning fade-in">
+  <span class="sp-ms">error</span>
+  <div><strong>We couldn't load your profile right now.</strong> Please try again later or contact the Registrar's Office if this continues.</div>
+</div>
+
 {% else %}
 
 {# ── Profile Hero ──────────────────────────────────────────── #}
