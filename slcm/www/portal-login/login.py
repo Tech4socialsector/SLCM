@@ -72,8 +72,18 @@ def _get_google_login_url(tab, redirect_to):
     # Returns the URL that starts the Google OAuth flow (redirects to Google's
     # consent screen), or None if Google login isn't configured/enabled for
     # this tab — in which case the "Continue with Google" button is hidden.
-    settings_doctype = "Parent Portal Settings" if tab == TAB_PARENT else "Student Portal Settings"
-    if not frappe.db.get_single_value(settings_doctype, "enable_google_login"):
+    if tab == TAB_PARENT:
+        enabled = frappe.db.get_single_value("Parent Portal Settings", "enable_google_login")
+    else:
+        # The faculty-student tab shares one button/URL for both roles, so it's
+        # enabled if either portal's setting allows it. Role-specific rejection
+        # happens post-login via enforce_student_google_login /
+        # enforce_faculty_google_login in auth_routing.py.
+        enabled = (
+            frappe.db.get_single_value("Student Portal Settings", "enable_google_login")
+            or frappe.db.get_single_value("Faculty Portal Settings", "enable_google_login")
+        )
+    if not enabled:
         return None
     if not frappe.db.exists(
         "Social Login Key",
