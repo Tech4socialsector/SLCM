@@ -12,6 +12,7 @@
   "show_logo",
   "nav_brand_text",
   "portal_favicon",
+  "login_page_background_image",
   "typography_section",
   "font_family",
   "col_break_typo",
@@ -177,6 +178,12 @@
    "fieldname": "portal_favicon",
    "fieldtype": "Attach Image",
    "label": "Portal Favicon"
+  },
+  {
+   "description": "Background image for the student portal login page. If empty, a fallback color (#FAFAFA) will be used.",
+   "fieldname": "login_page_background_image",
+   "fieldtype": "Attach Image",
+   "label": "Login Page Background Image"
   },
   {
    "collapsible": 1,
