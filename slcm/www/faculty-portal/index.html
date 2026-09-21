@@ -11,68 +11,84 @@
 </div>
 {% endif %}
 
-{# ── Hero Banner ─────────────────────────────────────── #}
-<div class="fp-dashboard-hero fade-in">
-  <div style="position:relative;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;">
-    <div>
-      {% if faculty_department %}<p class="fp-hero-sub">{{ faculty_department }}</p>{% endif %}
-      <div class="fp-hero-date">
-        <span class="fp-ms">today</span>
-        <span id="fp-live-date">Loading date…</span>
-        {% if current_academic_year %}
-        &nbsp;·&nbsp;
-        <span class="fp-ms">school</span>
-        {{ current_academic_year }}
-        {% endif %}
-      </div>
-      <div class="fp-hero-meta">
-        {% if attendance_pending > 0 %}
-        <span class="fp-hero-chip" style="background:rgba(217,119,6,0.2);border-color:rgba(217,119,6,0.3);">
-          <span class="fp-ms">pending_actions</span>
-          {{ attendance_pending }} pending attendance
-        </span>
-        {% else %}
-        <span class="fp-hero-chip" style="background:rgba(22,163,74,0.18);border-color:rgba(22,163,74,0.25);">
-          <span class="fp-ms">check_circle</span>
-          All attendance marked
-        </span>
-        {% endif %}
-        {% if todays_class_count > 0 %}
-        <span class="fp-hero-chip">
-          <span class="fp-ms">today</span>
-          {{ todays_class_count }} class{{ 'es' if todays_class_count > 1 else '' }} today
-        </span>
-        {% endif %}
-        {% if total_courses > 0 %}
-        <span class="fp-hero-chip">
-          <span class="fp-ms">menu_book</span>
-          {{ total_courses }} course{{ 's' if total_courses > 1 else '' }}
-        </span>
-        {% endif %}
-      </div>
-      <div class="fp-hero-actions">
-        <a href="/faculty-portal/attendance" class="fp-hero-btn fp-hero-btn-primary">
-          <span class="fp-ms">how_to_reg</span>
-          Take Attendance
-        </a>
-        <a href="/faculty-portal/my-classes" class="fp-hero-btn fp-hero-btn-ghost">
-          <span class="fp-ms">menu_book</span>
-          My Classes
-        </a>
-      </div>
+{# ── Welcome Header ─────────────────────────────────────── #}
+<div class="fp-page-header fade-in">
+  <div class="fp-page-header-left">
+    <h1 class="fp-page-title">Welcome back, {{ faculty_name }} 👋</h1>
+    {% if faculty_department or faculty_id %}
+    <p class="fp-page-sub">
+      {%- if faculty_department -%}{{ faculty_department }}{%- endif -%}
+      {%- if faculty_department and faculty_id %} · {% endif -%}
+      {%- if faculty_id -%}{{ faculty_id }}{%- endif -%}
+      {%- if current_academic_year %} · {{ current_academic_year }}{% endif -%}
+    </p>
+    {% endif %}
+  </div>
+  <div class="fp-page-actions">
+    <a href="/faculty-portal/attendance" class="fp-btn fp-btn-primary">
+      <span class="fp-ms">how_to_reg</span>
+      Take Attendance
+    </a>
+    <a href="/faculty-portal/my-classes" class="fp-btn fp-btn-secondary">
+      <span class="fp-ms">menu_book</span>
+      My Classes
+    </a>
+  </div>
+</div>
+
+{% if attendance_pending > 0 %}
+<div class="fp-alert fp-alert-warning fade-in">
+  <span class="fp-ms">pending_actions</span>
+  <div style="flex:1;">
+    <strong>Attendance Action Required</strong> — {{ attendance_pending }} attendance session{{ 's' if attendance_pending > 1 else '' }} pending.
+  </div>
+  <a href="/faculty-portal/attendance" style="font-weight:700;color:inherit;text-decoration:none;white-space:nowrap;">View Details →</a>
+</div>
+{% endif %}
+
+{# ── Quick Actions ─────────────────────────────────────── #}
+<div class="fp-card fade-in" style="margin-bottom:20px;">
+  <div class="fp-card-header">
+    <div class="fp-card-title">
+      <span class="fp-ms">bolt</span>
+      Quick Actions
+    </div>
+  </div>
+  <div class="fp-card-body">
+    <div class="fp-grid-auto">
+      <a href="/faculty-portal/attendance" class="fp-quick-action-btn" style="background:var(--fp-primary-light);color:var(--fp-primary);flex-direction:row;align-items:center;gap:14px;text-align:left;padding:16px 18px;">
+        <span class="fp-ms">how_to_reg</span>
+        <div>
+          <div style="font-size:13.5px;font-weight:700;color:var(--fp-text-1);">Take Attendance</div>
+          <div style="font-size:12px;color:var(--fp-text-4);margin-top:2px;">Mark today's session</div>
+        </div>
+      </a>
+      <a href="/faculty-portal/my-classes" class="fp-quick-action-btn" style="background:var(--fp-info-bg);color:var(--fp-info);flex-direction:row;align-items:center;gap:14px;text-align:left;padding:16px 18px;">
+        <span class="fp-ms">menu_book</span>
+        <div>
+          <div style="font-size:13.5px;font-weight:700;color:var(--fp-text-1);">My Classes</div>
+          <div style="font-size:12px;color:var(--fp-text-4);margin-top:2px;">View course offerings</div>
+        </div>
+      </a>
+      <a href="/faculty-portal/marks" class="fp-quick-action-btn" style="background:var(--fp-purple-bg);color:var(--fp-purple);flex-direction:row;align-items:center;gap:14px;text-align:left;padding:16px 18px;">
+        <span class="fp-ms">grade</span>
+        <div>
+          <div style="font-size:13.5px;font-weight:700;color:var(--fp-text-1);">Marks Entry</div>
+          <div style="font-size:12px;color:var(--fp-text-4);margin-top:2px;">Enter or update marks</div>
+        </div>
+      </a>
+      <a href="/faculty-portal/venue-booking" class="fp-quick-action-btn" style="background:var(--fp-teal-bg);color:var(--fp-teal);flex-direction:row;align-items:center;gap:14px;text-align:left;padding:16px 18px;">
+        <span class="fp-ms">meeting_room</span>
+        <div>
+          <div style="font-size:13.5px;font-weight:700;color:var(--fp-text-1);">Venue Booking</div>
+          <div style="font-size:12px;color:var(--fp-text-4);margin-top:2px;">Book a room or venue</div>
+        </div>
+      </a>
     </div>
   </div>
 </div>
 
 <script>
-/* Live date in hero */
-(function() {
-  var el = document.getElementById('fp-live-date');
-  if (!el) return;
-  var d = new Date();
-  var opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  el.textContent = d.toLocaleDateString('en-IN', opts);
-})();
 /* Pass dashboard data to sidebar quick-stats */
 window._fpDashData = {
   total_courses:     {{ total_courses }},
@@ -450,7 +466,7 @@ window._fpDashData = {
 {# ── Drill-down CSS additions ── #}
 <style>
 .fp-stat-drillable { position: relative; }
-.fp-stat-drillable:hover { box-shadow: var(--fp-shadow-md); transform: translateY(-3px); border-color: var(--fp-primary-mid); }
+.fp-stat-drillable:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); border-color: var(--fp-primary-mid); }
 .fp-drill-badge {
   position: absolute; top: 10px; right: 10px;
   font-size: 9px; font-weight: 700; letter-spacing: 0.06em;
