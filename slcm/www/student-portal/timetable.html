@@ -286,26 +286,27 @@
 {% block content %}
 
 {# ── Page header ───────────────────────────────────────────────── #}
-<div class="sp-page-header fade-in" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-  <div>
-    <h1 class="sp-page-title"><span class="sp-ms" style="font-size:24px;vertical-align:middle;margin-right:6px;">calendar_month</span>My Timetable</h1>
-    <p class="sp-page-sub">Your weekly class schedule</p>
+<div class="sp-page-header fade-in" style="margin-bottom: 32px; margin-top: 10px; display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+  <div style="display:flex; align-items:flex-start; gap:16px;">
+    <div style="border: 2px solid var(--sp-primary); border-radius: 8px; width: 42px; height: 34px; display:flex; align-items:center; justify-content:center; color: var(--sp-primary); margin-top: 4px;">
+      <span class="sp-ms" style="font-size: 24px; font-variation-settings: 'FILL' 1, 'wght' 600;">calendar_month</span>
+    </div>
+    <div>
+      <h1 class="sp-page-title" style="font-family: 'Merriweather', serif; font-size: 28px!important; color: var(--sp-text-1); margin: 0 0 6px 0; font-weight: 600;">My Timetable</h1>
+      <p class="sp-page-sub" style="font-size: 15px; color: var(--sp-text-3); margin: 0;">Your weekly class schedule</p>
+      <div style="font-size: 13px; color: var(--sp-text-4); margin-top: 14px;">
+        <a href="/student-portal" style="color: var(--sp-text-4); text-decoration: none;">Dashboard</a> &gt; 
+        <span style="color: var(--sp-primary); font-weight: 600;">Timetable</span>
+      </div>
+    </div>
   </div>
   {% if not no_student %}
-  <button class="sp-btn sp-btn-primary" onclick="spOpenModal('modal-gcal-sync')">
+  <button class="sp-btn" style="border: 1px solid var(--sp-primary); color: var(--sp-primary); background: transparent; font-weight: 600; padding: 8px 16px; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; margin-top: 4px;" onclick="spOpenModal('modal-gcal-sync')" onmouseover="this.style.background='rgba(146,12,36,0.05)'" onmouseout="this.style.background='transparent'">
     <span class="sp-ms">sync</span> Sync to My Calendar
   </button>
   {% endif %}
 </div>
 
-{% if no_student %}
-<div class="sp-alert sp-alert-warning fade-in">
-  <span class="sp-ms">warning</span>
-  <div><strong>No student record found.</strong> Please contact the Registrar's Office.</div>
-</div>
-{% else %}
-
-{# ── Week navigation ───────────────────────────────────────────── #}
 <div class="tt-week-nav fade-in">
   <a href="/student-portal/timetable?week={{ prev_week }}" class="tt-nav-btn">
     <span class="sp-ms">chevron_left</span> Prev
@@ -332,7 +333,7 @@
 <div class="tt-stats fade-in">
   <div class="tt-stat">
     <div class="tt-stat-icon" style="background:var(--sp-primary-light);color:var(--sp-primary);">
-      <span class="sp-ms">calendar_month</span>
+      <span class="sp-ms">calendar_today</span>
     </div>
     <div>
       <div class="tt-stat-val">{{ total_this_week }}</div>
@@ -342,8 +343,8 @@
 
   {% if is_current_week %}
   <div class="tt-stat">
-    <div class="tt-stat-icon" style="background:{% if today_count > 0 %}var(--sp-success-bg);color:var(--sp-success){% else %}var(--sp-warning-bg);color:var(--sp-warning){% endif %};">
-      <span class="sp-ms">today</span>
+    <div class="tt-stat-icon" style="background:#fff7ed;color:#ea580c;">
+      <span class="sp-ms">event_note</span>
     </div>
     <div>
       <div class="tt-stat-val">{{ today_count }}</div>
@@ -353,8 +354,8 @@
   {% endif %}
 
   <div class="tt-stat">
-    <div class="tt-stat-icon" style="background:#ede9fe;color:#7c3aed;">
-      <span class="sp-ms">auto_stories</span>
+    <div class="tt-stat-icon" style="background:#f3e8ff;color:#9333ea;">
+      <span class="sp-ms">menu_book</span>
     </div>
     <div>
       <div class="tt-stat-val">{{ legend|length }}</div>
@@ -377,16 +378,12 @@
 
 {# ── Weekly grid ───────────────────────────────────────────────── #}
 {% if total_this_week == 0 %}
-<div class="sp-card fade-in">
-  <div class="tt-no-schedule">
-    <span class="sp-ms">event_busy</span>
-    <div style="font-size:16px;font-weight:700;color:var(--sp-text-2);margin-bottom:6px;">No classes scheduled</div>
-    <div style="font-size:13px;">No class schedules found for this week.</div>
-    {% if not is_current_week %}
-    <a href="/student-portal/timetable" class="sp-btn sp-btn-primary" style="margin-top:16px;display:inline-flex;">
-      <span class="sp-ms">today</span> Go to Current Week
-    </a>
-    {% endif %}
+<div class="sp-card fade-in" style="padding: 80px 24px; min-height: 400px; display: flex; align-items: center; justify-content: center;">
+  <div class="tt-no-schedule" style="padding: 0;">
+    <span class="sp-ms" style="font-size: 64px; color: #cbd5e1; display: block; margin-bottom: 16px; font-variation-settings: 'FILL' 0, 'wght' 300;">event_busy</span>
+    <div style="font-size:20px;font-family:'Merriweather',serif;font-weight:700;color:var(--sp-text-1);margin-bottom:8px;">No classes scheduled</div>
+    <div style="font-size:14px;color:var(--sp-text-3);">No class schedules found for this week.</div>
+    
   </div>
 </div>
 {% else %}
@@ -452,7 +449,6 @@
 </div>
 {% endif %}
 
-{% endif %}{# end no_student #}
 
 {# ── Sync to Google Calendar modal ─────────────────────────────── #}
 <div class="sp-modal-overlay" id="modal-gcal-sync" onclick="spCloseModalIf(event, 'modal-gcal-sync')">

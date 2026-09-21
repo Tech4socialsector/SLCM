@@ -34,7 +34,8 @@ _DEFAULTS = {
     "grade_good_label":      "B+ / B",
     "grade_average_color":   "#d97706",
     "grade_average_label":   "C+ / C",
-    "grade_fail_color":      "#dc2626",
+    "grade_color": "#000000",
+            "grade_fail_color":      "#dc2626",
     "grade_fail_label":      "D / F",
     # Attendance thresholds
     "att_good_threshold":    75,
@@ -130,7 +131,7 @@ class StudentPortalSettings(Document):
             "primary_color", "secondary_color", "background_color", "card_background",
             "nav_text_color",
             "success_color", "warning_color", "danger_color", "info_color",
-            "grade_excellent_color", "grade_good_color", "grade_average_color", "grade_fail_color",
+            "grade_color", "grade_fail_color",
         ]
         for field in color_fields:
             val = (self.get(field) or "").strip()

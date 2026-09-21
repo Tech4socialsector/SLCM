@@ -11,12 +11,21 @@
 
 {% else %}
 
-<div class="sp-page-header fade-in">
-  <h1 class="sp-page-title">
-    <span class="sp-ms" style="font-size:24px;vertical-align:middle;margin-right:6px;">meeting_room</span>
-    Venue Booking
-  </h1>
-  <!-- <p class="sp-page-sub">Reserve rooms &amp; facilities — track your requests in real time</p> -->
+{# ── Page header ───────────────────────────────────────────────── #}
+<div class="sp-page-header fade-in" style="margin-bottom: 32px; margin-top: 10px; display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+  <div style="display:flex; align-items:flex-start; gap:16px;">
+    <div style="border: 2px solid var(--sp-primary); border-radius: 8px; width: 42px; height: 34px; display:flex; align-items:center; justify-content:center; color: var(--sp-primary); margin-top: 4px;">
+      <span class="sp-ms" style="font-size: 24px; font-variation-settings: 'FILL' 1, 'wght' 600;">door_front</span>
+    </div>
+    <div>
+      <h1 class="sp-page-title" style="font-family: 'Merriweather', serif; font-size: 28px!important; color: var(--sp-text-1); margin: 0 0 6px 0; font-weight: 600;">Venue Booking</h1>
+      <p class="sp-page-sub" style="font-size: 15px; color: var(--sp-text-3); margin: 0;">Book rooms and venues for your academic and co-curricular activities.</p>
+      <div style="font-size: 13px; color: var(--sp-text-4); margin-top: 14px;">
+        <a href="/student-portal" style="color: var(--sp-text-4); text-decoration: none;">Dashboard</a> &gt; 
+        <span style="color: var(--sp-primary); font-weight: 600;">Venue Booking</span>
+      </div>
+    </div>
+  </div>
 </div>
 
 {% if portal_error %}
@@ -93,8 +102,8 @@
 
 {# ── New Booking Form ─────────────────────────────────────────────── #}
 <div class="sp-section-card fade-in" style="animation-delay:0.06s;margin-bottom:24px;">
-  <div class="sp-section-header">
-    <span class="sp-ms">add_circle</span> New Venue Booking
+  <div class="sp-section-header" style="font-family: 'Merriweather', serif; font-size: 20px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 24px;">
+    <span class="sp-ms" style="color: var(--sp-primary);">add_circle</span> New Venue Booking
   </div>
   <div class="sp-section-body" style="padding:20px 24px;">
 
@@ -187,7 +196,7 @@
         <input type="file" class="vb-file-input" id="vb-attachment"
           accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
         <label class="vb-dropzone-label" for="vb-attachment">
-          <span class="sp-ms" style="font-size:28px;color:var(--sp-primary);opacity:0.6;">cloud_upload</span>
+          <span class="sp-ms" style="font-size:36px;color:#dc2626;opacity:1;">cloud_upload</span>
           <span id="vb-attach-name" class="vb-dropzone-text">Click to attach or drop a file here</span>
           <span class="vb-dropzone-hint">PDF, Image, DOC — max 10 MB</span>
         </label>
@@ -212,10 +221,10 @@
 {# ── My Booking History ───────────────────────────────────────────── #}
 <div class="sp-section-card fade-in" id="vb-history" style="animation-delay:0.12s;">
 
-  <div class="sp-section-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-    <span><span class="sp-ms">history</span> My Booking History</span>
+  <div class="sp-section-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px; font-family: 'Merriweather', serif; font-size: 20px; font-weight: 700; color: #0f172a; border-bottom: 1px solid transparent; padding-bottom: 16px; margin-bottom: 0;">
+    <span style="display: flex; align-items: center; gap: 8px;"><span class="sp-ms" style="color: var(--sp-primary);">history</span> My Booking History</span>
     <div style="display:flex;align-items:center;gap:10px;">
-      <span class="sp-badge sp-badge-pend" id="vb-count-badge">{{ total_count or 0 }}</span>
+      <span class="sp-badge" id="vb-count-badge" style="background: #fef3c7; color: #d97706; font-size: 14px; padding: 4px 10px; font-weight: 700;">{{ total_count or 0 }}</span>
     </div>
   </div>
 
@@ -245,7 +254,7 @@
 
   {% if not venue_bookings %}
   <div class="vb-empty-state">
-    <span class="sp-ms vb-empty-icon">meeting_room</span>
+    <span class="sp-ms vb-empty-icon">door_front</span>
     <div class="vb-empty-title">No bookings yet</div>
     <div class="vb-empty-sub">Use the form above to request a venue.</div>
   </div>
@@ -1520,5 +1529,134 @@ function showVbToast(msg, success) {
   color: var(--sp-text-2);
   line-height: 1.6;
 }
+
+/* ── VB UI Overrides ─────────────────────────────────── */
+.vb-form-info {
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+  border: 1px solid #fca5a5 !important;
+  border-radius: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 12px 16px !important;
+  margin-bottom: 24px !important;
+}
+.vb-form-info .sp-ms {
+  color: #b91c1c !important;
+}
+.vb-label {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: #475569 !important;
+  margin-bottom: 6px !important;
+  display: inline-block !important;
+}
+.vb-req { color: #dc2626 !important; }
+.vb-input, .vb-select {
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  padding: 10px 12px !important;
+  box-shadow: none !important;
+  color: #0f172a !important;
+}
+.vb-input::placeholder { color: #94a3b8 !important; }
+.vb-input:focus, .vb-select:focus {
+  border-color: var(--sp-primary) !important;
+  box-shadow: 0 0 0 3px rgba(146, 12, 36, 0.1) !important;
+}
+.vb-dropzone {
+  border: 1px dashed #cbd5e1 !important;
+  border-radius: 8px !important;
+  padding: 32px 24px !important;
+  text-align: center !important;
+  background: #f8fafc !important;
+}
+.vb-dropzone-label {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+.vb-dropzone-text {
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  font-size: 14px !important;
+}
+.sp-btn-ghost {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border: 1px solid transparent !important;
+  font-weight: 600 !important;
+}
+.sp-btn-ghost:hover {
+  background: #e2e8f0 !important;
+}
+.sp-btn-primary {
+  background: var(--sp-primary) !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+}
+.vb-tabs-bar {
+  border-bottom: 2px solid #e2e8f0 !important;
+  margin-bottom: 20px !important;
+  display: flex !important;
+  gap: 20px !important;
+  overflow: visible !important;
+  flex-wrap: wrap !important;
+}
+.vb-tab {
+  padding-bottom: 12px !important;
+  margin-bottom: -2px !important;
+  border-bottom: 2px solid transparent !important;
+  color: #64748b !important;
+  font-weight: 600 !important;
+  background: transparent !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+.vb-tab-active {
+  border-bottom-color: #dc2626 !important;
+  color: #dc2626 !important;
+}
+.vb-tab-active .sp-ms {
+  color: #dc2626 !important;
+}
+.vb-tab-active .vb-tab-count {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+}
+.vb-tab-count {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  border-radius: 12px !important;
+  padding: 2px 8px !important;
+  font-size: 11px !important;
+}
+.vb-empty-state {
+  padding: 64px 24px !important;
+}
+.vb-empty-icon {
+  font-size: 64px !important;
+  color: #cbd5e1 !important;
+  margin-bottom: 16px !important;
+  font-variation-settings: 'FILL' 0, 'wght' 300 !important;
+}
+.vb-empty-title {
+  font-family: 'Merriweather', serif !important;
+  font-size: 20px !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  margin-bottom: 8px !important;
+}
 </style>
+
 {% endblock %}
