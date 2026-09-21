@@ -80,7 +80,7 @@ const PP_DEFAULTS = {
     grade_excellent_color: "#16a34a", grade_excellent_label: "A+ / A / S",
     grade_good_color: "#0369a1", grade_good_label: "B+ / B",
     grade_average_color: "#d97706", grade_average_label: "C+ / C",
-    grade_fail_color: "#dc2626", grade_fail_label: "D / F",
+    grade_color: "#000000", grade_fail_color: "#dc2626", grade_fail_label: "D / F",
     att_good_threshold: 75, att_warn_threshold: 60,
     att_label_good: "Good", att_label_warn: "Low", att_label_danger: "Critical",
     sidebar_width: "Normal", nav_height: "Normal",
@@ -246,10 +246,8 @@ function _render_color_preview(frm) {
       <div class="pp-preview-group" style="margin-top:12px;">
         <div class="pp-preview-label">Grade Bands</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-          ${_grade_badge(gExc, gExcLabel)}
-          ${_grade_badge(gGood, gGoodLabel)}
-          ${_grade_badge(gAvg, gAvgLabel)}
-          ${_grade_badge(gFail, gFailLabel)}
+                    
+          
           <span style="font-size:10px;color:#9ca3af;margin-left:4px;">← shown on Results page</span>
         </div>
       </div>

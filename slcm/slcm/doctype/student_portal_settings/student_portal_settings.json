@@ -33,15 +33,16 @@
   "danger_color",
   "info_color",
   "grading_section",
+  "grade_color",
   "grade_excellent_color",
   "grade_excellent_label",
   "col_break_grade1",
+  "grade_fail_color",
   "grade_good_color",
   "grade_good_label",
   "grade_average_color",
   "grade_average_label",
   "col_break_grade2",
-  "grade_fail_color",
   "grade_fail_label",
   "tab_layout",
   "attendance_section",
@@ -318,13 +319,15 @@
    "description": "Top grade band \u2014 Distinction, A+, A, S",
    "fieldname": "grade_excellent_color",
    "fieldtype": "Color",
+   "hidden": 1,
    "label": "Excellent Grade Color"
   },
   {
-   "default": "A+ / A / S",
+   "default": "A+ / A",
    "description": "Label for this grade band shown in the Results legend",
    "fieldname": "grade_excellent_label",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Excellent Grade Label"
   },
   {
@@ -336,6 +339,7 @@
    "description": "Second grade band \u2014 B+, B",
    "fieldname": "grade_good_color",
    "fieldtype": "Color",
+   "hidden": 1,
    "label": "Good Grade Color"
   },
   {
@@ -343,6 +347,7 @@
    "description": "Label for this grade band",
    "fieldname": "grade_good_label",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Good Grade Label"
   },
   {
@@ -350,6 +355,7 @@
    "description": "Third grade band \u2014 C+, C",
    "fieldname": "grade_average_color",
    "fieldtype": "Color",
+   "hidden": 1,
    "label": "Average Grade Color"
   },
   {
@@ -357,6 +363,7 @@
    "description": "Label for this grade band",
    "fieldname": "grade_average_label",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Average Grade Label"
   },
   {
@@ -364,14 +371,21 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "#000000",
+   "description": "Default color for passing grades",
+   "fieldname": "grade_color",
+   "fieldtype": "Color",
+   "label": "Grade Color"
+  },
+  {
    "default": "#dc2626",
-   "description": "Fail grade band \u2014 D, F, Absent",
+   "description": "Fail grade band \u2014 F, AB, AS",
    "fieldname": "grade_fail_color",
    "fieldtype": "Color",
    "label": "Fail Grade Color"
   },
   {
-   "default": "D / F",
+   "default": "F / AB / AS",
    "description": "Label for this grade band",
    "fieldname": "grade_fail_label",
    "fieldtype": "Data",
@@ -943,7 +957,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-06-17 15:05:33.108471",
+ "modified": "2026-09-21 12:12:28.203465",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Portal Settings",
