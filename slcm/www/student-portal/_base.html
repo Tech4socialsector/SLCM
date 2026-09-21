@@ -57,6 +57,16 @@
     {% if sp_settings.custom_css %}
     {{ sp_settings.custom_css }}
     {% endif %}
+
+    /* UI Size Adjustments */
+    .sp-brand span { font-size: 22px !important; }
+    .sp-brand-logo { width: 40px !important; height: 40px !important; }
+    .sp-brand-logo img { width: 40px !important; height: 40px !important; object-fit: contain; }
+    .sp-nav-item { font-size: 14px !important; margin-bottom: 6px !important; }
+    .sp-nav-label { font-size: 14px !important; }
+    .sp-page-title { font-size: 22px !important; }
+    .sp-notif-btn { display: flex !important; align-items: center !important; justify-content: center !important; }
+    .sp-notif-btn .sp-ms { font-size: 28px !important; }
   </style>
 
   {% block extra_head %}{% endblock %}
@@ -145,7 +155,7 @@
       <!-- <span class="sp-ms" style="font-size: 18px; color: var(--sp-nav-text, #111); cursor: pointer; margin-left: 4px;" onclick="spToggleDropdown()">expand_more</span> -->
       <div class="sp-dropdown" id="sp-dropdown">
         <div class="sp-dropdown-header">
-          <div class="sp-dropdown-name">{{ student_name or frappe.session.user }}</div>
+          <div class="sp-dropdown-name">{% if student_id %}{{ student_name or frappe.session.user }} ({{ student_id }}){% else %}{{ student_name or frappe.session.user }}{% endif %}</div>
           <div class="sp-dropdown-email">{{ frappe.session.user }}</div>
         </div>
         <a href="/student-portal/profile" class="sp-dropdown-item">
