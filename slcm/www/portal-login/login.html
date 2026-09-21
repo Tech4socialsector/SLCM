@@ -78,8 +78,8 @@
     .lp-brand-icon img { max-width: 100%; max-height: 100%; object-fit: contain; }
     .lp-brand-name { font-size: 24px; font-weight: 400; color: var(--primary); line-height: 1.3; }
 
-    .lp-heading { font-size: 20px; font-weight: 400; color: #111827; margin-bottom: 6px; text-align: left; }
-    .lp-sub     { font-size: 14px; color: #6b7280; margin-bottom: 20px; line-height: 1.5; text-align: left; }
+    .lp-heading { font-size: 20px; font-weight: 400; color: #111827; margin-bottom: 6px; text-align: center; }
+    .lp-sub     { font-size: 14px; color: #6b7280; margin-bottom: 20px; line-height: 1.5; text-align: center; }
 
     /* top-level role tabs */
     .lp-role-tabs { display: flex; gap: 8px; margin-bottom: 26px; background: #f3f4f6;
@@ -184,7 +184,7 @@
     </div>
 
     <h2 class="lp-heading">Login</h2>
-    <p class="lp-sub">Enter your login details to access your account</p>
+    <p class="lp-sub" id="lp-sub-text">Enter your login details to access your account</p>
 
     <div class="lp-role-tabs">
       <button type="button" class="lp-role-tab" id="role-tab-faculty-student" onclick="lpRoleTab('faculty-student')">
@@ -380,8 +380,10 @@ function lpValidate(fields, panel) {
 function lpRoleTab(t) {
   var pFS = document.getElementById('role-panel-faculty-student');
   var pParent = document.getElementById('role-panel-parent');
+  var subText = document.getElementById('lp-sub-text');
   if (pFS) pFS.style.display = t === 'faculty-student' ? '' : 'none';
   if (pParent) pParent.style.display = t === 'parent' ? '' : 'none';
+  if (subText) subText.style.display = t === 'parent' ? 'block' : 'none';
   var tFS = document.getElementById('role-tab-faculty-student');
   var tParent = document.getElementById('role-tab-parent');
   if (tFS) tFS.classList.toggle('active', t === 'faculty-student');

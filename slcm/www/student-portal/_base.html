@@ -72,7 +72,7 @@
 {% endif %}
 
 {% if is_guest %}
-<script>window.location.href = "/student/login?redirect-to=/student-portal";</script>
+<script>window.location.href = "/portal-login?redirect-to=/student-portal";</script>
 
 {% elif not_a_student or (not is_guest and not _sp_has_student_role and not _sp_has_student_record) %}
 <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:'Poppins',sans-serif;background:linear-gradient(135deg,#f0f4f8,#e8edf3);">
