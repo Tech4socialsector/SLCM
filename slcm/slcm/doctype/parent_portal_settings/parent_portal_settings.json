@@ -12,6 +12,7 @@
   "col_break_brand",
   "show_logo",
   "nav_brand_text",
+  "portal_logo",
   "portal_favicon",
   "typography_section",
   "font_family",
@@ -127,6 +128,12 @@
    "fieldname": "nav_brand_text",
    "fieldtype": "Data",
    "label": "Navbar Brand Text"
+  },
+  {
+   "fieldname": "portal_logo",
+   "fieldtype": "Attach Image",
+   "label": "Portal Logo",
+   "description": "Logo shown in the portal navbar. If left blank, it falls back to the site default."
   },
   {
    "description": "Custom favicon for the parent portal. Leave blank to use the site default.",

@@ -21,104 +21,10 @@
 
 {% else %}
 
-{# ══════════════════════════════════════════════════════════════════
-   HERO SECTION — Premium Welcome Banner
-   ══════════════════════════════════════════════════════════════════ #}
-<div class="spd-hero fade-in">
-  {# Animated background shapes #}
-  <div class="spd-hero-shape spd-hero-shape-1"></div>
-  <div class="spd-hero-shape spd-hero-shape-2"></div>
-  <div class="spd-hero-shape spd-hero-shape-3"></div>
-  <div class="spd-hero-particles">
-    <span class="spd-particle"></span><span class="spd-particle"></span>
-    <span class="spd-particle"></span><span class="spd-particle"></span>
-    <span class="spd-particle"></span><span class="spd-particle"></span>
-  </div>
 
-  <div class="spd-hero-content">
-    {# Left: greeting + info #}
-    <div class="spd-hero-left">
-      <div class="spd-hero-greeting">
-        {% set _h = frappe.utils.now_datetime().hour %}
-        <span class="spd-greeting-emoji">
-          {% if _h < 12 %}🌅{% elif _h < 17 %}☀️{% else %}🌙{% endif %}
-        </span>
-        Good {{ "Morning" if _h < 12 else ("Afternoon" if _h < 17 else "Evening") }}
-      </div>
-      <h1 class="spd-hero-name">
-        {{ student_name.split()[0] if student_name else 'Student' }}
-      </h1>
-      <div class="spd-hero-meta">
-        {% if programme_name %}
-        <span class="spd-hero-tag">
-          <span class="sp-ms">school</span>{{ programme_name }}
-        </span>
-        {% endif %}
-        {% if batch_year %}
-        <span class="spd-hero-tag">
-          <span class="sp-ms">calendar_today</span>Batch {{ batch_year }}
-        </span>
-        {% endif %}
-        {% if current_term %}
-        <span class="spd-hero-tag">
-          <span class="sp-ms">timeline</span>{{ current_term }}
-        </span>
-        {% endif %}
-        {% if year_of_study %}
-        <span class="spd-hero-tag">
-          <span class="sp-ms">grade</span>{{ year_of_study }}
-        </span>
-        {% endif %}
-      </div>
-      <div class="spd-hero-date" id="spd-live-date"></div>
-    </div>
-
-    {# Right: avatar + status badge #}
-    <div class="spd-hero-right">
-      <div class="spd-hero-avatar-wrap">
-        <div class="spd-hero-avatar">
-          {% if student_photo %}
-            <img src="{{ student_photo }}" alt="{{ student_name }}">
-          {% else %}
-            <span>{{ student_initial or 'S' }}</span>
-          {% endif %}
-        </div>
-        <div class="spd-hero-status-dot {% if student_status == 'Active' %}active{% else %}inactive{% endif %}"></div>
-      </div>
-      <div class="spd-hero-status-label">
-        <span class="sp-ms">{{ 'verified' if student_status == 'Active' else 'pending' }}</span>
-        {{ student_status or 'Active' }}
-      </div>
-      {% if student_id %}
-      <div class="spd-hero-id">{{ student_id }}</div>
-      {% endif %}
-    </div>
-  </div>
-
-  {# Quick stat strip inside hero #}
-  <div class="spd-hero-strip">
-    <div class="spd-hero-strip-item">
-      <div class="spd-hero-strip-val">{{ "%02d"|format(course_count) }}</div>
-      <div class="spd-hero-strip-lbl">Courses</div>
-    </div>
-    <div class="spd-hero-strip-sep"></div>
-    <div class="spd-hero-strip-item">
-      {% set eligible_count = courses_eligible if courses_eligible is defined else 0 %}
-      <div class="spd-hero-strip-val" style="color:{% if eligible_count == course_count and course_count > 0 %}#34d399{% else %}#fbbf24{% endif %};">
-        {% if eligible_count == course_count and course_count > 0 %}All{% else %}{{ eligible_count }}/{{ course_count }}{% endif %}
-      </div>
-      <div class="spd-hero-strip-lbl">Examination Eligible</div>
-    </div>
-    {% if has_dues %}
-    <div class="spd-hero-strip-sep"></div>
-    <div class="spd-hero-strip-item">
-      <div class="spd-hero-strip-val" style="color:#f87171;">₹{{ "{:,.0f}".format(total_outstanding) }}</div>
-      <div class="spd-hero-strip-lbl">Outstanding</div>
-    </div>
-    {% endif %}
-  </div>
+<div class="spd-welcome fade-in" style="padding: 24px 0 16px;">
+  <h1 style="font-size: 28px; color: var(--sp-primary-dark); font-weight: 400; margin: 0;">Welcome back, {{ student_name }} 👋</h1>
 </div>
-
 {# ══════════════════════════════════════════════════════════════════
    SMART ALERT BANNERS
    ══════════════════════════════════════════════════════════════════ #}
@@ -210,370 +116,62 @@
     <div class="spd-kpi-sub">{% if has_dues %}Payment due — act now{% else %}All fees cleared{% endif %}</div>
   </a>
 
-  {# Quick Actions Shortcut KPI #}
-  {% if not sp_settings or sp_settings.show_quick_actions %}
-  <a href="#spd-quick-actions" class="spd-kpi-card spd-kpi-quickactions" onclick="document.getElementById('spd-quick-actions').scrollIntoView({behavior:'smooth'});return false;">
-    <div class="spd-kpi-top">
-      <div class="spd-kpi-icon"><span class="sp-ms">bolt</span></div>
-      <div class="spd-kpi-trend spd-kpi-trend-nls"><span class="sp-ms">apps</span>8 Actions</div>
-    </div>
-    <div class="spd-kqa-dots">
-      <span><span class="sp-ms">event_available</span></span>
-      <span><span class="sp-ms">workspace_premium</span></span>
-      <span><span class="sp-ms">folder_open</span></span>
-      <span><span class="sp-ms">campaign</span></span>
-    </div>
-    <div class="spd-kpi-label">Quick Actions</div>
-    <div class="spd-kpi-bar">
-      <div class="spd-kpi-bar-fill" style="width:100%;background:rgba(255,255,255,0.3);"></div>
-    </div>
-    <div class="spd-kpi-sub">Jump to any feature →</div>
-  </a>
-  {% endif %}
+  
 
 </div>
 
-{# ══════════════════════════════════════════════════════════════════
-   TODAY'S CLASSES — Timeline View
-   ══════════════════════════════════════════════════════════════════ #}
-{% if not sp_settings or sp_settings.show_today_classes %}
-<div class="spd-section-card fade-in delay-2">
-  <div class="spd-section-hdr">
-    <div class="spd-section-title">
-      <div class="spd-section-icon spd-icon-blue"><span class="sp-ms">today</span></div>
-      <div>
-        <div class="spd-section-name">Today's Classes</div>
-        <div class="spd-section-sub" id="spd-today-label"></div>
-      </div>
-    </div>
-    <a href="/student-portal/timetable" class="spd-section-link">Weekly View <span class="sp-ms">arrow_forward</span></a>
-  </div>
-  <div class="spd-section-body">
-    {% if todays_classes %}
-    <div class="spd-timeline">
-      {% for cls in todays_classes %}
-      <div class="spd-timeline-item {% if loop.first %}spd-timeline-current{% endif %}">
-        <div class="spd-timeline-time">
-          <div class="spd-timeline-hr">{{ cls.from_time or "TBA" }}</div>
-          {% if cls.to_time %}<div class="spd-timeline-end">{{ cls.to_time }}</div>{% endif %}
-        </div>
-        <div class="spd-timeline-dot {% if loop.first %}active{% endif %}">
-          <span class="sp-ms">school</span>
-        </div>
-        <div class="spd-timeline-card">
-          <div class="spd-tc-name">{{ cls.course_name }}</div>
-          <div class="spd-tc-meta">
-            {% if cls.venue %}<span class="spd-tc-chip"><span class="sp-ms">location_on</span>{{ cls.venue }}</span>{% endif %}
-            {% if cls.faculty %}<span class="spd-tc-chip"><span class="sp-ms">person</span>{{ cls.faculty }}</span>{% endif %}
-          </div>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-    {% else %}
-    <div class="spd-empty-state">
-      <div class="spd-empty-illustration">
-        <span class="sp-ms">event_available</span>
-      </div>
-      <div class="spd-empty-title">No Classes Today</div>
-      <div class="spd-empty-sub">Enjoy your free day! Use this time to review your notes or work on assignments.</div>
-      <a href="/student-portal/timetable" class="spd-btn spd-btn-ghost">View Full Timetable</a>
-    </div>
-    {% endif %}
-  </div>
-</div>
-{% endif %}
-
-{# ══════════════════════════════════════════════════════════════════
-   MAIN DASHBOARD GRID
-   ══════════════════════════════════════════════════════════════════ #}
-<div class="spd-main-grid">
-
-  {# ── LEFT COLUMN ─────────────────────────────────────── #}
-  <div class="spd-col">
-
-    {# Course Insights with Progress Rings #}
-    {% if attendance_summaries and (not sp_settings or sp_settings.show_course_insights) %}
-    <div class="spd-section-card fade-in delay-3">
-      <div class="spd-section-hdr">
-        <div class="spd-section-title">
-          <div class="spd-section-icon spd-icon-purple"><span class="sp-ms">insights</span></div>
-          <div>
-            <div class="spd-section-name">Course Insights</div>
-            <div class="spd-section-sub">Attendance health per course</div>
-          </div>
-        </div>
-        <a href="/student-portal/attendance" class="spd-section-link">Full Report <span class="sp-ms">arrow_forward</span></a>
-      </div>
-      <div class="spd-section-body spd-section-body-flush">
-        {% for s in attendance_summaries %}
-        {% set pct = s.attendance_percentage|round(0)|int if s.attendance_percentage else 0 %}
-        {% set status = 'good' if pct >= 75 else 'warn' if pct >= 60 else 'danger' %}
-        <div class="spd-insight-row">
-          {# Circular Progress Ring #}
-          <div class="spd-ring-wrap">
-            <svg class="spd-ring" viewBox="0 0 44 44" aria-label="{{ pct }}%">
-              <circle class="spd-ring-track" cx="22" cy="22" r="18"/>
-              <circle class="spd-ring-fill spd-ring-{{ status }}" cx="22" cy="22" r="18"
-                stroke-dasharray="{{ ((pct / 100) * 113.1)|round(1) }} 113.1"/>
-            </svg>
-            <div class="spd-ring-label spd-ring-lbl-{{ status }}">{{ pct }}%</div>
-          </div>
-          {# Course info #}
-          <div class="spd-insight-info">
-            <div class="spd-insight-name">{{ s.get('course_display') or s.course or '—' }}</div>
-            <div class="spd-insight-detail">
-              {{ s.attended_classes|int }}h attended · {{ s.total_class_hours|int }}h total
-              {% if s.get('faculty') and s.faculty != '—' %} · <span>{{ s.faculty }}</span>{% endif %}
-            </div>
-          </div>
-          {# Health badge #}
-          <div class="spd-health-badge spd-health-{{ status }}">
-            <span class="sp-ms">{% if status == 'good' %}check_circle{% elif status == 'warn' %}warning{% else %}error{% endif %}</span>
-            {% if status == 'good' %}Safe{% elif status == 'warn' %}At Risk{% else %}Critical{% endif %}
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-
-    {# My Courses #}
-    <div class="spd-section-card fade-in delay-3">
-      <div class="spd-section-hdr">
-        <div class="spd-section-title">
-          <div class="spd-section-icon spd-icon-teal"><span class="sp-ms">menu_book</span></div>
-          <div>
-            <div class="spd-section-name">My Courses</div>
-            <div class="spd-section-sub">{{ course_count }} enrolled this semester</div>
-          </div>
-        </div>
-        <a href="/student-portal/courses" class="spd-section-link">View All <span class="sp-ms">arrow_forward</span></a>
-      </div>
-      <div class="spd-section-body spd-section-body-flush">
-        {% if courses_display %}
-          {% for c in courses_display %}
-          {% set att_status = 'good' if c.attendance_pct >= 75 else 'warn' if c.attendance_pct >= 60 else 'danger' if c.attendance_pct > 0 else 'none' %}
-          <div class="spd-course-row">
-            <div class="spd-course-avatar" style="background:{{ ['#e8f4fd','#f0fdf4','#fef9c3','#fdf2f8','#eff6ff','#f0fdfa'][loop.index0 % 6] }};color:{{ ['#1d4ed8','#15803d','#a16207','#9333ea','#1d4ed8','#0f766e'][loop.index0 % 6] }};">
-              <span class="sp-ms">school</span>
-            </div>
-            <div class="spd-course-info">
-              <div class="spd-course-name">{{ c.course_name }}</div>
-              <div class="spd-course-meta">
-                {% if c.credits and c.credits > 0 %}<span>{{ c.credits }} Credits</span>{% endif %}
-                {% if c.faculty and c.faculty != '—' %}<span>{{ c.faculty }}</span>{% endif %}
-              </div>
-            </div>
-            <div class="spd-course-att">
-              {% if c.attendance_pct > 0 %}
-              <div class="spd-course-pct spd-att-{{ att_status }}">{{ c.attendance_pct }}%</div>
-              <div class="spd-course-pct-lbl">Attendance</div>
-              {% else %}
-              <div class="spd-course-pct" style="color:var(--sp-text-4);">—</div>
-              {% endif %}
-            </div>
-          </div>
-          {% endfor %}
-        {% else %}
-          <div class="spd-empty-state spd-empty-compact">
-            <span class="sp-ms">menu_book</span>
-            <div class="spd-empty-title">No Courses Yet</div>
-            <div class="spd-empty-sub">Your enrolled courses will appear here.</div>
-          </div>
-        {% endif %}
-      </div>
-    </div>
-
-  </div>{# end left col #}
-
-  {# ── RIGHT COLUMN ─────────────────────────────────────── #}
-  <div class="spd-col">
-
-    {# ── Quick Actions ─────────────────────────────────────────── #}
+{# ── Quick Actions ─────────────────────────────────────────── #}
     {% if not sp_settings or sp_settings.show_quick_actions %}
-    <div id="spd-quick-actions" class="spd-section-card spd-qa-accent-card fade-in delay-2">
-      <div class="spd-qa-accent-hdr">
-        <div class="spd-qa-accent-title">
-          <div class="spd-qa-accent-icon"><span class="sp-ms">bolt</span></div>
-          <div>
-            <div class="spd-qa-accent-name">Quick Actions</div>
-            <div class="spd-qa-accent-sub">Everything you need, one tap away</div>
-          </div>
-        </div>
+    <div id="spd-quick-actions" class="fade-in delay-2" style="margin-top: 24px;">
+      <div class="spd-qa-header" style="margin-bottom: 20px;">
+        <h2 style="font-size: 22px; margin: 0; color: var(--sp-primary-dark, #111); font-weight: 400;">Quick Actions</h2>
+        <p style="margin: 4px 0 0; color: var(--sp-text-2, #666); font-size: 14px;">Everything you need, one tap away</p>
       </div>
-      <div class="spd-section-body">
-        {# Quick Actions — only pages NOT already in the sidebar
-             Sidebar has: Dashboard, My Courses, Timetable, Fees & Payments, Venue Booking, Helpdesk, My Profile, Hostel
-             Quick Actions covers everything else students need fast access to #}
-        <div class="spd-qa-grid">
-
-          <a href="/student-portal/attendance" class="spd-qa-card" style="--qa-clr:#0369a1;--qa-bg:#e0f2fe;">
-            <div class="spd-qa-icon">
-              <span class="sp-ms">event_available</span>
-            </div>
+      <div class="spd-qa-grid">
+        <a href="/student-portal/attendance" class="spd-qa-card" style="--qa-clr:#0369a1;--qa-bg:#e0f2fe;">
+          <div class="spd-qa-icon"><span class="sp-ms">event_available</span></div>
+          <div class="spd-qa-text">
             <div class="spd-qa-label">Attendance</div>
             <div class="spd-qa-desc">View your attendance</div>
-          </a>
-
-          <a href="/student-portal/results" class="spd-qa-card" style="--qa-clr:#9333ea;--qa-bg:#fdf2f8;">
-            <div class="spd-qa-icon">
-              <span class="sp-ms">workspace_premium</span>
-            </div>
+          </div>
+          <div class="spd-qa-arrow"><span class="sp-ms">arrow_forward</span></div>
+        </a>
+        <a href="/student-portal/results" class="spd-qa-card" style="--qa-clr:#9333ea;--qa-bg:#fdf2f8;">
+          <div class="spd-qa-icon"><span class="sp-ms">workspace_premium</span></div>
+          <div class="spd-qa-text">
             <div class="spd-qa-label">My Results</div>
             <div class="spd-qa-desc">Grades &amp; marks</div>
-          </a>
-
-          <a href="/student-portal/documents" class="spd-qa-card" style="--qa-clr:#1d4ed8;--qa-bg:#eff6ff;">
-            <div class="spd-qa-icon">
-              <span class="sp-ms">folder_open</span>
-            </div>
+          </div>
+          <div class="spd-qa-arrow"><span class="sp-ms">arrow_forward</span></div>
+        </a>
+        <a href="/student-portal/documents" class="spd-qa-card" style="--qa-clr:#1d4ed8;--qa-bg:#eff6ff;">
+          <div class="spd-qa-icon"><span class="sp-ms">folder_open</span></div>
+          <div class="spd-qa-text">
             <div class="spd-qa-label">Documents</div>
             <div class="spd-qa-desc">Downloads &amp; uploads</div>
-          </a>
-
-          <a href="/student-portal/announcements" class="spd-qa-card" style="--qa-clr:#0f766e;--qa-bg:#f0fdfa;">
-            <div class="spd-qa-icon">
-              <span class="sp-ms">campaign</span>
-            </div>
+          </div>
+          <div class="spd-qa-arrow"><span class="sp-ms">arrow_forward</span></div>
+        </a>
+        <a href="/student-portal/announcements" class="spd-qa-card" style="--qa-clr:#0f766e;--qa-bg:#f0fdfa;">
+          <div class="spd-qa-icon"><span class="sp-ms">campaign</span></div>
+          <div class="spd-qa-text">
             <div class="spd-qa-label">Notices</div>
             <div class="spd-qa-desc">Announcements</div>
-          </a>
-
-          {#
-          Commented out — Transcript Request is now integrated into Helpdesk (with payment).
-          <a href="/student-portal/transcript-request" class="spd-qa-card" style="--qa-clr:#059669;--qa-bg:#ecfdf5;">
-            <div class="spd-qa-icon">
-              <span class="sp-ms">description</span>
-            </div>
-            <div class="spd-qa-label">Transcript</div>
-            <div class="spd-qa-desc">Request transcript</div>
-          </a>
-          #}
-
-          <a href="/student-portal/exam-schedule" class="spd-qa-card" style="--qa-clr:#0e7490;--qa-bg:#ecfeff;">
-            <div class="spd-qa-icon">
-              <span class="sp-ms">event_note</span>
-            </div>
-            <div class="spd-qa-label">Exam Schedule</div>
-            <div class="spd-qa-desc">Timetable &amp; results</div>
-          </a>
-
-          <a href="/student-portal/re-exam" class="spd-qa-card" style="--qa-clr:#7c3aed;--qa-bg:#f5f3ff;">
-            <div class="spd-qa-icon">
-              <span class="sp-ms">assignment_late</span>
-            </div>
-            <div class="spd-qa-label">Re-Examination</div>
-            <div class="spd-qa-desc">Apply for re-exam</div>
-          </a>
-
-          <a href="/student-portal/grade-appeal" class="spd-qa-card" style="--qa-clr:#c2410c;--qa-bg:#fff7ed;">
-            <div class="spd-qa-icon">
-              <span class="sp-ms">rate_review</span>
-            </div>
-            <div class="spd-qa-label">Grade Appeal</div>
-            <div class="spd-qa-desc">Contest a grade</div>
-          </a>
-
-        </div>
+          </div>
+          <div class="spd-qa-arrow"><span class="sp-ms">arrow_forward</span></div>
+        </a>
+        <a href="/student-portal/venue-booking" class="spd-qa-card" style="--qa-clr:#c2410c;--qa-bg:#fff7ed;">
+          <div class="spd-qa-icon"><span class="sp-ms">meeting_room</span></div>
+          <div class="spd-qa-text">
+            <div class="spd-qa-label">Venue Booking</div>
+            <div class="spd-qa-desc">Book rooms &amp; venues</div>
+          </div>
+          <div class="spd-qa-arrow"><span class="sp-ms">arrow_forward</span></div>
+        </a>
       </div>
     </div>
     {% endif %}
 
-
-    {# Fee Summary — Compact #}
-    {% if not sp_settings or sp_settings.show_fee_summary %}
-    <div class="spd-section-card fade-in delay-4">
-      <div class="spd-section-hdr">
-        <div class="spd-section-title">
-          <div class="spd-section-icon {% if has_dues %}spd-icon-red{% else %}spd-icon-green{% endif %}">
-            <span class="sp-ms">receipt_long</span>
-          </div>
-          <div>
-            <div class="spd-section-name">Fee Summary</div>
-            <div class="spd-section-sub">
-              {% if has_dues %}Payment required{% else %}All cleared{% endif %}
-            </div>
-          </div>
-        </div>
-        <a href="/student-portal/fees" class="spd-section-link">Details <span class="sp-ms">arrow_forward</span></a>
-      </div>
-      <div class="spd-section-body">
-        {% if fee_invoices %}
-          <div class="spd-fee-list">
-            {% for inv in fee_invoices %}
-            <div class="spd-fee-row">
-              <div class="spd-fee-row-left">
-                <div class="spd-fee-term">{{ inv.academic_term or inv.name }}</div>
-                {% if inv.due_date %}
-                <div class="spd-fee-due">Due {{ frappe.utils.formatdate(inv.due_date, "dd MMM yyyy") }}</div>
-                {% endif %}
-              </div>
-              <div class="spd-fee-row-right">
-                <span class="spd-status-badge spd-status-{{ inv.status | lower | replace(' ', '-') }}">{{ inv.status }}</span>
-                {% if inv.outstanding_amount > 0 %}
-                <div class="spd-fee-amt">₹{{ "{:,.0f}".format(inv.outstanding_amount) }}</div>
-                {% endif %}
-              </div>
-            </div>
-            {% endfor %}
-          </div>
-          {% if has_dues %}
-          <a href="/student-portal/fees" class="spd-btn spd-btn-primary spd-btn-full spd-btn-mt">
-            <span class="sp-ms">payments</span>Pay Now
-          </a>
-          {% endif %}
-        {% else %}
-          <div class="spd-empty-state spd-empty-compact">
-            <span class="sp-ms" style="color:var(--sp-success);">check_circle</span>
-            <div class="spd-empty-title">All Clear!</div>
-            <div class="spd-empty-sub">No pending fee invoices.</div>
-          </div>
-        {% endif %}
-      </div>
-    </div>
-    {% endif %}
-
-  </div>{# end right col #}
-</div>{# end main grid #}
-
-{# ══════════════════════════════════════════════════════════════════
-   UPCOMING CLASSES — Bottom Section
-   ══════════════════════════════════════════════════════════════════ #}
-{% if upcoming_sessions %}
-<div class="spd-section-card fade-in delay-5">
-  <div class="spd-section-hdr">
-    <div class="spd-section-title">
-      <div class="spd-section-icon spd-icon-teal"><span class="sp-ms">upcoming</span></div>
-      <div>
-        <div class="spd-section-name">Upcoming Classes</div>
-        <div class="spd-section-sub">Next scheduled sessions</div>
-      </div>
-    </div>
-    <a href="/student-portal/timetable" class="spd-section-link">Full Timetable <span class="sp-ms">arrow_forward</span></a>
-  </div>
-  <div class="spd-section-body">
-    <div class="spd-upcoming-grid">
-      {% for sess in upcoming_sessions %}
-      <div class="spd-upcoming-card">
-        <div class="spd-upcoming-date-col">
-          <div class="spd-upcoming-day">{{ frappe.utils.formatdate(sess.session_date, "dd") }}</div>
-          <div class="spd-upcoming-month">{{ frappe.utils.formatdate(sess.session_date, "MMM") }}</div>
-        </div>
-        <div class="spd-upcoming-info">
-          <div class="spd-upcoming-name">{{ sess.course_offering or "—" }}</div>
-          <div class="spd-upcoming-meta">
-            {% if sess.start_time %}<span><span class="sp-ms">schedule</span>{{ sess.start_time }}</span>{% endif %}
-            {% if sess.venue %}<span><span class="sp-ms">location_on</span>{{ sess.venue }}</span>{% endif %}
-            {% if sess.session_type %}<span><span class="sp-ms">category</span>{{ sess.session_type }}</span>{% endif %}
-          </div>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-</div>
-{% endif %}
 
 {% endif %}{# end no_student #}
 
