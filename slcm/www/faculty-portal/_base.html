@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Faculty Portal{% endblock %} — SLCM</title>
+  <title>{% block title %}Faculty Portal{% endblock %} — {{ fp_settings.portal_title if fp_settings and fp_settings.portal_title else "SLCM" }}</title>
 
   {% if fp_settings and fp_settings.portal_favicon %}
   <link rel="icon" href="{{ fp_settings.portal_favicon }}">
@@ -144,12 +144,20 @@
         {% elif _ws and _ws.banner_image %}
           <img src="{{ _ws.banner_image }}" alt="Logo">
         {% else %}
-          <span style="font-family:'Material Symbols Outlined';font-size:20px;color:#fff;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24;">school</span>
+          <span style="font-family:'Material Symbols Outlined';font-size:20px;color:var(--fp-nav-text);font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24;">school</span>
         {% endif %}
       </div>
       {% endif %}
       <div class="fp-brand-text">
-        <span class="fp-brand-name">{{ (fp_settings.nav_brand_text if fp_settings and fp_settings.nav_brand_text else "Faculty Portal") }}</span>
+        <span class="fp-brand-name">
+          {%- if fp_settings and fp_settings.nav_brand_text -%}
+          {{ fp_settings.nav_brand_text }}
+          {%- elif fp_settings and fp_settings.portal_title -%}
+          {{ fp_settings.portal_title }}
+          {%- else -%}
+          Faculty Portal
+          {%- endif -%}
+        </span>
         <span class="fp-brand-sub">{{ (fp_settings.portal_subtitle if fp_settings and fp_settings.portal_subtitle else "Academic Management") }}</span>
       </div>
     </a>

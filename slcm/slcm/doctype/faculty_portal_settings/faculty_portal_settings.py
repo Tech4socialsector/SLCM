@@ -147,6 +147,26 @@ class FacultyPortalSettings(Document):
         self._validate_colors()
         self._validate_thresholds()
         self._validate_integers()
+        self._ensure_public_attachments()
+
+    def _ensure_public_attachments(self):
+        # portal_logo / portal_favicon are rendered on every faculty-portal page
+        # (including for guests before login), so they must not be private —
+        # the Attach Image widget defaults to private unless the uploader
+        # remembers to tick "Public", so force it here instead of relying on that.
+        for fieldname in ("portal_logo", "portal_favicon"):
+            file_url = self.get(fieldname)
+            if not file_url or not file_url.startswith("/private/files/"):
+                continue
+            file_doc = frappe.db.get_value(
+                "File", {"file_url": file_url}, ["name", "is_private"], as_dict=True
+            )
+            if not file_doc or not file_doc.is_private:
+                continue
+            file = frappe.get_doc("File", file_doc.name)
+            file.is_private = 0
+            file.save(ignore_permissions=True)
+            self.set(fieldname, file.file_url)
 
     def _validate_colors(self):
         color_fields = [
