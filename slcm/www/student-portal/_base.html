@@ -48,8 +48,11 @@
       --sp-nav-h:              {{ '50px' if sp_settings.nav_height == 'Compact' else '72px' if sp_settings.nav_height == 'Tall' else '60px' }};
       --sp-sidebar-w:          {{ '200px' if sp_settings.sidebar_width == 'Narrow' else '280px' if sp_settings.sidebar_width == 'Wide' else '240px' }};
       
-      --sp-grade-color:      {{ sp_settings.grade_color            or '#000000' }};
+            --sp-grade-color:      {{ sp_settings.grade_color            or '#000000' }};
       --sp-grade-fail:         {{ sp_settings.grade_fail_color       or '#85142b' }};
+      --sp-grade-excellent:    {{ sp_settings.grade_excellent_color  or '#16a34a' }};
+      --sp-grade-good:         {{ sp_settings.grade_good_color       or '#0369a1' }};
+      --sp-grade-average:      {{ sp_settings.grade_average_color    or '#d97706' }};
       --sp-att-good:           {{ sp_settings.att_good_color         or '#15803d' }};
       --sp-att-warn:           {{ sp_settings.att_warn_color         or '#b45309' }};
       --sp-att-danger:         {{ sp_settings.att_danger_color       or '#85142b' }};
@@ -59,12 +62,13 @@
     {% endif %}
 
     /* UI Size Adjustments */
-    .sp-brand span { font-size: 22px !important; }
+    .sp-brand span { font-size: 24px !important; }
     .sp-brand-logo { width: 40px !important; height: 40px !important; }
     .sp-brand-logo img { width: 40px !important; height: 40px !important; object-fit: contain; }
-    .sp-nav-item { font-size: 14px !important; margin-bottom: 6px !important; }
-    .sp-nav-label { font-size: 14px !important; }
-    .sp-page-title { font-size: 22px !important; }
+    .sp-nav-item { font-size: 18px !important; margin-bottom: 6px !important; }
+    .sp-nav-label { font-size: 18px !important; }
+    .sp-page-title { font-size: 24px !important; }
+    body, p, .context-text, .sp-nav-item:not(.active), .sp-breadcrumb { font-weight: 300 !important; }
     .sp-notif-btn { display: flex !important; align-items: center !important; justify-content: center !important; }
     .sp-notif-btn .sp-ms { font-size: 28px !important; }
   </style>

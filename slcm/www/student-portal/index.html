@@ -23,7 +23,7 @@
 
 
 <div class="spd-welcome fade-in" style="padding: 24px 0 16px;">
-  <h1 style="font-size: 28px; color: var(--sp-primary-dark); font-weight: 400; margin: 0;">{{ student_name }} ({{ student_id }})</h1>
+  <h1 style="font-size: 24px; color: var(--sp-primary-dark); font-weight: 400; margin: 0;">{{ student_name }} ({{ student_id }})</h1>
 </div>
 {# ══════════════════════════════════════════════════════════════════
    SMART ALERT BANNERS
@@ -90,7 +90,7 @@
     <div class="spd-kpi-value">{{ eligible_count }}<span style="font-size:0.45em;font-weight:500;opacity:0.6;">/{{ course_count }}</span></div>
     <div class="spd-kpi-label">Examination Eligible</div>
     <div class="spd-kpi-bar">
-      <div class="spd-kpi-bar-fill" style="width:{% if course_count > 0 %}{{ ((eligible_count / course_count) * 100)|round|int }}{% else %}0{% endif %}%;background:{% if eligible_count == course_count and course_count > 0 %}var(--sp-success){% else %}#f59e0b{% endif %};"></div>
+      <div class="spd-kpi-bar-fill" style="width:{% if course_count > 0 %}{{ ((eligible_count / course_count) * 100)|round|int }}{% else %}0{% endif %}%;background:{% if eligible_count == course_count and course_count > 0 %}var(--sp-success){% else %}var(--sp-warning){% endif %};"></div>
     </div>
     <div class="spd-kpi-sub">Courses cleared for examinations</div>
   </a>
@@ -124,11 +124,11 @@
     {% if not sp_settings or sp_settings.show_quick_actions %}
     <div id="spd-quick-actions" class="fade-in delay-2" style="margin-top: 24px;">
       <div class="spd-qa-header" style="margin-bottom: 20px;">
-        <h2 style="font-size: 22px; margin: 0; color: var(--sp-primary-dark, #111); font-weight: 400;">Quick Actions</h2>
-        <p style="margin: 4px 0 0; color: var(--sp-text-2, #666); font-size: 14px;">Everything you need, one tap away</p>
+        <h2 style="font-size: 24px; margin: 0; color: var(--sp-primary-dark, #111); font-weight: 400;">Quick Actions</h2>
+        <p style="margin: 4px 0 0; color: var(--sp-text-2, #666); font-size: 18px; font-weight: 300;">Everything you need, one tap away</p>
       </div>
       <div class="spd-qa-grid">
-        <a href="/student-portal/attendance" class="spd-qa-card" style="--qa-clr:#0369a1;--qa-bg:#e0f2fe;">
+        <a href="/student-portal/attendance" class="spd-qa-card" style="--qa-clr:var(--sp-info);--qa-bg:var(--sp-primary-light);">
           <div class="spd-qa-icon"><span class="sp-ms">event_available</span></div>
           <div class="spd-qa-text">
             <div class="spd-qa-label">Attendance</div>
@@ -136,7 +136,7 @@
           </div>
           <div class="spd-qa-arrow"><span class="sp-ms">arrow_forward</span></div>
         </a>
-        <a href="/student-portal/results" class="spd-qa-card" style="--qa-clr:#9333ea;--qa-bg:#fdf2f8;">
+        <a href="/student-portal/results" class="spd-qa-card" style="--qa-clr:var(--sp-primary);--qa-bg:var(--sp-primary-light);">
           <div class="spd-qa-icon"><span class="sp-ms">workspace_premium</span></div>
           <div class="spd-qa-text">
             <div class="spd-qa-label">My Results</div>
@@ -144,7 +144,7 @@
           </div>
           <div class="spd-qa-arrow"><span class="sp-ms">arrow_forward</span></div>
         </a>
-        <a href="/student-portal/documents" class="spd-qa-card" style="--qa-clr:#1d4ed8;--qa-bg:#eff6ff;">
+        <a href="/student-portal/documents" class="spd-qa-card" style="--qa-clr:var(--sp-info);--qa-bg:var(--sp-primary-mid);">
           <div class="spd-qa-icon"><span class="sp-ms">folder_open</span></div>
           <div class="spd-qa-text">
             <div class="spd-qa-label">Documents</div>
@@ -152,7 +152,7 @@
           </div>
           <div class="spd-qa-arrow"><span class="sp-ms">arrow_forward</span></div>
         </a>
-        <a href="/student-portal/announcements" class="spd-qa-card" style="--qa-clr:#0f766e;--qa-bg:#f0fdfa;">
+        <a href="/student-portal/announcements" class="spd-qa-card" style="--qa-clr:var(--sp-success);--qa-bg:var(--sp-primary-light);">
           <div class="spd-qa-icon"><span class="sp-ms">campaign</span></div>
           <div class="spd-qa-text">
             <div class="spd-qa-label">Notices</div>
@@ -160,7 +160,7 @@
           </div>
           <div class="spd-qa-arrow"><span class="sp-ms">arrow_forward</span></div>
         </a>
-        <a href="/student-portal/venue-booking" class="spd-qa-card" style="--qa-clr:#c2410c;--qa-bg:#fff7ed;">
+        <a href="/student-portal/venue-booking" class="spd-qa-card" style="--qa-clr:var(--sp-warning);--qa-bg:var(--sp-primary-mid);">
           <div class="spd-qa-icon"><span class="sp-ms">meeting_room</span></div>
           <div class="spd-qa-text">
             <div class="spd-qa-label">Venue Booking</div>
@@ -177,20 +177,25 @@
 
 <script>
 (function() {
+  function formatPortalDate(date) {
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+
   /* Live date in hero */
   const dateEl = document.getElementById('spd-live-date');
   if (dateEl) {
     const d = new Date();
-    const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    dateEl.textContent = d.toLocaleDateString('en-IN', opts);
+    dateEl.textContent = formatPortalDate(d);
   }
 
   /* Today label in classes section */
   const todayLbl = document.getElementById('spd-today-label');
   if (todayLbl) {
     const d = new Date();
-    const opts = { weekday: 'long', month: 'short', day: 'numeric' };
-    todayLbl.textContent = d.toLocaleDateString('en-IN', opts);
+    todayLbl.textContent = formatPortalDate(d);
   }
 
   /* Animated counters */
