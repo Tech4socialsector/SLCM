@@ -2,291 +2,362 @@
 {% block title %}My Timetable{% endblock %}
 
 {% block extra_head %}
+<!-- Flatpickr for date inputs -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
 /* ── Timetable page ─────────────────────────────────── */
 
-/* Week navigation bar */
-.tt-week-nav {
+/* Filters */
+.tt-filters-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 16px;
   background: var(--sp-surface);
   border: 1px solid var(--sp-border);
   border-radius: 12px;
-  padding: 12px 18px;
-  margin-bottom: 18px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
 }
-.tt-week-label {
-  flex: 1;
-  text-align: center;
-  font-size: 15px;
-  font-weight: 700;
+.tt-filter-inputs {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.tt-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tt-input-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sp-text-2);
+}
+.tt-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.tt-input-wrap .sp-ms {
+  position: absolute;
+  right: 12px;
+  font-size: 18px;
+  color: var(--sp-text-3);
+  pointer-events: none;
+}
+.tt-input-wrap select, .tt-input-wrap input {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding: 8px 36px 8px 12px;
+  border: 1px solid var(--sp-border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
   color: var(--sp-text-1);
-  min-width: 180px;
+  background: #fff;
+  min-width: 160px;
 }
-.tt-week-sub {
-  text-align: center;
-  font-size: 11px;
-  color: var(--sp-text-4);
-  font-weight: 400;
-  display: block;
-  margin-top: 1px;
+.tt-input-wrap select:focus, .tt-input-wrap input:focus {
+  outline: none;
+  border-color: var(--sp-primary);
 }
-.tt-nav-btn {
+
+.tt-view-toggles {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tt-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--sp-border);
+  background: #fff;
+  color: var(--sp-text-2);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all .15s;
+}
+.tt-toggle-btn.active {
+  background: var(--sp-primary);
+  color: #fff;
+  border-color: var(--sp-primary);
+}
+.tt-toggle-btn:not(.active):hover {
+  background: var(--sp-primary-light);
+  color: var(--sp-primary);
+  border-color: var(--sp-primary);
+}
+
+/* Week navigation header */
+.tt-nav-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border: 1px solid var(--sp-border);
+  border-radius: 12px 12px 0 0;
+  padding: 14px 20px;
+  border-bottom: none;
+}
+.tt-nav-arrow {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 7px 14px;
-  border-radius: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
   border: 1px solid var(--sp-border);
-  background: var(--sp-bg);
+  background: #fff;
   color: var(--sp-text-2);
   font-size: 13px;
   font-weight: 600;
   text-decoration: none;
   transition: all .15s;
-  white-space: nowrap;
 }
-.tt-nav-btn:hover {
-  border-color: var(--sp-primary);
-  color: var(--sp-primary);
+.tt-nav-arrow:hover {
   background: var(--sp-primary-light);
-}
-.tt-nav-btn-today {
-  background: var(--sp-primary);
-  color: #fff;
-  border-color: var(--sp-primary);
-}
-.tt-nav-btn-today:hover {
-  background: var(--sp-accent);
-  border-color: var(--sp-accent);
-  color: #fff;
-}
-
-/* Stats strip */
-.tt-stats {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 18px;
-  flex-wrap: wrap;
-}
-.tt-stat {
-  flex: 1;
-  min-width: 120px;
-  background: var(--sp-surface);
-  border: 1px solid var(--sp-border);
-  border-radius: 10px;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.tt-stat-icon {
-  width: 36px; height: 36px;
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
-  flex-shrink: 0;
-}
-.tt-stat-val  { font-size: 20px; font-weight: 800; color: var(--sp-text-1); line-height: 1; }
-.tt-stat-lbl  { font-size: 11px; color: var(--sp-text-4); margin-top: 2px; font-weight: 500; }
-
-/* Legend */
-.tt-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 18px;
-}
-.tt-legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  background: var(--sp-surface);
-  border: 1px solid var(--sp-border);
-  color: var(--sp-text-2);
-  white-space: nowrap;
-}
-.tt-legend-dot {
-  width: 10px; height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-/* Weekly grid */
-.tt-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 10px;
-  align-items: start;
-}
-@media (max-width: 900px) {
-  .tt-grid { grid-template-columns: repeat(3, 1fr); }
-}
-@media (max-width: 580px) {
-  .tt-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 380px) {
-  .tt-grid { grid-template-columns: 1fr; }
-}
-
-/* Day column */
-.tt-day-col {
-  background: var(--sp-surface);
-  border: 1px solid var(--sp-border);
-  border-radius: 12px;
-  overflow: hidden;
-  transition: box-shadow .15s;
-}
-.tt-day-col:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
-.tt-day-col.tt-today {
-  border-color: var(--sp-primary);
-  box-shadow: 0 0 0 2px rgba(200,70,48,.15);
-}
-
-/* Day header */
-.tt-day-header {
-  padding: 10px 12px 8px;
-  background: var(--sp-bg);
-  border-bottom: 1px solid var(--sp-border);
-  text-align: center;
-}
-.tt-day-col.tt-today .tt-day-header {
-  background: var(--sp-primary);
-}
-.tt-day-short {
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--sp-text-3);
-}
-.tt-day-col.tt-today .tt-day-short { color: rgba(255,255,255,.8); }
-
-.tt-day-num {
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--sp-text-1);
-  line-height: 1.1;
-  margin: 2px 0;
-}
-.tt-day-col.tt-today .tt-day-num { color: #fff; }
-
-.tt-day-month {
-  font-size: 10px;
-  color: var(--sp-text-4);
-  font-weight: 500;
-}
-.tt-day-col.tt-today .tt-day-month { color: rgba(255,255,255,.7); }
-
-.tt-today-badge {
-  display: inline-block;
-  margin-top: 4px;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: .08em;
-  background: rgba(255,255,255,.25);
-  color: #fff;
-  padding: 2px 7px;
-  border-radius: 10px;
-}
-
-/* Day body */
-.tt-day-body {
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  min-height: 80px;
-}
-
-/* Class card */
-.tt-class-card {
-  border-radius: 9px;
-  padding: 9px 10px;
-  border-left: 4px solid;
-  cursor: default;
-  transition: transform .12s;
-}
-.tt-class-card:hover { transform: translateY(-1px); }
-
-.tt-class-name {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--sp-text-1);
-  line-height: 1.3;
-  margin-bottom: 5px;
-}
-.tt-class-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-.tt-class-meta-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: var(--sp-text-3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.tt-class-meta-row .sp-ms {
-  font-size: 13px;
-  flex-shrink: 0;
-  opacity: .7;
-}
-
-/* Free day */
-.tt-free-day {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 20px 8px;
-  color: var(--sp-text-4);
-  gap: 4px;
-}
-.tt-free-day .sp-ms { font-size: 22px; opacity: .4; }
-.tt-free-day span   { font-size: 11px; font-weight: 500; }
-
-/* Show-more overflow */
-.tt-class-hidden { display: none; }
-.tt-show-more-btn {
-  width: 100%;
-  padding: 5px 8px;
-  border: 1px dashed var(--sp-border);
-  border-radius: 8px;
-  background: transparent;
   color: var(--sp-primary);
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  text-align: center;
-  transition: background .12s;
+  border-color: var(--sp-primary);
 }
-.tt-show-more-btn:hover { background: var(--sp-primary-light); }
+.tt-date-title {
+  text-align: center;
+}
+.tt-date-title h2 {
+  font-family: 'Merriweather', serif;
+  font-size: 20px;
+  color: var(--sp-text-1);
+  margin: 0;
+  font-weight: 700;
+}
 
-/* No-schedule empty state */
+/* ── Graphical Grid Layout ── */
+.tt-grid-container {
+  border: 1px solid var(--sp-border);
+  border-radius: 0 0 12px 12px;
+  background: #fff;
+  overflow-x: auto;
+}
+@media (max-width: 768px) {
+  .tt-grid-inner { min-width: 800px !important; }
+  .tt-grid-container { scroll-snap-type: x mandatory; }
+  .tt-grid-col-header, .tt-day-col { scroll-snap-align: start; }
+}
+.tt-grid-inner {
+  
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header Row */
+.tt-grid-header {
+  display: grid;
+  
+  border-bottom: 1px solid var(--sp-border);
+}
+.tt-grid-col-header {
+  padding: 12px;
+  text-align: center;
+  border-left: 1px solid var(--sp-border);
+}
+.tt-grid-col-header:first-child { border-left: none; }
+.tt-day-name { font-size: 13px; color: var(--sp-text-3); margin-bottom: 4px; }
+.tt-day-date { font-size: 15px; font-weight: 600; color: var(--sp-text-1); }
+.tt-grid-col-header.tt-today { background: rgba(220, 38, 38, 0.06); }
+.tt-grid-col-header.tt-today .tt-day-name, .tt-grid-col-header.tt-today .tt-day-date { color: #b91c1c; font-weight: 700; }
+
+/* Body Layout */
+.tt-grid-body {
+  display: grid;
+  
+  position: relative;
+  /* Min height assuming 8am to 4pm = 8 hours * 60px = 480px */
+  min-height: 480px;
+}
+
+/* Time Column */
+.tt-time-col {
+  border-right: 1px solid var(--sp-border);
+  position: relative;
+}
+.tt-time-slot {
+  height: 60px;
+  border-bottom: 1px solid var(--sp-border);
+  padding-right: 8px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--sp-text-3);
+  box-sizing: border-box;
+  position: relative;
+}
+.tt-time-slot span {
+  position: absolute;
+  top: -8px;
+  right: 8px;
+  background: #fff;
+  padding: 0 4px;
+  z-index: 20;
+  line-height: 1;
+}
+
+/* Day Columns (Events area) */
+.tt-day-col {
+  border-right: 1px solid var(--sp-border);
+  position: relative;
+  
+}
+.tt-day-col:last-child {
+  border-right: none;
+}
+
+/* Absolute Event Cards */
+.tt-event-card {
+  position: absolute;
+  
+  border-radius: 6px;
+  padding: 6px;
+  border-left: 4px solid;
+  font-size: 11px;
+  line-height: 1.3;
+  cursor: pointer;
+  transition: transform .1s;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  min-height: 50px; /* Ensure content is visible even if backend height is small */
+  /* Remove overflow:hidden so tooltip can pop out */
+}
+.tt-event-card:hover {
+  z-index: 20;
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.tt-event-title { font-weight: 700; color: var(--sp-text-1); margin-bottom: 2px; }
+.tt-event-time { color: var(--sp-text-3); font-size: 10px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tt-event-room { color: var(--sp-text-3); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Popover Tooltip */
+.tt-popover {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  background: #fff;
+  border: 1px solid var(--sp-border);
+  border-radius: 8px;
+  padding: 16px;
+  min-width: 240px;
+  width: max-content;
+  max-width: 320px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  z-index: 100;
+  transition: opacity 0.2s;
+  left: calc(100% + 14px); /* Make room for arrow */
+  top: -10px;
+  white-space: normal;
+}
+.tt-popover::before {
+  content: "";
+  position: absolute;
+  top: 16px;
+  left: -6px;
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  border-left: 1px solid var(--sp-border);
+  border-bottom: 1px solid var(--sp-border);
+  transform: rotate(45deg);
+}
+.tt-popover.pop-left {
+  left: auto;
+  right: calc(100% + 14px);
+}
+.tt-popover.pop-left::before {
+  left: auto;
+  right: -6px;
+  border-left: none;
+  border-bottom: none;
+  border-right: 1px solid var(--sp-border);
+  border-top: 1px solid var(--sp-border);
+}
+/* hover visibility handled by JS reparenting */
+.tt-pop-title { font-size: 14px; font-weight: 700; color: var(--sp-text-1); margin-bottom: 12px; }
+.tt-pop-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; font-size: 12px; color: var(--sp-text-2); }
+.tt-pop-row .sp-ms { font-size: 16px; color: var(--sp-primary); margin-top: 1px; }
+.tt-pop-link { display: inline-block; margin-top: 12px; font-size: 13px; font-weight: 600; color: var(--sp-primary); text-decoration: none; }
+.tt-pop-link:hover { text-decoration: underline; }
+
+/* No Schedule */
 .tt-no-schedule {
   text-align: center;
   padding: 48px 24px;
   color: var(--sp-text-4);
 }
 .tt-no-schedule .sp-ms { font-size: 48px; opacity: .3; display: block; margin-bottom: 12px; }
+
+
+/* Month Grid */
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+.month-header-cell {
+  padding: 12px;
+  text-align: center;
+  font-weight: 600;
+  border-bottom: 1px solid var(--sp-border);
+  border-right: 1px solid var(--sp-border);
+  color: var(--sp-text-2);
+}
+.month-header-cell:last-child { border-right: none; }
+
+.month-cell {
+  min-height: 120px;
+  border-bottom: 1px solid var(--sp-border);
+  border-right: 1px solid var(--sp-border);
+  padding: 8px;
+}
+.month-cell:nth-child(7n) { border-right: none; }
+.month-cell.not-current { background: #f9fafb; opacity: 0.6; }
+.month-date-num { font-weight: 600; font-size: 14px; color: var(--sp-text-2); margin-bottom: 8px; text-align: right; }
+.month-cell.is-today .month-date-num { color: var(--sp-primary); }
+
+.month-event {
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  margin-bottom: 4px;
+  border-left: 3px solid;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tt-popover.pop-down {
+  left: 0;
+  top: calc(100% + 14px);
+}
+.tt-popover.pop-down::before {
+  top: -6px;
+  left: 16px;
+  border-left: 1px solid var(--sp-border);
+  border-top: 1px solid var(--sp-border);
+  border-bottom: none;
+  border-right: none;
+}
+
 </style>
 {% endblock %}
 
 {% block content %}
 
 {# ── Page header ───────────────────────────────────────────────── #}
-<div class="sp-page-header fade-in" style="margin-bottom: 32px; margin-top: 10px; display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+<div class="sp-page-header fade-in" style="margin-bottom: 24px; margin-top: 10px; display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:16px;">
   <div style="display:flex; align-items:flex-start; gap:16px;">
     <div style="border: 2px solid var(--sp-primary); border-radius: 8px; width: 42px; height: 34px; display:flex; align-items:center; justify-content:center; color: var(--sp-primary); margin-top: 4px;">
       <span class="sp-ms" style="font-size: 24px; font-variation-settings: 'FILL' 1, 'wght' 600;">calendar_month</span>
@@ -307,148 +378,217 @@
   {% endif %}
 </div>
 
-<div class="tt-week-nav fade-in">
-  <a href="/student-portal/timetable?week={{ prev_week }}" class="tt-nav-btn">
-    <span class="sp-ms">chevron_left</span> Prev
-  </a>
+{# ── Filters ───────────────────────────────────────────────── #}
+<form id="tt-form" method="GET" action="/student-portal/timetable" class="fade-in">
+  <input type="hidden" name="view" id="view-input" value="{{ view }}">
+  <input type="hidden" name="from_date_iso" id="from-date-iso" value="{{ from_date_iso }}">
+  <input type="hidden" name="to_date_iso" id="to-date-iso" value="{{ to_date_iso }}">
 
-  <div class="tt-week-label">
-    {{ week_label }}
-    <span class="tt-week-sub">
-      {% if is_current_week %}Current Week{% else %}{{ week_start.strftime('%A, %d %B %Y') }}{% endif %}
-    </span>
-  </div>
-
-  <a href="/student-portal/timetable?week={{ next_week }}" class="tt-nav-btn">
-    Next <span class="sp-ms">chevron_right</span>
-  </a>
-  {% if not is_current_week %}
-  <a href="/student-portal/timetable" class="tt-nav-btn tt-nav-btn-today">
-    <span class="sp-ms">today</span> Today
-  </a>
-  {% endif %}
-</div>
-
-{# ── Stats strip ───────────────────────────────────────────────── #}
-<div class="tt-stats fade-in">
-  <div class="tt-stat">
-    <div class="tt-stat-icon" style="background:var(--sp-primary-light);color:var(--sp-primary);">
-      <span class="sp-ms">calendar_today</span>
-    </div>
-    <div>
-      <div class="tt-stat-val">{{ total_this_week }}</div>
-      <div class="tt-stat-lbl">Classes This Week</div>
-    </div>
-  </div>
-
-  {% if is_current_week %}
-  <div class="tt-stat">
-    <div class="tt-stat-icon" style="background:#fff7ed;color:#ea580c;">
-      <span class="sp-ms">event_note</span>
-    </div>
-    <div>
-      <div class="tt-stat-val">{{ today_count }}</div>
-      <div class="tt-stat-lbl">Today's Classes</div>
-    </div>
-  </div>
-  {% endif %}
-
-  <div class="tt-stat">
-    <div class="tt-stat-icon" style="background:#f3e8ff;color:#9333ea;">
-      <span class="sp-ms">menu_book</span>
-    </div>
-    <div>
-      <div class="tt-stat-val">{{ legend|length }}</div>
-      <div class="tt-stat-lbl">Courses</div>
-    </div>
-  </div>
-</div>
-
-{# ── Course legend ─────────────────────────────────────────────── #}
-{% if legend %}
-<div class="tt-legend fade-in">
-  {% for item in legend %}
-  <div class="tt-legend-item">
-    <div class="tt-legend-dot" style="background:{{ item.color }};"></div>
-    {{ item.course_name }}
-  </div>
-  {% endfor %}
-</div>
-{% endif %}
-
-{# ── Weekly grid ───────────────────────────────────────────────── #}
-{% if total_this_week == 0 %}
-<div class="sp-card fade-in" style="padding: 80px 24px; min-height: 400px; display: flex; align-items: center; justify-content: center;">
-  <div class="tt-no-schedule" style="padding: 0;">
-    <span class="sp-ms" style="font-size: 64px; color: #cbd5e1; display: block; margin-bottom: 16px; font-variation-settings: 'FILL' 0, 'wght' 300;">event_busy</span>
-    <div style="font-size:20px;font-family:'Merriweather',serif;font-weight:700;color:var(--sp-text-1);margin-bottom:8px;">No classes scheduled</div>
-    <div style="font-size:14px;color:var(--sp-text-3);">No class schedules found for this week.</div>
-    
-  </div>
-</div>
-{% else %}
-<div class="tt-grid fade-in">
-  {% for day in days %}
-  {% set day_classes = schedules_by_day.get(day.date, []) %}
-  <div class="tt-day-col {% if day.date == today|string %}tt-today{% endif %}">
-
-    {# Day header #}
-    <div class="tt-day-header">
-      <div class="tt-day-short">{{ day.short }}</div>
-      <div class="tt-day-num">{{ day.num }}</div>
-      <div class="tt-day-month">{{ day.month }}</div>
-      {% if day.date == today|string %}
-      <div class="tt-today-badge">TODAY</div>
+  <div class="tt-filters-bar">
+    <div class="tt-filter-inputs">
+      <div class="tt-input-group">
+        <label>Course</label>
+        <div class="tt-input-wrap">
+          <select name="course" onchange="document.getElementById('tt-form').submit()">
+            <option value="all" {% if selected_course == 'all' %}selected{% endif %}>All Courses</option>
+            {% for c in all_courses %}
+            <option value="{{ c.id }}" {% if selected_course == c.id %}selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+          </select>
+          <span class="sp-ms">expand_more</span>
+        </div>
+      </div>
+      
+      {% if view == 'week' or view == 'day' %}
+      <div class="tt-input-group">
+        <label>From Date</label>
+        <div class="tt-input-wrap">
+          <input type="text" id="from-date-picker" placeholder="DD/MM/YYYY" value="{{ from_date_fmt }}">
+          <span class="sp-ms">calendar_today</span>
+        </div>
+      </div>
+      <div class="tt-input-group">
+        <label>To Date</label>
+        <div class="tt-input-wrap">
+          <input type="text" id="to-date-picker" placeholder="DD/MM/YYYY" value="{{ to_date_fmt }}">
+          <span class="sp-ms">calendar_today</span>
+        </div>
+      </div>
       {% endif %}
     </div>
 
-    {# Day body #}
-    <div class="tt-day-body">
-      {% if day_classes %}
-        {% set overflow = day_classes|length > 3 %}
-        {% for cls in day_classes %}
-        <div class="tt-class-card {% if loop.index > 3 %}tt-class-hidden{% endif %}"
-             style="border-left-color:{{ cls.color }};background:{{ cls.color }}18;">
-          <div class="tt-class-name">{{ cls.course_name }}</div>
-          <div class="tt-class-meta">
-            <div class="tt-class-meta-row">
+    <div class="tt-view-toggles">
+      <a href="/student-portal/timetable?view=day" class="tt-toggle-btn {% if view == 'day' %}active{% endif %}">
+        <span class="sp-ms">schedule</span> Day
+      </a>
+      <a href="/student-portal/timetable?view=week" class="tt-toggle-btn {% if view == 'week' %}active{% endif %}">
+        <span class="sp-ms">calendar_view_week</span> Week
+      </a>
+      <a href="/student-portal/timetable?view=month" class="tt-toggle-btn {% if view == 'month' %}active{% endif %}">
+        <span class="sp-ms">calendar_month</span> Month
+      </a>
+    </div>
+  </div>
+</form>
+
+
+{# ── Calendar Grid ───────────────────────────────────────────────── #}
+<div class="tt-nav-header fade-in">
+  {% if view == 'month' %}
+  <a href="/student-portal/timetable?view=month&from_date={{ prev_date }}&course={{ selected_course }}" class="tt-nav-arrow">
+    <span class="sp-ms">chevron_left</span> Previous
+  </a>
+  <div class="tt-date-title">
+    <h2>{{ month_name }}</h2>
+  </div>
+  <a href="/student-portal/timetable?view=month&from_date={{ next_date }}&course={{ selected_course }}" class="tt-nav-arrow">
+    Next <span class="sp-ms">chevron_right</span>
+  </a>
+  {% elif view == 'day' %}
+  <a href="/student-portal/timetable?view=day&from_date={{ prev_date }}&course={{ selected_course }}" class="tt-nav-arrow">
+    <span class="sp-ms">chevron_left</span> Previous
+  </a>
+  <div class="tt-date-title">
+    <h2>{{ date_label }}</h2>
+  </div>
+  <a href="/student-portal/timetable?view=day&from_date={{ next_date }}&course={{ selected_course }}" class="tt-nav-arrow">
+    Next <span class="sp-ms">chevron_right</span>
+  </a>
+  {% else %}
+  <a href="/student-portal/timetable?view=week&from_date={{ prev_date }}&course={{ selected_course }}" class="tt-nav-arrow">
+    <span class="sp-ms">chevron_left</span> Previous
+  </a>
+  <div class="tt-date-title">
+    <h2>{{ date_label }}</h2>
+  </div>
+  <a href="/student-portal/timetable?view=week&from_date={{ next_date }}&course={{ selected_course }}" class="tt-nav-arrow">
+    Next <span class="sp-ms">chevron_right</span>
+  </a>
+  {% endif %}
+</div>
+
+
+{% if view == 'month' %}
+{# ── MONTH VIEW ── #}
+<div class="tt-grid-container fade-in">
+  <div class="month-grid">
+    <div class="month-header-cell">Mon</div>
+    <div class="month-header-cell">Tue</div>
+    <div class="month-header-cell">Wed</div>
+    <div class="month-header-cell">Thu</div>
+    <div class="month-header-cell">Fri</div>
+    <div class="month-header-cell">Sat</div>
+    <div class="month-header-cell">Sun</div>
+    
+    {% for day in days %}
+    <div class="month-cell {% if not day.is_current_month %}not-current{% endif %} {% if day.is_today %}is-today{% endif %}">
+      <div class="month-date-num">{{ day.num }}</div>
+      {% for cls in schedules_by_day.get(day.date, []) %}
+      <div class="month-event tt-event-card-month" style="position:relative; background:{{ cls.color }}18; border-color:{{ cls.color }}; color:var(--sp-text-1); cursor:pointer;">
+        {{ cls.from_time }} &middot; {{ cls.course_name }} &middot; {{ cls.venue }}
+        
+        <!-- Popover -->
+        <div class="tt-popover" style="top: 0; left: 100%; margin-left: 14px; font-weight: normal;">
+          <div class="tt-pop-title">{{ cls.course_name }}</div>
+          <div class="tt-pop-row">
+            <span class="sp-ms">schedule</span>
+            <div>{{ cls.from_time }} – {{ cls.to_time }}</div>
+          </div>
+          <div class="tt-pop-row">
+            <span class="sp-ms">location_on</span>
+            <div>{{ cls.venue }}</div>
+          </div>
+          <div class="tt-pop-row">
+            <span class="sp-ms">menu_book</span>
+            <div>Course Code: {{ cls.course }}</div>
+          </div>
+          <div class="tt-pop-row">
+            <span class="sp-ms">person</span>
+            <div>Faculty: {{ cls.instructor }}</div>
+          </div>
+          
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% else %}
+{# ── WEEK VIEW (Time Grid) ── #}
+<div class="tt-grid-container fade-in">
+  <div class="tt-grid-inner" style="width: 100%;">
+    
+    <!-- Grid Header -->
+    <div class="tt-grid-header" style="grid-template-columns: 80px repeat({{ days|length }}, 1fr);">
+      <div class="tt-grid-col-header" style="border:none;">Time</div>
+      {% for day in days %}
+      <div class="tt-grid-col-header {% if day.is_today %}tt-today{% endif %}">
+        <div class="tt-day-name">{{ day.short }}</div>
+        <div class="tt-day-date">{{ day.num }} {{ day.month }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Grid Body -->
+    <div class="tt-grid-body" style="grid-template-columns: 80px repeat({{ days|length }}, 1fr);">
+      
+      <!-- Horizontal Alignment Lines -->
+      <div style="position: absolute; top: 0; left: 80px; right: 0; bottom: 0; pointer-events: none; z-index: 0; display: flex; flex-direction: column;">
+        {% for hour in range(8, 21) %}
+        <div style="height: 60px; border-bottom: 1px solid var(--sp-border); box-sizing: border-box; width: 100%;"></div>
+        {% endfor %}
+      </div>
+      <!-- Times -->
+      <div class="tt-time-col">
+        {% for hour in range(8, 21) %}
+        <div class="tt-time-slot">
+          <span>{{ hour if hour <= 12 else hour - 12 }}:00 {{ 'AM' if hour < 12 else 'PM' }}</span>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Days -->
+      {% for day in days %}
+      <div class="tt-day-col">
+        {% for cls in schedules_by_day.get(day.date, []) %}
+        <div class="tt-event-card" style="top: {{ cls.top_px }}px; height: {{ cls.height_px }}px; background: {{ cls.color }}18; border-color: {{ cls.color }}; left: calc({{ cls.left_pct|default(0) }}% + 4px); width: calc({{ cls.width_pct|default(100) }}% - 8px);">
+          <div class="tt-event-title">{{ cls.course_name }}</div>
+          <div class="tt-event-time">{{ cls.from_time }} – {{ cls.to_time }}</div>
+          <div class="tt-event-room">{{ cls.venue }}</div>
+
+          <!-- Popover -->
+          <div class="tt-popover">
+            <div class="tt-pop-title">{{ cls.course_name }}</div>
+            <div class="tt-pop-row">
               <span class="sp-ms">schedule</span>
-              {{ cls.from_time }}{% if cls.to_time %} – {{ cls.to_time }}{% endif %}
+              <div>{{ cls.from_time }} – {{ cls.to_time }}</div>
             </div>
-            {% if cls.venue and cls.venue != '—' %}
-            <div class="tt-class-meta-row">
+            <div class="tt-pop-row">
               <span class="sp-ms">location_on</span>
-              {{ cls.venue }}
+              <div>{{ cls.venue }}</div>
             </div>
-            {% endif %}
-            {% if cls.instructor and cls.instructor != '—' %}
-            <div class="tt-class-meta-row">
+            <div class="tt-pop-row">
+              <span class="sp-ms">menu_book</span>
+              <div>Course Code: {{ cls.course }}</div>
+            </div>
+            <div class="tt-pop-row">
               <span class="sp-ms">person</span>
-              {{ cls.instructor }}
+              <div>Faculty: {{ cls.instructor }}</div>
             </div>
-            {% endif %}
+            
           </div>
         </div>
         {% endfor %}
-        {% if overflow %}
-        <button class="tt-show-more-btn"
-                onclick="ttToggleMore(this, {{ day_classes|length - 3 }})">
-          +{{ day_classes|length - 3 }} more
-        </button>
-        {% endif %}
-      {% else %}
-        <div class="tt-free-day">
-          <span class="sp-ms">weekend</span>
-          <span>Free</span>
-        </div>
-      {% endif %}
+      </div>
+      {% endfor %}
+
     </div>
 
   </div>
-  {% endfor %}
 </div>
 {% endif %}
-
 
 {# ── Sync to Google Calendar modal ─────────────────────────────── #}
 <div class="sp-modal-overlay" id="modal-gcal-sync" onclick="spCloseModalIf(event, 'modal-gcal-sync')">
@@ -504,6 +644,104 @@
 
 <div id="sp-toast" class="sp-toast" role="alert" aria-live="polite"></div>
 
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize date pickers if they exist
+  var fdp = document.getElementById('from-date-picker');
+  var tdp = document.getElementById('to-date-picker');
+  var form = document.getElementById('tt-form');
+
+  if (fdp && tdp) {
+        flatpickr(fdp, {
+      dateFormat: "d/m/Y",
+      onChange: function(selectedDates, dateStr, instance) {
+        if(selectedDates[0]) {
+          var iso = selectedDates[0].toISOString().split('T')[0];
+          var view = document.getElementById('view-input').value;
+          var params = new URLSearchParams(window.location.search);
+          params.set('from_date', iso);
+          
+          if (view === 'week') {
+            var toDate = new Date(selectedDates[0]);
+            toDate.setDate(toDate.getDate() + 5);
+            params.set('to_date', toDate.toISOString().split('T')[0]);
+          }
+          
+          window.location.href = window.location.pathname + '?' + params.toString();
+        }
+      }
+    });
+
+    flatpickr(tdp, {
+      dateFormat: "d/m/Y",
+      onChange: function(selectedDates, dateStr, instance) {
+        if(selectedDates[0]) {
+          var iso = selectedDates[0].toISOString().split('T')[0];
+          var params = new URLSearchParams(window.location.search);
+          params.set('to_date', iso);
+          window.location.href = window.location.pathname + '?' + params.toString();
+        }
+      }
+    });
+  }
+
+  // Advanced Tooltip Reparenting to avoid overflow clipping
+  let activePopover = null;
+  document.querySelectorAll('.tt-event-card, .tt-event-card-month').forEach(function(card) {
+    card.addEventListener('mouseenter', function(e) {
+      if(activePopover) {
+         activePopover.remove();
+         activePopover = null;
+      }
+      var popover = this.querySelector('.tt-popover');
+      if(popover) {
+        activePopover = popover.cloneNode(true);
+        activePopover.style.position = 'fixed';
+        activePopover.style.visibility = 'visible';
+        activePopover.style.opacity = '1';
+        activePopover.style.zIndex = '9999';
+        activePopover.classList.remove('pop-left', 'pop-down');
+        
+        document.body.appendChild(activePopover);
+        
+        var cardRect = this.getBoundingClientRect();
+        // default right
+        var top = cardRect.top;
+        var left = cardRect.right + 14;
+        
+        activePopover.style.top = top + 'px';
+        activePopover.style.left = left + 'px';
+        
+        var rect = activePopover.getBoundingClientRect();
+        if (rect.right > window.innerWidth) {
+           activePopover.classList.add('pop-left');
+           left = cardRect.left - rect.width - 14;
+           activePopover.style.left = left + 'px';
+           rect = activePopover.getBoundingClientRect();
+           
+           if (rect.left < 0) {
+              activePopover.classList.remove('pop-left');
+              activePopover.classList.add('pop-down');
+              top = cardRect.bottom + 14;
+              left = cardRect.left;
+              activePopover.style.top = top + 'px';
+              activePopover.style.left = left + 'px';
+           }
+        }
+      }
+    });
+    card.addEventListener('mouseleave', function(e) {
+      if(activePopover) {
+         activePopover.remove();
+         activePopover = null;
+      }
+    });
+  });
+});
+</script>
+
 <script>
 function ttSyncToCalendar() {
   var selected = document.querySelector('input[name="gcal-email"]:checked');
@@ -550,28 +788,5 @@ window.spToast = window.spToast || function (msg, type) {
   clearTimeout(el._t);
   el._t = setTimeout(function () { el.classList.remove('open'); }, 5000);
 };
-</script>
-
-<script>
-function ttToggleMore(btn, extraCount) {
-  var body = btn.parentElement;
-  var expanded = btn.dataset.expanded === '1';
-  if (expanded) {
-    // collapse: re-hide cards after index 3
-    var cards = body.querySelectorAll('.tt-class-card');
-    cards.forEach(function(el, i) {
-      if (i >= 3) el.classList.add('tt-class-hidden');
-    });
-    btn.textContent = '+' + extraCount + ' more';
-    btn.dataset.expanded = '0';
-  } else {
-    // expand: show all
-    body.querySelectorAll('.tt-class-hidden').forEach(function(el) {
-      el.classList.remove('tt-class-hidden');
-    });
-    btn.textContent = 'Show less';
-    btn.dataset.expanded = '1';
-  }
-}
 </script>
 {% endblock %}
