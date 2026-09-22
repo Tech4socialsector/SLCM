@@ -8990,7 +8990,7 @@ details.fee-benefits-panel[open] .fee-benefits-chevron { transform: rotate(180de
 .spd-qa-card {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 16px;
   padding: 20px 16px;
   border-radius: 12px;
@@ -9035,20 +9035,20 @@ details.fee-benefits-panel[open] .fee-benefits-chevron { transform: rotate(180de
 }
 
 @media (max-width: 900px) {
-  .spd-qa-grid { grid-template-columns: repeat(5, 1fr); gap: 8px; }
-  .spd-qa-card { padding: 14px 6px 10px; }
+  .spd-qa-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .spd-qa-card { padding: 14px 10px; }
   .spd-qa-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: var(--qa-bg); color: var(--qa-clr); flex-shrink: 0; }
   .spd-qa-icon .sp-ms { font-size: 24px; }
-  .spd-qa-label { font-size: 11px; }
-  .spd-qa-desc { font-size: 9.5px; }
+  .spd-qa-label { font-size: 13px; }
+  .spd-qa-desc { font-size: 11px; }
 }
 @media (max-width: 480px) {
-  .spd-qa-grid { grid-template-columns: repeat(5, 1fr); gap: 6px; }
-  .spd-qa-card { padding: 12px 4px 10px; }
-  .spd-qa-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: var(--qa-bg); color: var(--qa-clr); flex-shrink: 0; }
-  .spd-qa-icon .sp-ms { font-size: 20px; }
-  .spd-qa-label { font-size: 10px; }
-  .spd-qa-desc { display: none; }
+  .spd-qa-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .spd-qa-card { padding: 14px 10px; }
+  .spd-qa-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: var(--qa-bg); color: var(--qa-clr); flex-shrink: 0; }
+  .spd-qa-icon .sp-ms { font-size: 22px; }
+  .spd-qa-label { font-size: 12px; }
+  .spd-qa-desc { display: block; font-size: 10px; }
 }
 
 /* ── Enrollment Grid ─────────────────────────────────────────────── */
@@ -9295,8 +9295,8 @@ details.fee-benefits-panel[open] .fee-benefits-chevron { transform: rotate(180de
 }
 .spd-qa-arrow {
   position: absolute;
-  bottom: 16px;
-  right: 16px;
+  top: 28px;
+  right: 20px;
   width: 28px;
   height: 28px;
   border-radius: 50%;
