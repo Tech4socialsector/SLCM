@@ -2,16 +2,13 @@ import frappe
 
 no_cache = 1
 
-
 def _mask_account(acct):
     acct = str(acct or "")
     return ("•••• " + acct[-4:]) if len(acct) > 4 else acct
 
-
 def _mask_ifsc(ifsc):
     ifsc = str(ifsc or "")
     return ("••••" + ifsc[-4:]) if len(ifsc) > 4 else ifsc
-
 
 def get_context(context):
     context.no_cache = 1
@@ -42,11 +39,9 @@ def get_context(context):
         student = frappe.get_doc("Student Master", student_name)
         _set_student_nav(context, student)
 
-        # ── Full profile data ──────────────────────────────────
         full_name = " ".join(filter(None, [student.first_name, student.middle_name, student.last_name]))
 
         context.profile = {
-            # Personal
             "full_name":        full_name or student.name,
             "first_name":       student.first_name or "",
             "middle_name":      student.middle_name or "",
@@ -58,7 +53,6 @@ def get_context(context):
             "quota":            student.quota or "",
             "photo":            student.passport_size_photo or "",
 
-            # Contact
             "email":            student.email or "",
             "official_email":   student.official_email_id or "",
             "personal_email":   student.personal_email or "",
@@ -69,7 +63,6 @@ def get_context(context):
             "pincode":          student.pincode or "",
             "country":          student.country or "",
 
-            # Academic
             "registration_id":  student.registration_id or "",
             "application_number": student.application_number or "",
             "programme":        frappe.db.get_value("Batch", student.programme, "cohort_name") or student.programme or "",
@@ -81,16 +74,16 @@ def get_context(context):
             "current_cgpa":     round(student.current_cgpa or 0.0, 2),
             "student_status":   student.student_status or "",
             "academic_status":  student.academic_status or "",
-            "specialisation":   student.specialisation or "",
-            "programme_system": student.programme_system or "",
-            "admission_type":   student.admission_type or "",
+            "specialisation":   student.get("specialisation") or "",
+            "programme_system": student.get("programme_system") or "",
+            "admission_type":   student.get("admission_type") or "",
 
-            # Hostel
             "is_hosteller":     bool(student.is_hosteller),
+            "hostel_name":      student.get("hostel_name") or "",
             "hostel_room":      student.hostel_room or "",
             "hostel_bed":       student.hostel_bed or "",
+            "meal_plan":        student.get("meal_plan") or "",
 
-            # Bank
             "bank_name":        student.bank_name or "",
             "bank_account_number": _mask_account(student.bank_account_number),
             "ifsc_code":        _mask_ifsc(student.ifsc_code),
@@ -98,7 +91,6 @@ def get_context(context):
             "account_holder":   student.account_holder_name or "",
         }
 
-        # ── ID Card ────────────────────────────────────────────
         try:
             id_card = frappe.get_all(
                 "ID Card Generation",
@@ -112,7 +104,6 @@ def get_context(context):
         except Exception:
             context.id_card = None
 
-        # ── Parents ────────────────────────────────────────────
         try:
             parents_raw = frappe.get_all(
                 "Student Parent",
@@ -121,12 +112,14 @@ def get_context(context):
                         "phone", "email", "occupation", "annual_income"],
                 ignore_permissions=True
             )
-            # Normalise field names for template
             parents = []
             for p in parents_raw:
                 full = " ".join(filter(None, [p.get("first_name"), p.get("middle_name"), p.get("last_name")]))
                 parents.append({
                     "parent_name": full or "—",
+                    "first_name": p.get("first_name") or "",
+                    "middle_name": p.get("middle_name") or "",
+                    "last_name": p.get("last_name") or "",
                     "relation": p.get("relation") or "",
                     "contact_number": p.get("phone") or "",
                     "email_id": p.get("email") or "",
@@ -136,16 +129,12 @@ def get_context(context):
         except Exception:
             context.parents = []
 
-        # ── Available Downloads ────────────────────────────────
-        # Both conditions must be true: the field is populated AND the Applicant
-        # document with that name actually exists in the database.
         context.can_download_application = bool(
             student.application_number
             and frappe.db.exists("Applicant", student.application_number)
         )
-        context.can_download_registration = True   # always available for enrolled students
+        context.can_download_registration = True
 
-        # ── UG Degree ─────────────────────────────────────────
         try:
             ug = frappe.get_all(
                 "UG Degree Detail",
@@ -153,7 +142,6 @@ def get_context(context):
                 fields=["ug_program", "college", "year_of_completion", "ug_cgpa"],
                 ignore_permissions=True
             )
-            # Normalize to template-friendly names
             context.ug_degrees = [
                 {
                     "degree": d.get("ug_program") or "",
@@ -165,6 +153,21 @@ def get_context(context):
             ]
         except Exception:
             context.ug_degrees = []
+
+        # Fetch important links from Student Portal Settings
+        try:
+            settings = frappe.get_single("Student Portal Settings")
+            context.important_links = {
+                "academic_calendar": settings.get("academic_calendar") or "#",
+                "student_handbook": settings.get("student_handbook") or "#",
+                "examination_guidelines": settings.get("examination_guidelines") or "#"
+            }
+        except Exception:
+            context.important_links = {
+                "academic_calendar": "#",
+                "student_handbook": "#",
+                "examination_guidelines": "#"
+            }
 
     except Exception as e:
         frappe.log_error(f"Student Portal Profile error: {e}", "Student Portal")
@@ -205,3 +208,24 @@ def _set_nav_defaults(context):
     context.programme_name = ""
     context.department = ""
     context.batch_year = ""
+
+
+@frappe.whitelist()
+def add_guardian(first_name, last_name, relation, phone, email, occupation):
+    student_name = _get_student_name()
+    if not student_name:
+        frappe.throw("Student not found")
+
+    student = frappe.get_doc("Student Master", student_name)
+    student.append("parents", {
+        "first_name": first_name,
+        "last_name": last_name,
+        "relation": relation,
+        "phone": phone,
+        "email": email,
+        "occupation": occupation
+    })
+    
+    student.flags.ignore_permissions = True
+    student.save()
+    return {"status": "success"}
