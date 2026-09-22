@@ -5,9 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Faculty Portal{% endblock %} — SLCM</title>
 
+  {% if fp_settings and fp_settings.portal_favicon %}
+  <link rel="icon" href="{{ fp_settings.portal_favicon }}">
+  <link rel="shortcut icon" href="{{ fp_settings.portal_favicon }}">
+  {% endif %}
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&family=Merriweather:wght@300;400;700;900&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0&display=block" rel="stylesheet">
 
   <link rel="stylesheet" href="/assets/slcm/css/faculty_portal.css">
@@ -21,7 +26,13 @@
       --fp-primary-light: {{ s.primary_light  or "rgba(146,12,36,0.08)" }};
       --fp-primary-mid:   {{ s.primary_mid    or "rgba(146,12,36,0.14)" }};
       --fp-secondary:     {{ s.secondary_color or "#c9a84c" }};
-      --fp-nav-text:      {{ s.nav_text_color  or "#ffffff" }};
+      {% if s.sidebar_theme == "Dark" %}
+      --fp-nav-bg:        {{ s.primary_color or "#920c24" }};
+      --fp-nav-text:      {{ s.nav_text_color or "#ffffff" }};
+      {% else %}
+      --fp-nav-bg:        #fafafa;
+      --fp-nav-text:      {{ s.primary_color or "#920c24" }};
+      {% endif %}
       --fp-bg:            {{ s.background_color or "#f0f4f8" }};
       --fp-card:          {{ s.card_background  or "#ffffff" }};
       --fp-success:       {{ s.success_color or "#16a34a" }};
@@ -32,7 +43,7 @@
       --fp-danger-bg:     {{ s.danger_bg     or "rgba(220,38,38,0.10)" }};
       --fp-info:          {{ s.info_color    or "#0369a1" }};
       --fp-info-bg:       {{ s.info_bg       or "rgba(3,105,161,0.10)" }};
-      --fp-font-family:   {{ s.font_family_css or "'Poppins', system-ui, sans-serif" }};
+      --fp-font-family:   {{ s.font_family_css or "'Merriweather', Georgia, serif" }};
       --fp-nav-h:         {{ s.nav_height_css or "62px" }};
       --fp-base-font:     {% if s.font_size == "Small" %}13px{% elif s.font_size == "Large" %}15px{% else %}14px{% endif %};
       --fp-radius:        {% if s.corner_style == "Sharp" %}6px{% elif s.corner_style == "Pill" %}20px{% else %}14px{% endif %};
@@ -125,17 +136,21 @@
       <span></span><span></span><span></span>
     </div>
     <a href="/faculty-portal" class="fp-brand">
+      {% if not fp_settings or fp_settings.show_logo %}
       <div class="fp-brand-logo">
         {% set _ws = frappe.get_doc("Website Settings", "Website Settings") %}
-        {% if _ws and _ws.banner_image %}
+        {% if fp_settings and fp_settings.portal_logo %}
+          <img src="{{ fp_settings.portal_logo }}" alt="Logo">
+        {% elif _ws and _ws.banner_image %}
           <img src="{{ _ws.banner_image }}" alt="Logo">
         {% else %}
           <span style="font-family:'Material Symbols Outlined';font-size:20px;color:#fff;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24;">school</span>
         {% endif %}
       </div>
+      {% endif %}
       <div class="fp-brand-text">
-        <span class="fp-brand-name">Faculty Portal</span>
-        <span class="fp-brand-sub">Academic Management</span>
+        <span class="fp-brand-name">{{ (fp_settings.nav_brand_text if fp_settings and fp_settings.nav_brand_text else "Faculty Portal") }}</span>
+        <span class="fp-brand-sub">{{ (fp_settings.portal_subtitle if fp_settings and fp_settings.portal_subtitle else "Academic Management") }}</span>
       </div>
     </a>
   </div>
@@ -213,26 +228,6 @@
 
   {# ── Sidebar ─────────────────────────────────────────────────────────── #}
   <aside class="fp-sidebar" id="fp-sidebar" role="navigation" aria-label="Faculty portal navigation">
-
-    {# Profile Hero #}
-    <div class="fp-profile-hero">
-      <div class="fp-profile-avatar-wrap">
-        <div class="fp-sidebar-avatar">
-          {% if faculty_photo %}
-            <img src="{{ faculty_photo }}" alt="{{ faculty_name }}">
-          {% else %}
-            {{ faculty_initial or "F" }}
-          {% endif %}
-        </div>
-        <span class="fp-online-dot" title="Online"></span>
-      </div>
-      <div class="fp-faculty-name">{{ faculty_name or "Faculty" }}</div>
-      <div class="fp-faculty-dept">{{ faculty_department or "—" }}</div>
-      <div class="fp-faculty-id">
-        <span class="fp-ms">badge</span>
-        {{ faculty_id or "—" }}
-      </div>
-    </div>
 
 
     {# Main Menu #}

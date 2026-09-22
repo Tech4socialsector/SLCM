@@ -203,7 +203,7 @@
    "fieldname": "font_family",
    "fieldtype": "Select",
    "label": "Font Family",
-   "options": "Poppins\nInter\nRoboto\nSystem Default"
+   "options": "Poppins\nInter\nRoboto\nMerriweather\nSystem Default"
   },
   {
    "fieldname": "col_break_typo",
