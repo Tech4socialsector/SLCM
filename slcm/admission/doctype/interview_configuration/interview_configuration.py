@@ -24,8 +24,9 @@ class InterviewConfiguration(Document):
 
     def before_save(self):
         if not self.configuration_code:
-            yr = getdate().strftime("%y")
-            code = frappe.generate_hash("InterviewConfiguration", 8).upper()[:8]
+            code = frappe.generate_hash(length=8).upper()
+            self.configuration_code = code
+
     @frappe.whitelist()
     def get_applicant_counts(self):
         all_apps = self.get_eligible_applicants()

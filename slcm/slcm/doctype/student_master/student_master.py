@@ -593,6 +593,12 @@ def bulk_student_enrollment(students):
         try:
             student = frappe.get_doc("Student Master", student_id)
 
+            previous_enrollment = frappe.db.get_value(
+                "Student Enrollment",
+                {"student": student.name, "status": "Enrolled", "docstatus": ["<", 2]},
+                "name",
+            )
+
             new_enrollment = frappe.get_doc({
                 "doctype":      "Student Enrollment",
                 "student":      student.name,
@@ -607,6 +613,10 @@ def bulk_student_enrollment(students):
             })
 
             new_enrollment.insert()
+
+            if previous_enrollment:
+                frappe.db.set_value("Student Enrollment", previous_enrollment, "status", "Completed")
+
             success.append(student_id)
 
         except Exception as e:
@@ -1514,7 +1524,6 @@ def get_batch_filter_options():
         label = f"{display_name} ({b.get('academic_year') or ''})".strip()
         options.append({
             "batch":            b["name"],
-            "batch":        b.get("program"),
             "programme_label":  label,
             "academic_year":    b.get("academic_year") or "",
             "term_name":        b.get("academic_term") or "",

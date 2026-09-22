@@ -127,22 +127,21 @@ def _get_students_raw(program, academic_year, from_year):
 	students = frappe.db.sql(
 		"""
 		SELECT
-			sm.name          AS student,
-			sm.first_name    AS first_name,
-			sm.last_name     AS last_name,
-			sm.current_cgpa  AS current_cgpa,
-			sm.programme     AS programme,
-			sm.batch_year    AS batch_year,
-			sm.current_year  AS current_year,
-			c.batch_name     AS cohort_name
+			sm.name                  AS student,
+			sm.first_name            AS first_name,
+			sm.cumulative_percentage AS current_cgpa,
+			sm.batch                 AS programme,
+			sm.year_of_study         AS batch_year,
+			sm.current_year          AS current_year,
+			c.batch_name             AS cohort_name
 		FROM `tabStudent Master` sm
-		INNER JOIN `tabBatch` c ON c.name = sm.programme
+		INNER JOIN `tabBatch` c ON c.name = sm.batch
 		WHERE
 			c.program         = %(program)s
 			AND c.academic_year = %(academic_year)s
 			AND sm.current_year  = %(from_year)s
 			AND sm.student_status = 'Active'
-		ORDER BY sm.first_name, sm.last_name
+		ORDER BY sm.first_name
 		""",
 		{"program": program, "academic_year": academic_year, "from_year": from_year_str},
 		as_dict=True,
@@ -225,9 +224,7 @@ def _get_students_raw(program, academic_year, from_year):
 		s["attendance_percent"]    = att_map.get(s["student"], 0.0)
 		s["shortage_course_count"] = shortage_map.get(s["student"], 0)
 		s["cf_fa_shortage_count"]  = cf_map.get(s["student"], 0)
-		s["student_name"]          = (
-			(s.get("first_name") or "") + " " + (s.get("last_name") or "")
-		).strip()
+		s["student_name"]          = (s.get("first_name") or "").strip()
 
 	return students
 
@@ -700,7 +697,7 @@ def download_formatted_promotion_list(program, academic_year, university_name=No
 		raw_year_rows = frappe.db.sql("""
 			SELECT DISTINCT sm.current_year
 			FROM `tabStudent Master` sm
-			INNER JOIN `tabBatch` c ON c.name = sm.programme
+			INNER JOIN `tabBatch` c ON c.name = sm.batch
 			WHERE c.program = %(program)s
 			  AND sm.student_status = 'Active'
 			  AND sm.current_year IS NOT NULL AND sm.current_year != ''
@@ -835,13 +832,13 @@ def download_formatted_promotion_list(program, academic_year, university_name=No
 			# from the user-selected academic_year.
 			raw_students = frappe.db.sql("""
 				SELECT sm.name AS student,
-				       sm.first_name, sm.last_name, sm.current_cgpa
+				       sm.first_name, sm.cumulative_percentage AS current_cgpa
 				FROM `tabStudent Master` sm
-				INNER JOIN `tabBatch` c ON c.name = sm.programme
+				INNER JOIN `tabBatch` c ON c.name = sm.batch
 				WHERE c.program = %(program)s
 				  AND sm.current_year = %(yr)s
 				  AND sm.student_status = 'Active'
-				ORDER BY sm.first_name, sm.last_name
+				ORDER BY sm.first_name
 			""", {"program": program, "yr": policy.raw_year}, as_dict=True)
 			if not raw_students:
 				ws.cell(row=1, column=1, value="No students found for this year level.")
@@ -884,7 +881,7 @@ def download_formatted_promotion_list(program, academic_year, university_name=No
 			ws.row_dimensions[r].height = 30; r += 1
 
 			for si, s in enumerate(raw_students, 1):
-				sname = f"{s.get('first_name', '')} {s.get('last_name', '')}".strip()
+				sname = (s.get("first_name") or "").strip()
 				vals  = [si, s["student"], sname,
 				         email_map.get(s["student"], ""),
 				         round(flt(s.get("current_cgpa") or 0), 2)]

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  {% set sp_settings = frappe.get_cached_doc("Student Portal Settings", "Student Portal Settings") %}
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Student Portal{% endblock %} — SLCM</title>
@@ -10,7 +11,7 @@
   {% if sp_settings and sp_settings.font_google_url %}
   <link href="{{ sp_settings.font_google_url }}" rel="stylesheet">
   {% else %}
-  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   {% endif %}
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0&display=block" rel="stylesheet">
 
@@ -18,36 +19,40 @@
 
   <style id="sp-custom-vars">
     :root {
-      --sp-primary:            {{ sp_settings.primary_color          or '#122a4a' }};
+      --sp-primary:            {{ sp_settings.primary_color          or '#920c24' }};
       --sp-primary-dark:       {{ sp_settings.primary_dark           or '#0a182c' }};
       --sp-primary-light:      {{ sp_settings.primary_light          or 'rgba(18, 42, 74, 0.06)' }};
       --sp-primary-mid:        {{ sp_settings.primary_mid            or 'rgba(18, 42, 74, 0.12)' }};
       --sp-secondary:          {{ sp_settings.secondary_color        or '#85142b' }};
-      --sp-bg:                 {{ sp_settings.background_color      or '#f8fafc' }};
-      --sp-card:               {{ sp_settings.card_background       or '#ffffff' }};
-      --sp-sidebar-bg:         #2b2e4a;
-      --sp-nav-text:           {{ sp_settings.nav_text_color         or '#ffffff' }};
-      --sp-nav-h:              {{ sp_settings.nav_height_css         or '58px'   }};
-      --sp-font-family:        {{ sp_settings.font_family_css        or "'Inter', 'Poppins', sans-serif" }};
-      --sp-grade-excellent:    {{ sp_settings.grade_excellent_color  or '#15803d' }};
-      --sp-grade-excellent-bg: {{ sp_settings.grade_excellent_bg     or '#f0fdf4' }};
-      --sp-grade-good:         {{ sp_settings.grade_good_color       or '#1d4ed8' }};
-      --sp-grade-good-bg:      {{ sp_settings.grade_good_bg          or '#eff6ff' }};
-      --sp-grade-average:      {{ sp_settings.grade_average_color    or '#b45309' }};
-      --sp-grade-average-bg:   {{ sp_settings.grade_average_bg       or '#fffbeb' }};
+      
+      --sp-bg:                 {{ sp_settings.background_color       or '#ffffff' }};
+      --sp-card-bg:            {{ sp_settings.card_background        or '#ffffff' }};
+      --sp-card:               {{ sp_settings.card_background        or '#ffffff' }};
+      
+      --sp-nav-bg:             {{ sp_settings.sidebar_theme          or '#fafafa' }};
+      --sp-sidebar-bg:         {{ sp_settings.sidebar_theme          or '#fafafa' }};
+      
+      --sp-nav-text:           {{ sp_settings.nav_text_color         or '#920c24' }};
+      --sp-sidebar-text:       {{ sp_settings.nav_text_color         or '#920c24' }};
+      --sp-sidebar-text-2:     {{ sp_settings.nav_text_color         or '#920c24' }};
+      
+      --sp-success:            {{ sp_settings.success_color          or '#16a34a' }};
+      --sp-warning:            {{ sp_settings.warning_color          or '#d97706' }};
+      --sp-danger:             {{ sp_settings.danger_color           or '#dc2626' }};
+      --sp-info:               {{ sp_settings.info_color             or '#0369a1' }};
+      
+      --sp-font-family:        'Merriweather', serif;
+      --sp-font-size:          {{ '13px' if sp_settings.font_size == 'Small' else '15px' if sp_settings.font_size == 'Large' else '14px' }};
+      --sp-corner-radius:      {{ '6px' if sp_settings.corner_style == 'Sharp' else '20px' if sp_settings.corner_style == 'Pill' else '14px' }};
+      
+      --sp-nav-h:              {{ '50px' if sp_settings.nav_height == 'Compact' else '72px' if sp_settings.nav_height == 'Tall' else '60px' }};
+      --sp-sidebar-w:          {{ '200px' if sp_settings.sidebar_width == 'Narrow' else '280px' if sp_settings.sidebar_width == 'Wide' else '240px' }};
+      
+      --sp-grade-color:      {{ sp_settings.grade_color            or '#000000' }};
       --sp-grade-fail:         {{ sp_settings.grade_fail_color       or '#85142b' }};
-      --sp-grade-fail-bg:      {{ sp_settings.grade_fail_bg          or '#fef2f3' }};
       --sp-att-good:           {{ sp_settings.att_good_color         or '#15803d' }};
       --sp-att-warn:           {{ sp_settings.att_warn_color         or '#b45309' }};
       --sp-att-danger:         {{ sp_settings.att_danger_color       or '#85142b' }};
-      --sp-status-enrolled:    {{ sp_settings.status_enrolled_color  or '#15803d' }};
-      --sp-status-enrolled-bg: {{ sp_settings.status_enrolled_bg     or '#f0fdf4' }};
-      --sp-status-pending:     {{ sp_settings.status_pending_color   or '#b45309' }};
-      --sp-status-pending-bg:  {{ sp_settings.status_pending_bg      or '#fffbeb' }};
-      --sp-status-inactive:    {{ sp_settings.status_inactive_color  or '#6b7280' }};
-      --sp-status-inactive-bg: {{ sp_settings.status_inactive_bg     or '#f3f4f6' }};
-      --sp-status-cancelled:   {{ sp_settings.status_cancelled_color or '#85142b' }};
-      --sp-status-cancelled-bg:{{ sp_settings.status_cancelled_bg    or '#fef2f3' }};
     }
     {% if sp_settings.custom_css %}
     {{ sp_settings.custom_css }}
@@ -67,7 +72,7 @@
 {% endif %}
 
 {% if is_guest %}
-<script>window.location.href = "/student/login?redirect-to=/student-portal";</script>
+<script>window.location.href = "/portal-login?redirect-to=/student-portal";</script>
 
 {% elif not_a_student or (not is_guest and not _sp_has_student_role and not _sp_has_student_record) %}
 <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:'Poppins',sans-serif;background:linear-gradient(135deg,#f0f4f8,#e8edf3);">
@@ -107,9 +112,11 @@
     <a href="/student-portal" class="sp-brand">
       {% if sp_settings.show_logo | default(1) %}
       <div class="sp-brand-logo">
-        {% set _ws = frappe.get_doc("Website Settings", "Website Settings") %}
-        {% if _ws and _ws.banner_image %}
-          <img src="{{ _ws.banner_image }}" alt="Logo">
+        {% set _ws = frappe.get_cached_doc("Website Settings", "Website Settings") %}
+        {% if sp_settings.portal_logo %}
+          <img src="{{ sp_settings.portal_logo }}" alt="Logo" style="max-height: 100%; max-width: 100%;">
+        {% elif _ws and _ws.banner_image %}
+          <img src="{{ _ws.banner_image }}" alt="Logo" style="max-height: 100%; max-width: 100%;">
         {% else %}
           SP
         {% endif %}
@@ -127,7 +134,7 @@
       <span class="sp-notif-badge" id="sp-notif-badge"></span>
     </button>
 
-    <div style="position:relative;">
+    <div style="position:relative; display: flex; align-items: center;">
       <div class="sp-avatar-btn" id="sp-avatar-btn" onclick="spToggleDropdown()">
         {% if student_photo %}
           <img src="{{ student_photo }}" alt="{{ student_name }}">
@@ -135,6 +142,7 @@
           {{ student_initial or "S" }}
         {% endif %}
       </div>
+      <!-- <span class="sp-ms" style="font-size: 18px; color: var(--sp-nav-text, #111); cursor: pointer; margin-left: 4px;" onclick="spToggleDropdown()">expand_more</span> -->
       <div class="sp-dropdown" id="sp-dropdown">
         <div class="sp-dropdown-header">
           <div class="sp-dropdown-name">{{ student_name or frappe.session.user }}</div>
@@ -142,9 +150,6 @@
         </div>
         <a href="/student-portal/profile" class="sp-dropdown-item">
           <span class="sp-ms">person</span> My Profile
-        </a>
-        <a href="/student-portal" class="sp-dropdown-item">
-          <span class="sp-ms">dashboard</span> Dashboard
         </a>
         <a href="/student-portal/support" class="sp-dropdown-item">
           <span class="sp-ms">support_agent</span> Helpdesk
@@ -238,11 +243,7 @@
       {% endif %}
 
       {# My Courses #}
-      {% if sp_settings.menu_courses | default(1) %}
-      <a href="/student-portal/courses" class="sp-nav-item {% if active_page == 'courses' %}active{% endif %}" data-label="My Courses">
-        <span class="sp-ms">menu_book</span><span class="sp-nav-label">My Courses</span>
-      </a>
-      {% endif %}
+      
 
       {# Timetable #}
       {% if sp_settings.menu_timetable | default(1) %}

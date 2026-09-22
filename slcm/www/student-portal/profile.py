@@ -30,6 +30,13 @@ def get_context(context):
         return context
 
     context.no_student = False
+    context.portal_error = None
+    context.profile = {}
+    context.id_card = None
+    context.parents = []
+    context.ug_degrees = []
+    context.can_download_application = False
+    context.can_download_registration = False
 
     try:
         student = frappe.get_doc("Student Master", student_name)

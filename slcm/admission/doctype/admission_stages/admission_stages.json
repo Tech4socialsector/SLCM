@@ -16,7 +16,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Stage",
-   "options": "Stage Master"
+   "options": "Stages"
   },
   {
    "fieldname": "start_date",

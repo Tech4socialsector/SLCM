@@ -73,6 +73,7 @@ jinja = {
 		"slcm.admission.utils.portal.get_portal_website_branding",
 		"slcm.admission.utils.portal.get_typography_style_block",
 		"slcm.admission.doctype.seat_allocation.seat_allocation.get_results_notification_context",
+		"slcm.slcm.doctype.fee_certificate_request.fee_certificate_request.get_fee_certificate_context",
 	],
 }
 
@@ -107,7 +108,7 @@ fixtures = [
                 # SLCM student-lifecycle roles
                 "slcm_Student", "slcm_Faculty", "slcm_Registrar",
                 "slcm_Programme Chair", "slcm_Hostel Warden", "slcm_Hostel Admin",
-                "slcm_Placement Officer",
+                "slcm_Placement Officer", "slcm_Academic Incharge",
                 # Student Registration workflow roles
                 "slcm_REGO Officer", "slcm_FINO Officer", "slcm_Registration Officer",
                 "slcm_Documentation Officer", "slcm_IT Admin", "slcm_Registration User",

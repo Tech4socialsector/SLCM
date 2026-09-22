@@ -29,21 +29,57 @@ def get_columns():
     ]
 
 def get_data(filters):
-    if filters.get("merit_processing_stage") == "Part A Ranking":
+    if filters.get("merit_processing_stage") in ["Part A Ranking", "Shortlisting Rank List"]:
         return get_part_a_data(filters)
     else:
         return get_final_allotment_data(filters)
 
 def get_part_a_data(filters):
-    conditions = []
+    sp_filters = {"docstatus": ["<", 2], "status": ["!=", "Superseded"]}
+    
     if filters.get("admission_cycle"):
-        conditions.append("ml.admission_cycle = %(admission_cycle)s")
+        sp_filters["admission_cycle"] = filters.get("admission_cycle")
+    elif filters.get("admission_year"):
+        cycles = frappe.get_all("Admission Cycle", filters={"admission_year": filters.get("admission_year")}, pluck="name")
+        if not cycles:
+            return []
+        sp_filters["admission_cycle"] = ["in", cycles]
+
     if filters.get("campus"):
-        conditions.append("ml.campus = %(campus)s")
+        sp_filters["campus"] = filters.get("campus")
+
+    raw_sp = frappe.get_all("Shortlisting Merit List",
+        filters=sp_filters,
+        fields=["name", "campus", "admission_cycle", "program_level", "program", "status", "modified"],
+        order_by="modified desc"
+    )
+
+    if not raw_sp:
+        return []
+
+    # Dedup: keep the newest non-superseded shortlist per (campus, cycle, program_level, program)
+    sp_dedup = {}
+    for sp in raw_sp:
+        key = (sp.campus, sp.admission_cycle, sp.program_level, sp.get("program"))
+        if key not in sp_dedup:
+            sp_dedup[key] = sp
+
+    target_sps = list(sp_dedup.values())
+    if filters.get("program"):
+        target_sps = [sp for sp in target_sps if not sp.get("program") or sp.get("program") == filters.get("program")]
+
+    sp_names = [sp.name for sp in target_sps]
+    if not sp_names:
+        return []
+
+    conditions = ["mla.parent IN %(sp_names)s", "mla.parentfield = 'shortlist_applicants'"]
+    params = {"sp_names": sp_names}
+
     if filters.get("program"):
         conditions.append("mla.program = %(program)s")
+        params["program"] = filters.get("program")
 
-    where_clause = " AND ".join(conditions) if conditions else "1=1"
+    where_clause = " AND ".join(conditions)
 
     query = f"""
         SELECT
@@ -66,25 +102,62 @@ def get_part_a_data(filters):
         LEFT JOIN
             `tabEntrance Test Seat Allocation` etsa ON mla.applicant_id = etsa.applicant
         WHERE
-            mla.parentfield = 'shortlist_applicants' AND {where_clause}
+            {where_clause}
         ORDER BY
-            mla.shortlist_rank ASC
+            CASE WHEN mla.shortlist_rank IS NULL OR mla.shortlist_rank = 0 THEN 999999 ELSE mla.shortlist_rank END ASC
     """
-    return frappe.db.sql(query, filters, as_dict=True)
+    return frappe.db.sql(query, params, as_dict=True)
 
 def get_final_allotment_data(filters):
-    conditions = []
+    ml_filters = {
+        "docstatus": ["<", 2],
+        "status": ["!=", "Superseded"],
+        "merit_processing_stage": "Final Allotment Ranking"
+    }
+    
     if filters.get("admission_cycle"):
-        conditions.append("ml.admission_cycle = %(admission_cycle)s")
+        ml_filters["admission_cycle"] = filters.get("admission_cycle")
+    elif filters.get("admission_year"):
+        cycles = frappe.get_all("Admission Cycle", filters={"admission_year": filters.get("admission_year")}, pluck="name")
+        if not cycles:
+            return []
+        ml_filters["admission_cycle"] = ["in", cycles]
+
     if filters.get("campus"):
-        conditions.append("ml.campus = %(campus)s")
+        ml_filters["campus"] = filters.get("campus")
+
+    raw_ml = frappe.get_all("Merit List",
+        filters=ml_filters,
+        fields=["name", "campus", "admission_cycle", "program_level", "program", "status", "modified"],
+        order_by="modified desc"
+    )
+
+    if not raw_ml:
+        return []
+
+    # Dedup: keep the newest non-superseded merit list per (campus, cycle, program_level, program)
+    ml_dedup = {}
+    for ml in raw_ml:
+        key = (ml.campus, ml.admission_cycle, ml.program_level, ml.get("program"))
+        if key not in ml_dedup:
+            ml_dedup[key] = ml
+
+    target_mls = list(ml_dedup.values())
+    if filters.get("program"):
+        target_mls = [ml for ml in target_mls if not ml.get("program") or ml.get("program") == filters.get("program")]
+
+    ml_names = [ml.name for ml in target_mls]
+    if not ml_names:
+        return []
+
+    conditions = ["mla.parent IN %(ml_names)s", "mla.parentfield = 'merit_applicants'"]
+    params = {"ml_names": ml_names}
+
     if filters.get("program"):
         conditions.append("mla.program = %(program)s")
-    
-    # Force Final Allotment stage if querying Merit List Applicant
-    conditions.append("ml.merit_processing_stage = 'Final Allotment Ranking'")
+        params["program"] = filters.get("program")
 
-    where_clause = " AND ".join(conditions) if conditions else "1=1"
+    where_clause = " AND ".join(conditions)
 
     query = f"""
         SELECT
@@ -105,11 +178,11 @@ def get_final_allotment_data(filters):
         JOIN
             `tabMerit List` ml ON mla.parent = ml.name
         WHERE
-            mla.parentfield = 'merit_applicants' AND {where_clause}
+            {where_clause}
         ORDER BY
-            mla.overall_rank ASC
+            CASE WHEN mla.overall_rank IS NULL OR mla.overall_rank = 0 THEN 999999 ELSE mla.overall_rank END ASC
     """
-    return frappe.db.sql(query, filters, as_dict=True)
+    return frappe.db.sql(query, params, as_dict=True)
 
 def get_chart(data):
     return None

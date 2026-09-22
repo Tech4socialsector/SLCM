@@ -1,7 +1,18 @@
+const FD_EVENT_DEMAND_DOCTYPES = [
+	"Hostel Fine",
+	"Discipline Order",
+	"Deferral Order",
+	"Convocation Registration",
+	"Re Exam Registration",
+	"Revaluation Request",
+	"Course Reregistration",
+];
+
 frappe.ui.form.on("Fee Demand", {
 	refresh(frm) {
 		frm.trigger("set_status_indicator");
 		frm.trigger("render_action_buttons");
+		frm.trigger("render_create_buttons");
 	},
 
 	set_status_indicator(frm) {
@@ -109,6 +120,29 @@ frappe.ui.form.on("Fee Demand", {
 				}
 			);
 		}
+		frm.trigger("render_create_buttons");
+	},
+
+	render_create_buttons(frm) {
+		if (!frm.doc.student) return;
+
+		// ── Fee Concession / Waiver — needs a saved Fee Demand to link against ──
+		const editable = !["Paid", "Waived", "Cancelled"].includes(frm.doc.status);
+		if (!frm.is_new() && editable) {
+			frm.add_custom_button(__("Fee Concession / Waiver"), () => {
+				frappe.new_doc("Fee Concession", {
+					student: frm.doc.student,
+					fee_demand: frm.doc.name,
+				});
+			}, __("Create"));
+		}
+
+		// ── Event-Triggered Demand sources — just need the student ──────────────
+		FD_EVENT_DEMAND_DOCTYPES.forEach((dt) => {
+			frm.add_custom_button(__(dt), () => {
+				frappe.new_doc(dt, { student: frm.doc.student });
+			}, __("Create Event Demand"));
+		});
 	},
 
 	fee_component(frm) {
@@ -174,13 +208,18 @@ frappe.ui.form.on("Fee Demand", {
 		}
 	},
 
+	penalty_amount(frm) {
+		frm.trigger("recalculate_amounts");
+	},
+
 	recalculate_amounts(frm) {
 		const original = flt(frm.doc.original_amount);
 		const waiver   = flt(frm.doc.waiver_amount);
+		const penalty  = flt(frm.doc.penalty_amount);
 		const paid     = flt(frm.doc.paid_amount);
 		const credit   = flt(frm.doc.credit_adjusted);
 
-		const net_payable = original - waiver;
+		const net_payable = original - waiver + penalty;
 		const outstanding = Math.max(0, net_payable - paid - credit);
 
 		frm.set_value("net_payable", net_payable);
