@@ -164,25 +164,19 @@
         <div class="fp-dropdown-header">
           <div class="fp-dropdown-name">{{ faculty_name or frappe.session.user }}</div>
           <div class="fp-dropdown-role">
-            <span style="font-family:'Material Symbols Outlined';font-size:11px;vertical-align:-1px;margin-right:3px;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20;">verified</span>
-            {{ faculty_designation or 'Faculty' }}
+            <span style="font-family:'Material Symbols Outlined';font-size:11px;vertical-align:-1px;margin-right:3px;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20;">badge</span>
+            {{ faculty_id or 'Faculty' }}
           </div>
           <div class="fp-dropdown-email">{{ frappe.session.user }}</div>
         </div>
         <a href="/faculty-portal/profile" class="fp-dropdown-item">
           <span class="fp-ms">manage_accounts</span> My Profile
         </a>
-        <a href="/faculty-portal" class="fp-dropdown-item">
-          <span class="fp-ms">dashboard</span> Dashboard
-        </a>
-        <a href="/faculty-portal/communication" class="fp-dropdown-item">
-          <span class="fp-ms">campaign</span> Announcements
-        </a>
         <a href="/faculty-portal/settings" class="fp-dropdown-item">
           <span class="fp-ms">tune</span> Settings
         </a>
         <a href="/faculty-portal/support" class="fp-dropdown-item">
-          <span class="fp-ms">support_agent</span> Help & Support
+          <span class="fp-ms">support_agent</span> Helpdesk
         </a>
         <hr class="fp-dropdown-divider">
         <a href="javascript:void(0)" onclick="fpLogout()" class="fp-dropdown-item fp-danger">
@@ -268,30 +262,11 @@
       </a>
     </div>
 
-    <div class="fp-sidebar-section fp-section-toggle" data-section="my-info" onclick="fpToggleSection('my-info')">
-      My Account
-      <span class="fp-ms fp-section-chevron">expand_more</span>
-    </div>
-    <div class="fp-section-items" id="fp-section-my-info">
-      <a href="/faculty-portal/profile"        class="fp-nav-item {% if active_page == 'profile'       %}active{% endif %}" data-label="My Profile">
-        <span class="fp-ms">manage_accounts</span><span class="fp-nav-label">My Profile</span>
-      </a>
-      <a href="/faculty-portal/settings"       class="fp-nav-item {% if active_page == 'settings'      %}active{% endif %}" data-label="Settings">
-        <span class="fp-ms">tune</span><span class="fp-nav-label">Settings</span>
-      </a>
-      <a href="/faculty-portal/support"        class="fp-nav-item {% if active_page == 'support'        %}active{% endif %}" data-label="Helpdesk">
-        <span class="fp-ms">support_agent</span><span class="fp-nav-label">Helpdesk</span>
-      </a>
-    </div>
-
     <hr class="fp-sidebar-divider">
     <button class="fp-collapse-btn" onclick="fpToggleMini()" data-label="Expand" style="margin:0 8px;">
       <span class="fp-ms">left_panel_close</span>
       <span class="fp-collapse-label">Collapse Sidebar</span>
     </button>
-    <a href="javascript:void(0)" onclick="fpLogout()" class="fp-nav-item fp-danger" data-label="Sign Out" style="margin:4px 8px 0;">
-      <span class="fp-ms">logout</span><span class="fp-nav-label">Sign Out</span>
-    </a>
   </aside>
 
   {# ── Main Content ─────────────────────────────────────────────────────── #}
@@ -465,7 +440,7 @@ body.fp-compact .fp-card-header{ padding: 12px 16px !important; }
     try { localStorage.setItem('fp-sect-' + sectionId, isCollapsed ? '0' : '1'); } catch(e) {}
   }
   (function fpInitSections() {
-    ['main-menu', 'my-info'].forEach(function(id) {
+    ['main-menu'].forEach(function(id) {
       var itemsEl  = document.getElementById('fp-section-' + id);
       var headerEl = document.querySelector('.fp-section-toggle[data-section="' + id + '"]');
       if (!itemsEl) return;
