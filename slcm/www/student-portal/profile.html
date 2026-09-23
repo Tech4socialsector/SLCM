@@ -1,4 +1,4 @@
-{% extends "slcm/www/student-portal/_base.html" %}
+﻿{% extends "slcm/www/student-portal/_base.html" %}
 
 {% block title %}My Profile{% endblock %}
 
@@ -109,7 +109,7 @@
   font-family: var(--sp-font-family, "Merriweather", serif);
   font-size: 20px;
   font-weight: 400;
-  color: var(--sp-primary);
+  color: black;
 }
 .sp-section-header-title .sp-ms {
   font-size: 24px;
@@ -164,11 +164,15 @@
   display: flex;
   flex-direction: column;
   padding: 16px;
+  padding-bottom: 32px;
+  padding-right: 32px;
   border-radius: 12px;
   text-decoration: none;
   background: var(--sp-primary-light);
   position: relative;
   transition: transform 0.2s;
+  height: 100%;
+  box-sizing: border-box;
 }
 .sp-quick-action-card:hover {
   transform: translateY(-2px);
@@ -250,39 +254,48 @@
 </div>
 
 {# ── Profile Hero ──────────────────────────────────────────── #}
-<div class="sp-profile-hero fade-in">
+<div class="sp-profile-hero fade-in" style="background: #fdf5f5 url('/assets/slcm/images/building-illustration.png') no-repeat right 35% center / contain; justify-content: space-between;">
   <div class="hero-content">
-    <div class="sp-profile-avatar">
+    <div class="sp-profile-avatar" style="border: 4px solid #fff; width: 110px; height: 110px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
       {% if profile.photo %}
         <img src="{{ profile.photo }}" alt="{{ student_name }}">
       {% else %}
         {{ student_initial or "S" }}
       {% endif %}
     </div>
+    
     <div>
-      <div style="font-family: var(--sp-font-family, 'Merriweather', serif); font-size:24px; font-weight:400; line-height:1.2; color:var(--sp-primary);">
-        {{ student_name }}
+      <div style="display: flex; gap: 48px;">
+        <div>
+          <div style="font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Student Name</div>
+          <div style="font-family: var(--sp-font-family, 'Merriweather', serif); font-size: 22px; font-weight: 400; color: var(--sp-primary); text-transform: uppercase;">
+            {{ student_name }}
+          </div>
+        </div>
+        <div>
+          <div style="font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Student ID</div>
+          <div style="font-family: var(--sp-font-family, 'Merriweather', serif); font-size: 22px; font-weight: 400; color: var(--sp-primary); text-transform: uppercase;">
+            {{ student_id }}
+          </div>
+        </div>
       </div>
-      <div style="font-family: var(--sp-font-family, 'Merriweather', serif); font-size:16px; margin-top:4px; font-weight: 400; color:var(--sp-primary);">
-        {{ student_id }}
-      </div>
-      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;">
+      
+      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:16px;">
         {% if programme_name %}
-        <span class="sp-status-tag gray">{{ programme_name }}</span>
+        <span class="sp-status-tag gray" style="background: #e2e8f0; color: #334155; font-weight: 500;">Programme: {{ programme_name }}</span>
         {% endif %}
         {% if profile.student_status %}
-        <span class="sp-status-tag {% if profile.student_status == 'Active' %}green{% else %}red{% endif %}">{{ profile.student_status }}</span>
+        <span class="sp-status-tag {% if profile.student_status == 'Active' %}green{% else %}red{% endif %}" style="{% if profile.student_status == 'Active' %}background: #0f766e; color: #fff;{% else %}background: #b91c1c; color: #fff;{% endif %} font-weight: 500; padding: 4px 16px;">{{ profile.student_status }}</span>
         {% endif %}
       </div>
     </div>
   </div>
   
-  <div class="sp-profile-hero-right">
-    <h2>National Law School<br>of India University</h2>
-    <p>Knowledge for a Just Society</p>
-  </div>
+  <!-- <div class="sp-profile-hero-right" style="text-align: right; z-index: 2; margin-left: 24px;">
+    <h2 style="font-family: var(--sp-font-family, 'Merriweather', serif); font-size: 22px; font-weight: 600; color: #b91c1c; margin: 0 0 8px 0; line-height: 1.3;">National Law School<br>of India University</h2>
+    <p style="font-size: 14px; font-style: italic; color: #6b7280; margin: 0;">Knowledge for a Just Society</p>
+  </div> -->
 </div>
-
 {# ── Two-Column Layout ─────────────────────────────────────── #}
 <div class="sp-profile-layout">
 
@@ -691,7 +704,7 @@ function submitGuardian() {
     return;
   }
 
-  spCall('slcm.www.student_portal.profile.add_guardian', data, function(res) {
+  spCall('slcm.api.student_portal.add_guardian', data, function(res) {
     spCloseModal('modal-add-guardian');
     spToast('Guardian added successfully', 'success');
     setTimeout(function() {
@@ -705,3 +718,7 @@ function submitGuardian() {
 
 {% endif %}{# end no_student #}
 {% endblock %}
+
+
+
+

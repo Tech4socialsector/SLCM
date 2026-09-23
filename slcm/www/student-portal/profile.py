@@ -65,11 +65,11 @@ def get_context(context):
 
             "registration_id":  student.registration_id or "",
             "application_number": student.application_number or "",
-            "programme":        frappe.db.get_value("Batch", student.programme, "cohort_name") or student.programme or "",
-            "department":       student.department or "",
-            "batch_year":       student.batch_year or "",
+            "programme":        student.master_programme or "N/A",
+            "department":       student.department or "AAD",
+            "batch_year":       student.batch or "N/A",
             "academic_year":    student.academic_year or "",
-            "current_term":     student.current_term or "",
+            "current_term":     student.academic_term or "N/A",
             "current_year":     student.current_year or "",
             "current_cgpa":     round(student.current_cgpa or 0.0, 2),
             "student_status":   student.student_status or "",
@@ -193,9 +193,9 @@ def _set_student_nav(context, student):
     context.student_id = student.registration_id or student.name
     context.student_photo = student.passport_size_photo or ""
     context.student_initial = (context.student_name[0]).upper() if context.student_name else "S"
-    context.programme_name = frappe.db.get_value("Batch", student.programme, "cohort_name") or student.programme or ""
-    context.department = student.department or ""
-    context.batch_year = student.batch_year or ""
+    context.programme_name = student.master_programme or "N/A"
+    context.department = student.department or "AAD"
+    context.batch_year = student.batch or "N/A"
 
 
 def _set_nav_defaults(context):

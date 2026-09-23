@@ -340,7 +340,7 @@
       {% endif %}
       #}
 
-      {# Hostel — visible only to active hostellers #}
+      <!-- {# Hostel — visible only to active hostellers #}
       {%- set _h_user = frappe.session.user -%}
       {%- set _h_student = frappe.db.get_value("Student Master", {"user": _h_user}, "name")
                         or frappe.db.get_value("Student Master", {"email": _h_user}, "name")
@@ -350,7 +350,7 @@
       <a href="/student-portal/hostel" class="sp-nav-item {% if active_page == 'hostel' %}active{% endif %}" data-label="Hostel">
         <span class="sp-ms">hotel</span><span class="sp-nav-label">Hostel</span>
       </a>
-      {% endif %}
+      {% endif %} -->
 
       {# ── Commented out — accessible via Dashboard Quick Actions ──
       {% if sp_settings.menu_documents | default(1) %}
