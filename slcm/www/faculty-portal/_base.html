@@ -26,6 +26,10 @@
       --fp-primary-light: {{ s.primary_light  or "rgba(146,12,36,0.08)" }};
       --fp-primary-mid:   {{ s.primary_mid    or "rgba(146,12,36,0.14)" }};
       --fp-secondary:     {{ s.secondary_color or "#c9a84c" }};
+      --fp-sidebar-active-text: {{ s.sidebar_active_text_color or "#ffffff" }};
+      --fp-sidebar-menu-text:        {{ s.sidebar_menu_text_color or "#475569" }};
+      --fp-sidebar-menu-hover-bg:    {{ s.sidebar_menu_hover_bg_color or "#f0f4f8" }};
+      --fp-sidebar-menu-hover-text:  {{ s.sidebar_menu_hover_text_color or "#0f172a" }};
       {% if s.sidebar_theme == "Dark" %}
       --fp-nav-bg:        {{ s.primary_color or "#920c24" }};
       --fp-nav-text:      {{ s.nav_text_color or "#ffffff" }};
@@ -240,7 +244,6 @@
 
     {# Main Menu #}
     <div class="fp-sidebar-section fp-section-toggle" data-section="main-menu" onclick="fpToggleSection('main-menu')">
-      Main Menu
       <span class="fp-ms fp-section-chevron">expand_more</span>
     </div>
     <div class="fp-section-items" id="fp-section-main-menu">
@@ -657,6 +660,65 @@ function fpCall(method, args, onSuccess, onError) {
     if (onError) onError(msg); else alert(msg);
   });
 }
+
+/* ── fpPositionMultiselect: place a fixed-position dropdown panel
+   under its trigger button. The panel is moved to document.body while
+   open so it escapes any ancestor with `overflow:hidden` or a CSS
+   `transform` (e.g. our `.fade-in` entrance animation) — either of
+   those would otherwise break `position:fixed` by making that ancestor
+   the containing block instead of the viewport. ── */
+function fpPositionMultiselect(btn, panel) {
+  var rect = btn.getBoundingClientRect();
+  var panelWidth = Math.max(panel.offsetWidth || 200, rect.width);
+  var left = rect.left;
+  if (left + panelWidth > window.innerWidth - 8) {
+    left = Math.max(8, window.innerWidth - panelWidth - 8);
+  }
+  panel.style.left = left + 'px';
+  panel.style.top = (rect.bottom + 6) + 'px';
+  panel.style.minWidth = rect.width + 'px';
+}
+
+function fpOpenMultiselectPanel(btn, panel) {
+  document.querySelectorAll('.fp-multiselect-panel.fp-open').forEach(function(p) {
+    if (p !== panel) fpCloseMultiselectPanel(p);
+  });
+  var willOpen = !panel.classList.contains('fp-open');
+  if (willOpen) {
+    if (!panel._fpHomeParent) {
+      panel._fpHomeParent = panel.parentNode;
+      panel._fpHomeNext = panel.nextSibling;
+    }
+    document.body.appendChild(panel);
+    panel.classList.add('fp-open');
+    fpPositionMultiselect(btn, panel);
+  } else {
+    fpCloseMultiselectPanel(panel);
+  }
+}
+
+function fpCloseMultiselectPanel(panel) {
+  panel.classList.remove('fp-open');
+  if (panel._fpHomeParent) {
+    if (panel._fpHomeNext && panel._fpHomeNext.parentNode === panel._fpHomeParent) {
+      panel._fpHomeParent.insertBefore(panel, panel._fpHomeNext);
+    } else {
+      panel._fpHomeParent.appendChild(panel);
+    }
+  }
+}
+
+(function() {
+  function reposition() {
+    document.querySelectorAll('.fp-multiselect-panel.fp-open').forEach(function(panel) {
+      var wrap = panel._fpHomeParent ? panel._fpHomeParent.closest('.fp-multiselect') : panel.closest('.fp-multiselect');
+      var btn = wrap ? wrap.querySelector('.fp-multiselect-btn') : null;
+      if (btn) fpPositionMultiselect(btn, panel);
+    });
+  }
+  window.addEventListener('scroll', reposition, true);
+  window.addEventListener('resize', reposition);
+})();
 </script>
 
 {% block extra_js %}{% endblock %}

@@ -110,6 +110,12 @@
           <span>{{ y }}</span>
         </label>
         {% endfor %}
+        {% if filter_years %}
+        <div class="fp-msf-footer">
+          <button type="button" class="fp-msf-footer-btn" onclick="fpMsfSelectAll('fp-filter-year')">Select all</button>
+          <button type="button" class="fp-msf-footer-btn fp-msf-clear" onclick="fpMsfClearAll('fp-filter-year')">Clear all</button>
+        </div>
+        {% endif %}
       </div>
     </div>
 
@@ -125,6 +131,12 @@
           <span>{{ t }}</span>
         </label>
         {% endfor %}
+        {% if filter_terms %}
+        <div class="fp-msf-footer">
+          <button type="button" class="fp-msf-footer-btn" onclick="fpMsfSelectAll('fp-filter-term')">Select all</button>
+          <button type="button" class="fp-msf-footer-btn fp-msf-clear" onclick="fpMsfClearAll('fp-filter-term')">Clear all</button>
+        </div>
+        {% endif %}
       </div>
     </div>
 
@@ -137,6 +149,10 @@
         <label class="fp-msf-option"><input type="checkbox" value="Open" onchange="fpFilterClasses()"><span>Open</span></label>
         <label class="fp-msf-option"><input type="checkbox" value="Active" onchange="fpFilterClasses()"><span>Active</span></label>
         <label class="fp-msf-option"><input type="checkbox" value="Closed" onchange="fpFilterClasses()"><span>Closed</span></label>
+        <div class="fp-msf-footer">
+          <button type="button" class="fp-msf-footer-btn" onclick="fpMsfSelectAll('fp-filter-status')">Select all</button>
+          <button type="button" class="fp-msf-footer-btn fp-msf-clear" onclick="fpMsfClearAll('fp-filter-status')">Clear all</button>
+        </div>
       </div>
     </div>
 
@@ -452,6 +468,24 @@ function _msfRefreshLabel(id) {
     labelEl.textContent = values.length + ' ' + manyLbl;
   }
   box.classList.toggle('fp-msf-active', values.length > 0);
+}
+
+function fpMsfSelectAll(id) {
+  var box = document.getElementById(id);
+  if (!box) return;
+  box.querySelectorAll('.fp-msf-panel input[type="checkbox"]').forEach(function(cb) { cb.checked = true; });
+  _msfRefreshLabel(id);
+  if (box.classList.contains('fp-msf-open')) _msfPositionPanel(box, true);
+  fpFilterClasses();
+}
+
+function fpMsfClearAll(id) {
+  var box = document.getElementById(id);
+  if (!box) return;
+  box.querySelectorAll('.fp-msf-panel input[type="checkbox"]').forEach(function(cb) { cb.checked = false; });
+  _msfRefreshLabel(id);
+  if (box.classList.contains('fp-msf-open')) _msfPositionPanel(box, true);
+  fpFilterClasses();
 }
 
 var _msfOpenBox = null;

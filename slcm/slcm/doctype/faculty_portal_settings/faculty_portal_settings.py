@@ -22,6 +22,10 @@ _DEFAULTS = {
     "card_background":       "#ffffff",
     "sidebar_theme":         "Light",
     "nav_text_color":        "#ffffff",
+    "sidebar_active_text_color": "#ffffff",
+    "sidebar_menu_text_color":         "#475569",
+    "sidebar_menu_hover_bg_color":     "#f0f4f8",
+    "sidebar_menu_hover_text_color":   "#0f172a",
     # Status colors
     "success_color":         "#16a34a",
     "warning_color":         "#d97706",
@@ -171,7 +175,8 @@ class FacultyPortalSettings(Document):
     def _validate_colors(self):
         color_fields = [
             "primary_color", "secondary_color", "background_color", "card_background",
-            "nav_text_color",
+            "nav_text_color", "sidebar_active_text_color",
+            "sidebar_menu_text_color", "sidebar_menu_hover_bg_color", "sidebar_menu_hover_text_color",
             "success_color", "warning_color", "danger_color", "info_color",
             "grade_color", "grade_fail_color",
         ]

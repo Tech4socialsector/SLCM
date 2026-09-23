@@ -101,6 +101,12 @@ def get_context(context):
         # ── Distinct terms present, most recent first ────────────────
         # "Most recent" = the term containing the latest session_date, since
         # Term/Academic Year have no reliable start/end dates to sort by.
+        # Terms are seeded from two sources so a newly-assigned course
+        # offering shows up as a switchable term even before any Attendance
+        # Session has been created against it:
+        #   1. Existing sessions (sorts to the top, real activity).
+        #   2. Course offerings with no sessions yet (sorted after, using
+        #      "" as their latest-date so they never outrank real activity).
         term_latest_date = {}
         term_labels = {}
         for s in all_sessions:
@@ -108,6 +114,14 @@ def get_context(context):
             term_labels[key] = f"{s['term_name']} · {s['academic_year']}"
             if key not in term_latest_date or s["session_date"] > term_latest_date[key]:
                 term_latest_date[key] = s["session_date"]
+
+        for co in course_offerings:
+            term_name = co.get("term_name") or "—"
+            academic_year = co.get("academic_year") or "—"
+            key = f"{term_name}|{academic_year}"
+            if key not in term_latest_date:
+                term_latest_date[key] = ""
+                term_labels[key] = f"{term_name} · {academic_year}"
 
         terms = sorted(
             term_latest_date.keys(),
