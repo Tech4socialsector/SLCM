@@ -259,10 +259,31 @@
       {# My Courses #}
       
 
+      {# Fees & Payments #}
+      {% if sp_settings.menu_fees | default(1) %}
+      <a href="/student-portal/fees" class="sp-nav-item {% if active_page == 'fees' %}active{% endif %}" data-label="Fees &amp; Payments">
+        <span class="sp-ms">payments</span><span class="sp-nav-label">Fees &amp; Payments</span>
+      </a>
+      {% endif %}
+
+      {# Helpdesk #}
+      {% if sp_settings.menu_helpdesk | default(1) %}
+      <a href="/student-portal/support" class="sp-nav-item {% if active_page == 'support' %}active{% endif %}" data-label="Helpdesk">
+        <span class="sp-ms">support_agent</span><span class="sp-nav-label">Helpdesk</span>
+      </a>
+      {% endif %}
+
       {# Timetable #}
       {% if sp_settings.menu_timetable | default(1) %}
       <a href="/student-portal/timetable" class="sp-nav-item {% if active_page == 'timetable' %}active{% endif %}" data-label="Timetable">
         <span class="sp-ms">calendar_month</span><span class="sp-nav-label">Timetable</span>
+      </a>
+      {% endif %}
+
+      {# Venue Booking #}
+      {% if sp_settings.menu_venue_booking | default(1) %}
+      <a href="/student-portal/venue-booking" class="sp-nav-item {% if active_page == 'venue_booking' %}active{% endif %}" data-label="Venue Booking">
+        <span class="sp-ms">meeting_room</span><span class="sp-nav-label">Venue Booking</span>
       </a>
       {% endif %}
 
@@ -279,13 +300,6 @@
         <span class="sp-ms">assignment_late</span><span class="sp-nav-label">Re-Examination</span>
       </a>
       {% endif %} #}
-
-      {# Fees & Payments #}
-      {% if sp_settings.menu_fees | default(1) %}
-      <a href="/student-portal/fees" class="sp-nav-item {% if active_page == 'fees' %}active{% endif %}" data-label="Fees &amp; Payments">
-        <span class="sp-ms">payments</span><span class="sp-nav-label">Fees &amp; Payments</span>
-      </a>
-      {% endif %}
 
       {# ── Commented out — accessible via Dashboard Quick Actions ──
       {% if sp_settings.menu_attendance | default(1) %}
@@ -309,20 +323,6 @@
       </a>
       {% endif %}
       ── End commented section ── #}
-
-      {# Venue Booking #}
-      {% if sp_settings.menu_venue_booking | default(1) %}
-      <a href="/student-portal/venue-booking" class="sp-nav-item {% if active_page == 'venue_booking' %}active{% endif %}" data-label="Venue Booking">
-        <span class="sp-ms">meeting_room</span><span class="sp-nav-label">Venue Booking</span>
-      </a>
-      {% endif %}
-
-      {# Helpdesk #}
-      {% if sp_settings.menu_helpdesk | default(1) %}
-      <a href="/student-portal/support" class="sp-nav-item {% if active_page == 'support' %}active{% endif %}" data-label="Helpdesk">
-        <span class="sp-ms">support_agent</span><span class="sp-nav-label">Helpdesk</span>
-      </a>
-      {% endif %}
 
     </div>
 
@@ -792,4 +792,5 @@ function spCall(method, args, onSuccess, onError) {
 
 </body>
 </html>
+
 

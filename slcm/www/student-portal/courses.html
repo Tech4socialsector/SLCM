@@ -1,4 +1,4 @@
-{% extends "slcm/www/student-portal/_base.html" %}
+﻿{% extends "slcm/www/student-portal/_base.html" %}
 
 {% block title %}My Courses{% endblock %}
 
@@ -12,11 +12,13 @@
 
 {% else %}
 
-<div class="sp-page-header fade-in">
-  <h1 class="sp-page-title">My Courses</h1>
-  <p class="sp-page-sub">
-    {{ programme_name }}{% if batch_year %} &nbsp;·&nbsp; Batch {{ batch_year }}{% endif %}
-  </p>
+<div class="sp-page-header fade-in" style="display:flex; justify-content:space-between; align-items:flex-end;">
+  <div>
+    <h1 class="sp-page-title">My Courses</h1>
+    <p class="sp-page-sub">
+      Dashboard <span style="margin:0 4px;color:var(--sp-text-4);">›</span> <span style="color:var(--sp-primary);">My Courses</span>
+    </p>
+  </div>
 </div>
 
 {% if portal_error %}
@@ -40,115 +42,104 @@
 
 {% else %}
 
-{# ── Term Tabs ─────────────────────────────────────────────── #}
-{% if all_terms %}
-<div class="sp-term-tabs-wrap fade-in">
-  <div class="sp-term-tabs">
-    {% for term in all_terms %}
-    <button class="sp-term-tab{% if term == active_term_label %} active{% endif %}"
-            data-term="{{ term }}"
-            onclick="spSwitchTerm(this)">
-      {{ term }}
-    </button>
-    {% endfor %}
-  </div>
-</div>
-{% endif %}
-
-{# ── Enrolment Sections (one per term) ───────────────────── #}
+{# ── Enrolment Sections (stacked terms) ───────────────────── #}
 {% for ed in enrollment_data %}
 {% if ed.course_count > 0 %}
 
-<div class="sp-term-section fade-in{% if ed.term_label != active_term_label %} sp-term-hidden{% endif %}"
-     data-term="{{ ed.term_label }}"
-     style="margin-bottom:32px;">
+<div class="sp-term-section fade-in" style="margin-bottom:32px;">
 
-  {# Section Header #}
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
-    <div style="font-size:16px;font-weight:700;color:var(--sp-text-1);display:flex;align-items:center;gap:8px;">
-      <span class="sp-ms" style="font-size:20px;color:var(--sp-primary);">school</span>
-      {{ ed.cohort_display }}
-      {% if ed.enrollment.academic_year %}
-      <span style="font-size:13px;font-weight:400;color:var(--sp-text-4);">{{ ed.enrollment.academic_year }}</span>
-      {% endif %}
-    </div>
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-      <span class="sp-badge" style="background:{% if ed.enrollment.status == 'Enrolled' %}var(--sp-success-bg);color:var(--sp-success){% elif ed.enrollment.status == 'Completed' %}var(--sp-info-bg);color:var(--sp-info){% else %}var(--sp-bg);color:var(--sp-text-3){% endif %};">
-        {{ ed.enrollment.status or "Enrolled" }}
-      </span>
-      <span style="font-size:13px;color:var(--sp-text-4);">
-        {{ ed.course_count }} course{% if ed.course_count != 1 %}s{% endif %}
-        {% if ed.total_credits %} · {{ ed.total_credits }} credits{% endif %}
-      </span>
+  {# Term Header #}
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+    <span class="sp-ms" style="font-size:24px;color:var(--sp-primary);">school</span>
+    <div>
+      <div style="font-size:20px;font-weight:700;color:var(--sp-text-1);">{{ ed.term_label }}</div>
+      <div style="font-size:14px;color:var(--sp-text-4);margin-top:2px;">
+        AY {{ ed.enrollment.academic_year }} &nbsp;|&nbsp; {{ ed.cohort_display }}
+      </div>
     </div>
   </div>
 
   {# Course Cards Grid #}
-  <div class="sp-courses-grid">
+  <div style="display:flex; flex-direction:column; gap:20px;">
     {% for c in ed.courses %}
-    <div class="sp-course-card">
+    <div style="background:#fff; border:1px solid var(--sp-border); border-radius:12px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
 
-      {# Course Name & Status #}
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
-        <div style="overflow:hidden;flex:1;">
-          <div style="font-size:15px;font-weight:700;color:var(--sp-text-1);line-height:1.3;margin-bottom:3px;">
-            {{ c.course_name }}
-          </div>
-          {% if c.course_offering %}
-          <div style="font-size:11px;color:var(--sp-text-4);font-family:monospace;letter-spacing:0.03em;">
-            {{ c.course_offering }}
-          </div>
+      {# Top Row #}
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+          <h3 style="margin:0; font-family:var(--sp-font-serif); font-size:20px; font-weight:700; color:var(--sp-text-1);">{{ c.course_name }}</h3>
+          {% if c.course_code %}
+          <span style="background:var(--sp-primary-light); color:var(--sp-primary); font-size:12px; font-weight:600; padding:4px 10px; border-radius:20px;">{{ c.course_code }}</span>
           {% endif %}
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
-          <span class="sp-badge" style="background:{% if c.status == 'Enrolled' %}var(--sp-success-bg);color:var(--sp-success){% elif c.status == 'Completed' %}var(--sp-info-bg);color:var(--sp-info){% else %}var(--sp-bg);color:var(--sp-text-3){% endif %};">
-            {{ c.status }}
-          </span>
+          {% if c.credits %}
+          <span style="background:var(--sp-success-light); color:var(--sp-success); font-size:12px; font-weight:600; padding:4px 10px; border-radius:20px;">{{ c.credits }} Credit{% if c.credits != 1 %}s{% endif %}</span>
+          {% endif %}
           {% if c.course_type and c.course_type != '—' %}
-          <span class="sp-badge" style="font-size:10px;background:var(--sp-primary-light);color:var(--sp-primary);">
-            {{ c.course_type }}
-          </span>
+          <span style="background:#fee2e2; color:#ef4444; font-size:12px; font-weight:600; padding:4px 10px; border-radius:20px;">{{ c.course_type }}</span>
           {% endif %}
+        </div>
+        <div style="display:flex; align-items:center; gap:6px; background:var(--sp-success-light); color:var(--sp-success); padding:6px 12px; border-radius:20px; font-size:13px; font-weight:600;">
+          <span class="sp-ms" style="font-size:16px;">check_circle</span> {{ c.status }}
         </div>
       </div>
 
-      {# Faculty & Credits row #}
-      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--sp-text-3);">
-          <span class="sp-ms" style="font-size:15px;color:var(--sp-text-4);">person</span>
-          {{ c.faculty }}
-        </span>
-        {% if c.credits %}
-        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--sp-text-3);">
-          <span class="sp-ms" style="font-size:15px;color:var(--sp-text-4);">stars</span>
-          {{ c.credits }} Credit{% if c.credits != 1 %}s{% endif %}
-        </span>
-        {% endif %}
-      </div>
-
-      {# Attendance Bar #}
-      <div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <span style="font-size:12px;color:var(--sp-text-4);">Attendance</span>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:13px;font-weight:700;color:{{ c.att_color }};">
-              {% if c.attendance_pct > 0 %}{{ c.attendance_pct }}%{% else %}—{% endif %}
-            </span>
-            {% if c.eligible_for_exam is not none %}
-            <span class="sp-badge" style="font-size:10px;background:{% if c.eligible_for_exam %}var(--sp-success-bg);color:var(--sp-success){% else %}var(--sp-danger-bg);color:var(--sp-danger){% endif %};">
-              {% if c.eligible_for_exam %}Eligible{% else %}Not Eligible{% endif %}
-            </span>
+      {# Middle Row (Next Class Info) #}
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:20px; margin-bottom:20px;">
+        
+        {# Next Class #}
+        <div style="display:flex; gap:12px;">
+          <span class="sp-ms" style="color:var(--sp-text-3); font-size:20px; margin-top:2px;">calendar_today</span>
+          <div>
+            <div style="font-size:12px; color:var(--sp-text-3); margin-bottom:4px;">Next Class</div>
+            {% if c.next_class %}
+            <div style="font-size:14px; font-weight:600; color:var(--sp-text-1);">{{ c.next_class.date }}</div>
+            <div style="font-size:13px; color:var(--sp-text-3);">{{ c.next_class.time }}</div>
+            {% else %}
+            <div style="font-size:14px; font-weight:600; color:var(--sp-text-1);">No upcoming class</div>
             {% endif %}
           </div>
         </div>
-        <div class="sp-progress">
-          <div class="sp-progress-bar" style="width:{{ [c.attendance_pct, 100]|min }}%;background:{{ c.att_color }};"></div>
+
+        {# Venue #}
+        <div style="display:flex; gap:12px; border-left:1px solid var(--sp-border); padding-left:20px;">
+          <span class="sp-ms" style="color:var(--sp-text-3); font-size:20px; margin-top:2px;">location_on</span>
+          <div>
+            <div style="font-size:12px; color:var(--sp-text-3); margin-bottom:4px;">Venue</div>
+            <div style="font-size:14px; font-weight:600; color:var(--sp-text-1);">{{ c.next_class.room if c.next_class else "—" }}</div>
+          </div>
         </div>
-        {% if c.total_classes > 0 %}
-        <div style="font-size:11px;color:var(--sp-text-4);margin-top:4px;">
-          {{ c.attended_classes|int }} / {{ c.total_classes|int }} sessions attended
+
+        {# Faculty #}
+        <div style="display:flex; gap:12px; border-left:1px solid var(--sp-border); padding-left:20px;">
+          <span class="sp-ms" style="color:var(--sp-text-3); font-size:20px; margin-top:2px;">person</span>
+          <div>
+            <div style="font-size:12px; color:var(--sp-text-3); margin-bottom:4px;">Faculty</div>
+            <div style="font-size:14px; font-weight:600; color:var(--sp-text-1);">{{ c.faculty }}</div>
+          </div>
         </div>
-        {% endif %}
+
+      </div>
+
+      {# Bottom Row (Upcoming Classes & Timetable button) #}
+      <div style="background:var(--sp-bg); border-radius:8px; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+          <span class="sp-ms" style="color:var(--sp-text-3); font-size:18px;">calendar_today</span>
+          <span style="font-size:13px; color:var(--sp-text-3);">Upcoming Classes (Next 2)</span>
+          
+          {% if c.upcoming_classes %}
+            {% for uc in c.upcoming_classes %}
+            <span style="background:#fff; border:1px solid var(--sp-border); color:var(--sp-text-2); font-size:12px; padding:4px 10px; border-radius:20px; box-shadow:0 1px 2px rgba(0,0,0,0.02);">
+              {{ uc.date }} &nbsp;&middot;&nbsp; {{ uc.time }}
+            </span>
+            {% endfor %}
+          {% else %}
+            <span style="font-size:13px; color:var(--sp-text-4);">No upcoming classes</span>
+          {% endif %}
+        </div>
+        
+        <a href="/student-portal/timetable?course={{ c.course_offering }}" style="display:inline-flex; align-items:center; gap:4px; font-size:13px; font-weight:600; color:var(--sp-primary); text-decoration:none; padding:6px 12px; border-radius:20px; background:#fff; border:1px solid var(--sp-primary-light);">
+          View Timetable <span class="sp-ms" style="font-size:16px;">chevron_right</span>
+        </a>
       </div>
 
     </div>
@@ -159,60 +150,24 @@
 {% endif %}
 {% endfor %}
 
+{# Bottom CTA #}
+<div class="fade-in" style="margin-top:32px; margin-bottom:32px; background:var(--sp-bg); border:1px solid var(--sp-border); border-radius:12px; padding:24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+  <div style="display:flex; align-items:flex-start; gap:16px;">
+    <div style="background:#fee2e2; color:var(--sp-primary); width:48px; height:48px; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+      <span class="sp-ms" style="font-size:24px;">calendar_today</span>
+    </div>
+    <div>
+      <h3 style="margin:0 0 4px; font-size:18px; color:var(--sp-text-1);">Want to see your full schedule?</h3>
+      <p style="margin:0; font-size:14px; color:var(--sp-text-3);">View your complete timetable with all courses and sessions.</p>
+    </div>
+  </div>
+  <a href="/student-portal/timetable" style="display:inline-flex; align-items:center; gap:8px; background:var(--sp-primary); color:#fff; font-size:14px; font-weight:600; padding:10px 20px; border-radius:8px; text-decoration:none;">
+    <span class="sp-ms" style="font-size:18px;">calendar_today</span> View Timetable
+  </a>
+</div>
+
 {% endif %}{# end has_any_courses #}
 
-<style>
-.sp-term-tabs-wrap {
-  margin-bottom: 24px;
-}
-.sp-term-tabs {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  background: var(--sp-card-bg, #fff);
-  border: 1px solid var(--sp-border, #e5e7eb);
-  border-radius: 10px;
-  padding: 8px 10px;
-}
-.sp-term-tab {
-  padding: 6px 18px;
-  border-radius: 6px;
-  border: none;
-  background: transparent;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--sp-text-3, #6b7280);
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-.sp-term-tab:hover {
-  background: var(--sp-primary-light, #e0f2fe);
-  color: var(--sp-primary, #0284c7);
-}
-.sp-term-tab.active {
-  background: var(--sp-primary, #0284c7);
-  color: #fff;
-}
-.sp-term-hidden {
-  display: none !important;
-}
-</style>
-
-<script>
-function spSwitchTerm(btn) {
-  document.querySelectorAll('.sp-term-tab').forEach(function(t) {
-    t.classList.remove('active');
-  });
-  btn.classList.add('active');
-  var term = btn.dataset.term;
-  document.querySelectorAll('.sp-term-section').forEach(function(s) {
-    if (s.dataset.term === term) {
-      s.classList.remove('sp-term-hidden');
-    } else {
-      s.classList.add('sp-term-hidden');
-    }
-  });
-}
-</script>
 {% endif %}{# end no_student #}
 {% endblock %}
+
