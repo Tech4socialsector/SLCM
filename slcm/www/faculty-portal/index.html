@@ -5,67 +5,41 @@
 {% block content %}
 
 {% if portal_error %}
-<div class="fp-alert fp-alert-warning fade-in">
+<div class="fp-alert fp-alert-warning fade-in" style="align-items:center;">
   <span class="fp-ms">warning_amber</span>
-  <div><strong>Portal Notice:</strong> Some data could not be loaded. Please refresh or contact support.</div>
+  <div style="flex:1;"><strong>Unable to load dashboard data.</strong> Please try again or contact support if this continues.</div>
+  <button onclick="window.location.reload()" class="fp-section-error-retry" style="background:transparent;">
+    <span class="fp-ms">refresh</span>Try Again
+  </button>
 </div>
 {% endif %}
 
-{# ── Hero Banner ─────────────────────────────────────── #}
-<div class="fp-dashboard-hero fade-in">
-  <div style="position:relative;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;">
-    <div>
-      {% if faculty_department %}<p class="fp-hero-sub">{{ faculty_department }}</p>{% endif %}
-      <div class="fp-hero-date">
-        <span class="fp-ms">today</span>
-        <span id="fp-live-date">Loading date…</span>
-        {% if current_academic_year %}
-        &nbsp;·&nbsp;
-        <span class="fp-ms">school</span>
-        {{ current_academic_year }}
-        {% endif %}
-      </div>
-      <div class="fp-hero-meta">
-        {% if attendance_pending > 0 %}
-        <span class="fp-hero-chip" style="background:rgba(217,119,6,0.2);border-color:rgba(217,119,6,0.3);">
-          <span class="fp-ms">pending_actions</span>
-          {{ attendance_pending }} pending attendance
-        </span>
-        {% else %}
-        <span class="fp-hero-chip" style="background:rgba(22,163,74,0.18);border-color:rgba(22,163,74,0.25);">
-          <span class="fp-ms">check_circle</span>
-          All attendance marked
-        </span>
-        {% endif %}
-        {% if todays_class_count > 0 %}
-        <span class="fp-hero-chip">
-          <span class="fp-ms">today</span>
-          {{ todays_class_count }} class{{ 'es' if todays_class_count > 1 else '' }} today
-        </span>
-        {% endif %}
-        {% if total_courses > 0 %}
-        <span class="fp-hero-chip">
-          <span class="fp-ms">menu_book</span>
-          {{ total_courses }} course{{ 's' if total_courses > 1 else '' }}
-        </span>
-        {% endif %}
-      </div>
-      <div class="fp-hero-actions">
-        <a href="/faculty-portal/attendance" class="fp-hero-btn fp-hero-btn-primary">
-          <span class="fp-ms">how_to_reg</span>
-          Take Attendance
-        </a>
-        <a href="/faculty-portal/my-classes" class="fp-hero-btn fp-hero-btn-ghost">
-          <span class="fp-ms">menu_book</span>
-          My Classes
-        </a>
-      </div>
+{# ── Context Bar (welcome heading removed per request) ────── #}
+<div class="fp-page-header fp-context-bar fade-in">
+  <div class="fp-page-header-left">
+    <div class="fp-context-date">
+      <span class="fp-ms">today</span>
+      <span id="fp-live-date">—</span>
+      {% if current_academic_year %}
+      <span class="fp-context-sep">·</span>
+      <span class="fp-ms">school</span>
+      {{ current_academic_year }}
+      {% endif %}
     </div>
+  </div>
+  <div class="fp-page-actions">
+    <a href="/faculty-portal/attendance" class="fp-btn fp-btn-primary">
+      <span class="fp-ms">how_to_reg</span>
+      Take Attendance
+    </a>
+    <a href="/faculty-portal/my-classes" class="fp-btn fp-btn-secondary">
+      <span class="fp-ms">menu_book</span>
+      My Classes
+    </a>
   </div>
 </div>
 
 <script>
-/* Live date in hero */
 (function() {
   var el = document.getElementById('fp-live-date');
   if (!el) return;
@@ -73,6 +47,61 @@
   var opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
   el.textContent = d.toLocaleDateString('en-IN', opts);
 })();
+</script>
+
+{% if attendance_pending > 0 %}
+<div class="fp-alert fp-alert-warning fade-in">
+  <span class="fp-ms">pending_actions</span>
+  <div style="flex:1;">
+    <strong>Attendance Action Required</strong> — {{ attendance_pending }} attendance session{{ 's' if attendance_pending > 1 else '' }} pending.
+  </div>
+  <a href="/faculty-portal/attendance" style="font-weight:700;color:inherit;text-decoration:none;white-space:nowrap;">View Details →</a>
+</div>
+{% endif %}
+
+{# ── Quick Actions ─────────────────────────────────────── #}
+<div class="fp-card fade-in" style="margin-bottom:20px;">
+  <div class="fp-card-header">
+    <div class="fp-card-title">
+      <span class="fp-ms">bolt</span>
+      Quick Actions
+    </div>
+  </div>
+  <div class="fp-card-body">
+    <div class="fp-grid-auto">
+      <a href="/faculty-portal/attendance" class="fp-quick-action-btn" style="background:var(--fp-primary-light);color:var(--fp-primary);flex-direction:row;align-items:center;gap:14px;text-align:left;padding:16px 18px;">
+        <span class="fp-ms">how_to_reg</span>
+        <div>
+          <div style="font-size:13.5px;font-weight:700;color:var(--fp-text-1);">Take Attendance</div>
+          <div style="font-size:12px;color:var(--fp-text-4);margin-top:2px;">Mark today's session</div>
+        </div>
+      </a>
+      <a href="/faculty-portal/my-classes" class="fp-quick-action-btn" style="background:var(--fp-info-bg);color:var(--fp-info);flex-direction:row;align-items:center;gap:14px;text-align:left;padding:16px 18px;">
+        <span class="fp-ms">menu_book</span>
+        <div>
+          <div style="font-size:13.5px;font-weight:700;color:var(--fp-text-1);">My Classes</div>
+          <div style="font-size:12px;color:var(--fp-text-4);margin-top:2px;">View course offerings</div>
+        </div>
+      </a>
+      <a href="/faculty-portal/marks" class="fp-quick-action-btn" style="background:var(--fp-purple-bg);color:var(--fp-purple);flex-direction:row;align-items:center;gap:14px;text-align:left;padding:16px 18px;">
+        <span class="fp-ms">grade</span>
+        <div>
+          <div style="font-size:13.5px;font-weight:700;color:var(--fp-text-1);">Marks Entry</div>
+          <div style="font-size:12px;color:var(--fp-text-4);margin-top:2px;">Enter or update marks</div>
+        </div>
+      </a>
+      <a href="/faculty-portal/venue-booking" class="fp-quick-action-btn" style="background:var(--fp-teal-bg);color:var(--fp-teal);flex-direction:row;align-items:center;gap:14px;text-align:left;padding:16px 18px;">
+        <span class="fp-ms">meeting_room</span>
+        <div>
+          <div style="font-size:13.5px;font-weight:700;color:var(--fp-text-1);">Venue Booking</div>
+          <div style="font-size:12px;color:var(--fp-text-4);margin-top:2px;">Book a room or venue</div>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
 /* Pass dashboard data to sidebar quick-stats */
 window._fpDashData = {
   total_courses:     {{ total_courses }},
@@ -82,44 +111,55 @@ window._fpDashData = {
 </script>
 
 {# ── Stat Cards ─────────────────────────────────────────────── #}
-<div class="fp-stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));">
+<div class="fp-stat-grid">
 
-  <div class="fp-stat-card fp-stat-drillable fade-in" style="animation-delay:0.04s;cursor:pointer;"
-       onclick="fpDrilldown('subjects')" title="Click to view details & export">
+  <div class="fp-stat-card {% if not portal_error %}fp-stat-drillable{% endif %} fade-in" style="animation-delay:0.04s;{% if not portal_error %}cursor:pointer;{% endif %}"
+       {% if not portal_error %}onclick="fpDrilldown('subjects')" title="Click to view details & export"{% endif %}>
     <div class="fp-stat-icon fp-c-navy">
       <span class="fp-ms">menu_book</span>
     </div>
     <div class="fp-stat-body">
-      <div class="fp-stat-val">{{ total_courses }}</div>
+      <div class="fp-stat-val">{{ total_courses if not portal_error else '—' }}</div>
       <div class="fp-stat-lbl">Total Courses</div>
+      {% if portal_error %}
+      <div class="fp-stat-sub"><span class="fp-ms" style="font-size:13px;color:var(--fp-danger);">error_outline</span> <span style="color:var(--fp-danger);">Unavailable</span></div>
+      {% else %}
       <div class="fp-stat-sub fp-drill-hint"><span class="fp-ms" style="font-size:13px;">open_in_new</span> Click to explore</div>
+      {% endif %}
     </div>
-    <span class="fp-drill-badge">Details</span>
+    {% if not portal_error %}<span class="fp-drill-badge">Details</span>{% endif %}
   </div>
 
-  <div class="fp-stat-card fp-stat-drillable fade-in" style="animation-delay:0.08s;cursor:pointer;"
-       onclick="fpDrilldown('students')" title="Click to view details & export">
+  <div class="fp-stat-card {% if not portal_error %}fp-stat-drillable{% endif %} fade-in" style="animation-delay:0.08s;{% if not portal_error %}cursor:pointer;{% endif %}"
+       {% if not portal_error %}onclick="fpDrilldown('students')" title="Click to view details & export"{% endif %}>
     <div class="fp-stat-icon fp-c-green">
       <span class="fp-ms">groups</span>
     </div>
     <div class="fp-stat-body">
-      <div class="fp-stat-val">{{ total_students }}</div>
+      <div class="fp-stat-val">{{ total_students if not portal_error else '—' }}</div>
       <div class="fp-stat-lbl">Total Students</div>
+      {% if portal_error %}
+      <div class="fp-stat-sub"><span class="fp-ms" style="font-size:13px;color:var(--fp-danger);">error_outline</span> <span style="color:var(--fp-danger);">Unavailable</span></div>
+      {% else %}
       <div class="fp-stat-sub fp-drill-hint"><span class="fp-ms" style="font-size:13px;">open_in_new</span> Click to explore</div>
+      {% endif %}
     </div>
-    <span class="fp-drill-badge">Details</span>
+    {% if not portal_error %}<span class="fp-drill-badge">Details</span>{% endif %}
   </div>
 
-  <div class="fp-stat-card fp-stat-drillable fade-in" style="animation-delay:0.12s;cursor:pointer;"
-       onclick="fpDrilldown('pending_attendance')" title="Click to view details & export">
-    <div class="fp-stat-icon {% if attendance_pending > 0 %}fp-c-orange{% else %}fp-c-green{% endif %}">
+  <div class="fp-stat-card {% if not portal_error %}fp-stat-drillable{% endif %} fade-in" style="animation-delay:0.12s;{% if not portal_error %}cursor:pointer;{% endif %}"
+       {% if not portal_error %}onclick="fpDrilldown('pending_attendance')" title="Click to view details & export"{% endif %}>
+    <div class="fp-stat-icon {% if portal_error %}fp-c-red{% elif attendance_pending > 0 %}fp-c-orange{% else %}fp-c-green{% endif %}">
       <span class="fp-ms">pending_actions</span>
     </div>
     <div class="fp-stat-body">
-      <div class="fp-stat-val {% if attendance_pending > 0 %}" style="color:var(--fp-warning);"{% else %}"{% endif %}>{{ attendance_pending }}</div>
+      <div class="fp-stat-val {% if attendance_pending > 0 and not portal_error %}" style="color:var(--fp-warning);"{% else %}"{% endif %}>{{ attendance_pending if not portal_error else '—' }}</div>
       <div class="fp-stat-lbl">Attendance Pending</div>
       <div class="fp-stat-sub">
-        {% if attendance_pending > 0 %}
+        {% if portal_error %}
+        <span class="fp-ms" style="font-size:13px;color:var(--fp-danger);">error_outline</span>
+        <span style="color:var(--fp-danger);">Unavailable</span>
+        {% elif attendance_pending > 0 %}
         <span class="fp-ms" style="font-size:13px;color:var(--fp-warning);">warning</span>
         <span style="color:var(--fp-warning);">Action needed</span>
         {% else %}
@@ -128,7 +168,7 @@ window._fpDashData = {
         {% endif %}
       </div>
     </div>
-    <span class="fp-drill-badge {% if attendance_pending > 0 %}fp-drill-badge-warn{% endif %}">Details</span>
+    {% if not portal_error %}<span class="fp-drill-badge {% if attendance_pending > 0 %}fp-drill-badge-warn{% endif %}">Details</span>{% endif %}
   </div>
 
 </div>
@@ -151,9 +191,17 @@ window._fpDashData = {
       </a>
     </div>
     <div class="fp-card-body" style="padding:0;">
-      {% if not todays_sessions %}
+      {% if portal_error %}
+      <div class="fp-section-error">
+        <span class="fp-ms">error_outline</span>
+        <div>Unable to load today's classes.</div>
+        <button onclick="window.location.reload()" class="fp-section-error-retry">
+          <span class="fp-ms">refresh</span>Try Again
+        </button>
+      </div>
+      {% elif not todays_sessions %}
       <div class="fp-empty">
-        <div class="fp-empty-icon"><span class="fp-ms">event_busy</span></div>
+        <div class="fp-empty-icon fp-c-navy"><span class="fp-ms">event_busy</span></div>
         <p class="fp-empty-title">No classes today</p>
         <p class="fp-empty-sub">Your schedule is clear. Enjoy your day!</p>
       </div>
@@ -195,9 +243,17 @@ window._fpDashData = {
       <span class="fp-badge fp-badge-neutral">Next 7 days</span>
     </div>
     <div class="fp-card-body" style="padding:0;">
-      {% if not upcoming_classes %}
+      {% if portal_error %}
+      <div class="fp-section-error">
+        <span class="fp-ms">error_outline</span>
+        <div>Unable to load upcoming classes.</div>
+        <button onclick="window.location.reload()" class="fp-section-error-retry">
+          <span class="fp-ms">refresh</span>Try Again
+        </button>
+      </div>
+      {% elif not upcoming_classes %}
       <div class="fp-empty">
-        <div class="fp-empty-icon"><span class="fp-ms">event_note</span></div>
+        <div class="fp-empty-icon fp-c-blue"><span class="fp-ms">event_note</span></div>
         <p class="fp-empty-title">No upcoming sessions</p>
         <p class="fp-empty-sub">Nothing scheduled in the next 7 days.</p>
       </div>
@@ -223,7 +279,7 @@ window._fpDashData = {
 </div>
 {% endif %}
 
-{# ── Attendance Trend ─────────────────────────────────────────── #}
+{# ── Attendance Trend (temporarily disabled per request) ────────
 <div class="fp-card fade-in" style="animation-delay:0.18s;margin-bottom:24px;">
   <div class="fp-card-header">
     <div class="fp-card-title">
@@ -244,8 +300,9 @@ window._fpDashData = {
     {% endif %}
   </div>
 </div>
+#}
 
-{# ── Course-wise Attendance ────────────────────────────────────── #}
+{# ── Course-wise Attendance (temporarily disabled per request) ──
 {% if course_attendance %}
 <div class="fp-card fade-in" style="animation-delay:0.22s;margin-bottom:20px;">
   <div class="fp-card-header">
@@ -260,8 +317,9 @@ window._fpDashData = {
   </div>
 </div>
 {% endif %}
+#}
 
-{# ── Chart.js ─────────────────────────────────────────────────── #}
+{# ── Chart.js (temporarily disabled per request, feeds the two sections above) ──
 {% if attendance_trend or course_attendance %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
@@ -382,6 +440,7 @@ window._fpDashData = {
 })();
 </script>
 {% endif %}
+#}
 
 {# ══════════════════════════════════════════════════════════
    DRILL-DOWN MODAL
@@ -394,27 +453,27 @@ window._fpDashData = {
 
     {# Modal header #}
     <div id="fp-drill-header"
-         style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--fp-border);background:var(--fp-bg);">
-      <div style="display:flex;align-items:center;gap:12px;">
+         style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px 24px;border-bottom:1px solid var(--fp-border);background:var(--fp-bg);flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1 1 auto;">
         <div id="fp-drill-icon"
-             style="width:42px;height:42px;border-radius:11px;background:var(--fp-primary-light);display:flex;align-items:center;justify-content:center;">
+             style="width:42px;height:42px;border-radius:11px;background:var(--fp-primary-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <span class="fp-ms" style="font-size:22px;color:var(--fp-primary);">table_chart</span>
         </div>
-        <div>
-          <div id="fp-drill-title" style="font-size:17px;font-weight:800;color:var(--fp-text-1);letter-spacing:-0.02em;">Details</div>
-          <div id="fp-drill-subtitle" style="font-size:12px;color:var(--fp-text-4);margin-top:1px;"></div>
+        <div style="min-width:0;">
+          <div id="fp-drill-title" style="font-size:17px;font-weight:800;color:var(--fp-text-1);letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Details</div>
+          <div id="fp-drill-subtitle" style="font-size:12px;color:var(--fp-text-4);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
         <button id="fp-drill-export-btn"
                 onclick="fpDrillExport()"
-                style="display:flex;align-items:center;gap:7px;padding:8px 16px;background:var(--fp-success-bg);border:1px solid rgba(22,163,74,0.2);border-radius:var(--fp-radius-sm);font-size:13px;font-weight:600;color:var(--fp-success);cursor:pointer;font-family:inherit;transition:all 0.18s;"
+                style="display:flex;align-items:center;gap:7px;padding:8px 16px;background:var(--fp-success-bg);border:1px solid rgba(22,163,74,0.2);border-radius:var(--fp-radius-sm);font-size:13px;font-weight:600;color:var(--fp-success);cursor:pointer;font-family:inherit;transition:all 0.18s;white-space:nowrap;"
                 onmouseover="this.style.background='var(--fp-success)';this.style.color='#fff';"
                 onmouseout="this.style.background='var(--fp-success-bg)';this.style.color='var(--fp-success)';">
           <span class="fp-ms" style="font-size:17px;">download</span>Export CSV
         </button>
         <button onclick="fpDrillClose()"
-                style="width:36px;height:36px;background:var(--fp-bg);border:1px solid var(--fp-border);border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.15s;"
+                style="width:36px;height:36px;background:var(--fp-bg);border:1px solid var(--fp-border);border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.15s;flex-shrink:0;"
                 onmouseover="this.style.background='var(--fp-danger-bg)';"
                 onmouseout="this.style.background='var(--fp-bg)';"
                 aria-label="Close">
@@ -450,7 +509,7 @@ window._fpDashData = {
 {# ── Drill-down CSS additions ── #}
 <style>
 .fp-stat-drillable { position: relative; }
-.fp-stat-drillable:hover { box-shadow: var(--fp-shadow-md); transform: translateY(-3px); border-color: var(--fp-primary-mid); }
+.fp-stat-drillable:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); border-color: var(--fp-primary-mid); }
 .fp-drill-badge {
   position: absolute; top: 10px; right: 10px;
   font-size: 9px; font-weight: 700; letter-spacing: 0.06em;
