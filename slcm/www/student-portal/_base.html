@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   {% set sp_settings = frappe.get_cached_doc("Student Portal Settings", "Student Portal Settings") %}
@@ -65,15 +65,15 @@
     .sp-brand span { font-size: 24px !important; }
     .sp-brand-logo { width: 40px !important; height: 40px !important; }
     .sp-brand-logo img { width: 40px !important; height: 40px !important; object-fit: contain; }
-    .sp-nav-item { font-size: 18px !important; margin-bottom: 6px !important; }
-    .sp-nav-label { font-size: 18px !important; }
-    .sp-page-title { font-size: 24px !important; }
-    body, p, .context-text, .sp-nav-item:not(.active), .sp-breadcrumb { font-weight: 300 !important; }
+    .sp-nav-item { font-size: 16px !important; margin-bottom: 6px !important; }
+    .sp-nav-label { font-size: 16px !important; }
+    .sp-page-title { font-size: 22px !important; }
+    body, p, .context-text, .sp-nav-item:not(.active), .sp-breadcrumb { font-weight: 400 !important; }
     .sp-notif-btn { display: flex !important; align-items: center !important; justify-content: center !important; }
     .sp-notif-btn .sp-ms { font-size: 28px !important; }
   </style>
 
-  {% block extra_head %}{% endblock %}
+  {% block extra_head %}{% endblock %} 
 </head>
 
 <body class="{{ sp_settings.body_classes | default('') }}">
@@ -792,3 +792,4 @@ function spCall(method, args, onSuccess, onError) {
 
 </body>
 </html>
+

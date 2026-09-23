@@ -9,7 +9,7 @@
   margin-bottom: 24px;
   color: var(--sp-nav-text);
   font-family: var(--sp-font-family, "Merriweather", serif);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 300;
 }
 .sp-breadcrumb a {
@@ -65,7 +65,7 @@
   color: var(--sp-primary);
 }
 .sp-profile-hero-right h2 {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 400;
   margin: 0 0 4px 0;
   line-height: 1.2;
@@ -107,12 +107,12 @@
   align-items: center;
   gap: 12px;
   font-family: var(--sp-font-family, "Merriweather", serif);
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 400;
   color: black;
 }
 .sp-section-header-title .sp-ms {
-  font-size: 24px;
+  font-size: 20px;
 }
 .sp-section-body {
   padding: 24px;
@@ -124,13 +124,13 @@
   gap: 20px 24px;
 }
 .sp-info-label {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: gray;
   margin-bottom: 4px;
 }
 .sp-info-value {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 400; /* As requested, standard text is 300, but data values look better at normal. The rule says "everything else 300" but the mockup shows these bolder. I will use 300 for normal text. */
   font-weight: 300;
   color: var(--sp-text-1);
@@ -188,13 +188,13 @@
 }
 .sp-quick-action-card h3 {
   font-family: var(--sp-font-family, "Merriweather", serif);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 400;
   color: var(--sp-text-1);
   margin: 0 0 4px 0;
 }
 .sp-quick-action-card p {
-  font-size: 12px;
+  font-size: 10px;
   color: var(--sp-nav-text);
   margin: 0;
   font-weight: 300;
@@ -267,14 +267,14 @@
     <div>
       <div style="display: flex; gap: 48px;">
         <div>
-          <div style="font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Student Name</div>
-          <div style="font-family: var(--sp-font-family, 'Merriweather', serif); font-size: 22px; font-weight: 400; color: var(--sp-primary); text-transform: uppercase;">
+          <div style="font-size: 11px; font-weight: 400; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Student Name</div>
+          <div style="font-family: var(--sp-font-family, 'Merriweather', serif); font-size: 20px; font-weight: 400; color: var(--sp-primary); text-transform: uppercase;">
             {{ student_name }}
           </div>
         </div>
         <div>
-          <div style="font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Student ID</div>
-          <div style="font-family: var(--sp-font-family, 'Merriweather', serif); font-size: 22px; font-weight: 400; color: var(--sp-primary); text-transform: uppercase;">
+          <div style="font-size: 11px; font-weight: 400; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Student ID</div>
+          <div style="font-family: var(--sp-font-family, 'Merriweather', serif); font-size: 20px; font-weight: 400; color: var(--sp-primary); text-transform: uppercase;">
             {{ student_id }}
           </div>
         </div>
@@ -462,7 +462,7 @@
             </div>
             <div style="flex-grow:1;">
               <div style="display:flex; align-items:center; gap:8px;">
-                <div style="font-weight:400; font-family: var(--sp-font-family, 'Merriweather', serif); color:var(--sp-text-1);">{{ p.parent_name }}</div>
+                <div style="font-weight:400; font-family: var(--sp-font-family, 'Merriweather', serif); color:var(--sp-text-1); font-size: 14px;">{{ p.parent_name }}</div>
                 {% if p.relation %}
                 <span style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:12px; font-size:12px;">{{ p.relation }}</span>
                 {% endif %}
