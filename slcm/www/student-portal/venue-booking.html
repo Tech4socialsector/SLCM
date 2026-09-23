@@ -1,4 +1,4 @@
-{% extends "slcm/www/student-portal/_base.html" %}
+﻿{% extends "slcm/www/student-portal/_base.html" %}
 {% block title %}Venue Booking{% endblock %}
 
 {% block extra_head %}
@@ -108,7 +108,7 @@
   <div class="sp-section-header" style="font-family: 'Merriweather', serif; font-size: 20px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 24px;">
     <span class="sp-ms" style="color: var(--sp-primary);">add_circle</span> New Venue Booking
   </div>
-  <div class="sp-section-body" style="padding:20px 24px;">
+  <div class="sp-section-body" style="padding:0 24px 20px 24px;">
 
     <div class="vb-form-info">
       <span class="sp-ms">info</span>
@@ -462,18 +462,25 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-  flatpickr("#vb-start", { 
+  var startPicker = flatpickr("#vb-start", { 
     enableTime: true, 
     dateFormat: "Y-m-d\TH:i", 
     altInput: true, 
     altFormat: "d/m/Y h:i K",
-    onChange: function() { checkDuration(); }
+    minDate: new Date(),
+    onChange: function(selectedDates, dateStr, instance) {
+      if (selectedDates.length > 0) {
+        endPicker.set('minDate', selectedDates[0]);
+      }
+      checkDuration(); 
+    }
   });
-  flatpickr("#vb-end", { 
+  var endPicker = flatpickr("#vb-end", { 
     enableTime: true, 
     dateFormat: "Y-m-d\TH:i", 
     altInput: true, 
     altFormat: "d/m/Y h:i K",
+    minDate: new Date(),
     onChange: function() { checkDuration(); }
   });
 });
@@ -1148,9 +1155,9 @@ function showVbToast(msg, success) {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  padding-top: 4px;
+  padding-top: 10px;
   border-top: 1px solid var(--sp-border);
-  margin-top: 4px;
+  margin-top: 10px;
 }
 
 /* ── Filter Tabs ───────────────────────────────────────────────── */
@@ -1680,3 +1687,4 @@ function showVbToast(msg, success) {
 </style>
 
 {% endblock %}
+
