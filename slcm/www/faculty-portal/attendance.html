@@ -72,6 +72,12 @@
   #fp-sessions-table td.fp-col-actions::before {
     content: none;
   }
+
+  /* Student Attendance Tool modal: stack the 2-column config form and
+     drop the now-irrelevant column-divider borders (only the bottom
+     border between stacked rows still makes sense). */
+  .sat-form-grid { grid-template-columns: 1fr !important; }
+  .sat-form-cell-bordered { border-right: none !important; }
 }
 
 /* ── Attendance page modals — above everything ── */
@@ -523,7 +529,7 @@
 </div>
 
 {# ── Stat Cards (all drillable) ───────────────────────────────── #}
-<div class="fp-stat-grid fp-vb-stat-grid" style="grid-template-columns:repeat(3,1fr);">
+<div class="fp-stat-grid fp-vb-stat-grid fp-vb-stat-grid-3">
 
   <div class="fp-stat-card fp-vb-stat-card fp-vb-accent-blue att-stat-drillable fade-in" style="animation-delay:0.04s;"
        onclick="attDrill('all_sessions')" title="View all sessions">
@@ -2651,10 +2657,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     {# ── Step 1: Configuration form — matches desk Student Attendance Tool ── #}
     <div id="sat-step-form" style="overflow-y:auto;flex-shrink:0;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+      <div class="sat-form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
 
         {# Row 1 Left: Based On #}
-        <div style="padding:18px 22px 16px;border-right:1px solid var(--fp-border);border-bottom:1px solid var(--fp-border);">
+        <div class="sat-form-cell sat-form-cell-bordered" style="padding:18px 22px 16px;border-right:1px solid var(--fp-border);border-bottom:1px solid var(--fp-border);">
           <label class="fp-label">Based On <span style="color:var(--fp-danger);">*</span></label>
           <select id="sat-based-on" onchange="satBasedOnChange()"
                   style="width:100%;padding:9px 12px;border:1.5px solid var(--fp-border);border-radius:var(--fp-radius-sm);font-size:13px;font-family:inherit;color:var(--fp-text-1);background:var(--fp-card);outline:none;cursor:pointer;"
@@ -2666,12 +2672,12 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
 
         {# Row 1 Right: dynamic — changes per Based On #}
-        <div id="sat-right-col" style="padding:18px 22px 16px;border-bottom:1px solid var(--fp-border);">
+        <div id="sat-right-col" class="sat-form-cell" style="padding:18px 22px 16px;border-bottom:1px solid var(--fp-border);">
           {# filled by satBasedOnChange() #}
         </div>
 
         {# Row 2 Left: Date #}
-        <div style="padding:18px 22px 16px;border-right:1px solid var(--fp-border);">
+        <div class="sat-form-cell sat-form-cell-bordered" style="padding:18px 22px 16px;border-right:1px solid var(--fp-border);">
           <label class="fp-label">Date <span style="color:var(--fp-danger);">*</span></label>
           <input type="date" id="sat-date" onchange="satDateChange()"
                  style="width:100%;padding:9px 12px;border:1.5px solid var(--fp-border);border-radius:var(--fp-radius-sm);font-size:13px;font-family:inherit;color:var(--fp-text-1);background:var(--fp-card);outline:none;"
@@ -2680,7 +2686,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
 
         {# Row 2 Right: Get Students #}
-        <div style="padding:18px 22px 16px;display:flex;align-items:flex-end;">
+        <div class="sat-form-cell" style="padding:18px 22px 16px;display:flex;align-items:flex-end;">
           <button id="sat-get-students-btn" onclick="satGetStudents()"
                   style="width:100%;padding:10px 16px;border:none;border-radius:var(--fp-radius-sm);background:var(--fp-primary);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.15s;box-shadow:0 2px 8px var(--fp-primary-glow);"
                   onmouseover="this.style.background='var(--fp-primary-dark)'" onmouseout="this.style.background='var(--fp-primary)'">
