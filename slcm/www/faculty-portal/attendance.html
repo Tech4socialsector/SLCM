@@ -3,20 +3,7 @@
 {% block title %}Attendance Management{% endblock %}
 
 {% block extra_head %}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-/* ── Page-scoped typography (Inter), matching my-classes.html ──
-   Modals for this page are rendered inside the extra_js template block,
-   outside the .fp-att-page wrapper — apply the same font stack to them
-   explicitly via their .att-modal-box / .sat-modal-box / .sp-modal-box
-   containers so the whole page (including dialogs) reads consistently. */
-.fp-att-page, .fp-att-page input, .fp-att-page select, .fp-att-page button,
-.att-modal-box, .att-modal-box input, .att-modal-box select, .att-modal-box button,
-.sp-modal-box, .sp-modal-box input, .sp-modal-box select, .sp-modal-box button {
-  font-family: 'Inter', 'Source Sans 3', var(--fp-font-family, sans-serif);
-}
 .fp-att-page .fp-page-title { letter-spacing: -0.02em; }
 
 /* ── Sticky table header for the sessions table ── */

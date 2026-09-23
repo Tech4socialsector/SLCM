@@ -1025,10 +1025,6 @@ header[class*="navbar"], .website-header,
    MY CLASSES PAGE — flat academic course cards, metrics, toolbar
 ══════════════════════════════════════════════════════════ */
 
-/* Page-scoped typography (Inter, this page only) */
-.fp-mc-page, .fp-mc-page input, .fp-mc-page select, .fp-mc-page button {
-  font-family: 'Inter', 'Source Sans 3', var(--fp-font-family, sans-serif);
-}
 .fp-mc-page .fp-page-title { letter-spacing: -0.02em; }
 
 /* Compact course-count chip in page header */
@@ -1857,7 +1853,7 @@ body.fp-sidebar-dark .fp-sidebar-divider { border-color: rgba(255,255,255,0.08);
   border-right: 1px solid var(--fp-border-light);
   transition: background var(--fp-transition), color var(--fp-transition);
   cursor: pointer;
-  font-family: var(--fp-font);
+  font-family: var(--fp-font-family);
 }
 .fco-action-btn:last-child { border-right: none; }
 .fco-action-btn .fp-ms { font-size: 15px; }
@@ -1928,7 +1924,7 @@ body.fp-sidebar-dark .fp-sidebar-divider { border-color: rgba(255,255,255,0.08);
   font-size: 13px; font-weight: 500;
   background: var(--fp-card); color: var(--fp-text-1);
   border: 1px solid var(--fp-border); border-radius: 8px;
-  cursor: pointer; font-family: var(--fp-font);
+  cursor: pointer; font-family: var(--fp-font-family);
 }
 .fp-multiselect-btn:hover { border-color: var(--fp-border-mid); }
 .fp-multiselect-btn .fp-ms { font-size: 16px; color: var(--fp-text-4); margin-left: auto; }
@@ -1962,7 +1958,7 @@ body.fp-sidebar-dark .fp-sidebar-divider { border-color: rgba(255,255,255,0.08);
 .fp-multiselect-clear {
   background: none; border: none; cursor: pointer;
   font-size: 12px; font-weight: 600; color: var(--fp-primary);
-  padding: 5px 7px; border-radius: 6px; font-family: var(--fp-font);
+  padding: 5px 7px; border-radius: 6px; font-family: var(--fp-font-family);
   transition: background 0.12s;
 }
 .fp-multiselect-selectall:hover { background: var(--fp-primary-light); }
