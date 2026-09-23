@@ -33,7 +33,7 @@ def get_context(context):
         faculty_meta = {}
         for f in frappe.get_all("Faculty", fields=["name", "first_name", "last_name"], ignore_permissions=True):
             fname = filter(None, [f.get("first_name"), f.get("last_name")])
-            faculty_meta[f.name] = " ".join(fname) or f.name
+            faculty_meta[str(f.name)] = " ".join(fname) or str(f.name)
 
         # ── Pre-fetch attendance summaries for fast lookup ─────────
         att_map = {}  # keyed by course_offering and by course
@@ -135,7 +135,7 @@ def get_context(context):
 
                     c_meta = courses_meta.get(ec.course) or {}
                     fac_id = co.get("faculty")
-                    fac_name = faculty_meta.get(fac_id) if fac_id else "—"
+                    fac_name = faculty_meta.get(str(fac_id)) if fac_id else "—"
                     
                     courses_out.append(_build_course_entry(
                         co_name=co_name,
@@ -158,7 +158,7 @@ def get_context(context):
 
                     c_meta = courses_meta.get(co.course_title) or {}
                     fac_id = co.faculty
-                    fac_name = faculty_meta.get(fac_id) if fac_id else "—"
+                    fac_name = faculty_meta.get(str(fac_id)) if fac_id else "—"
 
                     courses_out.append(_build_course_entry(
                         co_name=co_name,
@@ -373,7 +373,7 @@ def _build_course_entry(co_name, course_id, course_code, course_name, faculty, c
 
     if len(future_schedules) > 0:
         nc = future_schedules[0]
-        inst_name = faculty_meta.get(nc.instructor) if nc.instructor else None
+        inst_name = faculty_meta.get(str(nc.instructor)) if nc.instructor else None
         
         next_class = {
             "date": format_date(nc.schedule_date),
@@ -451,6 +451,7 @@ def _set_nav_defaults(context):
     context.programme_name = ""
     context.department = ""
     context.batch_year = ""
+
 
 
 
