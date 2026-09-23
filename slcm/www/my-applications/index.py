@@ -664,8 +664,18 @@ def get_context(context):
                      fee_type = frappe.db.get_value("Applicant Fee Assignment", rr.applicant_fee_assignment, "fee_type") or fee_type
                  elif rr.get("applicant_payment_receipt"):
                      apr_ft = frappe.db.get_value("Applicant Payment Receipt", rr.applicant_payment_receipt, "fee_type")
-                     if apr_ft and "Confirmation" in apr_ft:
-                         fee_type = "Confirmation Fee"
+                     if apr_ft:
+                         if "Confirmation" in apr_ft:
+                             fee_type = "Confirmation Fee"
+                         elif "Admission" in apr_ft:
+                             fee_type = "Admission Fee"
+                         else:
+                             fee_type = apr_ft
+
+                 # Ignore Application/Form Fee receipts
+                 if "Application" in fee_type or "Form" in fee_type:
+                     continue
+
                  rr["fee_type"] = fee_type
 
                  amt_p = flt(rr.amount_paid)
@@ -685,10 +695,22 @@ def get_context(context):
 
 
              first_canc = cancellations[0]
+
+             # Determine overall aggregate withdrawal status across all active refund requests/cancellations
+             rr_statuses = [rr.get("status") for rr in refund_requests] if refund_requests else [c.get("status") for c in cancellations]
+             if rr_statuses and all(s in ["Processed", "Completed"] for s in rr_statuses):
+                 overall_status = "Completed"
+             elif any(s in ["Under Review", "Initiated"] for s in rr_statuses):
+                 overall_status = "Under Review"
+             elif any(s in ["Approved", "Processing"] for s in rr_statuses):
+                 overall_status = "Approved"
+             else:
+                 overall_status = first_canc.status
+
              context.cancellation_details = {
                  "name": ", ".join(c.name for c in cancellations),
                  "cancellations": cancellations,
-                 "status": first_canc.status,
+                 "status": overall_status,
                  "requested_on": first_canc.requested_on,
                  "refund_requests": refund_requests,
                  "total_refund_amount": total_ref,

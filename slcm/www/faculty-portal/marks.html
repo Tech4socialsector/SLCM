@@ -82,22 +82,22 @@
 {% endif %}
 
 {# ── Stats ──────────────────────────────────────────────────── #}
-<div class="fp-stat-grid" style="grid-template-columns:repeat(auto-fill,minmax(155px,1fr));margin-bottom:20px;">
-  <div class="fp-stat-card fade-in" style="animation-delay:0.04s;">
+<div class="fp-stat-grid fp-vb-stat-grid" style="margin-bottom:20px;">
+  <div class="fp-stat-card fp-vb-stat-card fp-vb-accent-blue fade-in" style="animation-delay:0.04s;">
     <div class="fp-stat-icon fp-c-blue"><span class="fp-ms">groups</span></div>
     <div class="fp-stat-body">
       <div class="fp-stat-val">{{ marks_stats.total }}</div>
       <div class="fp-stat-lbl">Total Students</div>
     </div>
   </div>
-  <div class="fp-stat-card fade-in" style="animation-delay:0.08s;">
+  <div class="fp-stat-card fp-vb-stat-card fp-vb-accent-teal fade-in" style="animation-delay:0.08s;">
     <div class="fp-stat-icon fp-c-teal"><span class="fp-ms">grading</span></div>
     <div class="fp-stat-body">
       <div class="fp-stat-val">{{ marks_stats.graded }}</div>
       <div class="fp-stat-lbl">Graded</div>
     </div>
   </div>
-  <div class="fp-stat-card fade-in" style="animation-delay:0.12s;">
+  <div class="fp-stat-card fp-vb-stat-card fp-vb-accent-green fade-in" style="animation-delay:0.12s;">
     <div class="fp-stat-icon fp-c-green"><span class="fp-ms">check_circle</span></div>
     <div class="fp-stat-body">
       <div class="fp-stat-val">{{ marks_stats.passed }}</div>
@@ -107,7 +107,7 @@
       {% endif %}
     </div>
   </div>
-  <div class="fp-stat-card fade-in" style="animation-delay:0.16s;">
+  <div class="fp-stat-card fp-vb-stat-card fp-vb-accent-red fade-in" style="animation-delay:0.16s;">
     <div class="fp-stat-icon fp-c-red"><span class="fp-ms">cancel</span></div>
     <div class="fp-stat-body">
       <div class="fp-stat-val">{{ marks_stats.failed }}</div>

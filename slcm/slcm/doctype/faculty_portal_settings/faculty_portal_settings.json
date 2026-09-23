@@ -203,7 +203,7 @@
    "fieldname": "font_family",
    "fieldtype": "Select",
    "label": "Font Family",
-   "options": "Poppins\nInter\nRoboto\nSystem Default"
+   "options": "Poppins\nInter\nRoboto\nMerriweather\nSystem Default"
   },
   {
    "fieldname": "col_break_typo",
@@ -272,6 +272,42 @@
    "fieldname": "nav_text_color",
    "fieldtype": "Color",
    "label": "Navbar Text / Icon Colour"
+  },
+  {
+   "default": "#ffffff",
+   "description": "Colour of text and icons for the currently active sidebar menu item (white works on a dark/maroon active background)",
+   "fieldname": "sidebar_active_text_color",
+   "fieldtype": "Color",
+   "label": "Active Menu Text Colour"
+  },
+  {
+   "fieldname": "col_break_sidebar_menu1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "#475569",
+   "description": "Colour of text and icons for sidebar menu items that are NOT currently active",
+   "fieldname": "sidebar_menu_text_color",
+   "fieldtype": "Color",
+   "label": "Menu Text Colour"
+  },
+  {
+   "default": "#f0f4f8",
+   "description": "Background colour shown when hovering over a (non-active) sidebar menu item",
+   "fieldname": "sidebar_menu_hover_bg_color",
+   "fieldtype": "Color",
+   "label": "Menu Hover Background Colour"
+  },
+  {
+   "fieldname": "col_break_sidebar_menu2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "#0f172a",
+   "description": "Colour of text and icons for a (non-active) sidebar menu item while hovered",
+   "fieldname": "sidebar_menu_hover_text_color",
+   "fieldtype": "Color",
+   "label": "Menu Hover Text Colour"
   },
   {
    "collapsible": 1,
