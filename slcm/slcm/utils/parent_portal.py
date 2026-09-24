@@ -48,7 +48,8 @@ def get_parent_context(context):
     rows = frappe.db.sql(
         """
         SELECT sm.name, sm.first_name, sm.last_name, sm.programme,
-               sm.batch_year, sm.student_status, sm.passport_size_photo
+               sm.programme_of_study, sm.batch_year, sm.student_status,
+               sm.passport_size_photo, sm.academic_year, sm.academic_term
         FROM   `tabStudent Master` sm
         INNER JOIN `tabStudent Parent` sp
                ON sp.parent = sm.name AND sp.parenttype = 'Student Master'
@@ -105,8 +106,17 @@ def get_parent_context(context):
     if student.programme:
         prog_name = frappe.db.get_value("Batch", student.programme, "cohort_name")
         context.ward_programme = prog_name or student.programme
+    elif student.programme_of_study:
+        prog_name = frappe.db.get_value("Programme", student.programme_of_study, "program_name")
+        context.ward_programme = prog_name or student.programme_of_study
 
     context.ward_batch = student.batch_year or ""
+    context.ward_academic_year = student.academic_year or ""
+    context.ward_term = student.academic_term or ""
+
+    # Every portal link must carry the active ward, otherwise navigating
+    # (e.g. back to the dashboard) silently falls back to the first ward.
+    context.ward_qs = f"?ward={active_ward}"
 
     # Inject portal settings so all pages can access pp_settings in templates
     try:
