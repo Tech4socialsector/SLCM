@@ -2250,3 +2250,23 @@ def bulk_update_venue_booking_status(booking_names, status, admin_remarks=""):
 
     frappe.db.commit()
     return {"updated": updated, "status": status}
+
+@frappe.whitelist()
+def add_guardian(first_name, last_name, relation, phone, email, occupation):
+    student_name = _get_student()
+    if not student_name:
+        frappe.throw("Student not found")
+
+    student = frappe.get_doc("Student Master", student_name)
+    student.append("parents", {
+        "first_name": first_name,
+        "last_name": last_name,
+        "relation": relation,
+        "phone": phone,
+        "email": email,
+        "occupation": occupation
+    })
+    
+    student.flags.ignore_permissions = True
+    student.save()
+    return {"status": "success"}
