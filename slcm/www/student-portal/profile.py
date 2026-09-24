@@ -1,4 +1,5 @@
 import frappe
+from slcm.api.student_portal import BANK_DETAIL_FIELDS
 
 no_cache = 1
 
@@ -32,6 +33,7 @@ def get_context(context):
     context.id_card = None
     context.parents = []
     context.ug_degrees = []
+    context.bank_prefill = {}
     context.can_download_application = False
     context.can_download_registration = False
 
@@ -84,11 +86,26 @@ def get_context(context):
             "hostel_bed":       student.hostel_bed or "",
             "meal_plan":        student.get("meal_plan") or "",
 
-            "bank_name":        student.bank_name or "",
-            "bank_account_number": _mask_account(student.bank_account_number),
-            "ifsc_code":        _mask_ifsc(student.ifsc_code),
-            "branch_name":      student.branch_name or "",
-            "account_holder":   student.account_holder_name or "",
+            "savings_account_number": _mask_account(student.savings_account_number),
+            "savings_account_holder_name": student.savings_account_holder_name or "",
+            "savings_bank_name":   student.savings_bank_name or "",
+            "savings_branch_name": student.savings_branch_name or "",
+            "savings_ifsc_code":   _mask_ifsc(student.savings_ifsc_code),
+            "availed_education_loan": student.availed_education_loan or "",
+            "education_loan_scheme":  student.education_loan_scheme or "",
+            "other_loan_scheme":      student.other_loan_scheme or "",
+            "loan_account_number":    _mask_account(student.loan_account_number),
+            "loan_account_holder_name": student.loan_account_holder_name or "",
+            "loan_bank_name":      student.loan_bank_name or "",
+            "loan_branch_name":    student.loan_branch_name or "",
+            "loan_ifsc_code":      _mask_ifsc(student.loan_ifsc_code),
+            "bank_details_submitted": bool(student.bank_details_submitted),
+            "bank_details_submitted_on": frappe.utils.format_datetime(student.bank_details_submitted_on, "dd MMM yyyy, hh:mm a") if student.bank_details_submitted_on else "",
+        }
+
+        # Unmasked values pre-fill the one-time form; only exposed while it is still editable
+        context.bank_prefill = {} if student.bank_details_submitted else {
+            f: student.get(f) or "" for f in BANK_DETAIL_FIELDS
         }
 
         try:
