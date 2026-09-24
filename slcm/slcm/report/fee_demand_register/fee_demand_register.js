@@ -10,7 +10,7 @@ frappe.query_reports["Fee Demand Register"] = {
 			fieldname: "status",
 			label: __("Status"),
 			fieldtype: "Select",
-			options: "\nPending\nPartially Paid\nPaid\nOverdue\nWaived\nCancelled",
+			options: "\nPending\nPartially Paid\nPaid\nOverdue\nWaived\nMoved to Excess\nCancelled",
 		},
 		{
 			fieldname: "demand_type",

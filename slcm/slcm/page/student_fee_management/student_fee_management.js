@@ -50,6 +50,8 @@ const SFM_ICON_PATHS = {
 	"file-text": '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
 	card: '<rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/>',
 	loader: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+	columns: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/>',
+	award: '<circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>',
 };
 const sfm_icon = (name, size = 16, cls = "") =>
 	`<svg class="sfm-icon ${cls}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${SFM_ICON_PATHS[name] || ""}</svg>`;
@@ -69,7 +71,13 @@ const SFM_STATUS_CLASS = {
 	Reversed: "muted",
 	Active: "paid",
 	Exhausted: "muted",
+	"Moved to Excess": "excess",
+	"Cancelled & Moved to Excess": "excess-cancelled",
 };
+
+// A cancelled due whose paid money went to excess is stored as Cancelled + moved_to_excess_amount.
+const sfm_demand_status = (d) =>
+	d.status === "Cancelled" && flt(d.moved_to_excess_amount) > 0 ? "Cancelled & Moved to Excess" : d.status;
 const sfm_badge = (status, label) =>
 	`<span class="sfm-badge sfm-badge-${SFM_STATUS_CLASS[status] || "muted"}">${sfm_esc(label || status || "—")}</span>`;
 
@@ -94,6 +102,141 @@ function sfm_load_font() {
 	);
 }
 
+const SFM_DUES_STATUS_OPTIONS = [
+	{ value: "pending", label: __("Has Pending Dues") },
+	{ value: "overdue", label: __("Has Overdue Dues") },
+	{ value: "cleared", label: __("All Dues Cleared") },
+	{ value: "excess", label: __("Has Excess Amount") },
+	{ value: "no_demands", label: __("No Demands") },
+];
+
+// Checkbox dropdown with "Select all" / "Clear". An empty selection means "no filter".
+class SfmMultiSelect {
+	constructor($field, { key, label, all_label, searchable = false, on_change }) {
+		this.all_label = all_label;
+		this.on_change = on_change;
+		this.options = [];
+		this.selected = new Set();
+		this.$field = $field;
+		const id = `sfm-f-${key}`;
+		$field.addClass("sfm-ms").html(`
+			<label id="${id}-label" for="${id}">${label}</label>
+			<button type="button" id="${id}" class="sfm-control sfm-ms-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="${id}-panel">
+				<span class="sfm-ms-text"></span>
+				${sfm_icon("chevron-down", 14, "sfm-ms-caret")}
+			</button>
+			<div class="sfm-ms-panel" id="${id}-panel" role="group" aria-labelledby="${id}-label" hidden>
+				${
+					searchable
+						? `<div class="sfm-ms-search">${sfm_icon("search", 14)}<input type="search" class="sfm-ms-filter" placeholder="${__("Search…")}" aria-label="${sfm_esc(__("Search {0}", [label]))}" autocomplete="off"></div>`
+						: ""
+				}
+				<div class="sfm-ms-actions">
+					<button type="button" data-ms="all">${__("Select all")}</button>
+					<button type="button" data-ms="clear">${__("Clear")}</button>
+				</div>
+				<div class="sfm-ms-list"></div>
+			</div>`);
+		this.$trigger = $field.find(".sfm-ms-trigger");
+		this.$panel = $field.find(".sfm-ms-panel");
+		this.$list = $field.find(".sfm-ms-list");
+		this.$trigger.on("click", () => (this.is_open() ? this.close() : this.open()));
+		$field.on("keydown", (e) => {
+			if (e.key === "Escape" && this.is_open()) {
+				e.stopPropagation();
+				this.close();
+				this.$trigger.trigger("focus");
+			}
+		});
+		this.$list.on("change", "input", (e) => {
+			e.currentTarget.checked ? this.selected.add(e.currentTarget.value) : this.selected.delete(e.currentTarget.value);
+			this.changed();
+		});
+		// "Select all" respects the search box: it adds only the options currently shown.
+		this.$panel.on("click", '[data-ms="all"]', () => {
+			this.visible_options().forEach((o) => this.selected.add(o.value));
+			this.render_list();
+			this.changed();
+		});
+		this.$panel.on("click", '[data-ms="clear"]', () => {
+			this.selected.clear();
+			this.render_list();
+			this.changed();
+		});
+		this.$panel.on("input", ".sfm-ms-filter", () => this.render_list());
+		this.render_list();
+		this.render_trigger();
+	}
+
+	// Replace the option list; selections that no longer exist are dropped.
+	set_options(options, selected = [...this.selected]) {
+		this.options = options;
+		this.selected = new Set(selected.filter((v) => options.some((o) => o.value === v)));
+		this.render_list();
+		this.render_trigger();
+	}
+
+	value() {
+		return this.options.filter((o) => this.selected.has(o.value)).map((o) => o.value);
+	}
+
+	visible_options() {
+		const q = (this.$panel.find(".sfm-ms-filter").val() || "").trim().toLowerCase();
+		return q ? this.options.filter((o) => o.label.toLowerCase().includes(q)) : this.options;
+	}
+
+	render_list() {
+		const shown = this.visible_options();
+		this.$list.html(
+			shown.length
+				? shown
+						.map(
+							(o) => `<label class="sfm-ms-option">
+								<input type="checkbox" value="${sfm_esc(o.value)}" ${this.selected.has(o.value) ? "checked" : ""}>
+								<span>${sfm_esc(o.label)}</span>
+							</label>`
+						)
+						.join("")
+				: `<div class="sfm-ms-empty">${this.options.length ? __("No matches") : __("No options available")}</div>`
+		);
+	}
+
+	render_trigger() {
+		const n = this.selected.size;
+		let text = this.all_label;
+		if (n === 1) text = (this.options.find((o) => this.selected.has(o.value)) || {}).label || this.all_label;
+		else if (n > 1 && n === this.options.length) text = __("All selected ({0})", [n]);
+		else if (n > 1) text = __("{0} selected", [n]);
+		this.$trigger.toggleClass("has-value", n > 0).find(".sfm-ms-text").text(text);
+		this.$trigger.attr("title", n > 1 ? this.value().map((v) => (this.options.find((o) => o.value === v) || {}).label).join(", ") : text);
+	}
+
+	changed() {
+		this.render_trigger();
+		this.on_change(this.value());
+	}
+
+	is_open() {
+		return !this.$panel.prop("hidden");
+	}
+
+	open() {
+		this.$field.closest(".sfm-filter-grid").find(".sfm-ms").not(this.$field).each((_, el) => {
+			$(el).find(".sfm-ms-panel").prop("hidden", true);
+			$(el).find(".sfm-ms-trigger").attr("aria-expanded", "false");
+		});
+		this.$panel.prop("hidden", false);
+		this.$trigger.attr("aria-expanded", "true");
+		const $search = this.$panel.find(".sfm-ms-filter");
+		($search.length ? $search : this.$list.find("input").first()).trigger("focus");
+	}
+
+	close() {
+		this.$panel.prop("hidden", true);
+		this.$trigger.attr("aria-expanded", "false");
+	}
+}
+
 class StudentFeeManagement {
 	constructor(wrapper) {
 		this.page = frappe.ui.make_app_page({
@@ -108,10 +251,10 @@ class StudentFeeManagement {
 			// storage blocked — fall back to the default
 		}
 		this.list_state = {
-			academic_year: "",
-			academic_term: "",
-			programme: "",
-			dues_status: "",
+			academic_year: [],
+			academic_term: [],
+			programme: [],
+			dues_status: [],
 			search: "",
 			start: 0,
 			page_length: SFM_PAGE_SIZES.includes(page_length) ? page_length : 25,
@@ -125,7 +268,17 @@ class StudentFeeManagement {
 		this.detail = null;
 		this.dues_filter = "All";
 		this.detail_tab = "dues";
+		this.sch_subtab = "scholarship";
 		this.selected = new Set();
+		this.hidden_cols = new Set();
+		try {
+			this.hidden_cols = new Set(JSON.parse(localStorage.getItem("sfm_hidden_due_cols") || "[]"));
+		} catch (e) {
+			// storage blocked or bad value — show every column
+		}
+		this.ms = {};
+		// Filter edits collect here and only reach list_state (and the server) when Search is pressed.
+		this.draft = this.applied_filters();
 
 		sfm_load_font();
 		this.inject_styles();
@@ -150,18 +303,10 @@ class StudentFeeManagement {
 	// Student list
 	// ─────────────────────────────────────────────────────────────────────
 	show_list() {
+		this.close_col_menu();
 		this.page.set_title(__("Student Fee Management"));
 		this.page.clear_primary_action();
 		this.page.clear_secondary_action();
-
-		const field = (key, label, extra_cls = "") =>
-			`<div class="sfm-field ${extra_cls}">
-				<label for="sfm-f-${key}">${label}</label>
-				<div class="sfm-select-wrap">
-					<select id="sfm-f-${key}" class="sfm-control" data-f="${key}"></select>
-					${sfm_icon("chevron-down", 14, "sfm-select-caret")}
-				</div>
-			</div>`;
 
 		this.$root.off().html(`
 			<div class="sfm-shell">
@@ -183,23 +328,10 @@ class StudentFeeManagement {
 						</button>
 					</div>
 					<div class="sfm-filter-grid">
-						${field("academic_year", __("Academic Year"))}
-						${field("academic_term", __("Term"))}
-						${field("programme", __("Programme"), "sfm-field-wide")}
-						<div class="sfm-field">
-							<label for="sfm-f-dues_status">${__("Dues Status")}</label>
-							<div class="sfm-select-wrap">
-								<select id="sfm-f-dues_status" class="sfm-control" data-f="dues_status">
-									<option value="">${__("All Students")}</option>
-									<option value="pending">${__("Has Pending Dues")}</option>
-									<option value="overdue">${__("Has Overdue Dues")}</option>
-									<option value="cleared">${__("All Dues Cleared")}</option>
-									<option value="excess">${__("Has Excess Amount")}</option>
-									<option value="no_demands">${__("No Demands")}</option>
-								</select>
-								${sfm_icon("chevron-down", 14, "sfm-select-caret")}
-							</div>
-						</div>
+						<div class="sfm-field" data-ms-key="academic_year"></div>
+						<div class="sfm-field" data-ms-key="academic_term"></div>
+						<div class="sfm-field sfm-field-wide" data-ms-key="programme"></div>
+						<div class="sfm-field" data-ms-key="dues_status"></div>
 						<div class="sfm-field sfm-field-wide">
 							<label for="sfm-f-search">${__("Search")}</label>
 							<div class="sfm-search-wrap">
@@ -207,6 +339,11 @@ class StudentFeeManagement {
 								<input id="sfm-f-search" type="search" class="sfm-control" data-f="search"
 									placeholder="${__("Name, ID, registration no. or email")}" autocomplete="off">
 							</div>
+						</div>
+						<div class="sfm-field sfm-search-action">
+							<button type="button" class="sfm-btn sfm-btn-primary sfm-search-btn" data-act="apply">
+								${sfm_icon("search", 15)}<span>${__("Search")}</span>
+							</button>
 						</div>
 					</div>
 				</section>
@@ -259,6 +396,8 @@ class StudentFeeManagement {
 			</div>
 		`);
 
+		this.draft = this.applied_filters(); // unapplied edits from an earlier visit are discarded
+		this.build_filters();
 		this.bind_list_events();
 		this.render_sort_indicators();
 		this.$root.find("#sfm-page-size").val(this.list_state.page_length);
@@ -274,65 +413,125 @@ class StudentFeeManagement {
 		}
 	}
 
+	build_filters() {
+		const s = this.draft;
+		const make = (key, label, all_label, searchable = false) =>
+			new SfmMultiSelect(this.$root.find(`[data-ms-key="${key}"]`), {
+				key,
+				label,
+				all_label,
+				searchable,
+				on_change: (value) => {
+					s[key] = value;
+					if (key === "academic_year") this.render_filter_options();
+					this.update_dirty();
+				},
+			});
+		this.ms = {
+			academic_year: make("academic_year", __("Academic Year"), __("All Years")),
+			academic_term: make("academic_term", __("Term"), __("All Terms")),
+			programme: make("programme", __("Programme"), __("All Programmes"), true),
+			dues_status: make("dues_status", __("Dues Status"), __("All Students")),
+		};
+		this.ms.dues_status.set_options(SFM_DUES_STATUS_OPTIONS, s.dues_status);
+		this.ms.academic_year.set_options([], s.academic_year);
+		this.ms.academic_term.set_options([], s.academic_term);
+		this.ms.programme.set_options([], s.programme);
+
+		// Close any open filter dropdown on an outside click.
+		$(document)
+			.off("mousedown.sfm-ms")
+			.on("mousedown.sfm-ms", (e) => {
+				if (!$(e.target).closest(".sfm-ms").length) Object.values(this.ms).forEach((m) => m.close());
+			});
+	}
+
 	render_filter_options() {
 		const o = this.filter_options;
-		const s = this.list_state;
-		if (!o) return;
-		const opts = (items, all_label) =>
-			[`<option value="">${all_label}</option>`]
-				.concat(items.map(([v, l]) => `<option value="${sfm_esc(v)}">${sfm_esc(l)}</option>`))
-				.join("");
+		const s = this.draft;
+		if (!o || !this.ms.academic_year) return;
 
-		this.$root
-			.find('[data-f="academic_year"]')
-			.html(opts(o.academic_years.map((y) => [y, y]), __("All Years")))
-			.val(s.academic_year);
+		this.ms.academic_year.set_options(o.academic_years.map((y) => ({ value: y, label: y })), s.academic_year);
+		s.academic_year = this.ms.academic_year.value();
 
-		// Terms follow the chosen year; a term name can repeat across years, so dedupe.
+		// Terms follow the chosen years; a term name can repeat across years, so dedupe.
 		const terms = [
 			...new Set(
 				o.terms
-					.filter((t) => !s.academic_year || t.academic_year === s.academic_year)
+					.filter((t) => !s.academic_year.length || s.academic_year.includes(t.academic_year))
 					.map((t) => t.academic_term)
 			),
 		];
-		if (s.academic_term && !terms.includes(s.academic_term)) s.academic_term = "";
-		this.$root
-			.find('[data-f="academic_term"]')
-			.html(opts(terms.map((t) => [t, t]), __("All Terms")))
-			.val(s.academic_term);
+		this.ms.academic_term.set_options(terms.map((t) => ({ value: t, label: t })), s.academic_term);
+		s.academic_term = this.ms.academic_term.value();
 
-		this.$root
-			.find('[data-f="programme"]')
-			.html(
-				opts(
-					o.programmes.map((p) => [
-						p.name,
-						p.program_name && p.program_name !== p.name ? `${p.name} — ${p.program_name}` : p.name,
-					]),
-					__("All Programmes")
-				)
-			)
-			.val(s.programme);
-		this.$root.find('[data-f="dues_status"]').val(s.dues_status);
+		this.ms.programme.set_options(
+			o.programmes.map((p) => ({
+				value: p.name,
+				label: p.program_name && p.program_name !== p.name ? `${p.name} — ${p.program_name}` : p.name,
+			})),
+			s.programme
+		);
+		s.programme = this.ms.programme.value();
+		this.ms.dues_status.set_options(SFM_DUES_STATUS_OPTIONS, s.dues_status);
 		this.$root.find('[data-f="search"]').val(s.search);
+	}
+
+	applied_filters() {
+		const s = this.list_state;
+		return {
+			academic_year: [...s.academic_year],
+			academic_term: [...s.academic_term],
+			programme: [...s.programme],
+			dues_status: [...s.dues_status],
+			search: s.search,
+		};
+	}
+
+	// Push the draft filters to list_state and reload from page 1.
+	apply_filters() {
+		Object.values(this.ms).forEach((m) => m.close());
+		const d = this.draft;
+		Object.assign(this.list_state, {
+			academic_year: [...d.academic_year],
+			academic_term: [...d.academic_term],
+			programme: [...d.programme],
+			dues_status: [...d.dues_status],
+			search: (d.search || "").trim(),
+			start: 0,
+		});
+		this.update_dirty();
+		this.load_students();
+	}
+
+	// Flag the Search button while the filters on screen differ from the ones the table shows.
+	update_dirty() {
+		const norm = (f) => JSON.stringify({ ...f, search: (f.search || "").trim() });
+		const dirty = norm(this.draft) !== norm(this.applied_filters());
+		this.$root
+			.find(".sfm-search-btn")
+			.toggleClass("is-dirty", dirty)
+			.attr("title", dirty ? __("Filters changed — click Search to apply") : __("Search"));
 	}
 
 	has_active_filters() {
 		const s = this.list_state;
-		return !!(s.academic_year || s.academic_term || s.programme || s.dues_status || s.search);
+		return !!(s.academic_year.length || s.academic_term.length || s.programme.length || s.dues_status.length || s.search);
 	}
 
 	clear_filters() {
 		Object.assign(this.list_state, {
-			academic_year: "",
-			academic_term: "",
-			programme: "",
-			dues_status: "",
+			academic_year: [],
+			academic_term: [],
+			programme: [],
+			dues_status: [],
 			search: "",
 			start: 0,
 		});
+		this.draft = this.applied_filters();
+		Object.values(this.ms).forEach((m) => m.set_options(m.options, []));
 		this.render_filter_options();
+		this.update_dirty();
 		this.load_students();
 	}
 
@@ -340,21 +539,17 @@ class StudentFeeManagement {
 		const s = this.list_state;
 		const $r = this.$root;
 
-		$r.on("change", "select[data-f]", (e) => {
-			const f = $(e.currentTarget).data("f");
-			s[f] = $(e.currentTarget).val();
-			if (f === "academic_year") this.render_filter_options();
-			s.start = 0;
-			this.load_students();
-		});
-		const debounced = frappe.utils.debounce(() => {
-			s.start = 0;
-			this.load_students();
-		}, 350);
 		$r.on("input", '[data-f="search"]', (e) => {
-			s.search = $(e.currentTarget).val();
-			debounced();
+			this.draft.search = $(e.currentTarget).val();
+			this.update_dirty();
 		});
+		$r.on("keydown", '[data-f="search"]', (e) => {
+			if (e.key === "Enter") {
+				e.preventDefault();
+				this.apply_filters();
+			}
+		});
+		$r.on("click", '[data-act="apply"]', () => this.apply_filters());
 		$r.on("click", '[data-act="clear"]', () => this.clear_filters());
 		$r.on("click", '[data-act="refresh"]', () => this.load_students());
 		$r.on("click", '[data-act="retry"]', () => this.load_students());
@@ -590,7 +785,7 @@ class StudentFeeManagement {
 		
 		this.$root
 			.find(".sfm-table-caption")
-			.text(total ? __("{0} students match the current filters", [sfm_int(total)]) : "");
+			.text(total ? (total === 1 ? __("1 student matches the current filters") : __("{0} students match the current filters", [sfm_int(total)])) : "");
 
 		if (!total) {
 			this.$root.find(".sfm-pager").empty();
@@ -619,7 +814,7 @@ class StudentFeeManagement {
 			`<button type="button" class="sfm-page-btn sfm-page-nav" data-page="${page}" aria-label="${label}" title="${label}" ${disabled ? "disabled" : ""}>${icon}</button>`;
 
 		this.$root.find(".sfm-pager").html(`
-			<div class="sfm-muted">${__("Showing {0} to {1} of {2} students", [sfm_int(from), sfm_int(to), sfm_int(total)])}</div>
+			<div class="sfm-muted">${(total === 1 ? __("Showing 1 of 1 student") : __("Showing {0} to {1} of {2} students", [sfm_int(from), sfm_int(to), sfm_int(total)]))}</div>
 			<nav class="sfm-pages" aria-label="${__("Pagination")}">
 				${nav(1, sfm_icon("chevrons-left", 15), __("First page"), current === 1)}
 				${nav(current - 1, sfm_icon("chevron-left", 15) + `<span class="sfm-page-label">${__("Previous")}</span>`, __("Previous page"), current === 1)}
@@ -726,6 +921,8 @@ class StudentFeeManagement {
 	}
 
 	render_student() {
+		$(document).off("mousedown.sfm-ms");
+		this.close_col_menu();
 		const { profile: p, summary: s } = this.detail;
 		const initial = sfm_esc((p.first_name || p.name).trim().charAt(0).toUpperCase());
 		const avatar = p.passport_size_photo ? `<img src="${sfm_esc(p.passport_size_photo)}" alt="">` : initial;
@@ -734,7 +931,7 @@ class StudentFeeManagement {
 
 		this.$root.off().html(`
 			<div class="sfm-shell">
-				<a class="sfm-back" href="/desk/${SFM_PAGE}">${sfm_icon("arrow-left", 14)}${__("All Students")}</a>
+				<a class="sfm-btn sfm-btn-secondary sfm-btn-sm sfm-back" href="/desk/${SFM_PAGE}" role="button">${sfm_icon("arrow-left", 14)}<span>${__("All Students")}</span></a>
 				<header class="sfm-head">
 					<div>
 						<h1 class="sfm-title">${__("Student Due Details")}</h1>
@@ -769,6 +966,7 @@ class StudentFeeManagement {
 						["dues", "file-text", __("Manage Dues"), this.detail.demands.length],
 						["payments", "card", __("Payments"), this.detail.payments.length],
 						["excess", "wallet", __("Excess Breakdown"), this.detail.credit_notes.length],
+						["scholarship", "award", __("Scholarship / Stipend"), this.detail.concessions.length + this.detail.stipends.length],
 					]
 						.map(
 							([key, icon, label, n]) =>
@@ -807,18 +1005,26 @@ class StudentFeeManagement {
 			$(t).toggleClass("active", active).attr({ "aria-selected": active, tabindex: active ? 0 : -1 });
 		});
 		this.$root.find(".sfm-tab-body").attr("aria-labelledby", `sfm-tab-${this.detail_tab}`);
+		this.close_col_menu();
 		const $body = this.$root.find(".sfm-tab-body").off();
 		if (this.detail_tab === "payments") this.render_payments($body);
 		else if (this.detail_tab === "excess") this.render_excess($body);
+		else if (this.detail_tab === "scholarship") this.render_scholarship($body);
 		else this.render_dues($body);
 	}
 
 	// ── Manage Dues ──────────────────────────────────────────────────────
 	render_dues($body) {
+		const all_cols = this.due_columns();
+		const cols = all_cols.filter((c) => !this.hidden_cols.has(c.key));
+		const n_hidden = all_cols.length - cols.length;
 		const demands = this.detail.demands;
-		const filters = ["All", "Pending", "Overdue", "Partially Paid", "Paid", "Waived", "Cancelled"];
-		const count = (f) => (f === "All" ? demands.length : demands.filter((d) => d.status === f).length);
-		const shown = this.dues_filter === "All" ? demands : demands.filter((d) => d.status === this.dues_filter);
+		const filters = ["All", "Pending", "Overdue", "Partially Paid", "Paid", "Waived", "Moved to Excess", "Cancelled", "Cancelled & Moved to Excess"];
+		const count = (f) => (f === "All" ? demands.length : demands.filter((d) => sfm_demand_status(d) === f).length);
+		const shown = this.dues_filter === "All" ? demands : demands.filter((d) => sfm_demand_status(d) === this.dues_filter);
+		// Actions only ever apply to dues the user can see.
+		const visible = new Set(shown.map((d) => d.name));
+		this.selected = new Set([...this.selected].filter((n) => visible.has(n)));
 
 		$body.html(`
 			<div class="sfm-section-head">
@@ -841,12 +1047,17 @@ class StudentFeeManagement {
 					</div>
 					<div class="sfm-actions">
 						<span class="sfm-muted sfm-sel-count" aria-live="polite"></span>
+						<button type="button" class="sfm-btn sfm-btn-secondary sfm-cols-btn ${n_hidden ? "has-hidden" : ""}" data-cols-menu
+							aria-haspopup="dialog" aria-expanded="false" title="${__("Show or hide columns")}">
+							${sfm_icon("columns", 15)}<span>${__("Columns")}</span>${n_hidden ? `<span class="sfm-cols-badge">${__("{0} hidden", [n_hidden])}</span>` : ""}
+						</button>
 						<button type="button" class="sfm-btn sfm-btn-secondary" data-act="multi-pay">${__("Multiple Due Payment")}</button>
 						<div class="dropdown">
 							<button type="button" class="sfm-btn sfm-btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">${__("Actions")}</button>
 							<ul class="dropdown-menu dropdown-menu-right">
 								<li><a class="dropdown-item" href="#" data-act="pay">${__("Record Payment")}</a></li>
 								<li><a class="dropdown-item" href="#" data-act="excess">${__("Adjust from Excess")}</a></li>
+								<li><a class="dropdown-item" href="#" data-act="move-excess">${__("Move to Excess")}</a></li>
 								<li><a class="dropdown-item" href="#" data-act="waiver">${__("Apply Waiver / Concession")}</a></li>
 								<li><a class="dropdown-item" href="#" data-act="refund-demand">${__("Issue Refund for Due")}</a></li>
 								<li><a class="dropdown-item" href="#" data-act="open">${__("Open Voucher")}</a></li>
@@ -860,19 +1071,7 @@ class StudentFeeManagement {
 					<table class="sfm-table sfm-dues-table">
 						<thead><tr>
 							<th scope="col" class="sfm-check"><input type="checkbox" class="sfm-check-all" aria-label="${__("Select all dues")}"></th>
-							<th scope="col">${__("Fee Head")}</th>
-							<th scope="col">${__("Voucher No.")}</th>
-							<th scope="col">${__("Due Status")}</th>
-							<th scope="col">${__("Due Date")}</th>
-							<th scope="col">${__("Date of Creation")}</th>
-							<th scope="col" class="num">${__("Amount")}</th>
-							<th scope="col" class="num">${__("Penalty")}</th>
-							<th scope="col" class="num">${__("Waiver")}</th>
-							<th scope="col" class="num">${__("Total Payable")}</th>
-							<th scope="col" class="num">${__("Paid Amount")}</th>
-							<th scope="col" class="num">${__("Pending Amount")}</th>
-							<th scope="col">${__("Remark")}</th>
-							<th scope="col" class="center">${__("Receipt")}</th>
+							${cols.map((c) => `<th scope="col" class="${c.cls || ""}">${c.label}${c.sub ? `<div class="sfm-th-sub">${c.sub}</div>` : ""}</th>`).join("")}
 						</tr></thead>
 						<tbody>
 							${
@@ -881,23 +1080,11 @@ class StudentFeeManagement {
 											.map(
 												(d) => `<tr class="${this.selected.has(d.name) ? "selected" : ""}" data-name="${sfm_esc(d.name)}">
 								<td class="sfm-check"><input type="checkbox" class="sfm-row-check" aria-label="${sfm_esc(__("Select {0}", [d.name]))}" ${this.selected.has(d.name) ? "checked" : ""}></td>
-								<td><div class="sfm-strong">${sfm_esc(d.fee_component || "—")}</div><div class="sfm-sub">${sfm_esc(d.demand_type || "")}${d.academic_year ? " · " + sfm_esc(d.academic_year) : ""}</div></td>
-								<td><a class="sfm-link" href="${frappe.utils.get_form_link("Fee Demand", d.name)}">${sfm_esc(d.name)}</a></td>
-								<td>${sfm_badge(d.status)}</td>
-								<td>${sfm_date(d.due_date)}</td>
-								<td>${sfm_date(d.demand_date || d.creation)}</td>
-								<td class="num">${sfm_money(d.original_amount)}</td>
-								<td class="num">${sfm_money(d.penalty_amount)}</td>
-								<td class="num">${sfm_money(d.waiver_amount)}</td>
-								<td class="num">${sfm_money(d.net_payable)}</td>
-								<td class="num">${sfm_money(flt(d.paid_amount) + flt(d.credit_adjusted))}</td>
-								<td class="num sfm-amount-strong">${sfm_money(d.outstanding_amount)}</td>
-								<td class="sfm-remark" title="${sfm_esc(d.remarks || d.description || "")}">${sfm_esc(d.remarks || d.description || "—")}</td>
-								<td class="center sfm-receipt-cell">${this.demand_receipt_button(d)}</td>
+								${cols.map((c) => c.cell(d)).join("")}
 							</tr>`
 											)
 											.join("")
-									: `<tr><td colspan="14"><div class="sfm-empty-state"><div class="sfm-empty-title">${__("No dues in this view")}</div></div></td></tr>`
+									: `<tr><td colspan="${cols.length + 1}"><div class="sfm-empty-state"><div class="sfm-empty-title">${__("No dues in this view")}</div></div></td></tr>`
 							}
 						</tbody>
 					</table>
@@ -939,6 +1126,10 @@ class StudentFeeManagement {
 			e.preventDefault();
 			this.dues_action($(e.currentTarget).data("act"));
 		});
+		$body.on("click", "[data-cols-menu]", (e) => {
+			e.stopPropagation();
+			this.open_col_menu(e.currentTarget);
+		});
 		$body.on("click", ".sfm-demand-receipt", (e) => {
 			e.stopPropagation();
 			const $btn = $(e.currentTarget);
@@ -947,6 +1138,147 @@ class StudentFeeManagement {
 			if (d.receipts.length === 1) this.download_receipt(d.receipts[0].name, $btn);
 			else this.receipt_picker(__("Receipts for {0}", [d.name]), d.receipts);
 		});
+	}
+
+	// Every column of the dues table; any of them can be hidden from the Columns menu.
+	due_columns() {
+		return [
+			{
+				key: "fee_component",
+				label: __("Fee Component"),
+				cell: (d) =>
+					`<td class="sfm-wrap-cell sfm-fc-cell"><div class="sfm-strong">${sfm_esc(d.fee_component || "—")}</div><div class="sfm-sub">${sfm_esc(d.demand_type || "")}${d.academic_year ? " · " + sfm_esc(d.academic_year) : ""}</div></td>`,
+			},
+			{
+				key: "voucher",
+				label: __("Voucher No."),
+				cell: (d) => `<td><a class="sfm-link" href="${frappe.utils.get_form_link("Fee Demand", d.name)}">${sfm_esc(d.name)}</a></td>`,
+			},
+			{ key: "status", label: __("Due Status"), cell: (d) => `<td class="sfm-wrap-cell sfm-status-cell">${sfm_badge(sfm_demand_status(d))}</td>` },
+			{ key: "due_date", label: __("Due Date"), cell: (d) => `<td>${sfm_date(d.due_date)}</td>` },
+			{ key: "created", label: __("Date of Creation"), cell: (d) => `<td>${sfm_date(d.demand_date || d.creation)}</td>` },
+			{ key: "amount", label: __("Amount"), cls: "num", cell: (d) => `<td class="num">${sfm_money(d.original_amount)}</td>` },
+			{ key: "penalty", label: __("Penalty"), cls: "num", cell: (d) => `<td class="num">${sfm_money(d.penalty_amount)}</td>` },
+			{ key: "waiver", label: __("Scholarship"), sub: __("Waiver"), cls: "num", cell: (d) => `<td class="num">${sfm_money(d.waiver_amount)}</td>` },
+			{ key: "payable", label: __("Total Payable"), cls: "num", cell: (d) => `<td class="num">${sfm_money(d.net_payable)}</td>` },
+			{
+				key: "paid",
+				label: __("Paid Amount"),
+				cls: "num",
+				cell: (d) => `<td class="num">${sfm_money(flt(d.paid_amount) + flt(d.credit_adjusted))}</td>`,
+			},
+			{
+				key: "pending",
+				label: __("Pending Amount"),
+				cls: "num",
+				cell: (d) => `<td class="num sfm-amount-strong">${sfm_money(d.outstanding_amount)}</td>`,
+			},
+			{
+				key: "remark",
+				label: __("Remark"),
+				cell: (d) =>
+					`<td class="sfm-wrap-cell sfm-remark-cell" title="${sfm_esc(d.remarks || d.description || "")}"><span class="sfm-clamp">${sfm_esc(d.remarks || d.description || "—")}</span></td>`,
+			},
+			{
+				key: "receipt",
+				label: __("Receipt"),
+				cls: "center sfm-receipt-th",
+				cell: (d) => `<td class="center sfm-receipt-cell">${this.demand_receipt_button(d)}</td>`,
+			},
+		];
+	}
+
+	save_hidden_cols() {
+		try {
+			localStorage.setItem("sfm_hidden_due_cols", JSON.stringify([...this.hidden_cols]));
+		} catch (e) {
+			// storage blocked — the choice just won't be remembered next visit
+		}
+	}
+
+	close_col_menu() {
+		if (!this.$col_pop) return;
+		if (this.col_pop_cleanup) this.col_pop_cleanup();
+		this.col_pop_cleanup = null;
+		this.$col_pop.remove();
+		this.$col_pop = null;
+		$(document).off(".sfm-colpop");
+		$(window).off(".sfm-colpop");
+		this.$root.find('[data-cols-menu][aria-expanded="true"]').attr("aria-expanded", "false");
+	}
+
+	// Show / hide columns. Changes apply straight away and stay open, so several can be toggled in a row.
+	open_col_menu(btn, focus_key = null) {
+		if (this.$col_pop && !focus_key) return this.close_col_menu();
+		this.close_col_menu();
+		const all_cols = this.due_columns();
+
+		const $pop = $(`<div class="sfm-dialog sfm-col-pop" role="dialog" aria-label="${__("Show or hide columns")}">
+			<div class="sfm-col-pop-title">${__("Show columns")}</div>
+			<div class="sfm-ms-actions">
+				<button type="button" data-cm="all">${__("Show all")}</button>
+			</div>
+			<div class="sfm-ms-list">
+				${all_cols
+					.map(
+						(c) => `<label class="sfm-ms-option">
+							<input type="checkbox" value="${c.key}" ${this.hidden_cols.has(c.key) ? "" : "checked"}>
+							<span>${c.label}${c.sub ? ` <span class="sfm-th-sub sfm-inline">(${c.sub})</span>` : ""}</span>
+						</label>`
+					)
+					.join("")}
+			</div>
+			<div class="sfm-muted sfm-col-pop-note">${__("Your choice is remembered on this browser.")}</div>
+		</div>`).appendTo("body");
+		this.$col_pop = $pop;
+		$(btn).attr("aria-expanded", "true");
+
+		const place = () => {
+			if (!btn.isConnected) return this.close_col_menu();
+			const r = btn.getBoundingClientRect();
+			const w = $pop.outerWidth();
+			const top = Math.min(r.bottom + 6, window.innerHeight - $pop.outerHeight() - 8);
+			$pop.css({ top: Math.max(8, top), left: Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8)) });
+		};
+		place();
+
+		// Re-render the table, then reopen the menu on the new Columns button.
+		const apply = (key) => {
+			this.save_hidden_cols();
+			this.render_tab();
+			const new_btn = this.$root.find("[data-cols-menu]")[0];
+			if (new_btn) this.open_col_menu(new_btn, key || "__none__");
+		};
+		$pop.on("change", "input", (e) => {
+			const key = e.currentTarget.value;
+			if (e.currentTarget.checked) this.hidden_cols.delete(key);
+			else if (this.hidden_cols.size >= all_cols.length - 1) {
+				e.currentTarget.checked = true;
+				return frappe.show_alert({ message: __("At least one column must stay visible."), indicator: "orange" });
+			} else this.hidden_cols.add(key);
+			apply(key);
+		});
+		$pop.on("click", '[data-cm="all"]', () => {
+			this.hidden_cols.clear();
+			apply();
+		});
+		$pop.on("keydown", (e) => {
+			if (e.key === "Escape") {
+				this.close_col_menu();
+				const b = this.$root.find("[data-cols-menu]")[0];
+				if (b) b.focus();
+			}
+		});
+		setTimeout(() => {
+			$(document).on("mousedown.sfm-colpop", (e) => {
+				if (!$(e.target).closest(".sfm-col-pop, [data-cols-menu]").length) this.close_col_menu();
+			});
+			$(window).on("resize.sfm-colpop", () => this.close_col_menu());
+			window.addEventListener("scroll", place, true);
+			this.col_pop_cleanup = () => window.removeEventListener("scroll", place, true);
+		});
+		const target = focus_key && focus_key !== "__none__" ? $pop.find(`input[value="${focus_key}"]`)[0] : $pop.find("input")[0];
+		if (target) target.focus();
 	}
 
 	demand_receipt_button(d) {
@@ -1036,14 +1368,14 @@ class StudentFeeManagement {
 				frappe.set_route("Form", "Fee Demand", d.name);
 				break;
 
+			case "move-excess":
+				if (!(d = this.single_selected())) return;
+				this.move_to_excess_dialog(d);
+				break;
+
 			case "cancel":
 				if (!(d = this.single_selected())) return;
-				frappe.confirm(__("Cancel due <b>{0}</b> ({1})? This cannot be undone.", [sfm_esc(d.name), sfm_money(d.net_payable)]), async () => {
-					await frappe.call({ method: SFM_API + "cancel_demand", args: { fee_demand: d.name }, freeze: true });
-					frappe.show_alert({ message: __("Due {0} cancelled", [d.name]), indicator: "green" });
-					this.selected.delete(d.name);
-					this.show_student(p.name);
-				});
+				this.cancel_dialog(d);
 				break;
 		}
 	}
@@ -1069,10 +1401,11 @@ class StudentFeeManagement {
 				{ fieldtype: "Column Break" },
 				{ fieldtype: "Data", fieldname: "reference_number", label: __("Reference / UTR No.") },
 				{ fieldtype: "Date", fieldname: "transaction_date", label: __("Transaction Date") },
-				{ fieldtype: "Small Text", fieldname: "remarks", label: __("Remarks") },
+				{ fieldtype: "Small Text", fieldname: "remarks", label: __("Remarks"), reqd: 1 },
 			],
 			primary_action_label: __("Record Payment"),
 			primary_action: (values) => {
+				if (!(values.remarks || "").trim()) return frappe.msgprint(__("Remarks are mandatory."));
 				const allocations = [];
 				let invalid = null;
 				$alloc.find("input.sfm-alloc").each((_, el) => {
@@ -1112,7 +1445,7 @@ class StudentFeeManagement {
 		$alloc.html(`
 			<table class="sfm-table sfm-alloc-table">
 				<thead><tr>
-					<th scope="col">${__("Voucher No.")}</th><th scope="col">${__("Fee Head")}</th>
+					<th scope="col">${__("Voucher No.")}</th><th scope="col">${__("Fee Component")}</th>
 					<th scope="col" class="num">${__("Pending")}</th><th scope="col" class="num">${__("Paying Now")}</th>
 				</tr></thead>
 				<tbody>
@@ -1157,18 +1490,117 @@ class StudentFeeManagement {
 					options: `<p class="sfm-muted">${__("Due {0}: pending {1}. Available excess: {2}.", [sfm_esc(d.name), sfm_money(d.outstanding_amount), sfm_money(excess)])}</p>`,
 				},
 				{ fieldtype: "Currency", fieldname: "amount", label: __("Amount to Adjust"), reqd: 1, default: max, options: "INR" },
+				{ fieldtype: "Small Text", fieldname: "remarks", label: __("Remarks"), reqd: 1 },
 			],
 			primary_action_label: __("Adjust"),
-			primary_action: async ({ amount }) => {
+			primary_action: async ({ amount, remarks }) => {
 				if (flt(amount) <= 0 || flt(amount) > max) return frappe.msgprint(__("Amount must be between 0 and {0}.", [sfm_money(max)]));
+				if (!(remarks || "").trim()) return frappe.msgprint(__("Remarks are mandatory."));
 				await frappe.call({
 					method: SFM_API + "apply_excess_credit",
-					args: { student: this.detail.profile.name, fee_demand: d.name, amount },
+					args: { student: this.detail.profile.name, fee_demand: d.name, amount, remarks },
 					freeze: true,
 				});
 				dialog.hide();
 				frappe.show_alert({ message: __("Adjusted {0} against {1}", [sfm_money(amount), d.name]), indicator: "green" });
 				this.show_student(this.detail.profile.name);
+			},
+		});
+		dialog.$wrapper.addClass("sfm-dialog");
+		dialog.show();
+	}
+
+	cancel_dialog(d) {
+		if (flt(d.paid_amount) > 0) {
+			return frappe.msgprint(__("{0} has payments against it. Move the paid amount to excess or refund it before cancelling.", [d.name]));
+		}
+		const dialog = new frappe.ui.Dialog({
+			title: __("Cancel Due {0}", [d.name]),
+			fields: [
+				{
+					fieldtype: "HTML",
+					fieldname: "info",
+					options: `<p class="sfm-muted">${__("{0} · {1}. This cannot be undone.", [sfm_esc(d.fee_component || d.name), sfm_money(d.net_payable)])}</p>`,
+				},
+				{ fieldtype: "Small Text", fieldname: "remarks", label: __("Reason / Remarks"), reqd: 1 },
+			],
+			primary_action_label: __("Cancel Due"),
+			primary_action: async ({ remarks }) => {
+				if (!(remarks || "").trim()) return frappe.msgprint(__("Remarks are mandatory."));
+				await frappe.call({ method: SFM_API + "cancel_demand", args: { fee_demand: d.name, remarks }, freeze: true });
+				dialog.hide();
+				frappe.show_alert({ message: __("Due {0} cancelled", [d.name]), indicator: "green" });
+				this.selected.delete(d.name);
+				this.show_student(this.detail.profile.name);
+			},
+		});
+		dialog.$wrapper.addClass("sfm-dialog");
+		dialog.get_primary_btn().removeClass("btn-primary").addClass("btn-danger");
+		dialog.show();
+	}
+
+	// Paid money on a due → student's excess (a new Student Credit Note).
+	move_to_excess_dialog(d) {
+		const paid = flt(d.paid_amount);
+		if (d.status === "Cancelled") return frappe.msgprint(__("{0} is cancelled.", [d.name]));
+		if (paid <= 0) return frappe.msgprint(__("Nothing has been paid against {0}, so there is nothing to move to excess.", [d.name]));
+
+		const dialog = new frappe.ui.Dialog({
+			title: __("Move to Excess"),
+			fields: [
+				{
+					fieldtype: "HTML",
+					fieldname: "info",
+					options: `<div class="sfm-move-summary">
+						<div><span class="sfm-muted">${__("Due")}</span><b>${sfm_esc(d.name)}</b></div>
+						<div><span class="sfm-muted">${__("Fee Component")}</span><b>${sfm_esc(d.fee_component || "—")}</b></div>
+						<div><span class="sfm-muted">${__("Paid Amount")}</span><b>${sfm_money(paid)}</b></div>
+						<div><span class="sfm-muted">${__("Pending Amount")}</span><b>${sfm_money(d.outstanding_amount)}</b></div>
+					</div>
+					<p class="sfm-muted">${__("The amount is taken off this due's paid amount and added to the student's excess. The due's pending amount goes up by the same amount unless you cancel it.")}</p>`,
+				},
+				{ fieldtype: "Currency", fieldname: "amount", label: __("Amount to Move"), reqd: 1, default: paid, options: "INR" },
+				{
+					fieldtype: "Select",
+					fieldname: "credit_type",
+					label: __("Excess Type"),
+					reqd: 1,
+					options: ["Overpayment", "Advance Deposit", "Scholarship Credit", "Other"],
+					default: "Overpayment",
+				},
+				{ fieldtype: "Column Break" },
+				{ fieldtype: "Link", fieldname: "academic_year", label: __("Academic Year"), options: "Academic Year", default: d.academic_year || this.detail.profile.academic_year },
+				{
+					fieldtype: "Check",
+					fieldname: "cancel_due",
+					label: __("Cancel this due after moving"),
+					description: __("Only when the full paid amount is moved."),
+				},
+				{ fieldtype: "Section Break" },
+				{ fieldtype: "Small Text", fieldname: "remarks", label: __("Remarks"), reqd: 1 },
+			],
+			primary_action_label: __("Move to Excess"),
+			primary_action: (v) => {
+				const amount = flt(v.amount);
+				if (amount <= 0 || amount > paid) return frappe.msgprint(__("Amount must be between 0 and {0}.", [sfm_money(paid)]));
+				if (v.cancel_due && amount < paid) return frappe.msgprint(__("To cancel the due, move the full paid amount ({0}).", [sfm_money(paid)]));
+				if (!(v.remarks || "").trim()) return frappe.msgprint(__("Remarks are mandatory."));
+				frappe.confirm(
+					__("Move <b>{0}</b> from {1} to the student's excess?", [sfm_money(amount), sfm_esc(d.name)]) +
+						(v.cancel_due ? "<br>" + __("The due will then be cancelled.") : ""),
+					async () => {
+						const r = await frappe.call({
+							method: SFM_API + "move_to_excess",
+							args: { student: this.detail.profile.name, fee_demand: d.name, ...v, cancel_due: v.cancel_due ? 1 : 0 },
+							freeze: true,
+							freeze_message: __("Moving to excess…"),
+						});
+						dialog.hide();
+						frappe.show_alert({ message: __("{0} moved to excess · {1}", [sfm_money(amount), r.message.credit_note]), indicator: "green" }, 7);
+						this.selected.delete(d.name);
+						this.show_student(this.detail.profile.name);
+					}
+				);
 			},
 		});
 		dialog.$wrapper.addClass("sfm-dialog");
@@ -1310,6 +1742,202 @@ class StudentFeeManagement {
 		);
 	}
 
+	// ── Scholarship / Stipend ────────────────────────────────────────────
+	render_scholarship($body) {
+		const { profile: p, concessions, stipends, summary: s } = this.detail;
+		const sub = this.sch_subtab === "stipend" ? "stipend" : "scholarship";
+		const kpi = (icon, label, value, tone) =>
+			`<div class="sfm-kpi sfm-kpi-${tone}"><span class="sfm-kpi-icon">${sfm_icon(icon, 18)}</span><div class="sfm-kpi-body"><div class="sfm-kpi-label">${label}</div><div class="sfm-kpi-value">${value}</div></div></div>`;
+		const detail = (label, value) =>
+			`<div class="sfm-meta"><div class="sfm-meta-label">${label}</div><div class="sfm-meta-value">${sfm_esc(value || "—")}</div></div>`;
+
+		const subtabs = `
+			<div class="sfm-subtabs" role="tablist" aria-label="${__("Scholarship or stipend")}">
+				${[
+					["scholarship", "award", __("Scholarship"), concessions.length],
+					["stipend", "wallet", __("Stipend"), stipends.length],
+				]
+					.map(
+						([key, icon, label, n]) =>
+							`<button type="button" role="tab" class="sfm-subtab ${key === sub ? "active" : ""}" data-subtab="${key}"
+								aria-selected="${key === sub}" tabindex="${key === sub ? 0 : -1}">${sfm_icon(icon, 15)}<span>${label}</span><span class="sfm-tab-count">${n}</span></button>`
+					)
+					.join("")}
+			</div>`;
+
+		let head_actions = "";
+		let content = "";
+		if (sub === "scholarship") {
+			const on_record =
+				flt(p.scholarship_amount) > 0
+					? sfm_money(p.scholarship_amount)
+					: flt(p.scholarship_percentage) > 0
+					? `${flt(p.scholarship_percentage)}%`
+					: "—";
+			if (frappe.model.can_create("Fee Concession")) {
+				head_actions = `<button type="button" class="sfm-btn sfm-btn-primary" data-act="new-scholarship">${sfm_icon("plus", 15)}<span>${__("Apply Scholarship")}</span></button>`;
+			}
+			content = `
+				<div class="sfm-kpi-grid sfm-kpi-grid-3">
+					${kpi("award", __("Scholarship on Record"), on_record, "primary")}
+					${kpi("check", __("Scholarship / Waiver Applied"), sfm_money(s.scholarship_amount), "success")}
+					${kpi("file-text", __("Concessions"), sfm_int(concessions.length), "neutral")}
+				</div>
+
+				<div class="sfm-panel sfm-scholar-card">
+					<div class="sfm-panel-title">${sfm_icon("award", 15)}${__("Scholarship Details")}</div>
+					<div class="sfm-metas">
+						${detail(__("Applying for Scholarship"), p.applying_scholarship)}
+						${detail(__("Scholarship Type"), p.scholarship_type)}
+						${detail(__("Amount"), flt(p.scholarship_amount) ? sfm_money(p.scholarship_amount) : "")}
+						${detail(__("Percentage"), flt(p.scholarship_percentage) ? `${flt(p.scholarship_percentage)}%` : "")}
+						${detail(__("Approval Date"), p.scholarship_approval_date ? sfm_date(p.scholarship_approval_date) : "")}
+						${detail(__("Remarks"), p.fee_waiver_remarks)}
+					</div>
+				</div>
+
+				<div class="sfm-section-head"><h3 class="sfm-section-title">${__("Scholarships & Waivers Applied")}</h3></div>
+				<div class="sfm-panel sfm-table-panel"><div class="sfm-table-scroll">
+					<table class="sfm-table">
+						<thead><tr>
+							<th scope="col">${__("Concession No.")}</th><th scope="col">${__("Type")}</th><th scope="col">${__("Scholarship For")}</th>
+							<th scope="col">${__("Due")}</th><th scope="col">${__("Mode")}</th>
+							<th scope="col" class="num">${__("Scholarship")}<div class="sfm-th-sub">${__("Waiver")}</div></th>
+							<th scope="col">${__("Status")}</th><th scope="col">${__("Reason")}</th>
+						</tr></thead>
+						<tbody>
+							${
+								concessions.length
+									? concessions
+											.map(
+												(c) => `<tr>
+								<td><a class="sfm-link" href="${frappe.utils.get_form_link("Fee Concession", c.name)}">${sfm_esc(c.name)}</a></td>
+								<td>${sfm_esc(c.concession_type || "—")}</td>
+								<td>${sfm_esc(c.scholarship_for || "—")}</td>
+								<td>${sfm_esc(c.fee_demand || "—")}<div class="sfm-sub">${sfm_esc(c.fee_component || "")}</div></td>
+								<td>${sfm_esc(c.waiver_mode || "—")}${c.waiver_mode === "Percentage" ? `<div class="sfm-sub">${flt(c.waiver_value)}%</div>` : ""}</td>
+								<td class="num sfm-amount-strong">${sfm_money(c.waiver_amount)}</td>
+								<td>${sfm_badge(c.status || ["Draft", "Approved", "Cancelled"][c.docstatus])}</td>
+								<td class="sfm-remark" title="${sfm_esc(c.reason || "")}">${sfm_esc(c.reason || "—")}</td>
+							</tr>`
+											)
+											.join("")
+									: `<tr><td colspan="8"><div class="sfm-empty-state"><div class="sfm-empty-title">${__("No scholarships or waivers for this student")}</div></div></td></tr>`
+							}
+						</tbody>
+					</table>
+				</div></div>`;
+		} else {
+			const paid = stipends.filter((x) => x.docstatus === 1);
+			const last = paid[0];
+			if (frappe.model.can_create("Stipend Payment")) {
+				head_actions = `<button type="button" class="sfm-btn sfm-btn-primary" data-act="new-stipend">${sfm_icon("plus", 15)}<span>${__("Record Stipend Payment")}</span></button>`;
+			}
+			content = `
+				<div class="sfm-kpi-grid sfm-kpi-grid-3">
+					${kpi("wallet", __("Stipend Paid"), sfm_money(s.stipend_paid), "primary")}
+					${kpi("card", __("Stipend Payments"), sfm_int(paid.length), "neutral")}
+					${kpi("clock", __("Last Payment"), last ? `${sfm_money(last.amount)} <span class="sfm-kpi-note">${sfm_date(last.payment_date)}</span>` : "—", "neutral")}
+				</div>
+
+				<div class="sfm-section-head"><h3 class="sfm-section-title">${__("Stipend Payments")}</h3></div>
+				<div class="sfm-panel sfm-table-panel"><div class="sfm-table-scroll">
+					<table class="sfm-table">
+						<thead><tr>
+							<th scope="col">${__("Stipend No.")}</th><th scope="col">${__("Date")}</th><th scope="col">${__("Type")}</th>
+							<th scope="col">${__("Year / Term")}</th><th scope="col">${__("Mode")}</th><th scope="col">${__("Reference")}</th>
+							<th scope="col" class="num">${__("Amount")}</th><th scope="col">${__("Status")}</th><th scope="col">${__("Remarks")}</th>
+						</tr></thead>
+						<tbody>
+							${
+								stipends.length
+									? stipends
+											.map(
+												(x) => `<tr>
+								<td><a class="sfm-link" href="${frappe.utils.get_form_link("Stipend Payment", x.name)}">${sfm_esc(x.name)}</a></td>
+								<td>${sfm_date(x.payment_date)}</td>
+								<td>${sfm_esc(x.stipend_type || "—")}</td>
+								<td>${sfm_esc(x.academic_year || "—")}${x.academic_term ? `<div class="sfm-sub">${sfm_esc(x.academic_term)}</div>` : ""}</td>
+								<td>${sfm_esc(x.payment_mode || "—")}</td>
+								<td>${sfm_esc(x.reference_number || "—")}</td>
+								<td class="num sfm-amount-strong">${sfm_money(x.amount)}</td>
+								<td>${sfm_badge(x.status || ["Draft", "Submitted", "Cancelled"][x.docstatus])}</td>
+								<td class="sfm-remark" title="${sfm_esc(x.remarks || "")}">${sfm_esc(x.remarks || "—")}</td>
+							</tr>`
+											)
+											.join("")
+									: `<tr><td colspan="9"><div class="sfm-empty-state"><div class="sfm-empty-title">${__("No stipend payments for this student")}</div></div></td></tr>`
+							}
+						</tbody>
+					</table>
+				</div></div>`;
+		}
+
+		$body.html(`
+			<h2 class="sfm-section-title sfm-sr-only">${__("Scholarship / Stipend")}</h2>
+			<div class="sfm-subtab-bar">
+				${subtabs}
+				<div class="sfm-actions">${head_actions}</div>
+			</div>
+			<div role="tabpanel">${content}</div>
+		`);
+
+		$body.on("click", ".sfm-subtab", (e) => {
+			this.sch_subtab = $(e.currentTarget).data("subtab");
+			this.render_tab();
+			this.$root.find(`.sfm-subtab[data-subtab="${this.sch_subtab}"]`).trigger("focus");
+		});
+		$body.on("keydown", ".sfm-subtab", (e) => {
+			if (!["ArrowLeft", "ArrowRight"].includes(e.key)) return;
+			e.preventDefault();
+			$body.find(".sfm-subtab").not(e.currentTarget).trigger("click");
+		});
+		$body.find('[data-act="new-scholarship"]').on("click", () =>
+			frappe.new_doc("Fee Concession", { student: p.name, concession_type: "Scholarship" })
+		);
+		$body.find('[data-act="new-stipend"]').on("click", () => this.stipend_dialog());
+	}
+
+	async stipend_dialog() {
+		const p = this.detail.profile;
+		await frappe.model.with_doctype("Stipend Payment");
+		const opt = (field, fallback) =>
+			((frappe.meta.get_docfield("Stipend Payment", field) || {}).options || fallback).split("\n").filter(Boolean);
+		const dialog = new frappe.ui.Dialog({
+			title: __("Record Stipend Payment — {0}", [p.first_name || p.name]),
+			fields: [
+				{ fieldtype: "Select", fieldname: "stipend_type", label: __("Stipend Type"), reqd: 1, options: opt("stipend_type", "University Financial"), default: opt("stipend_type", "University Financial")[0] },
+				{ fieldtype: "Currency", fieldname: "amount", label: __("Amount"), reqd: 1, options: "INR" },
+				{ fieldtype: "Date", fieldname: "payment_date", label: __("Payment Date"), reqd: 1, default: frappe.datetime.get_today() },
+				{ fieldtype: "Column Break" },
+				{ fieldtype: "Select", fieldname: "payment_mode", label: __("Payment Mode"), reqd: 1, options: opt("payment_mode", "Bank Transfer"), default: "Bank Transfer" },
+				{ fieldtype: "Data", fieldname: "reference_number", label: __("Reference / UTR No.") },
+				{ fieldtype: "Link", fieldname: "academic_year", label: __("Academic Year"), options: "Academic Year", default: p.academic_year },
+				{ fieldtype: "Link", fieldname: "academic_term", label: __("Academic Term"), options: "Academic Term" },
+				{ fieldtype: "Section Break" },
+				{ fieldtype: "Small Text", fieldname: "remarks", label: __("Remarks"), reqd: 1 },
+			],
+			primary_action_label: __("Record Stipend Payment"),
+			primary_action: (v) => {
+				if (flt(v.amount) <= 0) return frappe.msgprint(__("Amount must be greater than zero."));
+				if (!(v.remarks || "").trim()) return frappe.msgprint(__("Remarks are mandatory."));
+				frappe.confirm(__("Record a stipend payment of <b>{0}</b> to {1}?", [sfm_money(v.amount), sfm_esc(p.first_name || p.name)]), async () => {
+					const r = await frappe.call({
+						method: SFM_API + "record_stipend",
+						args: { student: p.name, ...v },
+						freeze: true,
+						freeze_message: __("Recording stipend…"),
+					});
+					dialog.hide();
+					frappe.show_alert({ message: __("Stipend payment {0} recorded", [r.message.stipend_payment]), indicator: "green" }, 7);
+					this.show_student(p.name);
+				});
+			},
+		});
+		dialog.$wrapper.addClass("sfm-dialog");
+		dialog.show();
+	}
+
 	// ─────────────────────────────────────────────────────────────────────
 	inject_styles() {
 		if (document.getElementById("sfm-styles")) return;
@@ -1368,8 +1996,7 @@ class StudentFeeManagement {
 		.sfm-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 		.sfm-title { font-family: var(--sfm-font); font-size: 24px; font-weight: 700; line-height: 1.3; margin: 0; color: var(--sfm-text); letter-spacing: -.01em; }
 		.sfm-subtitle { margin: 4px 0 0; font-size: 13px; color: var(--sfm-muted); }
-		.sfm-back { display: inline-flex; align-items: center; gap: 6px; color: var(--sfm-primary-text) !important; font-size: 13px; margin-bottom: -8px; text-decoration: none !important; width: fit-content; }
-		.sfm-back:hover { text-decoration: underline !important; }
+		.sfm-back { align-self: flex-start; margin-bottom: -4px; text-decoration: none !important; color: var(--sfm-primary-text) !important; }
 
 		/* ── Buttons ── */
 		.sfm-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 6px; font-size: 13px; font-weight: 500; line-height: 1; border: 1px solid transparent; cursor: pointer; white-space: nowrap; transition: background-color .15s, border-color .15s, color .15s, box-shadow .15s; }
@@ -1396,7 +2023,10 @@ class StudentFeeManagement {
 		.sfm-link:hover { text-decoration: underline; }
 
 		/* ── Filters ── */
-		.sfm-filter-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr) minmax(0,1.6fr) minmax(0,1fr) minmax(0,1.6fr); gap: 16px; padding: 16px 20px 20px; }
+		.sfm-filter-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr) minmax(0,1.6fr) minmax(0,1fr) minmax(0,1.6fr) auto; gap: 16px; padding: 16px 20px 20px; }
+		.sfm-search-action { justify-content: flex-end; }
+		.sfm-search-btn { height: 38px; position: relative; }
+		.sfm-search-btn.is-dirty::after { content: ""; position: absolute; top: -4px; right: -4px; width: 10px; height: 10px; border-radius: 50%; background: #F59E0B; border: 2px solid var(--sfm-card); }
 		.sfm-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 		.sfm-field label, .sfm-page-size label { font-size: 12px; font-weight: 600; color: var(--sfm-text); margin: 0; }
 		.sfm-control { width: 100%; height: 38px; border: 1px solid var(--sfm-border-strong); border-radius: 6px; padding: 0 12px; font-size: 13px; background: var(--sfm-card); color: var(--sfm-text); transition: border-color .15s, box-shadow .15s; }
@@ -1408,6 +2038,30 @@ class StudentFeeManagement {
 		.sfm-select-caret { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); color: var(--sfm-muted); pointer-events: none; }
 		.sfm-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--sfm-muted); pointer-events: none; }
 		.sfm-search-wrap input { padding-left: 36px; }
+
+		/* ── Multi-select ── */
+		.sfm-ms { position: relative; }
+		.sfm-ms-trigger { display: flex; align-items: center; gap: 8px; text-align: left; cursor: pointer; }
+		.sfm-ms-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+		.sfm-ms-trigger.has-value { border-color: var(--sfm-primary); background: var(--sfm-primary-soft); color: var(--sfm-primary-text); font-weight: 600; }
+		.sfm-ms-caret { color: var(--sfm-muted); transition: transform .15s; }
+		.sfm-ms-trigger[aria-expanded="true"] .sfm-ms-caret { transform: rotate(180deg); }
+		.sfm-ms-trigger[aria-expanded="true"] { border-color: var(--sfm-primary); box-shadow: 0 0 0 3px var(--sfm-primary-tint); }
+		.sfm-ms-panel { position: absolute; top: calc(100% + 4px); left: 0; width: 100%; min-width: 240px; z-index: 40; background: var(--sfm-card); border: 1px solid var(--sfm-border); border-radius: var(--sfm-radius); box-shadow: 0 10px 28px rgba(16, 24, 40, .14); padding: 8px; }
+		.sfm-ms-panel[hidden] { display: none; }
+		.sfm-ms-search { position: relative; margin-bottom: 8px; }
+		.sfm-ms-search .sfm-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--sfm-muted); pointer-events: none; }
+		.sfm-ms-filter { width: 100%; height: 32px; border: 1px solid var(--sfm-border-strong); border-radius: 6px; padding: 0 10px 0 30px; font-size: 12px; background: var(--sfm-card); color: var(--sfm-text); }
+		.sfm-ms-filter:focus { outline: none; border-color: var(--sfm-primary); box-shadow: 0 0 0 3px var(--sfm-primary-tint); }
+		.sfm-ms-actions { display: flex; justify-content: space-between; gap: 8px; padding: 0 4px 8px; margin-bottom: 4px; border-bottom: 1px solid var(--sfm-border); }
+		.sfm-ms-actions button { background: none; border: none; padding: 2px 4px; border-radius: 4px; font-size: 12px; font-weight: 600; color: var(--sfm-primary-text); cursor: pointer; }
+		.sfm-ms-actions button:hover { background: var(--sfm-primary-soft); }
+		.sfm-ms-actions button:focus-visible { outline: 2px solid var(--sfm-primary); outline-offset: 1px; }
+		.sfm-ms-list { max-height: 240px; overflow-y: auto; }
+		.sfm-field .sfm-ms-option { display: flex; align-items: flex-start; gap: 8px; padding: 8px; margin: 0; border-radius: 6px; font-size: 13px; font-weight: 400; color: var(--sfm-text); cursor: pointer; }
+		.sfm-ms-option:hover { background: var(--sfm-primary-soft); }
+		.sfm-ms-option input { accent-color: var(--sfm-primary); width: 15px; height: 15px; margin-top: 2px; flex: none; }
+		.sfm-ms-empty { padding: 12px 8px; text-align: center; font-size: 12px; color: var(--sfm-muted); }
 
 		/* ── KPI cards ── */
 		.sfm-kpi-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; transition: opacity .15s; }
@@ -1439,7 +2093,11 @@ class StudentFeeManagement {
 		@media (prefers-reduced-motion: reduce) { .sfm-skel, .sfm-spin { animation: none; } }
 
 		/* ── Table ── */
-		.sfm-table-panel { overflow: hidden; }
+		.sfm-table-panel { overflow: visible; }
+		.sfm-table-panel > .sfm-table-scroll:last-child { border-radius: 0 0 var(--sfm-radius) var(--sfm-radius); }
+		.sfm-table-panel > .sfm-table-scroll:first-child { border-radius: var(--sfm-radius) var(--sfm-radius) 0 0; }
+		.sfm-table-panel > .sfm-table-scroll:only-child { border-radius: var(--sfm-radius); }
+		.sfm .dropdown-menu { z-index: 1050; }
 		.sfm-table-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 20px; border-bottom: 1px solid var(--sfm-border); }
 		.sfm-table-caption { margin-top: 2px; }
 		.sfm-page-size { display: flex; align-items: center; gap: 8px; }
@@ -1455,10 +2113,10 @@ class StudentFeeManagement {
 		/* Receipt column stays pinned to the right edge while the table scrolls sideways */
 		.sfm-student-table th:last-child, .sfm-student-table td:last-child { position: sticky; right: 0; background: var(--sfm-card); box-shadow: -1px 0 0 var(--sfm-border); }
 		.sfm-student-table thead th:last-child { z-index: 2; background: var(--sfm-subtle); }
-		.sfm-dues-table th:last-child, .sfm-dues-table td:last-child { position: sticky; right: 0; background: var(--sfm-card); box-shadow: -1px 0 0 var(--sfm-border); }
-		.sfm-dues-table thead th:last-child { z-index: 2; background: var(--sfm-subtle); }
-		.sfm-dues-table tbody tr[data-name]:hover td:last-child { background: linear-gradient(var(--sfm-primary-soft), var(--sfm-primary-soft)), var(--sfm-card); }
-		.sfm-dues-table tr.selected td:last-child { background: linear-gradient(var(--sfm-primary-tint), var(--sfm-primary-tint)), var(--sfm-card); }
+		.sfm-dues-table th.sfm-receipt-th, .sfm-dues-table td.sfm-receipt-cell { position: sticky; right: 0; background: var(--sfm-card); box-shadow: -1px 0 0 var(--sfm-border); }
+		.sfm-dues-table thead th.sfm-receipt-th { z-index: 2; background: var(--sfm-subtle); }
+		.sfm-dues-table tbody tr[data-name]:hover td.sfm-receipt-cell { background: linear-gradient(var(--sfm-primary-soft), var(--sfm-primary-soft)), var(--sfm-card); }
+		.sfm-dues-table tr.selected td.sfm-receipt-cell { background: linear-gradient(var(--sfm-primary-tint), var(--sfm-primary-tint)), var(--sfm-card); }
 		.sfm-student-row:hover td:last-child { background: linear-gradient(var(--sfm-primary-soft), var(--sfm-primary-soft)), var(--sfm-card); }
 		.sfm-table thead th { position: sticky; top: 0; z-index: 1; background: var(--sfm-subtle); color: var(--sfm-text); font-family: var(--sfm-font); font-weight: 600; font-size: 12px; padding: 12px 14px; text-align: left; white-space: nowrap; border-bottom: 2px solid var(--sfm-primary); }
 		.sfm-table td { padding: 14px; border-bottom: 1px solid var(--sfm-border); vertical-align: top; color: var(--sfm-text); }
@@ -1481,6 +2139,13 @@ class StudentFeeManagement {
 		.sfm-dues-table tbody tr[data-name] { cursor: pointer; }
 		.sfm-dues-table tr.selected td { background: var(--sfm-primary-tint); }
 		.sfm-dues-table td { white-space: nowrap; }
+		/* Text-heavy cells wrap (numbers/dates stay on one line) so more columns fit without side-scrolling */
+		.sfm-dues-table td.sfm-wrap-cell { white-space: normal; }
+		.sfm-dues-table td.sfm-fc-cell { min-width: 150px; max-width: 200px; }
+		.sfm-dues-table td.sfm-status-cell { max-width: 150px; }
+		.sfm-dues-table td.sfm-status-cell .sfm-badge { white-space: normal; height: auto; min-height: 22px; padding: 3px 10px; line-height: 1.35; text-align: center; }
+		.sfm-dues-table td.sfm-remark-cell { min-width: 150px; max-width: 200px; }
+		.sfm-clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 		.sfm-check { width: 44px; text-align: center !important; }
 		.sfm-check input { accent-color: var(--sfm-primary); width: 15px; height: 15px; }
 		.sfm-remark { max-width: 240px; overflow: hidden; text-overflow: ellipsis; }
@@ -1492,6 +2157,9 @@ class StudentFeeManagement {
 		.sfm-badge-partial { color: var(--sfm-amber);   background: var(--sfm-amber-bg);   border-color: var(--sfm-amber-bd); }
 		.sfm-badge-paid    { color: var(--sfm-success); background: var(--sfm-success-bg); border-color: var(--sfm-success-bd); }
 		.sfm-badge-waived  { color: var(--sfm-violet);  background: var(--sfm-violet-bg);  border-color: var(--sfm-violet-bd); }
+		.sfm-badge-excess  { color: #0E7490; background: #ECFEFF; border-color: #A5F3FC; }
+		.sfm-badge-excess-cancelled { color: var(--sfm-muted); background: var(--sfm-subtle); border-color: #A5F3FC; }
+		[data-theme="dark"] .sfm .sfm-badge-excess { color: #67E8F9; background: rgba(103,232,249,.08); border-color: rgba(103,232,249,.3); }
 		.sfm-badge-muted   { color: var(--sfm-muted);   background: var(--sfm-subtle);     border-color: var(--sfm-border); }
 
 		/* ── Icon buttons (receipt) ── */
@@ -1522,8 +2190,8 @@ class StudentFeeManagement {
 		.sfm-empty-state .sfm-btn { margin-top: 8px; }
 
 		/* ── Student detail ── */
-		.sfm-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--sfm-border); overflow-x: auto; margin-bottom: -4px; }
-		.sfm-tab { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; font-size: 13px; font-weight: 500; color: var(--sfm-muted); white-space: nowrap; cursor: pointer; transition: color .15s, border-color .15s, background-color .15s; border-radius: 6px 6px 0 0; }
+		.sfm-tabs { display: flex; gap: 4px; box-shadow: inset 0 -1px 0 var(--sfm-border); overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+		.sfm-tab { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; background: none; border: none; border-bottom: 2px solid transparent; font-size: 13px; font-weight: 500; color: var(--sfm-muted); white-space: nowrap; cursor: pointer; transition: color .15s, border-color .15s, background-color .15s; border-radius: 6px 6px 0 0; }
 		.sfm-tab:hover { color: var(--sfm-text); background: var(--sfm-primary-soft); }
 		.sfm-tab.active { color: var(--sfm-primary-text); border-bottom-color: var(--sfm-primary); font-weight: 600; }
 		.sfm-tab-count { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--sfm-subtle); border: 1px solid var(--sfm-border); color: var(--sfm-muted); font-size: 11px; font-weight: 600; line-height: 18px; text-align: center; }
@@ -1559,27 +2227,58 @@ class StudentFeeManagement {
 		.sfm-chip.active { border-color: var(--sfm-primary); color: var(--sfm-primary-text); background: var(--sfm-primary-tint); font-weight: 600; }
 		.sfm-chip.active span { color: var(--sfm-primary-text); }
 		.sfm .dropdown-menu { font-family: var(--sfm-font); font-size: 13px; }
+		.sfm-dialog .modal-footer .btn-primary { background: var(--sfm-primary); border-color: var(--sfm-primary); color: #fff; font-family: var(--sfm-font); }
+		.sfm-dialog .modal-footer .btn-primary:hover { background: var(--sfm-primary-hover); border-color: var(--sfm-primary-hover); }
+		/* Columns menu */
+		.sfm-col-pop { position: fixed; z-index: 1060; width: 260px; background: var(--sfm-card); color: var(--sfm-text); border: 1px solid var(--sfm-border); border-radius: var(--sfm-radius); box-shadow: 0 12px 32px rgba(16, 24, 40, .16); padding: 12px; font-family: var(--sfm-font); font-size: 13px; }
+		.sfm-col-pop-title { font-weight: 600; font-size: 13px; margin-bottom: 8px; }
+		.sfm-col-pop .sfm-ms-option { display: flex; align-items: flex-start; gap: 8px; padding: 7px 8px; margin: 0; border-radius: 6px; font-size: 13px; font-weight: 400; cursor: pointer; }
+		.sfm-col-pop .sfm-ms-option > span:nth-child(2) { flex: 1; overflow-wrap: anywhere; }
+		.sfm-col-pop .sfm-ms-list { max-height: 232px; overflow-y: auto; overscroll-behavior: contain; }
+		.sfm-col-pop-foot { display: flex; justify-content: space-between; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--sfm-border); }
+		.sfm-col-pop-note { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--sfm-border); font-size: 11px; }
+		.sfm-cols-btn.has-hidden { background: var(--sfm-primary-soft); }
+		.sfm-cols-badge { margin-left: 2px; padding: 1px 6px; border-radius: 999px; background: var(--sfm-primary); color: #fff; font-size: 10.5px; font-weight: 700; }
+		.sfm-th-sub { font-size: 10.5px; font-weight: 400; color: var(--sfm-muted); line-height: 1.2; margin-top: 1px; }
+		.sfm-th-sub.sfm-inline { display: inline; margin: 0; }
+		.sfm-subtab-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+		.sfm-subtabs { display: inline-flex; gap: 4px; padding: 4px; background: var(--sfm-subtle); border: 1px solid var(--sfm-border); border-radius: 10px; }
+		.sfm-subtab { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border: none; border-radius: 7px; background: none; color: var(--sfm-muted); font-size: 13px; font-weight: 500; cursor: pointer; transition: background-color .15s, color .15s; }
+		.sfm-subtab:hover { color: var(--sfm-text); }
+		.sfm-subtab.active { background: var(--sfm-card); color: var(--sfm-primary-text); font-weight: 600; box-shadow: 0 1px 3px rgba(16, 24, 40, .12); }
+		.sfm-subtab.active .sfm-tab-count { background: var(--sfm-primary); border-color: var(--sfm-primary); color: #fff; }
+		.sfm-subtab:focus-visible { outline: 2px solid var(--sfm-primary); outline-offset: 1px; }
+		.sfm-kpi-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 16px; }
+		.sfm-kpi-note { font-size: 11px; font-weight: 400; color: var(--sfm-muted); margin-left: 4px; }
+		.sfm-scholar-card { padding: 16px 20px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px; }
+		.sfm-scholar-card .sfm-metas { border-right: none; padding-right: 0; }
+		.sfm-move-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; padding: 12px; margin-bottom: 12px; border: 1px solid var(--sfm-border); border-radius: var(--sfm-radius); background: var(--sfm-subtle); }
+		.sfm-move-summary div { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
 		.sfm-alloc-table input { max-width: 150px; margin-left: auto; text-align: right; }
 		.sfm-dialog .sfm-table-scroll { max-height: 60vh; }
 
 		/* ── Responsive (container width = space beside the desk sidebar) ── */
 		@container sfm (max-width: 1239px) {
 			.sfm-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+			.sfm-kpi-grid.sfm-kpi-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+			.sfm-kpi-grid.sfm-kpi-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 		}
 		@container sfm (max-width: 1099px) {
 			.sfm-filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+			.sfm-search-btn { width: 100%; }
 			.sfm-metas { border-right: none; padding-right: 0; }
 		}
 		@container sfm (max-width: 899px) {
-			.sfm-kpi-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+			.sfm-kpi-grid.sfm-kpi-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 		}
 		@container sfm (max-width: 699px) {
 			.sfm-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+			.sfm-kpi-grid.sfm-kpi-grid-3 { grid-template-columns: minmax(0, 1fr); }
 			.sfm-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 			.sfm-page-label { display: none; }
 		}
 		@container sfm (max-width: 459px) {
-			.sfm-kpi-grid, .sfm-kpi-grid-4 { grid-template-columns: minmax(0, 1fr); }
+			.sfm-kpi-grid, .sfm-kpi-grid.sfm-kpi-grid-4, .sfm-kpi-grid.sfm-kpi-grid-3 { grid-template-columns: minmax(0, 1fr); }
 			.sfm-filter-grid { grid-template-columns: minmax(0, 1fr); padding: 16px; }
 			.sfm-panel-head, .sfm-table-toolbar, .sfm-pager { padding: 12px 16px; }
 			.sfm-pager { justify-content: center; }

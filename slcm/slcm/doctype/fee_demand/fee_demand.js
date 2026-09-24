@@ -22,10 +22,13 @@ frappe.ui.form.on("Fee Demand", {
 			"Paid": "green",
 			"Overdue": "red",
 			"Waived": "purple",
+			"Moved to Excess": "cyan",
 			"Cancelled": "grey",
 		};
-		if (frm.doc.status) {
-			frm.page.set_indicator(frm.doc.status, colors[frm.doc.status] || "grey");
+		if (frm.doc.status === "Cancelled" && flt(frm.doc.moved_to_excess_amount) > 0) {
+			frm.page.set_indicator(__("Cancelled & Moved to Excess"), "grey");
+		} else if (frm.doc.status) {
+			frm.page.set_indicator(__(frm.doc.status), colors[frm.doc.status] || "grey");
 		}
 	},
 
