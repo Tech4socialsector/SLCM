@@ -1,6 +1,19 @@
 {% extends "slcm/www/student-portal/_base.html" %}
 
-{% block title %}Attendance{% endblock %}
+{% block title %}Attendance
+<!-- Flatpickr for Date Inputs -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof flatpickr !== 'undefined') {
+      flatpickr("#cond-from-date", { dateFormat: "d/m/Y", allowInput: true });
+      flatpickr("#cond-to-date", { dateFormat: "d/m/Y", allowInput: true });
+    }
+  });
+</script>
+{% endblock %}
+
 
 {% block extra_head %}
 <script>
@@ -40,7 +53,20 @@
     flex-wrap: wrap;
   }
 </style>
+
+<!-- Flatpickr for Date Inputs -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof flatpickr !== 'undefined') {
+      flatpickr("#cond-from-date", { dateFormat: "d/m/Y", allowInput: true });
+      flatpickr("#cond-to-date", { dateFormat: "d/m/Y", allowInput: true });
+    }
+  });
+</script>
 {% endblock %}
+
 
 {% block content %}
 
@@ -112,16 +138,16 @@
 
 {# ── Tab Navigation ────────────────────────────────────────────── #}
 <div class="sp-tab-nav fade-in" style="display:flex;gap:8px;margin-bottom:24px;border:none;">
-  <button class="sp-tab active" onclick="spSwitchTab('overview', this)" id="tab-btn-overview" style="display:flex;align-items:center;gap:8px;padding:8px 20px;border-radius:8px;">
+  <button class="sp-tab active" onclick="spSwitchTab('overview', this)" id="tab-btn-overview" style="display:flex;align-items:center;gap:8px;border-radius:8px;">
     <span class="sp-ms">event_available</span> Overview
   </button>
-  <button class="sp-tab" onclick="spSwitchTab('condonation', this)" id="tab-btn-condonation" style="display:flex;align-items:center;gap:8px;padding:8px 20px;border-radius:8px;background:transparent;border:1px solid var(--sp-border);color:var(--sp-text-2);">
+  <button class="sp-tab" onclick="spSwitchTab('condonation', this)" id="tab-btn-condonation" style="display:flex;align-items:center;gap:8px;border-radius:8px;">
     <span class="sp-ms">person</span> Condonation
     {% if condonation_applications %}
     <span class="sp-tab-badge">{{ condonation_applications|length }}</span>
     {% endif %}
   </button>
-  <button class="sp-tab" onclick="spSwitchTab('officehours', this)" id="tab-btn-officehours" style="display:flex;align-items:center;gap:8px;padding:8px 20px;border-radius:8px;background:transparent;border:1px solid var(--sp-border);color:var(--sp-text-2);">
+  <button class="sp-tab" onclick="spSwitchTab('officehours', this)" id="tab-btn-officehours" style="display:flex;align-items:center;gap:8px;border-radius:8px;">
     <span class="sp-ms">schedule</span> Office Hours
     {% if office_hours_sessions %}
     <span class="sp-tab-badge sp-tab-badge-info">{{ office_hours_sessions|length }}</span>
@@ -280,29 +306,31 @@
 
   <div class="sp-tab-section-header">
     <div>
-      <h2 class="sp-section-title">Condonation Applications</h2>
+      <h2 class="sp-section-title" style="font-family:'Merriweather', serif; font-size:20px; font-weight:700; color:var(--sp-text-1);">Condonation Applications</h2>
       <p class="sp-section-sub">Request attendance condonation for approved absences</p>
     </div>
     {% if allow_condonation %}
-    <button class="sp-btn sp-btn-primary" onclick="spOpenCondonation('', '')">
-      <span class="sp-ms">add</span> New Application
+    <button class="sp-btn sp-btn-primary" style="border-radius:8px; padding:8px 16px; font-weight:500; display:flex; align-items:center; gap:6px;" onclick="spOpenCondonation('', '')">
+      <span style="font-size:18px; line-height:1;">+</span> New Application
     </button>
     {% endif %}
   </div>
 
   {% if not allow_condonation %}
   <div class="sp-alert sp-alert-info fade-in" style="margin-top:16px;">
-    <span class="sp-ms">info</span>
+    <span class="sp-ms" style="font-size:24px; color:#0284c7; flex-shrink:0;">info</span>
     <div>Condonation Applications are currently <strong>disabled</strong> by the administration.</div>
   </div>
   {% elif not condonation_applications %}
-  <div class="sp-empty fade-in">
-    <span class="sp-ms">how_to_reg</span>
-    <p class="sp-empty-title">No Condonation Applications</p>
+  <div class="sp-empty fade-in" style="text-align:center; padding: 48px 24px;">
+    <div style="color:var(--sp-primary);display:flex;align-items:center;justify-content:center;background:#fff0f2;width:72px;height:72px;border-radius:16px;margin: 0 auto 16px;">
+      <span class="sp-ms" style="font-size:36px; margin-bottom: 0 !important; color: var(--sp-primary) !important;">how_to_reg</span>
+    </div>
+    <p class="sp-empty-title" style="font-family:'Merriweather', serif; font-size:24px; font-weight:400; color:var(--sp-text-1); margin:0 0 8px;">No Condonation Applications</p>
     <p class="sp-empty-sub">You have not submitted any condonation applications yet.</p>
     {% if allow_condonation %}
-    <button class="sp-btn sp-btn-primary" style="margin-top:16px;" onclick="spOpenCondonation('', '')">
-      <span class="sp-ms">add</span> New Application
+    <button class="sp-btn sp-btn-primary" style="margin-top:16px; border-radius:8px; padding:8px 24px; font-weight:500; display:inline-flex; align-items:center; gap:6px;" onclick="spOpenCondonation('', '')">
+      <span style="font-size:18px; line-height:1;">+</span> New Application
     </button>
     {% endif %}
   </div>
@@ -359,11 +387,11 @@
   {% endif %}
 
   {# Info box about condonation #}
-  <div class="sp-info-box fade-in" style="margin-top:24px;">
-    <span class="sp-ms">info</span>
+  <div class="sp-info-box fade-in" style="margin-top:48px; background-color:#f0f9ff; border:1px solid #bae6fd; border-radius:12px; padding:20px; display:flex; gap:16px; color:#0c4a6e;">
+    <span class="sp-ms" style="font-size:24px; color:#0284c7; flex-shrink:0;">info</span>
     <div>
-      <strong>About Condonation:</strong>
-      <ul style="margin:6px 0 0 16px;padding:0;font-size:13px;line-height:1.8;">
+      <strong style="color:#0369a1; font-size:14px;">About Condonation:</strong>
+      <ul style="margin:8px 0 0 16px;padding:0;font-size:13px;line-height:1.8;color:#0f172a;">
         <li>Apply anytime during the trimester — your attendance % is only checked at final (Programme Chair) approval, and must be <strong>{{ min_condonation_pct|int }}% or above</strong> at that point</li>
         <li>Requires Faculty recommendation followed by Programme Chair approval</li>
         <li>Submit with a valid proof document (medical certificate, event proof, etc.)</li>
@@ -388,8 +416,8 @@
 
   {% if not office_hours_sessions %}
   <div class="sp-empty fade-in">
-    <span class="sp-ms">schedule</span>
-    <p class="sp-empty-title">No Upcoming Office Hours</p>
+    <span class="sp-ms" style="color: var(--sp-primary) !important;">schedule</span>
+    <p class="sp-empty-title" style="color: black !important;">No Upcoming Office Hours</p>
     <p class="sp-empty-sub">No office hours sessions are currently scheduled for your courses.</p>
   </div>
   {% else %}
@@ -463,8 +491,8 @@
   {% endif %}
 
   {# Info box #}
-  <div class="sp-info-box fade-in" style="margin-top:24px;">
-    <span class="sp-ms">info</span>
+  <div class="sp-info-box fade-in" style="margin-top:48px; background-color:#f0f9ff; border:1px solid #bae6fd; border-radius:12px; padding:20px; display:flex; gap:16px; color:#0c4a6e;">
+    <span class="sp-ms" style="font-size:24px; color:#0284c7; flex-shrink:0;">info</span>
     <div style="font-size:13px;line-height:1.8;">
       <strong>About Office Hours:</strong> Attending office hours sessions counts towards your attendance percentage.
       Click <strong>Register Attendance</strong> to log your participation for a scheduled session.
@@ -540,8 +568,8 @@
             <label class="sp-form-label" for="cond-from-date">
               From Date <span class="sp-required">*</span>
             </label>
-            <input type="date" class="sp-form-control" id="cond-from-date"
-              name="absence_from_date" required>
+            <input type="text" class="sp-form-control" id="cond-from-date"
+              name="absence_from_date" pattern="\d{2}/\d{2}/\d{4}" placeholder="DD/MM/YYYY" required>
           </div>
 
           {# To Date #}
@@ -549,8 +577,8 @@
             <label class="sp-form-label" for="cond-to-date">
               To Date <span class="sp-required">*</span>
             </label>
-            <input type="date" class="sp-form-control" id="cond-to-date"
-              name="absence_to_date" required>
+            <input type="text" class="sp-form-control" id="cond-to-date"
+              name="absence_to_date" pattern="\d{2}/\d{2}/\d{4}" placeholder="DD/MM/YYYY" required>
           </div>
         </div>
 
@@ -626,7 +654,20 @@
 <div id="sp-toast" class="sp-toast" role="alert" aria-live="polite"></div>
 
 {% endif %}{# end no_student #}
+
+<!-- Flatpickr for Date Inputs -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof flatpickr !== 'undefined') {
+      flatpickr("#cond-from-date", { dateFormat: "d/m/Y", allowInput: true });
+      flatpickr("#cond-to-date", { dateFormat: "d/m/Y", allowInput: true });
+    }
+  });
+</script>
 {% endblock %}
+
 
 
 {% block extra_js %}
@@ -805,6 +846,13 @@
     spOpenModal('modal-condonation');
   };
 
+  function parseDateDMY(dmy) {
+    if (!dmy) return null;
+    var p = dmy.split('/');
+    if (p.length === 3) return p[2] + '-' + p[1] + '-' + p[0];
+    return dmy;
+  }
+
   window.spSubmitCondonation = function () {
     spHideAlert('cond-alert');
     var btn = document.getElementById('btn-submit-cond');
@@ -819,8 +867,8 @@
 
         var args = {
           course_offering: document.getElementById('cond-course').value,
-          absence_from_date: document.getElementById('cond-from-date').value || null,
-          absence_to_date: document.getElementById('cond-to-date').value || null,
+          absence_from_date: parseDateDMY(document.getElementById('cond-from-date').value),
+          absence_to_date: parseDateDMY(document.getElementById('cond-to-date').value),
           number_of_sessions: document.getElementById('cond-sessions').value,
           number_of_hours: document.getElementById('cond-hours').value,
           condonation_reason: document.getElementById('cond-reason').value,
@@ -1199,4 +1247,17 @@
   renderCalendar(calYear, calMonth);
 })();
 </script>
+
+<!-- Flatpickr for Date Inputs -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof flatpickr !== 'undefined') {
+      flatpickr("#cond-from-date", { dateFormat: "d/m/Y", allowInput: true });
+      flatpickr("#cond-to-date", { dateFormat: "d/m/Y", allowInput: true });
+    }
+  });
+</script>
 {% endblock %}
+
