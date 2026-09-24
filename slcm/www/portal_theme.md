@@ -76,10 +76,10 @@ body, p, .context-text, .sp-nav-item:not(.active), .sp-breadcrumb {
 
 | Element | Size |
 |---|---|
-| Headings (page titles, section titles) | `22px` |
-| Body / context text | `16px` |
+| Headings (page titles, section titles) | `20px` |
+| Body / context text | `14px` |
 | Sidebar menu items & breadcrumbs | `16px` |
-| Badges and similar small labels | `14px` |
+| Badges and similar small labels | `10px` |
 
 ### Typography quick reference — mapped to real classes
 
