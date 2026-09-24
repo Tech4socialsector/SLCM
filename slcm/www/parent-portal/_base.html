@@ -659,6 +659,28 @@
     body.pp-switching .pp-notif-dropdown { display: none !important; }
     .pp-switch-skel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin: 16px 0; }
 
+    /* ── Admin preview bar ──────────────────────────────────── */
+    .pp-preview-bar {
+      display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap;
+      padding: 10px 14px; margin-bottom: 16px; border-radius: 10px;
+      background: #fffbeb; border: 1px solid #fcd34d; color: #78350f; font-size: 13px;
+    }
+    .pp-preview-bar > .ms { font-size: 20px; color: #b45309; }
+    .pp-preview-text { flex: 1 1 280px; min-width: 0; line-height: 1.45; }
+    .pp-preview-warn { display: block; font-weight: 600; margin-top: 2px; }
+    .pp-preview-form { display: flex; gap: 6px; }
+    .pp-preview-form input {
+      width: 190px; max-width: 46vw; height: 32px; padding: 0 10px; border-radius: 7px;
+      border: 1px solid #fcd34d; background: #fff; font: inherit; font-size: 13px; color: var(--pp-text-1);
+    }
+    .pp-preview-form button, .pp-preview-back {
+      height: 32px; padding: 0 12px; border-radius: 7px; font: inherit; font-size: 13px; font-weight: 600;
+      display: inline-flex; align-items: center; cursor: pointer; text-decoration: none; white-space: nowrap;
+    }
+    .pp-preview-form button { background: #b45309; color: #fff; border: 1px solid #b45309; }
+    .pp-preview-back { background: #fff; color: #78350f; border: 1px solid #fcd34d; }
+    .pp-preview-form input:focus-visible { outline: 2px solid #b45309; outline-offset: 1px; }
+
     {% block extra_css %}{% endblock %}
   </style>
 </head>
@@ -817,8 +839,9 @@
       {% if not pp_settings or pp_settings.show_logo %}
       <div class="pp-brand-logo">
         {% set _ws = frappe.get_doc("Website Settings", "Website Settings", ignore_permissions=True) %}
-        {% if _ws.banner_image %}
-          <img src="{{ _ws.banner_image }}" alt="">
+        {% set _logo = (pp_settings.portal_logo if pp_settings and pp_settings.portal_logo else '') or _ws.banner_image %}
+        {% if _logo %}
+          <img src="{{ _logo }}" alt="">
         {% else %}
           {{ (pp_settings.portal_title if pp_settings and pp_settings.portal_title else "S")[0] }}
         {% endif %}
@@ -1012,6 +1035,26 @@
 
   {# ── Main Content ─────────────────────────────────────────── #}
   <main class="pp-main" id="pp-main">
+    {% if is_preview %}
+    {% set _pv_path = frappe.request.path if frappe.request else '/parent-portal' %}
+    <div class="pp-preview-bar" role="region" aria-label="Admin preview">
+      <span class="ms" aria-hidden="true">visibility</span>
+      <div class="pp-preview-text">
+        <strong>Preview mode</strong> — viewing as the parent of
+        <strong>{{ ward_name | e }}</strong> ({{ active_ward | e }}). Payments and downloads are disabled.
+        {% if preview_notice %}<span class="pp-preview-warn">{{ preview_notice | e }}</span>{% endif %}
+      </div>
+      <form class="pp-preview-form" method="get" action="{{ _pv_path }}">
+        <label for="pp-preview-ward" class="pp-sr-only">Preview another student (Student ID)</label>
+        <input id="pp-preview-ward" name="ward" list="pp-preview-students" placeholder="Student ID…" autocomplete="off" required>
+        <datalist id="pp-preview-students">
+          {% for st in preview_students or [] %}<option value="{{ st.name | e }}">{{ st.full_name | e }}</option>{% endfor %}
+        </datalist>
+        <button type="submit">Switch</button>
+      </form>
+      <a class="pp-preview-back" href="/desk/parent-portal-settings">Back to Settings</a>
+    </div>
+    {% endif %}
     {# Shown only while switching ward (see ppSwitchWard) #}
     <div class="pp-switch-skel" role="status" aria-live="polite">
       <p id="pp-switch-msg" style="font-size:13.5px;font-weight:600;color:var(--pp-text-3);margin:0 0 12px;">Loading student information…</p>
@@ -1129,6 +1172,22 @@
   });
 </script>
 
+{% if is_preview %}
+<script>
+  /* Preview is read-only: invoice/receipt PDFs need a real parent session */
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href*="parent_download_"]');
+    if (!a) return;
+    e.preventDefault();
+    var t = document.createElement('div');
+    t.setAttribute('role', 'status');
+    t.textContent = 'Downloads are disabled in preview mode.';
+    t.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:10000;background:#fff;border:1.5px solid #fcd34d;color:#78350f;border-radius:10px;padding:10px 14px;font-size:13px;box-shadow:0 4px 16px rgba(0,0,0,.1);';
+    document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, 3000);
+  }, true);
+</script>
+{% endif %}
 {% block extra_js %}{% endblock %}
 </body>
 </html>

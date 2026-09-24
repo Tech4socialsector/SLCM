@@ -537,6 +537,9 @@ def get_context(context):
             )
         except Exception:
             context.payment_enabled = False
+        # Admin preview is read-only: payments need a real parent session
+        if context.get("is_preview"):
+            context.payment_enabled = False
 
         # Payer details for Razorpay prefill (parent pays on behalf of ward)
         try:

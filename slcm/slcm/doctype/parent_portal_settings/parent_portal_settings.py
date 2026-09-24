@@ -11,6 +11,7 @@ _DEFAULTS = {
     "portal_subtitle":       "",
     "show_logo":             1,
     "nav_brand_text":        "",
+    "portal_logo":           "",
     "portal_favicon":        "",
     # Typography
     "font_family":           "Inter",
@@ -35,8 +36,8 @@ _DEFAULTS = {
     "grade_good_label":      "B+ / B",
     "grade_average_color":   "#d97706",
     "grade_average_label":   "C+ / C",
-    "grade_color": "#000000",
-            "grade_fail_color":      "#dc2626",
+    "grade_color":           "#000000",
+    "grade_fail_color":      "#dc2626",
     "grade_fail_label":      "D / F",
     # Attendance thresholds
     "att_good_threshold":    75,
@@ -109,6 +110,7 @@ class ParentPortalSettings(Document):
             "primary_color", "secondary_color", "background_color", "card_background",
             "nav_text_color", "sidebar_bg_color", "sidebar_text_color",
             "success_color", "warning_color", "danger_color", "info_color",
+            "grade_excellent_color", "grade_good_color", "grade_average_color",
             "grade_color", "grade_fail_color",
         ]
         for field in color_fields:
@@ -159,6 +161,13 @@ def _darken_hex(hex_color, factor=0.82):
 
 # ── Public API ────────────────────────────────────────────────────────
 
+@frappe.whitelist()
+def get_default_settings():
+    """Factory defaults for the settings form's "Reset to Defaults" action."""
+    frappe.only_for(("System Manager",))
+    return dict(_DEFAULTS)
+
+
 def get_parent_portal_settings():
     """
     Returns a fully-resolved settings dict suitable for Jinja template use.
@@ -181,6 +190,12 @@ def get_parent_portal_settings():
                 raw[k] = v if v not in (None, "") else default_val
     except Exception:
         raw = dict(_DEFAULTS)
+
+    # A stored colour that isn't valid hex (e.g. saved before validation
+    # existed) must not break every portal page — use the default instead.
+    for k, default_val in _DEFAULTS.items():
+        if k.endswith("_color") and not _is_valid_hex(str(raw.get(k) or "")):
+            raw[k] = default_val
 
     # ── Derived primary palette ───────────────────────────────────
     primary = raw["primary_color"]
