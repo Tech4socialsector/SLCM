@@ -1,4 +1,4 @@
-frappe.listview_settings['Venue Booking'] = {
+﻿frappe.listview_settings['Venue Booking'] = {
     add_fields: ['status', 'docstatus'],
 
     refresh: function (listview) {
@@ -391,7 +391,7 @@ frappe.ui.form.on('Venue Booking', {
                                         return;
                                     }
                                     frappe.call({
-                                        method: 'slcm.slcm.doctype.venue_booking.venue_booking.swap_venue',
+                                        method: 'slcm.slcm.doctype.venue_booking.venue_booking.swap_venues',
                                         args: { booking_a: frm.doc.name, booking_b: vals.other_booking },
                                         freeze: true,
                                         freeze_message: __('Swapping venues…'),
@@ -574,3 +574,4 @@ function vb_bulk_action(listview, cfg) {
     });
     d.show();
 }
+

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   {% set sp_settings = frappe.get_cached_doc("Student Portal Settings", "Student Portal Settings") %}
@@ -48,8 +48,11 @@
       --sp-nav-h:              {{ '50px' if sp_settings.nav_height == 'Compact' else '72px' if sp_settings.nav_height == 'Tall' else '60px' }};
       --sp-sidebar-w:          {{ '200px' if sp_settings.sidebar_width == 'Narrow' else '280px' if sp_settings.sidebar_width == 'Wide' else '240px' }};
       
-      --sp-grade-color:      {{ sp_settings.grade_color            or '#000000' }};
+            --sp-grade-color:      {{ sp_settings.grade_color            or '#000000' }};
       --sp-grade-fail:         {{ sp_settings.grade_fail_color       or '#85142b' }};
+      --sp-grade-excellent:    {{ sp_settings.grade_excellent_color  or '#16a34a' }};
+      --sp-grade-good:         {{ sp_settings.grade_good_color       or '#0369a1' }};
+      --sp-grade-average:      {{ sp_settings.grade_average_color    or '#d97706' }};
       --sp-att-good:           {{ sp_settings.att_good_color         or '#15803d' }};
       --sp-att-warn:           {{ sp_settings.att_warn_color         or '#b45309' }};
       --sp-att-danger:         {{ sp_settings.att_danger_color       or '#85142b' }};
@@ -57,9 +60,20 @@
     {% if sp_settings.custom_css %}
     {{ sp_settings.custom_css }}
     {% endif %}
+
+    /* UI Size Adjustments */
+    .sp-brand span { font-size: 24px !important; }
+    .sp-brand-logo { width: 40px !important; height: 40px !important; }
+    .sp-brand-logo img { width: 40px !important; height: 40px !important; object-fit: contain; }
+    .sp-nav-item { font-size: 16px !important; margin-bottom: 6px !important; }
+    .sp-nav-label { font-size: 16px !important; }
+    .sp-page-title { font-size: 22px !important; }
+    body, p, .context-text, .sp-nav-item:not(.active), .sp-breadcrumb { font-weight: 400 !important; }
+    .sp-notif-btn { display: flex !important; align-items: center !important; justify-content: center !important; }
+    .sp-notif-btn .sp-ms { font-size: 28px !important; }
   </style>
 
-  {% block extra_head %}{% endblock %}
+  {% block extra_head %}{% endblock %} 
 </head>
 
 <body class="{{ sp_settings.body_classes | default('') }}">
@@ -145,7 +159,7 @@
       <!-- <span class="sp-ms" style="font-size: 18px; color: var(--sp-nav-text, #111); cursor: pointer; margin-left: 4px;" onclick="spToggleDropdown()">expand_more</span> -->
       <div class="sp-dropdown" id="sp-dropdown">
         <div class="sp-dropdown-header">
-          <div class="sp-dropdown-name">{{ student_name or frappe.session.user }}</div>
+          <div class="sp-dropdown-name">{% if student_id %}{{ student_name or frappe.session.user }} ({{ student_id }}){% else %}{{ student_name or frappe.session.user }}{% endif %}</div>
           <div class="sp-dropdown-email">{{ frappe.session.user }}</div>
         </div>
         <a href="/student-portal/profile" class="sp-dropdown-item">
@@ -245,10 +259,31 @@
       {# My Courses #}
       
 
+      {# Fees & Payments #}
+      {% if sp_settings.menu_fees | default(1) %}
+      <a href="/student-portal/fees" class="sp-nav-item {% if active_page == 'fees' %}active{% endif %}" data-label="Fees &amp; Payments">
+        <span class="sp-ms">payments</span><span class="sp-nav-label">Fees &amp; Payments</span>
+      </a>
+      {% endif %}
+
+      {# Helpdesk #}
+      {% if sp_settings.menu_helpdesk | default(1) %}
+      <a href="/student-portal/support" class="sp-nav-item {% if active_page == 'support' %}active{% endif %}" data-label="Helpdesk">
+        <span class="sp-ms">support_agent</span><span class="sp-nav-label">Helpdesk</span>
+      </a>
+      {% endif %}
+
       {# Timetable #}
       {% if sp_settings.menu_timetable | default(1) %}
       <a href="/student-portal/timetable" class="sp-nav-item {% if active_page == 'timetable' %}active{% endif %}" data-label="Timetable">
         <span class="sp-ms">calendar_month</span><span class="sp-nav-label">Timetable</span>
+      </a>
+      {% endif %}
+
+      {# Venue Booking #}
+      {% if sp_settings.menu_venue_booking | default(1) %}
+      <a href="/student-portal/venue-booking" class="sp-nav-item {% if active_page == 'venue_booking' %}active{% endif %}" data-label="Venue Booking">
+        <span class="sp-ms">meeting_room</span><span class="sp-nav-label">Venue Booking</span>
       </a>
       {% endif %}
 
@@ -265,13 +300,6 @@
         <span class="sp-ms">assignment_late</span><span class="sp-nav-label">Re-Examination</span>
       </a>
       {% endif %} #}
-
-      {# Fees & Payments #}
-      {% if sp_settings.menu_fees | default(1) %}
-      <a href="/student-portal/fees" class="sp-nav-item {% if active_page == 'fees' %}active{% endif %}" data-label="Fees &amp; Payments">
-        <span class="sp-ms">payments</span><span class="sp-nav-label">Fees &amp; Payments</span>
-      </a>
-      {% endif %}
 
       {# ── Commented out — accessible via Dashboard Quick Actions ──
       {% if sp_settings.menu_attendance | default(1) %}
@@ -296,20 +324,6 @@
       {% endif %}
       ── End commented section ── #}
 
-      {# Venue Booking #}
-      {% if sp_settings.menu_venue_booking | default(1) %}
-      <a href="/student-portal/venue-booking" class="sp-nav-item {% if active_page == 'venue_booking' %}active{% endif %}" data-label="Venue Booking">
-        <span class="sp-ms">meeting_room</span><span class="sp-nav-label">Venue Booking</span>
-      </a>
-      {% endif %}
-
-      {# Helpdesk #}
-      {% if sp_settings.menu_helpdesk | default(1) %}
-      <a href="/student-portal/support" class="sp-nav-item {% if active_page == 'support' %}active{% endif %}" data-label="Helpdesk">
-        <span class="sp-ms">support_agent</span><span class="sp-nav-label">Helpdesk</span>
-      </a>
-      {% endif %}
-
     </div>
 
     {# ── MY INFO ── #}
@@ -326,7 +340,7 @@
       {% endif %}
       #}
 
-      {# Hostel — visible only to active hostellers #}
+      <!-- {# Hostel — visible only to active hostellers #}
       {%- set _h_user = frappe.session.user -%}
       {%- set _h_student = frappe.db.get_value("Student Master", {"user": _h_user}, "name")
                         or frappe.db.get_value("Student Master", {"email": _h_user}, "name")
@@ -336,7 +350,7 @@
       <a href="/student-portal/hostel" class="sp-nav-item {% if active_page == 'hostel' %}active{% endif %}" data-label="Hostel">
         <span class="sp-ms">hotel</span><span class="sp-nav-label">Hostel</span>
       </a>
-      {% endif %}
+      {% endif %} -->
 
       {# ── Commented out — accessible via Dashboard Quick Actions ──
       {% if sp_settings.menu_documents | default(1) %}
@@ -778,3 +792,5 @@ function spCall(method, args, onSuccess, onError) {
 
 </body>
 </html>
+
+

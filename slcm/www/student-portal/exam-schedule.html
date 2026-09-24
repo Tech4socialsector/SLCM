@@ -1,9 +1,32 @@
-{% extends "slcm/www/student-portal/_base.html" %}
+﻿{% extends "slcm/www/student-portal/_base.html" %}
 {% block title %}Exam Schedule{% endblock %}
 
 {% block extra_head %}
 <style>
-/* ── Overview stats grid ── */
+/* ── Header ── */
+.es-header-wrap {
+  background: #fdf5f5 url('/assets/slcm/images/building-illustration.png') no-repeat right 5% bottom / contain;
+  border-radius: 16px;
+  padding: 24px 28px;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border: 1px solid var(--sp-border);
+}
+.es-header-icon {
+  width: 64px; height: 64px;
+  background: #fce8e8;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px;
+  color: var(--sp-primary);
+  flex-shrink: 0;
+}
+.es-header-title { font-size: 24px; font-weight: 800; margin-bottom: 4px; color: var(--sp-text-1); }
+.es-header-sub   { font-size: 14px; color: var(--sp-text-3); }
+
+/* ── Overview Stats ── */
 .es-overview {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -11,7 +34,7 @@
   margin-bottom: 24px;
 }
 .es-stat {
-  background: var(--sp-card);
+  background: #fff;
   border: 1px solid var(--sp-border);
   border-radius: 14px;
   padding: 18px 20px;
@@ -20,9 +43,8 @@
   gap: 14px;
   position: relative;
   overflow: hidden;
-  transition: box-shadow 0.18s, transform 0.18s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
 }
-.es-stat:hover { box-shadow: var(--sp-shadow-md, 0 4px 18px rgba(0,0,0,.08)); transform: translateY(-2px); }
 .es-stat::before {
   content: "";
   position: absolute;
@@ -30,10 +52,10 @@
   height: 3px;
   border-radius: 14px 14px 0 0;
 }
-.es-stat-upcoming::before  { background: linear-gradient(90deg, var(--sp-primary), #1e4080); }
-.es-stat-nextdate::before  { background: linear-gradient(90deg, var(--sp-secondary, #920c24), #c0192f); }
-.es-stat-reexam::before    { background: linear-gradient(90deg, #b45309, #d97706); }
-.es-stat-published::before { background: linear-gradient(90deg, #15803d, #16a34a); }
+.es-stat-upcoming::before  { background: var(--sp-primary); }
+.es-stat-nextdate::before  { background: #f59e0b; }
+.es-stat-reexam::before    { background: #3b82f6; }
+.es-stat-published::before { background: #10b981; }
 
 .es-stat-icon {
   width: 44px; height: 44px;
@@ -42,54 +64,60 @@
   font-size: 22px;
   flex-shrink: 0;
 }
-.es-stat-upcoming .es-stat-icon  { background: rgba(43,46,74,.07);  color: var(--sp-primary); }
-.es-stat-nextdate .es-stat-icon  { background: rgba(146,12,36,.08); color: var(--sp-secondary, #920c24); }
-.es-stat-reexam .es-stat-icon    { background: rgba(180,83,9,.08);  color: #b45309; }
-.es-stat-published .es-stat-icon { background: rgba(21,128,61,.08); color: #15803d; }
+.es-stat-upcoming .es-stat-icon  { background: #fee2e2;  color: var(--sp-primary); }
+.es-stat-nextdate .es-stat-icon  { background: #fef3c7; color: #f59e0b; }
+.es-stat-reexam .es-stat-icon    { background: #dbeafe;  color: #3b82f6; }
+.es-stat-published .es-stat-icon { background: #dcfce7; color: #10b981; }
 
 .es-stat-body { min-width: 0; flex: 1; }
 .es-stat-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .05em;
-  text-transform: uppercase;
-  color: var(--sp-text-4);
-  margin-bottom: 4px;
+  font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--sp-text-4); margin-bottom: 4px;
 }
-.es-stat-value {
-  font-size: 28px;
-  font-weight: 800;
-  color: var(--sp-text-1);
-  line-height: 1.1;
-}
-.es-stat-sub {
-  font-size: 11px;
-  color: var(--sp-text-4);
-  margin-top: 3px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+.es-stat-value { font-size: 28px; font-weight: 800; color: var(--sp-text-1); line-height: 1.1; }
+.es-stat-sub { font-size: 11px; color: var(--sp-text-4); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* ── Exam plan cards ── */
+/* ── Section Header (Term Header) ── */
+.es-section-header {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 16px;
+}
+.es-section-title {
+  display: flex; align-items: flex-start; gap: 12px;
+}
+.es-section-title-icon {
+  font-size: 24px; color: var(--sp-primary); margin-top: 2px;
+}
+.es-section-title-text {
+  font-size: 18px; font-weight: 700; color: var(--sp-text-1);
+}
+.es-section-title-sub {
+  font-size: 14px; color: var(--sp-text-4); margin-top: 2px;
+}
+.es-search-input {
+  padding: 8px 12px 8px 36px;
+  border: 1px solid var(--sp-border);
+  border-radius: 20px;
+  font-size: 13px;
+  width: 250px;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E") no-repeat 12px center;
+}
+.es-search-input:focus { outline: none; border-color: var(--sp-primary); }
+
+
+/* ── Exam Plan Card & Table ── */
 .exam-plan {
-  background: var(--sp-card);
+  background: #fff;
   border: 1px solid var(--sp-border);
   border-radius: 14px;
   overflow: hidden;
   margin-bottom: 20px;
-  box-shadow: var(--sp-shadow-sm);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
 }
 .exam-plan-strip { height: 4px; }
-
 .exam-plan-head {
   padding: 16px 20px;
-  display: flex;
-  justify-content: space-between;
-  gap: 14px;
-  align-items: center;
+  display: flex; justify-content: space-between; gap: 14px; align-items: center;
   border-bottom: 1px solid var(--sp-border);
-  background: linear-gradient(135deg, rgba(43,46,74,.03) 0%, transparent 60%);
 }
 .exam-title { font-size: 15px; font-weight: 800; color: var(--sp-text-1); margin-bottom: 4px; }
 .exam-meta  { font-size: 12px; color: var(--sp-text-4); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
@@ -107,9 +135,9 @@
   min-width: 600px;
 }
 
-/* Column header bar — NLSIU navy */
+/* Column header bar — NLSIU navy? No, soft pink in screenshot! */
 .es-table thead tr {
-  background: var(--sp-primary);
+  background: #fdf5f5;
 }
 .es-table th {
   padding: 10px 16px;
@@ -117,7 +145,7 @@
   font-weight: 700;
   letter-spacing: .07em;
   text-transform: uppercase;
-  color: rgba(255,255,255,.82);
+  color: var(--sp-primary);
   text-align: left;
   white-space: nowrap;
   border: none;
@@ -148,10 +176,10 @@
 
 /* Course name + code */
 .es-course-name { font-weight: 700; color: var(--sp-text-1); margin-bottom: 2px; line-height: 1.3; }
-.es-course-code { font-size: 10.5px; color: var(--sp-text-4); font-family: monospace; letter-spacing: .02em; }
+.es-course-code { font-size: 10.5px; color: var(--sp-text-4); letter-spacing: .02em; }
 
 /* Date + time */
-.es-date-main { font-weight: 700; color: var(--sp-text-1); }
+.es-date-main { color: var(--sp-text-1); }
 .es-time-sub  { font-size: 11.5px; color: var(--sp-text-3); margin-top: 2px; }
 .es-tba       { color: var(--sp-text-4); font-size: 12px; font-style: italic; }
 
@@ -166,16 +194,10 @@
   padding: 3px 10px;
   white-space: nowrap;
 }
-.es-badge-present  { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+.es-badge-present  { background: #e6f4ea; color: #15803d; border: 1px solid #bbf7d0; }
 .es-badge-detained { background: #fdf0f2; color: #920c24; border: 1px solid #fecdd3; }
 .es-badge-pending  { background: #f0f1f6; color: var(--sp-primary); border: 1px solid rgba(43,46,74,.15); }
-.es-badge-upcoming {
-  display: inline-flex; align-items: center; gap: 3px;
-  font-size: 10px; font-weight: 700;
-  background: rgba(43,46,74,.07); color: var(--sp-primary);
-  border-radius: 20px; padding: 2px 7px;
-  margin-left: 5px; vertical-align: middle;
-}
+.es-badge-scheduled { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
 
 /* Table footer — row count + summary */
 .es-table-footer {
@@ -183,23 +205,33 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 16px;
-  background: rgba(43,46,74,.03);
+  background: #fff;
   border-top: 1px solid var(--sp-border);
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--sp-text-4);
   gap: 10px;
   flex-wrap: wrap;
 }
-.es-table-footer strong { color: var(--sp-text-2); }
-.es-footer-pills { display: flex; gap: 6px; flex-wrap: wrap; }
-.es-footer-pill {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-size: 10.5px; font-weight: 600;
-  border-radius: 20px; padding: 2px 9px;
+.es-table-footer strong { color: var(--sp-text-1); }
+
+/* Pagination */
+.es-pagination {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-.es-footer-pill-upcoming  { background: rgba(43,46,74,.07);  color: var(--sp-primary); }
-.es-footer-pill-present   { background: #f0fdf4; color: #15803d; }
-.es-footer-pill-detained  { background: #fdf0f2; color: #920c24; }
+.es-page-btn {
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sp-text-3);
+  cursor: pointer;
+}
+.es-page-btn:hover { background: rgba(0,0,0,0.05); }
+.es-page-btn.active { background: #fdf0f2; color: var(--sp-primary); }
+
 
 /* ── Empty states ── */
 .exam-empty {
@@ -215,28 +247,6 @@
 }
 .exam-empty-title { font-size: 16px; font-weight: 700; color: var(--sp-text-2); margin-bottom: 6px; }
 .exam-empty-sub   { font-size: 13px; }
-
-/* ── Page header accent ── */
-.es-header-wrap {
-  background: #2b2e4a;
-  border-radius: 16px;
-  padding: 24px 28px;
-  margin-bottom: 22px;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.es-header-icon {
-  width: 52px; height: 52px;
-  background: rgba(255,255,255,.12);
-  border-radius: 14px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 26px;
-  flex-shrink: 0;
-}
-.es-header-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
-.es-header-sub   { font-size: 13px; opacity: .8; }
 
 /* ── Responsive ── */
 @media (max-width: 900px) {
@@ -254,7 +264,6 @@
 {% endblock %}
 
 {% block content %}
-
 <!-- Page Header -->
 <div class="es-header-wrap fade-in">
   <div class="es-header-icon">
@@ -332,20 +341,20 @@
 {% else %}
 
   {% for plan in exam_plans %}
-  {# compute summary counts for footer #}
-  {% set ns = namespace(upcoming=0, present=0, detained=0) %}
-  {% for c in plan.courses %}
-    {% if c.is_upcoming %}{% set ns.upcoming = ns.upcoming + 1 %}{% endif %}
-    {% if c.attendance_status in ['Present', 'Eligible'] %}{% set ns.present = ns.present + 1 %}{% endif %}
-    {% if c.attendance_status in ['Detained', 'Absent', 'Low Attendance'] %}{% set ns.detained = ns.detained + 1 %}{% endif %}
-  {% endfor %}
+  
+  <div class="es-section-header fade-in">
+    <div class="es-section-title">
+      <span class="sp-ms es-section-title-icon">calendar_month</span>
+      <div>
+        <div class="es-section-title-text">{{ plan.term or "Term" }} {% if plan.academic_year %}(AY {{ plan.academic_year }}){% endif %}</div>
+        <div class="es-section-title-sub">Examination timetable for this trimester</div>
+      </div>
+    </div>
+    <input type="text" class="es-search-input" placeholder="Search by course code or title..." onkeyup="filterExamTable(this, 'exam-table-{{ loop.index }}')">
+  </div>
 
   <div class="exam-plan fade-in">
-
-    <!-- Colour strip -->
-    <div class="exam-plan-strip" style="background:{% if plan.is_published %}#15803d{% elif plan.status == 'Active' %}var(--sp-primary){% else %}var(--sp-text-4){% endif %};"></div>
-
-    <!-- Plan header -->
+    <div class="exam-plan-strip" style="background:var(--sp-primary);"></div>
     <div class="exam-plan-head">
       <div style="min-width:0;">
         <div class="exam-title">{{ plan.exam_name }}</div>
@@ -358,8 +367,8 @@
         </div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;flex-shrink:0;">
-        <span class="sp-badge {% if plan.is_published %}sp-badge-paid{% elif plan.status == 'Active' %}sp-badge-pend{% else %}sp-badge-over{% endif %}">
-          {% if plan.is_published %}Result Published{% else %}{{ plan.status }}{% endif %}
+        <span class="es-badge" style="background:#e6f4ea; color:#15803d; border: 1px solid #bbf7d0;">
+          {{ plan.status }}
         </span>
         {% if plan.is_published %}
         <a href="/student-portal/results" class="sp-btn sp-btn-sm sp-btn-outline">
@@ -369,10 +378,9 @@
       </div>
     </div>
 
-    <!-- Data table -->
     {% if plan.courses %}
     <div class="es-table-wrap">
-      <table class="es-table">
+      <table class="es-table" id="exam-table-{{ loop.index }}">
         <thead>
           <tr>
             <th class="es-col-sno">#</th>
@@ -381,20 +389,16 @@
             <th>Time</th>
             <th>Venue / Hall</th>
             <th>Attendance</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody>
           {% for course in plan.courses %}
-          <tr>
+          <tr class="es-table-row">
             <td class="es-col-sno">{{ loop.index }}</td>
             <td>
-              <div class="es-course-name">
-                {{ course.course_name }}
-                {% if course.is_upcoming %}
-                <span class="es-badge-upcoming"><span class="sp-ms" style="font-size:10px;">schedule</span>Upcoming</span>
-                {% endif %}
-              </div>
-              <div class="es-course-code">{{ course.course }}</div>
+              <div class="es-course-name search-target">{{ course.course_name }}</div>
+              <div class="es-course-code search-target">{{ (course.get('course_code') or course.course).split('-')[0] }}</div>
             </td>
             <td>
               {% if course.exam_date %}
@@ -405,7 +409,7 @@
             </td>
             <td>
               {% if course.exam_time and course.exam_time != "To be announced" %}
-              <div class="es-time-sub" style="color:var(--sp-text-2);font-weight:600;">{{ course.exam_time }}</div>
+              <div class="es-time-sub">{{ course.exam_time }}</div>
               {% else %}
               <span class="es-tba">–</span>
               {% endif %}
@@ -426,6 +430,13 @@
               <span class="es-badge es-badge-pending"><span class="sp-ms" style="font-size:12px;">pending</span>Pending</span>
               {% endif %}
             </td>
+            <td>
+              {% if course.has_schedule %}
+              <span class="es-badge es-badge-scheduled">Scheduled</span>
+              {% else %}
+              <span class="es-tba">To be announced</span>
+              {% endif %}
+            </td>
           </tr>
           {% endfor %}
         </tbody>
@@ -434,17 +445,11 @@
 
     <!-- Table footer summary -->
     <div class="es-table-footer">
-      <span>Showing <strong>{{ plan.course_count }}</strong> course paper{{ "s" if plan.course_count != 1 else "" }}</span>
-      <div class="es-footer-pills">
-        {% if ns.upcoming > 0 %}
-        <span class="es-footer-pill es-footer-pill-upcoming"><span class="sp-ms" style="font-size:11px;">schedule</span>{{ ns.upcoming }} Upcoming</span>
-        {% endif %}
-        {% if ns.present > 0 %}
-        <span class="es-footer-pill es-footer-pill-present"><span class="sp-ms" style="font-size:11px;">check_circle</span>{{ ns.present }} Present</span>
-        {% endif %}
-        {% if ns.detained > 0 %}
-        <span class="es-footer-pill es-footer-pill-detained"><span class="sp-ms" style="font-size:11px;">cancel</span>{{ ns.detained }} Detained</span>
-        {% endif %}
+      <span class="row-count-display">Showing <strong>{{ plan.course_count }}</strong> course paper{{ "s" if plan.course_count != 1 else "" }}</span>
+      <div class="es-pagination">
+        <span class="sp-ms" style="font-size:16px;">chevron_left</span>
+        <div class="es-page-btn active">1</div>
+        <span class="sp-ms" style="font-size:16px;">chevron_right</span>
       </div>
     </div>
 
@@ -460,4 +465,40 @@
 
 {% endif %}
 {% endif %}
+
+<script>
+function filterExamTable(input, tableId) {
+  const filter = input.value.toLowerCase();
+  const table = document.getElementById(tableId);
+  const rows = table.getElementsByClassName('es-table-row');
+  let visibleCount = 0;
+
+  for (let i = 0; i < rows.length; i++) {
+    const targets = rows[i].getElementsByClassName('search-target');
+    let textValue = "";
+    for (let j = 0; j < targets.length; j++) {
+      textValue += targets[j].textContent || targets[j].innerText;
+    }
+    
+    if (textValue.toLowerCase().indexOf(filter) > -1) {
+      rows[i].style.display = "";
+      visibleCount++;
+    } else {
+      rows[i].style.display = "none";
+    }
+  }
+
+  // Update showing count
+  const footerStr = table.nextElementSibling;
+  if(footerStr && footerStr.classList.contains('es-table-footer')){
+    const countDisplay = footerStr.querySelector('.row-count-display strong');
+    if (countDisplay) {
+      countDisplay.innerText = visibleCount;
+    }
+  }
+}
+</script>
 {% endblock %}
+
+
+
