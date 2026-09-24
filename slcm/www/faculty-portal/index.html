@@ -69,28 +69,28 @@
   </div>
   <div class="fp-card-body">
     <div class="fp-grid-auto">
-      <a href="/faculty-portal/attendance" class="fp-quick-action-btn" style="background:var(--fp-primary-light);color:var(--fp-primary);flex-direction:row;align-items:center;gap:14px;text-align:left;padding:16px 18px;">
+      <a href="/faculty-portal/attendance" class="fp-quick-action-btn fp-dash-qa" style="flex-direction:row;align-items:center;gap:14px;text-align:left;padding:16px 18px;">
         <span class="fp-ms">how_to_reg</span>
         <div>
           <div style="font-size:13.5px;font-weight:700;color:var(--fp-text-1);">Take Attendance</div>
           <div style="font-size:12px;color:var(--fp-text-4);margin-top:2px;">Mark today's session</div>
         </div>
       </a>
-      <a href="/faculty-portal/my-classes" class="fp-quick-action-btn" style="background:var(--fp-info-bg);color:var(--fp-info);flex-direction:row;align-items:center;gap:14px;text-align:left;padding:16px 18px;">
+      <a href="/faculty-portal/my-classes" class="fp-quick-action-btn fp-dash-qa" style="flex-direction:row;align-items:center;gap:14px;text-align:left;padding:16px 18px;">
         <span class="fp-ms">menu_book</span>
         <div>
           <div style="font-size:13.5px;font-weight:700;color:var(--fp-text-1);">My Classes</div>
           <div style="font-size:12px;color:var(--fp-text-4);margin-top:2px;">View course offerings</div>
         </div>
       </a>
-      <a href="/faculty-portal/marks" class="fp-quick-action-btn" style="background:var(--fp-purple-bg);color:var(--fp-purple);flex-direction:row;align-items:center;gap:14px;text-align:left;padding:16px 18px;">
+      <a href="/faculty-portal/marks" class="fp-quick-action-btn fp-dash-qa" style="flex-direction:row;align-items:center;gap:14px;text-align:left;padding:16px 18px;">
         <span class="fp-ms">grade</span>
         <div>
           <div style="font-size:13.5px;font-weight:700;color:var(--fp-text-1);">Marks Entry</div>
           <div style="font-size:12px;color:var(--fp-text-4);margin-top:2px;">Enter or update marks</div>
         </div>
       </a>
-      <a href="/faculty-portal/venue-booking" class="fp-quick-action-btn" style="background:var(--fp-teal-bg);color:var(--fp-teal);flex-direction:row;align-items:center;gap:14px;text-align:left;padding:16px 18px;">
+      <a href="/faculty-portal/venue-booking" class="fp-quick-action-btn fp-dash-qa" style="flex-direction:row;align-items:center;gap:14px;text-align:left;padding:16px 18px;">
         <span class="fp-ms">meeting_room</span>
         <div>
           <div style="font-size:13.5px;font-weight:700;color:var(--fp-text-1);">Venue Booking</div>
@@ -111,7 +111,7 @@ window._fpDashData = {
 </script>
 
 {# ── Stat Cards ─────────────────────────────────────────────── #}
-<div class="fp-stat-grid">
+<div class="fp-stat-grid fp-dash-stat-grid">
 
   <div class="fp-stat-card {% if not portal_error %}fp-stat-drillable{% endif %} fade-in" style="animation-delay:0.04s;{% if not portal_error %}cursor:pointer;{% endif %}"
        {% if not portal_error %}onclick="fpDrilldown('subjects')" title="Click to view details & export"{% endif %}>
@@ -201,7 +201,7 @@ window._fpDashData = {
       </div>
       {% elif not todays_sessions %}
       <div class="fp-empty">
-        <div class="fp-empty-icon fp-c-navy"><span class="fp-ms">event_busy</span></div>
+        <div class="fp-empty-icon fp-dash-icon"><span class="fp-ms">event_busy</span></div>
         <p class="fp-empty-title">No classes today</p>
         <p class="fp-empty-sub">Your schedule is clear. Enjoy your day!</p>
       </div>
@@ -253,7 +253,7 @@ window._fpDashData = {
       </div>
       {% elif not upcoming_classes %}
       <div class="fp-empty">
-        <div class="fp-empty-icon fp-c-blue"><span class="fp-ms">event_note</span></div>
+        <div class="fp-empty-icon fp-dash-icon"><span class="fp-ms">event_note</span></div>
         <p class="fp-empty-title">No upcoming sessions</p>
         <p class="fp-empty-sub">Nothing scheduled in the next 7 days.</p>
       </div>
@@ -508,6 +508,22 @@ window._fpDashData = {
 
 {# ── Drill-down CSS additions ── #}
 <style>
+/* Dashboard stat cards — 3 equal columns filling the full row */
+.fp-dash-stat-grid { grid-template-columns: repeat(3, 1fr); }
+.fp-dash-stat-grid .fp-stat-card { background: #F6F3ED; }
+body.fp-dark .fp-dash-stat-grid .fp-stat-card { background: var(--fp-card); }
+/* Quick actions — same beige surface; all dashboard icons in brand maroon */
+.fp-dash-qa { background: #F6F3ED; color: #920C24; }
+body.fp-dark .fp-dash-qa { background: var(--fp-card); color: var(--fp-primary); }
+.fp-dash-stat-grid .fp-stat-icon,
+.fp-dash-icon { background: rgba(146,12,36,0.08) !important; }
+.fp-dash-icon { border-style: solid; border-color: var(--fp-primary-mid); }
+.fp-dash-stat-grid .fp-stat-icon .fp-ms,
+.fp-dash-icon .fp-ms { color: #920C24 !important; }
+body.fp-dark .fp-dash-stat-grid .fp-stat-icon .fp-ms,
+body.fp-dark .fp-dash-icon .fp-ms { color: var(--fp-primary) !important; }
+@media (max-width: 768px) { .fp-dash-stat-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .fp-dash-stat-grid { grid-template-columns: 1fr; } }
 .fp-stat-drillable { position: relative; }
 .fp-stat-drillable:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); border-color: var(--fp-primary-mid); }
 .fp-drill-badge {
