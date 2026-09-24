@@ -21,13 +21,8 @@ class FeeConcession(Document):
 		self.db_set("status", "Reversed")
 
 	def _calculate_waiver_amount(self):
-		original = flt(self.original_amount)
-		value = flt(self.waiver_value)
-
-		if self.waiver_mode == "Percentage":
-			self.waiver_amount = round(original * value / 100, 2)
-		else:
-			self.waiver_amount = value
+		# Waiver Value is the amount itself; waiver_amount mirrors it for Fee Demand / reports / portals.
+		self.waiver_amount = flt(self.waiver_value)
 
 	def _validate_waiver_amount(self):
 		original = flt(self.original_amount)
@@ -102,8 +97,8 @@ class FeeConcession(Document):
 
 
 @frappe.whitelist()
-def bulk_apply_concession(demand_names, concession_type, waiver_mode, waiver_value,
-	reason, scholarship_for=None, remarks=None):
+def bulk_apply_concession(demand_names, concession_type, waiver_value,
+	reason, remarks=None, **kwargs):
 	"""
 	Create and submit one Fee Concession per selected Fee Demand, using the
 	same waiver rule for all of them. Used by the Fee Demand list view's
@@ -138,8 +133,6 @@ def bulk_apply_concession(demand_names, concession_type, waiver_mode, waiver_val
 				"student": d.student,
 				"fee_demand": d.name,
 				"concession_type": concession_type,
-				"scholarship_for": scholarship_for,
-				"waiver_mode": waiver_mode,
 				"waiver_value": flt(waiver_value),
 				"reason": reason,
 				"remarks": remarks,

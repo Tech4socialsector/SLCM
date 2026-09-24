@@ -16,8 +16,6 @@
   "status",
   "section_concession",
   "concession_type",
-  "scholarship_for",
-  "waiver_mode",
   "waiver_value",
   "waiver_amount",
   "column_break_2",
@@ -99,36 +97,25 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Concession Type",
-   "options": "\nScholarship\nMerit\nSC/ST\nEWS\nStaff Ward\nOther",
-   "reqd": 1
-  },
-  {
-   "depends_on": "eval:doc.concession_type==\"Scholarship\"",
-   "fieldname": "scholarship_for",
-   "fieldtype": "Select",
-   "label": "Scholarship For",
-   "mandatory_depends_on": "eval:doc.concession_type==\"Scholarship\"",
-   "options": "\nTuition\nAccommodation\nStipend\nMess/Food\nTransport\nBooks & Stationery\nOther"
-  },
-  {
-   "fieldname": "waiver_mode",
-   "fieldtype": "Select",
-   "label": "Waiver Mode",
-   "options": "Fixed Amount\nPercentage",
+   "options": "\nUniversity Financial Aid\nMukhyamantri Medhavi Vidyarthi Yojana (MMVY) Scholarship\nAditya Birla Schoalrship",
    "reqd": 1
   },
   {
    "fieldname": "waiver_value",
-   "fieldtype": "Float",
+   "fieldtype": "Currency",
    "label": "Waiver Value",
-   "reqd": 1
+   "reqd": 1,
+   "options": "INR",
+   "in_list_view": 1,
+   "description": "Waiver / scholarship amount (₹) applied to the fee demand."
   },
   {
    "fieldname": "waiver_amount",
    "fieldtype": "Currency",
-   "in_list_view": 1,
    "label": "Waiver Amount",
-   "read_only": 1
+   "read_only": 1,
+   "hidden": 1,
+   "description": "Kept equal to Waiver Value; read by Fee Demand, reports and the portals."
   },
   {
    "fieldname": "column_break_2",
@@ -166,7 +153,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-28 10:28:28.975990",
+ "modified": "2026-09-24 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Fee Concession",

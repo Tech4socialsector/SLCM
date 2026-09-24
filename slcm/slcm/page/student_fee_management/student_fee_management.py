@@ -386,7 +386,7 @@ def get_student_dues(student):
 		"Fee Concession",
 		filters={"student": student, "docstatus": ["!=", 2]},
 		fields=[
-			"name", "fee_demand", "fee_component", "concession_type", "scholarship_for", "waiver_mode",
+			"name", "fee_demand", "fee_component", "concession_type",
 			"waiver_value", "waiver_amount", "status", "docstatus", "reason", "approved_on", "creation",
 		],
 		order_by="creation desc",

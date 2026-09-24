@@ -48,10 +48,6 @@ frappe.ui.form.on("Fee Concession", {
 		);
 	},
 
-	waiver_mode(frm) {
-		frm.trigger("calculate_waiver");
-	},
-
 	waiver_value(frm) {
 		frm.trigger("calculate_waiver");
 	},
@@ -66,16 +62,7 @@ frappe.ui.form.on("Fee Concession", {
 
 		if (!original || !value) return;
 
-		let waiver = 0;
-		if (frm.doc.waiver_mode === "Percentage") {
-			if (value > 100) {
-				frappe.show_alert({ message: __("Percentage cannot exceed 100."), indicator: "red" });
-				return;
-			}
-			waiver = Math.round(original * value / 100 * 100) / 100;
-		} else {
-			waiver = value;
-		}
+		const waiver = value;
 
 		if (waiver > original) {
 			frappe.show_alert({

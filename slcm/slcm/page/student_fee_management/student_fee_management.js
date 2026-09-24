@@ -947,7 +947,6 @@ class StudentFeeManagement {
 						<div class="sfm-name">${sfm_esc(p.first_name || p.name)}</div>
 						<div class="sfm-sub">${sfm_esc(p.registration_id || p.name)}</div>
 						<div class="sfm-pills">
-							<span class="sfm-pill">${__("Student")}</span>
 							${p.student_status ? `<span class="sfm-pill sfm-pill-muted">${sfm_esc(p.student_status)}</span>` : ""}
 						</div>
 						<div class="sfm-sub">${sfm_esc(p.official_email_id || p.email || "")}</div>
@@ -1217,6 +1216,7 @@ class StudentFeeManagement {
 			<div class="sfm-col-pop-title">${__("Show columns")}</div>
 			<div class="sfm-ms-actions">
 				<button type="button" data-cm="all">${__("Show all")}</button>
+				<button type="button" data-cm="clear" title="${__("Hide every column except Fee Component, then tick the ones you need")}">${__("Clear")}</button>
 			</div>
 			<div class="sfm-ms-list">
 				${all_cols
@@ -1260,6 +1260,11 @@ class StudentFeeManagement {
 		});
 		$pop.on("click", '[data-cm="all"]', () => {
 			this.hidden_cols.clear();
+			apply();
+		});
+		// The table always keeps one column, so Clear leaves Fee Component (it identifies each row).
+		$pop.on("click", '[data-cm="clear"]', () => {
+			this.hidden_cols = new Set(all_cols.map((c) => c.key).filter((k) => k !== "fee_component"));
 			apply();
 		});
 		$pop.on("keydown", (e) => {
@@ -1800,8 +1805,8 @@ class StudentFeeManagement {
 				<div class="sfm-panel sfm-table-panel"><div class="sfm-table-scroll">
 					<table class="sfm-table">
 						<thead><tr>
-							<th scope="col">${__("Concession No.")}</th><th scope="col">${__("Type")}</th><th scope="col">${__("Scholarship For")}</th>
-							<th scope="col">${__("Due")}</th><th scope="col">${__("Mode")}</th>
+							<th scope="col">${__("Concession No.")}</th><th scope="col">${__("Type")}</th>
+							<th scope="col">${__("Due")}</th>
 							<th scope="col" class="num">${__("Scholarship")}<div class="sfm-th-sub">${__("Waiver")}</div></th>
 							<th scope="col">${__("Status")}</th><th scope="col">${__("Reason")}</th>
 						</tr></thead>
@@ -1813,16 +1818,14 @@ class StudentFeeManagement {
 												(c) => `<tr>
 								<td><a class="sfm-link" href="${frappe.utils.get_form_link("Fee Concession", c.name)}">${sfm_esc(c.name)}</a></td>
 								<td>${sfm_esc(c.concession_type || "—")}</td>
-								<td>${sfm_esc(c.scholarship_for || "—")}</td>
 								<td>${sfm_esc(c.fee_demand || "—")}<div class="sfm-sub">${sfm_esc(c.fee_component || "")}</div></td>
-								<td>${sfm_esc(c.waiver_mode || "—")}${c.waiver_mode === "Percentage" ? `<div class="sfm-sub">${flt(c.waiver_value)}%</div>` : ""}</td>
 								<td class="num sfm-amount-strong">${sfm_money(c.waiver_amount)}</td>
 								<td>${sfm_badge(c.status || ["Draft", "Approved", "Cancelled"][c.docstatus])}</td>
 								<td class="sfm-remark" title="${sfm_esc(c.reason || "")}">${sfm_esc(c.reason || "—")}</td>
 							</tr>`
 											)
 											.join("")
-									: `<tr><td colspan="8"><div class="sfm-empty-state"><div class="sfm-empty-title">${__("No scholarships or waivers for this student")}</div></div></td></tr>`
+									: `<tr><td colspan="6"><div class="sfm-empty-state"><div class="sfm-empty-title">${__("No scholarships or waivers for this student")}</div></div></td></tr>`
 							}
 						</tbody>
 					</table>
@@ -1893,7 +1896,7 @@ class StudentFeeManagement {
 			$body.find(".sfm-subtab").not(e.currentTarget).trigger("click");
 		});
 		$body.find('[data-act="new-scholarship"]').on("click", () =>
-			frappe.new_doc("Fee Concession", { student: p.name, concession_type: "Scholarship" })
+			frappe.new_doc("Fee Concession", { student: p.name })
 		);
 		$body.find('[data-act="new-stipend"]').on("click", () => this.stipend_dialog());
 	}

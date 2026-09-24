@@ -396,7 +396,7 @@ def get_context(context):
                 "Fee Concession",
                 filters={"student": student_name},
                 fields=[
-                    "name", "concession_type", "waiver_mode", "waiver_value",
+                    "name", "concession_type", "waiver_value",
                     "waiver_amount", "original_amount", "fee_component",
                     "status", "reason", "remarks", "approved_by", "approved_on",
                 ],
@@ -406,14 +406,7 @@ def get_context(context):
             for c in concessions:
                 c["formatted_waiver"]   = "₹{:,.0f}".format(frappe.utils.flt(c.waiver_amount or 0))
                 c["formatted_original"] = "₹{:,.0f}".format(frappe.utils.flt(c.original_amount or 0))
-                c["waiver_display"] = (
-                    "{:.0f}% of {}".format(
-                        frappe.utils.flt(c.waiver_value),
-                        "₹{:,.0f}".format(frappe.utils.flt(c.original_amount or 0)),
-                    )
-                    if c.waiver_mode == "Percentage"
-                    else "₹{:,.0f} fixed".format(frappe.utils.flt(c.waiver_value or 0))
-                )
+                c["waiver_display"] = "₹{:,.0f}".format(frappe.utils.flt(c.waiver_amount or c.waiver_value or 0))
                 c["approved_on_fmt"] = (
                     frappe.utils.formatdate(c.approved_on, "dd MMM yyyy")
                     if c.approved_on else ""
