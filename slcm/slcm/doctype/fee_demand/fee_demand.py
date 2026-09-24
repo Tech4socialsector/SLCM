@@ -52,6 +52,10 @@ class FeeDemand(Document):
 		if self.status in ("Cancelled", "Waived"):
 			return
 
+		# "Moved to Excess" is kept on ordinary saves; a new payment/reversal recalculates it.
+		if self.status == "Moved to Excess" and not self.flags.payment_update:
+			return
+
 		outstanding = flt(self.outstanding_amount)
 		paid = flt(self.paid_amount)
 
@@ -79,9 +83,11 @@ class FeeDemand(Document):
 		if self.credit_adjusted < 0:
 			self.credit_adjusted = 0
 
+		self.flags.payment_update = True
 		self._calculate_amounts()
 		self._update_status()
 		self.save(ignore_permissions=True)
+		self.flags.payment_update = False
 
 		self._log_payment_event(paid_delta)
 

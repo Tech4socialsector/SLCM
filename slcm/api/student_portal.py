@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.utils import flt, cint, today, nowdate, getdate
 from slcm.api.student_payment import _require_parent_for_student
 
@@ -2269,4 +2270,68 @@ def add_guardian(first_name, last_name, relation, phone, email, occupation):
     
     student.flags.ignore_permissions = True
     student.save()
+    return {"status": "success"}
+
+
+BANK_DETAIL_FIELDS = (
+    "savings_account_number", "savings_account_holder_name", "savings_bank_name",
+    "savings_branch_name", "savings_ifsc_code", "availed_education_loan",
+    "education_loan_scheme", "other_loan_scheme", "loan_account_number",
+    "loan_account_holder_name", "loan_bank_name", "loan_branch_name", "loan_ifsc_code",
+)
+
+
+@frappe.whitelist(methods=["POST"])
+def submit_bank_details(**kwargs):
+    """One-time submission of savings / education-loan bank details from the Student Portal.
+
+    Once submitted the details are locked; the office can re-open them by unchecking
+    "Bank Details Submitted by Student" on the Student Master.
+    """
+    student_name = _get_student()
+    if not student_name:
+        frappe.throw(_("Student not found"))
+
+    student = frappe.get_doc("Student Master", student_name)
+    if student.bank_details_submitted:
+        frappe.throw(_("Bank details have already been submitted. Please contact the administration office to make changes."))
+
+    values = {f: (str(kwargs.get(f) or "")).strip() for f in BANK_DETAIL_FIELDS}
+
+    required = {
+        "savings_account_number": _("Savings Bank Account Number"),
+        "savings_account_holder_name": _("Name of the Account Holder"),
+        "savings_bank_name": _("Name of the Bank"),
+        "savings_branch_name": _("Name of the Branch"),
+        "savings_ifsc_code": _("IFSC Code"),
+        "availed_education_loan": _("Availed Education Loan?"),
+    }
+    if values["availed_education_loan"] not in ("Yes", "No"):
+        values["availed_education_loan"] = ""
+    if values["availed_education_loan"] == "Yes":
+        required.update({
+            "education_loan_scheme": _("Loan Scheme"),
+            "loan_account_number": _("Loan Account Number"),
+            "loan_account_holder_name": _("Loan Account Holder Name"),
+            "loan_bank_name": _("Loan Bank Name"),
+            "loan_branch_name": _("Loan Branch Name"),
+            "loan_ifsc_code": _("Loan IFSC Code"),
+        })
+        if values["education_loan_scheme"] not in ("PM Vidyalaxmi", "Others"):
+            values["education_loan_scheme"] = ""
+        if values["education_loan_scheme"] == "Others":
+            required["other_loan_scheme"] = _("Specify Other Scheme")
+
+    missing = [label for f, label in required.items() if not values[f]]
+    if missing:
+        frappe.throw(_("Please fill: {0}").format(", ".join(missing)))
+
+    # Bank fields are masked, and Frappe resets masked fields on save for users without
+    # mask permission (students), so validate via the controller and write them directly.
+    student.update(values)
+    student.validate_bank_details()
+    updates = {f: student.get(f) or None for f in BANK_DETAIL_FIELDS}
+    updates.update(bank_details_submitted=1, bank_details_submitted_on=frappe.utils.now_datetime())
+    frappe.db.set_value("Student Master", student_name, updates)
+    student.add_comment("Info", _("Bank details submitted by the student from the Student Portal."))
     return {"status": "success"}

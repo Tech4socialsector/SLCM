@@ -135,6 +135,59 @@
   font-weight: 300;
   color: var(--sp-text-1);
 }
+/* Bank details */
+.sp-bank-subtitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sp-primary);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.sp-bank-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  background: #fef9c3;
+  color: #854d0e;
+  font-size: 13px;
+  font-weight: 300;
+}
+.sp-bank-note .sp-ms { font-size: 18px; }
+.sp-bank-note-locked { background: #ecfdf5; color: #065f46; }
+.sp-bank-form label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sp-text-3);
+  margin-bottom: 6px;
+}
+.sp-bank-form input,
+.sp-bank-form select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--sp-border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+  background: #fff;
+}
+.sp-bank-form .sp-bank-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.sp-bank-form .sp-bank-hint {
+  font-size: 11px;
+  color: var(--sp-text-4);
+  margin-top: 4px;
+}
+
 .sp-info-value.bold {
   font-weight: 400;
 }
@@ -418,29 +471,87 @@
     <div class="sp-section-card fade-in delay-4">
       <div class="sp-section-header">
         <div class="sp-section-header-title"><span class="sp-ms">account_balance</span> Bank Details</div>
+        {% if not profile.bank_details_submitted %}
+        <button id="sp-bank-edit-btn" class="sp-btn" style="border: 1px solid var(--sp-primary); color: var(--sp-primary); background: #fff; border-radius: 20px; padding: 6px 16px; font-weight: 400;" onclick="spOpenModal('modal-bank-details')">
+          <span class="sp-ms" style="font-size:16px;vertical-align:-3px;">edit</span> {{ "Update" if profile.savings_account_number else "Add" }} Bank Details
+        </button>
+        {% endif %}
       </div>
       <div class="sp-section-body">
+        {% if profile.bank_details_submitted %}
+        <div class="sp-bank-note sp-bank-note-locked">
+          <span class="sp-ms">lock</span>
+          <span>Submitted{% if profile.bank_details_submitted_on %} on {{ profile.bank_details_submitted_on }}{% endif %}. To make changes, please contact the administration office.</span>
+        </div>
+        {% else %}
+        <div class="sp-bank-note">
+          <span class="sp-ms">info</span>
+          <span>Savings bank account details are mandatory. You can submit them <strong>only once</strong>; please verify before saving.</span>
+        </div>
+        {% endif %}
+
+        <div class="sp-bank-subtitle">Savings Bank Account</div>
         <div class="sp-info-grid">
           <div>
-            <div class="sp-info-label">Bank</div>
-            <div class="sp-info-value">{{ profile.bank_name or "—" }}</div>
-          </div>
-          <div>
             <div class="sp-info-label">Account Number</div>
-            <div class="sp-info-value">{{ profile.bank_account_number or "—" }}</div>
-          </div>
-          <div>
-            <div class="sp-info-label">IFSC Code</div>
-            <div class="sp-info-value">{{ profile.ifsc_code or "—" }}</div>
-          </div>
-          <div>
-            <div class="sp-info-label">Branch</div>
-            <div class="sp-info-value">{{ profile.branch_name or "—" }}</div>
+            <div class="sp-info-value">{{ profile.savings_account_number or "—" }}</div>
           </div>
           <div>
             <div class="sp-info-label">Account Holder</div>
-            <div class="sp-info-value">{{ profile.account_holder or "—" }}</div>
+            <div class="sp-info-value">{{ profile.savings_account_holder_name or "—" }}</div>
           </div>
+          <div>
+            <div class="sp-info-label">Bank</div>
+            <div class="sp-info-value">{{ profile.savings_bank_name or "—" }}</div>
+          </div>
+          <div>
+            <div class="sp-info-label">Branch</div>
+            <div class="sp-info-value">{{ profile.savings_branch_name or "—" }}</div>
+          </div>
+          <div>
+            <div class="sp-info-label">IFSC Code</div>
+            <div class="sp-info-value">{{ profile.savings_ifsc_code or "—" }}</div>
+          </div>
+        </div>
+
+        <div class="sp-bank-subtitle" style="margin-top:24px;">Education Loan</div>
+        <div class="sp-info-grid">
+          <div>
+            <div class="sp-info-label">Availed Education Loan?</div>
+            <div class="sp-info-value">{{ profile.availed_education_loan or "—" }}</div>
+          </div>
+          {% if profile.availed_education_loan == "Yes" %}
+          <div>
+            <div class="sp-info-label">Loan Scheme</div>
+            <div class="sp-info-value">{{ profile.education_loan_scheme or "—" }}</div>
+          </div>
+          {% if profile.education_loan_scheme == "Others" %}
+          <div>
+            <div class="sp-info-label">Other Scheme</div>
+            <div class="sp-info-value">{{ profile.other_loan_scheme or "—" }}</div>
+          </div>
+          {% endif %}
+          <div>
+            <div class="sp-info-label">Loan Account Number</div>
+            <div class="sp-info-value">{{ profile.loan_account_number or "—" }}</div>
+          </div>
+          <div>
+            <div class="sp-info-label">Account Holder</div>
+            <div class="sp-info-value">{{ profile.loan_account_holder_name or "—" }}</div>
+          </div>
+          <div>
+            <div class="sp-info-label">Bank</div>
+            <div class="sp-info-value">{{ profile.loan_bank_name or "—" }}</div>
+          </div>
+          <div>
+            <div class="sp-info-label">Branch</div>
+            <div class="sp-info-value">{{ profile.loan_branch_name or "—" }}</div>
+          </div>
+          <div>
+            <div class="sp-info-label">IFSC Code</div>
+            <div class="sp-info-value">{{ profile.loan_ifsc_code or "—" }}</div>
+          </div>
+          {% endif %}
         </div>
       </div>
     </div>
@@ -664,6 +775,146 @@
   </div>
 </div>
 
+{# ── Bank Details Modal (one-time submission) ───────── #}
+{% if not profile.bank_details_submitted %}
+<div class="sp-modal-overlay" id="modal-bank-details" onclick="spCloseModalIf(event, 'modal-bank-details')">
+  <div class="sp-modal" role="dialog" aria-modal="true" style="max-width:640px;">
+    <div class="sp-modal-header">
+      <div class="sp-modal-title">
+        <span class="sp-ms">account_balance</span> Bank Details
+      </div>
+      <button class="sp-modal-close" onclick="spCloseModal('modal-bank-details')" aria-label="Close">
+        <span class="sp-ms">close</span>
+      </button>
+    </div>
+    <div class="sp-modal-body" style="max-height:70vh; overflow-y:auto;">
+      <div class="sp-bank-note">
+        <span class="sp-ms">warning</span>
+        <span>These details can be submitted <strong>only once</strong> and cannot be edited afterwards.</span>
+      </div>
+      <form id="bank-details-form" class="sp-bank-form" onsubmit="event.preventDefault(); submitBankDetails();">
+        <div class="sp-bank-subtitle">Savings Bank Account (mandatory)</div>
+        <div class="sp-bank-row">
+          <div>
+            <label for="b_savings_account_number">Savings Bank Account Number *</label>
+            <input type="text" id="b_savings_account_number" maxlength="20" inputmode="numeric" autocomplete="off">
+          </div>
+          <div>
+            <label for="b_savings_account_holder_name">Name of the Account Holder *</label>
+            <input type="text" id="b_savings_account_holder_name" maxlength="100">
+          </div>
+        </div>
+        <div class="sp-bank-row">
+          <div>
+            <label for="b_savings_bank_name">Name of the Bank *</label>
+            <input type="text" id="b_savings_bank_name" maxlength="100">
+          </div>
+          <div>
+            <label for="b_savings_branch_name">Name of the Branch *</label>
+            <input type="text" id="b_savings_branch_name" maxlength="100">
+          </div>
+        </div>
+        <div class="sp-bank-row">
+          <div>
+            <label for="b_savings_ifsc_code">IFSC Code *</label>
+            <input type="text" id="b_savings_ifsc_code" maxlength="11" style="text-transform:uppercase;" autocomplete="off">
+            <div class="sp-bank-hint">11 alphanumeric characters</div>
+          </div>
+        </div>
+
+        <div class="sp-bank-subtitle" style="margin-top:8px;">Education Loan</div>
+        <div class="sp-bank-row">
+          <div>
+            <label for="b_availed_education_loan">Availed Education Loan? *</label>
+            <select id="b_availed_education_loan" onchange="spToggleLoanFields()">
+              <option value="">Select</option>
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          <div class="sp-loan-field">
+            <label for="b_education_loan_scheme">Loan Scheme *</label>
+            <select id="b_education_loan_scheme" onchange="spToggleLoanFields()">
+              <option value="">Select</option>
+              <option value="PM Vidyalaxmi">PM Vidyalaxmi</option>
+              <option value="Others">Others</option>
+            </select>
+          </div>
+        </div>
+        <div class="sp-loan-field">
+          <div class="sp-bank-row" id="sp-other-scheme-row">
+            <div>
+              <label for="b_other_loan_scheme">Specify Other Scheme *</label>
+              <input type="text" id="b_other_loan_scheme" maxlength="140" placeholder="Name of the loan scheme">
+            </div>
+          </div>
+          <div class="sp-bank-row">
+            <div>
+              <label for="b_loan_account_number">Loan Account Number *</label>
+              <input type="text" id="b_loan_account_number" maxlength="30" autocomplete="off">
+            </div>
+            <div>
+              <label for="b_loan_account_holder_name">Name of the Account Holder *</label>
+              <input type="text" id="b_loan_account_holder_name" maxlength="100">
+            </div>
+          </div>
+          <div class="sp-bank-row">
+            <div>
+              <label for="b_loan_bank_name">Name of the Bank *</label>
+              <input type="text" id="b_loan_bank_name" maxlength="100">
+            </div>
+            <div>
+              <label for="b_loan_branch_name">Name of the Branch *</label>
+              <input type="text" id="b_loan_branch_name" maxlength="100">
+            </div>
+          </div>
+          <div class="sp-bank-row">
+            <div>
+              <label for="b_loan_ifsc_code">IFSC Code *</label>
+              <input type="text" id="b_loan_ifsc_code" maxlength="11" style="text-transform:uppercase;" autocomplete="off">
+              <div class="sp-bank-hint">11 alphanumeric characters</div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="sp-modal-footer">
+      <button class="sp-btn sp-btn-secondary" onclick="spCloseModal('modal-bank-details')">Cancel</button>
+      <button class="sp-btn sp-btn-primary" onclick="submitBankDetails()">
+        Submit Bank Details
+      </button>
+    </div>
+  </div>
+</div>
+
+{# ── Bank Details Confirmation ─────────────────────── #}
+<div class="sp-modal-overlay" id="modal-bank-confirm" onclick="spCloseModalIf(event, 'modal-bank-confirm')">
+  <div class="sp-modal" role="dialog" aria-modal="true" style="max-width:440px;">
+    <div class="sp-modal-header">
+      <div class="sp-modal-title">
+        <span class="sp-ms">help</span> Confirm Bank Details
+      </div>
+      <button class="sp-modal-close" onclick="spCloseModal('modal-bank-confirm')" aria-label="Close">
+        <span class="sp-ms">close</span>
+      </button>
+    </div>
+    <div class="sp-modal-body">
+      <p style="margin:0 0 12px; font-size:14px; color:var(--sp-text-2);">
+        Please check your bank details carefully before saving.
+      </p>
+      <div class="sp-bank-note" style="margin-bottom:0;">
+        <span class="sp-ms">lock</span>
+        <span>Once saved, you <strong>cannot edit</strong> these details again. If you need to make changes later, please approach the <strong>Administrator</strong>.</span>
+      </div>
+    </div>
+    <div class="sp-modal-footer">
+      <button class="sp-btn sp-btn-secondary" onclick="spCloseModal('modal-bank-confirm')">Go Back</button>
+      <button class="sp-btn sp-btn-primary" onclick="spConfirmBankDetails()">Yes, Save</button>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <div id="sp-toast" class="sp-toast" role="alert" aria-live="polite"></div>
 
 <script>
@@ -712,6 +963,102 @@ function submitGuardian() {
     }, 1000);
   }, function(err) {
     spToast(err || 'Failed to add guardian', 'danger');
+  });
+}
+var SP_BANK_FIELDS = [
+  'savings_account_number', 'savings_account_holder_name', 'savings_bank_name',
+  'savings_branch_name', 'savings_ifsc_code', 'availed_education_loan',
+  'education_loan_scheme', 'other_loan_scheme', 'loan_account_number',
+  'loan_account_holder_name', 'loan_bank_name', 'loan_branch_name', 'loan_ifsc_code'
+];
+var SP_BANK_PENDING = null;
+var SP_BANK_PREFILL = {{ bank_prefill | tojson }};
+var SP_IFSC_RE = /^[A-Z0-9]{11}$/;
+
+function spToggleLoanFields() {
+  var sel = document.getElementById('b_availed_education_loan');
+  if (!sel) return;
+  var show = sel.value === 'Yes';
+  document.querySelectorAll('.sp-loan-field').forEach(function (el) {
+    el.style.display = show ? '' : 'none';
+  });
+  var scheme = document.getElementById('b_education_loan_scheme');
+  var otherRow = document.getElementById('sp-other-scheme-row');
+  if (otherRow) otherRow.style.display = (show && scheme && scheme.value === 'Others') ? '' : 'none';
+}
+
+(function initBankForm() {
+  if (!document.getElementById('bank-details-form')) return;
+  SP_BANK_FIELDS.forEach(function (f) {
+    var el = document.getElementById('b_' + f);
+    if (el && SP_BANK_PREFILL[f]) el.value = SP_BANK_PREFILL[f];
+  });
+  spToggleLoanFields();
+})();
+
+function spServerMsg(err) {
+  /* spCall passes _server_messages entries joined by newlines; each is a JSON string */
+  try {
+    return String(err || '').split('\n').map(function (m) {
+      try { var o = JSON.parse(m); return (o && o.message) || m; } catch (e) { return m; }
+    }).join(' ');
+  } catch (e) { return err; }
+}
+
+function submitBankDetails() {
+  var data = {};
+  SP_BANK_FIELDS.forEach(function (f) {
+    var el = document.getElementById('b_' + f);
+    data[f] = el ? el.value.trim() : '';
+  });
+  data.savings_ifsc_code = data.savings_ifsc_code.toUpperCase();
+  data.loan_ifsc_code = data.loan_ifsc_code.toUpperCase();
+
+  var required = ['savings_account_number', 'savings_account_holder_name', 'savings_bank_name',
+                  'savings_branch_name', 'savings_ifsc_code', 'availed_education_loan'];
+  var loan = data.availed_education_loan === 'Yes';
+  if (loan) {
+    required = required.concat(['education_loan_scheme', 'loan_account_number', 'loan_account_holder_name',
+                                'loan_bank_name', 'loan_branch_name', 'loan_ifsc_code']);
+    if (data.education_loan_scheme === 'Others') required.push('other_loan_scheme');
+    else data.other_loan_scheme = '';
+  } else {
+    ['education_loan_scheme', 'other_loan_scheme', 'loan_account_number', 'loan_account_holder_name',
+     'loan_bank_name', 'loan_branch_name', 'loan_ifsc_code'].forEach(function (f) { data[f] = ''; });
+  }
+  for (var i = 0; i < required.length; i++) {
+    if (!data[required[i]]) {
+      spToast('Please fill all mandatory (*) fields', 'danger');
+      var el = document.getElementById('b_' + required[i]);
+      if (el) el.focus();
+      return;
+    }
+  }
+  if (!SP_IFSC_RE.test(data.savings_ifsc_code)) {
+    spToast('Savings IFSC Code must be exactly 11 alphanumeric characters', 'danger');
+    return;
+  }
+  if (loan && !SP_IFSC_RE.test(data.loan_ifsc_code)) {
+    spToast('Loan IFSC Code must be exactly 11 alphanumeric characters', 'danger');
+    return;
+  }
+  SP_BANK_PENDING = data;
+  spOpenModal('modal-bank-confirm');
+}
+
+function spConfirmBankDetails() {
+  if (!SP_BANK_PENDING) return;
+  var data = SP_BANK_PENDING;
+  spCloseModal('modal-bank-confirm');
+  spCall('slcm.api.student_portal.submit_bank_details', data, function () {
+    SP_BANK_PENDING = null;
+    spCloseModal('modal-bank-details');
+    var btn = document.getElementById('sp-bank-edit-btn');
+    if (btn) btn.remove();
+    spToast('Bank details submitted successfully', 'success');
+    setTimeout(function () { window.location.reload(); }, 1000);
+  }, function (err) {
+    spToast(spServerMsg(err) || 'Failed to submit bank details', 'danger');
   });
 }
 </script>
