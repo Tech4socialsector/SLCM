@@ -1,4 +1,20 @@
 frappe.listview_settings["Fee Demand"] = {
+	add_fields: ["status", "moved_to_excess_amount"],
+	get_indicator(doc) {
+		const colors = {
+			Pending: "orange",
+			"Partially Paid": "blue",
+			Paid: "green",
+			Overdue: "red",
+			Waived: "purple",
+			"Moved to Excess": "cyan",
+			Cancelled: "gray",
+		};
+		if (doc.status === "Cancelled" && flt(doc.moved_to_excess_amount) > 0) {
+			return [__("Cancelled & Moved to Excess"), "gray", "status,=,Cancelled"];
+		}
+		return [__(doc.status), colors[doc.status] || "gray", `status,=,${doc.status}`];
+	},
 	onload(listview) {
 		if (!frappe.user.has_role(["System Manager", "Campus Admin"])) return;
 

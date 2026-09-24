@@ -32,6 +32,22 @@ def _check_access():
 	frappe.only_for(ALLOWED_ROLES)
 
 
+def _require_remarks(remarks):
+	remarks = (remarks or "").strip()
+	if not remarks:
+		frappe.throw(_("Remarks are mandatory."))
+	return remarks
+
+
+def _as_list(value):
+	"""Accept a list, a JSON-encoded list, or a single plain value; drop blanks."""
+	if not value:
+		return []
+	if isinstance(value, str):
+		value = frappe.parse_json(value) if value.lstrip().startswith("[") else [value]
+	return [v for v in value if v not in (None, "")]
+
+
 @frappe.whitelist()
 def get_filter_options():
 	"""Academic years, terms (with their year, for dependent filtering) and programmes present on students."""
@@ -74,15 +90,16 @@ def get_students(
 
 	conditions = ["1=1"]
 	values = {}
-	if academic_year:
-		conditions.append("sm.academic_year = %(academic_year)s")
-		values["academic_year"] = academic_year
-	if academic_term:
-		conditions.append("sm.academic_term = %(academic_term)s")
-		values["academic_term"] = academic_term
-	if programme:
-		conditions.append("sm.programme_of_study = %(programme)s")
-		values["programme"] = programme
+	# Each filter takes one or more values (multi-select); empty means "no filter".
+	for param, column, key in (
+		(academic_year, "sm.academic_year", "academic_year"),
+		(academic_term, "sm.academic_term", "academic_term"),
+		(programme, "sm.programme_of_study", "programme"),
+	):
+		selected = _as_list(param)
+		if selected:
+			conditions.append(f"{column} IN %({key})s")
+			values[key] = tuple(selected)
 	if search:
 		conditions.append(
 			"(sm.name LIKE %(search)s OR sm.first_name LIKE %(search)s "
@@ -97,8 +114,10 @@ def get_students(
 		"excess": "IFNULL(cn.excess_amount, 0) > 0",
 		"no_demands": "IFNULL(fd.demand_count, 0) = 0",
 	}
-	if dues_status in status_conditions:
-		conditions.append(status_conditions[dues_status])
+	# Several statuses → a student matching any of them is included.
+	chosen = [status_conditions[k] for k in _as_list(dues_status) if k in status_conditions]
+	if chosen:
+		conditions.append("(" + " OR ".join(f"({c})" for c in chosen) + ")")
 
 	base = f"""
 		FROM `tabStudent Master` sm
@@ -220,22 +239,34 @@ def get_student_receipts(student):
 @frappe.whitelist()
 def download_receipt(receipt):
 	"""
-	PDF of an existing Fee Receipt using its standard "Fee Receipt" print format.
-	Access is gated by this page's roles (Accounts roles don't have read on Fee Receipt itself).
+	PDF for a Fee Receipt, rendered exactly as staff print it today: the linked Fee Payment in the
+	"Fee Payment Receipt - Admin Copy" format (the Fee Payment form's Print Receipt → Admin Copy).
+	Receipts with no linked Fee Payment fall back to the student portal's orphan-receipt layout.
+	Access is gated by this page's roles, since Accounts roles lack read on Fee Receipt / Fee Payment.
 	"""
 	_check_access()
 
-	doc = frappe.get_doc("Fee Receipt", receipt)
-	if doc.status == "Cancelled":
+	row = frappe.db.get_value("Fee Receipt", receipt, ["status", "fee_payment"], as_dict=True)
+	if not row:
+		frappe.throw(_("Receipt {0} not found.").format(receipt))
+	if row.status == "Cancelled":
 		frappe.throw(_("Receipt {0} has been cancelled.").format(receipt))
 
-	frappe.flags.ignore_print_permissions = True
-	try:
-		pdf = frappe.get_print("Fee Receipt", doc.name, "Fee Receipt", doc=doc, as_pdf=True)
-	finally:
-		frappe.flags.ignore_print_permissions = False
+	fee_payment = row.fee_payment or frappe.db.get_value("Fee Payment", {"receipt": receipt}, "name")
+	if fee_payment:
+		frappe.flags.ignore_print_permissions = True
+		try:
+			pdf = frappe.get_print(
+				"Fee Payment", fee_payment, "Fee Payment Receipt - Admin Copy", as_pdf=True, no_letterhead=0
+			)
+		finally:
+			frappe.flags.ignore_print_permissions = False
+	else:
+		from slcm.api.student_portal import _generate_orphan_receipt_pdf
 
-	frappe.local.response.filename = "{0}.pdf".format(doc.name.replace(" ", "-").replace("/", "-"))
+		pdf = _generate_orphan_receipt_pdf(receipt)
+
+	frappe.local.response.filename = "{0}.pdf".format(receipt.replace(" ", "-").replace("/", "-"))
 	frappe.local.response.filecontent = pdf
 	frappe.local.response.type = "pdf"
 
@@ -255,6 +286,8 @@ def get_student_dues(student):
 			"name", "first_name", "registration_id", "official_email_id", "email", "phone",
 			"programme_of_study", "batch", "academic_year", "academic_term", "section",
 			"student_status", "passport_size_photo",
+			"applying_scholarship", "scholarship_type", "scholarship_amount", "scholarship_percentage",
+			"scholarship_approval_date", "fee_waiver_remarks",
 		],
 		as_dict=True,
 	)
@@ -273,7 +306,7 @@ def get_student_dues(student):
 			"name", "demand_type", "fee_component", "description", "status",
 			"demand_date", "due_date", "creation", "academic_year",
 			"original_amount", "penalty_amount", "waiver_amount", "net_payable",
-			"paid_amount", "credit_adjusted", "outstanding_amount", "refunded_amount",
+			"paid_amount", "credit_adjusted", "outstanding_amount", "refunded_amount", "moved_to_excess_amount",
 			"is_refundable", "last_payment_date", "remarks",
 		],
 		order_by="demand_date desc, creation desc",
@@ -349,6 +382,25 @@ def get_student_dues(student):
 		order_by="refund_date desc, creation desc",
 	)
 
+	concessions = frappe.get_all(
+		"Fee Concession",
+		filters={"student": student, "docstatus": ["!=", 2]},
+		fields=[
+			"name", "fee_demand", "fee_component", "concession_type", "scholarship_for", "waiver_mode",
+			"waiver_value", "waiver_amount", "status", "docstatus", "reason", "approved_on", "creation",
+		],
+		order_by="creation desc",
+	)
+	stipends = frappe.get_all(
+		"Stipend Payment",
+		filters={"student": student, "docstatus": ["!=", 2]},
+		fields=[
+			"name", "stipend_type", "academic_year", "academic_term", "payment_date", "payment_mode",
+			"amount", "reference_number", "status", "docstatus", "remarks",
+		],
+		order_by="payment_date desc, creation desc",
+	)
+
 	active = [d for d in demands if d.status != "Cancelled"]
 	summary = {
 		"total_payable": sum(flt(d.net_payable) for d in active),
@@ -361,6 +413,8 @@ def get_student_dues(student):
 			flt(c.available_credit) for c in credit_notes if c.status == "Active"
 		),
 		"refunded_amount": sum(flt(r.refund_amount) for r in refunds if r.docstatus == 1),
+		"scholarship_amount": sum(flt(c.waiver_amount) for c in concessions if c.status == "Approved"),
+		"stipend_paid": sum(flt(x.amount) for x in stipends if x.docstatus == 1),
 	}
 
 	return {
@@ -370,6 +424,8 @@ def get_student_dues(student):
 		"payments": payments,
 		"credit_notes": credit_notes,
 		"refunds": refunds,
+		"concessions": concessions,
+		"stipends": stipends,
 	}
 
 
@@ -390,6 +446,7 @@ def record_payment(
 	Submitting runs the existing Fee Payment pipeline (demand status update, receipt, payment log).
 	"""
 	_check_access()
+	remarks = _require_remarks(remarks)
 
 	allocations = frappe.parse_json(allocations) or []
 	allocations = [a for a in allocations if flt(a.get("amount")) > 0]
@@ -436,9 +493,10 @@ def record_payment(
 
 
 @frappe.whitelist()
-def apply_excess_credit(student, fee_demand, amount):
+def apply_excess_credit(student, fee_demand, amount, remarks=None):
 	"""Adjust a student's excess (active credit notes, oldest first) against one demand."""
 	_check_access()
+	remarks = _require_remarks(remarks)
 
 	amount = flt(amount)
 	if amount <= 0:
@@ -478,10 +536,134 @@ def apply_excess_credit(student, fee_demand, amount):
 		used.append(n.name)
 		remaining -= take
 
+	frappe.get_doc("Fee Demand", fee_demand).add_comment(
+		"Comment",
+		_("Adjusted {0} from excess ({1}). Remarks: {2}").format(
+			frappe.utils.fmt_money(amount, currency="INR"), ", ".join(used), frappe.utils.escape_html(remarks)
+		),
+	)
 	return {"credit_notes": used}
 
 
 @frappe.whitelist()
-def cancel_demand(fee_demand):
+def cancel_demand(fee_demand, remarks=None):
 	_check_access()
-	return frappe.get_doc("Fee Demand", fee_demand).cancel_demand()
+	remarks = _require_remarks(remarks)
+	demand = frappe.get_doc("Fee Demand", fee_demand)
+	result = demand.cancel_demand()
+	demand.add_comment("Comment", _("Due cancelled. Remarks: {0}").format(frappe.utils.escape_html(remarks)))
+	return result
+
+
+@frappe.whitelist()
+def move_to_excess(student, fee_demand, amount, credit_type, remarks=None, academic_year=None, cancel_due=0):
+	"""
+	Move money already paid against a due into the student's excess.
+
+	The amount comes off the due's paid amount (the due's outstanding/status recalculate through the
+	standard Fee Demand logic, same as a refund) and a submitted Student Credit Note is created for it,
+	so it shows under Excess and can later be adjusted against other dues or refunded.
+	Optionally cancels the due when its whole paid amount has been moved.
+	"""
+	_check_access()
+	remarks = _require_remarks(remarks)
+	amount = flt(amount)
+	if amount <= 0:
+		frappe.throw(_("Amount must be greater than zero."))
+
+	demand = frappe.get_doc("Fee Demand", fee_demand)
+	if demand.student != student:
+		frappe.throw(_("Fee Demand {0} does not belong to this student.").format(fee_demand))
+	if demand.status == "Cancelled":
+		frappe.throw(_("Fee Demand {0} is cancelled.").format(fee_demand))
+	if amount > flt(demand.paid_amount):
+		frappe.throw(
+			_("Amount ({0}) exceeds the amount paid on {1} ({2}).").format(
+				frappe.utils.fmt_money(amount, currency="INR"),
+				fee_demand,
+				frappe.utils.fmt_money(demand.paid_amount, currency="INR"),
+			)
+		)
+	if cint(cancel_due) and amount < flt(demand.paid_amount):
+		frappe.throw(_("A due can only be cancelled when its whole paid amount is moved to excess."))
+
+	source_receipt = frappe.db.sql(
+		"""SELECT fr.name FROM `tabFee Receipt Demands Paid` rdp
+		JOIN `tabFee Receipt` fr ON fr.name = rdp.parent AND rdp.parenttype = 'Fee Receipt'
+		WHERE rdp.fee_demand = %s AND IFNULL(fr.status, '') != 'Cancelled'
+		ORDER BY fr.receipt_date DESC, fr.creation DESC LIMIT 1""",
+		fee_demand,
+	)
+
+	demand.update_payment_status(paid_delta=-amount)
+
+	note = frappe.new_doc("Student Credit Note")
+	note.student = student
+	note.credit_type = credit_type
+	note.academic_year = academic_year or demand.academic_year
+	note.credit_amount = amount
+	note.source_receipt = source_receipt[0][0] if source_receipt else None
+	note.remarks = _("Moved from due {0} ({1}). {2}").format(
+		fee_demand, demand.fee_component or demand.description or "", remarks
+	)
+	note.insert()
+	note.submit()
+
+	# Status: "Moved to Excess", or Cancelled (shown as "Cancelled & Moved to Excess" via moved_to_excess_amount)
+	demand.reload()
+	moved_total = flt(demand.moved_to_excess_amount) + amount
+	if cint(cancel_due):
+		demand.cancel_demand()
+		demand.db_set("moved_to_excess_amount", moved_total)
+	else:
+		demand.db_set({"moved_to_excess_amount": moved_total, "status": "Moved to Excess"})
+
+	demand.add_comment(
+		"Comment",
+		_("{0} moved to excess as {1}. Remarks: {2}").format(
+			frappe.utils.fmt_money(amount, currency="INR"), note.name, frappe.utils.escape_html(remarks)
+		),
+	)
+	return {"credit_note": note.name}
+
+
+@frappe.whitelist()
+def record_stipend(
+	student,
+	stipend_type,
+	payment_date,
+	payment_mode,
+	amount,
+	remarks=None,
+	academic_year=None,
+	academic_term=None,
+	reference_number=None,
+):
+	"""Create and submit a Stipend Payment for the student (normal Stipend Payment permissions apply)."""
+	_check_access()
+	remarks = _require_remarks(remarks)
+	if flt(amount) <= 0:
+		frappe.throw(_("Amount must be greater than zero."))
+
+	sm = frappe.db.get_value("Student Master", student, ["first_name", "programme_of_study"], as_dict=True)
+	if not sm:
+		frappe.throw(_("Student {0} not found.").format(student))
+
+	doc = frappe.new_doc("Stipend Payment")
+	doc.update({
+		"student": student,
+		"student_name": sm.first_name,
+		"programme": sm.programme_of_study if frappe.db.exists("Programme", sm.programme_of_study) else None,
+		"academic_year": academic_year,
+		"academic_term": academic_term,
+		"stipend_type": stipend_type,
+		"payment_date": payment_date,
+		"payment_mode": payment_mode,
+		"amount": flt(amount),
+		"reference_number": reference_number,
+		"remarks": remarks,
+		"status": "Draft",
+	})
+	doc.insert()
+	doc.submit()
+	return {"stipend_payment": doc.name}
