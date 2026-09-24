@@ -100,12 +100,14 @@ def get_context(context):
                     co = frappe.db.get_value(
                         "Course Offering",
                         co_name,
-                        ["course_name", "faculty", "term_name"],
+                        ["course_name", "faculty", "term_name", "course_title", "credit_value"],
                         as_dict=True,
                     )
                     if co:
                         s["course_display"] = co.course_name or s["course_display"]
                         s["faculty"] = co.faculty or "—"
+                        s["course_code"] = co.course_title or ""
+                        s["credits"] = co.credit_value or ""
                         if not s.term_name:
                             s["term_name"] = co.term_name or ""
                 except Exception:
