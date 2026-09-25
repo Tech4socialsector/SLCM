@@ -248,107 +248,499 @@ body { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
         <span class="text-warning">{{ da_pending }} pending</span> <span style="margin:0 4px; color:#e5e7eb;">|</span> <span class="text-danger">{{ overdue_demand_count }} overdue</span>
       </span>
     </div>
-    <table class="table">
-      <thead><tr><th>COMPONENT</th><th>DUE DATE</th><th style="text-align:right;">AMOUNT</th><th>STATUS</th></tr></thead>
-      <tbody>
-        {% for row in outstanding_rows %}
-        <tr>
-          <td>
-            <div class="font-bold text-gray-900">{{ row.component }}</div>
-            <div class="text-xs text-gray-500">{{ row.sub_label }}</div>
-          </td>
-          <td>
-            <div class="text-sm text-gray-900">{{ row.due_date_fmt }}</div>
-            {% if row.is_overdue %}<div class="text-xs text-danger font-semibold"><strike>29d overdue</strike></div>{% endif %}
-          </td>
-          <td style="text-align:right;" class="font-bold text-gray-900">{{ row.formatted_amount }}</td>
-          <td>
-            {% if row.status == 'Overdue' %}
-              <span class="pill red" style="color: #991b1b; border-color: #fca5a5;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg> Overdue</span>
-            {% elif row.status == 'Pending' %}
-              <span class="pill orange"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> Pending</span>
-            {% else %}
-              <span class="pill orange"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> {{ row.status }}</span>
-            {% endif %}
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="4" class="text-center text-gray-500 py-4">No upcoming or outstanding fees.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+
+    <div class="fee-inv-info">
+      <div class="fee-inv-term">{{ rex.course_name }}</div>
+      <div class="fee-inv-dates">{{ rex.exam_plan_name }}</div>
+      <div class="fee-comp-pills" style="margin-top:4px;">
+        <span class="fee-comp-pill fee-comp-examination-fee">Exam Fee</span>
+      </div>
+    </div>
+
+    <div class="fee-inv-actions">
+      <div class="fee-inv-amount-block">
+        <div class="fee-inv-amount {% if rex_status != 'Paid' %}fee-inv-amount-due{% else %}fee-inv-amount-clear{% endif %}">
+          {% if rex_status == 'Paid' %}&#8377;0{% else %}{{ rex.formatted_fee }}{% endif %}
+        </div>
+        <div class="fee-inv-amount-label">{% if rex_status == 'Paid' %}settled{% else %}due{% endif %}</div>
+      </div>
+
+      <span class="fee-inv-badge fee-badge-{{ rex_status | lower | replace(' ', '-') | replace('_', '-') }}">
+        {% if rex_status == 'Paid' %}<span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:9px;">check_circle</span>&nbsp;{% endif %}
+        {{ rex_status }}
+      </span>
+
+      {% if rex.can_pay and payment_enabled %}
+      <button class="fee-pay-btn" type="button" id="pay-btn-rex-{{ rex.name | e }}"
+              onclick="event.stopPropagation(); spInitiateReExamPayment('{{ rex.name | e }}', '{{ rex.exam_plan | e }}', '{{ rex.course | e }}')">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;">payments</span>
+        Pay
+      </button>
+      {% endif %}
+
+      <span class="sp-ms fee-inv-chevron" id="chv-{{ rex_idx }}"
+            style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--sp-text-4);transition:transform 0.22s;">
+        expand_more
+      </span>
+    </div>
+  </div>
+
+  <div class="fee-inv-detail" id="inv-{{ rex_idx }}" role="region">
+    <div class="fee-inv-detail-grid" style="grid-template-columns:1fr;">
+      <div class="fee-detail-col">
+        <div class="fee-detail-col-hdr">Fee Details</div>
+        <div class="fee-detail-line fee-detail-comp-line">
+          <span class="fee-detail-comp-icon">&#128221;</span>
+          <span class="fee-detail-line-label">Re-Exam Fee — {{ rex.course_name }}</span>
+          <span class="fee-detail-line-value">{{ rex.formatted_fee }}</span>
+        </div>
+        <div class="fee-detail-comp-divider"></div>
+        <div class="fee-detail-line fee-detail-line-strong">
+          <span class="fee-detail-line-label">Total</span>
+          <span class="fee-detail-line-value">{{ rex.formatted_fee }}</span>
+        </div>
+
+        {# Status-specific messaging #}
+        {% if rex_status in ('Payment Initiated', 'Authorized') %}
+        <div class="fee-status-info-box fee-status-box-initiated">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;">pending</span>
+          Payment is in progress. Please wait or refresh after a few minutes.
+        </div>
+        {% elif rex_status in ('Payment Failed', 'Failed') %}
+        <div class="fee-status-info-box fee-status-box-failed">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;">error</span>
+          Last payment attempt failed. Please try again.
+        </div>
+        {% elif rex_status == 'Refunded' %}
+        <div class="fee-status-info-box fee-status-box-refunded">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;">undo</span>
+          This fee has been refunded. Contact the Exam Section for queries.
+        </div>
+        {% endif %}
+
+        <div class="fee-detail-line" style="margin-top:8px;">
+          <span class="fee-detail-line-label" style="color:var(--sp-text-3);font-size:11px;">Reference</span>
+          <span class="fee-detail-line-value" style="font-size:11px;color:var(--sp-text-3);">{{ rex.name }}</span>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
+{% endfor %}
+{% endif %}{# end has_re_exam_fees #}
 
-<div class="section-grid">
-  <!-- Fee Invoices -->
-  <div class="card" style="margin-bottom:0;">
-    <div class="section-title">
-      <svg class="svg-icon text-gray-500" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg> Fee Invoices
-      <span class="text-xs text-gray-500 font-semibold" style="margin-left: auto;">{{ invoices | length }} invoices</span>
+{# ═══════════════════════════════════════════════════════════════════
+   Hostel Fines
+═══════════════════════════════════════════════════════════════════ #}
+{% if has_hostel_fines %}
+<div class="fee-section-hdr fade-in" style="margin-top:24px;">
+  <div class="fee-section-title">
+    <span class="sp-ms" style="color:#c2410c;">home</span>
+    Hostel Fines
+  </div>
+  <span class="fee-section-count">{{ hostel_fines|length }} fine{{ 's' if hostel_fines|length != 1 else '' }}</span>
+</div>
+
+{% for fine in hostel_fines %}
+<div class="fee-invoice-card fade-in fee-fine-card" style="animation-delay:{{ loop.index * 0.05 }}s;">
+  <div class="fee-inv-row fee-fine-row">
+    <div class="fee-inv-status-icon {% if fine.status == 'Paid' %}fee-icon-paid{% elif fine.status == 'Waived' %}fee-icon-cancelled{% else %}fee-icon-overdue{% endif %}">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;">
+        {% if fine.status == 'Paid' %}check_circle{% elif fine.status == 'Waived' %}do_not_disturb_on{% else %}report{% endif %}
+      </span>
     </div>
-    <table class="table">
-      <thead><tr><th>DESCRIPTION</th><th>INVOICE DA...</th><th>DUE DATE</th><th style="text-align:right;">AMOUNT</th><th>STATUS</th><th>ACTION</th></tr></thead>
-      <tbody>
-        {% for inv in invoices %}
-        {% if loop.first %}
-        <tr><td colspan="6" class="text-xs font-bold" style="color:#991b1b; padding:4px 0; border:none;">Semester 1 <span style="float:right; color:#6b7280; font-weight:normal;">2025 - 2026</span></td></tr>
-        {% endif %}
-        <tr>
-          <td>
-            <div class="font-bold text-gray-900">Program Fee</div>
-            <div class="text-xs text-gray-500">{{ inv.name }}</div>
-          </td>
-          <td class="text-gray-900">{{ inv.invoice_date.strftime('%d %b %Y') if inv.invoice_date else '' }}</td>
-          <td class="text-gray-900">{{ inv.due_date.strftime('%d %b %Y') if inv.due_date else '' }}</td>
-          <td style="text-align:right;" class="font-bold text-gray-900">₹{{ "{:,.0f}".format(inv.final_payable_amount) }}</td>
-          <td><span class="pill green"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Paid</span></td>
-          <td><a href="#" style="color:#991b1b; border:1px solid #fca5a5; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:700; text-decoration:none; display:inline-block;">View</a></td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="6" class="text-center text-gray-500 py-4">No invoices yet.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+
+    <div class="fee-inv-info">
+      <div class="fee-inv-term">{{ fine.reason }}</div>
+      <div class="fee-inv-dates">
+        {% if fine.fine_date %}{{ frappe.utils.formatdate(fine.fine_date, "dd MMM yyyy") }}{% endif %}
+      </div>
+      <div class="fee-comp-pills" style="margin-top:4px;">
+        <span class="fee-comp-pill fee-comp-hostel-fee">Hostel Fine</span>
+      </div>
+    </div>
+
+    <div class="fee-inv-actions">
+      <div class="fee-inv-amount-block">
+        <div class="fee-inv-amount {% if fine.status == 'Unpaid' %}fee-inv-amount-due{% else %}fee-inv-amount-clear{% endif %}">
+          {{ fine.formatted_amount }}
+        </div>
+        <div class="fee-inv-amount-label">fine</div>
+      </div>
+      <span class="fee-inv-badge
+        {% if fine.status == 'Paid' %}fee-badge-paid
+        {% elif fine.status == 'Waived' %}fee-badge-cancelled
+        {% else %}fee-badge-overdue{% endif %}">
+        {{ fine.status }}
+      </span>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}{# end has_hostel_fines #}
+
+{# ═══════════════════════════════════════════════════════════════════
+   SECTION 3 — Activity & History (tabbed: Demands | Receipts | Refunds)
+═══════════════════════════════════════════════════════════════════ #}
+{% if has_fee_demands or has_transactions or has_fee_refunds %}
+<div class="fee-section-hdr fade-in" style="margin-top:28px;">
+  <div class="fee-section-title">
+    <span class="sp-ms" style="color:#7c3aed;">list_alt</span>
+    Additional Charges &amp; History
+  </div>
+  {% if has_fee_demands %}
+  <span class="fee-section-count" style="{% if has_overdue_demands %}background:#fff1f2;color:#be123c;border-color:#fecdd3;{% endif %}">
+    {% if has_overdue_demands %}{{ overdue_demand_count }} overdue{% else %}{{ fee_demands|length }} demand{{ 's' if fee_demands|length != 1 else '' }}{% endif %}
+  </span>
+  {% endif %}
+</div>
+{% if has_fee_demands %}
+<div style="font-size:12px;color:var(--sp-text-4);margin:-8px 0 12px 4px;font-weight:500;">
+  These are additional charges (development fee, hostel, exam, etc.) separate from your programme tuition fee above.
+</div>
+{% endif %}
+<div class="fee-history-wrap fade-in" style="margin-top:0;" id="sp-demand-ledger">
+
+  {# Tab bar #}
+  <div class="fee-tab-bar">
+    {% if has_fee_demands %}
+    <button class="fee-tab fee-tab-active" id="fee-tabbtn-demands" onclick="spFeeTab('demands')">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;">list_alt</span>
+      Fee Demands
+      {% if has_overdue_demands %}<span class="fee-tab-badge fee-tab-badge-red">{{ overdue_demand_count }}</span>
+      {% else %}<span class="fee-tab-badge">{{ fee_demands|length }}</span>{% endif %}
+    </button>
+    {% endif %}
+    {% if has_transactions %}
+    <button class="fee-tab {% if not has_fee_demands %}fee-tab-active{% endif %}" id="fee-tabbtn-receipts" onclick="spFeeTab('receipts')">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;">receipt</span>
+      Receipts
+      <span class="fee-tab-badge">{{ all_transactions|length }}</span>
+    </button>
+    {% endif %}
+    {% if has_fee_refunds %}
+    <button class="fee-tab" id="fee-tabbtn-refunds" onclick="spFeeTab('refunds')">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:15px;">undo</span>
+      Refunds
+      <span class="fee-tab-badge fee-tab-badge-green">{{ fee_refunds|length }}</span>
+    </button>
+    {% endif %}
   </div>
 
-  <!-- Payment History -->
-  <div class="card" style="margin-bottom:0;">
-    <div class="section-title">
-      <svg class="svg-icon text-gray-500" viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg> Payment History
-      <span class="text-xs text-gray-500 font-semibold" style="margin-left: auto;">{{ payment_history | length }} payments <a href="#" style="color:#991b1b; text-decoration:none; margin-left:8px; font-weight:700;">View All &rarr;</a></span>
+  {# ── Tab: Fee Demands ──────────────────────────────────── #}
+  {% if has_fee_demands %}
+  <div id="fee-tab-demands" class="fee-tab-panel">
+
+    {# ── Payment Analytics Panel ─────────────────────────── #}
+    {% if da_total > 0 %}
+    <div class="spda-wrap">
+      {# Progress bar #}
+      <div class="spda-progress-row">
+        <div class="spda-progress-bar">
+          <div class="spda-progress-fill spda-fill-paid"   style="width:{{ ((da_paid_amt / da_total_amt * 100) if da_total_amt > 0 else 0)|round|int }}%;"></div>
+          <div class="spda-progress-fill spda-fill-waived" style="width:{{ ((da_waived_amt / da_total_amt * 100) if da_total_amt > 0 else 0)|round|int }}%;"></div>
+        </div>
+        <span class="spda-pct-label">{{ da_pct }}% settled</span>
+      </div>
+      {# Stat cards #}
+      <div class="spda-stats">
+        <div class="spda-stat spda-stat-total">
+          <div class="spda-stat-val">{{ da_fmt_total }}</div>
+          <div class="spda-stat-lbl">Total Levied</div>
+          <div class="spda-stat-sub">{{ da_total }} demand{{ 's' if da_total != 1 else '' }}</div>
+        </div>
+        <div class="spda-stat spda-stat-paid">
+          <div class="spda-stat-val">{{ da_fmt_paid }}</div>
+          <div class="spda-stat-lbl">Settled</div>
+          <div class="spda-stat-sub">{{ da_paid }} paid{% if da_waived %} · {{ da_waived }} waived{% endif %}</div>
+        </div>
+        {% if da_waived_amt > 0 %}
+        <div class="spda-stat spda-stat-waived">
+          <div class="spda-stat-val">{{ da_fmt_waived }}</div>
+          <div class="spda-stat-lbl">Waived Off</div>
+          <div class="spda-stat-sub">concessions applied</div>
+        </div>
+        {% endif %}
+        <div class="spda-stat {% if da_overdue > 0 %}spda-stat-overdue{% else %}spda-stat-due{% endif %}">
+          <div class="spda-stat-val">{{ da_fmt_outstanding }}</div>
+          <div class="spda-stat-lbl">Outstanding</div>
+          <div class="spda-stat-sub">
+            {% if da_overdue > 0 %}{{ da_overdue }} overdue{% elif da_pending > 0 %}{{ da_pending }} pending{% else %}all clear{% endif %}
+          </div>
+        </div>
+      </div>
+      {# Legend dots #}
+      <div class="spda-legend">
+        <span class="spda-dot spda-dot-paid"></span><span class="spda-legend-lbl">Settled</span>
+        {% if da_waived_amt > 0 %}<span class="spda-dot spda-dot-waived"></span><span class="spda-legend-lbl">Waived</span>{% endif %}
+        {% if da_outstanding > 0 %}<span class="spda-dot {% if da_overdue > 0 %}spda-dot-overdue{% else %}spda-dot-pending{% endif %}"></span>
+        <span class="spda-legend-lbl">{% if da_overdue > 0 %}Overdue{% else %}Outstanding{% endif %}</span>{% endif %}
+      </div>
     </div>
-    <table class="table">
-      <thead><tr><th>DATE</th><th>DESCRIPTION</th><th style="text-align:right;">AMOUNT</th><th>PAYMENT ...</th><th>REFERENCE</th><th>STATUS</th></tr></thead>
-      <tbody>
-        {% for hist in payment_history[:5] %}
-        <tr>
-          <td class="text-gray-900" style="white-space:nowrap;">{{ hist.date_fmt }}</td>
-          <td>
-            <div class="font-bold text-gray-900">{{ hist.description }}</div>
-            <div class="text-xs text-gray-500">{{ hist.receipt or '—' }}</div>
-          </td>
-          <td style="text-align:right;" class="font-bold text-success">{{ hist.formatted_amount }}</td>
-          <td class="text-gray-900">{{ hist.mode }}</td>
-          <td class="text-gray-500 text-xs">{{ hist.reference or '—' }}</td>
-          <td>
-            <div class="flex items-center gap-2">
-              <span class="pill green"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Paid</span>
-              <a href="#" style="color:#991b1b; padding:4px; border-radius:4px; border:1px solid #fca5a5; display:inline-flex; align-items:center;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></a>
-            </div>
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="6" class="text-center text-gray-500 py-4">No payments recorded yet.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    {% endif %}
+
+    {# Auto-calculate all payable demands server-side #}
+    {% if payment_enabled %}
+    {% set ns_pay = namespace(total=0, count=0, names=[]) %}
+    {% for d in fee_demands %}
+      {% if d.outstanding_amount > 0 and d.status not in ('Paid','Waived','Cancelled') %}
+        {% set ns_pay.total = ns_pay.total + d.outstanding_amount %}
+        {% set ns_pay.count = ns_pay.count + 1 %}
+        {% set ns_pay.names = ns_pay.names + [d.name] %}
+      {% endif %}
+    {% endfor %}
+    {% if ns_pay.count > 0 %}
+    <div class="spd-pay-all-bar">
+      <div class="spd-pay-all-info">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;color:var(--sp-primary);">pending_actions</span>
+        <div>
+          <div class="spd-pay-all-label">{{ ns_pay.count }} outstanding demand{{ 's' if ns_pay.count != 1 else '' }}</div>
+          <div class="spd-pay-all-sub">Total due across all unpaid charges</div>
+        </div>
+      </div>
+      <div class="spd-pay-all-right">
+        <span class="spd-pay-all-total">₹{{ "{:,.0f}".format(ns_pay.total) }}</span>
+        <button class="spd-pay-all-btn" onclick="spPayAll()"
+          data-demands="{{ ns_pay.names | join(',') | e }}"
+          data-total="{{ ns_pay.total }}">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">shopping_cart_checkout</span>
+          Pay All
+        </button>
+      </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    {% for demand_type, type_demands in fee_demands | groupby('demand_type') %}
+    <div class="fee-demand-type-group">
+      <div class="fee-demand-type-hdr">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:13px;
+          color:{% if demand_type == 'Academic' %}var(--sp-primary)
+                {% elif demand_type == 'Non Academic' %}#c2410c
+                {% elif demand_type == 'Hostel' %}#c2410c
+                {% elif demand_type == 'Fine' %}#b91c1c
+                {% elif demand_type == 'Examination' %}#7c3aed
+                {% else %}var(--sp-text-3){% endif %};">
+          {% if demand_type == 'Academic' %}school
+          {% elif demand_type == 'Non Academic' %}category
+          {% elif demand_type == 'Hostel' %}home
+          {% elif demand_type == 'Fine' %}report
+          {% elif demand_type == 'Examination' %}edit_note
+          {% else %}receipt_long{% endif %}
+        </span>
+        {{ demand_type }} Demands
+        <span class="fee-demand-type-count">{{ type_demands|list|length }}</span>
+      </div>
+      <div class="fee-demand-table-wrap" style="border-radius:10px;overflow:hidden;">
+        <table class="fee-demand-table fee-demand-table-v2">
+          <colgroup>
+            <col style="width:auto;min-width:160px;">
+            <col style="width:130px;">
+            <col class="fee-col-hide-sm" style="width:110px;">
+            <col class="fee-col-hide-sm" style="width:100px;">
+            <col style="width:120px;">
+            <col style="width:110px;">
+          </colgroup>
+          <thead>
+            <tr>
+              <th style="text-align:left;">Component</th>
+              <th style="text-align:center;">Due Date</th>
+              <th class="fee-demand-amt-col fee-col-hide-sm" style="text-align:right;">Net Payable</th>
+              <th class="fee-demand-amt-col fee-col-hide-sm" style="text-align:right;">Settled</th>
+              <th class="fee-demand-amt-col" style="text-align:right;">Outstanding</th>
+              <th style="text-align:center;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in type_demands %}
+            <tr class="fee-demand-row {% if d.status == 'Overdue' or d.is_demand_overdue %}fee-demand-row-overdue{% elif d.status in ('Paid','Waived') %}fee-demand-row-settled{% endif %}">
+              <td class="fee-demand-component">
+                <div class="fee-demand-comp-name">{{ d.fee_component or d.description or "—" }}</div>
+                {% if d.trigger_ref_doctype %}
+                <span class="fee-demand-source-chip">
+                  {{ d.trigger_ref_doctype | replace('Course Reregistration','Re-reg') | replace('Convocation Registration','Convocation') | replace('_',' ') }}
+                </span>
+                {% endif %}
+              </td>
+              <td class="fee-demand-due" style="text-align:center;white-space:nowrap;">
+                {% if d.due_date_fmt %}
+                  {% if d.status == 'Overdue' or d.is_demand_overdue %}
+                  <div class="fee-demand-due-overdue" style="justify-content:center;">
+                    <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:13px;">warning</span>
+                    {{ d.due_date_fmt }}
+                  </div>
+                  <div class="fee-demand-days-overdue" style="text-align:center;margin-top:2px;">{{ d.days_overdue }}d overdue</div>
+                  {% else %}
+                  <span style="font-size:12px;color:var(--sp-text-2);">{{ d.due_date_fmt }}</span>
+                  {% endif %}
+                {% else %}<span style="color:var(--sp-text-4);">—</span>{% endif %}
+              </td>
+              <td class="fee-demand-amt-col fee-col-hide-sm" style="text-align:right;color:var(--sp-text-2);font-size:13px;font-variant-numeric:tabular-nums;"
+                  title="Original: {{ d.formatted_original }}{% if d.waiver_amount and d.waiver_amount > 0 %} · Waiver applied: −{{ d.formatted_waiver }}{% endif %}">
+                {{ d.formatted_net }}
+                {% if d.waiver_amount and d.waiver_amount > 0 %}
+                <div style="font-size:10px;color:#059669;font-weight:600;">−{{ d.formatted_waiver }} waiver</div>
+                {% endif %}
+              </td>
+              <td class="fee-demand-amt-col fee-col-hide-sm" style="text-align:right;font-variant-numeric:tabular-nums;"
+                  title="{% if d.paid_amount and d.paid_amount > 0 %}Paid: {{ d.formatted_paid }}{% endif %}{% if d.has_credit_adj %} · Credit adjusted: {{ d.formatted_credit_adj }}{% endif %}">
+                {% if d.settled_amount and d.settled_amount > 0 %}
+                <span style="color:#059669;font-weight:600;">{{ d.formatted_settled }}</span>
+                {% if d.has_credit_adj %}<div style="font-size:10px;color:#0891b2;font-weight:600;">incl. credit</div>{% endif %}
+                {% else %}<span style="color:var(--sp-text-4);">—</span>{% endif %}
+              </td>
+              <td class="fee-demand-amt-col fee-demand-outstanding" style="text-align:right;font-variant-numeric:tabular-nums;">
+                <span class="{% if d.outstanding_amount > 0 and d.status not in ('Paid','Waived') %}fee-demand-amt-due{% else %}fee-demand-amt-clear{% endif %}">
+                  {{ d.formatted_outstanding }}
+                </span>
+              </td>
+              <td style="text-align:center;">
+                <span class="fee-demand-badge fee-demand-badge-{{ (d.status if not (d.is_demand_overdue and d.status == 'Pending') else 'Overdue') | lower | replace(' ','-') }}">
+                  {% if d.status == 'Paid' %}<span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:9px;">check_circle</span>&nbsp;
+                  {% elif d.status == 'Overdue' or d.is_demand_overdue %}<span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:9px;">error</span>&nbsp;
+                  {% elif d.status == 'Waived' %}<span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:9px;">do_not_disturb_on</span>&nbsp;
+                  {% endif %}
+                  {% if d.is_demand_overdue and d.status == 'Pending' %}Overdue{% else %}{{ d.status }}{% endif %}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# ── Bulk Payment Confirmation Bottom Sheet ────────────────────── #}
+  {% if payment_enabled and has_fee_demands %}
+  <div id="spd-bulk-sheet-overlay" class="spd-bulk-overlay" style="display:none;" onclick="spBulkSheetClose()"></div>
+  <div id="spd-bulk-sheet" class="spd-bulk-sheet" role="dialog" aria-modal="true" aria-label="Confirm Payment">
+    <div class="spd-bulk-sheet-handle"></div>
+    <div class="spd-bulk-sheet-head">
+      <div class="spd-bulk-sheet-title">
+        <div class="spd-bulk-sheet-title-icon">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;">receipt_long</span>
+        </div>
+        Payment Summary
+      </div>
+      <button class="spd-bulk-sheet-close" onclick="spBulkSheetClose()" aria-label="Close">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;">close</span>
+      </button>
+    </div>
+    <div class="spd-bulk-sheet-body">
+      <div class="spd-bulk-sheet-note">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:14px;vertical-align:-2px;">info</span>
+        Review the charges below before proceeding to payment.
+      </div>
+      <div id="spd-bulk-items" class="spd-bulk-items"></div>
+      <div class="spd-bulk-total-row">
+        <div class="spd-bulk-total-label">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;color:var(--sp-text-3);">payments</span>
+          Total Payable
+        </div>
+        <span id="spd-bulk-total-amt" class="spd-bulk-total-val"></span>
+      </div>
+    </div>
+    <div class="spd-bulk-sheet-foot">
+      <button class="spd-bulk-sheet-cancel" onclick="spBulkSheetClose()">Cancel</button>
+      <button class="spd-bulk-sheet-confirm" id="spd-bulk-confirm-btn" onclick="spBulkConfirmPay()">
+        <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:18px;">lock</span>
+        Proceed to Pay
+      </button>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Tab: Receipts ─────────────────────────────────────── #}
+  {% if has_transactions %}
+  <div id="fee-tab-receipts" class="fee-tab-panel" {% if has_fee_demands %}style="display:none;"{% endif %}>
+    <div class="fee-txn-table-wrap" style="border-radius:0 0 12px 12px;box-shadow:none;border-top:none;">
+      <table class="fee-txn-table">
+        <thead>
+          <tr>
+            <th>Receipt No.</th>
+            <th>Date</th>
+            <th class="fee-col-hide-sm">Academic Year</th>
+            <th>Mode</th>
+            <th class="fee-col-hide-sm">Reference No.</th>
+            <th class="fee-txn-amt-col">Amount</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for txn in all_transactions %}
+          <tr>
+            <td class="fee-txn-receipt-no">{{ txn.name }}</td>
+            <td class="fee-txn-date">{{ txn.display_date or "—" }}</td>
+            <td class="fee-col-hide-sm">{{ txn.academic_year or "—" }}</td>
+            <td>{{ txn.payment_mode or "—" }}</td>
+            <td class="fee-txn-ref fee-col-hide-sm">{{ txn.reference_number or "—" }}</td>
+            <td class="fee-txn-amount">{{ txn.formatted_amount }}</td>
+            <td class="fee-txn-dl-col">
+              <a class="fee-txn-dl-btn"
+                 href="/api/method/slcm.api.student_portal.download_fee_receipt?receipt_name={{ txn.name | urlencode }}"
+                 target="_blank" rel="noopener noreferrer" title="Download Receipt">
+                <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:17px;">download</span>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Tab: Refunds ──────────────────────────────────────── #}
+  {% if has_fee_refunds %}
+  <div id="fee-tab-refunds" class="fee-tab-panel" style="display:none;padding:12px;">
+    {% for r in fee_refunds %}
+    {% if r.demand_paid_amount and r.demand_paid_amount > 0 %}
+    <div class="fee-refund-card" style="margin-bottom:10px;">
+      <div class="fee-refund-left">
+        <div class="fee-refund-icon fee-refund-icon-{{ r.status | lower }}">
+          <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:20px;">
+            {% if r.status == 'Approved' %}check_circle{% else %}pending{% endif %}
+          </span>
+        </div>
+        <div>
+          <div class="fee-refund-type">{{ r.refund_type or "Refund" }}</div>
+          <div class="fee-refund-component">{{ r.fee_component or "—" }}</div>
+        </div>
+      </div>
+      <div class="fee-refund-mid">
+        {% if r.reason %}<div class="fee-refund-reason">{{ r.reason }}</div>{% endif %}
+        <div class="fee-refund-meta-row">
+          {% if r.refund_date_fmt %}<span class="fee-refund-chip"><span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">event</span>{{ r.refund_date_fmt }}</span>{% endif %}
+          {% if r.refund_mode %}<span class="fee-refund-chip"><span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">payments</span>{{ r.refund_mode }}</span>{% endif %}
+          {% if r.approved_by_name %}<span class="fee-refund-chip"><span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">person</span>{{ r.approved_by_name }}</span>{% endif %}
+        </div>
+        {% if r.status == 'Approved' and (r.bank_name or r.masked_account or r.utr_number) %}
+        <div class="fee-refund-bank-row">
+          {% if r.bank_name %}<span class="fee-refund-bank-detail"><span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">account_balance</span>{{ r.bank_name }}</span>{% endif %}
+          {% if r.masked_account %}<span class="fee-refund-bank-detail">{{ r.masked_account }}</span>{% endif %}
+          {% if r.utr_number %}<span class="fee-refund-bank-detail fee-refund-utr"><span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:11px;">tag</span>UTR: {{ r.utr_number }}</span>{% endif %}
+        </div>
+        {% endif %}
+      </div>
+      <div class="fee-refund-right">
+        <div class="fee-refund-amount">+ {{ r.formatted_amount }}</div>
+        <div class="fee-refund-amount-label">refunded</div>
+        <span class="fee-refund-status fee-refund-status-{{ r.status | lower }}">
+          {% if r.status == 'Approved' %}<span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:10px;">check_circle</span>&nbsp;{% endif %}
+          {{ r.status }}
+        </span>
+      </div>
+    </div>
+    {% else %}
+    <div class="fee-refund-invalid-notice">
+      <span class="sp-ms" style="font-family:'Material Symbols Outlined';font-size:16px;">info</span>
+      Refund <strong>{{ r.name }}</strong> ({{ r.formatted_amount }}) cannot be processed — no payment has been recorded for the linked demand. Please contact the Bursar's Office.
+    </div>
+    {% endif %}
+    {% endfor %}
   </div>
 </div>
 

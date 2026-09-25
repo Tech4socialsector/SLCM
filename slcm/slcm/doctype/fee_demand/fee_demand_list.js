@@ -109,11 +109,6 @@ async function _fd_list_open_bulk_concession_dialog(demand_names, on_done) {
 				label: __("Reason"),
 				reqd: 1,
 			},
-			{
-				fieldtype: "Small Text",
-				fieldname: "remarks",
-				label: __("Remarks"),
-			},
 		],
 		primary_action_label: __("Apply"),
 		primary_action(values) {
@@ -125,7 +120,6 @@ async function _fd_list_open_bulk_concession_dialog(demand_names, on_done) {
 					concession_type: values.concession_type,
 					waiver_value: values.waiver_value,
 					reason: values.reason,
-					remarks: values.remarks,
 				},
 				callback(r) {
 					dialog.hide();
