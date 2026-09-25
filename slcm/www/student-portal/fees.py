@@ -709,6 +709,7 @@ def _build_view_model(context):
             for t in context.all_transactions:
                 if t.get("academic_year"): ay_set.add(t.get("academic_year"))
 
+        if context.get("current_academic_year"): ay_set.add(context.current_academic_year)
         context.fee_academic_years = sorted(list(ay_set), reverse=True)
 
     except Exception as e:
@@ -745,6 +746,7 @@ def _set_nav_defaults(context):
     context.programme_name = ""
     context.department = ""
     context.batch_year = ""
+    context.current_academic_year = ""
 
 def _set_student_nav(context, student):
     full_name = " ".join(filter(None, [student.first_name, student.middle_name, student.last_name]))
@@ -753,24 +755,16 @@ def _set_student_nav(context, student):
     context.student_photo = student.passport_size_photo or ""
     context.student_initial = (context.student_name[0]).upper() if context.student_name else "S"
 
-    prog_name = ""
+    # Programme / batch / year come from Student Master (the old Program Enrollment query no longer works)
+    prog_name = student.get("master_programme") or ""
     dept = ""
-    batch = ""
-    try:
-        prog_enr = frappe.get_all(
-            "Program Enrollment",
-            filters={"student": student.name, "docstatus": 1},
-            fields=["program", "academic_year"],
-            order_by="creation desc",
-            limit_page_length=1
-        )
-        if prog_enr:
-            enr = prog_enr[0]
-            prog_name = frappe.db.get_value("Program", enr.program, "program_name") or enr.program
-            dept = frappe.db.get_value("Program", enr.program, "department") or ""
-            batch = enr.academic_year or ""
-    except Exception:
-        pass
+    batch = student.get("batch") or ""
+    if student.get("programme_of_study"):
+        prog = frappe.db.get_value("Programme", student.programme_of_study, ["program_name", "department"], as_dict=True)
+        if prog:
+            prog_name = prog_name or prog.program_name or student.programme_of_study
+            dept = prog.department or ""
+    context.current_academic_year = student.get("academic_year") or ""
 
     context.current_enrollment = f"{prog_name} ({batch})" if prog_name else ""
     context.programme_name = prog_name
