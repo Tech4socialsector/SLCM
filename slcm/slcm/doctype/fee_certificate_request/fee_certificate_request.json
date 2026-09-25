@@ -15,6 +15,7 @@
   "level_of_study",
   "section_purpose",
   "purpose",
+  "certificate_type",
   "certificate_mode",
   "column_break_purpose",
   "include_bank_details",
@@ -81,20 +82,31 @@
   },
   {
    "fieldname": "purpose",
-   "fieldtype": "Select",
+   "fieldtype": "Autocomplete",
    "in_list_view": 1,
    "label": "Purpose",
-   "options": "Scholarship\nBank Loan\nEducation Loan\nDetained Student Fee Structure\nOther",
-   "reqd": 1
+   "options": "Fee Certificate for Education Loan\nFee Demand Letter for Education Loan/others\nFee Certificate/ Receipt for Scholarship/others",
+   "reqd": 1,
+   "description": "Options come from Fee Certificate Settings \u2192 Purposes & Templates."
+  },
+  {
+   "fieldname": "certificate_type",
+   "fieldtype": "Select",
+   "label": "Certificate Type",
+   "options": "\nMulti Year Fee Structure\nSingle Year Fee Demand\nSingle Year Fee Receipt",
+   "read_only": 1,
+   "in_standard_filter": 1,
+   "description": "Set from the Purpose's template in Fee Certificate Settings."
   },
   {
    "default": "Single Year",
    "fieldname": "certificate_mode",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "label": "Certificate Mode",
    "options": "Single Year\nMulti Year",
-   "reqd": 1
+   "reqd": 1,
+   "read_only": 1,
+   "hidden": 1
   },
   {
    "fieldname": "column_break_purpose",
@@ -110,7 +122,8 @@
    "default": "0",
    "fieldname": "has_scholarship",
    "fieldtype": "Check",
-   "label": "Has University Scholarship"
+   "label": "Has University Scholarship",
+   "depends_on": "eval:doc.certificate_type!=\"Single Year Fee Receipt\""
   },
   {
    "fieldname": "section_years",
@@ -122,18 +135,18 @@
    "fieldtype": "Link",
    "label": "Academic Year",
    "options": "Academic Year",
-   "reqd": 1
+   "reqd": 1,
+   "description": "The academic year the certificate is for. A Multi Year Fee Structure shows every year of the programme from the student's first year; the Admission Fee appears only in the first year."
   },
   {
-   "depends_on": "eval:doc.certificate_mode==\"Multi Year\"",
    "fieldname": "to_academic_year",
    "fieldtype": "Link",
    "label": "To Academic Year",
-   "mandatory_depends_on": "eval:doc.certificate_mode==\"Multi Year\"",
-   "options": "Academic Year"
+   "options": "Academic Year",
+   "hidden": 1
   },
   {
-   "description": "Click \"Fetch Academic Years\" to populate this from the range above, then edit the Year Label for any row (e.g. a detained/repeated year) before generating the certificate.",
+   "description": "Filled automatically on save (or click \"Fetch Academic Years\"). Edit a row's Year Label to change its column heading on the certificate, e.g. for a detained/repeated year.",
    "fieldname": "years",
    "fieldtype": "Table",
    "label": "Year-wise Breakdown",
@@ -170,7 +183,7 @@
   }
  ],
  "links": [],
- "modified": "2026-09-08 00:00:00.000000",
+ "modified": "2026-09-25 17:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Fee Certificate Request",

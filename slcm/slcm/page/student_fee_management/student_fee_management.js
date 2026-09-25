@@ -1,6 +1,8 @@
 // Student Fee Management
 //   /desk/student-fee-management            → student list (year / term / programme filters)
 //   /desk/student-fee-management/<student>  → that student's dues, payments and excess
+// The list view has three tabs sharing one set of filters: Students, Due Wise Report and
+// Student Wise Outstanding (the office's two report sheets, exportable to Excel).
 
 const SFM_PAGE = "student-fee-management";
 const SFM_API = "slcm.slcm.page.student_fee_management.student_fee_management.";
@@ -262,6 +264,15 @@ class StudentFeeManagement {
 			sort_by: "outstanding_amount",
 			sort_order: "desc",
 		};
+		this.list_view = "students";
+		try {
+			const saved = localStorage.getItem("sfm_list_view");
+			if (["students", "due_wise", "outstanding"].includes(saved)) this.list_view = saved;
+		} catch (e) {
+			// storage blocked — start on the Students tab
+		}
+		this.report_state = { start: 0, page_length: 25 };
+		this.report_req = 0;
 		this.filter_options = null;
 		this.last_totals = null;
 		this.list_rows = [];
@@ -357,6 +368,46 @@ class StudentFeeManagement {
 
 				<section class="sfm-kpi-grid" aria-label="${__("Summary")}"></section>
 
+				<div class="sfm-tabs sfm-view-tabs" role="tablist" aria-label="${__("Views")}">
+					${[
+						["students", "users", __("Students")],
+						["due_wise", "file-text", __("Due Wise Report")],
+						["outstanding", "clock", __("Student Wise Outstanding")],
+					]
+						.map(
+							([key, icon, label]) =>
+								`<button type="button" role="tab" class="sfm-tab" data-view="${key}">${sfm_icon(icon, 16)}<span>${label}</span></button>`
+						)
+						.join("")}
+				</div>
+
+				<section class="sfm-panel sfm-report-panel" hidden>
+					<div class="sfm-table-toolbar">
+						<div>
+							<h2 class="sfm-panel-title sfm-report-title"></h2>
+							<div class="sfm-muted sfm-report-caption" aria-live="polite"></div>
+						</div>
+						<div class="sfm-report-tools">
+							<div class="sfm-page-size">
+								<label for="sfm-report-size">${__("Rows per page")}</label>
+								<div class="sfm-select-wrap">
+									<select id="sfm-report-size" class="sfm-control sfm-control-sm">
+										${SFM_PAGE_SIZES.map((n) => `<option value="${n}">${n}</option>`).join("")}
+									</select>
+									${sfm_icon("chevron-down", 14, "sfm-select-caret")}
+								</div>
+							</div>
+							<button type="button" class="sfm-btn sfm-btn-primary sfm-btn-sm" data-act="export-report">
+								${sfm_icon("download", 14)}<span>${__("Export Excel")}</span>
+							</button>
+						</div>
+					</div>
+					<div class="sfm-table-scroll">
+						<table class="sfm-table sfm-report-table"><thead></thead><tbody></tbody><tfoot></tfoot></table>
+					</div>
+					<footer class="sfm-pager" data-pager="report"></footer>
+				</section>
+
 				<section class="sfm-panel sfm-table-panel" aria-labelledby="sfm-table-title">
 					<div class="sfm-table-toolbar">
 						<div>
@@ -408,7 +459,9 @@ class StudentFeeManagement {
 		this.bind_list_events();
 		this.render_sort_indicators();
 		this.$root.find("#sfm-page-size").val(this.list_state.page_length);
+		this.$root.find("#sfm-report-size").val(this.report_state.page_length);
 		this.load_students();
+		this.set_list_view(this.list_view);
 
 		if (this.filter_options) {
 			this.render_filter_options();
@@ -509,6 +562,7 @@ class StudentFeeManagement {
 		});
 		this.update_dirty();
 		this.load_students();
+		this.reload_report();
 	}
 
 	// Flag the Search button while the filters on screen differ from the ones the table shows.
@@ -540,6 +594,7 @@ class StudentFeeManagement {
 		this.render_filter_options();
 		this.update_dirty();
 		this.load_students();
+		this.reload_report();
 	}
 
 	bind_list_events() {
@@ -558,7 +613,26 @@ class StudentFeeManagement {
 		});
 		$r.on("click", '[data-act="apply"]', () => this.apply_filters());
 		$r.on("click", '[data-act="clear"]', () => this.clear_filters());
-		$r.on("click", '[data-act="refresh"]', () => this.load_students());
+		$r.on("click", '[data-act="refresh"]', () => {
+			this.load_students();
+			this.load_report();
+		});
+		$r.on("click", ".sfm-view-tabs .sfm-tab", (e) => this.set_list_view($(e.currentTarget).data("view")));
+		$r.on("click", '[data-act="export-report"]', () => this.export_report());
+		$r.on("click", ".sfm-report-student", (e) => {
+			if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return;
+			e.preventDefault();
+			frappe.set_route(SFM_PAGE, $(e.currentTarget).data("student"));
+		});
+		$r.on("change", "#sfm-report-size", (e) => {
+			this.report_state.page_length = cint($(e.currentTarget).val()) || 25;
+			this.reload_report();
+		});
+		$r.on("click", '.sfm-pager[data-pager="report"] [data-page]', (e) => {
+			const rs = this.report_state;
+			rs.start = Math.max(0, (cint($(e.currentTarget).data("page")) - 1) * rs.page_length);
+			this.load_report();
+		});
 		$r.on("click", '[data-act="bulk-upload"]', () => this.bulk_upload_dialog());
 		$r.on("click", '[data-act="retry"]', () => this.load_students());
 
@@ -587,7 +661,7 @@ class StudentFeeManagement {
 			this.load_students();
 		});
 
-		$r.on("click", ".sfm-pager [data-page]", (e) => {
+		$r.on("click", '.sfm-pager:not([data-pager="report"]) [data-page]', (e) => {
 			const page = cint($(e.currentTarget).data("page"));
 			s.start = Math.max(0, (page - 1) * s.page_length);
 			this.load_students();
@@ -769,7 +843,7 @@ class StudentFeeManagement {
 						<button type="button" class="sfm-btn sfm-btn-primary" data-act="retry">${sfm_icon("refresh", 15)}<span>${__("Retry")}</span></button>
 					</div>
 				</td></tr>`);
-			this.$root.find(".sfm-pager").empty();
+			this.$root.find('.sfm-pager:not([data-pager="report"])').empty();
 			return;
 		}
 
@@ -849,19 +923,24 @@ class StudentFeeManagement {
 		);
 	}
 
-	render_pager(total, shown) {
-		const s = this.list_state;
+	// `opts` lets the report tabs reuse this with their own state, pager and wording.
+	render_pager(total, shown, opts = {}) {
+		const s = opts.state || this.list_state;
+		const $pager = opts.$pager || this.$root.find('.sfm-pager:not([data-pager="report"])');
+		const $caption = opts.$caption || this.$root.find(".sfm-table-caption");
+		const one = opts.one || __("1 student matches the current filters");
+		const many = opts.many || __("{0} students match the current filters");
+		const showing_one = opts.showing_one || __("Showing 1 of 1 student");
+		const showing_many = opts.showing_many || __("Showing {0} to {1} of {2} students");
 		const pages = Math.max(1, Math.ceil(total / s.page_length));
 		const current = Math.floor(s.start / s.page_length) + 1;
 		const from = total ? s.start + 1 : 0;
 		const to = Math.min(s.start + shown, total);
-		
-		this.$root
-			.find(".sfm-table-caption")
-			.text(total ? (total === 1 ? __("1 student matches the current filters") : __("{0} students match the current filters", [sfm_int(total)])) : "");
+
+		$caption.text(total ? (total === 1 ? one : many.replace("{0}", sfm_int(total))) : "");
 
 		if (!total) {
-			this.$root.find(".sfm-pager").empty();
+			$pager.empty();
 			return;
 		}
 
@@ -886,8 +965,8 @@ class StudentFeeManagement {
 		const nav = (page, icon, label, disabled) =>
 			`<button type="button" class="sfm-page-btn sfm-page-nav" data-page="${page}" aria-label="${label}" title="${label}" ${disabled ? "disabled" : ""}>${icon}</button>`;
 
-		this.$root.find(".sfm-pager").html(`
-			<div class="sfm-muted">${(total === 1 ? __("Showing 1 of 1 student") : __("Showing {0} to {1} of {2} students", [sfm_int(from), sfm_int(to), sfm_int(total)]))}</div>
+		$pager.html(`
+			<div class="sfm-muted">${total === 1 ? showing_one : showing_many.replace("{0}", sfm_int(from)).replace("{1}", sfm_int(to)).replace("{2}", sfm_int(total))}</div>
 			<nav class="sfm-pages" aria-label="${__("Pagination")}">
 				${nav(1, sfm_icon("chevrons-left", 15), __("First page"), current === 1)}
 				${nav(current - 1, sfm_icon("chevron-left", 15) + `<span class="sfm-page-label">${__("Previous")}</span>`, __("Previous page"), current === 1)}
@@ -896,6 +975,170 @@ class StudentFeeManagement {
 				${nav(pages, sfm_icon("chevrons-right", 15), __("Last page"), current === pages)}
 			</nav>
 		`);
+	}
+
+	// ── Reports (Due Wise / Student Wise Outstanding) ────────────────────
+	set_list_view(view) {
+		this.list_view = view;
+		try {
+			localStorage.setItem("sfm_list_view", view);
+		} catch (e) {
+			// storage blocked — the tab just won't be remembered
+		}
+		this.$root.find(".sfm-view-tabs .sfm-tab").each((_, t) => {
+			const active = $(t).data("view") === view;
+			$(t).toggleClass("active", active).attr("aria-selected", active);
+		});
+		const is_report = view !== "students";
+		this.$root.find(".sfm-table-panel").prop("hidden", is_report);
+		this.$root.find(".sfm-report-panel").prop("hidden", !is_report);
+		if (is_report) this.reload_report();
+	}
+
+	reload_report() {
+		this.report_state.start = 0;
+		this.load_report();
+	}
+
+	report_args() {
+		const s = this.list_state;
+		return {
+			academic_year: s.academic_year,
+			academic_term: s.academic_term,
+			programme: s.programme,
+			dues_status: s.dues_status,
+			search: s.search,
+		};
+	}
+
+	async load_report() {
+		const view = this.list_view;
+		if (view === "students" || !this.$root.find(".sfm-report-panel").length) return;
+		const req = ++this.report_req;
+		const rs = this.report_state;
+		const $panel = this.$root.find(".sfm-report-panel");
+		$panel.find(".sfm-report-title").text(view === "due_wise" ? __("Due Wise Report") : __("Student Wise Outstanding Fee"));
+		$panel.find(".sfm-report-caption").text(__("Loading…"));
+		$panel.find(".sfm-report-table tbody").html(
+			`<tr><td colspan="40"><div class="sfm-empty-state">${sfm_icon("loader", 22, "sfm-spin")}</div></td></tr>`
+		);
+		$panel.find(".sfm-report-table tfoot").empty();
+
+		let result;
+		try {
+			const r = await frappe.call({
+				method: SFM_API + (view === "due_wise" ? "get_due_wise_report" : "get_outstanding_report"),
+				args: { ...this.report_args(), start: rs.start, page_length: rs.page_length },
+			});
+			result = r.message;
+		} catch (e) {
+			result = null;
+		}
+		if (req !== this.report_req || view !== this.list_view) return;
+
+		if (!result) {
+			$panel.find(".sfm-report-caption").text("");
+			$panel.find(".sfm-report-table thead").empty();
+			$panel.find(".sfm-report-table tbody").html(
+				`<tr><td><div class="sfm-empty-state"><span class="sfm-empty-icon">${sfm_icon("alert", 22)}</span><div class="sfm-empty-title">${__("Couldn't load the report")}</div></div></td></tr>`
+			);
+			$panel.find('.sfm-pager[data-pager="report"]').empty();
+			return;
+		}
+		if (view === "due_wise") this.render_due_wise(result);
+		else this.render_outstanding(result);
+	}
+
+	render_due_wise({ columns, rows, totals }) {
+		const $t = this.$root.find(".sfm-report-table");
+		const cell = (key, is_amount, d) => {
+			const v = d[key];
+			if (is_amount) return `<td class="num">${sfm_money(v)}</td>`;
+			if (key === "student_name")
+				return `<td><a href="/desk/${SFM_PAGE}/${encodeURIComponent(d.student)}" class="sfm-report-student" data-student="${sfm_esc(d.student)}">${sfm_esc(v || d.student)}</a></td>`;
+			if (key === "voucher_number")
+				return `<td><a href="${frappe.utils.get_form_link("Fee Demand", v)}">${sfm_esc(v)}</a></td>`;
+			if (key === "due_status") return `<td>${sfm_badge(v)}</td>`;
+			if (key.endsWith("_date")) return `<td>${sfm_date(v)}</td>`;
+			return `<td class="${key === "remarks" || key === "email" ? "sfm-wrap" : ""}">${sfm_esc(v || "—")}</td>`;
+		};
+		$t.find("thead").html(
+			`<tr>${columns.map(([_k, label, a]) => `<th scope="col" class="${a ? "num" : ""}">${sfm_esc(label)}</th>`).join("")}</tr>`
+		);
+		$t.find("tbody").html(
+			rows.length
+				? rows.map((d) => `<tr>${columns.map(([k, _l, a]) => cell(k, a, d)).join("")}</tr>`).join("")
+				: `<tr><td colspan="${columns.length}"><div class="sfm-empty-state"><span class="sfm-empty-icon">${sfm_icon("search-x", 22)}</span><div class="sfm-empty-title">${__("No dues found")}</div></div></td></tr>`
+		);
+		const first_amount = columns.findIndex((c) => c[2]);
+		$t.find("tfoot").html(
+			rows.length
+				? `<tr class="sfm-report-total"><td colspan="${first_amount}">${__("Total (all matching dues)")}</td>${columns
+						.slice(first_amount)
+						.map(([k, _l, a]) => (a ? `<td class="num">${sfm_money(totals[k])}</td>` : "<td></td>"))
+						.join("")}</tr>`
+				: ""
+		);
+		this.render_pager(cint(totals.row_count), rows.length, {
+			state: this.report_state,
+			$pager: this.$root.find('.sfm-pager[data-pager="report"]'),
+			$caption: this.$root.find(".sfm-report-caption"),
+			one: __("1 due matches the current filters"),
+			many: __("{0} dues match the current filters"),
+			showing_one: __("Showing 1 of 1 due"),
+			showing_many: __("Showing {0} to {1} of {2} dues"),
+		});
+	}
+
+	render_outstanding({ components, rows, count, totals }) {
+		const $t = this.$root.find(".sfm-report-table");
+		const amount = (v) => (flt(v) ? sfm_money(v) : '<span class="sfm-sub">0</span>');
+		$t.find("thead").html(`<tr>
+			<th scope="col" class="num">${__("Sl. No.")}</th>
+			<th scope="col">${__("Student ID")}</th>
+			<th scope="col">${__("Student Name")}</th>
+			<th scope="col">${__("Student Email ID")}</th>
+			<th scope="col">${__("Academic Status")}</th>
+			${components.map((c) => `<th scope="col" class="num">${sfm_esc(c)}</th>`).join("")}
+			<th scope="col" class="num">${__("Total Outstanding Fee")}</th>
+		</tr>`);
+		$t.find("tbody").html(
+			rows.length
+				? rows
+						.map(
+							(d, i) => `<tr>
+					<td class="num">${this.report_state.start + i + 1}</td>
+					<td>${sfm_esc(d.student_id)}</td>
+					<td><a href="/desk/${SFM_PAGE}/${encodeURIComponent(d.student)}" class="sfm-report-student" data-student="${sfm_esc(d.student)}">${sfm_esc(d.student_name || d.student)}</a></td>
+					<td class="sfm-wrap">${sfm_esc(d.email || "—")}</td>
+					<td>${sfm_esc(d.academic_status || "—")}</td>
+					${components.map((c) => `<td class="num">${amount(d.amounts[c])}</td>`).join("")}
+					<td class="num sfm-amount-strong">${sfm_money(d.total)}</td>
+				</tr>`
+						)
+						.join("")
+				: `<tr><td colspan="${components.length + 6}"><div class="sfm-empty-state"><span class="sfm-empty-icon">${sfm_icon("search-x", 22)}</span><div class="sfm-empty-title">${__("No students found")}</div></div></td></tr>`
+		);
+		$t.find("tfoot").html(
+			rows.length
+				? `<tr class="sfm-report-total"><td colspan="5">${__("Total (all matching students)")}</td>${components
+						.map((c) => `<td class="num">${sfm_money(totals[c])}</td>`)
+						.join("")}<td class="num">${sfm_money(totals.total)}</td></tr>`
+				: ""
+		);
+		this.render_pager(cint(count), rows.length, {
+			state: this.report_state,
+			$pager: this.$root.find('.sfm-pager[data-pager="report"]'),
+			$caption: this.$root.find(".sfm-report-caption"),
+		});
+	}
+
+	export_report() {
+		const params = new URLSearchParams({ report: this.list_view });
+		Object.entries(this.report_args()).forEach(([k, v]) => {
+			if (Array.isArray(v) ? v.length : v) params.append(k, Array.isArray(v) ? JSON.stringify(v) : v);
+		});
+		window.open(`/api/method/${SFM_API}export_report?${params.toString()}`);
 	}
 
 	// ── Receipts ─────────────────────────────────────────────────────────
@@ -2290,6 +2533,11 @@ class StudentFeeManagement {
 		.sfm-empty-state .sfm-btn { margin-top: 8px; }
 
 		/* ── Student detail ── */
+		.sfm-view-tabs { margin-bottom: -8px; }
+		.sfm-report-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+		.sfm-report-table tfoot td { font-weight: 700; background: var(--sfm-subtle); border-top: 2px solid var(--sfm-primary); padding: 12px 14px; white-space: nowrap; }
+		.sfm-report-table td { white-space: nowrap; }
+		.sfm-report-table td.sfm-wrap { white-space: normal; min-width: 180px; }
 		.sfm-tabs { display: flex; gap: 4px; box-shadow: inset 0 -1px 0 var(--sfm-border); overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
 		.sfm-tab { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; background: none; border: none; border-bottom: 2px solid transparent; font-size: 13px; font-weight: 500; color: var(--sfm-muted); white-space: nowrap; cursor: pointer; transition: color .15s, border-color .15s, background-color .15s; border-radius: 6px 6px 0 0; }
 		.sfm-tab:hover { color: var(--sfm-text); background: var(--sfm-primary-soft); }

@@ -1,46 +1,70 @@
-const PURPOSE_DEFAULTS = {
-	Scholarship: { certificate_mode: "Single Year", include_bank_details: 0 },
-	"Bank Loan": { certificate_mode: "Single Year", include_bank_details: 1 },
-	"Education Loan": { certificate_mode: "Multi Year", include_bank_details: 1 },
-	"Detained Student Fee Structure": { certificate_mode: "Multi Year", include_bank_details: 1 },
-};
+const METHOD_BASE = "slcm.slcm.doctype.fee_certificate_request.fee_certificate_request";
+
+function load_purpose_options(frm) {
+	frappe.call({
+		method: "slcm.slcm.doctype.fee_certificate_settings.fee_certificate_settings.get_purpose_options",
+		callback(r) {
+			frm._purpose_options = r.message || [];
+			frm.set_df_property(
+				"purpose",
+				"options",
+				frm._purpose_options.map((o) => o.purpose)
+			);
+		},
+	});
+}
 
 function fetch_years(frm) {
-	if (!frm.doc.student || !frm.doc.from_academic_year) {
-		frappe.msgprint(__("Set Student and Academic Year first."));
-		return;
-	}
-	if (frm.doc.certificate_mode === "Multi Year" && !frm.doc.to_academic_year) {
-		frappe.msgprint(__("Set To Academic Year first."));
+	if (!frm.doc.student || !frm.doc.from_academic_year || !frm.doc.purpose) {
+		frappe.msgprint(__("Set Student, Purpose and Academic Year first."));
 		return;
 	}
 
 	frappe.call({
-		method: "slcm.slcm.doctype.fee_certificate_request.fee_certificate_request.preview_academic_years",
+		method: `${METHOD_BASE}.preview_academic_years`,
 		args: {
 			student: frm.doc.student,
 			from_academic_year: frm.doc.from_academic_year,
-			to_academic_year: frm.doc.certificate_mode === "Multi Year" ? frm.doc.to_academic_year : null,
+			purpose: frm.doc.purpose,
 		},
 		callback(r) {
-			const rows = r.message || [];
 			frm.clear_table("years");
-			rows.forEach((row) => {
+			(r.message || []).forEach((row) => {
 				const child = frm.add_child("years");
 				child.academic_year = row.academic_year;
 				child.year_label = row.year_label;
+				child.programme_year = row.programme_year;
 			});
 			frm.refresh_field("years");
 		},
 	});
 }
 
+function download_certificate(frm) {
+	const params = new URLSearchParams({
+		doctype: frm.doc.doctype,
+		name: frm.doc.name,
+		format: "Fee Certificate",
+		no_letterhead: 1,
+	});
+	window.open(`/api/method/frappe.utils.print_format.download_pdf?${params.toString()}`);
+}
+
 frappe.ui.form.on("Fee Certificate Request", {
+	setup(frm) {
+		load_purpose_options(frm);
+	},
+
 	purpose(frm) {
-		const defaults = PURPOSE_DEFAULTS[frm.doc.purpose];
-		if (!defaults) return;
-		frm.set_value("certificate_mode", defaults.certificate_mode);
-		frm.set_value("include_bank_details", defaults.include_bank_details);
+		const option = (frm._purpose_options || []).find((o) => o.purpose === frm.doc.purpose);
+		if (!option) return;
+		frm.set_value("certificate_type", option.certificate_type);
+		frm.set_value("include_bank_details", option.include_bank_details);
+		if (frm.doc.student && frm.doc.from_academic_year) fetch_years(frm);
+	},
+
+	from_academic_year(frm) {
+		if (frm.doc.student && frm.doc.purpose && frm.doc.from_academic_year) fetch_years(frm);
 	},
 
 	refresh(frm) {
@@ -57,9 +81,24 @@ frappe.ui.form.on("Fee Certificate Request", {
 		});
 
 		if (frm.doc.status !== "Cancelled") {
+			frm.add_custom_button(__("Download Certificate"), () => {
+				if (frm.is_dirty()) {
+					frappe.msgprint(__("Save your changes first — the certificate reflects the last saved version."));
+					return;
+				}
+				download_certificate(frm);
+				if (frm.doc.status !== "Generated") {
+					frappe.call({
+						method: `${METHOD_BASE}.mark_generated`,
+						args: { name: frm.doc.name },
+						callback: () => frm.reload_doc(),
+					});
+				}
+			}).addClass("btn-primary");
+
 			frm.add_custom_button(__("Mark as Generated"), () => {
 				frappe.call({
-					method: "slcm.slcm.doctype.fee_certificate_request.fee_certificate_request.mark_generated",
+					method: `${METHOD_BASE}.mark_generated`,
 					args: { name: frm.doc.name },
 					callback: () => frm.reload_doc(),
 				});

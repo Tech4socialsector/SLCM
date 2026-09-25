@@ -1,0 +1,143 @@
+{% extends "slcm/www/student-portal/_base.html" %}
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+
+{% if no_student %}
+<div class="sp-info-box fade-in" style="background:var(--sp-warning-bg);border-color:var(--sp-warning);">
+  <span class="sp-ms">warning</span>
+  <div><strong>No student record found.</strong> Please contact the Registrar's Office.</div>
+</div>
+
+{% else %}
+
+<div class="sp-page-header fade-in">
+  <h1 class="sp-page-title">Notifications</h1>
+  <p class="sp-page-sub">Announcements, exam schedules, results and updates on your requests</p>
+</div>
+
+{% if portal_error %}
+<div class="sp-info-box fade-in" style="background:var(--sp-warning-bg);border-color:var(--sp-warning);margin-bottom:20px;">
+  <span class="sp-ms">warning</span>
+  <div>{{ portal_error }}</div>
+</div>
+{% endif %}
+
+<div class="sp-section-card fade-in" style="animation-delay:0.06s;">
+  <div class="sp-section-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <span><span class="sp-ms">notifications</span> All Notifications</span>
+    <span class="sp-badge sp-badge-pend" id="nt-count-badge">{{ notifications|length }}</span>
+  </div>
+
+  {% if categories|length > 1 %}
+  <div style="padding:12px 20px 0;border-bottom:1px solid var(--sp-border);display:flex;gap:4px;flex-wrap:wrap;">
+    <button class="nt-tab nt-tab-active" onclick="filterNotifications(this, '')">
+      All <span class="nt-tab-count">{{ notifications|length }}</span>
+    </button>
+    {% for c in categories %}
+    <button class="nt-tab" data-category="{{ c.name }}" onclick="filterNotifications(this, this.dataset.category)">
+      {{ c.name }} <span class="nt-tab-count">{{ c.count }}</span>
+    </button>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if not notifications %}
+  <div style="padding:48px 20px;text-align:center;color:var(--sp-text-4);">
+    <div style="font-family:'Material Symbols Outlined';font-size:48px;margin-bottom:8px;opacity:0.35;">notifications_none</div>
+    <div style="font-weight:600;color:var(--sp-text-2);">No notifications</div>
+    <div style="font-size:13px;margin-top:4px;">You're all caught up.</div>
+  </div>
+  {% else %}
+  <div id="nt-list">
+    {% for n in notifications %}
+    {%- set icon_cls = 'normal' -%}
+    {%- if n.priority == 'Urgent' or n.icon == 'cancel' %}{% set icon_cls = 'urgent' %}
+    {%- elif n.icon == 'check_circle' %}{% set icon_cls = 'success' %}
+    {%- elif n.priority == 'Important' %}{% set icon_cls = 'important' %}{% endif -%}
+    <a href="{{ n.link or '#' }}" class="nt-item" data-category="{{ n.category }}">
+      <div class="sp-notif-icon {{ icon_cls }}"><span class="sp-ms">{{ n.icon or 'notifications' }}</span></div>
+      <div style="flex:1;min-width:0;">
+        <div class="sp-notif-cat">{{ n.category }}</div>
+        <div class="nt-title">{{ n.title }}</div>
+        {% if n.subtitle %}<div class="sp-notif-sub">{{ n.subtitle }}</div>{% endif %}
+      </div>
+      <span class="sp-ms nt-chevron">chevron_right</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterNotifications(btn, category) {
+  document.querySelectorAll('.nt-tab').forEach(function(t) { t.classList.remove('nt-tab-active'); });
+  btn.classList.add('nt-tab-active');
+  var visible = 0;
+  document.querySelectorAll('.nt-item').forEach(function(item) {
+    var show = !category || item.dataset.category === category;
+    item.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  var badge = document.getElementById('nt-count-badge');
+  if (badge) badge.textContent = visible;
+}
+</script>
+
+<style>
+.nt-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--sp-border);
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s;
+}
+.nt-item:last-child { border-bottom: none; }
+.nt-item:hover { background: var(--sp-primary-light); }
+.nt-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--sp-text-1);
+}
+.nt-chevron { color: var(--sp-text-4); font-size: 20px; }
+.nt-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font-size: 13px;
+  color: var(--sp-text-3);
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+  margin-bottom: -1px;
+}
+.nt-tab:hover { color: var(--sp-primary); }
+.nt-tab-active {
+  color: var(--sp-primary);
+  border-bottom-color: var(--sp-primary);
+  font-weight: 600;
+}
+.nt-tab-count {
+  background: var(--sp-border);
+  color: var(--sp-text-3);
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.nt-tab-active .nt-tab-count {
+  background: var(--sp-primary-light);
+  color: var(--sp-primary);
+}
+</style>
+{% endblock %}

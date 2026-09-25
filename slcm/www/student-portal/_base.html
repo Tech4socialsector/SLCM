@@ -243,7 +243,7 @@
     </div>
   </div>
   <div class="sp-notif-footer">
-    <a href="/student-portal/announcements">View All Announcements ›</a>
+    <a href="/student-portal/notifications">View All Notifications ›</a>
   </div>
 </div>
 
@@ -325,6 +325,9 @@
           <span class="sp-ms sp-nav-group-caret">keyboard_arrow_down</span>
         </div>
         <div class="sp-nav-group-items">
+          <a href="/student-portal/notifications" class="sp-nav-item {% if active_page == 'notifications' %}active{% endif %}" data-label="Notifications">
+            <span class="sp-ms">notifications</span><span class="sp-nav-label">Notifications</span>
+          </a>
           <a href="/student-portal/announcements" class="sp-nav-item {% if active_page == 'announcements' %}active{% endif %}" data-label="Announcements">
             <span class="sp-ms">campaign</span><span class="sp-nav-label">Announcements</span>
           </a>
@@ -383,6 +386,9 @@
           <!-- <a href="/student-portal/documents" class="sp-nav-item {% if active_page == 'documents' %}active{% endif %}" data-label="Documents">
             <span class="sp-ms">folder_open</span><span class="sp-nav-label">Documents</span>
           </a> -->
+          <a href="/student-portal/fee-certificate" class="sp-nav-item {% if active_page == 'fee_certificate' %}active{% endif %}" data-label="Fee Certificate">
+            <span class="sp-ms">workspace_premium</span><span class="sp-nav-label">Fee Certificate</span>
+          </a>
           <a href="/student-portal/hostel" class="sp-nav-item {% if active_page == 'hostel' %}active{% endif %}" data-label="Hostel Management">
             <span class="sp-ms">hotel</span><span class="sp-nav-label">Hostel Management</span>
           </a>
