@@ -9,6 +9,11 @@ const FD_EVENT_DEMAND_DOCTYPES = [
 ];
 
 frappe.ui.form.on("Fee Demand", {
+	setup(frm) {
+		// Student ID: search by ID, name, Registration Id, Application Number or email
+		frm.set_query("student", () => ({ query: "slcm.slcm.doctype.fee_concession.fee_concession.student_query" }));
+	},
+
 	refresh(frm) {
 		frm.trigger("set_status_indicator");
 		frm.trigger("render_action_buttons");
@@ -22,10 +27,13 @@ frappe.ui.form.on("Fee Demand", {
 			"Paid": "green",
 			"Overdue": "red",
 			"Waived": "purple",
+			"Moved to Excess": "cyan",
 			"Cancelled": "grey",
 		};
-		if (frm.doc.status) {
-			frm.page.set_indicator(frm.doc.status, colors[frm.doc.status] || "grey");
+		if (frm.doc.status === "Cancelled" && flt(frm.doc.moved_to_excess_amount) > 0) {
+			frm.page.set_indicator(__("Cancelled & Moved to Excess"), "grey");
+		} else if (frm.doc.status) {
+			frm.page.set_indicator(__(frm.doc.status), colors[frm.doc.status] || "grey");
 		}
 	},
 
@@ -149,37 +157,7 @@ frappe.ui.form.on("Fee Demand", {
 		if (frm.doc.fee_component && !frm.doc.description) {
 			frm.set_value("description", frm.doc.fee_component);
 		}
-		// Auto-set demand_type based on component type
-		frappe.db.get_value("Fee Component", frm.doc.fee_component, "component_type", (r) => {
-			if (r && r.component_type && !frm.doc.demand_type) {
-				const type_map = {
-					"Admission Fee": "Academic",
-					"Re-admission Fee": "Academic",
-					"Tuition and Facilities Fee": "Academic",
-					"Housing and Mess Fee": "Hostel",
-					"Off-campus Housing and Mess Fee": "Hostel",
-					"Re-registration Tuition Fee": "Academic",
-					"Student Refundable Deposit": "Deposit",
-					"Annual Fee (PhD)": "Academic",
-					"Continuation Fee (PhD)": "Academic",
-					"Course Work Fee (PhD)": "Academic",
-					"Registration Fee (PhD)": "Academic",
-					"Examination Fee": "Examination",
-					"Revaluation Fee": "Examination",
-					"Convocation Fee": "Service",
-					"Certificate Fee": "Service",
-					"ID Card Fee": "Service",
-					"Fine - Disciplinary": "Fine",
-					"Fine - Hostel": "Fine",
-					"Gap Year Fee": "Academic",
-					"Mess Charges": "Hostel",
-					"Electrical Appliance Charges": "Hostel",
-					"Laundry Charges": "Hostel",
-				};
-				const demand_type = type_map[r.component_type];
-				if (demand_type) frm.set_value("demand_type", demand_type);
-			}
-		});
+		// Demand Type comes from the Fee Component (fetch_from fee_component.demand_type)
 	},
 
 	original_amount(frm) {

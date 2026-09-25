@@ -3,6 +3,7 @@
 
 import base64
 import io
+import re
 
 import frappe
 from frappe import _
@@ -85,6 +86,13 @@ def _calculate_discount(total_fee, applying_scholarship, scholarship_percentage,
     return 0.0
 
 
+IFSC_PATTERN = re.compile(r"^[A-Z0-9]{11}$")
+LOAN_ACCOUNT_FIELDS = (
+    "education_loan_scheme", "other_loan_scheme", "loan_account_number", "loan_account_holder_name",
+    "loan_bank_name", "loan_branch_name", "loan_ifsc_code", "loan_passbook",
+)
+
+
 # ---------------------------------------------------------------------------
 # Main DocType class
 # ---------------------------------------------------------------------------
@@ -92,6 +100,63 @@ def _calculate_discount(total_fee, applying_scholarship, scholarship_percentage,
 class StudentMaster(Document):
     def validate(self):
         self.validate_status_transition()
+        self.validate_bank_details()
+
+    def validate_bank_details(self, reveal_owner=True):
+        """Normalise IFSC codes, drop loan details when no education loan was availed, and keep
+        savings / loan account numbers unique across students.
+
+        reveal_owner: include the other student's ID in the duplicate message (office users);
+        the Student Portal passes False so one student never learns another's record.
+        """
+        if self.availed_education_loan != "Yes":
+            for f in LOAN_ACCOUNT_FIELDS:
+                self.set(f, None)
+        if self.education_loan_scheme != "Others":
+            self.other_loan_scheme = None
+
+        for f, label in (("savings_ifsc_code", _("Savings Bank IFSC Code")), ("loan_ifsc_code", _("Loan Account IFSC Code"))):
+            value = (self.get(f) or "").strip().upper()
+            self.set(f, value or None)
+            if value and not IFSC_PATTERN.match(value):
+                frappe.throw(_("{0} must be exactly 11 alphanumeric characters.").format(label))
+
+        self.validate_unique_bank_accounts(reveal_owner)
+
+    def validate_unique_bank_accounts(self, reveal_owner=True):
+        """A savings or loan account number may belong to only one student, and a student's
+        savings and loan account numbers must differ."""
+        accounts = {}
+        for f, label in (
+            ("savings_account_number", _("Savings Bank Account Number")),
+            ("loan_account_number", _("Loan Account Number")),
+        ):
+            value = re.sub(r"\s+", "", self.get(f) or "").upper()
+            self.set(f, value or None)
+            if value:
+                accounts[f] = (value, label)
+
+        if len(accounts) == 2 and accounts["savings_account_number"][0] == accounts["loan_account_number"][0]:
+            frappe.throw(_("Savings Bank Account Number and Loan Account Number cannot be the same."))
+
+        for f, (value, label) in accounts.items():
+            # Match against both columns: one student's savings number can't be another's loan number.
+            owner = frappe.db.sql(
+                """SELECT name FROM `tabStudent Master`
+                WHERE name != %(name)s AND (savings_account_number = %(v)s OR loan_account_number = %(v)s)
+                LIMIT 1""",
+                {"name": self.name or "", "v": value},
+            )
+            if owner:
+                if reveal_owner:
+                    frappe.throw(
+                        _("{0} {1} is already registered for student {2}.").format(label, value, owner[0][0]),
+                        title=_("Duplicate Bank Account"),
+                    )
+                frappe.throw(
+                    _("This {0} is already registered to another student. Please check the number, or contact the administration office.").format(label.lower()),
+                    title=_("Duplicate Bank Account"),
+                )
 
     def before_insert(self):
         """Auto-populate fee details from the currently valid Fee Structure on new record."""

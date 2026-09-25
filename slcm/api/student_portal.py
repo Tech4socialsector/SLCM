@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.utils import flt, cint, today, nowdate, getdate
 from slcm.api.student_payment import _require_parent_for_student
 
@@ -2250,3 +2251,155 @@ def bulk_update_venue_booking_status(booking_names, status, admin_remarks=""):
 
     frappe.db.commit()
     return {"updated": updated, "status": status}
+
+@frappe.whitelist()
+def add_guardian(first_name, last_name, relation, phone, email, occupation):
+    student_name = _get_student()
+    if not student_name:
+        frappe.throw("Student not found")
+
+    student = frappe.get_doc("Student Master", student_name)
+    student.append("parents", {
+        "first_name": first_name,
+        "last_name": last_name,
+        "relation": relation,
+        "phone": phone,
+        "email": email,
+        "occupation": occupation
+    })
+    
+    student.flags.ignore_permissions = True
+    student.save()
+    return {"status": "success"}
+
+
+BANK_DETAIL_FIELDS = (
+    "savings_account_number", "savings_account_holder_name", "savings_bank_name",
+    "savings_branch_name", "savings_ifsc_code", "availed_education_loan",
+    "education_loan_scheme", "other_loan_scheme", "loan_account_number",
+    "loan_account_holder_name", "loan_bank_name", "loan_branch_name", "loan_ifsc_code",
+)
+
+
+@frappe.whitelist(methods=["POST"])
+def submit_bank_details(**kwargs):
+    """One-time submission of savings / education-loan bank details from the Student Portal.
+
+    Once submitted the details are locked; the office can re-open them by unchecking
+    "Bank Details Submitted by Student" on the Student Master.
+    """
+    student_name = _get_student()
+    if not student_name:
+        frappe.throw(_("Student not found"))
+
+    student = frappe.get_doc("Student Master", student_name)
+    if student.bank_details_submitted:
+        frappe.throw(_("Bank details have already been submitted. Please contact the administration office to make changes."))
+
+    values = {f: (str(kwargs.get(f) or "")).strip() for f in BANK_DETAIL_FIELDS}
+
+    required = {
+        "savings_account_number": _("Savings Bank Account Number"),
+        "savings_account_holder_name": _("Name of the Account Holder"),
+        "savings_bank_name": _("Name of the Bank"),
+        "savings_branch_name": _("Name of the Branch"),
+        "savings_ifsc_code": _("IFSC Code"),
+        "availed_education_loan": _("Availed Education Loan?"),
+    }
+    if values["availed_education_loan"] not in ("Yes", "No"):
+        values["availed_education_loan"] = ""
+    if values["availed_education_loan"] == "Yes":
+        required.update({
+            "education_loan_scheme": _("Loan Scheme"),
+            "loan_account_number": _("Loan Account Number"),
+            "loan_account_holder_name": _("Loan Account Holder Name"),
+            "loan_bank_name": _("Loan Bank Name"),
+            "loan_branch_name": _("Loan Branch Name"),
+            "loan_ifsc_code": _("Loan IFSC Code"),
+        })
+        if values["education_loan_scheme"] not in ("PM Vidyalaxmi", "Others"):
+            values["education_loan_scheme"] = ""
+        if values["education_loan_scheme"] == "Others":
+            required["other_loan_scheme"] = _("Specify Other Scheme")
+
+    missing = [label for f, label in required.items() if not values[f]]
+    if missing:
+        frappe.throw(_("Please fill: {0}").format(", ".join(missing)))
+
+    # Bank fields are masked, and Frappe resets masked fields on save for users without
+    # mask permission (students), so validate via the controller and write them directly.
+    student.update(values)
+    student.validate_bank_details(reveal_owner=False)
+    updates = {f: student.get(f) or None for f in BANK_DETAIL_FIELDS}
+    updates.update(bank_details_submitted=1, bank_details_submitted_on=frappe.utils.now_datetime())
+
+    # Optional passbook uploads (loan passbook only when a loan was availed)
+    passbooks = {"savings_passbook": kwargs.get("savings_passbook")}
+    if values["availed_education_loan"] == "Yes":
+        passbooks["loan_passbook"] = kwargs.get("loan_passbook")
+    for field, file_url in passbooks.items():
+        if file_url:
+            updates[field] = _claim_passbook_file(student_name, field, file_url)
+
+    frappe.db.set_value("Student Master", student_name, updates)
+    student.add_comment("Info", _("Bank details submitted by the student from the Student Portal."))
+    return {"status": "success"}
+
+
+PASSBOOK_FIELDS = {"savings": "savings_passbook", "loan": "loan_passbook"}
+PASSBOOK_EXTENSIONS = (".pdf", ".jpg", ".jpeg", ".png")
+
+
+def _claim_passbook_file(student_name, fieldname, file_url):
+    """Attach a passbook the student just uploaded (private, owned by them) to their Student Master."""
+    file_url = (file_url or "").strip()
+    f = frappe.db.get_value(
+        "File",
+        {"file_url": file_url, "owner": frappe.session.user},
+        ["name", "is_private", "attached_to_name", "file_name"],
+        as_dict=True,
+    )
+    if not f:
+        frappe.throw(_("The passbook upload could not be found. Please upload the file again."))
+    if not f.is_private:
+        frappe.throw(_("Passbook files must be uploaded privately. Please upload the file again."))
+    if f.attached_to_name and f.attached_to_name != student_name:
+        frappe.throw(_("This file is already attached to another record. Please upload the file again."))
+    if not (f.file_name or file_url).lower().endswith(PASSBOOK_EXTENSIONS):
+        frappe.throw(_("Passbook must be a PDF, JPG or PNG file."))
+
+    frappe.db.set_value("File", f.name, {
+        "attached_to_doctype": "Student Master",
+        "attached_to_name": student_name,
+        "attached_to_field": fieldname,
+    })
+    return file_url
+
+
+@frappe.whitelist(methods=["POST"])
+def upload_bank_passbook(kind, file_url):
+    """Add a missing savings / loan passbook after bank details were submitted (details stay locked).
+
+    An existing passbook can only be replaced by the administration office.
+    """
+    student_name = _get_student()
+    if not student_name:
+        frappe.throw(_("Student not found"))
+
+    fieldname = PASSBOOK_FIELDS.get(kind)
+    if not fieldname:
+        frappe.throw(_("Invalid passbook type."))
+
+    student = frappe.db.get_value(
+        "Student Master", student_name, ["availed_education_loan", fieldname], as_dict=True
+    )
+    if kind == "loan" and student.availed_education_loan != "Yes":
+        frappe.throw(_("A loan passbook can only be added when an education loan was availed."))
+    if student.get(fieldname):
+        frappe.throw(_("A passbook is already on file. Please contact the administration office to replace it."))
+
+    frappe.db.set_value("Student Master", student_name, fieldname, _claim_passbook_file(student_name, fieldname, file_url))
+    frappe.get_doc("Student Master", student_name).add_comment(
+        "Info", _("{0} passbook uploaded by the student from the Student Portal.").format(kind.title())
+    )
+    return {"status": "success"}
