@@ -32,6 +32,7 @@
   "paid_amount",
   "credit_adjusted",
   "outstanding_amount",
+  "moved_to_excess_amount",
   "section_reminders",
   "reminder_1_sent",
   "reminder_2_sent",
@@ -154,7 +155,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Pending\nPartially Paid\nPaid\nOverdue\nWaived\nCancelled",
+   "options": "Pending\nPartially Paid\nPaid\nOverdue\nWaived\nMoved to Excess\nCancelled",
    "read_only": 1,
    "search_index": 1
   },
@@ -245,6 +246,14 @@
    "read_only": 1,
    "default": "0",
    "in_list_view": 1
+  },
+  {
+   "fieldname": "moved_to_excess_amount",
+   "fieldtype": "Currency",
+   "label": "Moved to Excess",
+   "read_only": 1,
+   "default": "0",
+   "description": "Amount paid on this demand that was later moved to the student's excess (Student Credit Note)."
   },
   {
    "fieldname": "section_payment_details",
@@ -345,7 +354,7 @@
   }
  ],
  "links": [],
- "modified": "2026-06-02 16:58:30.424844",
+ "modified": "2026-09-24 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Fee Demand",
