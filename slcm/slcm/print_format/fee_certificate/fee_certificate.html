@@ -8,15 +8,45 @@
 <head>
 	<meta charset="UTF-8">
 	<style>
+		/* Equal 15mm margin on all four sides (the print format's margin fields match). */
 		@page {
 			size: A4;
-			margin: 10mm 12mm;
+			margin: 15mm;
+		}
+
+		html, body { margin: 0; padding: 0; }
+
+		/* Two-row table: content, then the letterhead footer pinned to the bottom
+		   margin (wkhtmltopdf ignores position:fixed / flex). */
+		table.fc-layout {
+			width: 100%;
+			border-collapse: collapse;
+		}
+
+		table.fc-layout > tbody > tr > td {
+			padding: 0;
+			vertical-align: top;
+		}
+
+		/* Keeps the footer on the bottom margin. wkhtmltopdf renders CSS at about 0.75
+		   scale, so the PDF needs 328mm here; a real browser (JavaScript on; the PDF
+		   generator runs with it off) switches to .fc-browser, which is 1:1. */
+		table.fc-layout td.fc-layout-body {
+			height: 328mm;
+		}
+
+		.fc-browser table.fc-layout td.fc-layout-body {
+			height: 245mm;
+		}
+
+		table.fc-layout > tbody > tr.fc-layout-footer > td {
+			vertical-align: bottom;
 		}
 
 		.fc-page {
 			font-family: Cambria, Georgia, "Times New Roman", serif;
 			font-size: 12pt;
-			line-height: 1.6;
+			line-height: 1.85;
 			color: #000;
 		}
 
@@ -49,12 +79,12 @@
 		}
 
 		.fc-content {
-			padding: 0 8mm;
+			padding: 0;
 		}
 
 		.date-line {
 			text-align: right;
-			margin: 8mm 0 2mm;
+			margin: 8mm 0 4mm;
 		}
 
 		.title {
@@ -62,7 +92,7 @@
 			text-decoration: underline;
 			font-weight: bold;
 			font-size: 13pt;
-			margin-bottom: 6px;
+			margin-bottom: 14px;
 		}
 
 		.body-text {
@@ -70,13 +100,13 @@
 		}
 
 		.body-text p, .bank-details p, .closing-text p {
-			margin: 0 0 6px;
+			margin: 0 0 12px;
 		}
 
 		table.fee-table {
 			width: 100%;
 			border-collapse: collapse;
-			margin: 6px 0 16px;
+			margin: 4px 0 20px;
 			line-height: 1.3;
 		}
 
@@ -115,7 +145,7 @@
 		}
 
 		.signature-block .signature {
-			height: 26mm;
+			height: 24mm;
 			display: inline-block;
 		}
 
@@ -130,12 +160,8 @@
 			font-weight: bold;
 		}
 
-		/* Kept in normal flow: wkhtmltopdf builds without patched Qt ignore
-		   --footer-html and misplace position:fixed, so this is the layout that
-		   renders the same everywhere. */
 		.fc-footer {
-			margin-top: 8mm;
-			page-break-inside: avoid;
+			padding-top: 6mm;
 		}
 
 		.fc-footer img {
@@ -153,9 +179,11 @@
 </head>
 <body>
 <div class="fc-page">
-	{% if settings.letterhead_header_image %}
+<script>document.querySelector(".fc-page").classList.add("fc-browser");</script>
+<table class="fc-layout"><tbody><tr><td class="fc-layout-body">
+	{% if ctx.header_image %}
 	<div class="fc-header">
-		<img class="letterhead" src="data:image/png;base64,{{ get_file_b64(settings.letterhead_header_image) }}">
+		<img class="letterhead" src="data:image/png;base64,{{ ctx.header_image }}">
 	</div>
 	{% else %}
 	<div class="fc-header text-header">
@@ -236,7 +264,7 @@
 		{% endif %}
 
 		<div class="signature-block">
-			{% if settings.cfo_signature %}<img class="signature" src="data:image/png;base64,{{ get_file_b64(settings.cfo_signature) }}">{% endif %}
+			{% if ctx.signature_image %}<img class="signature" src="data:image/png;base64,{{ ctx.signature_image }}">{% endif %}
 			{% if not (settings.cfo_signature and settings.signature_includes_designation) %}
 			<div class="designation">{{ settings.cfo_designation or "Chief Finance Officer" }}</div>
 			<div>{{ settings.institute_name or "" }}</div>
@@ -244,14 +272,16 @@
 			{% if settings.seal_image %}<img class="seal" src="data:image/png;base64,{{ get_file_b64(settings.seal_image) }}">{% endif %}
 		</div>
 	</div>
-
+</td></tr>
+<tr class="fc-layout-footer"><td>
 	<div class="fc-footer">
-		{% if settings.letterhead_footer_image %}
-		<img src="data:image/png;base64,{{ get_file_b64(settings.letterhead_footer_image) }}">
+		{% if ctx.footer_image %}
+		<img src="data:image/png;base64,{{ ctx.footer_image }}">
 		{% elif settings.footer_note %}
 		<div class="footer-note">{{ settings.footer_note }}</div>
 		{% endif %}
 	</div>
+</td></tr></tbody></table>
 </div>
 </body>
 </html>

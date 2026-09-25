@@ -444,8 +444,41 @@ def get_fee_certificate_context(request_name):
 		"closing_html": render(template and template.closing_text),
 		"total_label": (template and template.total_label) or "Total",
 		"generation_date": formatdate(today(), "dd.mm.yyyy"),
+		"header_image": _trimmed_image_b64(settings.letterhead_header_image),
+		"footer_image": _trimmed_image_b64(settings.letterhead_footer_image),
+		"signature_image": _trimmed_image_b64(settings.cfo_signature),
 		"table": table,
 	}
+
+
+def _trimmed_image_b64(file_url):
+	"""Base64 PNG of an attached image with its blank (white/transparent) border
+	cropped, so letterhead artwork lines up exactly with the page margins."""
+	if not file_url:
+		return ""
+	import base64
+	from io import BytesIO
+
+	from PIL import Image, ImageOps
+
+	from slcm.admission.utils.jinja import get_file_b64
+
+	raw = get_file_b64(file_url)
+	if not raw:
+		return ""
+	try:
+		img = Image.open(BytesIO(base64.b64decode(raw))).convert("RGBA")
+		flat = Image.new("RGBA", img.size, (255, 255, 255, 255))
+		flat.alpha_composite(img)
+		mask = ImageOps.invert(flat.convert("L")).point(lambda v: 255 if v > 40 else 0)
+		bbox = mask.getbbox()
+		if bbox:
+			img = img.crop(bbox)
+		out = BytesIO()
+		img.save(out, format="PNG")
+		return base64.b64encode(out.getvalue()).decode()
+	except Exception:
+		return raw
 
 
 def _build_table(years):
