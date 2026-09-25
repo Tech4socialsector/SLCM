@@ -169,9 +169,9 @@ class OfferService:
                 "selection_status": "Selected",
                 "parenttype": "Seat Allocation"
             }
-            status_check = frappe.db.get_value("Seat Selection Applicant", sa_filters, ["parent"], as_dict=1)
+            sa_parents = frappe.db.get_all("Seat Selection Applicant", filters=sa_filters, pluck="parent")
 
-            if not status_check:
+            if not sa_parents:
                  # Check if an offer was ALREADY issued (in which case they would be 'Offer Issued')
                  already_issued = frappe.db.exists("Offer Letter", {
                     "applicant": applicant,
@@ -181,8 +181,25 @@ class OfferService:
                  if not already_issued:
                     throw(_("Applicant {0} is not in 'Selected' status for Program {1} in any Seat Allocation. Offer letter cannot be generated.").format(applicant, program))
             else:
-                # Check if parent Seat Allocation is Published
-                if frappe.db.get_value("Seat Allocation", status_check.parent, "status") != "Published":
+                # Check if parent Seat Allocation matching campus and cycle is Published
+                published_filters = {
+                    "name": ["in", sa_parents],
+                    "status": "Published"
+                }
+                if resolved_cycle or cycle:
+                    published_filters["admission_cycle"] = resolved_cycle or cycle
+                if campus:
+                    published_filters["campus"] = campus
+
+                published_sa = frappe.db.exists("Seat Allocation", published_filters)
+                if not published_sa:
+                    # Fallback check without strict cycle/campus if specific match failed
+                    published_sa = frappe.db.exists("Seat Allocation", {
+                        "name": ["in", sa_parents],
+                        "status": "Published"
+                    })
+
+                if not published_sa:
                      throw(_("Seat Allocation for Applicant {0} is not yet 'Published'. Please publish the allocation first.").format(applicant))
 
         # Idempotency: Prevent duplicate offers for same campus, cycle, program and admission_year
@@ -557,12 +574,19 @@ class OfferService:
                         "applicant_id": applicant_name
                     }
 
-                    sa_child_data = frappe.db.get_value(
+                    sa_child_records = frappe.db.get_all(
                         "Seat Selection Applicant",
-                        sa_child_filters,
-                        ["parent", "program"],
-                        as_dict=1
+                        filters=sa_child_filters,
+                        fields=["parent", "program"]
                     )
+                    sa_child_data = None
+                    for rec in sa_child_records:
+                        st = frappe.db.get_value("Seat Allocation", rec.parent, "status")
+                        if st == "Published":
+                            sa_child_data = rec
+                            break
+                    if not sa_child_data and sa_child_records:
+                        sa_child_data = sa_child_records[0]
 
                     if sa_child_data:
                         parent_sa = frappe.db.get_value("Seat Allocation", sa_child_data.parent, 

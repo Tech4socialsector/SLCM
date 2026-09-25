@@ -4,7 +4,7 @@ from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 from frappe.model.document import Document
 from frappe import _
-from frappe.utils import get_datetime, getdate
+from frappe.utils import get_datetime, getdate, now_datetime
 from frappe.email.doctype.email_template.email_template import get_email_template
 
 WEEKDAY_FIELDS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
@@ -53,6 +53,9 @@ class VenueBooking(Document):
 			self.create_recurring_bookings()
 
 	def validate_dates(self):
+		if get_datetime(self.start_datetime) < now_datetime():
+			frappe.throw(_("Start Date & Time cannot be in the past"))
+			
 		if get_datetime(self.start_datetime) >= get_datetime(self.end_datetime):
 			frappe.throw(_("End Date & Time must be after Start Date & Time"))
 
@@ -456,7 +459,7 @@ def _notify_requester_swap(booking_name, decision, old_room, new_room, admin_rem
         if not requester_email:
             return
 
-        new_room_name = frappe.db.get_value("Room", new_room, "room_name") or new_room or "—"
+        new_room_name = frappe.db.get_value("Venue Master", new_room, "venue_name_or_number") or new_room or "—"
         color = "#166534" if decision == "Approved" else "#991b1b"
         bg    = "#f0fdf4" if decision == "Approved" else "#fef2f2"
         body_detail = (
@@ -483,18 +486,18 @@ def _notify_requester_swap(booking_name, decision, old_room, new_room, admin_rem
             recipients=[requester_email],
             subject=rendered.get("subject"),
             message=rendered.get("message"),
-            now=True,
+            now=False,
         )
     except Exception:
         frappe.log_error(frappe.get_traceback(), "Venue Swap — Requester Notification Error")
 
 
 @frappe.whitelist()
-def swap_venues(doc_a_name, doc_b_name):
+def swap_venues(booking_a, booking_b):
 	"""Swap the venues of two bookings."""
 	_require_admin()
-	doc_a = frappe.get_doc("Venue Booking", doc_a_name)
-	doc_b = frappe.get_doc("Venue Booking", doc_b_name)
+	doc_a = frappe.get_doc("Venue Booking", booking_a)
+	doc_b = frappe.get_doc("Venue Booking", booking_b)
 
 	venue_a = doc_a.venue
 	venue_b = doc_b.venue
@@ -639,7 +642,7 @@ def _notify_admin_new_booking(doc):
 			recipients=admin_emails,
 			subject=rendered.get("subject"),
 			message=rendered.get("message"),
-			now=True,
+			now=False,
 		)
 	except Exception:
 		frappe.log_error(frappe.get_traceback(), "Venue Booking — Admin Notification Error")
@@ -698,7 +701,7 @@ def _notify_requester(booking_name, new_status, admin_remarks=None):
 			recipients=[requester_email],
 			subject=rendered.get("subject"),
 			message=rendered.get("message"),
-			now=True,
+			now=False,
 		)
 	except Exception:
 		frappe.log_error(frappe.get_traceback(), "Venue Booking — Requester Notification Error")

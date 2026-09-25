@@ -189,9 +189,10 @@ class StudentEnrollment(Document):
 
 @frappe.whitelist()
 def get_other_terms(student, exclude=None):
-    """List a student's other Student Enrollment records (other terms),
-    most recent academic year first, for the 'Other Terms' selector on
-    the Student Enrollment form."""
+    """List a student's Student Enrollment records across terms, most recent
+    academic year first, for the Academic Timeline on the Student Enrollment
+    form. Pass exclude=None to include every term (the form marks the one
+    currently being viewed); pass a docname to omit just that record."""
     if not student:
         return []
 

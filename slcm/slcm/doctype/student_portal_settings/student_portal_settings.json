@@ -8,10 +8,15 @@
   "branding_section",
   "portal_title",
   "portal_subtitle",
+  "academic_calendar",
+  "student_handbook",
+  "examination_guidelines",
   "col_break_brand",
   "show_logo",
   "nav_brand_text",
+  "portal_logo",
   "portal_favicon",
+  "login_page_background_image",
   "typography_section",
   "font_family",
   "col_break_typo",
@@ -32,15 +37,16 @@
   "danger_color",
   "info_color",
   "grading_section",
+  "grade_color",
   "grade_excellent_color",
   "grade_excellent_label",
   "col_break_grade1",
+  "grade_fail_color",
   "grade_good_color",
   "grade_good_label",
   "grade_average_color",
   "grade_average_label",
   "col_break_grade2",
-  "grade_fail_color",
   "grade_fail_label",
   "tab_layout",
   "attendance_section",
@@ -173,10 +179,22 @@
    "label": "Navbar Brand Text"
   },
   {
+   "description": "Logo shown in the portal navbar. If left blank, it falls back to the site default.",
+   "fieldname": "portal_logo",
+   "fieldtype": "Attach Image",
+   "label": "Portal Logo"
+  },
+  {
    "description": "Custom favicon for the student portal. Leave blank to use the site default.",
    "fieldname": "portal_favicon",
    "fieldtype": "Attach Image",
    "label": "Portal Favicon"
+  },
+  {
+   "description": "Background image for the student portal login page. If empty, a fallback color (#FAFAFA) will be used.",
+   "fieldname": "login_page_background_image",
+   "fieldtype": "Attach Image",
+   "label": "Login Page Background Image"
   },
   {
    "collapsible": 1,
@@ -211,16 +229,17 @@
   },
   {
    "default": "#2b2e4a",
-   "description": "Main color for the top navbar background",
+   "description": "Main color for the portal (buttons, titles, active items)",
    "fieldname": "primary_color",
    "fieldtype": "Color",
-   "label": "Primary Color (Navbar)"
+   "label": "Primary Color"
   },
   {
    "default": "#920c24",
    "description": "Accent color used for active nav items, badges, and key highlights",
    "fieldname": "secondary_color",
    "fieldtype": "Color",
+   "hidden": 1,
    "label": "Secondary / Accent Color"
   },
   {
@@ -242,12 +261,11 @@
    "label": "Card Background Color"
   },
   {
-   "default": "Light",
-   "description": "Light sidebar uses a white background. Dark sidebar uses the primary color as background with white text.",
+   "default": "#FAFAFA",
+   "description": "Background color for both the top navbar and side navigation",
    "fieldname": "sidebar_theme",
-   "fieldtype": "Select",
-   "label": "Sidebar Theme",
-   "options": "Light\nDark"
+   "fieldtype": "Color",
+   "label": "Navbar & Sidebar Background Color"
   },
   {
    "fieldname": "col_break_theme2",
@@ -255,10 +273,10 @@
   },
   {
    "default": "#ffffff",
-   "description": "Color of text and icons in the top navbar (white works on dark navbars)",
+   "description": "Color of text and icons in the top navbar and sidebar",
    "fieldname": "nav_text_color",
    "fieldtype": "Color",
-   "label": "Navbar Text / Icon Color"
+   "label": "Navbar & Sidebar Text / Icon Color"
   },
   {
    "collapsible": 1,
@@ -311,13 +329,15 @@
    "description": "Top grade band \u2014 Distinction, A+, A, S",
    "fieldname": "grade_excellent_color",
    "fieldtype": "Color",
+   "hidden": 1,
    "label": "Excellent Grade Color"
   },
   {
-   "default": "A+ / A / S",
+   "default": "A+ / A",
    "description": "Label for this grade band shown in the Results legend",
    "fieldname": "grade_excellent_label",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Excellent Grade Label"
   },
   {
@@ -329,6 +349,7 @@
    "description": "Second grade band \u2014 B+, B",
    "fieldname": "grade_good_color",
    "fieldtype": "Color",
+   "hidden": 1,
    "label": "Good Grade Color"
   },
   {
@@ -336,6 +357,7 @@
    "description": "Label for this grade band",
    "fieldname": "grade_good_label",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Good Grade Label"
   },
   {
@@ -343,6 +365,7 @@
    "description": "Third grade band \u2014 C+, C",
    "fieldname": "grade_average_color",
    "fieldtype": "Color",
+   "hidden": 1,
    "label": "Average Grade Color"
   },
   {
@@ -350,6 +373,7 @@
    "description": "Label for this grade band",
    "fieldname": "grade_average_label",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Average Grade Label"
   },
   {
@@ -357,14 +381,21 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "#000000",
+   "description": "Default color for passing grades",
+   "fieldname": "grade_color",
+   "fieldtype": "Color",
+   "label": "Grade Color"
+  },
+  {
    "default": "#dc2626",
-   "description": "Fail grade band \u2014 D, F, Absent",
+   "description": "Fail grade band \u2014 F, AB, AS",
    "fieldname": "grade_fail_color",
    "fieldtype": "Color",
    "label": "Fail Grade Color"
   },
   {
-   "default": "D / F",
+   "default": "F / AB / AS",
    "description": "Label for this grade band",
    "fieldname": "grade_fail_label",
    "fieldtype": "Data",
@@ -932,11 +963,26 @@
    "fieldtype": "Code",
    "label": "Custom CSS",
    "options": "CSS"
+  },
+  {
+   "fieldname": "academic_calendar",
+   "fieldtype": "Attach",
+   "label": "Academic Calendar"
+  },
+  {
+   "fieldname": "student_handbook",
+   "fieldtype": "Attach",
+   "label": "Student Handbook"
+  },
+  {
+   "fieldname": "examination_guidelines",
+   "fieldtype": "Attach",
+   "label": "Examination Guidelines"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-06-17 15:05:33.108471",
+ "modified": "2026-09-23 10:09:25.150375",
  "modified_by": "Administrator",
  "module": "SLCM",
  "name": "Student Portal Settings",

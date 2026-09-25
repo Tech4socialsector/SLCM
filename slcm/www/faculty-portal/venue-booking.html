@@ -4,9 +4,15 @@
 
 {% block content %}
 
+<div class="fp-breadcrumb fade-in" style="margin-bottom:6px;">
+  <span>Home</span> <span class="fp-ms" style="font-size:13px;">chevron_right</span> <span>Venue Booking</span>
+</div>
+
 <div class="fp-page-header fade-in">
-  <h1 class="fp-page-title">Venue Booking</h1>
-  <p class="fp-page-sub">Book classrooms, seminar halls, and meeting rooms</p>
+  <div>
+    <h1 class="fp-page-title">Venue Booking</h1>
+    <p class="fp-page-sub">Book classrooms, seminar halls and meeting rooms for academic and institutional activities.</p>
+  </div>
 </div>
 
 {% if portal_error %}
@@ -17,29 +23,29 @@
 {% endif %}
 
 {# ── Stat cards ─────────────────────────────────────────────── #}
-<div class="fp-stat-grid" style="grid-template-columns:repeat(auto-fill,minmax(155px,1fr));">
-  <div class="fp-stat-card fade-in" style="animation-delay:0.04s;">
+<div class="fp-stat-grid fp-vb-stat-grid">
+  <div class="fp-stat-card fp-vb-stat-card fp-vb-accent-blue fade-in" style="animation-delay:0.04s;">
     <div class="fp-stat-icon fp-c-blue"><span class="fp-ms">meeting_room</span></div>
     <div class="fp-stat-body">
       <div class="fp-stat-val">{{ total_bookings or 0 }}</div>
       <div class="fp-stat-lbl">Total Bookings</div>
     </div>
   </div>
-  <div class="fp-stat-card fade-in" style="animation-delay:0.08s;">
+  <div class="fp-stat-card fp-vb-stat-card fp-vb-accent-orange fade-in" style="animation-delay:0.08s;">
     <div class="fp-stat-icon fp-c-orange"><span class="fp-ms">hourglass_top</span></div>
     <div class="fp-stat-body">
       <div class="fp-stat-val">{{ pending_bookings or 0 }}</div>
       <div class="fp-stat-lbl">Pending</div>
     </div>
   </div>
-  <div class="fp-stat-card fade-in" style="animation-delay:0.12s;">
+  <div class="fp-stat-card fp-vb-stat-card fp-vb-accent-green fade-in" style="animation-delay:0.12s;">
     <div class="fp-stat-icon fp-c-green"><span class="fp-ms">check_circle</span></div>
     <div class="fp-stat-body">
       <div class="fp-stat-val">{{ approved_bookings or 0 }}</div>
       <div class="fp-stat-lbl">Approved</div>
     </div>
   </div>
-  <div class="fp-stat-card fade-in" style="animation-delay:0.16s;">
+  <div class="fp-stat-card fp-vb-stat-card fp-vb-accent-red fade-in" style="animation-delay:0.16s;">
     <div class="fp-stat-icon fp-c-red"><span class="fp-ms">cancel</span></div>
     <div class="fp-stat-body">
       <div class="fp-stat-val">{{ rejected_bookings or 0 }}</div>
@@ -53,32 +59,60 @@
   {# Booking List #}
   <div style="grid-column:1/-1;">
     <div class="fp-card fade-in" style="animation-delay:0.1s;">
-      <div class="fp-card-header">
-        <div class="fp-card-title">
-          <span class="fp-ms" style="font-size:18px;vertical-align:-4px;color:var(--fp-primary);margin-right:6px;">event_available</span>
-          My Bookings
+      <div class="fp-card-header" style="flex-wrap:wrap;gap:12px;">
+        <div>
+          <div class="fp-card-title">
+            <span class="fp-ms">event_available</span>
+            My Bookings
+          </div>
+          <div style="font-size:12px;color:var(--fp-text-3);margin-top:2px;">View and manage your venue booking requests.</div>
         </div>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-          <select class="fp-select" id="fp-vb-status-filter" onchange="fpFilterBookings()" style="width:auto;min-width:130px;padding:6px 10px;font-size:13px;">
-            <option value="">All Status</option>
-            <option value="Pending">Pending</option>
-            <option value="Approved">Approved</option>
-            <option value="Rejected">Rejected</option>
-          </select>
+        <div class="fp-vb-toolbar">
+          <div class="fp-multiselect" id="fp-vb-status-multiselect">
+            <button type="button" class="fp-multiselect-btn" id="fp-vb-status-btn" onclick="fpToggleStatusPanel()">
+              <span class="fp-ms" style="margin-left:0;color:var(--fp-text-4);font-size:16px;">filter_list</span>
+              <span id="fp-vb-status-btn-label">All Status</span>
+              <span class="fp-ms">expand_more</span>
+            </button>
+            <div class="fp-multiselect-panel" id="fp-vb-status-panel">
+              <label class="fp-multiselect-option">
+                <input type="checkbox" class="fp-vb-status-opt" value="Pending Allotment" onchange="fpApplyStatusFilter()"> Pending
+              </label>
+              <label class="fp-multiselect-option">
+                <input type="checkbox" class="fp-vb-status-opt" value="Allotted" onchange="fpApplyStatusFilter()"> Approved
+              </label>
+              <label class="fp-multiselect-option">
+                <input type="checkbox" class="fp-vb-status-opt" value="Rejected" onchange="fpApplyStatusFilter()"> Rejected
+              </label>
+              <label class="fp-multiselect-option">
+                <input type="checkbox" class="fp-vb-status-opt" value="Cancelled" onchange="fpApplyStatusFilter()"> Cancelled
+              </label>
+              <div class="fp-multiselect-footer">
+                <button type="button" class="fp-multiselect-selectall" onclick="fpSelectAllStatusFilter()">Select all</button>
+                <button type="button" class="fp-multiselect-clear" onclick="fpClearStatusFilter()">Clear all</button>
+              </div>
+            </div>
+          </div>
           <button class="fp-btn fp-btn-primary fp-btn-sm" onclick="fpOpenBookingForm()">
             <span class="fp-ms">add</span>New Booking
           </button>
         </div>
       </div>
+
+      <div id="fp-vb-chips" class="fp-filter-chips" style="display:none;padding:14px 22px 0;"></div>
+
       <div class="fp-card-body" style="padding:0;">
         {% if not my_bookings %}
         <div class="fp-empty">
           <span class="fp-ms">event_busy</span>
-          <p class="fp-empty-title">No bookings found</p>
-          <p class="fp-empty-sub">You have not made any venue bookings yet. Click "New Booking" to create one.</p>
+          <p class="fp-empty-title">No venue bookings yet</p>
+          <p class="fp-empty-sub">You haven't submitted any venue booking requests.</p>
+          <button class="fp-btn fp-btn-primary fp-btn-sm" style="margin-top:10px;" onclick="fpOpenBookingForm()">
+            <span class="fp-ms">add</span>New Booking
+          </button>
         </div>
         {% else %}
-        <div class="fp-table-wrap">
+        <div class="fp-table-wrap fp-vb-hide-table-mobile">
           <table class="fp-table" id="fp-bookings-table">
             <thead>
               <tr>
@@ -93,7 +127,7 @@
             </thead>
             <tbody>
               {% for b in my_bookings %}
-              <tr class="fp-booking-row" data-status="{{ b.status or 'Pending' }}">
+              <tr class="fp-booking-row" data-status="{{ b.status or 'Pending Allotment' }}">
                 <td style="font-weight:500;color:var(--fp-text-1);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ b.event_name }}">
                   {{ b.event_name or '—' }}
                 </td>
@@ -110,7 +144,7 @@
                   {{ b.admin_remarks or '—' }}
                 </td>
                 <td>
-                  <button class="fp-btn fp-btn-secondary fp-btn-sm" onclick="fpViewBooking('{{ b.name }}','{{ b.event_name | replace("'","") }}','{{ b.room or "" }}','{{ b.start_fmt }}','{{ b.end_fmt }}','{{ b.status or "Pending" }}','{{ b.admin_remarks | replace("'","") }}')" title="View details">
+                  <button class="fp-btn fp-btn-secondary fp-btn-sm" onclick="fpViewBooking('{{ b.name }}','{{ b.event_name | replace("'","") }}','{{ b.room or "" }}','{{ b.start_fmt }}','{{ b.end_fmt }}','{{ b.status or "Pending" }}','{{ b.admin_remarks | replace("'","") }}')" title="View details" aria-label="View booking details">
                     <span class="fp-ms">visibility</span>
                   </button>
                 </td>
@@ -118,6 +152,31 @@
               {% endfor %}
             </tbody>
           </table>
+        </div>
+
+        {# Mobile card list — mirrors table rows, filtered the same way via data-status #}
+        <div class="fp-vb-card-list" id="fp-bookings-card-list">
+          {% for b in my_bookings %}
+          <div class="fp-vb-card fp-booking-row" data-status="{{ b.status or 'Pending Allotment' }}">
+            <div class="fp-vb-card-top">
+              <div>
+                <div class="fp-vb-card-title">{{ b.event_name or '—' }}</div>
+                <div class="fp-vb-card-room">{{ b.room or '—' }}</div>
+              </div>
+              <span class="fp-badge {{ b.status_class }}">{{ b.status or 'Pending' }}</span>
+            </div>
+            <div class="fp-vb-card-meta">
+              {{ b.start_fmt }} to {{ b.end_fmt }}<br>
+              {{ b.expected_attendees or '—' }} attendees
+            </div>
+            <div class="fp-vb-card-footer">
+              <span style="font-size:12px;color:var(--fp-text-3);">{{ b.admin_remarks or '—' }}</span>
+              <button class="fp-btn fp-btn-secondary fp-btn-sm" onclick="fpViewBooking('{{ b.name }}','{{ b.event_name | replace("'","") }}','{{ b.room or "" }}','{{ b.start_fmt }}','{{ b.end_fmt }}','{{ b.status or "Pending" }}','{{ b.admin_remarks | replace("'","") }}')" aria-label="View booking details">
+                <span class="fp-ms">visibility</span> View
+              </button>
+            </div>
+          </div>
+          {% endfor %}
         </div>
         {% endif %}
       </div>
@@ -128,64 +187,97 @@
 
 {# ── New Booking Modal ────────────────────────────────────── #}
 <div id="fp-booking-modal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
-  <div style="background:var(--fp-card);border-radius:var(--fp-radius);width:92%;max-width:500px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.25);">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid var(--fp-border);">
-      <div style="font-size:16px;font-weight:700;color:var(--fp-text-1);">New Venue Booking</div>
-      <button onclick="fpCloseBookingModal()" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:var(--fp-text-4);">
+  <div class="fp-vb-modal-panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 28px 14px;border-bottom:1px solid var(--fp-border);">
+      <div>
+        <div style="font-size:17px;font-weight:700;color:var(--fp-text-1);">New Venue Booking</div>
+        <div style="font-size:12px;color:var(--fp-text-3);margin-top:2px;">Provide the details below to request a venue.</div>
+      </div>
+      <button onclick="fpCloseBookingModal()" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:var(--fp-text-4);" aria-label="Close">
         <span class="fp-ms" style="font-size:22px;">close</span>
       </button>
     </div>
-    <div style="padding:20px 22px;">
-      <div class="fp-form-group">
-        <label class="fp-label">Event / Purpose <span style="color:var(--fp-danger);">*</span></label>
-        <input type="text" class="fp-input" id="fp-vb-event" placeholder="e.g. Guest Lecture, Seminar, Meeting">
-      </div>
-      <div class="fp-form-group">
-        <label class="fp-label">Venue Type <span style="color:var(--fp-danger);">*</span></label>
-        <select class="fp-select" id="fp-vb-venue-type" onchange="fpFilterRoomsByType()">
-          <option value="">Select type…</option>
-          <option value="Classroom">Classroom</option>
-          <option value="Moot Court">Moot Court</option>
-          <option value="Open Spaces">Open Spaces</option>
-          <option value="Meeting Room">Meeting Room</option>
-          <option value="Mess">Mess</option>
-          <option value="Quad">Quad</option>
-          <option value="Conference Hall">Conference Hall</option>
-          <option value="Project">Project</option>
-          <option value="Guest House">Guest House</option>
-          <option value="Staff Quarters">Staff Quarters</option>
-        </select>
-      </div>
-      <div class="fp-form-group">
-        <label class="fp-label">Room / Venue <span style="color:var(--fp-danger);">*</span></label>
-        <select class="fp-select" id="fp-vb-room">
-          <option value="">Select venue type first…</option>
-        </select>
-        <script>window._fp_vb_rooms = {{ (available_rooms or []) | tojson }};</script>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-        <div class="fp-form-group">
-          <label class="fp-label">Start Date &amp; Time <span style="color:var(--fp-danger);">*</span></label>
-          <input type="datetime-local" class="fp-input" id="fp-vb-start">
-        </div>
-        <div class="fp-form-group">
-          <label class="fp-label">End Date &amp; Time <span style="color:var(--fp-danger);">*</span></label>
-          <input type="datetime-local" class="fp-input" id="fp-vb-end">
+    <div class="fp-vb-modal-body">
+
+      <div class="fp-vb-section">
+        <div class="fp-vb-section-title"><span class="fp-ms">event_note</span>Event Details</div>
+        <div class="fp-form-group" style="margin-bottom:0;">
+          <label class="fp-label" for="fp-vb-event">Event / Purpose <span style="color:var(--fp-danger);">*</span></label>
+          <input type="text" class="fp-input" id="fp-vb-event" placeholder="e.g. Guest Lecture, Seminar, Meeting">
+          <div class="fp-vb-field-error" id="fp-vb-event-err"><span class="fp-ms">error</span>Event / Purpose is required.</div>
         </div>
       </div>
-      <div class="fp-form-group">
-        <label class="fp-label">Expected Attendees</label>
-        <input type="number" class="fp-input" id="fp-vb-attendees" placeholder="0" min="1">
+
+      <div class="fp-vb-section">
+        <div class="fp-vb-section-title"><span class="fp-ms">meeting_room</span>Venue</div>
+        <div class="fp-vb-row-2">
+          <div class="fp-form-group" style="margin-bottom:0;">
+            <label class="fp-label" for="fp-vb-venue-type">Venue Type <span style="color:var(--fp-danger);">*</span></label>
+            <select class="fp-select" id="fp-vb-venue-type" onchange="fpFilterRoomsByType()">
+              <option value="">Select type…</option>
+              <option value="Classroom">Classroom</option>
+              <option value="Moot Court">Moot Court</option>
+              <option value="Open Spaces">Open Spaces</option>
+              <option value="Meeting Room">Meeting Room</option>
+              <option value="Mess">Mess</option>
+              <option value="Quad">Quad</option>
+              <option value="Conference Hall">Conference Hall</option>
+              <option value="Project">Project</option>
+              <option value="Guest House">Guest House</option>
+              <option value="Staff Quarters">Staff Quarters</option>
+            </select>
+            <div class="fp-vb-field-error" id="fp-vb-venue-type-err"><span class="fp-ms">error</span>Please select a venue type.</div>
+          </div>
+          <div class="fp-form-group" style="margin-bottom:0;">
+            <label class="fp-label" for="fp-vb-room">Room / Venue <span style="color:var(--fp-danger);">*</span></label>
+            <select class="fp-select" id="fp-vb-room">
+              <option value="">Select venue type first…</option>
+            </select>
+            <div class="fp-vb-field-error" id="fp-vb-room-err"><span class="fp-ms">error</span>Please select a room / venue.</div>
+            <script>window._fp_vb_rooms = {{ (available_rooms or []) | tojson }};</script>
+          </div>
+        </div>
       </div>
-      <div class="fp-form-group">
-        <label class="fp-label">Description / Remarks</label>
-        <textarea class="fp-textarea" id="fp-vb-reason" placeholder="Provide any additional details…"></textarea>
+
+      <div class="fp-vb-section">
+        <div class="fp-vb-section-title"><span class="fp-ms">schedule</span>Schedule</div>
+        <div class="fp-vb-row-2">
+          <div class="fp-form-group" style="margin-bottom:0;">
+            <label class="fp-label" for="fp-vb-start">Start Date &amp; Time <span style="color:var(--fp-danger);">*</span></label>
+            <input type="datetime-local" class="fp-input" id="fp-vb-start">
+            <div class="fp-vb-field-error" id="fp-vb-start-err"><span class="fp-ms">error</span>Start date &amp; time is required.</div>
+          </div>
+          <div class="fp-form-group" style="margin-bottom:0;">
+            <label class="fp-label" for="fp-vb-end">End Date &amp; Time <span style="color:var(--fp-danger);">*</span></label>
+            <input type="datetime-local" class="fp-input" id="fp-vb-end">
+            <div class="fp-vb-field-error" id="fp-vb-end-err"><span class="fp-ms">error</span>End time must be after start time.</div>
+          </div>
+        </div>
       </div>
+
+      <div class="fp-vb-section">
+        <div class="fp-vb-section-title"><span class="fp-ms">groups</span>Attendee Information</div>
+        <div class="fp-form-group" style="margin-bottom:0;">
+          <label class="fp-label" for="fp-vb-attendees">Expected Attendees <span style="color:var(--fp-danger);">*</span></label>
+          <input type="number" class="fp-input" id="fp-vb-attendees" placeholder="0" min="1" step="1">
+          <div class="fp-vb-field-error" id="fp-vb-attendees-err"><span class="fp-ms">error</span>Enter a valid number of attendees (1 or more).</div>
+        </div>
+      </div>
+
+      <div class="fp-vb-section">
+        <div class="fp-vb-section-title"><span class="fp-ms">notes</span>Description</div>
+        <div class="fp-form-group" style="margin-bottom:0;">
+          <label class="fp-label" for="fp-vb-reason">Description / Remarks</label>
+          <textarea class="fp-textarea" id="fp-vb-reason" placeholder="Provide any additional details about your booking…" maxlength="500" oninput="fpUpdateCharCount()"></textarea>
+          <div class="fp-vb-charcount"><span id="fp-vb-charcount-val">0</span>/500</div>
+        </div>
+      </div>
+
       <div id="fp-vb-error" style="display:none;" class="fp-alert fp-alert-danger">
         <span class="fp-ms">error</span><div></div>
       </div>
       <div id="fp-vb-success" style="display:none;" class="fp-alert fp-alert-success">
-        <span class="fp-ms">check_circle</span><div>Booking submitted successfully! It will appear in the list pending approval.</div>
+        <span class="fp-ms">check_circle</span><div>Venue booking request submitted successfully.</div>
       </div>
       <div style="display:flex;gap:10px;margin-top:4px;">
         <button class="fp-btn fp-btn-primary" id="fp-vb-submit-btn" onclick="fpSubmitBooking()" style="flex:1;justify-content:center;">
@@ -202,7 +294,7 @@
   <div style="background:var(--fp-card);border-radius:var(--fp-radius);width:92%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.25);">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid var(--fp-border);">
       <div style="font-size:15px;font-weight:700;color:var(--fp-text-1);">Booking Details</div>
-      <button onclick="document.getElementById('fp-view-booking-modal').style.display='none';document.body.style.overflow='';" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:var(--fp-text-4);">
+      <button onclick="document.getElementById('fp-view-booking-modal').style.display='none';document.body.style.overflow='';" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:var(--fp-text-4);" aria-label="Close">
         <span class="fp-ms" style="font-size:22px;">close</span>
       </button>
     </div>
@@ -214,14 +306,73 @@
 
 {% block extra_js %}
 <script>
-function fpFilterBookings() {
-  var status = (document.getElementById('fp-vb-status-filter').value || '').toLowerCase();
-  document.querySelectorAll('.fp-booking-row').forEach(function(row) {
-    var rowStatus = (row.getAttribute('data-status') || '').toLowerCase();
-    row.style.display = (!status || rowStatus === status) ? '' : 'none';
-  });
+/* ── Status multi-select filter ─────────────────────────────── */
+function fpToggleStatusPanel() {
+  fpOpenMultiselectPanel(document.getElementById('fp-vb-status-btn'), document.getElementById('fp-vb-status-panel'));
 }
 
+function fpGetSelectedStatuses() {
+  return Array.from(document.querySelectorAll('.fp-vb-status-opt:checked')).map(function(el) { return el.value; });
+}
+
+var fpStatusLabels = { 'Pending Allotment': 'Pending', 'Allotted': 'Approved', 'Rejected': 'Rejected', 'Cancelled': 'Cancelled' };
+
+function fpApplyStatusFilter() {
+  var selected = fpGetSelectedStatuses();
+
+  document.querySelectorAll('.fp-booking-row').forEach(function(row) {
+    var rowStatus = row.getAttribute('data-status') || '';
+    row.style.display = (!selected.length || selected.indexOf(rowStatus) !== -1) ? '' : 'none';
+  });
+
+  var btnLabel = document.getElementById('fp-vb-status-btn-label');
+  if (!selected.length) {
+    btnLabel.textContent = 'All Status';
+  } else if (selected.length === 1) {
+    btnLabel.textContent = fpStatusLabels[selected[0]] || selected[0];
+  } else {
+    btnLabel.textContent = selected.length + ' selected';
+  }
+
+  var chipsWrap = document.getElementById('fp-vb-chips');
+  chipsWrap.innerHTML = '';
+  if (selected.length) {
+    chipsWrap.style.display = 'flex';
+    selected.forEach(function(s) {
+      var chip = document.createElement('span');
+      chip.className = 'fp-filter-chip';
+      chip.innerHTML = 'Status: ' + (fpStatusLabels[s] || s) + ' <button type="button" aria-label="Remove filter"><span class="fp-ms">close</span></button>';
+      chip.querySelector('button').onclick = function() {
+        var cb = document.querySelector('.fp-vb-status-opt[value="' + s.replace(/"/g, '\\"') + '"]');
+        if (cb) cb.checked = false;
+        fpApplyStatusFilter();
+      };
+      chipsWrap.appendChild(chip);
+    });
+  } else {
+    chipsWrap.style.display = 'none';
+  }
+}
+
+function fpSelectAllStatusFilter() {
+  document.querySelectorAll('.fp-vb-status-opt').forEach(function(el) { el.checked = true; });
+  fpApplyStatusFilter();
+}
+
+function fpClearStatusFilter() {
+  document.querySelectorAll('.fp-vb-status-opt').forEach(function(el) { el.checked = false; });
+  fpApplyStatusFilter();
+}
+
+document.addEventListener('click', function(e) {
+  var wrap  = document.getElementById('fp-vb-status-multiselect');
+  var panel = document.getElementById('fp-vb-status-panel');
+  if (wrap && panel && !wrap.contains(e.target) && !panel.contains(e.target)) {
+    fpCloseMultiselectPanel(panel);
+  }
+});
+
+/* ── Booking form helpers ────────────────────────────────────── */
 function fpReset(id, val) {
   var el = document.getElementById(id);
   if (el) el.value = val !== undefined ? val : '';
@@ -229,6 +380,21 @@ function fpReset(id, val) {
 function fpHide(id) {
   var el = document.getElementById(id);
   if (el) el.style.display = 'none';
+}
+function fpClearFieldErrors() {
+  document.querySelectorAll('.fp-vb-field-error').forEach(function(el) { el.classList.remove('fp-show'); });
+  document.querySelectorAll('#fp-booking-modal .fp-invalid').forEach(function(el) { el.classList.remove('fp-invalid'); });
+}
+function fpShowFieldError(fieldId) {
+  var input = document.getElementById(fieldId);
+  var err = document.getElementById(fieldId + '-err');
+  if (input) input.classList.add('fp-invalid');
+  if (err) err.classList.add('fp-show');
+}
+function fpUpdateCharCount() {
+  var el = document.getElementById('fp-vb-reason');
+  var countEl = document.getElementById('fp-vb-charcount-val');
+  if (el && countEl) countEl.textContent = el.value.length;
 }
 
 function fpFilterRoomsByType() {
@@ -272,6 +438,8 @@ function fpOpenBookingForm() {
   fpReset('fp-vb-reason');
   fpHide('fp-vb-error');
   fpHide('fp-vb-success');
+  fpClearFieldErrors();
+  fpUpdateCharCount();
   var roomSel = document.getElementById('fp-vb-room');
   if (roomSel) roomSel.innerHTML = '<option value="">Select venue type first…</option>';
   var btn = document.getElementById('fp-vb-submit-btn');
@@ -304,15 +472,26 @@ function fpSubmitBooking() {
 
   var errEl = document.getElementById('fp-vb-error');
   errEl.style.display = 'none';
+  fpClearFieldErrors();
 
-  if (!event)     { errEl.style.display='flex'; errEl.querySelector('div').textContent='Event / Purpose is required.'; return; }
-  if (!venueType) { errEl.style.display='flex'; errEl.querySelector('div').textContent='Please select a Venue Type.'; return; }
-  if (!room)      { errEl.style.display='flex'; errEl.querySelector('div').textContent='Please select or enter a room/venue.'; return; }
-  if (!start)     { errEl.style.display='flex'; errEl.querySelector('div').textContent='Start date & time is required.'; return; }
-  if (!end)       { errEl.style.display='flex'; errEl.querySelector('div').textContent='End date & time is required.'; return; }
-  if (end <= start) { errEl.style.display='flex'; errEl.querySelector('div').textContent='End time must be after start time.'; return; }
+  var firstInvalid = null;
+  var hasError = false;
+
+  if (!event)     { fpShowFieldError('fp-vb-event'); hasError = true; firstInvalid = firstInvalid || eventEl; }
+  if (!venueType) { fpShowFieldError('fp-vb-venue-type'); hasError = true; firstInvalid = firstInvalid || venueTypeEl; }
+  if (!room)      { fpShowFieldError('fp-vb-room'); hasError = true; firstInvalid = firstInvalid || roomEl; }
+  if (!start)     { fpShowFieldError('fp-vb-start'); hasError = true; firstInvalid = firstInvalid || startEl; }
+  if (!end || (start && end <= start)) { fpShowFieldError('fp-vb-end'); hasError = true; firstInvalid = firstInvalid || endEl; }
+  var attendeesNum = parseInt(attendees, 10);
+  if (!attendees || isNaN(attendeesNum) || attendeesNum < 1) { fpShowFieldError('fp-vb-attendees'); hasError = true; firstInvalid = firstInvalid || attendeesEl; }
+
+  if (hasError) {
+    if (firstInvalid && firstInvalid.scrollIntoView) firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
 
   var btn = document.getElementById('fp-vb-submit-btn');
+  if (btn.disabled) return;
   btn.disabled = true;
   btn.innerHTML = '<span class="fp-ms">sync</span>Submitting…';
 
@@ -328,7 +507,8 @@ function fpSubmitBooking() {
     btn.disabled = false;
     btn.innerHTML = '<span class="fp-ms">send</span>Submit Booking';
     document.getElementById('fp-vb-success').style.display = 'flex';
-    setTimeout(function() { fpCloseBookingModal(); location.reload(); }, 2000);
+    if (window.fpToast) fpToast('Venue booking request submitted successfully.', 'success');
+    setTimeout(function() { fpCloseBookingModal(); location.reload(); }, 1500);
   }, function(msg) {
     btn.disabled = false;
     btn.innerHTML = '<span class="fp-ms">send</span>Submit Booking';
@@ -344,7 +524,7 @@ function fpViewBooking(name, event, room, start, end, status, remarks) {
       + '<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--fp-text-4);">' + label + '</div>'
       + '<div style="font-size:13px;font-weight:500;color:var(--fp-text-1);">' + (val || '—') + '</div></div></div>';
   }
-  var statusMap = { Pending:'fp-badge-warning', Approved:'fp-badge-success', Rejected:'fp-badge-danger', Cancelled:'fp-badge-neutral' };
+  var statusMap = { 'Pending Allotment':'fp-badge-warning', Allotted:'fp-badge-success', Rejected:'fp-badge-danger', Cancelled:'fp-badge-neutral' };
   var html = row('event', 'Event', event)
     + row('meeting_room', 'Room', room)
     + row('schedule', 'Start', start)

@@ -17,10 +17,11 @@ class FeeDemand(Document):
 	def _calculate_amounts(self):
 		self.original_amount = flt(self.original_amount)
 		self.waiver_amount = flt(self.waiver_amount)
+		self.penalty_amount = flt(self.penalty_amount)
 		self.paid_amount = flt(self.paid_amount)
 		self.credit_adjusted = flt(self.credit_adjusted)
 
-		self.net_payable = self.original_amount - self.waiver_amount
+		self.net_payable = self.original_amount - self.waiver_amount + self.penalty_amount
 		self.outstanding_amount = self.net_payable - self.paid_amount - self.credit_adjusted
 
 		# Prevent negative outstanding
@@ -51,6 +52,10 @@ class FeeDemand(Document):
 		if self.status in ("Cancelled", "Waived"):
 			return
 
+		# "Moved to Excess" is kept on ordinary saves; a new payment/reversal recalculates it.
+		if self.status == "Moved to Excess" and not self.flags.payment_update:
+			return
+
 		outstanding = flt(self.outstanding_amount)
 		paid = flt(self.paid_amount)
 
@@ -78,9 +83,11 @@ class FeeDemand(Document):
 		if self.credit_adjusted < 0:
 			self.credit_adjusted = 0
 
+		self.flags.payment_update = True
 		self._calculate_amounts()
 		self._update_status()
 		self.save(ignore_permissions=True)
+		self.flags.payment_update = False
 
 		self._log_payment_event(paid_delta)
 

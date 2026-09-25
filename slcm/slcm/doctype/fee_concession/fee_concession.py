@@ -1,4 +1,5 @@
 import frappe
+from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, today
 
@@ -98,3 +99,56 @@ class FeeConcession(Document):
 			demand.status = "Pending"
 
 		demand.save(ignore_permissions=True)
+
+
+@frappe.whitelist()
+def bulk_apply_concession(demand_names, concession_type, waiver_mode, waiver_value,
+	reason, scholarship_for=None, remarks=None):
+	"""
+	Create and submit one Fee Concession per selected Fee Demand, using the
+	same waiver rule for all of them. Used by the Fee Demand list view's
+	"Apply Fee Concession / Waiver" bulk action.
+	"""
+	if isinstance(demand_names, str):
+		demand_names = frappe.parse_json(demand_names)
+	if not demand_names:
+		frappe.throw(_("Please select at least one Fee Demand."))
+
+	demands = frappe.get_all(
+		"Fee Demand",
+		filters={"name": ["in", demand_names]},
+		fields=["name", "student", "status", "outstanding_amount"],
+	)
+
+	created = []
+	skipped = []
+
+	for d in demands:
+		if d.status in ("Paid", "Cancelled", "Waived") or flt(d.outstanding_amount) <= 0:
+			skipped.append({"name": d.name, "reason": _("No outstanding amount / already settled")})
+			continue
+
+		if frappe.db.exists("Fee Concession", {"fee_demand": d.name, "status": "Approved"}):
+			skipped.append({"name": d.name, "reason": _("Already has an approved concession")})
+			continue
+
+		try:
+			doc = frappe.get_doc({
+				"doctype": "Fee Concession",
+				"student": d.student,
+				"fee_demand": d.name,
+				"concession_type": concession_type,
+				"scholarship_for": scholarship_for,
+				"waiver_mode": waiver_mode,
+				"waiver_value": flt(waiver_value),
+				"reason": reason,
+				"remarks": remarks,
+			})
+			doc.insert(ignore_permissions=True)
+			doc.submit()
+			created.append(doc.name)
+		except Exception:
+			frappe.log_error(title="Bulk Fee Concession Failed", message=frappe.get_traceback())
+			skipped.append({"name": d.name, "reason": _("Could not be processed — see error log")})
+
+	return {"created": created, "skipped": skipped}

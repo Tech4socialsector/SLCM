@@ -6,7 +6,7 @@ frappe.ui.form.on("Shortlisting Merit List", {
             }
 
             frm.add_custom_button(__("Generate Final Admission Merit"), function () {
-                frappe.confirm(__("Are you sure you want to generate the Final Merit List?"), function () {
+                frappe.confirm(__("Are you sure you want to generate the Final Merit List?<br><br><span class='text-muted' style='font-size: 13px;'>This action will evaluate all shortlisted candidates by combining Part A and Part B scores to generate the final admission rank list.</span>"), function () {
                     frappe.call({
                         method: "clear_generation_progress",
                         doc: frm.doc,

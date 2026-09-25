@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.utils import flt, cint, today, nowdate, getdate
 from slcm.api.student_payment import _require_parent_for_student
 
@@ -300,7 +301,7 @@ def create_support_ticket(category, subject, description, attachment=None):
                 recipients=[admin_email],
                 subject=f"[Student Portal] {full_subject}",
                 message=full_content,
-                now=True,
+                now=False,
             )
     except Exception as e:
         # Email failure should not block the user
@@ -1821,7 +1822,7 @@ def initiate_improvement_exam_registration(exam_plan, course):
 
 @frappe.whitelist()
 def check_room_availability(room, start_datetime, end_datetime):
-    """Return conflicting Pending/Approved bookings for the room in the given time window."""
+    """Return conflicting Pending/Approved bookings for the venue in the given time window."""
     if frappe.session.user == "Guest":
         frappe.throw("Please log in.", frappe.PermissionError)
     if not room or not start_datetime or not end_datetime:
@@ -1829,32 +1830,32 @@ def check_room_availability(room, start_datetime, end_datetime):
     conflicts = frappe.db.sql("""
         SELECT name, event_name, start_datetime, end_datetime, status
         FROM `tabVenue Booking`
-        WHERE room = %(room)s
+        WHERE venue = %(venue)s
           AND docstatus IN (0, 1)
           AND status IN ('Pending', 'Approved')
           AND start_datetime < %(end)s
           AND end_datetime   > %(start)s
         ORDER BY start_datetime ASC
         LIMIT 5
-    """, {"room": room, "start": start_datetime, "end": end_datetime}, as_dict=True)
+    """, {"venue": room, "start": start_datetime, "end": end_datetime}, as_dict=True)
     return {"conflicts": conflicts}
 
 
 @frappe.whitelist()
 def get_rooms_for_type(venue_type):
-    """Return available rooms for the given venue type."""
+    """Return available venues for the given venue type."""
     if frappe.session.user == "Guest":
         frappe.throw("Please log in.", frappe.PermissionError)
     if not venue_type:
         return []
-    rooms = frappe.get_all(
-        "Room",
-        filters={"room_type": venue_type, "is_booking_allowed": 1},
-        fields=["name", "room_name", "seating_capacity", "block", "floor"],
-        order_by="room_name asc",
+    venues = frappe.get_all(
+        "Venue Master",
+        filters={"venue_type": venue_type, "is_active": 1},
+        fields=["name", "venue_name_or_number as room_name", "capacity as seating_capacity", "building as block", "floor"],
+        order_by="venue_name_or_number asc",
         ignore_permissions=True,
     )
-    return rooms
+    return venues
 
 
 @frappe.whitelist()
@@ -1880,7 +1881,7 @@ def submit_venue_booking(
         "doctype":            "Venue Booking",
         "event_name":         event_name,
         "venue_type":         venue_type,
-        "room":               room,
+        "venue":              room,
         "start_datetime":     start_datetime,
         "end_datetime":       end_datetime,
         "reason":             reason or "",
@@ -1898,7 +1899,7 @@ def submit_venue_booking(
 
 @frappe.whitelist()
 def request_venue_swap(booking_name, requested_room, reason=None):
-    """Student/Faculty raises a swap request to move their booking to a different room."""
+    """Student/Faculty raises a swap request to move their booking to a different venue."""
     if frappe.session.user == "Guest":
         frappe.throw("Please log in.", frappe.PermissionError)
 
@@ -1918,24 +1919,24 @@ def request_venue_swap(booking_name, requested_room, reason=None):
         frappe.throw("A swap request is already pending for this booking.")
 
     if not requested_room:
-        frappe.throw("Please select a room to swap to.")
+        frappe.throw("Please select a venue to swap to.")
 
-    if requested_room == booking.room:
-        frappe.throw("The requested room is the same as the current room.")
+    if requested_room == booking.venue:
+        frappe.throw("The requested venue is the same as the current venue.")
 
     requester_name = frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user
 
     frappe.db.set_value("Venue Booking", booking_name, {
-        "swap_requested":      1,
-        "swap_requested_room": requested_room,
-        "swap_request_reason": reason or "",
-        "swap_status":         "Pending",
-        "swap_admin_remarks":  "",
+        "swap_requested":       1,
+        "swap_requested_venue": requested_room,
+        "swap_request_reason":  reason or "",
+        "swap_status":          "Pending",
+        "swap_admin_remarks":   "",
     }, update_modified=False)
 
     _insert_swap_log(
         booking_name  = booking_name,
-        from_room     = booking.room,
+        from_room     = booking.venue,
         to_room       = requested_room,
         swap_status   = "Pending",
         requested_by  = requester_name,
@@ -1970,11 +1971,11 @@ def cancel_venue_swap_request(booking_name):
         frappe.throw("No pending swap request found for this booking.")
 
     frappe.db.set_value("Venue Booking", booking_name, {
-        "swap_requested":      0,
-        "swap_requested_room": "",
-        "swap_request_reason": "",
-        "swap_status":         "",
-        "swap_admin_remarks":  "",
+        "swap_requested":       0,
+        "swap_requested_venue": "",
+        "swap_request_reason":  "",
+        "swap_status":          "",
+        "swap_admin_remarks":   "",
     }, update_modified=False)
 
     # Mark the latest Pending log entry as Withdrawn
@@ -2057,8 +2058,8 @@ def backfill_swap_log(booking_name):
 
     bk = frappe.db.get_value(
         "Venue Booking", booking_name,
-        ["swap_requested", "swap_status", "swap_requested_room",
-         "swap_request_reason", "room", "owner", "requester_name"],
+        ["swap_requested", "swap_status", "swap_requested_venue",
+         "swap_request_reason", "venue", "owner", "requester_name"],
         as_dict=True
     )
     if not bk or not bk.swap_requested:
@@ -2075,8 +2076,8 @@ def backfill_swap_log(booking_name):
     )
     _insert_swap_log(
         booking_name  = booking_name,
-        from_room     = bk.room,
-        to_room       = bk.swap_requested_room or "",
+        from_room     = bk.venue,
+        to_room       = bk.swap_requested_venue or "",
         swap_status   = bk.swap_status or "Pending",
         requested_by  = requester_name,
         requested_on  = frappe.utils.now(),
@@ -2091,26 +2092,26 @@ def _notify_admin_swap_request(booking_name, requested_room, reason):
     try:
         booking = frappe.db.get_value(
             "Venue Booking", booking_name,
-            ["event_name", "room", "venue_type", "start_datetime", "end_datetime",
+            ["event_name", "venue", "venue_type", "start_datetime", "end_datetime",
              "requester_name", "requester_type"],
             as_dict=True,
         )
         if not booking:
             return
 
-        req_room_name = frappe.db.get_value("Room", requested_room, "room_name") or requested_room
+        req_room_name = frappe.db.get_value("Venue Master", requested_room, "venue_name_or_number") or requested_room
 
-        # Find who currently has the requested room booked in this time window
+        # Find who currently has the requested venue booked in this time window
         conflict_rows = frappe.db.sql("""
             SELECT name, event_name, requester_name, start_datetime, end_datetime, status
             FROM `tabVenue Booking`
-            WHERE room = %(room)s
+            WHERE venue = %(venue)s
               AND docstatus IN (0, 1)
               AND status IN ('Pending', 'Approved')
               AND start_datetime < %(end)s
               AND end_datetime   > %(start)s
             LIMIT 3
-        """, {"room": requested_room,
+        """, {"venue": requested_room,
               "start": booking.start_datetime,
               "end":   booking.end_datetime}, as_dict=True)
 
@@ -2160,7 +2161,7 @@ def _notify_admin_swap_request(booking_name, requested_room, reason):
   <tr><td style="padding:6px 12px;font-weight:600;color:#555;width:180px;">Booking Ref</td><td style="padding:6px 12px;">{booking_name}</td></tr>
   <tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">Requested By</td><td style="padding:6px 12px;">{booking.requester_name} ({booking.requester_type})</td></tr>
   <tr><td style="padding:6px 12px;font-weight:600;color:#555;">Event / Purpose</td><td style="padding:6px 12px;">{booking.event_name}</td></tr>
-  <tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">Current Room</td><td style="padding:6px 12px;">{booking.room}</td></tr>
+  <tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">Current Room</td><td style="padding:6px 12px;">{booking.venue}</td></tr>
   <tr><td style="padding:6px 12px;font-weight:600;color:#555;">Requested Room</td><td style="padding:6px 12px;font-weight:700;color:#1d4ed8;">{req_room_name} ({requested_room})</td></tr>
   <tr style="background:#f7f7f7;"><td style="padding:6px 12px;font-weight:600;color:#555;">Time Slot</td><td style="padding:6px 12px;">{booking.start_datetime} → {booking.end_datetime}</td></tr>
   {f'<tr><td style="padding:6px 12px;font-weight:600;color:#555;">Swap Reason</td><td style="padding:6px 12px;">{reason}</td></tr>' if reason else ""}
@@ -2168,7 +2169,7 @@ def _notify_admin_swap_request(booking_name, requested_room, reason):
 {conflict_html}
 <p style="margin-top:16px;">Please log in to <strong>approve or reject</strong> this swap request from the Venue Booking record.</p>
 """
-        frappe.sendmail(recipients=admin_emails, subject=subject, message=message, now=True)
+        frappe.sendmail(recipients=admin_emails, subject=subject, message=message, now=False)
     except Exception:
         frappe.log_error(frappe.get_traceback(), "Venue Swap Request — Admin Notification Error")
 
@@ -2250,3 +2251,87 @@ def bulk_update_venue_booking_status(booking_names, status, admin_remarks=""):
 
     frappe.db.commit()
     return {"updated": updated, "status": status}
+
+@frappe.whitelist()
+def add_guardian(first_name, last_name, relation, phone, email, occupation):
+    student_name = _get_student()
+    if not student_name:
+        frappe.throw("Student not found")
+
+    student = frappe.get_doc("Student Master", student_name)
+    student.append("parents", {
+        "first_name": first_name,
+        "last_name": last_name,
+        "relation": relation,
+        "phone": phone,
+        "email": email,
+        "occupation": occupation
+    })
+    
+    student.flags.ignore_permissions = True
+    student.save()
+    return {"status": "success"}
+
+
+BANK_DETAIL_FIELDS = (
+    "savings_account_number", "savings_account_holder_name", "savings_bank_name",
+    "savings_branch_name", "savings_ifsc_code", "availed_education_loan",
+    "education_loan_scheme", "other_loan_scheme", "loan_account_number",
+    "loan_account_holder_name", "loan_bank_name", "loan_branch_name", "loan_ifsc_code",
+)
+
+
+@frappe.whitelist(methods=["POST"])
+def submit_bank_details(**kwargs):
+    """One-time submission of savings / education-loan bank details from the Student Portal.
+
+    Once submitted the details are locked; the office can re-open them by unchecking
+    "Bank Details Submitted by Student" on the Student Master.
+    """
+    student_name = _get_student()
+    if not student_name:
+        frappe.throw(_("Student not found"))
+
+    student = frappe.get_doc("Student Master", student_name)
+    if student.bank_details_submitted:
+        frappe.throw(_("Bank details have already been submitted. Please contact the administration office to make changes."))
+
+    values = {f: (str(kwargs.get(f) or "")).strip() for f in BANK_DETAIL_FIELDS}
+
+    required = {
+        "savings_account_number": _("Savings Bank Account Number"),
+        "savings_account_holder_name": _("Name of the Account Holder"),
+        "savings_bank_name": _("Name of the Bank"),
+        "savings_branch_name": _("Name of the Branch"),
+        "savings_ifsc_code": _("IFSC Code"),
+        "availed_education_loan": _("Availed Education Loan?"),
+    }
+    if values["availed_education_loan"] not in ("Yes", "No"):
+        values["availed_education_loan"] = ""
+    if values["availed_education_loan"] == "Yes":
+        required.update({
+            "education_loan_scheme": _("Loan Scheme"),
+            "loan_account_number": _("Loan Account Number"),
+            "loan_account_holder_name": _("Loan Account Holder Name"),
+            "loan_bank_name": _("Loan Bank Name"),
+            "loan_branch_name": _("Loan Branch Name"),
+            "loan_ifsc_code": _("Loan IFSC Code"),
+        })
+        if values["education_loan_scheme"] not in ("PM Vidyalaxmi", "Others"):
+            values["education_loan_scheme"] = ""
+        if values["education_loan_scheme"] == "Others":
+            required["other_loan_scheme"] = _("Specify Other Scheme")
+
+    missing = [label for f, label in required.items() if not values[f]]
+    if missing:
+        frappe.throw(_("Please fill: {0}").format(", ".join(missing)))
+
+    # Bank fields are masked, and Frappe resets masked fields on save for users without
+    # mask permission (students), so validate via the controller and write them directly.
+    student.update(values)
+    student.validate_bank_details()
+    updates = {f: student.get(f) or None for f in BANK_DETAIL_FIELDS}
+    updates.update(bank_details_submitted=1, bank_details_submitted_on=frappe.utils.now_datetime())
+    frappe.db.set_value("Student Master", student_name, updates)
+    student.add_comment("Info", _("Bank details submitted by the student from the Student Portal."))
+    return {"status": "success"}

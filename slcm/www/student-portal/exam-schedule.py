@@ -1,4 +1,4 @@
-import frappe
+﻿import frappe
 
 no_cache = 1
 
@@ -106,7 +106,11 @@ def get_context(context):
             if rows:
                 # Build courses from Student Course Marks (normal path)
                 for row in rows:
-                    course_name = frappe.db.get_value("Course", row.course, "course_name") or row.course or "Course"
+                    actual_course = frappe.db.get_value("Course Offering", row.course, "course") or row.course
+                    c_doc = frappe.db.get_value("Course", actual_course, ["course_name", "course_code"], as_dict=True) or {}
+                    course_name = c_doc.get("course_name") or actual_course
+                    course_code = c_doc.get("course_code") or actual_course
+                    
                     att = _get_attendance(row, student_name, exam_plan)
                     sched = schedule_map.get(row.course) or frappe._dict()
                     exam_date_str = frappe.utils.formatdate(sched.exam_date, "d MMM yyyy") if sched.exam_date else ""
@@ -116,6 +120,7 @@ def get_context(context):
                     venue_str = " | ".join(filter(None, [sched.venue, sched.hall])) or "To be announced"
                     courses.append({
                         "course": row.course,
+                        "course_code": course_code,
                         "course_name": course_name,
                         "attendance_status": att,
                         "enrollment_status": row.enrollment_status or "Enrolled",
@@ -132,7 +137,11 @@ def get_context(context):
                 # the Exam Plan's course_schedules child table so the timetable
                 # is still visible to students before marks are created.
                 for sched in schedule_rows:
-                    course_name = frappe.db.get_value("Course", sched.course, "course_name") or sched.course or "Course"
+                    actual_course = frappe.db.get_value("Course Offering", sched.course, "course") or sched.course
+                    c_doc = frappe.db.get_value("Course", actual_course, ["course_name", "course_code"], as_dict=True) or {}
+                    course_name = c_doc.get("course_name") or actual_course
+                    course_code = c_doc.get("course_code") or actual_course
+                    
                     exam_date_str = frappe.utils.formatdate(sched.exam_date, "d MMM yyyy") if sched.exam_date else ""
                     start = _fmt_time(sched.start_time) if sched.start_time else ""
                     end = _fmt_time(sched.end_time) if sched.end_time else ""
@@ -140,6 +149,7 @@ def get_context(context):
                     venue_str = " | ".join(filter(None, [sched.venue, sched.hall])) or "To be announced"
                     courses.append({
                         "course": sched.course,
+                        "course_code": course_code,
                         "course_name": course_name,
                         "attendance_status": "",
                         "enrollment_status": "Enrolled",
@@ -310,3 +320,4 @@ def _set_nav_defaults(context):
     context.programme_name = ""
     context.department = ""
     context.batch_year = ""
+

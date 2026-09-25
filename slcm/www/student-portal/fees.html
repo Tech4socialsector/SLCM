@@ -2,6 +2,23 @@
 {% block title %}Fees &amp; Payments{% endblock %}
 
 {% block content %}
+
+{# ── Page header ───────────────────────────────────────────────── #}
+<div style="margin-bottom: 32px; margin-top: 10px;">
+  <div style="display:flex; align-items:flex-start; gap:16px;">
+    <div style="border: 2px solid var(--sp-primary); border-radius: 8px; width: 42px; height: 34px; display:flex; align-items:center; justify-content:center; color: var(--sp-primary); margin-top: 4px;">
+      <span class="sp-ms" style="font-size: 24px; font-variation-settings: 'FILL' 1, 'wght' 600;">payments</span>
+    </div>
+    <div>
+      <h1 class="sp-page-title" style="font-family: 'Merriweather', serif; font-size: 28px!important; color: var(--sp-text-1); margin: 0 0 6px 0; font-weight: 600;">Fees &amp; Payments</h1>
+      <p class="sp-page-sub" style="font-size: 15px; color: var(--sp-text-3); margin: 0;">View your programme fee details and payment history</p>
+      <div style="font-size: 13px; color: var(--sp-text-4); margin-top: 14px;">
+        <a href="/student-portal" style="color: var(--sp-text-4); text-decoration: none;">Dashboard</a> &gt; 
+        <span style="color: var(--sp-primary); font-weight: 600;">Fees &amp; Payments</span>
+      </div>
+    </div>
+  </div>
+</div>
 {% if no_student %}
 <div class="sp-alert sp-alert-warning fade-in">
   <span class="sp-ms">warning</span>
@@ -20,10 +37,10 @@
 
 {% if not total_payable and not has_invoices %}
 {# ── No fees configured ───────────────────────────────────────────── #}
-<div class="fee-empty-state fade-in">
-  <span class="sp-ms fee-empty-icon">receipt_long</span>
-  <div class="fee-empty-title">No fee details yet</div>
-  <div class="fee-empty-sub">Your programme fee will appear here once the Finance Office has set up your record.</div>
+<div class="fee-empty-state fade-in" style="background:#fff; border:1px dashed #cbd5e1; border-radius:12px; padding:100px 24px; text-align:center; min-height:400px; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+  <span class="sp-ms fee-empty-icon" style="font-size:64px; color:#cbd5e1; margin-bottom:16px; font-variation-settings: 'FILL' 0, 'wght' 300;">receipt_long</span>
+  <div class="fee-empty-title" style="font-size:22px; font-family:'Merriweather',serif; font-weight:700; color:var(--sp-text-1); margin-bottom:10px;">No fee details yet</div>
+  <div class="fee-empty-sub" style="font-size:15px; color:var(--sp-text-3);">Your programme fee will appear here once the Finance Office<br>has set up your record.</div>
 </div>
 
 {% else %}
